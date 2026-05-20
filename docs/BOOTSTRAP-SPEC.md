@@ -129,7 +129,31 @@ Checklist:
 - `/api/v1` base path is active.
 - Fail-fast behavior exists for missing critical env vars.
 
-## 8. Deployment Readiness Hook (For Later in Month)
+## 8. Seed First Manager (Local)
+
+Use the seed command once to create the initial manager user. It is safe to re-run; it will upsert the user password and ensure a manager membership.
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/nursery_management?sslmode=disable \
+go run ./cmd/seed \
+  --email manager@pilot.local \
+  --password "ReplaceWithAStrongPassword" \
+  --tenant "Pilot Nursery" \
+  --branch "Main"
+```
+
+Required flags:
+
+- `--email`
+- `--password`
+
+Optional flags:
+
+- `--database-url` (defaults to `DATABASE_URL` env var)
+- `--tenant` (defaults to `Pilot Nursery`)
+- `--branch` (defaults to `Main`)
+
+## 9. Deployment Readiness Hook (For Later in Month)
 
 Even if deployment is not done on Day 1, prepare these now:
 
