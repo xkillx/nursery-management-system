@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"nursery-management-system/api/internal/auth"
 	"nursery-management-system/api/internal/platform/config"
 )
 
@@ -31,6 +32,11 @@ func NewRouter(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	router.GET("/health", healthHandler(pool))
 	api := router.Group(cfg.APIBasePath)
 	api.GET("/health", healthHandler(pool))
+
+	authRepo := auth.NewRepository(pool)
+	authTokens := auth.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours)
+	authHandler := auth.NewHandler(authRepo, authTokens, cfg)
+	authHandler.RegisterRoutes(api)
 
 	return router
 }
