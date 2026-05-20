@@ -34,6 +34,13 @@ Create a working API foundation for the 30-day MVP with:
 
 - `DATABASE_URL` (Postgres DSN)
 
+Local setup (example):
+
+```bash
+psql postgres -c "CREATE ROLE nursery_app WITH LOGIN PASSWORD 'nursery_app';"
+psql postgres -c "CREATE DATABASE nursery_management OWNER nursery_app;"
+```
+
 ## Auth
 
 - `JWT_ACCESS_SECRET`
