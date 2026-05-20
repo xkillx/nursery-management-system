@@ -1,0 +1,3 @@
+# Session-bound authorization guards for MVP
+
+For month 1, we authorize every protected API request through session-bound authorization guards: each session is bound to one membership (`membership_id`, tenant, branch, role), protected routes are default-deny with explicit role/scope requirements, and parent-child access is verified as a live relationship check. We chose this over request-selected scope or role-only RBAC because it gives deterministic guard behavior, stronger tenant/branch isolation, clearer auditability, and simpler testable failure semantics (`401` vs `403` with stable denial codes) while fitting the 30-day delivery window.

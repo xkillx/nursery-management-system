@@ -27,7 +27,7 @@ Source: `docs/PRD-MVP-1M.md`
 |---|---|---|---|
 | 1 | Project bootstrap | Initialize Gin API skeleton, `/api/v1` router, env config, local Postgres connection, golang-migrate wiring | Done (health endpoints respond) |
 | 2 | Auth base | Login/logout, JWT access (15m), refresh token store (30d), password hash and verify | Done (seeded user login/refresh/logout verified) |
-| 3 | Roles and guards | RBAC middleware for manager/practitioner/parent + tenant/branch scope checks | Protected route rejects wrong role/scope |
+| 3 | Roles and guards | Authorization guards middleware (role, scope, relationship) + scoped query enforcement | Done (protected routes reject wrong role/scope/relationship with matrix tests) |
 | 4 | Core schema | Create tables: users, memberships, children, guardians, links, sessions, audit_logs | Migrations succeed on clean DB |
 | 5 | Child management API | Manager CRUD for child and guardian + relationship linking | Manager can create and edit records |
 | 6 | Staff UI basics | Manager/practitioner screens; manager edit only, practitioner read only | Permissions match policy in UI/API |

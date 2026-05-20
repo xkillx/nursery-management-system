@@ -21,7 +21,18 @@ type TokenManager struct {
 
 type AccessClaims struct {
 	jwt.RegisteredClaims
-	Email string `json:"email"`
+	Email        string `json:"email"`
+	MembershipID string `json:"membership_id"`
+	TenantID     string `json:"tenant_id"`
+	BranchID     string `json:"branch_id"`
+	Role         string `json:"role"`
+}
+
+type ScopeClaims struct {
+	MembershipID string
+	TenantID     string
+	BranchID     string
+	Role         string
 }
 
 func NewTokenManager(accessSecret, refreshSecret string, accessTTLMin, refreshTTLHours int) *TokenManager {
@@ -33,7 +44,7 @@ func NewTokenManager(accessSecret, refreshSecret string, accessTTLMin, refreshTT
 	}
 }
 
-func (m *TokenManager) NewAccessToken(userID uuid.UUID, email string) (string, time.Time, error) {
+func (m *TokenManager) NewAccessToken(userID uuid.UUID, email string, scope ScopeClaims) (string, time.Time, error) {
 	now := time.Now().UTC()
 	expiresAt := now.Add(m.accessTTL)
 
@@ -43,7 +54,11 @@ func (m *TokenManager) NewAccessToken(userID uuid.UUID, email string) (string, t
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
-		Email: email,
+		Email:        email,
+		MembershipID: scope.MembershipID,
+		TenantID:     scope.TenantID,
+		BranchID:     scope.BranchID,
+		Role:         scope.Role,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -53,6 +68,34 @@ func (m *TokenManager) NewAccessToken(userID uuid.UUID, email string) (string, t
 	}
 
 	return signed, expiresAt, nil
+}
+
+func (m *TokenManager) ParseAccessToken(raw string) (AccessClaims, error) {
+	claims := AccessClaims{}
+	token, err := jwt.ParseWithClaims(raw, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrInvalidAccessToken
+		}
+		return m.accessSecret, nil
+	})
+	if err != nil {
+		return AccessClaims{}, ErrInvalidAccessToken
+	}
+	if !token.Valid {
+		return AccessClaims{}, ErrInvalidAccessToken
+	}
+
+	if claims.Subject == "" ||
+		claims.MembershipID == "" ||
+		claims.TenantID == "" ||
+		claims.BranchID == "" ||
+		claims.Role == "" ||
+		claims.ExpiresAt == nil ||
+		claims.IssuedAt == nil {
+		return AccessClaims{}, ErrInvalidAccessToken
+	}
+
+	return claims, nil
 }
 
 func (m *TokenManager) NewRefreshToken() (raw string, hash string, expiresAt time.Time, err error) {

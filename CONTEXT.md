@@ -24,6 +24,10 @@ A nursery staff role focused on day-to-day child attendance operations.
 
 A guardian-side role that views invoices and completes payments.
 
+## Role Capability Inheritance (MVP)
+
+Manager permissions include practitioner attendance actions within the same active session scope.
+
 ## Funding v1
 
 A simple funded-hours deduction model used to reduce monthly billed amount per child.
@@ -35,6 +39,10 @@ A monthly billing statement showing gross fees, funded deduction, and final amou
 ## Parent Account Provisioning (MVP)
 
 Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
+
+## Manager Provisioning Authority (MVP)
+
+Manager role assignment is reserved to administrative bootstrap flows in month 1; manager-invited users are limited to non-manager roles.
 
 ## Attendance Record (MVP)
 
@@ -108,6 +116,10 @@ Extras are added manually as invoice line items by managers.
 
 Attendance capture includes check-in and check-out only; room-move tracking is out of scope.
 
+## Practitioner Attendance Scope (MVP)
+
+Practitioners can perform check-in and check-out for any child within the active session branch.
+
 ## Absence Handling (MVP)
 
 Absences are recorded with a simple marker and are not billed automatically.
@@ -122,7 +134,7 @@ A child requires name, date of birth, start date, one linked guardian, and a bil
 
 ## Parent Visibility Scope (MVP)
 
-One parent account can be linked to multiple children and can view invoices for all linked children.
+One parent account can be linked to multiple children and can view invoices for linked children within the active session scope.
 
 ## Login Identifier (MVP)
 
@@ -148,6 +160,22 @@ API endpoints return plain JSON resources with standard HTTP status codes instea
 
 API errors use a consistent JSON structure with stable error code, human-readable message, optional details, and request identifier.
 
+## Authorization Error Status Policy (MVP)
+
+Authorization failures return `403 Forbidden` with stable authorization-specific error codes (for example role, scope, and relationship failures), while `404 Not Found` is reserved for genuinely missing resources.
+
+## Authorization Error Disclosure Policy (MVP)
+
+Authorization errors expose stable machine-readable denial codes while keeping human-readable messages generic.
+
+## Authorization Denial Code Baseline (MVP)
+
+The initial stable authorization denial code set includes role, scope, unknown-role, parent-child-link, and scope-selection denial variants alongside unauthorized authentication failure.
+
+## Scope Selection Error Semantics (MVP)
+
+Missing or malformed membership selection at authentication time returns a validation error, while a well-formed selection outside the user's allowed memberships returns an authorization error.
+
 ## Persistence Strategy (MVP)
 
 Data access uses `sqlc` with `pgx` and typed SQL queries rather than an ORM.
@@ -160,6 +188,78 @@ Schema changes are applied with manual `golang-migrate` commands against local P
 
 Authentication uses short-lived access JWTs plus database-backed refresh tokens that can be revoked.
 
+## Session Scope Mode (MVP)
+
+Each active session is bound to exactly one membership scope (tenant, branch, and role) rather than selecting scope per request.
+
+## Session Scope Selection Rule (MVP)
+
+When a user has multiple memberships, the active session scope is chosen explicitly by the user at login and must belong to that user.
+
+## Session Single-Scope Auto-Selection (MVP)
+
+Authentication auto-selects the active membership scope when exactly one active membership is available.
+
+## Session Scope Selection Identifier (MVP)
+
+Session scope selection uses the membership identifier as the canonical selector instead of a tenant-branch-role tuple.
+
+## Session Scope Requirement (MVP)
+
+Authentication does not create a session unless the user has at least one active membership scope available.
+
+## Membership Breadth (MVP)
+
+A user may hold memberships across multiple tenants and branches, but each active session is bound to exactly one selected membership scope.
+
+## Membership Activity State (MVP)
+
+Authentication and authorization consider only active memberships; inactive memberships cannot be selected for sessions.
+
+## Session Scope Visibility (MVP)
+
+Authentication responses include both the active session scope and the user's available scopes so clients can present explicit scope switching.
+
+## Session Membership Binding (MVP)
+
+Each refresh-token-backed session is bound to one membership scope and cannot change scope unless an explicit membership switch request is validated.
+
+## Session Refresh Scope Integrity (MVP)
+
+Token refresh succeeds only when the session's bound membership remains active; refresh does not auto-fallback to a different membership.
+
+## Session Claim Shape (MVP)
+
+Access tokens include subject user identifier, membership identifier, tenant identifier, branch identifier, role, and standard token timestamps so each request can be unambiguously authorized against one active membership.
+
+## Session Scope Switch Flow (MVP)
+
+Changing the active membership scope is an explicit session action and is distinct from routine token refresh.
+
+## Session Scope Switch Authentication (MVP)
+
+Membership scope switching is performed through a refresh-token-backed session action that rotates session tokens.
+
+## Session Action CSRF Policy (MVP)
+
+Refresh-token-cookie-backed session actions, including refresh, logout, and membership switch, require CSRF protection in month 1.
+
+## Logout Idempotency (MVP)
+
+Session logout is idempotent and returns success even when no active refresh-token session is present.
+
+## Session CSRF Mechanism (MVP)
+
+Cookie-backed session actions use a double-submit CSRF token pattern with a client-readable CSRF token echoed in a request header and a trusted origin or referer check.
+
+## Session Scope Switch Auditing (MVP)
+
+Membership scope switch actions are persisted as audit events with actor, previous scope, new scope, and request identifier.
+
+## Authentication Event Persistence Scope (MVP)
+
+Login, refresh, and logout are treated as authentication telemetry in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+
 ## Token Transport Policy (MVP)
 
 Access tokens are sent as bearer tokens, while refresh tokens are stored in secure HttpOnly cookies.
@@ -167,6 +267,10 @@ Access tokens are sent as bearer tokens, while refresh tokens are stored in secu
 ## Session Concurrency (MVP)
 
 Users may hold multiple active sessions concurrently, with token revocation supported per session.
+
+## Membership Change Revocation Policy (MVP)
+
+When membership scope or role is changed, refresh tokens for affected sessions are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
 
 ## Token Lifetime Policy (MVP)
 
@@ -236,9 +340,25 @@ Tenant and branch isolation is enforced in application-layer authorization and q
 
 Automated test coverage is prioritized for funding calculation logic, invoice state transitions, authorization scope checks, and Stripe webhook idempotency, with minimal UI end-to-end coverage on core happy paths.
 
+## Authorization Verification Baseline (MVP)
+
+Authorization acceptance requires a route-by-route role and scope test matrix that proves unauthenticated requests are rejected, wrong-role/wrong-tenant/wrong-branch requests are forbidden, and correctly scoped allowed-role requests succeed.
+
 ## Observability Baseline (MVP)
 
 Operations monitoring uses structured logs plus essential metrics for webhook outcomes, invoice-generation job health, and authentication failures.
+
+## Authorization Denial Logging (MVP)
+
+Authorization denials are captured in structured logs with request identifier, actor, scope context, and denial reason code.
+
+## Authorization Denial Persistence Scope (MVP)
+
+Authorization denials are treated as operational telemetry and are recorded in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+
+## Authorization Denial Metrics (MVP)
+
+Authorization denials emit metrics tagged by stable denial reason code to support operational monitoring.
 
 ## Async Processing Scope (MVP)
 
@@ -264,6 +384,58 @@ During the 30-day delivery window, only changes that unblock the defined success
 
 Authorization combines role checks with scope checks, including tenant scope, branch scope, and parent-child linkage where applicable.
 
+## Authorization Guards (MVP)
+
+Authorization guards are the combined enforcement layer for role, scope, and relationship checks; RBAC is one component of this guard model.
+
+## Authorization Check Taxonomy (MVP)
+
+Scope checks validate tenant and branch boundaries from the active session membership, while relationship checks validate dynamic record linkage such as parent-child access.
+
+## Authorization Evaluation Rule (MVP)
+
+Session-bound scope and role claims are used for baseline access checks, while dynamic relationship checks such as parent-child linkage are validated against current records.
+
+## Parent Relationship Check Freshness (MVP)
+
+Parent access to child-linked resources is authorized against current guardian-child links at request time.
+
+## Authorization Route Policy (MVP)
+
+Protected endpoints follow default-deny behavior, with explicit role and scope requirements declared per route.
+
+## Route Role Declaration Style (MVP)
+
+Month-1 protected endpoints declare explicit allowed role lists per route; capability abstraction is deferred.
+
+## Unknown Role Handling (MVP)
+
+If a session presents an unknown or unsupported role claim, authorization fails closed with a forbidden response and a stable role-specific error code.
+
+## Authorization Denial Precedence (MVP)
+
+When multiple authorization checks fail, guards return one deterministic primary denial code based on a fixed evaluation order.
+
+## Authorization Check Order (MVP)
+
+Authorization evaluation order is authentication validity first, then role checks, then tenant/branch scope checks, then relationship checks.
+
+## Authorization Layer Boundary (MVP)
+
+Middleware enforces token validity and coarse route-level role and scope checks, while domain logic enforces resource-specific relationship authorization.
+
+## Authorization Context Propagation (MVP)
+
+Authorization middleware constructs a normalized request authorization context (user, membership, role, tenant, branch, request identifier) for downstream handlers and services.
+
+## Scope Source of Truth (MVP)
+
+Effective tenant and branch scope is derived from the active session membership, and client-supplied scope fields are rejected when they conflict.
+
+## Session Scope Isolation Rule (MVP)
+
+Operations cannot cross into another branch or tenant within the same session; users must switch membership scope before acting in a different scope.
+
 ## Attendance Edit Authority (MVP)
 
 Historical attendance events are not edited directly by practitioners; corrections are captured as manager-only correction events.
@@ -287,6 +459,10 @@ Post-issue billing changes are handled through a manager-created follow-up adjus
 ## API Versioning (MVP)
 
 HTTP endpoints are published under a versioned `/api/v1` route prefix.
+
+## Public Route Allowlist (MVP)
+
+Only health and authentication endpoints are public in month 1; all other API routes require authorization guards.
 
 ## Deployment Model (MVP)
 

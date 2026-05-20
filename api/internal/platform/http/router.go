@@ -38,6 +38,15 @@ func NewRouter(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	authHandler := auth.NewHandler(authRepo, authTokens, cfg)
 	authHandler.RegisterRoutes(api)
 
+	protected := api.Group("")
+	protected.Use(authnMiddleware(authTokens))
+	protected.GET("/me", requireRoles("manager", "practitioner", "parent"), meHandler())
+	protected.GET("/authz/probe/manager", requireRoles("manager"), meHandler())
+	protected.GET("/authz/probe/practitioner", requireRoles("practitioner"), meHandler())
+	protected.GET("/authz/probe/parent", requireRoles("parent"), meHandler())
+	protected.GET("/authz/probe/scope/:tenant_id/:branch_id", requireRoles("manager", "practitioner", "parent"), scopeProbeHandler())
+	protected.GET("/authz/probe/parent-link/:child_id", requireRoles("parent"), parentLinkProbeHandler())
+
 	return router
 }
 

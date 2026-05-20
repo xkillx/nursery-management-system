@@ -22,17 +22,19 @@ type User struct {
 }
 
 type Membership struct {
+	ID       uuid.UUID
 	TenantID uuid.UUID
 	BranchID uuid.UUID
 	Role     string
 }
 
 type RefreshToken struct {
-	ID        uuid.UUID
-	UserID    uuid.UUID
-	TokenHash string
-	ExpiresAt time.Time
-	RevokedAt *time.Time
+	ID           uuid.UUID
+	UserID       uuid.UUID
+	MembershipID uuid.UUID
+	TokenHash    string
+	ExpiresAt    time.Time
+	RevokedAt    *time.Time
 }
 
 func NewRepository(pool *pgxpool.Pool) *Repository {
@@ -60,7 +62,7 @@ LIMIT 1`
 
 func (r *Repository) ListMembershipsByUserID(ctx context.Context, userID uuid.UUID) ([]Membership, error) {
 	const q = `
-SELECT tenant_id, branch_id, role
+SELECT id, tenant_id, branch_id, role
 FROM memberships
 WHERE user_id = $1
 ORDER BY created_at ASC`
@@ -74,7 +76,7 @@ ORDER BY created_at ASC`
 	memberships := make([]Membership, 0)
 	for rows.Next() {
 		var m Membership
-		if err := rows.Scan(&m.TenantID, &m.BranchID, &m.Role); err != nil {
+		if err := rows.Scan(&m.ID, &m.TenantID, &m.BranchID, &m.Role); err != nil {
 			return nil, err
 		}
 		memberships = append(memberships, m)
@@ -85,27 +87,31 @@ ORDER BY created_at ASC`
 
 func (r *Repository) CreateRefreshToken(ctx context.Context, token RefreshToken, userAgent, ipAddress string) error {
 	const q = `
-INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, user_agent, ip_address)
-VALUES ($1, $2, $3, $4, $5, $6)`
+INSERT INTO refresh_tokens (id, user_id, membership_id, token_hash, expires_at, user_agent, ip_address)
+VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err := r.pool.Exec(ctx, q, token.ID, token.UserID, token.TokenHash, token.ExpiresAt, userAgent, ipAddress)
+	_, err := r.pool.Exec(ctx, q, token.ID, token.UserID, token.MembershipID, token.TokenHash, token.ExpiresAt, userAgent, ipAddress)
 	return err
 }
 
-func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash string) (RefreshToken, User, error) {
+func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash string) (RefreshToken, User, Membership, error) {
 	const q = `
-SELECT rt.id, rt.user_id, rt.token_hash, rt.expires_at, rt.revoked_at,
-       u.id, u.email, u.password_hash, u.is_active
+SELECT rt.id, rt.user_id, rt.membership_id, rt.token_hash, rt.expires_at, rt.revoked_at,
+       u.id, u.email, u.password_hash, u.is_active,
+       m.id, m.tenant_id, m.branch_id, m.role
 FROM refresh_tokens rt
 JOIN users u ON u.id = rt.user_id
+JOIN memberships m ON m.id = rt.membership_id AND m.user_id = u.id
 WHERE rt.token_hash = $1
 LIMIT 1`
 
 	var token RefreshToken
 	var user User
+	var membership Membership
 	err := r.pool.QueryRow(ctx, q, tokenHash).Scan(
 		&token.ID,
 		&token.UserID,
+		&token.MembershipID,
 		&token.TokenHash,
 		&token.ExpiresAt,
 		&token.RevokedAt,
@@ -113,19 +119,23 @@ LIMIT 1`
 		&user.Email,
 		&user.PasswordHash,
 		&user.IsActive,
+		&membership.ID,
+		&membership.TenantID,
+		&membership.BranchID,
+		&membership.Role,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return RefreshToken{}, User{}, ErrNotFound
+		return RefreshToken{}, User{}, Membership{}, ErrNotFound
 	}
 	if err != nil {
-		return RefreshToken{}, User{}, err
+		return RefreshToken{}, User{}, Membership{}, err
 	}
 
 	if token.RevokedAt != nil || time.Now().UTC().After(token.ExpiresAt) || !user.IsActive {
-		return RefreshToken{}, User{}, ErrNotFound
+		return RefreshToken{}, User{}, Membership{}, ErrNotFound
 	}
 
-	return token, user, nil
+	return token, user, membership, nil
 }
 
 func (r *Repository) RotateRefreshToken(ctx context.Context, oldTokenID uuid.UUID, replacement RefreshToken, userAgent, ipAddress string) error {
@@ -145,10 +155,10 @@ WHERE id = $1 AND revoked_at IS NULL`
 	}
 
 	const insertQ = `
-INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, user_agent, ip_address)
-VALUES ($1, $2, $3, $4, $5, $6)`
+INSERT INTO refresh_tokens (id, user_id, membership_id, token_hash, expires_at, user_agent, ip_address)
+VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	if _, err := tx.Exec(ctx, insertQ, replacement.ID, replacement.UserID, replacement.TokenHash, replacement.ExpiresAt, userAgent, ipAddress); err != nil {
+	if _, err := tx.Exec(ctx, insertQ, replacement.ID, replacement.UserID, replacement.MembershipID, replacement.TokenHash, replacement.ExpiresAt, userAgent, ipAddress); err != nil {
 		return err
 	}
 
@@ -162,5 +172,27 @@ SET revoked_at = now(), updated_at = now()
 WHERE token_hash = $1 AND revoked_at IS NULL`
 
 	_, err := r.pool.Exec(ctx, q, tokenHash)
+	return err
+}
+
+func (r *Repository) CreateScopeSwitchAuditLog(ctx context.Context, actorUserID uuid.UUID, fromMembership, toMembership Membership, requestID string) error {
+	const q = `
+INSERT INTO audit_logs (id, tenant_id, branch_id, actor_user_id, action_type, action_entity_type, action_entity_id, details)
+VALUES ($1, $2, $3, $4, $5, $6, $7, jsonb_build_object('from_membership_id', $8, 'to_membership_id', $9, 'request_id', $10))`
+
+	_, err := r.pool.Exec(
+		ctx,
+		q,
+		uuid.New(),
+		toMembership.TenantID,
+		toMembership.BranchID,
+		actorUserID,
+		"session_scope_switched",
+		"membership",
+		toMembership.ID,
+		fromMembership.ID,
+		toMembership.ID,
+		requestID,
+	)
 	return err
 }
