@@ -179,8 +179,8 @@ WHERE token_hash = $1 AND revoked_at IS NULL`
 
 func (r *Repository) CreateScopeSwitchAuditLog(ctx context.Context, actorUserID uuid.UUID, fromMembership, toMembership Membership, requestID string) error {
 	const q = `
-INSERT INTO audit_logs (id, tenant_id, branch_id, actor_user_id, action_type, action_entity_type, action_entity_id, request_id, details)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, jsonb_build_object('from_membership_id', $9, 'to_membership_id', $10))`
+INSERT INTO audit_logs (id, tenant_id, branch_id, actor_user_id, actor_membership_id, action_type, action_entity_type, action_entity_id, request_id, details)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, jsonb_build_object('from_membership_id', $10, 'to_membership_id', $11))`
 
 	_, err := r.pool.Exec(
 		ctx,
@@ -189,6 +189,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, jsonb_build_object('from_membership_id',
 		toMembership.TenantID,
 		toMembership.BranchID,
 		actorUserID,
+		fromMembership.ID,
 		"session_scope_switched",
 		"membership",
 		toMembership.ID,

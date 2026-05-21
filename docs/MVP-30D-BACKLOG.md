@@ -29,7 +29,7 @@ Source: `docs/PRD-MVP-1M.md`
 | 2 | Auth base | Login/logout, JWT access (15m), refresh token store (30d), password hash and verify | Done (seeded user login/refresh/logout verified) |
 | 3 | Roles and guards | Authorization guards middleware (role, scope, relationship) + scoped query enforcement | Done (protected routes reject wrong role/scope/relationship with matrix tests) |
 | 4 | Core schema | Create tables: users, memberships, children, guardians, links, sessions, audit_logs | Done (migrations up/down/up + seed scenarios) |
-| 5 | Child management API | Manager CRUD for child and guardian + relationship linking | Manager can create and edit records |
+| 5 | Child management API | Manager CRUD for child and guardian + relationship linking | Done (manager child/guardian APIs + relationship lifecycle actions wired) |
 | 6 | Staff UI basics | Manager/practitioner screens; manager edit only, practitioner read only | Permissions match policy in UI/API |
 | 7 | Week 1 gate | Hardening + smoke test + backup check + demo prep | Week 1 demo completed |
 

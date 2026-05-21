@@ -48,13 +48,49 @@ Guardian records store child relationship and contact data independently from au
 
 Within a tenant-branch scope, a parent membership maps to at most one guardian record.
 
+## Parent Mapping Change Flow (MVP)
+
+Changing an active parent membership-to-guardian mapping requires explicitly ending the current mapping (with reason) before creating a new active mapping; implicit in-place replacement is not used.
+
+## Parent Membership End Cascade (MVP)
+
+Ending a parent membership ends any active parent-membership-to-guardian mapping in the same action so no dangling active mapping remains.
+
+## Parent Membership End Cascade Reason Attribution (MVP)
+
+When parent membership end cascades to end an active parent-membership-to-guardian mapping, the mapping stores an explicit system cascade reason code so automatic effects are distinguishable from direct manager-initiated end actions.
+
+## Parent Mapping End Visibility Rule (MVP)
+
+Ending an active parent-membership-to-guardian mapping immediately removes that parent membership's access to child-linked resources reachable through that guardian relationship.
+
+## Parent Mapping Idempotent Create (MVP)
+
+Creating a parent-membership-to-guardian mapping for a pair that is already active is treated as idempotent success, while attempts to map that membership to a different active guardian require explicit end-then-remap flow.
+
+## Parent Mapping Active-Entity Requirement (MVP)
+
+Creating an active parent-membership-to-guardian mapping requires both the membership and guardian to be active at mapping time.
+
 ## Guardian Contact vs Login (MVP)
 
 Guardian contact records may exist without an email address, while user login identity requires a unique normalized email on the user account.
 
+## Parent-Guardian Email Independence (MVP)
+
+Parent membership-to-guardian mapping does not require the parent user's login email to match the guardian contact email.
+
+## Guardian Email Auto-Link Policy (MVP)
+
+Entering or editing a guardian contact email does not automatically link that guardian to any user login; parent portal access is granted only through explicit invitation and membership-to-guardian mapping.
+
 ## Contact Detail Scope (MVP)
 
 Child and guardian records carry only minimal operational contact details in month 1; richer profile/contact modeling is deferred until after pilot validation.
+
+## Guardian Creation Minimum Data (MVP)
+
+Guardian creation requires only full name in month 1; email and phone are optional contact details.
 
 ## Manager Provisioning Authority (MVP)
 
@@ -136,6 +172,14 @@ Attendance capture includes check-in and check-out only; room-move tracking is o
 
 Practitioners can perform check-in and check-out for any child within the active session branch.
 
+## Practitioner Contact Visibility (MVP)
+
+Practitioner attendance workflows expose only attendance-facing child information and do not expose guardian contact details such as email or phone in month 1.
+
+## Child and Guardian Write Authority (MVP)
+
+Child/guardian and relationship write actions (create, update, deactivate, link, unlink, mapping changes) are manager-only in month 1, while practitioner access remains read-only for attendance-facing child views.
+
 ## Absence Handling (MVP)
 
 Absences are recorded with a simple marker and are not billed automatically.
@@ -148,6 +192,14 @@ Billing runs monthly on calendar-month boundaries.
 
 A child requires name, date of birth, start date, one linked guardian, and a billing rate before attendance and invoicing flows begin.
 
+## Enrollment Gate Scope (MVP)
+
+Enrollment minimum checks gate all new attendance capture and invoicing actions, while manager-only historical attendance corrections remain allowed under the post-enrollment correction policy.
+
+## Child Creation Flow (MVP)
+
+Managers may create a child record before linking a guardian, but attendance and invoicing remain blocked until all child enrollment minimum requirements are satisfied.
+
 ## Child Billing Rate Source (MVP)
 
 Each child has one current core billing rate in enrollment data, while issued invoices preserve the applied rate in invoice lines for historical explainability.
@@ -156,6 +208,26 @@ Each child has one current core billing rate in enrollment data, while issued in
 
 Child records remain retained when enrollment ends; the child can be marked inactive/left while attendance and billing history stays intact.
 
+## Child Lifecycle Reason Requirement (MVP)
+
+Manager-initiated child lifecycle transitions such as marking a child inactive/left require a stable reason code with an optional note.
+
+## Child Lifecycle vs Enrollment Date Separation (MVP)
+
+Child lifecycle transitions (active/inactive-left) are managed independently from enrollment date edits; enrollment boundary dates are updated through explicit date-change flows with enrollment window integrity checks.
+
+## Child Reactivation Deferral (MVP)
+
+Month-1 lifecycle APIs include explicit guardian reactivation, while explicit child reactivation endpoints are deferred unless pilot operations require them.
+
+## Child and Guardian Default Listing Scope (MVP)
+
+Manager child and guardian listings default to active records only, with an explicit option to include inactive or ended records for historical administration.
+
+## Child Identity Uniqueness (MVP)
+
+Child identity is anchored by UUID entity identifiers, and matching name/date-of-birth combinations are not enforced as a hard uniqueness rule.
+
 ## Post-Enrollment Attendance Correction (MVP)
 
 After enrollment ends, managers may still record corrections for historical attendance sessions so billing derived from attendance actuals remains accurate.
@@ -163,6 +235,10 @@ After enrollment ends, managers may still record corrections for historical atte
 ## Enrollment Date Semantics (MVP)
 
 Enrollment boundaries use date-only fields (start and optional end date), while billing calculations continue to derive from attendance timestamps in `Europe/London`.
+
+## Enrollment Window Integrity (MVP)
+
+Enrollment date updates are rejected when they would place existing attendance records outside the child's enrollment window.
 
 ## Guardian-Child Link Cardinality (MVP)
 
@@ -190,7 +266,7 @@ Persisted audit events include request identifier correlation so domain changes 
 
 ## Audit Actor Semantics (MVP)
 
-Audit events may omit actor user identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
+Audit events include actor membership identity for user-initiated actions and may omit actor identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
 
 ## Cross-Month Session Allocation (MVP)
 
@@ -203,6 +279,10 @@ API endpoints return plain JSON resources with standard HTTP status codes instea
 ## API Error Contract (MVP)
 
 API errors use a consistent JSON structure with stable error code, human-readable message, optional details, and request identifier.
+
+## Lifecycle Error Code Baseline (MVP)
+
+Child, guardian, guardian-child-link, and parent-mapping lifecycle endpoints use a stable domain error-code set so clients can handle expected lifecycle failures deterministically.
 
 ## Authorization Error Status Policy (MVP)
 
@@ -344,13 +424,73 @@ Records remain branch-scoped in the data model with one default branch used in t
 
 Core child, attendance, and invoice records are not hard-deleted; corrections, voiding, or archival flows are used instead.
 
+## Child and Guardian Management Lifecycle (MVP)
+
+Manager child/guardian management supports create and update plus lifecycle transitions (child inactive/left, guardian deactivated, guardian-child link ended/relinked) rather than hard delete operations.
+
 ## Guardian Link Lifecycle (MVP)
 
 Guardian records and guardian-child links are deactivated or ended rather than hard-deleted so history remains explainable while access can be removed immediately.
 
+## Guardian Deactivation Cascade (MVP)
+
+Deactivating a guardian ends that guardian's active guardian-child links and active parent-membership mapping in the same action so parent access is revoked immediately with no partially active relationship state.
+
+## Guardian Deactivation Idempotency (MVP)
+
+Deactivating a guardian is idempotent; repeating the same deactivation request for an already inactive guardian returns success without introducing additional state changes.
+
+## Guardian Lifecycle Timestamp Semantics (MVP)
+
+Guardian entity lifecycle uses deactivate/reactivate terminology with deactivation-specific timestamps, while "end" timestamps are reserved for relationship records such as guardian-child links and parent-membership mappings.
+
+## Guardian Deactivation Reason Requirement (MVP)
+
+Manager-initiated guardian deactivation requires a stable reason code with an optional note.
+
+## Deactivation Cascade Reason Attribution (MVP)
+
+When guardian deactivation cascades to end active guardian-child links or parent-membership mapping, dependent records persist an explicit cascade end reason so automatic effects are distinguishable from direct manager-initiated end actions.
+
+## Guardian Reactivation Policy (MVP)
+
+Managers may reactivate the same guardian record when deactivation was mistaken, but previously ended guardian-child links and parent-membership mapping are not auto-restored and must be re-linked explicitly.
+
+## Relationship End Reason Requirement (MVP)
+
+Manager-initiated actions that end guardian-child links or parent-membership mapping require an explicit reason for audit explainability.
+
+## Relationship End Reason Shape (MVP)
+
+Relationship end reasons use a stable machine-readable reason code with an optional human note so audit trails stay both queryable and explainable.
+
+## Lifecycle Reason Vocabulary (MVP)
+
+Lifecycle transitions across child, guardian, guardian-child link, and parent-membership mapping use a shared controlled vocabulary of reason codes with scoped subsets per action.
+
+## Lifecycle Reason Starter Set (MVP)
+
+The initial shared reason-code set for month 1 is `duplicate_record`, `entered_in_error`, `left_nursery`, `safeguarding_direction`, `contact_update`, `access_revoked`, and `other`, with scoped usage per lifecycle action.
+
+## Lifecycle Other-Reason Note Requirement (MVP)
+
+When lifecycle `reason_code` is `other`, a non-empty `reason_note` is required so the audit trail remains explainable.
+
+## Relationship End Terminology (MVP)
+
+Lifecycle actions that stop active links or mappings use the canonical verb "end"; terms implying hard deletion (such as delete/remove) are not used for these actions.
+
+## Child Guardian Link Requirement Enforcement (MVP)
+
+Ending a child's last active guardian-child link is allowed, but that child immediately becomes enrollment-incomplete and is blocked from attendance and invoicing until an active guardian link is restored.
+
 ## Guardian Link Reactivation (MVP)
 
 Only one active guardian-child link may exist per pair at a time, while historical ended links are retained so the same pair can be linked again later.
+
+## Guardian Link Idempotent Create (MVP)
+
+Creating a guardian-child link for a pair that already has an active link is treated as an idempotent success and does not create a duplicate active link.
 
 ## Invoice Due Policy (MVP)
 
@@ -551,3 +691,7 @@ Draft invoices are visible only to managers; parents can view invoices only afte
 ## Mid-Month Leave Billing (MVP)
 
 If a child leaves during a month, billing is automatically derived from attendance actuals up to the leave date.
+
+## Post-Leave Invoice Artifact Policy (MVP)
+
+Marking a child inactive/left does not trigger automatic voiding of unrelated invoice artifacts; future billing is naturally blocked by attendance-derived invoice generation.

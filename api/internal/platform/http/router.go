@@ -47,6 +47,9 @@ func NewRouter(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	protected.GET("/authz/probe/scope/:tenant_id/:branch_id", requireRoles("manager", "practitioner", "parent"), scopeProbeHandler())
 	protected.GET("/authz/probe/parent-link/:child_id", requireRoles("parent"), parentLinkProbeHandler())
 
+	people := newPeopleHandler(pool)
+	people.registerRoutes(protected)
+
 	return router
 }
 
