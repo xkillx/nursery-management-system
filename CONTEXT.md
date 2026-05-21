@@ -40,6 +40,22 @@ A monthly billing statement showing gross fees, funded deduction, and final amou
 
 Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
 
+## Guardian Identity Separation (MVP)
+
+Guardian records store child relationship and contact data independently from authentication users; portal access exists only when a guardian is linked to a parent-role user membership.
+
+## Parent Membership Guardian Mapping (MVP)
+
+Within a tenant-branch scope, a parent membership maps to at most one guardian record.
+
+## Guardian Contact vs Login (MVP)
+
+Guardian contact records may exist without an email address, while user login identity requires a unique normalized email on the user account.
+
+## Contact Detail Scope (MVP)
+
+Child and guardian records carry only minimal operational contact details in month 1; richer profile/contact modeling is deferred until after pilot validation.
+
 ## Manager Provisioning Authority (MVP)
 
 Manager role assignment is reserved to administrative bootstrap flows in month 1; manager-invited users are limited to non-manager roles.
@@ -132,6 +148,26 @@ Billing runs monthly on calendar-month boundaries.
 
 A child requires name, date of birth, start date, one linked guardian, and a billing rate before attendance and invoicing flows begin.
 
+## Child Billing Rate Source (MVP)
+
+Each child has one current core billing rate in enrollment data, while issued invoices preserve the applied rate in invoice lines for historical explainability.
+
+## Child Enrollment Lifecycle (MVP)
+
+Child records remain retained when enrollment ends; the child can be marked inactive/left while attendance and billing history stays intact.
+
+## Post-Enrollment Attendance Correction (MVP)
+
+After enrollment ends, managers may still record corrections for historical attendance sessions so billing derived from attendance actuals remains accurate.
+
+## Enrollment Date Semantics (MVP)
+
+Enrollment boundaries use date-only fields (start and optional end date), while billing calculations continue to derive from attendance timestamps in `Europe/London`.
+
+## Guardian-Child Link Cardinality (MVP)
+
+Guardian-child relationships are many-to-many: a child may link to multiple guardians, and a guardian may link to multiple children.
+
 ## Parent Visibility Scope (MVP)
 
 One parent account can be linked to multiple children and can view invoices for linked children within the active session scope.
@@ -147,6 +183,14 @@ The first manager account for a tenant is created through a one-time administrat
 ## Audit Baseline Scope (MVP)
 
 Audit logs are mandatory for user provisioning changes, child record updates, attendance events and corrections, funding profile updates, invoice draft/issue actions, and payment-status updates.
+
+## Audit Request Correlation (MVP)
+
+Persisted audit events include request identifier correlation so domain changes can be traced to individual API requests.
+
+## Audit Actor Semantics (MVP)
+
+Audit events may omit actor user identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
 
 ## Cross-Month Session Allocation (MVP)
 
@@ -212,6 +256,10 @@ Authentication does not create a session unless the user has at least one active
 
 A user may hold memberships across multiple tenants and branches, but each active session is bound to exactly one selected membership scope.
 
+## Single Role Per Scope (MVP)
+
+Within a single tenant-branch scope, a user holds exactly one membership role; concurrent dual-role memberships in the same scope are not used in month 1.
+
 ## Membership Activity State (MVP)
 
 Authentication and authorization consider only active memberships; inactive memberships cannot be selected for sessions.
@@ -268,6 +316,10 @@ Access tokens are sent as bearer tokens, while refresh tokens are stored in secu
 
 Users may hold multiple active sessions concurrently, with token revocation supported per session.
 
+## Session Persistence Model (MVP)
+
+Session state is persisted as refresh-token-backed, revocable session records; a second parallel session artifact is not introduced in month 1.
+
 ## Membership Change Revocation Policy (MVP)
 
 When membership scope or role is changed, refresh tokens for affected sessions are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
@@ -291,6 +343,14 @@ Records remain branch-scoped in the data model with one default branch used in t
 ## Core Record Deletion Policy (MVP)
 
 Core child, attendance, and invoice records are not hard-deleted; corrections, voiding, or archival flows are used instead.
+
+## Guardian Link Lifecycle (MVP)
+
+Guardian records and guardian-child links are deactivated or ended rather than hard-deleted so history remains explainable while access can be removed immediately.
+
+## Guardian Link Reactivation (MVP)
+
+Only one active guardian-child link may exist per pair at a time, while historical ended links are retained so the same pair can be linked again later.
 
 ## Invoice Due Policy (MVP)
 
@@ -331,6 +391,10 @@ Invoice amounts, statuses, and payment details are visible only to managers and 
 ## Access Scope Enforcement (MVP)
 
 All record access is constrained by both tenant and branch scope in month 1, even with a single pilot tenant and default branch.
+
+## Guardian Link Scope Consistency (MVP)
+
+Guardian-child links are valid only when guardian and child belong to the same tenant and branch scope.
 
 ## Tenancy Isolation Enforcement (MVP)
 
@@ -443,6 +507,10 @@ Historical attendance events are not edited directly by practitioners; correctio
 ## Guardian Unlink Visibility Rule (MVP)
 
 When a guardian-child link is removed, that parent immediately loses access to that child's invoices, including historical invoices.
+
+## Guardian Relink Visibility Rule (MVP)
+
+When a guardian-child link is reactivated, parent visibility for that child's invoices is restored based on the current active-link relationship check.
 
 ## Draft Invoice Idempotency (MVP)
 

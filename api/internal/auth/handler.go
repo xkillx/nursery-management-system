@@ -127,7 +127,7 @@ func (h *Handler) login(c *gin.Context) {
 	}
 
 	err = h.repo.CreateRefreshToken(c.Request.Context(), RefreshToken{
-		ID:           uuid.New(),
+		ID:           newUUID(),
 		UserID:       user.ID,
 		MembershipID: activeMembership.ID,
 		TokenHash:    refreshHash,
@@ -168,7 +168,7 @@ func (h *Handler) refresh(c *gin.Context) {
 	}
 
 	replacement := RefreshToken{
-		ID:           uuid.New(),
+		ID:           newUUID(),
 		UserID:       user.ID,
 		MembershipID: oldToken.MembershipID,
 		TokenHash:    replacementHash,
@@ -274,7 +274,7 @@ func (h *Handler) switchMembership(c *gin.Context) {
 	}
 
 	replacement := RefreshToken{
-		ID:           uuid.New(),
+		ID:           newUUID(),
 		UserID:       user.ID,
 		MembershipID: selectedMembership.ID,
 		TokenHash:    replacementHash,
@@ -478,6 +478,13 @@ func newCSRFToken() string {
 		return uuid.NewString()
 	}
 	return base64.RawURLEncoding.EncodeToString(buf)
+}
+
+func newUUID() uuid.UUID {
+	if id, err := uuid.NewV7(); err == nil {
+		return id
+	}
+	return uuid.New()
 }
 
 func (h *Handler) unauthorized(c *gin.Context) {

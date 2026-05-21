@@ -156,6 +156,13 @@ func seedManager(ctx context.Context, pool *pgxpool.Pool, payload seedPayload) (
 	}, nil
 }
 
+func newUUID() uuid.UUID {
+	if id, err := uuid.NewV7(); err == nil {
+		return id
+	}
+	return uuid.New()
+}
+
 func findOrCreateTenant(ctx context.Context, tx pgx.Tx, name string) (uuid.UUID, error) {
 	const selectQ = `SELECT id FROM tenants WHERE name = $1 LIMIT 1`
 	var id uuid.UUID
@@ -167,7 +174,7 @@ func findOrCreateTenant(ctx context.Context, tx pgx.Tx, name string) (uuid.UUID,
 		return uuid.UUID{}, err
 	}
 
-	id = uuid.New()
+	id = newUUID()
 	const insertQ = `INSERT INTO tenants (id, name) VALUES ($1, $2)`
 	if _, err := tx.Exec(ctx, insertQ, id, name); err != nil {
 		return uuid.UUID{}, err
@@ -184,7 +191,7 @@ ON CONFLICT (tenant_id, name)
 DO UPDATE SET updated_at = now()
 RETURNING id`
 
-	id := uuid.New()
+	id := newUUID()
 	if err := tx.QueryRow(ctx, q, id, tenantID, name).Scan(&id); err != nil {
 		return uuid.UUID{}, err
 	}
@@ -203,7 +210,7 @@ DO UPDATE SET email = EXCLUDED.email,
               updated_at = now()
 RETURNING id`
 
-	id := uuid.New()
+	id := newUUID()
 	if err := tx.QueryRow(ctx, q, id, email, emailNormalized, passwordHash).Scan(&id); err != nil {
 		return uuid.UUID{}, err
 	}
@@ -213,11 +220,12 @@ RETURNING id`
 
 func ensureMembership(ctx context.Context, tx pgx.Tx, tenantID, branchID, userID uuid.UUID) error {
 	const q = `
-INSERT INTO memberships (id, tenant_id, branch_id, user_id, role)
-VALUES ($1, $2, $3, $4, 'manager')
+INSERT INTO memberships (id, tenant_id, branch_id, user_id, role, is_active, ended_at)
+VALUES ($1, $2, $3, $4, 'manager', true, NULL)
 ON CONFLICT (tenant_id, branch_id, user_id)
-DO UPDATE SET role = 'manager', updated_at = now()`
+DO UPDATE SET role = 'manager', is_active = true, ended_at = NULL, updated_at = now()`
 
-	_, err := tx.Exec(ctx, q, uuid.New(), tenantID, branchID, userID)
+	membershipID := newUUID()
+	_, err := tx.Exec(ctx, q, membershipID, tenantID, branchID, userID)
 	return err
 }

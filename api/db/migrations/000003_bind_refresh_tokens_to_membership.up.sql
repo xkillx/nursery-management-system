@@ -3,14 +3,13 @@ ADD COLUMN membership_id UUID;
 
 UPDATE refresh_tokens rt
 SET membership_id = selected.id
-FROM LATERAL (
-    SELECT id
+FROM (
+    SELECT DISTINCT ON (user_id) user_id, id
     FROM memberships
-    WHERE user_id = rt.user_id
-    ORDER BY created_at ASC
-    LIMIT 1
+    ORDER BY user_id, created_at ASC
 ) AS selected
-WHERE rt.membership_id IS NULL;
+WHERE selected.user_id = rt.user_id
+  AND rt.membership_id IS NULL;
 
 DELETE FROM refresh_tokens
 WHERE membership_id IS NULL;

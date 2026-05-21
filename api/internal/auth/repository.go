@@ -26,6 +26,7 @@ type Membership struct {
 	TenantID uuid.UUID
 	BranchID uuid.UUID
 	Role     string
+	IsActive bool
 }
 
 type RefreshToken struct {
@@ -62,9 +63,9 @@ LIMIT 1`
 
 func (r *Repository) ListMembershipsByUserID(ctx context.Context, userID uuid.UUID) ([]Membership, error) {
 	const q = `
-SELECT id, tenant_id, branch_id, role
+SELECT id, tenant_id, branch_id, role, is_active
 FROM memberships
-WHERE user_id = $1
+WHERE user_id = $1 AND is_active = true AND ended_at IS NULL
 ORDER BY created_at ASC`
 
 	rows, err := r.pool.Query(ctx, q, userID)
@@ -76,7 +77,7 @@ ORDER BY created_at ASC`
 	memberships := make([]Membership, 0)
 	for rows.Next() {
 		var m Membership
-		if err := rows.Scan(&m.ID, &m.TenantID, &m.BranchID, &m.Role); err != nil {
+		if err := rows.Scan(&m.ID, &m.TenantID, &m.BranchID, &m.Role, &m.IsActive); err != nil {
 			return nil, err
 		}
 		memberships = append(memberships, m)
@@ -98,10 +99,10 @@ func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash strin
 	const q = `
 SELECT rt.id, rt.user_id, rt.membership_id, rt.token_hash, rt.expires_at, rt.revoked_at,
        u.id, u.email, u.password_hash, u.is_active,
-       m.id, m.tenant_id, m.branch_id, m.role
+       m.id, m.tenant_id, m.branch_id, m.role, m.is_active
 FROM refresh_tokens rt
 JOIN users u ON u.id = rt.user_id
-JOIN memberships m ON m.id = rt.membership_id AND m.user_id = u.id
+JOIN memberships m ON m.id = rt.membership_id AND m.user_id = u.id AND m.is_active = true AND m.ended_at IS NULL
 WHERE rt.token_hash = $1
 LIMIT 1`
 
@@ -123,6 +124,7 @@ LIMIT 1`
 		&membership.TenantID,
 		&membership.BranchID,
 		&membership.Role,
+		&membership.IsActive,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return RefreshToken{}, User{}, Membership{}, ErrNotFound
@@ -177,8 +179,8 @@ WHERE token_hash = $1 AND revoked_at IS NULL`
 
 func (r *Repository) CreateScopeSwitchAuditLog(ctx context.Context, actorUserID uuid.UUID, fromMembership, toMembership Membership, requestID string) error {
 	const q = `
-INSERT INTO audit_logs (id, tenant_id, branch_id, actor_user_id, action_type, action_entity_type, action_entity_id, details)
-VALUES ($1, $2, $3, $4, $5, $6, $7, jsonb_build_object('from_membership_id', $8, 'to_membership_id', $9, 'request_id', $10))`
+INSERT INTO audit_logs (id, tenant_id, branch_id, actor_user_id, action_type, action_entity_type, action_entity_id, request_id, details)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, jsonb_build_object('from_membership_id', $9, 'to_membership_id', $10))`
 
 	_, err := r.pool.Exec(
 		ctx,
@@ -190,9 +192,9 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, jsonb_build_object('from_membership_id', $8,
 		"session_scope_switched",
 		"membership",
 		toMembership.ID,
+		requestID,
 		fromMembership.ID,
 		toMembership.ID,
-		requestID,
 	)
 	return err
 }
