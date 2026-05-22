@@ -1,0 +1,108 @@
+<div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+  <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
+    {{ mode === 'create' ? 'Create child' : 'Edit child' }}
+  </h3>
+
+  @if (serverError) {
+    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700/40 dark:bg-red-500/10 dark:text-red-300">
+      {{ serverError }}
+    </div>
+  }
+
+  <form class="grid grid-cols-1 gap-4 md:grid-cols-2" (ngSubmit)="submit()">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">Full name</label>
+      <input
+        name="full_name"
+        [(ngModel)]="form.full_name"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+        required
+      />
+      @if (fieldErrors['full_name']) {
+        <p class="mt-1 text-xs text-red-600">{{ fieldErrors['full_name'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">Date of birth</label>
+      <input
+        type="date"
+        name="date_of_birth"
+        [(ngModel)]="form.date_of_birth"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+        required
+      />
+      @if (fieldErrors['date_of_birth']) {
+        <p class="mt-1 text-xs text-red-600">{{ fieldErrors['date_of_birth'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">Start date</label>
+      <input
+        type="date"
+        name="start_date"
+        [(ngModel)]="form.start_date"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+        required
+      />
+      @if (fieldErrors['start_date']) {
+        <p class="mt-1 text-xs text-red-600">{{ fieldErrors['start_date'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">Core hourly rate (minor)</label>
+      <input
+        type="number"
+        min="0"
+        name="core_hourly_rate_minor"
+        [(ngModel)]="form.core_hourly_rate_minor"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+        required
+      />
+      @if (fieldErrors['core_hourly_rate_minor']) {
+        <p class="mt-1 text-xs text-red-600">{{ fieldErrors['core_hourly_rate_minor'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">End date (optional)</label>
+      <input
+        type="date"
+        name="end_date"
+        [(ngModel)]="form.end_date"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+      />
+      @if (fieldErrors['end_date']) {
+        <p class="mt-1 text-xs text-red-600">{{ fieldErrors['end_date'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">Notes (optional)</label>
+      <input
+        name="notes"
+        [(ngModel)]="form.notes"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+      />
+    </div>
+
+    <div class="col-span-full flex items-center gap-3 pt-2">
+      <button
+        type="submit"
+        [disabled]="submitting"
+        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+      >
+        {{ submitting ? 'Saving...' : mode === 'create' ? 'Create child' : 'Save changes' }}
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
+        (click)="cancelled.emit()"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

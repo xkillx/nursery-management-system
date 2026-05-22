@@ -6,6 +6,9 @@ import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
 import { SidebarWidgetComponent } from './app-sidebar-widget.component';
 import { combineLatest, Subscription } from 'rxjs';
 
+import { ROLES } from '../../../core/constants/roles';
+import { AuthService } from '../../../core/services/auth.service';
+
 type NavItem = {
   name: string;
   icon: string;
@@ -113,7 +116,8 @@ export class AppSidebarComponent {
   constructor(
     public sidebarService: SidebarService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
@@ -217,7 +221,6 @@ export class AppSidebarComponent {
   }
 
   onSubmenuClick() {
-    console.log('click submenu');
     this.isMobileOpen$.subscribe(isMobile => {
       if (isMobile) {
         this.sidebarService.setMobileOpen(false);
@@ -225,5 +228,47 @@ export class AppSidebarComponent {
     }).unsubscribe();
   }  
 
-  
+  get staffLinks(): { label: string; path: string; testId: string }[] {
+    const role = this.authService.currentRole();
+
+    if (!role) {
+      return [];
+    }
+
+    if (role === ROLES.manager) {
+      return [
+        {
+          label: 'Children',
+          path: '/staff/manager/children',
+          testId: 'staff-link-manager-children',
+        },
+        {
+          label: 'Guardians',
+          path: '/staff/manager/guardians',
+          testId: 'staff-link-manager-guardians',
+        },
+        {
+          label: 'Attendance',
+          path: '/staff/practitioner/attendance-children',
+          testId: 'staff-link-practitioner-attendance',
+        },
+      ];
+    }
+
+    if (role === ROLES.practitioner) {
+      return [
+        {
+          label: 'Attendance',
+          path: '/staff/practitioner/attendance-children',
+          testId: 'staff-link-practitioner-attendance',
+        },
+      ];
+    }
+
+    return [];
+  }
+
+  get isParent(): boolean {
+    return this.authService.currentRole() === ROLES.parent;
+  }
 }

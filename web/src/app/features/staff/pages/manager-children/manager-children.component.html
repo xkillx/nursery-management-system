@@ -1,0 +1,117 @@
+<div class="space-y-5">
+  <div class="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 md:flex-row md:items-center md:justify-between dark:border-gray-800 dark:bg-white/[0.03]">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Manager children</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Create and edit child enrollment basics with active-first listings.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <label class="text-sm text-gray-600 dark:text-gray-300">Status</label>
+      <select
+        [value]="status"
+        (change)="onStatusChange(($any($event.target).value))"
+        class="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+      >
+        @for (option of statusOptions; track option) {
+          <option [value]="option">{{ option }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+        (click)="openCreate()"
+      >
+        Add child
+      </button>
+    </div>
+  </div>
+
+  @if (showForm) {
+    <app-child-form
+      [mode]="formMode"
+      [selectedChild]="selectedChild"
+      [submitting]="isSaving"
+      [fieldErrors]="fieldErrors"
+      [serverError]="errorMessage"
+      (saved)="save($event)"
+      (cancelled)="closeForm()"
+    />
+  }
+
+  <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+    @if (errorMessage && !showForm) {
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700/40 dark:bg-red-500/10 dark:text-red-300">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+            <th class="py-2 pr-3">Name</th>
+            <th class="py-2 pr-3">DOB</th>
+            <th class="py-2 pr-3">Start</th>
+            <th class="py-2 pr-3">Rate</th>
+            <th class="py-2 pr-3">Active</th>
+            <th class="py-2 pr-3">Enrollment</th>
+            <th class="py-2 pr-3">Missing requirements</th>
+            <th class="py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading) {
+            <tr>
+              <td class="py-3 text-gray-500 dark:text-gray-400" colspan="8">Loading children...</td>
+            </tr>
+          } @else if (children.length === 0) {
+            <tr>
+              <td class="py-3 text-gray-500 dark:text-gray-400" colspan="8">No children found.</td>
+            </tr>
+          } @else {
+            @for (child of children; track child.id) {
+              <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                <td class="py-3 pr-3 text-gray-800 dark:text-white/90">{{ child.fullName }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.dateOfBirth }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.startDate }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.coreHourlyRateMinor }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.isActive ? 'Yes' : 'No' }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.enrollmentComplete ? 'Complete' : 'Incomplete' }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.missingRequirements.join(', ') || '-' }}</td>
+                <td class="py-3">
+                  <button
+                    type="button"
+                    class="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                    (click)="openEdit(child)"
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex items-center justify-end gap-2">
+      <button
+        type="button"
+        class="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+        [disabled]="offset === 0 || isLoading"
+        (click)="previousPage()"
+      >
+        Previous
+      </button>
+      <span class="text-xs text-gray-500 dark:text-gray-400">Offset {{ offset }} / Limit {{ limit }}</span>
+      <button
+        type="button"
+        class="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+        [disabled]="children.length < limit || isLoading"
+        (click)="nextPage()"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
