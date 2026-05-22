@@ -9,42 +9,45 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"nursery-management-system/api/internal/auth"
+	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
+	authdomain "nursery-management-system/api/internal/modules/authentication/domain"
+	"nursery-management-system/api/internal/platform/tenant"
 )
 
 func TestAuthorizationGuardsMatrix(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	tokens := auth.NewTokenManager("access-secret", "refresh-secret", 15, 720)
+	tokens := authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720)
+	tokenParser := &testTokenParser{tm: tokens}
 	router := gin.New()
-	router.Use(requestIDMiddleware())
+	router.Use(RequestIDMiddleware())
 
 	protected := router.Group("/protected")
-	protected.Use(authnMiddleware(tokens))
-	protected.GET("/manager", requireRoles("manager"), meHandler())
-	protected.GET("/parent-link/:child_id", requireRoles("parent"), parentLinkProbeHandler())
-	protected.GET("/scope/:tenant_id/:branch_id", requireRoles("manager", "practitioner", "parent"), scopeProbeHandler())
+	protected.Use(AuthnMiddleware(tokenParser))
+	protected.GET("/manager", RequireRoles("manager"), meHandler())
+	protected.GET("/parent-link/:child_id", RequireRoles("parent"), parentLinkProbeHandler())
+	protected.GET("/scope/:tenant_id/:branch_id", RequireRoles("manager", "practitioner", "parent"), scopeProbeHandler())
 
-	managerToken := mustAccessToken(t, tokens, auth.ScopeClaims{
+	managerToken := mustAccessToken(t, tokens, authdomain.ScopeClaims{
 		MembershipID: uuid.NewString(),
 		TenantID:     uuid.NewString(),
 		BranchID:     uuid.NewString(),
 		Role:         "manager",
 	})
 	managerClaims := mustParseClaims(t, tokens, managerToken)
-	practitionerToken := mustAccessToken(t, tokens, auth.ScopeClaims{
+	practitionerToken := mustAccessToken(t, tokens, authdomain.ScopeClaims{
 		MembershipID: uuid.NewString(),
 		TenantID:     uuid.NewString(),
 		BranchID:     uuid.NewString(),
 		Role:         "practitioner",
 	})
-	parentToken := mustAccessToken(t, tokens, auth.ScopeClaims{
+	parentToken := mustAccessToken(t, tokens, authdomain.ScopeClaims{
 		MembershipID: uuid.NewString(),
 		TenantID:     uuid.NewString(),
 		BranchID:     uuid.NewString(),
 		Role:         "parent",
 	})
-	unknownRoleToken := mustAccessToken(t, tokens, auth.ScopeClaims{
+	unknownRoleToken := mustAccessToken(t, tokens, authdomain.ScopeClaims{
 		MembershipID: uuid.NewString(),
 		TenantID:     uuid.NewString(),
 		BranchID:     uuid.NewString(),
@@ -107,17 +110,35 @@ func TestAuthorizationGuardsMatrix(t *testing.T) {
 	})
 }
 
-func mustAccessToken(t *testing.T, tokens *auth.TokenManager, scope auth.ScopeClaims) string {
+type testTokenParser struct {
+	tm *authtokens.TokenManager
+}
+
+func (p *testTokenParser) ParseAccessToken(raw string) (tenant.AuthorizationContext, error) {
+	claims, err := p.tm.ParseAccessToken(raw)
+	if err != nil {
+		return tenant.AuthorizationContext{}, err
+	}
+	return tenant.AuthorizationContext{
+		UserID:       claims.Subject,
+		MembershipID: claims.MembershipID,
+		TenantID:     claims.TenantID,
+		BranchID:     claims.BranchID,
+		Role:         claims.Role,
+	}, nil
+}
+
+func mustAccessToken(t *testing.T, tokens *authtokens.TokenManager, scope authdomain.ScopeClaims) string {
 	t.Helper()
 	userID := uuid.New()
-	raw, _, err := tokens.NewAccessToken(userID, "test@example.com", scope)
+	raw, _, err := tokens.GenerateAccessToken(userID, "test@example.com", scope)
 	if err != nil {
 		t.Fatalf("failed to create access token: %v", err)
 	}
 	return raw
 }
 
-func mustParseClaims(t *testing.T, tokens *auth.TokenManager, raw string) auth.AccessClaims {
+func mustParseClaims(t *testing.T, tokens *authtokens.TokenManager, raw string) authtokens.AccessClaims {
 	t.Helper()
 	parsed, err := tokens.ParseAccessToken(raw)
 	if err != nil {

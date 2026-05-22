@@ -50,6 +50,22 @@ func recoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
 	})
 }
 
+func RequestIDMiddleware() gin.HandlerFunc {
+	return requestIDMiddleware()
+}
+
+func AccessLogMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	return accessLogMiddleware(logger)
+}
+
+func RecoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	return recoveryMiddleware(logger)
+}
+
+func RequestIDFromContext(c *gin.Context) string {
+	return requestIDFromContext(c)
+}
+
 func requestIDFromContext(c *gin.Context) string {
 	if v, ok := c.Get(requestIDContext); ok {
 		if requestID, castOK := v.(string); castOK {

@@ -13,7 +13,7 @@ type ErrorResponse struct {
 	RequestID string      `json:"request_id"`
 }
 
-func writeError(c *gin.Context, status int, code, message string, details interface{}) {
+func WriteError(c *gin.Context, status int, code, message string, details interface{}) {
 	resp := ErrorResponse{
 		Code:      code,
 		Message:   message,
@@ -24,6 +24,14 @@ func writeError(c *gin.Context, status int, code, message string, details interf
 	c.AbortWithStatusJSON(status, resp)
 }
 
+func writeError(c *gin.Context, status int, code, message string, details interface{}) {
+	WriteError(c, status, code, message, details)
+}
+
 func writeInternalError(c *gin.Context) {
-	writeError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
+	WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
+}
+
+func WriteInternalError(c *gin.Context) {
+	writeInternalError(c)
 }

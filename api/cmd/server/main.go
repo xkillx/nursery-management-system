@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"nursery-management-system/api/internal/app/bootstrap"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
-	httpserver "nursery-management-system/api/internal/platform/http"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	router := httpserver.NewRouter(cfg, logger, pool)
+	router := bootstrap.Bootstrap(cfg, logger, pool)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.APIPort,

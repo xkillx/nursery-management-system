@@ -6,21 +6,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nursery-management-system/api/internal/auth"
+	"nursery-management-system/api/internal/platform/tenant"
 )
 
-const authContextKey = "auth_context"
+type AuthorizationContext = tenant.AuthorizationContext
 
-type AuthorizationContext struct {
-	UserID       string `json:"user_id"`
-	MembershipID string `json:"membership_id"`
-	TenantID     string `json:"tenant_id"`
-	BranchID     string `json:"branch_id"`
-	Role         string `json:"role"`
-	RequestID    string `json:"request_id"`
+type TokenParser interface {
+	ParseAccessToken(raw string) (AuthorizationContext, error)
 }
 
-func authnMiddleware(tokens *auth.TokenManager) gin.HandlerFunc {
+func AuthnMiddleware(tokens TokenParser) gin.HandlerFunc {
+	return authnMiddleware(tokens)
+}
+
+func authnMiddleware(tokens TokenParser) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawToken := strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
 		if rawToken == "" || !strings.HasPrefix(strings.TrimSpace(c.GetHeader("Authorization")), "Bearer ") {
@@ -34,8 +33,8 @@ func authnMiddleware(tokens *auth.TokenManager) gin.HandlerFunc {
 			return
 		}
 
-		c.Set(authContextKey, AuthorizationContext{
-			UserID:       claims.Subject,
+		c.Set(tenant.AuthContextKey, AuthorizationContext{
+			UserID:       claims.UserID,
 			MembershipID: claims.MembershipID,
 			TenantID:     claims.TenantID,
 			BranchID:     claims.BranchID,
@@ -46,6 +45,10 @@ func authnMiddleware(tokens *auth.TokenManager) gin.HandlerFunc {
 	}
 }
 
+func RequireRoles(roles ...string) gin.HandlerFunc {
+	return requireRoles(roles...)
+}
+
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))
 	for _, role := range roles {
@@ -53,7 +56,7 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		authCtx, ok := authContextFromContext(c)
+		authCtx, ok := AuthContextFromContext(c)
 		if !ok {
 			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
@@ -75,8 +78,8 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	}
 }
 
-func authContextFromContext(c *gin.Context) (AuthorizationContext, bool) {
-	v, ok := c.Get(authContextKey)
+func AuthContextFromContext(c *gin.Context) (AuthorizationContext, bool) {
+	v, ok := c.Get(tenant.AuthContextKey)
 	if !ok {
 		return AuthorizationContext{}, false
 	}
@@ -87,4 +90,8 @@ func authContextFromContext(c *gin.Context) (AuthorizationContext, bool) {
 	}
 
 	return authCtx, true
+}
+
+func authContextFromContext(c *gin.Context) (AuthorizationContext, bool) {
+	return AuthContextFromContext(c)
 }
