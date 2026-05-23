@@ -18,17 +18,20 @@ type CheckOutChild struct {
 	repo  domain.Repository
 	txMgr *transaction.Manager
 	audit *audit.Writer
+	clock *AttendanceClock
 }
 
 func NewCheckOutChild(
 	repo domain.Repository,
 	txMgr *transaction.Manager,
 	auditWriter *audit.Writer,
+	clock *AttendanceClock,
 ) *CheckOutChild {
 	return &CheckOutChild{
 		repo:   repo,
 		txMgr:  txMgr,
 		audit:  auditWriter,
+		clock:  clock,
 	}
 }
 
@@ -44,7 +47,7 @@ func (uc *CheckOutChild) Execute(ctx context.Context, actor tenant.ActorContext,
 			return domainerrors.Conflict("attendance_session_not_open", "No open attendance session found for this child.")
 		}
 
-		now, localDate := LondonNow()
+		now, localDate := uc.clock.Now()
 
 		completed, err := uc.repo.CompleteSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, session, now, localDate, actor.UserID, actor.MembershipID, actor.RequestID)
 		if err != nil {

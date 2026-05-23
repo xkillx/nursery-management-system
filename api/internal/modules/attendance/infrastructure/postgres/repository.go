@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/attendance/domain"
@@ -40,7 +41,7 @@ VALUES ($1, $2, $3, $4, 'open', $5, $6)`,
 		sessionID, tenantID, branchID, childID, occurredAt, localDate,
 	)
 	if err != nil {
-		if isUniqueViolation(err) {
+		if isOpenSessionUniqueViolation(err) {
 			return domain.Session{}, domain.ErrSessionAlreadyOpen
 		}
 		return domain.Session{}, fmt.Errorf("insert attendance session: %w", err)
@@ -153,10 +154,10 @@ WHERE tenant_id = $5 AND branch_id = $6 AND id = $7`,
 	}, nil
 }
 
-func isUniqueViolation(err error) bool {
-	var pgErr interface{ SQLState() string }
-	if errors.As(err, &pgErr) {
-		return pgErr.SQLState() == "23505"
+func isOpenSessionUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return pgErr.ConstraintName == "idx_attendance_sessions_one_open_child"
 	}
 	return false
 }

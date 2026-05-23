@@ -61,6 +61,10 @@ func makeActor() tenant.ActorContext {
 	}
 }
 
+func fixedClock(t time.Time) *AttendanceClock {
+	return NewAttendanceClock(func() time.Time { return t })
+}
+
 func TestCheckIn_RejectsEnrollmentIncomplete(t *testing.T) {
 	err := mapCheckInError(domain.ErrChildEnrollmentIncomplete)
 	de, ok := err.(*domainerrors.DomainError)
@@ -103,15 +107,8 @@ func TestCheckOut_SucceedsWithOpenSession(t *testing.T) {
 	}
 	repo := &fakeRepository{session: session}
 	auditWriter := audit.NewWriter()
-	_ = repo
-	_ = auditWriter
-}
-
-func TestCheckOut_SkipsEnrollmentValidation(t *testing.T) {
-	uc := NewCheckOutChild(nil, nil, nil)
-	if uc == nil {
-		t.Fatal("expected non-nil CheckOutChild")
-	}
+	clock := fixedClock(time.Now().UTC())
+	_ = NewCheckOutChild(repo, nil, auditWriter, clock)
 }
 
 func TestCheckIn_ChildCheckerReturnsIncomplete(t *testing.T) {
@@ -123,7 +120,8 @@ func TestCheckIn_ChildCheckerReturnsIncomplete(t *testing.T) {
 }
 
 func TestLondonNow(t *testing.T) {
-	utc, localDate := LondonNow()
+	clock := NewAttendanceClock(RealClock)
+	utc, localDate := clock.Now()
 	if utc.IsZero() {
 		t.Fatal("expected non-zero UTC time")
 	}

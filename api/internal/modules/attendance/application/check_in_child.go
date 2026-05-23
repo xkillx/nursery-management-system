@@ -19,6 +19,7 @@ type CheckInChild struct {
 	childChecker domain.ChildEnrollmentChecker
 	txMgr        *transaction.Manager
 	audit        *audit.Writer
+	clock        *AttendanceClock
 }
 
 func NewCheckInChild(
@@ -26,12 +27,14 @@ func NewCheckInChild(
 	childChecker domain.ChildEnrollmentChecker,
 	txMgr *transaction.Manager,
 	auditWriter *audit.Writer,
+	clock *AttendanceClock,
 ) *CheckInChild {
 	return &CheckInChild{
 		repo:         repo,
 		childChecker: childChecker,
 		txMgr:        txMgr,
 		audit:        auditWriter,
+		clock:        clock,
 	}
 }
 
@@ -39,7 +42,7 @@ func (uc *CheckInChild) Execute(ctx context.Context, actor tenant.ActorContext, 
 	var result domain.Session
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
-		now, localDate := LondonNow()
+		now, localDate := uc.clock.Now()
 
 		if err := uc.childChecker.CheckEnrollmentForAttendance(ctx, tx, actor.TenantID, actor.BranchID, childID, localDate); err != nil {
 			return mapCheckInError(err)

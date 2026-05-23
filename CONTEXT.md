@@ -98,7 +98,7 @@ Manager role assignment is reserved to administrative bootstrap flows in month 1
 
 ## Attendance Record (MVP)
 
-Attendance is captured as an event history (check-in, check-out, correction) instead of a single mutable interval row.
+Attendance is captured as an event history (check-in, check-out, correction) instead of a single mutable interval row. Use check-in and check-out rather than sign-in or sign-out.
 
 ## Attendance Session (MVP)
 
@@ -106,7 +106,7 @@ An attendance session is one continuous period of a child's attendance, beginnin
 
 ## Attendance Open Session Rule (MVP)
 
-A child may have multiple attendance sessions on the same local day, but may have only one open attendance session at a time.
+A child may have multiple attendance sessions on the same local day, but may have only one open attendance session at a time. Avoid the phrase active check-in for this rule.
 
 ## Attendance Daily List Scope (MVP)
 
@@ -126,7 +126,7 @@ Only managers can create attendance correction events.
 
 ## Attendance Correction Reason Vocabulary (MVP)
 
-Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`.
+Only attendance corrections carry attendance reason codes; routine check-in and check-out events do not. Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`.
 
 ## Invoice Source of Truth (MVP)
 

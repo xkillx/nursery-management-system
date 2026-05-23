@@ -87,7 +87,7 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 		childapp.NewCreateChild(childRepo, auditWriter),
 		childapp.NewUpdateChild(childRepo, auditWriter),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
-		childapp.NewListAttendance(childRepo),
+		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
 	)
 
 	// Guardians module
@@ -121,9 +121,10 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	// Attendance module
 	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
 	childEnrollmentChecker := &childEnrollmentCheckerAdapter{repo: childRepo}
+	attendanceClock := attendanceapp.NewAttendanceClock(attendanceapp.RealClock)
 	attendanceHandler := attendancehandler.NewHandler(
-		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, txManager, auditWriter),
-		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter),
+		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, txManager, auditWriter, attendanceClock),
+		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter, attendanceClock),
 	)
 
 	// Register people routes

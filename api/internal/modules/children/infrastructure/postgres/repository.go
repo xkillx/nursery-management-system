@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -295,18 +296,22 @@ func (r *ChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID
 	return exists, nil
 }
 
-func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID) ([]domain.AttendanceChild, error) {
+func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID, localDate time.Time) ([]domain.AttendanceChild, error) {
 	const q = `
 	SELECT c.id,
 	       c.full_name,
-	       EXISTS (
-	           SELECT 1
-	           FROM guardian_child_links gcl
-	           WHERE gcl.tenant_id = c.tenant_id
-	             AND gcl.branch_id = c.branch_id
-	             AND gcl.child_id = c.id
-	             AND gcl.ended_at IS NULL
-	       ) AS enrollment_complete,
+	       (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
+	        AND c.date_of_birth IS NOT NULL
+	        AND c.start_date IS NOT NULL
+	        AND c.core_hourly_rate_minor >= 0
+	        AND EXISTS (
+	            SELECT 1
+	            FROM guardian_child_links gcl
+	            WHERE gcl.tenant_id = c.tenant_id
+	              AND gcl.branch_id = c.branch_id
+	              AND gcl.child_id = c.id
+	              AND gcl.ended_at IS NULL
+	        )) AS enrollment_complete,
 	       CASE WHEN s.id IS NULL THEN 'not_checked_in' ELSE 'checked_in' END AS attendance_state,
 	       s.id AS open_session_id,
 	       s.check_in_at AS checked_in_at
@@ -319,12 +324,12 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	WHERE c.tenant_id = $1
 	  AND c.branch_id = $2
 	  AND (
-	      (c.is_active = true AND c.start_date <= CURRENT_DATE AND (c.end_date IS NULL OR c.end_date >= CURRENT_DATE))
+	      (c.is_active = true AND c.start_date <= $3 AND (c.end_date IS NULL OR c.end_date >= $3))
 	      OR s.id IS NOT NULL
 	  )
 	ORDER BY c.full_name ASC`
 
-	rows, err := r.pool.Query(ctx, q, tenantID, branchID)
+	rows, err := r.pool.Query(ctx, q, tenantID, branchID, localDate)
 	if err != nil {
 		return nil, fmt.Errorf("query attendance children: %w", err)
 	}

@@ -38,7 +38,8 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		status = http.StatusForbidden
 	case "validation_error", "child_lifecycle_reason_required", "guardian_deactivation_reason_required",
 		"relationship_reason_required", "lifecycle_reason_invalid", "reason_note_required_for_other",
-		"guardian_not_active", "membership_not_parent", "membership_not_active":
+		"guardian_not_active", "membership_not_parent", "membership_not_active",
+			"attendance_correction_reason_required", "attendance_correction_reason_invalid":
 		status = http.StatusBadRequest
 	case "attendance_session_already_open", "attendance_session_not_open",
 		"child_enrollment_incomplete", "attendance_invalid_time_order":

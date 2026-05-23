@@ -47,6 +47,9 @@ interface AttendanceChildApiModel {
   id: string;
   full_name: string;
   enrollment_complete: boolean;
+  attendance_state: string;
+  open_session_id?: string;
+  checked_in_at?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -102,6 +105,9 @@ export class StaffApiService {
             id: child.id,
             fullName: child.full_name,
             enrollmentComplete: child.enrollment_complete,
+            attendanceState: child.attendance_state,
+            openSessionId: child.open_session_id ?? null,
+            checkedInAt: child.checked_in_at ?? null,
           })),
         ),
       );
