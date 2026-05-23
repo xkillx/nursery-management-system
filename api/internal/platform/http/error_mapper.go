@@ -40,6 +40,9 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"relationship_reason_required", "lifecycle_reason_invalid", "reason_note_required_for_other",
 		"guardian_not_active", "membership_not_parent", "membership_not_active":
 		status = http.StatusBadRequest
+	case "attendance_session_already_open", "attendance_session_not_open",
+		"child_enrollment_incomplete", "attendance_invalid_time_order":
+		status = http.StatusConflict
 	default:
 		if len(domainErr.Code) > 10 && domainErr.Code[len(domainErr.Code)-10:] == "_not_found" {
 			status = http.StatusNotFound

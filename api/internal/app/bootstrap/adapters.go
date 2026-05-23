@@ -2,6 +2,8 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -10,6 +12,8 @@ import (
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
+	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
+	childdomain "nursery-management-system/api/internal/modules/children/domain"
 )
 
 type guardianCheckerAdapter struct {
@@ -35,3 +39,33 @@ type membershipCheckerAdapter struct {
 func (a *membershipCheckerAdapter) GetForScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (domain.MembershipInfo, bool, error) {
 	return a.repo.GetMembershipForScope(ctx, tx, tenantID, branchID, membershipID)
 }
+
+type childEnrollmentCheckerAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *childEnrollmentCheckerAdapter) CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
+	child, found, err := a.repo.GetForAttendanceCheck(ctx, tx, tenantID, branchID, childID)
+	if err != nil {
+		return fmt.Errorf("check child enrollment: %w", err)
+	}
+	if !found {
+		return attendancedomain.ErrChildNotFound
+	}
+	if !child.IsActive {
+		return attendancedomain.ErrChildNotFound
+	}
+	if !child.EnrollmentComplete() {
+		return attendancedomain.ErrChildEnrollmentIncomplete
+	}
+	if localDate.Before(child.StartDate) {
+		return attendancedomain.ErrChildEnrollmentIncomplete
+	}
+	if child.EndDate != nil && localDate.After(*child.EndDate) {
+		return attendancedomain.ErrChildEnrollmentIncomplete
+	}
+	return nil
+}
+
+// Ensure adapter satisfies the interface at compile time.
+var _ childdomain.Repository = (*postgreschild.ChildRepository)(nil)

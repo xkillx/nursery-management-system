@@ -25,9 +25,12 @@ type childResponse struct {
 }
 
 type attendanceChildResponse struct {
-	ID                 string `json:"id"`
-	FullName           string `json:"full_name"`
-	EnrollmentComplete bool   `json:"enrollment_complete"`
+	ID                 string  `json:"id"`
+	FullName           string  `json:"full_name"`
+	EnrollmentComplete bool    `json:"enrollment_complete"`
+	AttendanceState    string  `json:"attendance_state"`
+	OpenSessionID      *string `json:"open_session_id,omitempty"`
+	CheckedInAt        *string `json:"checked_in_at,omitempty"`
 }
 
 func toChildResponse(child domain.Child) childResponse {
@@ -60,9 +63,19 @@ func toChildResponse(child domain.Child) childResponse {
 }
 
 func toAttendanceResponse(child domain.AttendanceChild) attendanceChildResponse {
-	return attendanceChildResponse{
+	resp := attendanceChildResponse{
 		ID:                 child.ID.String(),
 		FullName:           child.FullName,
 		EnrollmentComplete: child.EnrollmentComplete,
+		AttendanceState:    child.AttendanceState,
 	}
+	if child.OpenSessionID != nil {
+		id := child.OpenSessionID.String()
+		resp.OpenSessionID = &id
+	}
+	if child.CheckedInAt != nil {
+		at := child.CheckedInAt.UTC().Format(time.RFC3339)
+		resp.CheckedInAt = &at
+	}
+	return resp
 }

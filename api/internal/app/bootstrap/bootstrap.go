@@ -30,6 +30,10 @@ import (
 	mappingapp "nursery-management-system/api/internal/modules/parentmappings/application"
 	mappingpostgres "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
 
+	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
+	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
+	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	httpserver "nursery-management-system/api/internal/platform/http"
@@ -114,6 +118,14 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 		mappingapp.NewEndMappingUseCase(mappingRepo, auditWriter, txManager),
 	)
 
+	// Attendance module
+	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
+	childEnrollmentChecker := &childEnrollmentCheckerAdapter{repo: childRepo}
+	attendanceHandler := attendancehandler.NewHandler(
+		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, txManager, auditWriter),
+		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter),
+	)
+
 	// Register people routes
 	childrenHandler.RegisterRoutes(protected)
 
@@ -122,6 +134,9 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	guardiansHandler.RegisterRoutes(manager)
 	linksHandler.RegisterRoutes(manager)
 	mappingsHandler.RegisterRoutes(manager)
+
+	// Register attendance routes (manager + practitioner)
+	attendanceHandler.RegisterRoutes(protected)
 
 	return router
 }

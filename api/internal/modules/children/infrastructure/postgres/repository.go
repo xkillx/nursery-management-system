@@ -306,12 +306,23 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	             AND gcl.branch_id = c.branch_id
 	             AND gcl.child_id = c.id
 	             AND gcl.ended_at IS NULL
-	       ) AS has_guardian_link
+	       ) AS enrollment_complete,
+	       CASE WHEN s.id IS NULL THEN 'not_checked_in' ELSE 'checked_in' END AS attendance_state,
+	       s.id AS open_session_id,
+	       s.check_in_at AS checked_in_at
 	FROM children c
+	LEFT JOIN attendance_sessions s
+	  ON s.tenant_id = c.tenant_id
+	 AND s.branch_id = c.branch_id
+	 AND s.child_id = c.id
+	 AND s.status = 'open'
 	WHERE c.tenant_id = $1
 	  AND c.branch_id = $2
-	  AND c.is_active = true
-	ORDER BY c.updated_at DESC`
+	  AND (
+	      (c.is_active = true AND c.start_date <= CURRENT_DATE AND (c.end_date IS NULL OR c.end_date >= CURRENT_DATE))
+	      OR s.id IS NOT NULL
+	  )
+	ORDER BY c.full_name ASC`
 
 	rows, err := r.pool.Query(ctx, q, tenantID, branchID)
 	if err != nil {
@@ -322,7 +333,7 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	out := make([]domain.AttendanceChild, 0)
 	for rows.Next() {
 		var child domain.AttendanceChild
-		if err := rows.Scan(&child.ID, &child.FullName, &child.EnrollmentComplete); err != nil {
+		if err := rows.Scan(&child.ID, &child.FullName, &child.EnrollmentComplete, &child.AttendanceState, &child.OpenSessionID, &child.CheckedInAt); err != nil {
 			return nil, fmt.Errorf("scan attendance child row: %w", err)
 		}
 		out = append(out, child)
@@ -333,6 +344,60 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	}
 
 	return out, nil
+}
+
+func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
+	const q = `
+	SELECT c.id,
+	       c.full_name,
+	       c.date_of_birth,
+	       c.start_date,
+	       c.end_date,
+	       c.core_hourly_rate_minor,
+	       c.notes,
+	       c.is_active,
+	       c.left_at,
+	       c.left_reason_code::text,
+	       c.left_reason_note,
+	       EXISTS (
+	           SELECT 1
+	           FROM guardian_child_links gcl
+	           WHERE gcl.tenant_id = c.tenant_id
+	             AND gcl.branch_id = c.branch_id
+	             AND gcl.child_id = c.id
+	             AND gcl.ended_at IS NULL
+	       ) AS has_guardian_link,
+	       c.created_at,
+	       c.updated_at
+	FROM children c
+	WHERE c.tenant_id = $1
+	  AND c.branch_id = $2
+	  AND c.id = $3`
+
+	var child domain.Child
+	err := tx.QueryRow(ctx, q, tenantID, branchID, childID).Scan(
+		&child.ID,
+		&child.FullName,
+		&child.DateOfBirth,
+		&child.StartDate,
+		&child.EndDate,
+		&child.CoreHourlyRateMinor,
+		&child.Notes,
+		&child.IsActive,
+		&child.LeftAt,
+		&child.LeftReasonCode,
+		&child.LeftReasonNote,
+		&child.HasGuardianLink,
+		&child.CreatedAt,
+		&child.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Child{}, false, nil
+	}
+	if err != nil {
+		return domain.Child{}, false, fmt.Errorf("get child for attendance check: %w", err)
+	}
+	return child, true, nil
 }
 
 // orderedColumns returns column names in a deterministic order for UPDATE statements.
