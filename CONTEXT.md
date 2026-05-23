@@ -100,9 +100,33 @@ Manager role assignment is reserved to administrative bootstrap flows in month 1
 
 Attendance is captured as an event history (check-in, check-out, correction) instead of a single mutable interval row.
 
+## Attendance Session (MVP)
+
+An attendance session is one continuous period of a child's attendance, beginning with check-in and ending with check-out.
+
+## Attendance Open Session Rule (MVP)
+
+A child may have multiple attendance sessions on the same local day, but may have only one open attendance session at a time.
+
+## Attendance Daily List Scope (MVP)
+
+The attendance-facing child list shows active children and any inactive child with an open attendance session that still needs resolution.
+
+## Attendance Correction Target (MVP)
+
+An attendance correction applies to the effective attendance session for one child rather than rewriting the original check-in or check-out event.
+
+## Attendance Correction Scope (MVP)
+
+Attendance correction changes the effective check-in and check-out times for a session; voiding or excluding a session from billing is a separate deferred concept.
+
 ## Attendance Correction Authority (MVP)
 
 Only managers can create attendance correction events.
+
+## Attendance Correction Reason Vocabulary (MVP)
+
+Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`.
 
 ## Invoice Source of Truth (MVP)
 
@@ -123,6 +147,10 @@ Each attendance session is rounded up to the nearest 15 minutes for billing.
 ## Billing Timezone (MVP)
 
 Attendance day boundaries and invoice-period calculations use `Europe/London` local time.
+
+## Attendance Timestamp Semantics (MVP)
+
+Attendance event times are captured as absolute instants while attendance day grouping is derived from `Europe/London` local dates.
 
 ## Incomplete Attendance Handling (MVP)
 
@@ -167,6 +195,10 @@ Extras are added manually as invoice line items by managers.
 ## Attendance Capture Scope (MVP)
 
 Attendance capture includes check-in and check-out only; room-move tracking is out of scope.
+
+## Attendance Capture Time Authority (MVP)
+
+Routine practitioner check-in and check-out capture uses the current server time; historical or custom attendance times are manager-controlled corrections.
 
 ## Practitioner Attendance Scope (MVP)
 
