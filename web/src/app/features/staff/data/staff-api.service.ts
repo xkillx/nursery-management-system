@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
-import { AttendanceChildRecord } from '../models/attendance-child.models';
+import { AttendanceChildRecord, AttendanceSessionRecord, AttendanceState } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload } from '../models/guardians.models';
 
@@ -50,6 +50,19 @@ interface AttendanceChildApiModel {
   attendance_state: string;
   open_session_id?: string;
   checked_in_at?: string;
+}
+
+interface AttendanceSessionApiModel {
+  id: string;
+  child_id: string;
+  status: string;
+  check_in_at: string;
+  check_out_at?: string;
+  check_in_local_date: string;
+  check_out_local_date?: string;
+  duration_minutes?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -105,12 +118,24 @@ export class StaffApiService {
             id: child.id,
             fullName: child.full_name,
             enrollmentComplete: child.enrollment_complete,
-            attendanceState: child.attendance_state,
+            attendanceState: child.attendance_state as AttendanceState,
             openSessionId: child.open_session_id ?? null,
             checkedInAt: child.checked_in_at ?? null,
           })),
         ),
       );
+  }
+
+  checkInChild(childId: string): Observable<AttendanceSessionRecord> {
+    return this.http
+      .post<AttendanceSessionApiModel>(apiUrl('/attendance/check-ins'), { child_id: childId })
+      .pipe(map((session) => this.toAttendanceSessionRecord(session)));
+  }
+
+  checkOutChild(childId: string): Observable<AttendanceSessionRecord> {
+    return this.http
+      .post<AttendanceSessionApiModel>(apiUrl('/attendance/check-outs'), { child_id: childId })
+      .pipe(map((session) => this.toAttendanceSessionRecord(session)));
   }
 
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
@@ -121,6 +146,21 @@ export class StaffApiService {
         offset,
       },
     });
+  }
+
+  private toAttendanceSessionRecord(session: AttendanceSessionApiModel): AttendanceSessionRecord {
+    return {
+      id: session.id,
+      childId: session.child_id,
+      status: session.status,
+      checkInAt: session.check_in_at,
+      checkOutAt: session.check_out_at ?? null,
+      checkInLocalDate: session.check_in_local_date,
+      checkOutLocalDate: session.check_out_local_date ?? null,
+      durationMinutes: session.duration_minutes ?? null,
+      createdAt: session.created_at,
+      updatedAt: session.updated_at,
+    };
   }
 
   private toChildRecord(child: ChildApiModel): ChildRecord {

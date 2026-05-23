@@ -110,7 +110,7 @@ A child may have multiple attendance sessions on the same local day, but may hav
 
 ## Attendance Daily List Scope (MVP)
 
-The attendance-facing child list shows active children and any inactive child with an open attendance session that still needs resolution.
+The attendance-facing child list shows children for the current `Europe/London` local day: active children and any inactive child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.
 
 ## Attendance Correction Target (MVP)
 
