@@ -79,3 +79,27 @@ func TestMapDomainError_InternalError_500(t *testing.T) {
 		t.Fatalf("expected 500, got %d", status)
 	}
 }
+
+func TestMapDomainError_AttendanceCorrectionFutureTime_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("attendance_correction_future_time", "future")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestMapDomainError_AttendanceSessionOverlap_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("attendance_session_overlap", "overlap")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestMapDomainError_AttendanceOutsideEnrollmentWindow_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("attendance_outside_enrollment_window", "outside")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}

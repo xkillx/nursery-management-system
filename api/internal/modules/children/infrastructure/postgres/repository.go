@@ -314,7 +314,8 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	        )) AS enrollment_complete,
 	       CASE WHEN s.id IS NULL THEN 'not_checked_in' ELSE 'checked_in' END AS attendance_state,
 	       s.id AS open_session_id,
-	       s.check_in_at AS checked_in_at
+	       s.check_in_at AS checked_in_at,
+	       s.id IS NOT NULL AS has_incomplete_session
 	FROM children c
 	LEFT JOIN attendance_sessions s
 	  ON s.tenant_id = c.tenant_id
@@ -338,7 +339,7 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	out := make([]domain.AttendanceChild, 0)
 	for rows.Next() {
 		var child domain.AttendanceChild
-		if err := rows.Scan(&child.ID, &child.FullName, &child.EnrollmentComplete, &child.AttendanceState, &child.OpenSessionID, &child.CheckedInAt); err != nil {
+		if err := rows.Scan(&child.ID, &child.FullName, &child.EnrollmentComplete, &child.AttendanceState, &child.OpenSessionID, &child.CheckedInAt, &child.HasIncompleteSession); err != nil {
 			return nil, fmt.Errorf("scan attendance child row: %w", err)
 		}
 		out = append(out, child)
@@ -403,6 +404,25 @@ func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, 
 		return domain.Child{}, false, fmt.Errorf("get child for attendance check: %w", err)
 	}
 	return child, true, nil
+}
+
+func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
+	const q = `
+	SELECT c.id, c.start_date, c.end_date
+	FROM children c
+	WHERE c.tenant_id = $1
+	  AND c.branch_id = $2
+	  AND c.id = $3`
+
+	var info domain.ChildCorrectionInfo
+	err := tx.QueryRow(ctx, q, tenantID, branchID, childID).Scan(&info.ID, &info.StartDate, &info.EndDate)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.ChildCorrectionInfo{}, false, nil
+	}
+	if err != nil {
+		return domain.ChildCorrectionInfo{}, false, fmt.Errorf("get child for correction: %w", err)
+	}
+	return info, true, nil
 }
 
 // orderedColumns returns column names in a deterministic order for UPDATE statements.

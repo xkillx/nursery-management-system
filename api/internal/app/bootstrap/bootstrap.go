@@ -121,10 +121,12 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	// Attendance module
 	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
 	childEnrollmentChecker := &childEnrollmentCheckerAdapter{repo: childRepo}
+	childCorrectionChecker := &childCorrectionCheckerAdapter{repo: childRepo}
 	attendanceClock := attendanceapp.NewAttendanceClock(attendanceapp.RealClock)
 	attendanceHandler := attendancehandler.NewHandler(
 		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter, attendanceClock),
+		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
 	)
 
 	// Register people routes

@@ -7,6 +7,7 @@ export interface AttendanceChildRecord {
   attendanceState: AttendanceState;
   openSessionId: string | null;
   checkedInAt: string | null;
+  hasIncompleteSession: boolean;
 }
 
 export interface AttendanceSessionRecord {

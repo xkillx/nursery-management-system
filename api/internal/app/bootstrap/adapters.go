@@ -69,3 +69,22 @@ func (a *childEnrollmentCheckerAdapter) CheckEnrollmentForAttendance(ctx context
 
 // Ensure adapter satisfies the interface at compile time.
 var _ childdomain.Repository = (*postgreschild.ChildRepository)(nil)
+
+type childCorrectionCheckerAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *childCorrectionCheckerAdapter) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (attendancedomain.ChildCorrectionInfo, bool, error) {
+	info, found, err := a.repo.GetChildForCorrection(ctx, tx, tenantID, branchID, childID)
+	if err != nil {
+		return attendancedomain.ChildCorrectionInfo{}, false, err
+	}
+	if !found {
+		return attendancedomain.ChildCorrectionInfo{}, false, nil
+	}
+	return attendancedomain.ChildCorrectionInfo{
+		ID:        info.ID,
+		StartDate: info.StartDate,
+		EndDate:   info.EndDate,
+	}, true, nil
+}

@@ -43,6 +43,22 @@ func (f *fakeRepository) CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx
 	return session, nil
 }
 
+func (f *fakeRepository) GetSessionForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, sessionID uuid.UUID) (domain.Session, bool, error) {
+	return domain.Session{}, false, nil
+}
+
+func (f *fakeRepository) CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+	return domain.Session{}, nil
+}
+
+func (f *fakeRepository) CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session domain.Session, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+	return domain.Session{}, nil
+}
+
+func (f *fakeRepository) HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
+	return false, nil
+}
+
 type fakeChildChecker struct {
 	err error
 }

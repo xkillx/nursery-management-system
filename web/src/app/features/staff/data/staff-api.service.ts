@@ -50,6 +50,7 @@ interface AttendanceChildApiModel {
   attendance_state: string;
   open_session_id?: string;
   checked_in_at?: string;
+  has_incomplete_session: boolean;
 }
 
 interface AttendanceSessionApiModel {
@@ -121,6 +122,7 @@ export class StaffApiService {
             attendanceState: child.attendance_state as AttendanceState,
             openSessionId: child.open_session_id ?? null,
             checkedInAt: child.checked_in_at ?? null,
+            hasIncompleteSession: child.has_incomplete_session,
           })),
         ),
       );

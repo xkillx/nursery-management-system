@@ -14,10 +14,11 @@ import (
 type Handler struct {
 	checkIn  *application.CheckInChild
 	checkOut *application.CheckOutChild
+	correct  *application.CorrectAttendance
 }
 
-func NewHandler(checkIn *application.CheckInChild, checkOut *application.CheckOutChild) *Handler {
-	return &Handler{checkIn: checkIn, checkOut: checkOut}
+func NewHandler(checkIn *application.CheckInChild, checkOut *application.CheckOutChild, correct *application.CorrectAttendance) *Handler {
+	return &Handler{checkIn: checkIn, checkOut: checkOut, correct: correct}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -25,6 +26,10 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	g.Use(requireRoles("manager", "practitioner"))
 	g.POST("/attendance/check-ins", h.checkInHandler)
 	g.POST("/attendance/check-outs", h.checkOutHandler)
+
+	managerOnly := protected.Group("")
+	managerOnly.Use(requireRoles("manager"))
+	managerOnly.POST("/attendance/corrections", h.correctionHandler)
 }
 
 func (h *Handler) checkInHandler(c *gin.Context) {
@@ -81,6 +86,38 @@ func (h *Handler) checkOutHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toSessionResponse(session))
+}
+
+func (h *Handler) correctionHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req correctionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	params, err := parseCorrectionRequest(req)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	result, err := h.correct.Execute(c.Request.Context(), actor, params)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if result.Created {
+		c.JSON(http.StatusCreated, toSessionResponse(result.Session))
+	} else {
+		c.JSON(http.StatusOK, toSessionResponse(result.Session))
+	}
 }
 
 func handleError(c *gin.Context, err error) {

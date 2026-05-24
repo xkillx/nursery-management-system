@@ -18,6 +18,7 @@ describe('StaffApiService — Attendance', () => {
         attendance_state: 'not_checked_in',
         open_session_id: null,
         checked_in_at: null,
+        has_incomplete_session: false,
       },
       {
         id: 'child-2',
@@ -26,6 +27,7 @@ describe('StaffApiService — Attendance', () => {
         attendance_state: 'checked_in',
         open_session_id: 'session-1',
         checked_in_at: '2026-05-24T07:42:00Z',
+        has_incomplete_session: true,
       },
     ],
   };
@@ -67,6 +69,7 @@ describe('StaffApiService — Attendance', () => {
         attendanceState: 'not_checked_in',
         openSessionId: null,
         checkedInAt: null,
+        hasIncompleteSession: false,
       });
 
       expect(children[1]).toEqual({
@@ -76,6 +79,7 @@ describe('StaffApiService — Attendance', () => {
         attendanceState: 'checked_in',
         openSessionId: 'session-1',
         checkedInAt: '2026-05-24T07:42:00Z',
+        hasIncompleteSession: true,
       });
     });
 

@@ -16,17 +16,26 @@ type checkOutRequest struct {
 	ChildID string `json:"child_id" binding:"required"`
 }
 
+type correctionRequest struct {
+	SessionID  *string `json:"session_id"`
+	ChildID    *string `json:"child_id"`
+	CheckInAt  string  `json:"check_in_at" binding:"required"`
+	CheckOutAt string  `json:"check_out_at" binding:"required"`
+	ReasonCode string  `json:"reason_code" binding:"required"`
+	ReasonNote string  `json:"reason_note"`
+}
+
 type sessionResponse struct {
-	ID               string  `json:"id"`
-	ChildID          string  `json:"child_id"`
-	Status           string  `json:"status"`
-	CheckInAt        string  `json:"check_in_at"`
-	CheckOutAt       *string `json:"check_out_at"`
-	CheckInLocalDate string  `json:"check_in_local_date"`
+	ID                string  `json:"id"`
+	ChildID           string  `json:"child_id"`
+	Status            string  `json:"status"`
+	CheckInAt         string  `json:"check_in_at"`
+	CheckOutAt        *string `json:"check_out_at"`
+	CheckInLocalDate  string  `json:"check_in_local_date"`
 	CheckOutLocalDate *string `json:"check_out_local_date"`
-	DurationMinutes  *int    `json:"duration_minutes"`
-	CreatedAt        string  `json:"created_at"`
-	UpdatedAt        string  `json:"updated_at"`
+	DurationMinutes   *int    `json:"duration_minutes"`
+	CreatedAt         string  `json:"created_at"`
+	UpdatedAt         string  `json:"updated_at"`
 }
 
 func toSessionResponse(s domain.Session) sessionResponse {
@@ -55,4 +64,41 @@ func toSessionResponse(s domain.Session) sessionResponse {
 
 func parseChildID(raw string) (uuid.UUID, error) {
 	return uuid.Parse(raw)
+}
+
+func parseCorrectionRequest(req correctionRequest) (domain.CorrectionParams, error) {
+	var params domain.CorrectionParams
+
+	if req.SessionID != nil && *req.SessionID != "" {
+		id, err := uuid.Parse(*req.SessionID)
+		if err != nil {
+			return domain.CorrectionParams{}, err
+		}
+		params.SessionID = &id
+	}
+
+	if req.ChildID != nil && *req.ChildID != "" {
+		id, err := uuid.Parse(*req.ChildID)
+		if err != nil {
+			return domain.CorrectionParams{}, err
+		}
+		params.ChildID = &id
+	}
+
+	checkInAt, err := time.Parse(time.RFC3339, req.CheckInAt)
+	if err != nil {
+		return domain.CorrectionParams{}, err
+	}
+	params.CheckInAt = checkInAt.UTC()
+
+	checkOutAt, err := time.Parse(time.RFC3339, req.CheckOutAt)
+	if err != nil {
+		return domain.CorrectionParams{}, err
+	}
+	params.CheckOutAt = checkOutAt.UTC()
+
+	params.ReasonCode = req.ReasonCode
+	params.ReasonNote = req.ReasonNote
+
+	return params, nil
 }

@@ -19,6 +19,12 @@ const (
 	StatusAll      StatusFilter = "all"
 )
 
+type ChildCorrectionInfo struct {
+	ID        uuid.UUID
+	StartDate time.Time
+	EndDate   *time.Time
+}
+
 type Repository interface {
 	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int) ([]Child, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
@@ -28,4 +34,5 @@ type Repository interface {
 	GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error)
 	ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID, localDate time.Time) ([]AttendanceChild, error)
+	GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (ChildCorrectionInfo, bool, error)
 }

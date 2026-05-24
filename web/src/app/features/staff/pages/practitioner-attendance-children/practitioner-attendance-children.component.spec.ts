@@ -20,6 +20,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       attendanceState: 'not_checked_in',
       openSessionId: null,
       checkedInAt: null,
+      hasIncompleteSession: false,
     },
     {
       id: 'child-2',
@@ -28,6 +29,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       attendanceState: 'not_checked_in',
       openSessionId: null,
       checkedInAt: null,
+      hasIncompleteSession: false,
     },
     {
       id: 'child-3',
@@ -36,6 +38,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       attendanceState: 'checked_in',
       openSessionId: 'session-1',
       checkedInAt: '2026-05-24T07:42:00Z',
+      hasIncompleteSession: true,
     },
   ];
 
@@ -46,6 +49,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     attendanceState: 'checked_in',
     openSessionId: 'session-2',
     checkedInAt: '2026-05-24T08:00:00Z',
+    hasIncompleteSession: true,
   };
 
   beforeEach(async () => {

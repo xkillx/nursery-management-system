@@ -40,7 +40,7 @@ Source: `docs/PRD-MVP-1M.md`
 | 8 | Attendance schema/API | Create event model (`check_in`,`check_out`,`correction`) + endpoints | Done (check-in/check-out API + attendance daily list endpoint) |
 | 9 | Attendance validations | Prevent duplicate active check-in, enforce correction reason, timezone policy | Done (duplicate session blocked, enrollment gate, correction reason contracts, clock injection) |
 | 10 | Attendance UI | Practitioner flow: today list, check-in, check-out | Done (operational list with check-in/check-out, search, filters, row errors, enrollment gating) |
-| 11 | Attendance corrections | Manager-only correction endpoint + audit event + incomplete session flagging | Correction stores reason and actor |
+| 11 | Attendance corrections | Manager-only correction endpoint + audit event + incomplete session flagging | Done (correction endpoint, reason/actor audit, overlap/enrollment checks, incomplete session flag) |
 | 12 | Funding schema | Create funding_profiles + monthly allowance settings per child | Manager can save allowance |
 | 13 | Funding calc v1 | Implement formula + 15-min round-up + core-only deduction + extras payable | Inputs produce expected net due |
 | 14 | Week 2 gate | E2E dry run: attendance -> monthly totals -> funding result | Demo shows full operational chain |
