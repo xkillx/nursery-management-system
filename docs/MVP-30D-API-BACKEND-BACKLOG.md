@@ -111,7 +111,7 @@ Implementation notes:
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| API-01 | Verify existing Gin bootstrap, config, health endpoints, request ID, structured access logs, recovery, and `/api/v1` base path. Fill only real gaps against `docs/BOOTSTRAP-SPEC.md`. | Existing API | Health endpoints respond; missing critical env vars fail fast; request id appears in errors/logs. |
+| ~~API-01~~ | ~~Verify existing Gin bootstrap, config, health endpoints, request ID, structured access logs, recovery, and `/api/v1` base path. Fill only real gaps against `docs/BOOTSTRAP-SPEC.md`.~~ | ~~Existing API~~ | ~~Done. Health endpoints respond; missing critical env vars fail fast; request id appears in errors/logs.~~ |
 | API-02 | Verify migration workflow and document current schema state. Ensure all current migrations apply cleanly up/down/up on a clean database. | API-01 | `migrate up`, `migrate down`, `migrate up` works locally. |
 | API-03 | Add `sqlc` generation workflow for new modules. Add Makefile/npm-equivalent command if missing, keep output at `api/internal/platform/db/sqlc`, and add first harmless query if needed to prove generation. | API-02 | `sqlc generate` works and generated code compiles; no existing repository refactor required. |
 | API-04 | Verify existing auth/session contract: login, refresh, logout, switch membership, CSRF-protected cookie session actions, single-scope auto-selection, multi-scope selection errors. | Existing auth | Auth tests or smoke checks cover one membership, multi-membership, invalid selection, refresh rotation, logout idempotency. |
