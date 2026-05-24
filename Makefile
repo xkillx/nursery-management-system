@@ -1,4 +1,4 @@
-.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify
+.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate
 
 API_DIR := api
 WEB_DIR := web
@@ -43,3 +43,6 @@ migrate-verify:
 migrate-create:
 	@test -n "$(name)" || (echo "name is required, usage: make migrate-create name=add_table_name" && exit 1)
 	@migrate create -ext sql -dir "$(MIGRATIONS_DIR)" -seq "$(name)"
+
+sqlc-generate:
+	@cd "$(API_DIR)" && go tool sqlc generate

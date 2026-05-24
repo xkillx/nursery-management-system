@@ -29,7 +29,7 @@ This repository is currently aligned to a 30-day MVP with:
 
 Install these before running locally:
 
-- Go `1.25+`
+- Go `1.26+`
 - Node.js `20+` and npm
 - PostgreSQL `14+`
 - `migrate` CLI (`golang-migrate`)
@@ -126,6 +126,14 @@ Open `http://localhost:4200`.
 ```bash
 cd api
 go test ./...
+```
+
+### Code Generation
+
+Regenerate `sqlc` typed query code from `api/db/query/*.sql`:
+
+```bash
+make sqlc-generate
 ```
 
 ### Frontend
