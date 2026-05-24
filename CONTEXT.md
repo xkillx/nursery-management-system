@@ -296,6 +296,10 @@ Guardian-child relationships are many-to-many: a child may link to multiple guar
 
 One parent account can be linked to multiple children and can view invoices for linked children within the active session scope.
 
+## Parent Portal (MVP)
+
+The parent-side product surface where a parent-role user views issued invoices for linked children and initiates full invoice payment.
+
 ## Login Identifier (MVP)
 
 User authentication uses a unique, case-insensitive normalized email address as the login identifier.
