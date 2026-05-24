@@ -24,6 +24,10 @@ A nursery staff role focused on day-to-day child attendance operations.
 
 A guardian-side role that views invoices and completes payments.
 
+## Membership
+
+A user's role-bearing participation in one tenant and one branch. A user may have multiple active memberships, but each authenticated session acts through exactly one membership.
+
 ## Role Capability Inheritance (MVP)
 
 Manager permissions include practitioner attendance actions within the same active session scope.
