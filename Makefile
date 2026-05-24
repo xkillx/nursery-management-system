@@ -1,4 +1,4 @@
-.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create
+.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify
 
 API_DIR := api
 WEB_DIR := web
@@ -25,6 +25,20 @@ migrate-reset:
 
 migrate-version:
 	@if [ -f "$(API_ENV)" ]; then set -a; . "$(API_ENV)"; set +a; fi; test -n "$$DATABASE_URL" || (echo "DATABASE_URL is required" && exit 1); migrate -path "$(MIGRATIONS_DIR)" -database "$$DATABASE_URL" version
+
+migrate-verify:
+	@test -n "$$VERIFY_DATABASE_URL" || (echo "VERIFY_DATABASE_URL is required (use a disposable database)" && exit 1)
+	@echo "==> migrate up"
+	@migrate -path "$(MIGRATIONS_DIR)" -database "$$VERIFY_DATABASE_URL" up
+	@echo "==> version after first up"
+	@migrate -path "$(MIGRATIONS_DIR)" -database "$$VERIFY_DATABASE_URL" version
+	@echo "==> migrate down -all"
+	@migrate -path "$(MIGRATIONS_DIR)" -database "$$VERIFY_DATABASE_URL" down -all
+	@echo "==> migrate up again"
+	@migrate -path "$(MIGRATIONS_DIR)" -database "$$VERIFY_DATABASE_URL" up
+	@echo "==> version after second up"
+	@migrate -path "$(MIGRATIONS_DIR)" -database "$$VERIFY_DATABASE_URL" version
+	@echo "==> verification complete"
 
 migrate-create:
 	@test -n "$(name)" || (echo "name is required, usage: make migrate-create name=add_table_name" && exit 1)

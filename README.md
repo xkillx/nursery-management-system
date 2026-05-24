@@ -136,16 +136,34 @@ npm test
 npm run build
 ```
 
-### Re-run migrations from clean state
+### Migrations
+
+One-step rollback (undo the most recent migration only):
 
 ```bash
-set -a
-source api/.env
-set +a
-
-migrate -path api/db/migrations -database "$DATABASE_URL" down
-migrate -path api/db/migrations -database "$DATABASE_URL" up
+make migrate-down
 ```
+
+Full rollback (remove all application schema managed by migrations):
+
+```bash
+make migrate-down-all
+```
+
+Full clean-state replay (down-all then up):
+
+```bash
+make migrate-reset
+```
+
+Verify migrations on a disposable database (up, down-all, up):
+
+```bash
+export VERIFY_DATABASE_URL='postgres://user:pass@localhost:5432/your_disposable_db?sslmode=disable'
+make migrate-verify
+```
+
+`VERIFY_DATABASE_URL` is intentionally separate from `DATABASE_URL` to protect non-disposable databases.
 
 ## API Notes
 

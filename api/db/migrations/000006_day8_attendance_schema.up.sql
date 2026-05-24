@@ -65,6 +65,10 @@ CREATE TABLE attendance_events (
         CHECK (reason_code <> 'other' OR NULLIF(reason_note, '') IS NOT NULL)
 );
 
+-- Unique index needed before deferred FK references
+CREATE UNIQUE INDEX attendance_events_scope_id_unique
+    ON attendance_events (tenant_id, branch_id, id);
+
 -- Deferred relationship constraints after both tables exist
 ALTER TABLE attendance_sessions
 ADD CONSTRAINT attendance_sessions_check_in_event_fkey
@@ -85,9 +89,6 @@ CREATE INDEX idx_attendance_sessions_child_date
 CREATE INDEX idx_attendance_sessions_open_scope
     ON attendance_sessions (tenant_id, branch_id, status, check_in_at)
     WHERE status = 'open';
-
-CREATE UNIQUE INDEX attendance_events_scope_id_unique
-    ON attendance_events (tenant_id, branch_id, id);
 
 CREATE INDEX idx_attendance_events_session_time
     ON attendance_events (tenant_id, branch_id, session_id, occurred_at);
