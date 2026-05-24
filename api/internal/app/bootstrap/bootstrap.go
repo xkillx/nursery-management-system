@@ -10,29 +10,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	authapp "nursery-management-system/api/internal/modules/authentication/application"
-	authhandler "nursery-management-system/api/internal/modules/authentication/interfaces/http"
 	authpostgres "nursery-management-system/api/internal/modules/authentication/infrastructure/postgres"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
+	authhandler "nursery-management-system/api/internal/modules/authentication/interfaces/http"
 
-	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
+	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 
-	guardianhandler "nursery-management-system/api/internal/modules/guardians/interfaces/http"
 	guardianapp "nursery-management-system/api/internal/modules/guardians/application"
 	guardianpostgres "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
+	guardianhandler "nursery-management-system/api/internal/modules/guardians/interfaces/http"
 
-	linkhandler "nursery-management-system/api/internal/modules/guardianlinks/interfaces/http"
 	linkapp "nursery-management-system/api/internal/modules/guardianlinks/application"
 	linkpostgres "nursery-management-system/api/internal/modules/guardianlinks/infrastructure/postgres"
+	linkhandler "nursery-management-system/api/internal/modules/guardianlinks/interfaces/http"
 
-	mappinghandler "nursery-management-system/api/internal/modules/parentmappings/interfaces/http"
 	mappingapp "nursery-management-system/api/internal/modules/parentmappings/application"
 	mappingpostgres "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	mappinghandler "nursery-management-system/api/internal/modules/parentmappings/interfaces/http"
 
-	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
+	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
@@ -50,9 +50,7 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	router.Use(httpserver.AccessLogMiddleware(logger))
 	router.Use(httpserver.RecoveryMiddleware(logger))
 
-	router.GET("/health", healthHandler(pool))
-	api := router.Group(cfg.APIBasePath)
-	api.GET("/health", healthHandler(pool))
+	api := registerHealthRoutes(router, cfg.APIBasePath, pool)
 
 	// Auth module
 	tokenManager := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours)
@@ -144,12 +142,23 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	return router
 }
 
-func healthHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+type healthPinger interface {
+	Ping(context.Context) error
+}
+
+func registerHealthRoutes(router *gin.Engine, basePath string, pinger healthPinger) *gin.RouterGroup {
+	router.GET("/health", healthHandler(pinger))
+	api := router.Group(basePath)
+	api.GET("/health", healthHandler(pinger))
+	return api
+}
+
+func healthHandler(pinger healthPinger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 		defer cancel()
 
-		if err := pool.Ping(ctx); err != nil {
+		if err := pinger.Ping(ctx); err != nil {
 			httpserver.WriteError(c, http.StatusServiceUnavailable, "db_unavailable", "Database is unavailable.", nil)
 			return
 		}
