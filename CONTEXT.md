@@ -110,15 +110,27 @@ A child may have multiple attendance sessions on the same local day, but may hav
 
 ## Attendance Daily List Scope (MVP)
 
-The attendance-facing child list shows children for the current `Europe/London` local day: active children and any inactive child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.
+The attendance-facing child list shows children for the current `Europe/London` local day: active children and any child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.
 
 ## Attendance Correction Target (MVP)
 
-An attendance correction applies to the effective attendance session for one child rather than rewriting the original check-in or check-out event.
+An attendance correction applies to the effective attendance session for one child rather than rewriting the original check-in or check-out event. A correction may adjust an existing session or record a missed session that should have existed.
 
 ## Attendance Correction Scope (MVP)
 
-Attendance correction changes the effective check-in and check-out times for a session; voiding or excluding a session from billing is a separate deferred concept.
+Attendance correction changes or establishes the full effective check-in and check-out interval for a session; voiding or excluding a session from billing is a separate deferred concept.
+
+## Duplicate Entry Attendance Correction (MVP)
+
+A duplicate-entry attendance correction still establishes a valid effective attendance interval; it does not void, delete, or exclude a session from billing in month 1.
+
+## Attendance Correction History (MVP)
+
+A session may receive more than one attendance correction; each correction remains part of the historical trail while the latest correction determines the current effective interval.
+
+## Attendance Correction Recorded Time (MVP)
+
+The time a correction is recorded is the manager action time, distinct from the corrected attendance interval.
 
 ## Attendance Correction Authority (MVP)
 
@@ -127,6 +139,10 @@ Only managers can create attendance correction events.
 ## Attendance Correction Reason Vocabulary (MVP)
 
 Only attendance corrections carry attendance reason codes; routine check-in and check-out events do not. Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`.
+
+## Attendance Correction Audit Reason Semantics (MVP)
+
+Attendance correction reason codes are distinct from lifecycle reason codes even when an audit trail records the correction.
 
 ## Invoice Source of Truth (MVP)
 
@@ -154,7 +170,7 @@ Attendance event times are captured as absolute instants while attendance day gr
 
 ## Incomplete Attendance Handling (MVP)
 
-Attendance records missing check-out are excluded from automatic billing until resolved by manager correction.
+Attendance records missing check-out are excluded from automatic billing until a manager correction establishes the full effective attendance interval.
 
 ## Invoice Generation Flow (MVP)
 
@@ -226,7 +242,7 @@ A child requires name, date of birth, start date, one linked guardian, and a bil
 
 ## Enrollment Gate Scope (MVP)
 
-Enrollment minimum checks gate all new attendance capture and invoicing actions, while manager-only historical attendance corrections remain allowed under the post-enrollment correction policy.
+Enrollment minimum checks gate all new routine attendance capture and invoicing actions, while manager-only historical attendance corrections remain allowed under the post-enrollment correction policy.
 
 ## Child Creation Flow (MVP)
 
@@ -262,7 +278,7 @@ Child identity is anchored by UUID entity identifiers, and matching name/date-of
 
 ## Post-Enrollment Attendance Correction (MVP)
 
-After enrollment ends, managers may still record corrections for historical attendance sessions so billing derived from attendance actuals remains accurate.
+After enrollment ends, managers may still record corrections for historical attendance sessions so billing derived from attendance actuals remains accurate. Historical corrections require the child to exist in scope but do not require current active enrollment, while the corrected attendance interval remains constrained to the child's enrollment dates.
 
 ## Enrollment Date Semantics (MVP)
 
