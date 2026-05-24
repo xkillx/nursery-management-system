@@ -67,6 +67,31 @@ Known backend gaps:
 - Public routes remain health and authentication/account-recovery routes only; all business routes require authorization guards.
 - API errors use `{ code, message, details?, request_id }`.
 
+## Recommended Libraries and Frameworks
+
+These are preferred implementation defaults for the MVP API backlog. Keep them wrapped behind platform-layer interfaces where practical so the handler -> application/use case -> domain -> infrastructure repository flow remains intact.
+
+| Area | Recommended choice | Backlog fit |
+|---|---|---|
+| HTTP framework | Keep existing Gin | Matches the current API bootstrap, `/api/v1` routing, middleware model, and PRD requirement to follow the existing architecture. |
+| Gin request logging | `github.com/gin-contrib/zap` with Uber Zap, or a small custom Gin middleware around `github.com/rs/zerolog` | Supports API-01 and API-28 structured request logs, request IDs, actor/scope fields, auth denial logs, and webhook status logs. Pick one logger family and use it consistently. |
+| Metrics | `github.com/prometheus/client_golang/prometheus` plus `promhttp.Handler()` mounted from Gin | Covers API-28 minimal metrics for auth failures, authorization denials, invoice generation outcomes, Stripe webhook outcomes, and basic HTTP latency/status counts. |
+| DB driver and codegen | `sqlc` configured for `pgx/v5` | Required for new funding, invoicing, payments, invites, password-reset, and job persistence while avoiding risky refactors of existing hand-written repositories. |
+| Migrations | Existing `github.com/golang-migrate/migrate` workflow | Matches API-02 and the required clean `up/down/up` verification for new migration pairs. |
+| Stripe | Official `github.com/stripe/stripe-go` module, pinned to the current supported major version during implementation | Fits API-22 to API-24 for hosted Checkout session creation, webhook event parsing/signature verification, payment reconciliation, and retry-safe status updates. |
+| Scheduler | `github.com/robfig/cron/v3` | Fits API-20 single-instance overdue invoice transition job. Keep scheduler ownership behind an env flag so only one deployed API process runs scheduled jobs. |
+| Future durable jobs | Optional post-MVP `github.com/hibiken/asynq` if Redis-backed persistence/retries become necessary | Not required for the 30-day MVP. Consider only if one-process cron is no longer sufficient. |
+| Email delivery | `github.com/wneessen/go-mail` behind `api/internal/platform/email` | Provides a practical SMTP abstraction for API-05 password reset and API-06 invite emails, while keeping provider details replaceable. |
+| Lightweight email fallback | Standard `net/smtp` plus a small message builder, or a gomail-style helper | Acceptable only if the MVP needs a thinner dependency and the platform email interface still owns message construction and provider behavior. |
+
+Implementation notes:
+
+- Do not replace Gin, `pgx`, `sqlc`, or `golang-migrate` unless a later decision document explicitly changes the backend baseline.
+- Prefer `robfig/cron/v3` for MVP scheduling; defer Redis-backed queues until there is a concrete retry/durability requirement.
+- Keep Stripe integration limited to hosted Checkout, PaymentIntent/payment status reads where needed, and webhook processing. Do not add direct card handling.
+- Keep email, metrics, logging, scheduler, Stripe, and generated DB access under `api/internal/platform/**` or module-local infrastructure packages rather than leaking vendor APIs into domain code.
+- Pin dependency versions in `api/go.mod` when implementing each backlog item, and document any non-obvious version choice in the related PR or runbook.
+
 ## Global API Definition of Done
 
 - Endpoint is registered under `/api/v1` with plain JSON resources and standard HTTP status codes.
