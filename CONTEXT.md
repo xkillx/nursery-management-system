@@ -44,6 +44,18 @@ A monthly billing statement showing gross fees, funded deduction, and final amou
 
 Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
 
+## Manager Invite Access Grant Timing (MVP)
+
+A manager invitation does not grant usable access by itself; invited access becomes usable only after the invitee accepts the invitation and sets a password.
+
+## Manager Invite Membership Activation Scope (MVP)
+
+Accepting a manager invitation creates a new active membership for a new login identity; invitation acceptance does not reactivate existing inactive users or inactive memberships in month 1.
+
+## Manager Invite Session Start (MVP)
+
+Accepting a manager invitation does not automatically start an authenticated session; invitees sign in through the normal login flow after acceptance.
+
 ## Guardian Identity Separation (MVP)
 
 Guardian records store child relationship and contact data independently from authentication users; portal access exists only when a guardian is linked to a parent-role user membership.
@@ -87,6 +99,10 @@ Parent membership-to-guardian mapping does not require the parent user's login e
 ## Guardian Email Auto-Link Policy (MVP)
 
 Entering or editing a guardian contact email does not automatically link that guardian to any user login; parent portal access is granted only through explicit invitation and membership-to-guardian mapping.
+
+## Parent Invite Mapping Separation (MVP)
+
+Accepting a parent invitation creates login-ready parent membership access but does not automatically map that membership to a guardian; guardian access still requires an explicit parent-membership-to-guardian mapping.
 
 ## Contact Detail Scope (MVP)
 
@@ -332,6 +348,14 @@ Persisted audit events include request identifier correlation so domain changes 
 
 Audit events include actor membership identity for user-initiated actions and may omit actor identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
 
+## Manager Invite Audit Scope (MVP)
+
+Manager invitation creation, resend, revocation, and acceptance are persisted as audit events because they change user provisioning state.
+
+## Manager Invite Acceptance Actor Semantics (MVP)
+
+Invitation acceptance audit events are attributed to the newly provisioned user and membership created by that acceptance, while manager-initiated invitation actions are attributed to the manager's active session actor.
+
 ## Cross-Month Session Allocation (MVP)
 
 An attendance session that crosses midnight is allocated to the invoice month of its check-in date using `Europe/London` local time.
@@ -403,6 +427,10 @@ A user may hold memberships across multiple tenants and branches, but each activ
 ## Single Role Per Scope (MVP)
 
 Within a single tenant-branch scope, a user holds exactly one membership role; concurrent dual-role memberships in the same scope are not used in month 1.
+
+## Registered Email Invite Deferral (MVP)
+
+Manager invitations in month 1 are used only for new login identities; inviting an email address that already belongs to a user is deferred until an authenticated existing-user membership invite flow exists.
 
 ## Membership Activity State (MVP)
 
@@ -504,13 +532,73 @@ A password reset link is considered issued only when the reset message is accept
 
 Raw password reset tokens are delivered only through the reset message and are never returned by API responses.
 
+## Manager Invite Token Exposure Policy (MVP)
+
+Raw manager invitation tokens are delivered only through the invitation message and are never returned by API responses.
+
 ## Password Reset Request Throttling (MVP)
 
 Password reset requests are rate-limited by login identifier and client source so the public recovery flow cannot be used for unbounded email sending.
 
+## Manager Invite Acceptance Throttling (MVP)
+
+Public invitation acceptance attempts are rate-limited by client source to reduce token-guessing risk.
+
 ## Password Reset Token Error Semantics (MVP)
 
 Invalid, expired, and already-consumed password reset links return distinct stable error codes with generic human-readable messages; superseded reset links are treated as already consumed.
+
+## Manager Invite Link Lifetime (MVP)
+
+Manager invitation links expire after seven days from issuance.
+
+## Manager Invite Link Supersession (MVP)
+
+Resending a pending manager invitation issues a new invitation link and invalidates the prior unused link for that invitation.
+
+## Manager Invite Link Issuance (MVP)
+
+A manager invitation link is considered issued only when the invitation message is accepted for delivery; failed delivery does not leave a newly generated usable invite link behind.
+
+## Manager Invite Idempotent Create (MVP)
+
+Creating a manager invitation for the same normalized email, role, tenant, and branch as an existing pending invitation refreshes that pending invitation instead of creating a duplicate; creating one for the same email and scope with a different role is a conflict.
+
+## Manager Invite Historical Reissue (MVP)
+
+Creating a new manager invitation after an earlier invitation for the same email, role, and scope was revoked or expired creates a new invitation record rather than reopening the historical invitation.
+
+## Manager Invite Minimum Data (MVP)
+
+Creating a manager invitation requires only the invitee login email and invited role in month 1; staff profiles, display names, and guardian linkage are not collected by the invitation flow.
+
+## Manager Invite Scope Source (MVP)
+
+Manager invitations target the manager's active tenant-branch session scope; clients do not choose invitation tenant or branch in the request body.
+
+## Manager Invite List Visibility (MVP)
+
+Manager invitation lists default to currently pending invitations in the active tenant-branch scope, while accepted, revoked, expired, and all-invite history are available only through explicit status filtering.
+
+## Manager Invite Expiry State (MVP)
+
+Invitation expiry is derived from the invitation expiry time rather than a separate manager action or background lifecycle transition.
+
+## Manager Invite Revocation (MVP)
+
+Managers may revoke pending invitations, including pending invitations whose links have already expired; revoking an already revoked invitation is idempotent, while accepted invitations cannot be revoked.
+
+## Manager Invite Revocation Reason Scope (MVP)
+
+Manager invitation revocation does not require a reason code or note in month 1; the audit event records the actor and invitation details without using lifecycle reason fields.
+
+## Manager Invite Token Error Semantics (MVP)
+
+Invalid, expired, revoked, and already-accepted manager invitation links return distinct stable error codes with generic human-readable messages.
+
+## Manager Invite Acceptance Idempotency (MVP)
+
+Invitation acceptance is single-use; after one successful acceptance, later attempts with the same invitation link return an already-accepted result and do not create additional users or memberships.
 
 ## Email Delivery Strategy (MVP)
 
@@ -771,6 +859,10 @@ HTTP endpoints are published under a versioned `/api/v1` route prefix.
 ## Public Route Allowlist (MVP)
 
 Only health and authentication endpoints are public in month 1; all other API routes require authorization guards.
+
+## Invite Acceptance Route Visibility (MVP)
+
+Invitation acceptance is a public provisioning route because invitees do not have a session before acceptance; all manager invitation management routes remain manager-protected.
 
 ## Deployment Model (MVP)
 
