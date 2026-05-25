@@ -96,6 +96,10 @@ Child and guardian records carry only minimal operational contact details in mon
 
 Guardian creation requires only full name in month 1; email and phone are optional contact details.
 
+## Guardian-Child Link (MVP)
+
+A relationship showing that a guardian record is connected to a child within the same nursery scope. A child may have multiple guardian-child links, and active links contribute to parent access and enrollment completeness; ended links no longer grant access.
+
 ## Manager Provisioning Authority (MVP)
 
 Manager role assignment is reserved to administrative bootstrap flows in month 1; manager-invited users are limited to non-manager roles.
