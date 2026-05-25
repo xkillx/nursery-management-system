@@ -213,9 +213,9 @@ SELECT EXISTS (
     WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
       AND status IN ('open', 'complete', 'corrected')
       AND (
-          (check_out_at IS NOT NULL AND check_in_at < $5 AND check_out_at > $4)
+          (check_out_at IS NOT NULL AND check_in_at < $4 AND check_out_at > $5)
           OR
-          (check_out_at IS NULL AND check_in_at < $5)
+          (check_out_at IS NULL AND check_in_at < $4)
       )
       AND id != ALL (SELECT unnest(CASE WHEN $6::uuid IS NOT NULL THEN ARRAY[$6::uuid] ELSE ARRAY[]::uuid[] END))
 )
@@ -225,8 +225,8 @@ type AttendanceHasOverlappingSessionParams struct {
 	TenantID   pgtype.UUID
 	BranchID   pgtype.UUID
 	ChildID    pgtype.UUID
-	CheckOutAt pgtype.Timestamptz
 	CheckInAt  pgtype.Timestamptz
+	CheckOutAt pgtype.Timestamptz
 	Column6    pgtype.UUID
 }
 
@@ -235,8 +235,8 @@ func (q *Queries) AttendanceHasOverlappingSession(ctx context.Context, arg Atten
 		arg.TenantID,
 		arg.BranchID,
 		arg.ChildID,
-		arg.CheckOutAt,
 		arg.CheckInAt,
+		arg.CheckOutAt,
 		arg.Column6,
 	)
 	var exists bool

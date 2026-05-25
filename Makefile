@@ -1,4 +1,4 @@
-.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate
+.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories
 
 API_DIR := api
 WEB_DIR := web
@@ -46,3 +46,13 @@ migrate-create:
 
 sqlc-generate:
 	@cd "$(API_DIR)" && go tool sqlc generate
+
+test-api-repositories:
+	@test -n "$$TEST_DATABASE_URL" || (echo "TEST_DATABASE_URL is required (use a disposable database)" && exit 1)
+	cd "$(API_DIR)" && go test \
+		./internal/modules/authentication/infrastructure/postgres/ \
+		./internal/modules/children/infrastructure/postgres/ \
+		./internal/modules/guardians/infrastructure/postgres/ \
+		./internal/modules/guardianlinks/infrastructure/postgres/ \
+		./internal/modules/parentmappings/infrastructure/postgres/ \
+		./internal/modules/attendance/infrastructure/postgres/
