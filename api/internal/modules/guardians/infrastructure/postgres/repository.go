@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/guardians/domain"
+	"nursery-management-system/api/internal/platform/db/sqlc"
 )
 
 type GuardianRepository struct {
@@ -26,128 +28,55 @@ func (r *GuardianRepository) Pool() *pgxpool.Pool {
 }
 
 func (r *GuardianRepository) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int) ([]domain.Guardian, error) {
-	statusClause := "AND g.is_active = true"
-	if filter == domain.StatusInactive {
-		statusClause = "AND g.is_active = false"
-	}
-	if filter == domain.StatusAll {
-		statusClause = ""
-	}
-
-	q := fmt.Sprintf(`
-	SELECT g.id,
-	       g.full_name,
-	       g.email,
-	       g.phone,
-	       g.notes,
-	       g.is_active,
-	       g.deactivated_at,
-	       g.deactivation_reason_code::text,
-	       g.deactivation_reason_note,
-	       g.created_at,
-	       g.updated_at
-	FROM guardians g
-	WHERE g.tenant_id = $1
-	  AND g.branch_id = $2
-	  %s
-	ORDER BY g.updated_at DESC
-	LIMIT $3 OFFSET $4`, statusClause)
-
-	rows, err := r.pool.Query(ctx, q, tenantID, branchID, limit, offset)
+	q := sqlc.New(r.pool)
+	rows, err := q.GuardiansList(ctx, sqlc.GuardiansListParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		Limit:        int32(limit),
+		Offset:       int32(offset),
+		StatusFilter: string(filter),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list guardians: %w", err)
 	}
-	defer rows.Close()
-
-	out := make([]domain.Guardian, 0)
-	for rows.Next() {
-		var g domain.Guardian
-		if err := rows.Scan(
-			&g.ID,
-			&g.FullName,
-			&g.Email,
-			&g.Phone,
-			&g.Notes,
-			&g.IsActive,
-			&g.DeactivatedAt,
-			&g.DeactivationReasonCode,
-			&g.DeactivationReasonNote,
-			&g.CreatedAt,
-			&g.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan guardian row: %w", err)
-		}
-		out = append(out, g)
+	out := make([]domain.Guardian, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapGuardianRow(row.ID, row.FullName, row.Email, row.Phone, row.Notes,
+			row.IsActive, row.DeactivatedAt, row.DeactivationReasonCode, row.DeactivationReasonNote,
+			row.CreatedAt, row.UpdatedAt))
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate guardian rows: %w", err)
-	}
-
 	return out, nil
 }
 
 func (r *GuardianRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Guardian, error) {
-	const q = `
-	SELECT g.id,
-	       g.full_name,
-	       g.email,
-	       g.phone,
-	       g.notes,
-	       g.is_active,
-	       g.deactivated_at,
-	       g.deactivation_reason_code::text,
-	       g.deactivation_reason_note,
-	       g.created_at,
-	       g.updated_at
-	FROM guardians g
-	WHERE g.tenant_id = $1
-	  AND g.branch_id = $2
-	  AND g.id = $3`
-
-	var g domain.Guardian
-	err := r.pool.QueryRow(ctx, q, tenantID, branchID, id).Scan(
-		&g.ID,
-		&g.FullName,
-		&g.Email,
-		&g.Phone,
-		&g.Notes,
-		&g.IsActive,
-		&g.DeactivatedAt,
-		&g.DeactivationReasonCode,
-		&g.DeactivationReasonNote,
-		&g.CreatedAt,
-		&g.UpdatedAt,
-	)
+	q := sqlc.New(r.pool)
+	row, err := q.GuardiansGetByID(ctx, sqlc.GuardiansGetByIDParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Guardian{}, domain.ErrNotFound
 	}
 	if err != nil {
 		return domain.Guardian{}, fmt.Errorf("get guardian by id: %w", err)
 	}
-
-	return g, nil
+	return mapGuardianRow(row.ID, row.FullName, row.Email, row.Phone, row.Notes,
+		row.IsActive, row.DeactivatedAt, row.DeactivationReasonCode, row.DeactivationReasonNote,
+		row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *GuardianRepository) Create(ctx context.Context, guardian domain.Guardian) error {
-	const q = `
-	INSERT INTO guardians (id, tenant_id, branch_id, full_name, email, phone, notes, is_active)
-	VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), true)`
-
-	_, err := r.pool.Exec(ctx, q,
-		guardian.ID,
-		guardian.TenantID,
-		guardian.BranchID,
-		guardian.FullName,
-		derefStr(guardian.Email),
-		derefStr(guardian.Phone),
-		derefStr(guardian.Notes),
-	)
-	if err != nil {
-		return fmt.Errorf("insert guardian: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(r.pool)
+	return q.GuardiansCreate(ctx, sqlc.GuardiansCreateParams{
+		ID:       uuidToPgtype(guardian.ID),
+		TenantID: uuidToPgtype(guardian.TenantID),
+		BranchID: uuidToPgtype(guardian.BranchID),
+		FullName: guardian.FullName,
+		Column5:  derefStr(guardian.Email),
+		Column6:  derefStr(guardian.Phone),
+		Column7:  derefStr(guardian.Notes),
+	})
 }
 
 func (r *GuardianRepository) Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
@@ -155,171 +84,146 @@ func (r *GuardianRepository) Update(ctx context.Context, tenantID, branchID, id 
 		return 0, nil
 	}
 
-	setClauses := make([]string, 0, len(fields))
-	args := make([]any, 0, len(fields)+3)
-	args = append(args, tenantID, branchID, id)
-	argPos := 4
-
-	for name, value := range fields {
-		if name == "email" || name == "phone" || name == "notes" {
-			setClauses = append(setClauses, fmt.Sprintf("%s = NULLIF($%d, '')", name, argPos))
-		} else {
-			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", name, argPos))
-		}
-		args = append(args, value)
-		argPos++
+	params := sqlc.GuardiansUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
 	}
 
-	q := fmt.Sprintf(`
-	UPDATE guardians
-	SET %s, updated_at = now()
-	WHERE tenant_id = $1 AND branch_id = $2 AND id = $3`, strings.Join(setClauses, ", "))
+	if v, ok := fields["full_name"]; ok {
+		params.SetFullName = int32(1)
+		params.FullName = v.(string)
+	}
+	if v, ok := fields["email"]; ok {
+		params.SetEmail = int32(1)
+		s, _ := v.(string)
+		params.Email = s
+	}
+	if v, ok := fields["phone"]; ok {
+		params.SetPhone = int32(1)
+		s, _ := v.(string)
+		params.Phone = s
+	}
+	if v, ok := fields["notes"]; ok {
+		params.SetNotes = int32(1)
+		s, _ := v.(string)
+		params.Notes = s
+	}
 
-	ct, err := r.pool.Exec(ctx, q, args...)
+	q := sqlc.New(r.pool)
+	ct, err := q.GuardiansUpdate(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("update guardian: %w", err)
 	}
-
-	return ct.RowsAffected(), nil
+	return ct, nil
 }
 
 func (r *GuardianRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.Guardian, error) {
-	const q = `
-	SELECT g.id,
-	       g.full_name,
-	       g.email,
-	       g.phone,
-	       g.notes,
-	       g.is_active,
-	       g.deactivated_at,
-	       g.deactivation_reason_code::text,
-	       g.deactivation_reason_note,
-	       g.created_at,
-	       g.updated_at
-	FROM guardians g
-	WHERE g.tenant_id = $1
-	  AND g.branch_id = $2
-	  AND g.id = $3
-	FOR UPDATE`
-
-	var g domain.Guardian
-	err := tx.QueryRow(ctx, q, tenantID, branchID, id).Scan(
-		&g.ID,
-		&g.FullName,
-		&g.Email,
-		&g.Phone,
-		&g.Notes,
-		&g.IsActive,
-		&g.DeactivatedAt,
-		&g.DeactivationReasonCode,
-		&g.DeactivationReasonNote,
-		&g.CreatedAt,
-		&g.UpdatedAt,
-	)
+	q := sqlc.New(tx)
+	row, err := q.GuardiansGetByIDForUpdate(ctx, sqlc.GuardiansGetByIDForUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Guardian{}, domain.ErrNotFound
 	}
 	if err != nil {
 		return domain.Guardian{}, fmt.Errorf("get guardian for update: %w", err)
 	}
-
-	return g, nil
+	return mapGuardianRow(row.ID, row.FullName, row.Email, row.Phone, row.Notes,
+		row.IsActive, row.DeactivatedAt, row.DeactivationReasonCode, row.DeactivationReasonNote,
+		row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *GuardianRepository) GetActive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, bool, error) {
-	const q = `
-	SELECT is_active
-	FROM guardians
-	WHERE tenant_id = $1
-	  AND branch_id = $2
-	  AND id = $3`
-
-	var isActive bool
-	err := tx.QueryRow(ctx, q, tenantID, branchID, id).Scan(&isActive)
+	q := sqlc.New(tx)
+	isActive, err := q.GuardiansGetActive(ctx, sqlc.GuardiansGetActiveParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, false, nil
 	}
 	if err != nil {
 		return false, false, fmt.Errorf("get guardian active: %w", err)
 	}
-
 	return isActive, true, nil
 }
 
 func (r *GuardianRepository) Deactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
-	const q = `
-	UPDATE guardians
-	SET is_active = false,
-	    deactivated_at = now(),
-	    deactivation_reason_code = $1,
-	    deactivation_reason_note = NULLIF($2, ''),
-	    updated_at = now()
-	WHERE tenant_id = $3 AND branch_id = $4 AND id = $5`
-
-	_, err := tx.Exec(ctx, q, reasonCode, reasonNote, tenantID, branchID, id)
-	if err != nil {
-		return fmt.Errorf("deactivate guardian: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(tx)
+	return q.GuardiansDeactivate(ctx, sqlc.GuardiansDeactivateParams{
+		DeactivationReasonCode: reasonCode,
+		Column2:                reasonNote,
+		TenantID:               uuidToPgtype(tenantID),
+		BranchID:               uuidToPgtype(branchID),
+		ID:                     uuidToPgtype(id),
+	})
 }
 
 func (r *GuardianRepository) CascadeLinks(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID, reasonCode, reasonNote string) error {
-	const q = `
-	UPDATE guardian_child_links
-	SET ended_at = now(),
-	    ended_reason_code = $1,
-	    ended_reason_note = $2,
-	    updated_at = now()
-	WHERE tenant_id = $3
-	  AND branch_id = $4
-	  AND guardian_id = $5
-	  AND ended_at IS NULL`
-
-	_, err := tx.Exec(ctx, q, reasonCode, reasonNote, tenantID, branchID, guardianID)
-	if err != nil {
-		return fmt.Errorf("cascade guardian child links: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(tx)
+	return q.GuardiansCascadeLinks(ctx, sqlc.GuardiansCascadeLinksParams{
+		EndedReasonCode: reasonCode,
+		EndedReasonNote: stringToPgtypeText(reasonNote),
+		TenantID:        uuidToPgtype(tenantID),
+		BranchID:        uuidToPgtype(branchID),
+		GuardianID:      uuidToPgtype(guardianID),
+	})
 }
 
 func (r *GuardianRepository) CascadeMappings(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID, reasonCode, reasonNote string) error {
-	const q = `
-	UPDATE parent_membership_guardians
-	SET ended_at = now(),
-	    ended_reason_code = $1,
-	    ended_reason_note = $2,
-	    updated_at = now()
-	WHERE tenant_id = $3
-	  AND branch_id = $4
-	  AND guardian_id = $5
-	  AND ended_at IS NULL`
-
-	_, err := tx.Exec(ctx, q, reasonCode, reasonNote, tenantID, branchID, guardianID)
-	if err != nil {
-		return fmt.Errorf("cascade parent membership guardians: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(tx)
+	return q.GuardiansCascadeMappings(ctx, sqlc.GuardiansCascadeMappingsParams{
+		EndedReasonCode: reasonCode,
+		EndedReasonNote: stringToPgtypeText(reasonNote),
+		TenantID:        uuidToPgtype(tenantID),
+		BranchID:        uuidToPgtype(branchID),
+		GuardianID:      uuidToPgtype(guardianID),
+	})
 }
 
 func (r *GuardianRepository) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	const q = `
-	UPDATE guardians
-	SET is_active = true,
-	    deactivated_at = NULL,
-	    deactivation_reason_code = NULL,
-	    deactivation_reason_note = NULL,
-	    updated_at = now()
-	WHERE tenant_id = $1 AND branch_id = $2 AND id = $3`
+	q := sqlc.New(tx)
+	return q.GuardiansReactivate(ctx, sqlc.GuardiansReactivateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
+}
 
-	_, err := tx.Exec(ctx, q, tenantID, branchID, id)
-	if err != nil {
-		return fmt.Errorf("reactivate guardian: %w", err)
+func mapGuardianRow(
+	id pgtype.UUID, fullName string, email, phone, notes pgtype.Text,
+	isActive bool, deactivatedAt pgtype.Timestamptz,
+	deactivationReasonCode interface{}, deactivationReasonNote pgtype.Text,
+	createdAt, updatedAt pgtype.Timestamptz,
+) domain.Guardian {
+	return domain.Guardian{
+		ID:                     pgtypeUUIDToUUID(id),
+		FullName:               fullName,
+		Email:                  pgtypeTextToStringPtr(email),
+		Phone:                  pgtypeTextToStringPtr(phone),
+		Notes:                  pgtypeTextToStringPtr(notes),
+		IsActive:               isActive,
+		DeactivatedAt:          pgtypeTimestamptzToTimePtr(deactivatedAt),
+		DeactivationReasonCode: ifaceToStringPtr(deactivationReasonCode),
+		DeactivationReasonNote: pgtypeTextToStringPtr(deactivationReasonNote),
+		CreatedAt:              pgtypeTimestamptzToTime(createdAt),
+		UpdatedAt:              pgtypeTimestamptzToTime(updatedAt),
 	}
+}
 
-	return nil
+func ifaceToStringPtr(v interface{}) *string {
+	if v == nil {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok || s == "" {
+		return nil
+	}
+	return &s
 }
 
 func derefStr(s *string) string {
@@ -327,4 +231,34 @@ func derefStr(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func uuidToPgtype(u uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{Bytes: [16]byte(u), Valid: true}
+}
+
+func pgtypeUUIDToUUID(u pgtype.UUID) uuid.UUID {
+	return uuid.UUID(u.Bytes)
+}
+
+func pgtypeTimestamptzToTime(t pgtype.Timestamptz) time.Time {
+	return t.Time
+}
+
+func pgtypeTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Time
+}
+
+func pgtypeTextToStringPtr(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
+}
+
+func stringToPgtypeText(s string) pgtype.Text {
+	return pgtype.Text{String: s, Valid: true}
 }

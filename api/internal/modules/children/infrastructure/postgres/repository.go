@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/children/domain"
+	"nursery-management-system/api/internal/platform/db/sqlc"
 )
 
 type ChildRepository struct {
@@ -23,273 +24,141 @@ func NewChildRepository(pool *pgxpool.Pool) *ChildRepository {
 }
 
 func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int) ([]domain.Child, error) {
-	statusClause := "AND c.is_active = true"
-	switch filter {
-	case domain.StatusInactive:
-		statusClause = "AND c.is_active = false"
-	case domain.StatusAll:
-		statusClause = ""
-	}
-
-	q := fmt.Sprintf(`
-	SELECT c.id,
-	       c.full_name,
-	       c.date_of_birth,
-	       c.start_date,
-	       c.end_date,
-	       c.core_hourly_rate_minor,
-	       c.notes,
-	       c.is_active,
-	       c.left_at,
-	       c.left_reason_code::text,
-	       c.left_reason_note,
-	       EXISTS (
-	           SELECT 1
-	           FROM guardian_child_links gcl
-	           WHERE gcl.tenant_id = c.tenant_id
-	             AND gcl.branch_id = c.branch_id
-	             AND gcl.child_id = c.id
-	             AND gcl.ended_at IS NULL
-	       ) AS has_guardian_link,
-	       c.created_at,
-	       c.updated_at
-	FROM children c
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  %s
-	ORDER BY c.updated_at DESC
-	LIMIT $3 OFFSET $4`, statusClause)
-
-	rows, err := r.pool.Query(ctx, q, tenantID, branchID, limit, offset)
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildrenList(ctx, sqlc.ChildrenListParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		Limit:        int32(limit),
+		Offset:       int32(offset),
+		StatusFilter: string(filter),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("query children: %w", err)
 	}
-	defer rows.Close()
-
-	out := make([]domain.Child, 0)
-	for rows.Next() {
-		var child domain.Child
-		if err := rows.Scan(
-			&child.ID,
-			&child.FullName,
-			&child.DateOfBirth,
-			&child.StartDate,
-			&child.EndDate,
-			&child.CoreHourlyRateMinor,
-			&child.Notes,
-			&child.IsActive,
-			&child.LeftAt,
-			&child.LeftReasonCode,
-			&child.LeftReasonNote,
-			&child.HasGuardianLink,
-			&child.CreatedAt,
-			&child.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan child row: %w", err)
-		}
-		out = append(out, child)
+	out := make([]domain.Child, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+			row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+			row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt))
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate child rows: %w", err)
-	}
-
 	return out, nil
 }
 
 func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
-	const q = `
-	SELECT c.id,
-	       c.full_name,
-	       c.date_of_birth,
-	       c.start_date,
-	       c.end_date,
-	       c.core_hourly_rate_minor,
-	       c.notes,
-	       c.is_active,
-	       c.left_at,
-	       c.left_reason_code::text,
-	       c.left_reason_note,
-	       EXISTS (
-	           SELECT 1
-	           FROM guardian_child_links gcl
-	           WHERE gcl.tenant_id = c.tenant_id
-	             AND gcl.branch_id = c.branch_id
-	             AND gcl.child_id = c.id
-	             AND gcl.ended_at IS NULL
-	       ) AS has_guardian_link,
-	       c.created_at,
-	       c.updated_at
-	FROM children c
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  AND c.id = $3`
-
-	var child domain.Child
-	err := r.pool.QueryRow(ctx, q, tenantID, branchID, id).Scan(
-		&child.ID,
-		&child.FullName,
-		&child.DateOfBirth,
-		&child.StartDate,
-		&child.EndDate,
-		&child.CoreHourlyRateMinor,
-		&child.Notes,
-		&child.IsActive,
-		&child.LeftAt,
-		&child.LeftReasonCode,
-		&child.LeftReasonNote,
-		&child.HasGuardianLink,
-		&child.CreatedAt,
-		&child.UpdatedAt,
-	)
+	q := sqlc.New(r.pool)
+	row, err := q.ChildrenGetByID(ctx, sqlc.ChildrenGetByIDParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Child{}, false, nil
 	}
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("query child by id: %w", err)
 	}
-
-	return child, true, nil
+	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
-	const q = `
-	INSERT INTO children (
-	    id, tenant_id, branch_id, full_name, date_of_birth, start_date, end_date,
-	    core_hourly_rate_minor, notes, is_active
-	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), true)`
-
-	_, err := r.pool.Exec(ctx, q,
-		child.ID,
-		tenantID,
-		branchID,
-		child.FullName,
-		child.DateOfBirth,
-		child.StartDate,
-		child.EndDate,
-		child.CoreHourlyRateMinor,
-		notes,
-	)
-	if err != nil {
-		return fmt.Errorf("insert child: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(r.pool)
+	return q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
+		ID:                  uuidToPgtype(child.ID),
+		TenantID:            uuidToPgtype(tenantID),
+		BranchID:            uuidToPgtype(branchID),
+		FullName:            child.FullName,
+		DateOfBirth:         timeToPgtypeDate(child.DateOfBirth),
+		StartDate:           timeToPgtypeDate(child.StartDate),
+		EndDate:             timeToPgtypeDatePtr(child.EndDate),
+		CoreHourlyRateMinor: int32(child.CoreHourlyRateMinor),
+		Column9:             notes,
+	})
 }
 
 func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
-	setParts := make([]string, 0, len(fields))
-	args := make([]any, 0, len(fields)+3)
-	args = append(args, tenantID, branchID, id)
-	argPos := 4
-
-	for _, col := range orderedColumns(fields) {
-		val := fields[col]
-		switch col {
-		case "notes":
-			setParts = append(setParts, fmt.Sprintf("notes = NULLIF($%d, '')", argPos))
-		default:
-			setParts = append(setParts, fmt.Sprintf("%s = $%d", col, argPos))
-		}
-		args = append(args, val)
-		argPos++
+	if len(fields) == 0 {
+		return 0, nil
 	}
 
-	q := fmt.Sprintf(`
-	UPDATE children
-	SET %s, updated_at = now()
-	WHERE tenant_id = $1 AND branch_id = $2 AND id = $3`, strings.Join(setParts, ", "))
+	params := sqlc.ChildrenUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	}
 
-	ct, err := r.pool.Exec(ctx, q, args...)
+	if v, ok := fields["full_name"]; ok {
+		params.SetFullName = int32(1)
+		params.FullName = v.(string)
+	}
+	if v, ok := fields["date_of_birth"]; ok {
+		params.SetDateOfBirth = int32(1)
+		params.DateOfBirth = timeToPgtypeDate(v.(time.Time))
+	}
+	if v, ok := fields["start_date"]; ok {
+		params.SetStartDate = int32(1)
+		params.StartDate = timeToPgtypeDate(v.(time.Time))
+	}
+	if v, ok := fields["end_date"]; ok {
+		params.SetEndDate = int32(1)
+		if t, ok := v.(time.Time); ok {
+			params.EndDate = timeToPgtypeDate(t)
+		}
+	}
+	if v, ok := fields["core_hourly_rate_minor"]; ok {
+		params.SetCoreHourlyRateMinor = int32(1)
+		params.CoreHourlyRateMinor = int32(v.(int))
+	}
+	if v, ok := fields["notes"]; ok {
+		params.SetNotes = int32(1)
+		params.Notes = v.(string)
+	}
+
+	q := sqlc.New(r.pool)
+	ct, err := q.ChildrenUpdate(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("update child: %w", err)
 	}
-
-	return ct.RowsAffected(), nil
+	return ct, nil
 }
 
 func (r *ChildRepository) MarkInactive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
-	const q = `
-	UPDATE children
-	SET is_active = false,
-	    left_at = now(),
-	    left_reason_code = $1,
-	    left_reason_note = NULLIF($2, ''),
-	    updated_at = now()
-	WHERE tenant_id = $3 AND branch_id = $4 AND id = $5`
-
-	_, err := tx.Exec(ctx, q, reasonCode, reasonNote, tenantID, branchID, id)
-	if err != nil {
-		return fmt.Errorf("mark child inactive: %w", err)
-	}
-
-	return nil
+	q := sqlc.New(tx)
+	return q.ChildrenMarkInactive(ctx, sqlc.ChildrenMarkInactiveParams{
+		LeftReasonCode: reasonCode,
+		Column2:        reasonNote,
+		TenantID:       uuidToPgtype(tenantID),
+		BranchID:       uuidToPgtype(branchID),
+		ID:             uuidToPgtype(id),
+	})
 }
 
 func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
-	const q = `
-	SELECT c.id,
-	       c.full_name,
-	       c.date_of_birth,
-	       c.start_date,
-	       c.end_date,
-	       c.core_hourly_rate_minor,
-	       c.notes,
-	       c.is_active,
-	       c.left_at,
-	       c.left_reason_code::text,
-	       c.left_reason_note,
-	       EXISTS (
-	           SELECT 1
-	           FROM guardian_child_links gcl
-	           WHERE gcl.tenant_id = c.tenant_id
-	             AND gcl.branch_id = c.branch_id
-	             AND gcl.child_id = c.id
-	             AND gcl.ended_at IS NULL
-	       ) AS has_guardian_link,
-	       c.created_at,
-	       c.updated_at
-	FROM children c
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  AND c.id = $3
-	FOR UPDATE`
-
-	var child domain.Child
-	err := tx.QueryRow(ctx, q, tenantID, branchID, id).Scan(
-		&child.ID,
-		&child.FullName,
-		&child.DateOfBirth,
-		&child.StartDate,
-		&child.EndDate,
-		&child.CoreHourlyRateMinor,
-		&child.Notes,
-		&child.IsActive,
-		&child.LeftAt,
-		&child.LeftReasonCode,
-		&child.LeftReasonNote,
-		&child.HasGuardianLink,
-		&child.CreatedAt,
-		&child.UpdatedAt,
-	)
+	q := sqlc.New(tx)
+	row, err := q.ChildrenGetByIDForUpdate(ctx, sqlc.ChildrenGetByIDForUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Child{}, false, nil
 	}
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("query child for update: %w", err)
 	}
-
-	return child, true, nil
+	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
-	const q = `
-	SELECT EXISTS (
-	  SELECT 1 FROM children WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
-	)`
-	var exists bool
-	err := tx.QueryRow(ctx, q, tenantID, branchID, id).Scan(&exists)
+	q := sqlc.New(tx)
+	exists, err := q.ChildrenExistsInScope(ctx, sqlc.ChildrenExistsInScopeParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
 	if err != nil {
 		return false, fmt.Errorf("check child exists in scope: %w", err)
 	}
@@ -297,142 +166,163 @@ func (r *ChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID
 }
 
 func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID, localDate time.Time) ([]domain.AttendanceChild, error) {
-	const q = `
-	SELECT c.id,
-	       c.full_name,
-	       (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
-	        AND c.date_of_birth IS NOT NULL
-	        AND c.start_date IS NOT NULL
-	        AND c.core_hourly_rate_minor >= 0
-	        AND EXISTS (
-	            SELECT 1
-	            FROM guardian_child_links gcl
-	            WHERE gcl.tenant_id = c.tenant_id
-	              AND gcl.branch_id = c.branch_id
-	              AND gcl.child_id = c.id
-	              AND gcl.ended_at IS NULL
-	        )) AS enrollment_complete,
-	       CASE WHEN s.id IS NULL THEN 'not_checked_in' ELSE 'checked_in' END AS attendance_state,
-	       s.id AS open_session_id,
-	       s.check_in_at AS checked_in_at,
-	       s.id IS NOT NULL AS has_incomplete_session
-	FROM children c
-	LEFT JOIN attendance_sessions s
-	  ON s.tenant_id = c.tenant_id
-	 AND s.branch_id = c.branch_id
-	 AND s.child_id = c.id
-	 AND s.status = 'open'
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  AND (
-	      (c.is_active = true AND c.start_date <= $3 AND (c.end_date IS NULL OR c.end_date >= $3))
-	      OR s.id IS NOT NULL
-	  )
-	ORDER BY c.full_name ASC`
-
-	rows, err := r.pool.Query(ctx, q, tenantID, branchID, localDate)
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildrenListAttendance(ctx, sqlc.ChildrenListAttendanceParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		StartDate: timeToPgtypeDate(localDate),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("query attendance children: %w", err)
 	}
-	defer rows.Close()
-
-	out := make([]domain.AttendanceChild, 0)
-	for rows.Next() {
-		var child domain.AttendanceChild
-		if err := rows.Scan(&child.ID, &child.FullName, &child.EnrollmentComplete, &child.AttendanceState, &child.OpenSessionID, &child.CheckedInAt, &child.HasIncompleteSession); err != nil {
-			return nil, fmt.Errorf("scan attendance child row: %w", err)
+	out := make([]domain.AttendanceChild, 0, len(rows))
+	for _, row := range rows {
+		var hasIncomplete bool
+		if v, ok := row.HasIncompleteSession.(bool); ok {
+			hasIncomplete = v
 		}
-		out = append(out, child)
+		out = append(out, domain.AttendanceChild{
+			ID:                   pgtypeUUIDToUUID(row.ID),
+			FullName:             row.FullName,
+			EnrollmentComplete:   row.EnrollmentComplete.Bool,
+			AttendanceState:      row.AttendanceState,
+			OpenSessionID:        pgtypeUUIDToUUIDPtr(row.OpenSessionID),
+			CheckedInAt:          pgtypeTimestamptzToTimePtr(row.CheckedInAt),
+			HasIncompleteSession: hasIncomplete,
+		})
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate attendance rows: %w", err)
-	}
-
 	return out, nil
 }
 
 func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
-	const q = `
-	SELECT c.id,
-	       c.full_name,
-	       c.date_of_birth,
-	       c.start_date,
-	       c.end_date,
-	       c.core_hourly_rate_minor,
-	       c.notes,
-	       c.is_active,
-	       c.left_at,
-	       c.left_reason_code::text,
-	       c.left_reason_note,
-	       EXISTS (
-	           SELECT 1
-	           FROM guardian_child_links gcl
-	           WHERE gcl.tenant_id = c.tenant_id
-	             AND gcl.branch_id = c.branch_id
-	             AND gcl.child_id = c.id
-	             AND gcl.ended_at IS NULL
-	       ) AS has_guardian_link,
-	       c.created_at,
-	       c.updated_at
-	FROM children c
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  AND c.id = $3`
-
-	var child domain.Child
-	err := tx.QueryRow(ctx, q, tenantID, branchID, childID).Scan(
-		&child.ID,
-		&child.FullName,
-		&child.DateOfBirth,
-		&child.StartDate,
-		&child.EndDate,
-		&child.CoreHourlyRateMinor,
-		&child.Notes,
-		&child.IsActive,
-		&child.LeftAt,
-		&child.LeftReasonCode,
-		&child.LeftReasonNote,
-		&child.HasGuardianLink,
-		&child.CreatedAt,
-		&child.UpdatedAt,
-	)
+	q := sqlc.New(tx)
+	row, err := q.ChildrenGetByID(ctx, sqlc.ChildrenGetByIDParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(childID),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Child{}, false, nil
 	}
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("get child for attendance check: %w", err)
 	}
-	return child, true, nil
+	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
-	const q = `
-	SELECT c.id, c.start_date, c.end_date
-	FROM children c
-	WHERE c.tenant_id = $1
-	  AND c.branch_id = $2
-	  AND c.id = $3`
-
-	var info domain.ChildCorrectionInfo
-	err := tx.QueryRow(ctx, q, tenantID, branchID, childID).Scan(&info.ID, &info.StartDate, &info.EndDate)
+	q := sqlc.New(tx)
+	row, err := q.ChildrenGetForCorrection(ctx, sqlc.ChildrenGetForCorrectionParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(childID),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.ChildCorrectionInfo{}, false, nil
 	}
 	if err != nil {
 		return domain.ChildCorrectionInfo{}, false, fmt.Errorf("get child for correction: %w", err)
 	}
-	return info, true, nil
+	return domain.ChildCorrectionInfo{
+		ID:        pgtypeUUIDToUUID(row.ID),
+		StartDate: pgtypeDateToTime(row.StartDate),
+		EndDate:   pgtypeDateToTimePtr(row.EndDate),
+	}, true, nil
 }
 
-// orderedColumns returns column names in a deterministic order for UPDATE statements.
-func orderedColumns(fields map[string]any) []string {
-	order := []string{"full_name", "date_of_birth", "start_date", "end_date", "core_hourly_rate_minor", "notes"}
-	result := make([]string, 0, len(fields))
-	for _, col := range order {
-		if _, ok := fields[col]; ok {
-			result = append(result, col)
-		}
+func mapChildRow(
+	id pgtype.UUID, fullName string, dateOfBirth, startDate, endDate pgtype.Date,
+	coreHourlyRateMinor int32, notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
+	leftReasonCode interface{}, leftReasonNote pgtype.Text, hasGuardianLink bool,
+	createdAt, updatedAt pgtype.Timestamptz,
+) domain.Child {
+	return domain.Child{
+		ID:                  pgtypeUUIDToUUID(id),
+		FullName:            fullName,
+		DateOfBirth:         pgtypeDateToTime(dateOfBirth),
+		StartDate:           pgtypeDateToTime(startDate),
+		EndDate:             pgtypeDateToTimePtr(endDate),
+		CoreHourlyRateMinor: int(coreHourlyRateMinor),
+		Notes:               pgtypeTextToStringPtr(notes),
+		IsActive:            isActive,
+		LeftAt:              pgtypeTimestamptzToTimePtr(leftAt),
+		LeftReasonCode:      ifaceToStringPtr(leftReasonCode),
+		LeftReasonNote:      pgtypeTextToStringPtr(leftReasonNote),
+		HasGuardianLink:     hasGuardianLink,
+		CreatedAt:           pgtypeTimestamptzToTime(createdAt),
+		UpdatedAt:           pgtypeTimestamptzToTime(updatedAt),
 	}
-	return result
+}
+
+func ifaceToStringPtr(v interface{}) *string {
+	if v == nil {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok || s == "" {
+		return nil
+	}
+	return &s
+}
+
+func uuidToPgtype(u uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{Bytes: [16]byte(u), Valid: true}
+}
+
+func pgtypeUUIDToUUID(u pgtype.UUID) uuid.UUID {
+	return uuid.UUID(u.Bytes)
+}
+
+func pgtypeUUIDToUUIDPtr(u pgtype.UUID) *uuid.UUID {
+	if !u.Valid {
+		return nil
+	}
+	id := uuid.UUID(u.Bytes)
+	return &id
+}
+
+func timeToPgtypeTimestamptz(t time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: t, Valid: true}
+}
+
+func pgtypeTimestamptzToTime(t pgtype.Timestamptz) time.Time {
+	return t.Time
+}
+
+func pgtypeTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Time
+}
+
+func timeToPgtypeDate(t time.Time) pgtype.Date {
+	return pgtype.Date{Time: t, Valid: true}
+}
+
+func timeToPgtypeDatePtr(t *time.Time) pgtype.Date {
+	if t == nil {
+		return pgtype.Date{}
+	}
+	return pgtype.Date{Time: *t, Valid: true}
+}
+
+func pgtypeDateToTime(d pgtype.Date) time.Time {
+	return d.Time
+}
+
+func pgtypeDateToTimePtr(d pgtype.Date) *time.Time {
+	if !d.Valid {
+		return nil
+	}
+	return &d.Time
+}
+
+func pgtypeTextToStringPtr(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
 }

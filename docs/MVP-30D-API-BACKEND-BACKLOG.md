@@ -168,7 +168,8 @@ These items are intentionally outside the month-1 pilot critical path. Do them a
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| API-TD-01 | Migrate existing hand-written `pgx` repository queries to `sqlc`: authentication/session, children, guardians, guardian-child links, parent mappings, and attendance. Preserve current repository interfaces and behavior while moving SQL into `api/db/query/*.sql` and generated code under `api/internal/platform/db/sqlc`. | Core MVP API stable; route/test coverage green | Existing module tests pass unchanged or with equivalent coverage; `make sqlc-generate` and `go test ./...` pass; no public API behavior or authorization semantics change. |
+| ~~API-TD-01~~ | ~~Migrate existing hand-written `pgx` repository queries to `sqlc`: authentication/session, children, guardians, guardian-child links, parent mappings, and attendance.~~ **Done 2025-05-25.** | Core MVP API stable; route/test coverage green | Existing module tests pass unchanged or with equivalent coverage; `make sqlc-generate` and `go test ./...` pass; no public API behavior or authorization semantics change. |
+| API-TD-02 | Add env-gated PostgreSQL repository tests for the sqlc-backed authentication/session, children, guardians, guardian-child links, parent membership guardian mappings, and attendance repositories. Keep them behind a disposable database variable such as `TEST_DATABASE_URL` so normal `go test ./...` remains lightweight. | API-TD-01 | Repository tests cover no-row behavior, tenant/branch scoping, lifecycle end/deactivate/reactivate writes, refresh-token rotation, attendance session/event writes, overlap detection, and nullable field mapping against a real migrated PostgreSQL database. |
 
 ## Expected API Routes
 
