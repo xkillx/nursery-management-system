@@ -115,6 +115,31 @@ type GuardianChildLink struct {
 	EndedReasonNote pgtype.Text
 }
 
+type ManagerInvite struct {
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	BranchID              pgtype.UUID
+	Email                 string
+	EmailNormalized       string
+	Role                  string
+	TokenHash             string
+	ExpiresAt             pgtype.Timestamptz
+	AcceptedAt            pgtype.Timestamptz
+	AcceptedUserID        pgtype.UUID
+	AcceptedMembershipID  pgtype.UUID
+	RevokedAt             pgtype.Timestamptz
+	RevokedByUserID       pgtype.UUID
+	RevokedByMembershipID pgtype.UUID
+	CreatedByUserID       pgtype.UUID
+	CreatedByMembershipID pgtype.UUID
+	ResentAt              pgtype.Timestamptz
+	ResentByUserID        pgtype.UUID
+	ResentByMembershipID  pgtype.UUID
+	SendCount             int32
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
 type Membership struct {
 	ID        pgtype.UUID
 	TenantID  pgtype.UUID

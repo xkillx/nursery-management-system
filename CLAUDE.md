@@ -71,6 +71,7 @@ api/internal/
     guardianlinks/      # create (idempotent), end guardian-child links
     parentmappings/     # create (idempotent), end parent-membership-guardian mappings
     passwordreset/      # request token, reset password
+    invites/            # manager invite create/list/resend/revoke, public accept
     attendance/         # (in progress)
 
     <module>/
@@ -147,6 +148,11 @@ auditWriter.Write(ctx, pool, actor, audit.WriteParams{...})
 | POST | /auth/switch-membership | public (cookie) | authentication |
 | POST | /auth/password-reset-requests | public | passwordreset |
 | POST | /auth/password-resets | public | passwordreset |
+| POST | /invites | manager | invites |
+| GET | /invites | manager | invites |
+| POST | /invites/:id/resend | manager | invites |
+| POST | /invites/:id/revoke | manager | invites |
+| POST | /invites/accept | public | invites |
 | GET | /children/attendance | manager, practitioner | children |
 | GET/POST/PATCH | /children[/:id] | manager | children |
 | POST | /children/:id/actions/mark-inactive | manager | children |

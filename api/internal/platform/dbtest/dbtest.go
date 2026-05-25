@@ -229,6 +229,7 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 	tables := []string{
 		"attendance_events",
 		"attendance_sessions",
+		"manager_invites",
 		"parent_membership_guardians",
 		"guardian_child_links",
 		"guardians",
@@ -371,6 +372,41 @@ func InsertParentMapping(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchI
 		id, tenantID, branchID, membershipID, guardianID)
 	if err != nil {
 		t.Fatalf("insert parent mapping: %v", err)
+	}
+}
+
+// InsertInvite inserts a manager invite.
+func InsertInvite(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, email, emailNorm, role, tokenHash string, expiresAt time.Time, createdByUserID, createdByMembershipID uuid.UUID) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		"INSERT INTO manager_invites (id, tenant_id, branch_id, email, email_normalized, role, token_hash, expires_at, created_by_user_id, created_by_membership_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		id, tenantID, branchID, email, emailNorm, role, tokenHash, expiresAt, createdByUserID, createdByMembershipID)
+	if err != nil {
+		t.Fatalf("insert invite: %v", err)
+	}
+}
+
+// AcceptInvite marks an invite as accepted. Creates the user and membership first.
+func AcceptInvite(t testing.TB, pool *pgxpool.Pool, inviteID, userID, membershipID, tenantID, branchID uuid.UUID, email string) {
+	t.Helper()
+	InsertUser(t, pool, userID, email, "hash", true)
+	InsertMembership(t, pool, membershipID, tenantID, branchID, userID, "practitioner", true)
+	_, err := pool.Exec(context.Background(),
+		"UPDATE manager_invites SET accepted_at = now(), accepted_user_id = $2, accepted_membership_id = $3 WHERE id = $1",
+		inviteID, userID, membershipID)
+	if err != nil {
+		t.Fatalf("accept invite: %v", err)
+	}
+}
+
+// RevokeInvite marks an invite as revoked.
+func RevokeInviteDB(t testing.TB, pool *pgxpool.Pool, inviteID, revokedByUserID, revokedByMembershipID uuid.UUID) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		"UPDATE manager_invites SET revoked_at = now(), revoked_by_user_id = $2, revoked_by_membership_id = $3 WHERE id = $1",
+		inviteID, revokedByUserID, revokedByMembershipID)
+	if err != nil {
+		t.Fatalf("revoke invite: %v", err)
 	}
 }
 

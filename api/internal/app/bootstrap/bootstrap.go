@@ -34,6 +34,11 @@ import (
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 
+	inviteapp "nursery-management-system/api/internal/modules/invites/application"
+	invitepostgres "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
+	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
+	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
@@ -158,6 +163,21 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 
 	// Register attendance routes (manager + practitioner)
 	attendanceHandler.RegisterRoutes(protected)
+
+	// Invites module
+	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
+	inviteRepo := invitepostgres.NewRepository(pool, auditWriter)
+	inviteTokenGen := inviteapp.NewTokenGeneratorAdapter(inviteTokenMgr)
+	inviteEmailAdapter := inviteapp.NewInviteEmailAdapter(smtpSender)
+	createInviteUC := inviteapp.NewCreateInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)
+	listInvitesUC := inviteapp.NewListInvitesUseCase(inviteRepo)
+	resendInviteUC := inviteapp.NewResendInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)
+	revokeInviteUC := inviteapp.NewRevokeInviteUseCase(inviteRepo, logger)
+	acceptInviteUC := inviteapp.NewAcceptInviteUseCase(inviteRepo, logger)
+	inviteIPLimiter := ratelimit.NewFixedWindowLimiter(10, 15*time.Minute)
+	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter)
+	inviteHandler.RegisterPublicRoutes(api)
+	inviteHandler.RegisterManagerRoutes(manager)
 
 	return router
 }

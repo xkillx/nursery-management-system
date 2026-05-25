@@ -45,12 +45,15 @@ func TestLoadDefaultsNonSecretAPIConfig(t *testing.T) {
 	if cfg.SMTPPort != 1025 {
 		t.Fatalf("expected default SMTP_PORT 1025, got %d", cfg.SMTPPort)
 	}
+	if cfg.InviteTokenTTLHours != 168 {
+		t.Fatalf("expected default INVITE_TOKEN_TTL_HOURS 168, got %d", cfg.InviteTokenTTLHours)
+	}
 }
 
 func TestLoadFailsFastForMissingCriticalEnvVars(t *testing.T) {
 	for _, key := range []string{
 		"DATABASE_URL", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET",
-		"WEB_BASE_URL", "PASSWORD_RESET_TOKEN_SECRET",
+		"WEB_BASE_URL", "PASSWORD_RESET_TOKEN_SECRET", "INVITE_TOKEN_SECRET",
 	} {
 		t.Run(key, func(t *testing.T) {
 			setBaseEnv(t)
@@ -113,6 +116,8 @@ func TestLoadRejectsInvalidConfigValues(t *testing.T) {
 		{name: "unsupported email provider", key: "EMAIL_PROVIDER", value: "ses", wantErr: "EMAIL_PROVIDER"},
 		{name: "invalid smtp port", key: "SMTP_PORT", value: "99999", wantErr: "SMTP_PORT"},
 		{name: "non positive reset ttl", key: "PASSWORD_RESET_TOKEN_TTL_MINUTES", value: "0", wantErr: "PASSWORD_RESET_TOKEN_TTL_MINUTES"},
+		{name: "non positive invite ttl", key: "INVITE_TOKEN_TTL_HOURS", value: "0", wantErr: "INVITE_TOKEN_TTL_HOURS"},
+		{name: "invalid invite ttl", key: "INVITE_TOKEN_TTL_HOURS", value: "many", wantErr: "INVITE_TOKEN_TTL_HOURS"},
 	}
 
 	for _, tc := range tests {
@@ -149,4 +154,6 @@ func setBaseEnv(t *testing.T) {
 	t.Setenv("SMTP_FROM", "no-reply@example.local")
 	t.Setenv("PASSWORD_RESET_TOKEN_SECRET", "reset-secret")
 	t.Setenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "60")
+	t.Setenv("INVITE_TOKEN_SECRET", "invite-secret")
+	t.Setenv("INVITE_TOKEN_TTL_HOURS", "168")
 }

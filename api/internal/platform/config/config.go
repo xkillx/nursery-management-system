@@ -29,6 +29,8 @@ type Config struct {
 	SMTPFrom                    string
 	PasswordResetTokenSecret    string
 	PasswordResetTokenTTLMinutes int
+	InviteTokenSecret            string
+	InviteTokenTTLHours          int
 }
 
 func Load() (Config, error) {
@@ -45,6 +47,10 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	smtpPort, err := getEnvInt("SMTP_PORT", 1025)
+	if err != nil {
+		return Config{}, err
+	}
+	inviteTTLMHours, err := getEnvInt("INVITE_TOKEN_TTL_HOURS", 168)
 	if err != nil {
 		return Config{}, err
 	}
@@ -69,6 +75,8 @@ func Load() (Config, error) {
 		SMTPFrom:                    strings.TrimSpace(os.Getenv("SMTP_FROM")),
 		PasswordResetTokenSecret:    strings.TrimSpace(os.Getenv("PASSWORD_RESET_TOKEN_SECRET")),
 		PasswordResetTokenTTLMinutes: resetTTLMin,
+		InviteTokenSecret:           strings.TrimSpace(os.Getenv("INVITE_TOKEN_SECRET")),
+		InviteTokenTTLHours:         inviteTTLMHours,
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -130,6 +138,13 @@ func Load() (Config, error) {
 	}
 	if cfg.PasswordResetTokenTTLMinutes <= 0 {
 		return Config{}, errors.New("PASSWORD_RESET_TOKEN_TTL_MINUTES must be > 0")
+	}
+
+	if cfg.InviteTokenSecret == "" {
+		return Config{}, errors.New("INVITE_TOKEN_SECRET is required")
+	}
+	if cfg.InviteTokenTTLHours <= 0 {
+		return Config{}, errors.New("INVITE_TOKEN_TTL_HOURS must be > 0")
 	}
 
 	return cfg, nil
