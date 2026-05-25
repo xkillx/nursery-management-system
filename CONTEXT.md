@@ -374,7 +374,7 @@ Child, guardian, guardian-child-link, and parent-mapping lifecycle endpoints use
 
 ## Authorization Error Status Policy (MVP)
 
-Authorization failures return `403 Forbidden` with stable authorization-specific error codes (for example role, scope, and relationship failures), while `404 Not Found` is reserved for genuinely missing resources.
+Authorization failures return `403 Forbidden` with stable authorization-specific error codes for explicit role, scope-selection, and relationship failures, while opaque resource identifiers outside the active tenant-branch scope are treated as not found so resource existence is not disclosed across scopes.
 
 ## Authorization Error Disclosure Policy (MVP)
 
@@ -832,13 +832,13 @@ Operations cannot cross into another branch or tenant within the same session; u
 
 Historical attendance events are not edited directly by practitioners; corrections are captured as manager-only correction events.
 
-## Guardian Unlink Visibility Rule (MVP)
+## Guardian Link End Visibility Rule (MVP)
 
-When a guardian-child link is removed, that parent immediately loses access to that child's invoices, including historical invoices.
+When a guardian-child link is ended, that parent immediately loses access to that child's invoices, including historical invoices.
 
 ## Guardian Relink Visibility Rule (MVP)
 
-When a guardian-child link is reactivated, parent visibility for that child's invoices is restored based on the current active-link relationship check.
+When a guardian-child relationship is re-linked with an active guardian-child link, parent visibility for that child's invoices is restored based on the current active-link relationship check.
 
 ## Draft Invoice Idempotency (MVP)
 
