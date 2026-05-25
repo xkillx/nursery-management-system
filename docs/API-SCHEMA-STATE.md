@@ -1,11 +1,11 @@
 # API Schema State
 
-- **Verification date**: 2026-05-24
+- **Verification date**: 2026-05-25
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
-- **Final migration version**: 7 (clean)
+- **Final migration version**: 8 (clean)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (12)
+## Application Tables (13)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -23,6 +23,7 @@
 | `users` | `id UUID PK`, `email`, `email_normalized UNIQUE`, `password_hash`, `is_active` | Global (not tenant-scoped) |
 | `memberships` | `id UUID PK`, `tenant_id FK`, `branch_id FK`, `user_id FK`, `role TEXT`, `is_active`, `ended_at` | Unique `(tenant_id, branch_id, user_id)`. Role enum: `manager`, `practitioner`, `parent`. Active/inactive consistency check. Composite unique `(tenant_id, branch_id, id)`. |
 | `refresh_tokens` | `id UUID PK`, `user_id FK`, `membership_id FK NOT NULL`, `token_hash UNIQUE`, `expires_at`, `revoked_at` | Bound to membership. |
+| `password_reset_tokens` | `id UUID PK`, `user_id FK`, `token_hash UNIQUE`, `expires_at`, `used_at`, `superseded_at` | CHECK: `used_at IS NULL OR superseded_at IS NULL`. Partial index on active tokens per user. |
 
 ### Children & Guardians
 
@@ -79,3 +80,6 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `idx_attendance_sessions_one_open_child` | `attendance_sessions` | UNIQUE btree (partial) | One open session per child per branch scope |
 | `attendance_events_scope_id_unique` | `attendance_events` | UNIQUE btree | Scope composite key |
 | `attendance_sessions_scope_id_unique` | `attendance_sessions` | UNIQUE btree | Scope composite key |
+| `idx_password_reset_tokens_user_id` | `password_reset_tokens` | btree | Lookup by user |
+| `idx_password_reset_tokens_expires_at` | `password_reset_tokens` | btree | Expiry scan |
+| `idx_password_reset_tokens_active_user` | `password_reset_tokens` | btree (partial) | Active tokens per user by creation desc |

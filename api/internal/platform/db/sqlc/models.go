@@ -140,6 +140,17 @@ type ParentMembershipGuardian struct {
 	EndedReasonNote pgtype.Text
 }
 
+type PasswordResetToken struct {
+	ID           pgtype.UUID
+	UserID       pgtype.UUID
+	TokenHash    string
+	ExpiresAt    pgtype.Timestamptz
+	UsedAt       pgtype.Timestamptz
+	SupersededAt pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
 type RefreshToken struct {
 	ID           pgtype.UUID
 	UserID       pgtype.UUID

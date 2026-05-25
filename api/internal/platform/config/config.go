@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -18,6 +19,16 @@ type Config struct {
 	JWTRefreshSecret   string
 	JWTAccessTTLMin    int
 	JWTRefreshTTLHours int
+
+	WebBaseURL                  string
+	EmailProvider               string
+	SMTPHost                    string
+	SMTPPort                    int
+	SMTPUser                    string
+	SMTPPass                    string
+	SMTPFrom                    string
+	PasswordResetTokenSecret    string
+	PasswordResetTokenTTLMinutes int
 }
 
 func Load() (Config, error) {
@@ -26,6 +37,14 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	refreshTTLHours, err := getEnvInt("JWT_REFRESH_TTL_HOURS", 720)
+	if err != nil {
+		return Config{}, err
+	}
+	resetTTLMin, err := getEnvInt("PASSWORD_RESET_TOKEN_TTL_MINUTES", 60)
+	if err != nil {
+		return Config{}, err
+	}
+	smtpPort, err := getEnvInt("SMTP_PORT", 1025)
 	if err != nil {
 		return Config{}, err
 	}
@@ -40,6 +59,16 @@ func Load() (Config, error) {
 		JWTRefreshSecret:   strings.TrimSpace(os.Getenv("JWT_REFRESH_SECRET")),
 		JWTAccessTTLMin:    accessTTLMin,
 		JWTRefreshTTLHours: refreshTTLHours,
+
+		WebBaseURL:                  strings.TrimSpace(os.Getenv("WEB_BASE_URL")),
+		EmailProvider:               getEnv("EMAIL_PROVIDER", "smtp"),
+		SMTPHost:                    strings.TrimSpace(os.Getenv("SMTP_HOST")),
+		SMTPPort:                    smtpPort,
+		SMTPUser:                    strings.TrimSpace(os.Getenv("SMTP_USER")),
+		SMTPPass:                    strings.TrimSpace(os.Getenv("SMTP_PASS")),
+		SMTPFrom:                    strings.TrimSpace(os.Getenv("SMTP_FROM")),
+		PasswordResetTokenSecret:    strings.TrimSpace(os.Getenv("PASSWORD_RESET_TOKEN_SECRET")),
+		PasswordResetTokenTTLMinutes: resetTTLMin,
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -72,6 +101,35 @@ func Load() (Config, error) {
 
 	if cfg.JWTRefreshTTLHours <= 0 {
 		return Config{}, errors.New("JWT_REFRESH_TTL_HOURS must be > 0")
+	}
+
+	if cfg.WebBaseURL == "" {
+		return Config{}, errors.New("WEB_BASE_URL is required")
+	}
+	webURL, err := url.Parse(cfg.WebBaseURL)
+	if err != nil || !(webURL.Scheme == "http" || webURL.Scheme == "https") || webURL.Host == "" {
+		return Config{}, fmt.Errorf("WEB_BASE_URL must be a valid absolute http or https URL: %q", cfg.WebBaseURL)
+	}
+
+	if cfg.EmailProvider != "smtp" {
+		return Config{}, fmt.Errorf("EMAIL_PROVIDER must be smtp: %q", cfg.EmailProvider)
+	}
+
+	if cfg.SMTPHost == "" {
+		return Config{}, errors.New("SMTP_HOST is required when EMAIL_PROVIDER is smtp")
+	}
+	if cfg.SMTPPort < 1 || cfg.SMTPPort > 65535 {
+		return Config{}, errors.New("SMTP_PORT must be between 1 and 65535")
+	}
+	if cfg.SMTPFrom == "" {
+		return Config{}, errors.New("SMTP_FROM is required when EMAIL_PROVIDER is smtp")
+	}
+
+	if cfg.PasswordResetTokenSecret == "" {
+		return Config{}, errors.New("PASSWORD_RESET_TOKEN_SECRET is required")
+	}
+	if cfg.PasswordResetTokenTTLMinutes <= 0 {
+		return Config{}, errors.New("PASSWORD_RESET_TOKEN_TTL_MINUTES must be > 0")
 	}
 
 	return cfg, nil

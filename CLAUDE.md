@@ -288,6 +288,8 @@ Middleware defines `TokenParser` interface returning `tenant.AuthorizationContex
 | POST | /auth/refresh | public (cookie) | authentication |
 | POST | /auth/logout | public (cookie) | authentication |
 | POST | /auth/switch-membership | public (cookie) | authentication |
+| POST | /auth/password-reset-requests | public | passwordreset |
+| POST | /auth/password-resets | public | passwordreset |
 | GET | /children/attendance | manager, practitioner | children |
 | GET | /children | manager | children |
 | GET | /children/:id | manager | children |

@@ -36,8 +36,15 @@ import (
 
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
+	"nursery-management-system/api/internal/platform/email"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
+
+	resetapp "nursery-management-system/api/internal/modules/passwordreset/application"
+	resetpostgres "nursery-management-system/api/internal/modules/passwordreset/infrastructure/postgres"
+	resettokens "nursery-management-system/api/internal/modules/passwordreset/infrastructure/tokens"
+	resethandler "nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 )
 
 func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.Engine {
@@ -61,6 +68,19 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	switchUC := authapp.NewSwitchMembershipUseCase(authRepo, authRepo, tokenManager)
 	authHandler := authhandler.NewHandler(loginUC, refreshUC, logoutUC, switchUC, cfg)
 	authHandler.RegisterRoutes(api)
+
+	// Password reset module
+	resetTokenMgr := resettokens.NewManager(cfg.PasswordResetTokenSecret, cfg.PasswordResetTokenTTLMinutes)
+	resetRepo := resetpostgres.NewRepository(pool)
+	resetTokenGen := resetapp.NewTokenGeneratorAdapter(resetTokenMgr)
+	smtpSender := email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
+	resetEmailAdapter := resetapp.NewEmailAdapter(smtpSender)
+	requestResetUC := resetapp.NewRequestResetUseCase(resetRepo, resetEmailAdapter, resetTokenGen, cfg.WebBaseURL, logger)
+	setPasswordUC := resetapp.NewSetNewPasswordUseCase(resetRepo, logger)
+	resetEmailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
+	resetIPLimiter := ratelimit.NewFixedWindowLimiter(20, 15*time.Minute)
+	resetHandler := resethandler.NewHandler(requestResetUC, setPasswordUC, resetEmailLimiter, resetIPLimiter)
+	resetHandler.RegisterRoutes(api)
 
 	// Middleware
 	tokenParser := &tokenParserAdapter{tm: tokenManager}
