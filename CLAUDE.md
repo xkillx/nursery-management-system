@@ -1,38 +1,57 @@
-# API Coding Rules
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Common Commands
+
+```bash
+# API
+cd api && go run ./cmd/server          # start API (needs .env loaded)
+make run-api                           # same, auto-loads api/.env
+cd api && go test ./...                # all tests
+cd api && go test ./internal/modules/authentication/...  # single module tests
+cd api && go test ./internal/modules/authentication/application/ -run TestLogin -v  # single test
+
+# Migrations
+make migrate-up                        # apply all pending
+make migrate-down                      # rollback one
+make migrate-down-all                  # rollback all
+make migrate-reset                     # down-all then up
+make migrate-create name=add_xxx       # create new migration pair
+make migrate-verify                    # idempotency check (needs VERIFY_DATABASE_URL)
+
+# Code generation
+make sqlc-generate                     # regenerate sqlc from db/query/*.sql
+
+# Frontend
+cd web && npm install && npm start     # dev server on :4200
+cd web && npm run build                # production build
+cd web && npm test                     # karma tests
+
+# Seed
+cd api && set -a && source .env && set +a && SEED_EMAIL=x@y.local SEED_PASSWORD='Pass123' go run ./cmd/seed
+```
+
+Environment: copy `api/.env.example` to `api/.env`. Set `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PASSWORD_RESET_TOKEN_SECRET`. PostgreSQL 14+ required.
+
+## Project Overview
+
+Multi-tenant nursery management MVP (UK). Go API + Angular frontend + PostgreSQL.
+
+- `api/` — Go backend (Gin, pgx, JWT auth, scoped memberships)
+- `web/` — Angular 21 + Tailwind 4 frontend (TailAdmin template)
+- `docs/` — PRD, ADRs, backlog specs
+- `CONTEXT.md` — domain glossary and MVP decision baseline
 
 ## Architecture
 
-Use:
-
-- Clean Architecture
-- Hexagonal Architecture
-- DDD
-
-Dependency flow:
+Clean Architecture / Hexagonal / DDD. Dependencies point inward only.
 
 ```text
-HTTP/Handler
-    ↓
-Application (Use Cases)
-    ↓
-Domain
-    ↓
-Infrastructure implements interfaces
+HTTP Handler → Application (Use Cases) → Domain → Infrastructure (implements interfaces)
 ```
 
-Rules:
-
-- Dependencies only point inward
-- `domain` must have zero framework imports
-- No globals
-- No `init()`
-- No service locator
-
----
-
-## Forbidden
-
-Never do:
+### Forbidden imports
 
 ```text
 domain → postgres/gin/http/sql
@@ -40,245 +59,83 @@ application → sql/http/framework types
 handler → direct database access
 ```
 
----
-
-## Project Structure
+### API structure
 
 ```text
 api/internal/
-
-app/bootstrap/
-    bootstrap.go       # dependency wiring only
-    token_parser.go    # adapter: TokenManager → TokenParser interface
-    adapters.go        # cross-module checker adapters
-
-modules/
-    authentication/    # login, refresh, logout, membership switch
-    children/          # CRUD, mark-inactive, attendance list
-    guardians/         # CRUD, deactivate/reactivate (cascades links+mappings)
-    guardianlinks/     # create (idempotent), end guardian-child links
-    parentmappings/    # create (idempotent), end parent-membership-guardian mappings
+  app/bootstrap/        # wiring only: bootstrap.go, adapters.go, token_parser.go
+  modules/
+    authentication/     # login, refresh, logout, membership switch
+    children/           # CRUD, mark-inactive, attendance list
+    guardians/          # CRUD, deactivate/reactivate (cascades links+mappings)
+    guardianlinks/      # create (idempotent), end guardian-child links
+    parentmappings/     # create (idempotent), end parent-membership-guardian mappings
+    passwordreset/      # request token, reset password
+    attendance/         # (in progress)
 
     <module>/
-        domain/
-            entities.go
-            errors.go
-            repository.go
+      domain/           # entities, errors, repository interface (zero framework imports)
+      application/      # one use case per file, pure logic, signature: (ctx, actor, ...) → (Result, error)
+      infrastructure/
+        postgres/       # repository impl, SQL lives here only
+        tokens/         # authentication module only
+      interfaces/http/  # thin handler + DTO
 
-        application/
-            <usecase>.go
-
-        infrastructure/
-            postgres/
-                repository.go
-            tokens/               # authentication only
-                tokens.go
-
-        interfaces/http/
-            handler.go
-            dto.go
-
-platform/
-    audit/               # shared audit writer (pool or tx)
-    config/              # environment config
-    db/                  # postgres pool setup
-    errors/              # domain error types
-    http/
-        authz_middleware  # JWT authn + role authz, TokenParser interface
-        errors.go         # ErrorResponse struct
-        error_mapper.go   # MapDomainError
-        middleware.go      # request ID, access log, recovery
-    lifecycle/           # shared reason codes and validation
-    tenant/              # ActorContext, AuthorizationContext
-    transaction/         # ExecTx manager
-    uid/                 # NewUUID (v7), NewCSRFToken
+  platform/
+    audit/              # shared audit writer (pool or tx)
+    config/             # env config
+    db/                 # postgres pool + sqlc generated code
+    email/              # smtp + fake sender
+    errors/             # domain error types
+    http/               # authz middleware, error mapper, request middleware
+    lifecycle/          # shared reason codes and validation
+    ratelimit/          # rate limiter
+    tenant/             # ActorContext, AuthorizationContext
+    transaction/        # ExecTx manager
+    uid/                # NewUUID (v7), NewCSRFToken
 ```
 
----
-
-## Domain Rules
-
-- Pure business logic only
-- No framework imports
-- No SQL
-- No HTTP
-- Repository = interface only
-
-Example:
-
-```go
-type UserRepository interface {}
-```
-
----
-
-## Use Case Rules
-
-- One use case per file
-- Pure business logic
-- No HTTP objects
-- No DB objects
-
-Signature:
-
-```go
-func(ctx context.Context, actor tenant.ActorContext, ...)
-```
-
-Return:
-
-```go
-(Result, error)
-```
-
----
-
-## Handler Rules
-
-Handlers must be thin:
-
-Allowed:
-
-- Parse request
-- Validate input
-- Call use case
-- Return response
-
-Forbidden:
-
-- SQL query
-- Business logic
-- Direct DB access
-
----
-
-## Repository Rules
-
-Inside:
+### Frontend structure
 
 ```text
-infrastructure/postgres/
+web/src/app/
+  core/       config, constants, errors, guards, http, models, services, utils
+  features/   staff (child-form, guardian-form, manager-children, manager-guardians, practitioner-attendance-children)
+  pages/      auth-pages, dashboard, forms, invoices, charts, calendar, other-page
+  shared/     components, data, models
 ```
 
-Allowed:
+## Key Patterns
 
-- SQL queries
-- Database operations
-- Implement repository interfaces
+### Dependency injection
 
-Forbidden:
+All wiring in `app/bootstrap/bootstrap.go`. Repository → UseCase → Handler. No globals, no `init()`, no service locator.
 
-- Business logic
+### Transactions
 
----
+Always use `txMgr.ExecTx(ctx, func(tx pgx.Tx) error { ... })`. Never call `Begin/Commit/Rollback` directly.
 
-## Dependency Injection
+### Cross-module communication
 
-All dependency wiring:
+Never import another module directly. Define interface in consumer, wire adapter in `bootstrap/adapters.go`.
 
-```text
-app/bootstrap/bootstrap.go
-```
+Current adapters: `guardianCheckerAdapter`, `childCheckerAdapter`, `membershipCheckerAdapter`.
 
-Flow:
+### Authorization
 
+Get actor from `tenant.ActorFromGinContext(c)`. Never parse JWT manually. Middleware handles JWT validation + role checks. `TokenParser` interface returns `tenant.AuthorizationContext`.
+
+### Error flow
+
+Domain/Application → `DomainError` → `MapDomainError()` → HTTP response. Auth handler returns generic "Invalid credentials or session" to prevent info leakage.
+
+### Audit
+
+All modules use `audit.Writer`. Works with pool or tx:
 ```go
-Repository
-    ↓
-UseCase
-    ↓
-Handler
+auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{...})
+auditWriter.Write(ctx, pool, actor, audit.WriteParams{...})
 ```
-
-Never:
-
-- Global variables
-- init()
-- Service locator
-
----
-
-## Transaction Rules
-
-Always:
-
-```go
-txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
-    return nil
-})
-```
-
-Never:
-
-```go
-Begin()
-Commit()
-Rollback()
-```
-
----
-
-## Error Rules
-
-Flow:
-
-```text
-Domain/Application
-    ↓
-DomainError
-    ↓
-MapDomainError()
-    ↓
-HTTP response
-```
-
-Auth handler is special: returns generic "Invalid credentials or session" to prevent info leakage. Auth errors bypass MapDomainError.
-
----
-
-## Cross Module Communication
-
-Do not directly import another module.
-
-Use interfaces:
-
-```go
-type GuardianChecker interface {}
-```
-
-Wire adapters in:
-
-```text
-app/bootstrap/adapters.go
-```
-
-Current adapters:
-
-- `guardianCheckerAdapter` — guardianlinks/parentmappings check guardian active status
-- `childCheckerAdapter` — guardianlinks check child exists in scope
-- `membershipCheckerAdapter` — parentmappings check membership role/active status
-
----
-
-## Authorization
-
-Get actor only from:
-
-```go
-tenant.ActorFromGinContext(c)
-```
-
-Do not manually parse JWT.
-
-Middleware handles:
-
-- JWT validation
-- Authorization context
-- Role checks
-
-Middleware defines `TokenParser` interface returning `tenant.AuthorizationContext` — no module imports needed. Adapter in `bootstrap/token_parser.go` wraps `tokens.TokenManager`.
-
----
 
 ## Routes
 
@@ -291,15 +148,9 @@ Middleware defines `TokenParser` interface returning `tenant.AuthorizationContex
 | POST | /auth/password-reset-requests | public | passwordreset |
 | POST | /auth/password-resets | public | passwordreset |
 | GET | /children/attendance | manager, practitioner | children |
-| GET | /children | manager | children |
-| GET | /children/:id | manager | children |
-| POST | /children | manager | children |
-| PATCH | /children/:id | manager | children |
+| GET/POST/PATCH | /children[/:id] | manager | children |
 | POST | /children/:id/actions/mark-inactive | manager | children |
-| GET | /guardians | manager | guardians |
-| GET | /guardians/:id | manager | guardians |
-| POST | /guardians | manager | guardians |
-| PATCH | /guardians/:id | manager | guardians |
+| GET/POST/PATCH | /guardians[/:id] | manager | guardians |
 | POST | /guardians/:id/actions/deactivate | manager | guardians |
 | POST | /guardians/:id/actions/reactivate | manager | guardians |
 | POST | /guardian-child-links | manager | guardianlinks |
@@ -307,49 +158,25 @@ Middleware defines `TokenParser` interface returning `tenant.AuthorizationContex
 | POST | /parent-membership-guardian-mappings | manager | parentmappings |
 | POST | /parent-membership-guardian-mappings/:id/actions/end | manager | parentmappings |
 
----
+## Database
 
-## Audit
-
-All modules use `audit.Writer`. Works with pool or tx:
-
-```go
-auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{...})
-auditWriter.Write(ctx, pool, actor, audit.WriteParams{...})
-```
-
----
-
-## Database Rules
-
-- Migrations → `db/migrations/`
-- SQL only inside `infrastructure/postgres/`
+- Migrations: `api/db/migrations/` (golang-migrate, sequential numbering)
+- SQL queries: only inside `infrastructure/postgres/`
+- sqlc: `api/db/query/*.sql` → generated Go in `internal/platform/db/sqlc/`
 - All queries must be tenant + branch scoped
-- `sqlc` configured but not yet used for code generation
 
----
+## Testing Strategy
 
-## Testing
-
-Run:
-
-```bash
-cd api && go test ./...
-```
-
-Test strategy:
-
-- Domain/Application → mock repositories
-- Integration → real PostgreSQL
-- Handler → httptest + gin context
-
----
+- Domain/Application: mock repositories
+- Integration: real PostgreSQL
+- Handler: httptest + gin context
 
 ## Adding New Module
 
-1. Create module folder under `modules/<name>/`
-2. Create domain entities + interfaces
-3. Create use cases
-4. Implement repository
-5. Create handler
-6. Wire in bootstrap
+1. Create `modules/<name>/` with domain/application/infrastructure/interfaces layers
+2. Define domain entities + repository interface (zero framework imports)
+3. Create use cases (one per file)
+4. Implement postgres repository
+5. Create handler + DTO
+6. Wire in `bootstrap.go`
+7. Add route in handler setup

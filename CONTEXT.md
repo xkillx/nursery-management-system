@@ -308,6 +308,10 @@ The parent-side product surface where a parent-role user views issued invoices f
 
 User authentication uses a unique, case-insensitive normalized email address as the login identifier.
 
+## Password Credential Policy (MVP)
+
+User passwords must be at least 8 characters in month 1; additional composition rules are not enforced.
+
 ## Pilot Tenant Bootstrap (MVP)
 
 The first manager account for a tenant is created through a one-time administrative seed command; subsequent users are provisioned by manager invitation.
@@ -442,7 +446,7 @@ Membership scope switch actions are persisted as audit events with actor, previo
 
 ## Authentication Event Persistence Scope (MVP)
 
-Login, refresh, and logout are treated as authentication telemetry in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+Login, refresh, logout, and password reset activity are treated as authentication/security telemetry in structured logs and metrics rather than persisted as audit-log domain events in month 1.
 
 ## Token Transport Policy (MVP)
 
@@ -460,6 +464,10 @@ Session state is persisted as refresh-token-backed, revocable session records; a
 
 When membership scope or role is changed, refresh tokens for affected sessions are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
 
+## Password Reset Session Revocation Policy (MVP)
+
+After a successful password reset, all refresh-token-backed sessions for that user are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
+
 ## Token Lifetime Policy (MVP)
 
 Access tokens expire after 15 minutes; refresh tokens expire after 30 days and rotate on refresh.
@@ -467,6 +475,38 @@ Access tokens expire after 15 minutes; refresh tokens expire after 30 days and r
 ## Password Reset (MVP)
 
 Users can reset passwords through a basic email-link reset flow.
+
+## Password Reset Account Scope (MVP)
+
+Password reset applies to the global user login identity rather than to an individual membership, tenant, or branch scope.
+
+## Password Reset Request Disclosure Policy (MVP)
+
+Password reset requests do not reveal whether a login identifier belongs to an active user account; eligible active users receive reset email while inactive or unknown users do not, and the requester sees a generic outcome.
+
+## Password Reset Link Supersession (MVP)
+
+Only the newest unused password reset link for a user remains valid; creating a new reset request invalidates earlier unused reset links for that user.
+
+## Password Reset Link Lifetime (MVP)
+
+Password reset links are short-lived recovery links that remain valid for 60 minutes from creation.
+
+## Password Reset Link Issuance (MVP)
+
+A password reset link is considered issued only when the reset message is accepted for delivery; failed delivery does not leave a usable reset link behind.
+
+## Password Reset Token Exposure Policy (MVP)
+
+Raw password reset tokens are delivered only through the reset message and are never returned by API responses.
+
+## Password Reset Request Throttling (MVP)
+
+Password reset requests are rate-limited by login identifier and client source so the public recovery flow cannot be used for unbounded email sending.
+
+## Password Reset Token Error Semantics (MVP)
+
+Invalid, expired, and already-consumed password reset links return distinct stable error codes with generic human-readable messages; superseded reset links are treated as already consumed.
 
 ## Email Delivery Strategy (MVP)
 

@@ -60,6 +60,7 @@ Known backend gaps:
 - Follow the existing API architecture from `CLAUDE.md`: handler -> application/use case -> domain -> infrastructure repository.
 - Use `sqlc + pgx` for all new funding, invoicing, payment, invite, password-reset, and job-related persistence.
 - Do not force a risky refactor of already-working auth, child, guardian, mapping, and attendance repositories unless a task touches them for a bug or contract gap.
+- Track full migration of existing hand-written query repositories to `sqlc` as post-MVP technical debt; do not make it a blocker for month-1 pilot features.
 - Include backend-owned production operations in Week 4.
 - Treat reporting basics and CSV export as stretch, not core.
 - Treat absence marker API as stretch, not core.
@@ -160,6 +161,14 @@ Implementation notes:
 | API-32 | Add UAT seed/scenario data for one tenant, one default branch, manager, practitioner, parent, children, guardians, attendance sessions, funding profiles, draft/issued invoices, and payment states. | API-24 | Seed data supports manager/practitioner/parent UAT journeys without manual DB editing. |
 | API-33 | Run backend UAT script and fix critical/high defects only. Freeze new backend feature work after this point except pilot blockers. | API-32 | UAT signoff covers attendance, correction, invoice generation, payment, and payment retry. |
 | API-34 | Optional reporting and CSV export only after payment loop is stable. Keep these limited to invoice/payment exports required by pilot operations. | API-24 | Stretch only; does not delay Stripe or invoice correctness work. |
+
+## Post-MVP API Technical Debt Backlog
+
+These items are intentionally outside the month-1 pilot critical path. Do them after the payment loop, UAT fixes, and pilot operations are stable.
+
+| ID | Task | Dependencies | Done check |
+|---|---|---|---|
+| API-TD-01 | Migrate existing hand-written `pgx` repository queries to `sqlc`: authentication/session, children, guardians, guardian-child links, parent mappings, and attendance. Preserve current repository interfaces and behavior while moving SQL into `api/db/query/*.sql` and generated code under `api/internal/platform/db/sqlc`. | Core MVP API stable; route/test coverage green | Existing module tests pass unchanged or with equivalent coverage; `make sqlc-generate` and `go test ./...` pass; no public API behavior or authorization semantics change. |
 
 ## Expected API Routes
 
