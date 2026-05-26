@@ -1,0 +1,59 @@
+# =====================
+# System / OS
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# IDE / Editor
+# =====================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# =====================
+# Go / API (api/)
+# =====================
+api/.env
+api/tmp/
+api/server
+api/api
+
+# =====================
+# Angular / Frontend (web/)
+# =====================
+web/node_modules/
+web/dist/
+web/tmp/
+web/out-tsc/
+web/bazel-out/
+web/.angular/cache/
+web/coverage/
+web/.sass-cache/
+npm-debug.log
+yarn-error.log
+testem.log
+
+# =====================
+# Tool / Generated
+# =====================
+.codegraph/
+.connect.lock
+/typings
+/libpeerconnection.log
+
+# =====================
+# Secrets / Environment
+# =====================
+*.env
+!api/.env.example
