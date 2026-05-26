@@ -170,7 +170,7 @@ Attendance correction reason codes are distinct from lifecycle reason codes even
 
 ## Invoice Source of Truth (MVP)
 
-Monthly invoice billable hours are derived from attendance actuals.
+Monthly invoice billable minutes are derived from attendance actuals.
 
 ## Funding Application Rule (MVP)
 
@@ -178,11 +178,11 @@ Funded-hours deduction applies only to core childcare hours; extras remain fully
 
 ## Core Billing Formula (MVP)
 
-Core due hours are calculated as `max(0, core attended hours - funded hours allowance)` before pricing is applied.
+Core due hours are calculated as `max(0, rounded core attendance minutes - funded hours allowance)` before pricing is applied. Rounded core attendance minutes are the sum of per-session billable minutes rather than raw elapsed minutes.
 
 ## Attendance Billing Rounding (MVP)
 
-Each attendance session is rounded up to the nearest 15 minutes for billing.
+Each attendance session is rounded up to the nearest 15 minutes for billing. Any positive elapsed-time remainder beyond a 15-minute boundary rounds up; exact 15-minute boundaries do not add another block.
 
 ## Billing Timezone (MVP)
 
@@ -259,6 +259,10 @@ Absences are recorded with a simple marker and are not billed automatically.
 ## Billing Period (MVP)
 
 Billing runs monthly on calendar-month boundaries.
+
+## Billing Quantity Unit (MVP)
+
+Attendance-derived billing quantities use integer minutes as the canonical unit. Hours are a display format only.
 
 ## Child Enrollment Minimum (MVP)
 
