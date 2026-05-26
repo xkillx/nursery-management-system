@@ -692,6 +692,10 @@ An unpaid issued invoice transitions to `overdue` at 00:00 the next local day in
 
 Invoice issue runs can proceed for eligible children while children with incomplete attendance are blocked and returned in an exception list for manager resolution.
 
+## Invoice Run Blocked Child (MVP)
+
+A child excluded from a specific monthly invoice run because billing readiness checks found a resolvable issue, such as incomplete attendance. This is a run/month-specific billing state, not a child lifecycle state.
+
 ## Draft Invoice Regeneration (MVP)
 
 After attendance corrections, managers can regenerate draft invoices for individual children without rerunning the full month batch.
