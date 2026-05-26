@@ -204,6 +204,18 @@ Monthly invoice billable minutes are derived from attendance actuals.
 
 Funded-hours deduction applies only to core childcare hours; extras remain fully payable.
 
+## Core Attended Minutes (MVP)
+
+Core attended minutes means rounded core attendance minutes for billing and funding deduction, not raw elapsed attendance minutes.
+
+## Funded Deduction Minutes (MVP)
+
+Funded deduction minutes are the portion of core attended minutes covered by the child's funded allowance for the billing month.
+
+## Core Billable Minutes (MVP)
+
+Core billable minutes are the remaining core attended minutes after funded deduction minutes are applied.
+
 ## Core Billing Formula (MVP)
 
 Core due hours are calculated as `max(0, rounded core attendance minutes - funded hours allowance)` before pricing is applied. Rounded core attendance minutes are the sum of per-session billable minutes rather than raw elapsed minutes.
@@ -922,7 +934,7 @@ Domain entities use UUID primary keys (UUIDv7 preferred, UUIDv4 acceptable).
 
 ## Invoice Explainability Persistence (MVP)
 
-Invoice line storage preserves both intermediate billing components (attended minutes, funded minutes, billable minutes, hourly rate) and final totals.
+Invoice line storage preserves both intermediate billing components (core attended minutes, funded deduction minutes, core billable minutes, hourly rate) and final totals.
 
 ## Parent Draft Invoice Visibility (MVP)
 
