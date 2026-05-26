@@ -55,4 +55,5 @@ test-api-repositories:
 		./internal/modules/guardians/infrastructure/postgres/ \
 		./internal/modules/guardianlinks/infrastructure/postgres/ \
 		./internal/modules/parentmappings/infrastructure/postgres/ \
-		./internal/modules/attendance/infrastructure/postgres/
+		./internal/modules/attendance/infrastructure/postgres/ \
+		./internal/modules/funding/infrastructure/postgres/

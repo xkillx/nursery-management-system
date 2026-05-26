@@ -86,6 +86,17 @@ type Child struct {
 	LeftReasonNote      pgtype.Text
 }
 
+type FundingProfile struct {
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	ChildID                pgtype.UUID
+	BillingMonth           pgtype.Date
+	FundedAllowanceMinutes int32
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
 type Guardian struct {
 	ID                     pgtype.UUID
 	TenantID               pgtype.UUID

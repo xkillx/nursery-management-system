@@ -36,6 +36,34 @@ Manager permissions include practitioner attendance actions within the same acti
 
 A simple funded-hours deduction model used to reduce monthly billed amount per child.
 
+## Funding Profile (MVP)
+
+A child's funded-hours allowance for a single billing month.
+
+## Missing Funding Profile (MVP)
+
+A child-month without a recorded funding profile. This is distinct from a funding profile with a zero-minute allowance.
+
+## Funding Profile Enrollment Scope (MVP)
+
+Funding profiles are valid for billing months that overlap the child's enrollment window, including historical months after the child has left.
+
+## Funding Profile Partial-Month Rule (MVP)
+
+A funding profile may exist when the billing month overlaps the child's enrollment window by at least one day.
+
+## Funding Profile Audit Scope (MVP)
+
+Funding profile creation and allowance changes are persisted as audit events, while unchanged idempotent saves are not.
+
+## Funding Profile Invoice Snapshot Boundary (MVP)
+
+Changing a funding profile after an invoice is issued does not change that issued invoice; issued invoice lines preserve the funded allowance applied at issue time.
+
+## Funding v1 Metadata Scope (MVP)
+
+Funding v1 records only the month-specific allowance; funding source, entitlement type, evidence, stretched funding, term-time rules, and notes are deferred.
+
 ## Invoice
 
 A monthly billing statement showing gross fees, funded deduction, and final amount due.
@@ -260,9 +288,21 @@ Absences are recorded with a simple marker and are not billed automatically.
 
 Billing runs monthly on calendar-month boundaries.
 
+## Billing Month (MVP)
+
+A calendar month identified as `YYYY-MM` for funding and invoice workflows.
+
 ## Billing Quantity Unit (MVP)
 
 Attendance-derived billing quantities use integer minutes as the canonical unit. Hours are a display format only.
+
+## Funded Allowance Unit (MVP)
+
+Funded-hours allowances are stored and exchanged as integer minutes. Hours are a display format only.
+
+## Funded Allowance Bounds (MVP)
+
+A funded-hours allowance may be zero but must not exceed the number of minutes in a 31-day month.
 
 ## Child Enrollment Minimum (MVP)
 

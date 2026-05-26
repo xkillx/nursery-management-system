@@ -227,6 +227,7 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 	ctx := context.Background()
 
 	tables := []string{
+		"funding_profiles",
 		"attendance_events",
 		"attendance_sessions",
 		"manager_invites",

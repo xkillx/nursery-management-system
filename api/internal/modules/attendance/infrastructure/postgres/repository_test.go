@@ -923,7 +923,13 @@ func TestAttListIncompleteSessionsForPeriod_IncludesInactiveChild(t *testing.T) 
 	linkID := uuid.MustParse("d7000000-0000-0000-0000-000000000099")
 
 	dbtest.InsertChild(t, pool, childID, attTenantID, attBranchID, "Inactive Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, false)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+	_, err := pool.Exec(ctx,
+		"UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', updated_at = now() WHERE id = $1",
+		childID)
+	if err != nil {
+		t.Fatalf("mark child inactive: %v", err)
+	}
 	dbtest.InsertGuardian(t, pool, guardianID, attTenantID, attBranchID, "Inactive Parent", true)
 	dbtest.InsertGuardianLink(t, pool, linkID, attTenantID, attBranchID, guardianID, childID)
 

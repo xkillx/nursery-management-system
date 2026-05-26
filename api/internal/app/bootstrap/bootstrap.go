@@ -39,6 +39,10 @@ import (
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
 
+	fundingapp "nursery-management-system/api/internal/modules/funding/application"
+	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
+	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
@@ -163,6 +167,14 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 
 	// Register attendance routes (manager + practitioner)
 	attendanceHandler.RegisterRoutes(protected)
+
+	// Funding module
+	fundingRepo := fundingpostgres.NewRepository(pool)
+	fundingHandler := fundinghandler.NewHandler(
+		fundingapp.NewGetProfile(fundingRepo),
+		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter),
+	)
+	fundingHandler.RegisterRoutes(manager)
 
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)

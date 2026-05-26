@@ -858,6 +858,92 @@ Roles: manager. Query: `event_type=check_in|check_out|correction`.
 
 ---
 
+## Funding v1
+
+Manager-only endpoints for maintaining a child's funded-hours allowance per billing month. Parents see funding effects through issued invoices, not through these routes.
+
+**Routes are manager-only.** Practitioner and parent requests receive `403 forbidden_role`.
+
+**`billing_month`** is required on all funding requests, formatted as `YYYY-MM`.
+
+**Zero allowance is explicit** and distinct from a missing funding profile. A missing profile means no funding has been configured for that child/month.
+
+### GET /funding/children/:child_id?billing_month=YYYY-MM
+
+Retrieve a child's funding profile for a specific billing month.
+
+**Request:**
+
+| Parameter | Location | Required | Description |
+|-----------|----------|----------|-------------|
+| `child_id` | path | yes | UUID of the child |
+| `billing_month` | query | yes | Billing month as `YYYY-MM` |
+
+**Response 200:**
+
+```json
+{
+  "id": "uuid",
+  "child_id": "uuid",
+  "billing_month": "2026-05",
+  "funded_allowance_minutes": 570,
+  "created_at": "2026-05-26T10:00:00Z",
+  "updated_at": "2026-05-26T10:00:00Z"
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Invalid child_id, missing billing_month, or invalid month format |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `funding_profile_not_found` | No profile for this child/month |
+
+### PUT /funding/children/:child_id
+
+Create or update a child's funding profile for a billing month. Upsert semantics: returns `201` on create, `200` on update or unchanged save. An unchanged save does not update `updated_at` or write an audit event.
+
+**Request body:**
+
+```json
+{
+  "billing_month": "2026-05",
+  "funded_allowance_minutes": 570
+}
+```
+
+| Field | Type | Required | Bounds |
+|-------|------|----------|--------|
+| `billing_month` | string | yes | `YYYY-MM` format |
+| `funded_allowance_minutes` | integer | yes | 0–44640 |
+
+**Response 201** (created):
+
+```json
+{
+  "id": "uuid",
+  "child_id": "uuid",
+  "billing_month": "2026-05",
+  "funded_allowance_minutes": 570,
+  "created_at": "2026-05-26T10:00:00Z",
+  "updated_at": "2026-05-26T10:00:00Z"
+}
+```
+
+**Response 200** (updated or unchanged): same shape as above.
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Invalid child_id, invalid month, or allowance outside 0–44640 |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `child_not_found` | Child does not exist in tenant/branch scope |
+| 409 | `funding_month_outside_enrollment_window` | Billing month is fully before start_date or fully after end_date |
+
+---
+
 ## Known Contract Gaps
 
 1. **Relationship read endpoints not implemented.** Child detail linked guardian and parent access status must use mock data until `GET /children/:child_id/guardian-child-links` and `GET /guardians/:guardian_id/parent-membership-guardian-mappings` are built.

@@ -2,10 +2,10 @@
 
 - **Verification date**: 2026-05-25
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
-- **Final migration version**: 8 (clean)
+- **Final migration version**: 10 (clean)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (13)
+## Application Tables (14)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -40,6 +40,12 @@
 |---|---|---|
 | `attendance_sessions` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `status`, `check_in_at`, `check_out_at`, `check_in_local_date`, `check_out_local_date`, `check_in_event_id FK`, `check_out_event_id FK`, `corrected_by_event_id FK` | Status: `open`, `complete`, `corrected`. Composite unique `(tenant_id, branch_id, id)`. Partial unique index ensures one open session per child per branch. Shape check: `open` → no checkout columns; `complete`/`corrected` → checkout required. `check_out_at > check_in_at`. |
 | `attendance_events` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `session_id FK`, `event_type`, `occurred_at`, `local_date`, `recorded_by_user_id FK`, `recorded_by_membership_id FK`, `request_id`, `reason_code`, `reason_note`, `details JSONB` | Event type: `check_in`, `check_out`, `correction`. Composite unique `(tenant_id, branch_id, id)`. Routine events (check-in/check-out) cannot carry reason_code or reason_note. Correction events require a reason code (`missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, `other`). `other` requires non-empty note. |
+
+### Funding
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `funding_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `billing_month DATE`, `funded_allowance_minutes INTEGER`, `created_at`, `updated_at` | Unique `(tenant_id, branch_id, child_id, billing_month)`. `billing_month` must be first day of month. Allowance bounds: 0–44640. FK to `branches(tenant_id, id)` and `children(tenant_id, branch_id, id)`. |
 
 ### Audit
 
@@ -83,3 +89,6 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `idx_password_reset_tokens_user_id` | `password_reset_tokens` | btree | Lookup by user |
 | `idx_password_reset_tokens_expires_at` | `password_reset_tokens` | btree | Expiry scan |
 | `idx_password_reset_tokens_active_user` | `password_reset_tokens` | btree (partial) | Active tokens per user by creation desc |
+| `funding_profiles_scope_child_month_unique` | `funding_profiles` | UNIQUE btree | One profile per child per billing month in scope |
+| `idx_funding_profiles_scope_month` | `funding_profiles` | btree | Lookup by tenant/branch/month |
+| `idx_funding_profiles_child_month` | `funding_profiles` | btree | Lookup by tenant/branch/child/month |
