@@ -64,12 +64,13 @@ func (uc *CorrectAttendance) Execute(ctx context.Context, actor tenant.ActorCont
 
 	checkInLocalDate := uc.clock.LocalDate(params.CheckInAt)
 	checkOutLocalDate := uc.clock.LocalDate(params.CheckOutAt)
+	correctionActionLocalDate := uc.clock.LocalDate(now)
 
 	var result CorrectionResult
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		if params.SessionID != nil {
-			session, err := uc.correctExistingSession(ctx, tx, actor, params, checkInLocalDate, checkOutLocalDate, now)
+			session, err := uc.correctExistingSession(ctx, tx, actor, params, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now)
 			if err != nil {
 				return err
 			}
@@ -77,7 +78,7 @@ func (uc *CorrectAttendance) Execute(ctx context.Context, actor tenant.ActorCont
 			return uc.writeAudit(ctx, tx, actor, session, params, now, checkInLocalDate, checkOutLocalDate, false)
 		}
 
-		session, err := uc.createMissedSession(ctx, tx, actor, params, checkInLocalDate, checkOutLocalDate, now)
+		session, err := uc.createMissedSession(ctx, tx, actor, params, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,7 @@ func (uc *CorrectAttendance) Execute(ctx context.Context, actor tenant.ActorCont
 
 func (uc *CorrectAttendance) correctExistingSession(
 	ctx context.Context, tx pgx.Tx, actor tenant.ActorContext,
-	params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, now time.Time,
+	params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now time.Time,
 ) (domain.Session, error) {
 	session, found, err := uc.repo.GetSessionForCorrection(ctx, tx, actor.TenantID, actor.BranchID, *params.SessionID)
 	if err != nil {
@@ -117,12 +118,12 @@ func (uc *CorrectAttendance) correctExistingSession(
 		return domain.Session{}, domainerrors.Conflict("attendance_session_overlap", "Corrected interval overlaps another session.")
 	}
 
-	return uc.repo.CorrectSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, session, params, checkInLocalDate, checkOutLocalDate, now, actor.UserID, actor.MembershipID, actor.RequestID)
+	return uc.repo.CorrectSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, session, params, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now, actor.UserID, actor.MembershipID, actor.RequestID)
 }
 
 func (uc *CorrectAttendance) createMissedSession(
 	ctx context.Context, tx pgx.Tx, actor tenant.ActorContext,
-	params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, now time.Time,
+	params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now time.Time,
 ) (domain.Session, error) {
 	if err := uc.validateChildAndWindow(ctx, tx, actor, *params.ChildID, checkInLocalDate, checkOutLocalDate); err != nil {
 		return domain.Session{}, err
@@ -136,7 +137,7 @@ func (uc *CorrectAttendance) createMissedSession(
 		return domain.Session{}, domainerrors.Conflict("attendance_session_overlap", "Corrected interval overlaps another session.")
 	}
 
-	return uc.repo.CreateCorrectedSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, params, checkInLocalDate, checkOutLocalDate, now, actor.UserID, actor.MembershipID, actor.RequestID)
+	return uc.repo.CreateCorrectedSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, params, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate, now, actor.UserID, actor.MembershipID, actor.RequestID)
 }
 
 func (uc *CorrectAttendance) validateChildAndWindow(

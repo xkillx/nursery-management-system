@@ -417,7 +417,7 @@ Roles: manager.
 
 Roles: manager, practitioner.
 
-Returns children with current attendance state for check-in/check-out UI.
+Returns children with current attendance state for the current `Europe/London` local day.
 
 **Response 200:**
 
@@ -689,7 +689,7 @@ Roles: manager, practitioner.
 }
 ```
 
-`status` values: `open`, `closed`.
+`status` values: `open`, `complete`, `corrected`.
 
 **Errors:**
 
@@ -753,6 +753,8 @@ Exactly one of `session_id` or `child_id` is required. Supplying both or neither
 Correction reason codes: `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, `other`.
 
 `reason_note` is required when `reason_code` is `other`.
+
+The correction event's `occurred_at` and `local_date` reflect the manager action instant/day. The corrected interval dates (`check_in_local_date`, `check_out_local_date`) are represented by the returned session and event details.
 
 **Response 200** (corrected existing session) or **201** (created missed session).
 

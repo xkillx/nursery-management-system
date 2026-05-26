@@ -527,7 +527,7 @@ func TestAttCorrectSessionWithEvent(t *testing.T) {
 	}
 
 	corrected, err := repo.CorrectSessionWithEvent(ctx, tx, attTenantID, attBranchID, session, params,
-		dbtest.DateAt(2025, 5, 15), dbtest.DateAt(2025, 5, 15), occurredAt, attUserID, attMembershipID, "req-cor")
+		dbtest.DateAt(2025, 5, 15), dbtest.DateAt(2025, 5, 15), dbtest.DateAt(2025, 5, 15), occurredAt, attUserID, attMembershipID, "req-cor")
 	if err != nil {
 		t.Fatalf("CorrectSessionWithEvent: %v", err)
 	}
@@ -585,7 +585,7 @@ func TestAttCreateCorrectedSessionWithEvent(t *testing.T) {
 
 	tx := dbtest.BeginTx(t, pool)
 	session, err := repo.CreateCorrectedSessionWithEvent(ctx, tx, attTenantID, attBranchID, params,
-		dbtest.DateAt(2025, 5, 14), dbtest.DateAt(2025, 5, 14), occurredAt, attUserID, attMembershipID, "req-miss")
+		dbtest.DateAt(2025, 5, 14), dbtest.DateAt(2025, 5, 14), dbtest.DateAt(2025, 5, 15), occurredAt, attUserID, attMembershipID, "req-miss")
 	if err != nil {
 		t.Fatalf("CreateCorrectedSessionWithEvent: %v", err)
 	}
@@ -636,6 +636,7 @@ func TestAttCreateCorrectedSessionWithEvent_NullableFields(t *testing.T) {
 	tx := dbtest.BeginTx(t, pool)
 	session, err := repo.CreateCorrectedSessionWithEvent(ctx, tx, attTenantID, attBranchID, params,
 		dbtest.DateAt(2025, 5, 14), dbtest.DateAt(2025, 5, 14),
+		dbtest.DateAt(2025, 5, 15),
 		dbtest.TimestampAt(2025, 5, 15, 10, 0), attUserID, attMembershipID, "")
 	if err != nil {
 		t.Fatalf("CreateCorrectedSessionWithEvent: %v", err)
@@ -707,6 +708,7 @@ func TestAttCreateCorrectedSessionWithEvent_NullReasonNote(t *testing.T) {
 	tx := dbtest.BeginTx(t, pool)
 	session, err := repo.CreateCorrectedSessionWithEvent(ctx, tx, attTenantID, attBranchID, params,
 		dbtest.DateAt(2025, 5, 14), dbtest.DateAt(2025, 5, 14),
+		dbtest.DateAt(2025, 5, 15),
 		dbtest.TimestampAt(2025, 5, 15, 10, 0), attUserID, attMembershipID, "req-test")
 	if err != nil {
 		t.Fatalf("CreateCorrectedSessionWithEvent: %v", err)
@@ -722,5 +724,107 @@ func TestAttCreateCorrectedSessionWithEvent_NullReasonNote(t *testing.T) {
 	}
 	if reasonNote != nil {
 		t.Errorf("reason_note = %v, want nil for empty string", reasonNote)
+	}
+}
+
+func TestAttRoutineEvents_NullReasonFields(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	checkInAt := dbtest.TimestampAt(2025, 5, 15, 8, 30)
+	checkOutAt := dbtest.TimestampAt(2025, 5, 15, 16, 0)
+	localDate := dbtest.DateAt(2025, 5, 15)
+
+	tx := dbtest.BeginTx(t, pool)
+	session, err := repo.CreateOpenSessionWithEvent(ctx, tx, attTenantID, attBranchID, childID,
+		checkInAt, localDate, attUserID, attMembershipID, "req-in")
+	if err != nil {
+		t.Fatalf("create open session: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+
+	var reasonCode *string
+	var reasonNote *string
+	err = pool.QueryRow(ctx,
+		"SELECT reason_code, reason_note FROM attendance_events WHERE session_id = $1 AND event_type = 'check_in'", session.ID,
+	).Scan(&reasonCode, &reasonNote)
+	if err != nil {
+		t.Fatalf("query check-in event: %v", err)
+	}
+	if reasonCode != nil {
+		t.Errorf("check-in reason_code = %v, want nil", reasonCode)
+	}
+	if reasonNote != nil {
+		t.Errorf("check-in reason_note = %v, want nil", reasonNote)
+	}
+
+	tx2 := dbtest.BeginTx(t, pool)
+	_, err = repo.CompleteSessionWithEvent(ctx, tx2, attTenantID, attBranchID, session,
+		checkOutAt, localDate, attUserID, attMembershipID, "req-out")
+	if err != nil {
+		t.Fatalf("complete session: %v", err)
+	}
+	dbtest.CommitTx(t, tx2)
+
+	err = pool.QueryRow(ctx,
+		"SELECT reason_code, reason_note FROM attendance_events WHERE session_id = $1 AND event_type = 'check_out'", session.ID,
+	).Scan(&reasonCode, &reasonNote)
+	if err != nil {
+		t.Fatalf("query check-out event: %v", err)
+	}
+	if reasonCode != nil {
+		t.Errorf("check-out reason_code = %v, want nil", reasonCode)
+	}
+	if reasonNote != nil {
+		t.Errorf("check-out reason_note = %v, want nil", reasonNote)
+	}
+}
+
+func TestAttCorrectionEvent_ActionLocalDate(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	actionDate := dbtest.DateAt(2025, 5, 20)
+	occurredAt := dbtest.TimestampAt(2025, 5, 20, 14, 0)
+
+	params := attendomain.CorrectionParams{
+		ChildID:    &childID,
+		CheckInAt:  dbtest.TimestampAt(2025, 5, 15, 8, 0),
+		CheckOutAt: dbtest.TimestampAt(2025, 5, 15, 16, 0),
+		ReasonCode: "missed_check_in",
+	}
+
+	tx := dbtest.BeginTx(t, pool)
+	session, err := repo.CreateCorrectedSessionWithEvent(ctx, tx, attTenantID, attBranchID, params,
+		dbtest.DateAt(2025, 5, 15), dbtest.DateAt(2025, 5, 15), actionDate, occurredAt, attUserID, attMembershipID, "req-test")
+	if err != nil {
+		t.Fatalf("CreateCorrectedSessionWithEvent: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+
+	var eventLocalDate time.Time
+	err = pool.QueryRow(ctx,
+		"SELECT local_date FROM attendance_events WHERE session_id = $1 AND event_type = 'correction'", session.ID,
+	).Scan(&eventLocalDate)
+	if err != nil {
+		t.Fatalf("query correction event: %v", err)
+	}
+	y, m, d := eventLocalDate.Date()
+	if y != 2025 || m != 5 || d != 20 {
+		t.Errorf("correction event local_date = %d-%02d-%02d, want 2025-05-20 (action day)", y, m, d)
+	}
+
+	var sessionCheckInLD time.Time
+	err = pool.QueryRow(ctx,
+		"SELECT check_in_local_date FROM attendance_sessions WHERE id = $1", session.ID,
+	).Scan(&sessionCheckInLD)
+	if err != nil {
+		t.Fatalf("query session: %v", err)
+	}
+	y, m, d = sessionCheckInLD.Date()
+	if y != 2025 || m != 5 || d != 15 {
+		t.Errorf("session check_in_local_date = %d-%02d-%02d, want 2025-05-15 (corrected interval)", y, m, d)
 	}
 }

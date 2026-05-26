@@ -22,8 +22,8 @@ type Repository interface {
 	GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (Session, bool, error)
 	CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
 	GetSessionForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, sessionID uuid.UUID) (Session, bool, error)
-	CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params CorrectionParams, checkInLocalDate, checkOutLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
-	CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session Session, params CorrectionParams, checkInLocalDate, checkOutLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session Session, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
 	HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error)
 }
 

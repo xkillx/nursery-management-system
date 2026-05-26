@@ -154,7 +154,7 @@ A session may receive more than one attendance correction; each correction remai
 
 ## Attendance Correction Recorded Time (MVP)
 
-The time a correction is recorded is the manager action time, distinct from the corrected attendance interval.
+The time and local day a correction is recorded are the manager action time and action day, distinct from the corrected attendance interval.
 
 ## Attendance Correction Authority (MVP)
 

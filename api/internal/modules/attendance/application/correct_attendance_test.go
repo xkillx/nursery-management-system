@@ -148,6 +148,56 @@ func TestValidateTargets_ChildOnly(t *testing.T) {
 	}
 }
 
+func TestCorrection_NonOtherReasonDoesNotRequireNote(t *testing.T) {
+	for _, code := range []string{"missed_check_in", "missed_check_out", "incorrect_time", "duplicate_entry"} {
+		err := domain.ValidateCorrectionReason(code, "")
+		if err != nil {
+			t.Fatalf("reason_code=%s: expected nil for empty note, got %v", code, err)
+		}
+	}
+}
+
+func TestCorrection_ActionLocalDateDistinctFromCorrectedInterval(t *testing.T) {
+	// Verify the clock computes distinct local dates for the corrected interval vs the action.
+	actionTime := time.Date(2025, 5, 20, 14, 0, 0, 0, time.UTC)
+	clock := fixedClock(actionTime)
+
+	checkInLocalDate := clock.LocalDate(time.Date(2025, 5, 15, 8, 0, 0, 0, time.UTC))
+	correctionActionLocalDate := clock.LocalDate(actionTime)
+
+	y, m, d := checkInLocalDate.Date()
+	if y != 2025 || m != 5 || d != 15 {
+		t.Fatalf("checkInLocalDate = %d-%02d-%02d, want 2025-05-15", y, m, d)
+	}
+
+	y, m, d = correctionActionLocalDate.Date()
+	if y != 2025 || m != 5 || d != 20 {
+		t.Fatalf("correctionActionLocalDate = %d-%02d-%02d, want 2025-05-20", y, m, d)
+	}
+
+	if checkInLocalDate.Equal(correctionActionLocalDate) {
+		t.Fatal("expected corrected interval and action local dates to differ")
+	}
+}
+
+func TestCorrection_ActionLocalDateLondonBoundary(t *testing.T) {
+	// Action at 2025-06-15 23:30 UTC = 2025-06-16 00:30 BST
+	actionTime := time.Date(2025, 6, 15, 23, 30, 0, 0, time.UTC)
+	clock := fixedClock(actionTime)
+
+	correctionActionLocalDate := clock.LocalDate(actionTime)
+	y, m, d := correctionActionLocalDate.Date()
+	if y != 2025 || m != 6 || d != 16 {
+		t.Fatalf("correctionActionLocalDate = %d-%02d-%02d, want 2025-06-16 (BST)", y, m, d)
+	}
+
+	checkInLocalDate := clock.LocalDate(time.Date(2025, 6, 10, 8, 0, 0, 0, time.UTC))
+	y, m, d = checkInLocalDate.Date()
+	if y != 2025 || m != 6 || d != 10 {
+		t.Fatalf("checkInLocalDate = %d-%02d-%02d, want 2025-06-10", y, m, d)
+	}
+}
+
 func newTestCorrectAttendance() *CorrectAttendance {
 	return NewCorrectAttendance(nil, nil, nil, audit.NewWriter(), fixedClock(time.Now().UTC()))
 }
