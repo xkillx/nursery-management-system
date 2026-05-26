@@ -70,3 +70,21 @@ VALUES ($1, $2, $3, $4, 'corrected', $5, $6, $7, $8);
 -- name: AttendanceAttachCorrectedEvent :exec
 UPDATE attendance_sessions SET corrected_by_event_id = $1
 WHERE tenant_id = $2 AND branch_id = $3 AND id = $4;
+
+-- name: AttendanceListIncompleteSessionsForPeriod :many
+SELECT s.child_id,
+       c.full_name AS child_name,
+       s.id AS session_id,
+       s.check_in_at,
+       s.check_in_local_date
+FROM attendance_sessions s
+JOIN children c
+  ON c.tenant_id = s.tenant_id
+ AND c.branch_id = s.branch_id
+ AND c.id = s.child_id
+WHERE s.tenant_id = $1
+  AND s.branch_id = $2
+  AND s.status = 'open'
+  AND s.check_in_local_date >= $3
+  AND s.check_in_local_date < $4
+ORDER BY s.check_in_local_date ASC, c.full_name ASC, s.check_in_at ASC;

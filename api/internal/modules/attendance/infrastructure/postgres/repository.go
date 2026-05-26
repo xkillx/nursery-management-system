@@ -444,3 +444,31 @@ func pgtypeDateToTimePtr(d pgtype.Date) *time.Time {
 func stringToPgtypeText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: true}
 }
+
+func (r *AttendanceRepository) ListIncompleteSessionsForPeriod(
+	ctx context.Context,
+	tenantID, branchID uuid.UUID,
+	periodStartLocalDate, periodEndExclusiveLocalDate time.Time,
+) ([]domain.IncompleteSessionBlocker, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.AttendanceListIncompleteSessionsForPeriod(ctx, sqlc.AttendanceListIncompleteSessionsForPeriodParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		CheckInLocalDate: timeToPgtypeDate(periodStartLocalDate),
+		CheckInLocalDate_2: timeToPgtypeDate(periodEndExclusiveLocalDate),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list incomplete attendance sessions for period: %w", err)
+	}
+	result := make([]domain.IncompleteSessionBlocker, len(rows))
+	for i, row := range rows {
+		result[i] = domain.IncompleteSessionBlocker{
+			ChildID:          pgtypeUUIDToUUID(row.ChildID),
+			ChildName:        row.ChildName,
+			SessionID:        pgtypeUUIDToUUID(row.SessionID),
+			CheckInAt:        pgtypeTimestamptzToTime(row.CheckInAt),
+			CheckInLocalDate: pgtypeDateToTime(row.CheckInLocalDate),
+		}
+	}
+	return result, nil
+}

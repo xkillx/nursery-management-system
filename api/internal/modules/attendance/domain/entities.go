@@ -22,6 +22,14 @@ const (
 	EventCorrection EventType = "correction"
 )
 
+type IncompleteSessionBlocker struct {
+	ChildID          uuid.UUID
+	ChildName        string
+	SessionID        uuid.UUID
+	CheckInAt        time.Time
+	CheckInLocalDate time.Time
+}
+
 type Session struct {
 	ID                uuid.UUID
 	ChildID           uuid.UUID

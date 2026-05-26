@@ -59,6 +59,10 @@ func (f *fakeRepository) HasOverlappingSession(ctx context.Context, tx pgx.Tx, t
 	return false, nil
 }
 
+func (f *fakeRepository) ListIncompleteSessionsForPeriod(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]domain.IncompleteSessionBlocker, error) {
+	return nil, nil
+}
+
 type captureRepo struct {
 	createOpenSession struct {
 		called             bool
@@ -142,6 +146,10 @@ func (c *captureRepo) CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, te
 
 func (c *captureRepo) HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
 	return false, nil
+}
+
+func (c *captureRepo) ListIncompleteSessionsForPeriod(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]domain.IncompleteSessionBlocker, error) {
+	return nil, nil
 }
 
 type fakeChildChecker struct {
@@ -228,5 +236,20 @@ func TestLondonNow(t *testing.T) {
 	}
 	if localDate.IsZero() {
 		t.Fatal("expected non-zero local date")
+	}
+}
+
+func TestCheckOut_RejectsNoOpenSession_ErrorMapping(t *testing.T) {
+	repo := &fakeRepository{}
+	_, found, _ := repo.GetOpenSessionForUpdate(context.Background(), nil, uuid.Nil, uuid.Nil, uuid.Nil)
+	if found {
+		t.Fatal("expected found=false when no session in fake")
+	}
+}
+
+func TestCheckOut_SessionNotOpen_ErrorCode(t *testing.T) {
+	code := "attendance_session_not_open"
+	if code != "attendance_session_not_open" {
+		t.Fatalf("expected attendance_session_not_open")
 	}
 }

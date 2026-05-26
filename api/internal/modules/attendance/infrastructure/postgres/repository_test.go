@@ -828,3 +828,177 @@ func TestAttCorrectionEvent_ActionLocalDate(t *testing.T) {
 		t.Errorf("session check_in_local_date = %d-%02d-%02d, want 2025-05-15 (corrected interval)", y, m, d)
 	}
 }
+
+func TestAttListIncompleteSessionsForPeriod_ReturnsOpenInPeriod(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	sessionID := uuid.New()
+	dbtest.InsertAttendanceSession(t, pool, sessionID, attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 6, 10, 8, 30), dbtest.DateAt(2025, 6, 10))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].ChildID != childID {
+		t.Errorf("ChildID = %s, want %s", results[0].ChildID, childID)
+	}
+	if results[0].SessionID != sessionID {
+		t.Errorf("SessionID = %s, want %s", results[0].SessionID, sessionID)
+	}
+	if results[0].ChildName != "Att Child" {
+		t.Errorf("ChildName = %s, want Att Child", results[0].ChildName)
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_ExcludesBeforePeriod(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 5, 31, 8, 30), dbtest.DateAt(2025, 5, 31))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results for before-period session, got %d", len(results))
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_ExcludesOnExclusiveEnd(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 7, 1, 8, 30), dbtest.DateAt(2025, 7, 1))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results for on-exclusive-end session, got %d", len(results))
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_ExcludesCompleteSessions(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	sessionID := uuid.New()
+	dbtest.InsertAttendanceSession(t, pool, sessionID, attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 6, 10, 8, 30), dbtest.DateAt(2025, 6, 10))
+	dbtest.CompleteAttendanceSession(t, pool, attTenantID, attBranchID, sessionID,
+		dbtest.TimestampAt(2025, 6, 10, 16, 0), dbtest.DateAt(2025, 6, 10))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results for complete session, got %d", len(results))
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_IncludesInactiveChild(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+
+	childID := uuid.MustParse("d5000000-0000-0000-0000-000000000099")
+	guardianID := uuid.MustParse("d6000000-0000-0000-0000-000000000099")
+	linkID := uuid.MustParse("d7000000-0000-0000-0000-000000000099")
+
+	dbtest.InsertChild(t, pool, childID, attTenantID, attBranchID, "Inactive Child",
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, false)
+	dbtest.InsertGuardian(t, pool, guardianID, attTenantID, attBranchID, "Inactive Parent", true)
+	dbtest.InsertGuardianLink(t, pool, linkID, attTenantID, attBranchID, guardianID, childID)
+
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 6, 10, 8, 30), dbtest.DateAt(2025, 6, 10))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result for inactive child open session, got %d", len(results))
+	}
+	if results[0].ChildName != "Inactive Child" {
+		t.Errorf("ChildName = %s, want Inactive Child", results[0].ChildName)
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_SortsStably(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+
+	childA := uuid.MustParse("d5000000-0000-0000-0000-0000000000a1")
+	childB := uuid.MustParse("d5000000-0000-0000-0000-0000000000b2")
+	guardianA := uuid.MustParse("d6000000-0000-0000-0000-0000000000a1")
+	guardianB := uuid.MustParse("d6000000-0000-0000-0000-0000000000b2")
+	linkA := uuid.MustParse("d7000000-0000-0000-0000-0000000000a1")
+	linkB := uuid.MustParse("d7000000-0000-0000-0000-0000000000b2")
+
+	dbtest.InsertChild(t, pool, childA, attTenantID, attBranchID, "Beta Child",
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+	dbtest.InsertChild(t, pool, childB, attTenantID, attBranchID, "Alpha Child",
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+	dbtest.InsertGuardian(t, pool, guardianA, attTenantID, attBranchID, "Parent A", true)
+	dbtest.InsertGuardian(t, pool, guardianB, attTenantID, attBranchID, "Parent B", true)
+	dbtest.InsertGuardianLink(t, pool, linkA, attTenantID, attBranchID, guardianA, childA)
+	dbtest.InsertGuardianLink(t, pool, linkB, attTenantID, attBranchID, guardianB, childB)
+
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childA, "open",
+		dbtest.TimestampAt(2025, 6, 11, 8, 30), dbtest.DateAt(2025, 6, 11))
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childB, "open",
+		dbtest.TimestampAt(2025, 6, 10, 8, 30), dbtest.DateAt(2025, 6, 10))
+
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, attTenantID, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	if results[0].ChildName != "Alpha Child" {
+		t.Errorf("first result ChildName = %s, want Alpha Child (earlier date)", results[0].ChildName)
+	}
+	if results[1].ChildName != "Beta Child" {
+		t.Errorf("second result ChildName = %s, want Beta Child (later date)", results[1].ChildName)
+	}
+}
+
+func TestAttListIncompleteSessionsForPeriod_RespectsTenantBranchScope(t *testing.T) {
+	repo, pool := setupAttRepo(t)
+	ctx := context.Background()
+	childID := seedAttChild(t, pool)
+
+	dbtest.InsertAttendanceSession(t, pool, uuid.New(), attTenantID, attBranchID, childID, "open",
+		dbtest.TimestampAt(2025, 6, 10, 8, 30), dbtest.DateAt(2025, 6, 10))
+
+	wrongTenant := uuid.New()
+	results, err := repo.ListIncompleteSessionsForPeriod(ctx, wrongTenant, attBranchID,
+		dbtest.DateAt(2025, 6, 1), dbtest.DateAt(2025, 7, 1))
+	if err != nil {
+		t.Fatalf("ListIncompleteSessionsForPeriod: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results for wrong tenant, got %d", len(results))
+	}
+}

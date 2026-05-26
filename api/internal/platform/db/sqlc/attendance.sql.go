@@ -407,3 +407,68 @@ func (q *Queries) AttendanceInsertOpenSession(ctx context.Context, arg Attendanc
 	)
 	return err
 }
+
+const attendanceListIncompleteSessionsForPeriod = `-- name: AttendanceListIncompleteSessionsForPeriod :many
+SELECT s.child_id,
+       c.full_name AS child_name,
+       s.id AS session_id,
+       s.check_in_at,
+       s.check_in_local_date
+FROM attendance_sessions s
+JOIN children c
+  ON c.tenant_id = s.tenant_id
+ AND c.branch_id = s.branch_id
+ AND c.id = s.child_id
+WHERE s.tenant_id = $1
+  AND s.branch_id = $2
+  AND s.status = 'open'
+  AND s.check_in_local_date >= $3
+  AND s.check_in_local_date < $4
+ORDER BY s.check_in_local_date ASC, c.full_name ASC, s.check_in_at ASC
+`
+
+type AttendanceListIncompleteSessionsForPeriodParams struct {
+	TenantID           pgtype.UUID
+	BranchID           pgtype.UUID
+	CheckInLocalDate   pgtype.Date
+	CheckInLocalDate_2 pgtype.Date
+}
+
+type AttendanceListIncompleteSessionsForPeriodRow struct {
+	ChildID          pgtype.UUID
+	ChildName        string
+	SessionID        pgtype.UUID
+	CheckInAt        pgtype.Timestamptz
+	CheckInLocalDate pgtype.Date
+}
+
+func (q *Queries) AttendanceListIncompleteSessionsForPeriod(ctx context.Context, arg AttendanceListIncompleteSessionsForPeriodParams) ([]AttendanceListIncompleteSessionsForPeriodRow, error) {
+	rows, err := q.db.Query(ctx, attendanceListIncompleteSessionsForPeriod,
+		arg.TenantID,
+		arg.BranchID,
+		arg.CheckInLocalDate,
+		arg.CheckInLocalDate_2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AttendanceListIncompleteSessionsForPeriodRow
+	for rows.Next() {
+		var i AttendanceListIncompleteSessionsForPeriodRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.ChildName,
+			&i.SessionID,
+			&i.CheckInAt,
+			&i.CheckInLocalDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
