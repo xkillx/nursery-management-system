@@ -34,6 +34,10 @@ import (
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 
+	absenceapp "nursery-management-system/api/internal/modules/absence/application"
+	absencepostgres "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
+	absencehandler "nursery-management-system/api/internal/modules/absence/interfaces/http"
+
 	inviteapp "nursery-management-system/api/internal/modules/invites/application"
 	invitepostgres "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
@@ -150,11 +154,21 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	childEnrollmentChecker := &childEnrollmentCheckerAdapter{repo: childRepo}
 	childCorrectionChecker := &childCorrectionCheckerAdapter{repo: childRepo}
 	attendanceClock := attendanceapp.NewAttendanceClock(attendanceapp.RealClock)
+
+	// Absence module
+	absenceRepo := absencepostgres.NewAbsenceRepository(pool)
+	absenceMarkerChecker := &absenceMarkerCheckerAdapter{repo: absenceRepo}
+	absenceClock := attendanceapp.NewAttendanceClock(attendanceapp.RealClock)
+	markAbsentUC := absenceapp.NewMarkAbsent(absenceRepo, childEnrollmentChecker, txManager, auditWriter, absenceClock)
+	clearMarkerUC := absenceapp.NewClearMarker(absenceRepo, txManager, auditWriter, absenceClock)
+
 	attendanceHandler := attendancehandler.NewHandler(
-		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, txManager, auditWriter, attendanceClock),
+		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, absenceMarkerChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
 	)
+
+	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC)
 
 	// Register people routes
 	childrenHandler.RegisterRoutes(protected)
@@ -167,6 +181,9 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 
 	// Register attendance routes (manager + practitioner)
 	attendanceHandler.RegisterRoutes(protected)
+
+	// Register absence routes (manager + practitioner)
+	absenceHandler.RegisterRoutes(protected)
 
 	// Funding module
 	fundingRepo := fundingpostgres.NewRepository(pool)

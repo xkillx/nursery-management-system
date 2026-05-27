@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AbsenceMarker struct {
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	BranchID              pgtype.UUID
+	ChildID               pgtype.UUID
+	LocalDate             pgtype.Date
+	MarkedAt              pgtype.Timestamptz
+	MarkedByUserID        pgtype.UUID
+	MarkedByMembershipID  pgtype.UUID
+	ClearedAt             pgtype.Timestamptz
+	ClearedByUserID       pgtype.UUID
+	ClearedByMembershipID pgtype.UUID
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
 type AttendanceEvent struct {
 	ID                     pgtype.UUID
 	TenantID               pgtype.UUID

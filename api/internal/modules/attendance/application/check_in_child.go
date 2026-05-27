@@ -15,26 +15,29 @@ import (
 )
 
 type CheckInChild struct {
-	repo         domain.Repository
-	childChecker domain.ChildEnrollmentChecker
-	txMgr        *transaction.Manager
-	audit        *audit.Writer
-	clock        *AttendanceClock
+	repo           domain.Repository
+	childChecker   domain.ChildEnrollmentChecker
+	absenceChecker domain.AbsenceMarkerChecker
+	txMgr          *transaction.Manager
+	audit          *audit.Writer
+	clock          *AttendanceClock
 }
 
 func NewCheckInChild(
 	repo domain.Repository,
 	childChecker domain.ChildEnrollmentChecker,
+	absenceChecker domain.AbsenceMarkerChecker,
 	txMgr *transaction.Manager,
 	auditWriter *audit.Writer,
 	clock *AttendanceClock,
 ) *CheckInChild {
 	return &CheckInChild{
-		repo:         repo,
-		childChecker: childChecker,
-		txMgr:        txMgr,
-		audit:        auditWriter,
-		clock:        clock,
+		repo:           repo,
+		childChecker:   childChecker,
+		absenceChecker: absenceChecker,
+		txMgr:          txMgr,
+		audit:          auditWriter,
+		clock:          clock,
 	}
 }
 
@@ -46,6 +49,16 @@ func (uc *CheckInChild) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 		if err := uc.childChecker.CheckEnrollmentForAttendance(ctx, tx, actor.TenantID, actor.BranchID, childID, localDate); err != nil {
 			return mapCheckInError(err)
+		}
+
+		if uc.absenceChecker != nil {
+			hasAbsence, err := uc.absenceChecker.HasActiveAbsenceMarker(ctx, tx, actor.TenantID, actor.BranchID, childID, localDate)
+			if err != nil {
+				return domainerrors.Internal(fmt.Errorf("check absence marker: %w", err))
+			}
+			if hasAbsence {
+				return domainerrors.Conflict("absence_marker_exists", "An active absence marker exists for this child today.")
+			}
 		}
 
 		session, err := uc.repo.CreateOpenSessionWithEvent(ctx, tx, actor.TenantID, actor.BranchID, childID, now, localDate, actor.UserID, actor.MembershipID, actor.RequestID)

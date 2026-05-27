@@ -32,6 +32,8 @@ type attendanceChildResponse struct {
 	OpenSessionID        *string `json:"open_session_id,omitempty"`
 	CheckedInAt          *string `json:"checked_in_at,omitempty"`
 	HasIncompleteSession bool    `json:"has_incomplete_session"`
+	AbsenceMarkerID      *string `json:"absence_marker_id,omitempty"`
+	AbsenceMarkedAt      *string `json:"absence_marked_at,omitempty"`
 }
 
 func toChildResponse(child domain.Child) childResponse {
@@ -78,6 +80,14 @@ func toAttendanceResponse(child domain.AttendanceChild) attendanceChildResponse 
 	if child.CheckedInAt != nil {
 		at := child.CheckedInAt.UTC().Format(time.RFC3339)
 		resp.CheckedInAt = &at
+	}
+	if child.AbsenceMarkerID != nil {
+		id := child.AbsenceMarkerID.String()
+		resp.AbsenceMarkerID = &id
+	}
+	if child.AbsenceMarkedAt != nil {
+		at := child.AbsenceMarkedAt.UTC().Format(time.RFC3339)
+		resp.AbsenceMarkedAt = &at
 	}
 	return resp
 }

@@ -41,3 +41,7 @@ type ChildCorrectionInfo struct {
 type ChildEnrollmentChecker interface {
 	CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error
 }
+
+type AbsenceMarkerChecker interface {
+	HasActiveAbsenceMarker(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error)
+}

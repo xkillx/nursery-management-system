@@ -103,3 +103,27 @@ func TestMapDomainError_AttendanceOutsideEnrollmentWindow_Conflict(t *testing.T)
 		t.Fatalf("expected 409, got %d", status)
 	}
 }
+
+func TestMapDomainError_AbsenceAttendanceExists_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("absence_attendance_exists", "test")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestMapDomainError_AbsenceMarkerExists_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("absence_marker_exists", "test")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestMapDomainError_AbsenceMarkerNotFound_404(t *testing.T) {
+	err := domainerrors.NotFound("absence_marker", "test")
+	status, _ := MapDomainError(err, "req-1")
+	if status != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", status)
+	}
+}

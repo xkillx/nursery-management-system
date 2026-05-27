@@ -431,13 +431,17 @@ Returns children with current attendance state for the current `Europe/London` l
       "attendance_state": "checked_in",
       "open_session_id": "uuid",
       "checked_in_at": "2026-05-26T08:00:00Z",
-      "has_incomplete_session": true
+      "has_incomplete_session": true,
+      "absence_marker_id": null,
+      "absence_marked_at": null
     }
   ]
 }
 ```
 
-`attendance_state` values: `not_checked_in`, `checked_in`.
+`attendance_state` values: `not_checked_in`, `checked_in`, `absent`.
+
+`absence_marker_id` and `absence_marked_at` are nullable. When present, the child has an active (non-cleared) absence marker for the current `Europe/London` local day and `attendance_state` is `absent`.
 
 ---
 
@@ -698,6 +702,7 @@ Roles: manager, practitioner.
 | 400 | `validation_error` | Invalid payload |
 | 404 | `child_not_found` | Child does not exist |
 | 409 | `attendance_session_already_open` | Child already checked in |
+| 409 | `absence_marker_exists` | Child has an active absence marker for today |
 | 409 | `child_enrollment_incomplete` | Child enrollment is not complete |
 
 ### POST /api/v1/attendance/check-outs
@@ -769,6 +774,71 @@ The correction event's `occurred_at` and `local_date` reflect the manager action
 | 409 | `attendance_correction_future_time` | Corrected times are in the future |
 | 409 | `attendance_session_overlap` | Corrected interval overlaps another session |
 | 409 | `attendance_outside_enrollment_window` | Corrected dates are outside child start/end dates |
+
+### POST /api/v1/attendance/absence-markers
+
+Roles: manager, practitioner.
+
+Mark a child as absent for the current `Europe/London` local day. Absence markers are non-billing and never change invoice calculations. Idempotent: if an active (non-cleared) marker already exists for the same child and local date, returns the existing marker with **200**.
+
+**Request:**
+
+```json
+{ "child_id": "uuid" }
+```
+
+**Response 201** (new marker):
+
+```json
+{
+  "id": "uuid",
+  "child_id": "uuid",
+  "local_date": "2026-05-26",
+  "marked_at": "2026-05-26T08:30:00Z",
+  "cleared_at": null,
+  "created_at": "2026-05-26T08:30:00Z",
+  "updated_at": "2026-05-26T08:30:00Z"
+}
+```
+
+**Response 200** (existing active marker): same shape.
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Invalid payload or child_id |
+| 404 | `child_not_found` | Child does not exist |
+| 409 | `absence_attendance_exists` | Child already has an open attendance session for today |
+
+### POST /api/v1/attendance/absence-markers/:absence_marker_id/clear
+
+Roles: manager, practitioner.
+
+Clear an active absence marker. Sets `cleared_at` to the current server time. The marker is no longer considered active.
+
+**Request:** No body required.
+
+**Response 200:**
+
+```json
+{
+  "id": "uuid",
+  "child_id": "uuid",
+  "local_date": "2026-05-26",
+  "marked_at": "2026-05-26T08:30:00Z",
+  "cleared_at": "2026-05-26T09:00:00Z",
+  "created_at": "2026-05-26T08:30:00Z",
+  "updated_at": "2026-05-26T09:00:00Z"
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Invalid `absence_marker_id` |
+| 404 | `absence_marker_not_found` | Marker does not exist |
 
 ---
 

@@ -71,11 +71,13 @@ func (c Child) EnrollmentComplete() bool {
 }
 
 type AttendanceChild struct {
-	ID                  uuid.UUID
-	FullName            string
-	EnrollmentComplete  bool
-	AttendanceState     string
-	OpenSessionID       *uuid.UUID
-	CheckedInAt         *time.Time
+	ID                   uuid.UUID
+	FullName             string
+	EnrollmentComplete   bool
+	AttendanceState      string
+	OpenSessionID        *uuid.UUID
+	CheckedInAt          *time.Time
 	HasIncompleteSession bool
+	AbsenceMarkerID      *uuid.UUID
+	AbsenceMarkedAt      *time.Time
 }

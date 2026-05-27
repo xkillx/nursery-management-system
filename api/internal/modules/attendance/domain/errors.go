@@ -15,4 +15,5 @@ var (
 	ErrSessionOverlap             = errors.New("attendance_session_overlap")
 	ErrOutsideEnrollmentWindow    = errors.New("attendance_outside_enrollment_window")
 	ErrSessionNotFound            = errors.New("attendance_session_not_found")
+	ErrAbsenceMarkerExists        = errors.New("absence_marker_exists")
 )

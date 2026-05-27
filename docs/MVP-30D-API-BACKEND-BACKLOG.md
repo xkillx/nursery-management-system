@@ -63,7 +63,7 @@ Known backend gaps:
 - Track full migration of existing hand-written query repositories to `sqlc` as post-MVP technical debt; do not make it a blocker for month-1 pilot features.
 - Include backend-owned production operations in Week 4.
 - Treat reporting basics and CSV export as stretch, not core.
-- Treat absence marker API as stretch, not core.
+- Treat absence marker API as stretch, not core. ~~Completed as API-14 (2026-05-27).~~
 - Implement issued-invoice immutability as core. Add only the schema/state hooks needed for future adjustment invoices in the core path; full adjustment endpoints are stretch unless UAT requires them.
 - Public routes remain health and authentication/account-recovery routes only; all business routes require authorization guards.
 - API errors use `{ code, message, details?, request_id }`.
@@ -130,7 +130,7 @@ Implementation notes:
 | ~~API-11~~ | ~~Add billing calculation package for attendance-derived minutes. Implement `Europe/London` month boundaries, check-in-month allocation for cross-midnight sessions, incomplete exclusion, and 15-minute round-up per session.~~ **Done 2026-05-26.** | ~~API-10~~ | ~~Pure calculator at `billing/domain`: London month-boundary derivation, check-in-month allocation, 15-minute ceiling rounding, incomplete session exclusions. 27 table-driven tests pass covering same-day, cross-midnight, cross-month, DST, corrected, and multiple-session cases.~~ |
 | ~~API-12~~ | ~~Add Funding v1 schema and module: `funding_profiles` with monthly funded-hours allowance per child, manager read/update endpoints, audit events, tenant/branch scope, and validation.~~ **Done 2026-05-26.** | ~~API-03, API-07~~ | ~~Manager can save/read allowance; practitioner/parent are forbidden; funding update audit event is persisted. 239 tests pass. Migration 000010 verified. Funding routes: `GET/PUT /api/v1/funding/children/:child_id`.~~ |
 | ~~API-13~~ | ~~Add Funding v1 calculation service: `max(0, core_attended_minutes - funded_allowance_minutes)` with extras excluded from deduction and calculation components returned for invoice generation.~~ **Done 2026-05-27.** | ~~API-11, API-12~~ | ~~Pure calculator at `billing/domain`: core-only funded deduction, zero-floor behavior, deterministic output. 9 table-driven tests pass covering deduction, zero-floor, zero allowance/attendance, exact match, determinism, shape, and negative input rejection. 249 tests pass overall.~~ |
-| API-14 | Add optional absence marker only if core attendance/funding work is complete. Keep it non-billing and manager/practitioner scoped per product decision. | API-09 | Stretch only; absence marker never changes invoice calculations. |
+| ~~API-14~~ | ~~Add optional absence marker only if core attendance/funding work is complete. Keep it non-billing and manager/practitioner scoped per product decision.~~ **Done 2026-05-27.** | ~~API-09~~ | ~~Manager and practitioner can mark a child absent for the current Europe/London local day and clear the marker. Absence markers are non-billing, current-day only, and never change invoice calculations. Check-in is blocked when an active absence marker exists.~~ |
 
 ## Week 3 - Invoicing, Parent Billing API, and Stripe
 
@@ -204,6 +204,8 @@ New route groups to add:
 - `POST /api/v1/invites/accept`
 - `GET /api/v1/funding/children/:child_id`
 - `PUT /api/v1/funding/children/:child_id`
+- `POST /api/v1/attendance/absence-markers`
+- `POST /api/v1/attendance/absence-markers/:absence_marker_id/clear`
 - `POST /api/v1/invoice-runs/preflight`
 - `POST /api/v1/invoice-runs/drafts`
 - `GET /api/v1/invoices`

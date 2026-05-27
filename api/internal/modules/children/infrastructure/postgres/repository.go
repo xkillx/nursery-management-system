@@ -170,7 +170,7 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	rows, err := q.ChildrenListAttendance(ctx, sqlc.ChildrenListAttendanceParams{
 		TenantID:  uuidToPgtype(tenantID),
 		BranchID:  uuidToPgtype(branchID),
-		StartDate: timeToPgtypeDate(localDate),
+		LocalDate: timeToPgtypeDate(localDate),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("query attendance children: %w", err)
@@ -189,6 +189,8 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 			OpenSessionID:        pgtypeUUIDToUUIDPtr(row.OpenSessionID),
 			CheckedInAt:          pgtypeTimestamptzToTimePtr(row.CheckedInAt),
 			HasIncompleteSession: hasIncomplete,
+			AbsenceMarkerID:      pgtypeUUIDToUUIDPtr(row.AbsenceMarkerID),
+			AbsenceMarkedAt:      pgtypeTimestamptzToTimePtr(row.AbsenceMarkedAt),
 		})
 	}
 	return out, nil

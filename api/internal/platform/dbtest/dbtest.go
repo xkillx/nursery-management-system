@@ -228,6 +228,7 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 
 	tables := []string{
 		"funding_profiles",
+		"absence_markers",
 		"attendance_events",
 		"attendance_sessions",
 		"manager_invites",
@@ -451,6 +452,17 @@ func CompleteAttendanceSession(t testing.TB, pool *pgxpool.Pool, tenantID, branc
 		checkOutAt, checkOutLocalDate, tenantID, branchID, sessionID)
 	if err != nil {
 		t.Fatalf("complete attendance session: %v", err)
+	}
+}
+
+// InsertAbsenceMarker inserts an absence marker. Pass nil for clearedAt/clearedBy fields to create an active marker.
+func InsertAbsenceMarker(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, childID, markedByUserID, markedByMembershipID uuid.UUID, localDate, markedAt time.Time, clearedAt *time.Time, clearedByUserID, clearedByMembershipID *uuid.UUID) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		"INSERT INTO absence_markers (id, tenant_id, branch_id, child_id, local_date, marked_at, marked_by_user_id, marked_by_membership_id, cleared_at, cleared_by_user_id, cleared_by_membership_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+		id, tenantID, branchID, childID, localDate, markedAt, markedByUserID, markedByMembershipID, clearedAt, clearedByUserID, clearedByMembershipID)
+	if err != nil {
+		t.Fatalf("insert absence marker: %v", err)
 	}
 }
 

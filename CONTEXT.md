@@ -292,9 +292,25 @@ Practitioner attendance workflows expose only attendance-facing child informatio
 
 Child/guardian and relationship write actions (create, update, deactivate, link, unlink, mapping changes) are manager-only in month 1, while practitioner access remains read-only for attendance-facing child views.
 
-## Absence Handling (MVP)
+## Absence Marker (MVP)
 
-Absences are recorded with a simple marker and are not billed automatically.
+An absence marker records that one child was absent for one `Europe/London` local date. It is separate from attendance sessions and attendance corrections, and it does not create, edit, void, or exclude any attendance session; a child-day cannot have both an absence marker and attendance.
+
+## Clear Absence Marker (MVP)
+
+Clearing an absence marker means removing the active absent state for a child-day while preserving the historical record that the marker existed.
+
+## Absence Marker Authority (MVP)
+
+Managers and practitioners may create and clear absence markers. Parents do not have access to absence marker workflows.
+
+## Absence Marker Detail Scope (MVP)
+
+Absence markers do not carry reason codes, notes, charge policy, or funding policy in month 1.
+
+## Absence Marker Date Scope (MVP)
+
+Absence markers are used only for the current `Europe/London` local day in month 1; future absence scheduling is out of scope.
 
 ## Billing Period (MVP)
 

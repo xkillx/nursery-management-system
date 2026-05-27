@@ -354,16 +354,28 @@ SELECT c.id,
               AND gcl.child_id = c.id
               AND gcl.ended_at IS NULL
         )) AS enrollment_complete,
-       CASE WHEN s.id IS NULL THEN 'not_checked_in' ELSE 'checked_in' END AS attendance_state,
+       CASE
+         WHEN s.id IS NOT NULL THEN 'checked_in'
+         WHEN am.id IS NOT NULL THEN 'absent'
+         ELSE 'not_checked_in'
+       END AS attendance_state,
        s.id AS open_session_id,
        s.check_in_at AS checked_in_at,
-       s.id IS NOT NULL AS has_incomplete_session
+       s.id IS NOT NULL AS has_incomplete_session,
+       am.id AS absence_marker_id,
+       am.marked_at AS absence_marked_at
 FROM children c
 LEFT JOIN attendance_sessions s
   ON s.tenant_id = c.tenant_id
  AND s.branch_id = c.branch_id
  AND s.child_id = c.id
  AND s.status = 'open'
+LEFT JOIN absence_markers am
+  ON am.tenant_id = c.tenant_id
+ AND am.branch_id = c.branch_id
+ AND am.child_id = c.id
+ AND am.local_date = $3
+ AND am.cleared_at IS NULL
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND (
@@ -376,7 +388,7 @@ ORDER BY c.full_name ASC
 type ChildrenListAttendanceParams struct {
 	TenantID  pgtype.UUID
 	BranchID  pgtype.UUID
-	StartDate pgtype.Date
+	LocalDate pgtype.Date
 }
 
 type ChildrenListAttendanceRow struct {
@@ -387,10 +399,12 @@ type ChildrenListAttendanceRow struct {
 	OpenSessionID        pgtype.UUID
 	CheckedInAt          pgtype.Timestamptz
 	HasIncompleteSession interface{}
+	AbsenceMarkerID      pgtype.UUID
+	AbsenceMarkedAt      pgtype.Timestamptz
 }
 
 func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAttendanceParams) ([]ChildrenListAttendanceRow, error) {
-	rows, err := q.db.Query(ctx, childrenListAttendance, arg.TenantID, arg.BranchID, arg.StartDate)
+	rows, err := q.db.Query(ctx, childrenListAttendance, arg.TenantID, arg.BranchID, arg.LocalDate)
 	if err != nil {
 		return nil, err
 	}
@@ -406,6 +420,8 @@ func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAt
 			&i.OpenSessionID,
 			&i.CheckedInAt,
 			&i.HasIncompleteSession,
+			&i.AbsenceMarkerID,
+			&i.AbsenceMarkedAt,
 		); err != nil {
 			return nil, err
 		}

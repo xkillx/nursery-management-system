@@ -11,7 +11,9 @@ import (
 	postgresguardian "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
+	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 )
@@ -88,3 +90,17 @@ func (a *childCorrectionCheckerAdapter) GetChildForCorrection(ctx context.Contex
 		EndDate:   info.EndDate,
 	}, true, nil
 }
+
+type absenceMarkerCheckerAdapter struct {
+	repo *postgresabsence.AbsenceRepository
+}
+
+func (a *absenceMarkerCheckerAdapter) HasActiveAbsenceMarker(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
+	_, found, err := a.repo.FindActiveByChildDate(ctx, tx, tenantID, branchID, childID, localDate)
+	if err != nil {
+		return false, fmt.Errorf("check active absence marker: %w", err)
+	}
+	return found, nil
+}
+
+var _ absencedomain.Repository = (*postgresabsence.AbsenceRepository)(nil)
