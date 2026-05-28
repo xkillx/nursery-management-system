@@ -142,6 +142,94 @@ type GuardianChildLink struct {
 	EndedReasonNote pgtype.Text
 }
 
+type Invoice struct {
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	ChildID                pgtype.UUID
+	BillingMonth           pgtype.Date
+	InvoiceKind            string
+	Status                 string
+	InvoiceNumber          pgtype.Text
+	IssuedSequence         pgtype.Int4
+	GeneratedRunID         pgtype.UUID
+	IssuedRunID            pgtype.UUID
+	IssuedAt               pgtype.Timestamptz
+	IssuedByUserID         pgtype.UUID
+	IssuedByMembershipID   pgtype.UUID
+	LockedAt               pgtype.Timestamptz
+	DueAt                  pgtype.Timestamptz
+	CurrencyCode           string
+	SubtotalMinor          int32
+	FundedDeductionMinor   int32
+	TotalDueMinor          int32
+	AmountPaidMinor        int32
+	PaidAt                 pgtype.Timestamptz
+	PaymentFailedAt        pgtype.Timestamptz
+	PaymentStatusUpdatedAt pgtype.Timestamptz
+	AdjustsInvoiceID       pgtype.UUID
+	AdjustmentReasonCode   pgtype.Text
+	AdjustmentReasonNote   pgtype.Text
+	PeriodStartDate        pgtype.Date
+	PeriodEndDate          pgtype.Date
+	CalculationDetails     []byte
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
+type InvoiceLine struct {
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	InvoiceID              pgtype.UUID
+	LineKind               string
+	Description            string
+	SortOrder              int32
+	QuantityMinutes        pgtype.Int4
+	UnitAmountMinor        pgtype.Int4
+	LineAmountMinor        int32
+	RawAttendedMinutes     pgtype.Int4
+	RoundedAttendedMinutes pgtype.Int4
+	FundedAllowanceMinutes pgtype.Int4
+	FundedDeductionMinutes pgtype.Int4
+	CoreBillableMinutes    pgtype.Int4
+	SessionCount           pgtype.Int4
+	Details                []byte
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
+type InvoiceNumberSequence struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingYear  int32
+	BillingMonth int32
+	NextSequence int32
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+type InvoiceRun struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	BillingMonth            pgtype.Date
+	RunType                 string
+	Status                  string
+	StartedAt               pgtype.Timestamptz
+	CompletedAt             pgtype.Timestamptz
+	RequestedByUserID       pgtype.UUID
+	RequestedByMembershipID pgtype.UUID
+	RequestID               pgtype.Text
+	EligibleCount           int32
+	SuccessCount            int32
+	BlockedCount            int32
+	FailedCount             int32
+	Details                 []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
 type ManagerInvite struct {
 	ID                    pgtype.UUID
 	TenantID              pgtype.UUID

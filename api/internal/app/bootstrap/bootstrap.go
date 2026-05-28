@@ -115,8 +115,8 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	childrenHandler := childhandler.NewHandler(
 		childapp.NewListChildren(childRepo),
 		childapp.NewGetChild(childRepo),
-		childapp.NewCreateChild(childRepo, auditWriter),
-		childapp.NewUpdateChild(childRepo, auditWriter),
+		childapp.NewCreateChild(childRepo, auditWriter, pool),
+		childapp.NewUpdateChild(childRepo, auditWriter, pool),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
 	)

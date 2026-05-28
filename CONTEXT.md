@@ -68,6 +68,14 @@ Funding v1 records only the month-specific allowance; funding source, entitlemen
 
 A monthly billing statement showing gross fees, funded deduction, and final amount due.
 
+## Monthly Invoice (MVP)
+
+An invoice for one child and one calendar billing month. A child has at most one monthly invoice for the same billing month within a nursery branch.
+
+## Invoice Line (MVP)
+
+A charge, deduction, extra, or adjustment entry that explains how an invoice total was formed. Invoice lines preserve the billing calculation used for the invoice they belong to.
+
 ## Parent Account Provisioning (MVP)
 
 Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
@@ -244,9 +252,17 @@ Managers manually generate monthly draft invoices before any invoice is issued.
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
 
+## Invoice Run (MVP)
+
+A manager-triggered monthly billing operation that prepares or issues per-child invoices as a batch. An invoice run may include successful invoices and child-specific exceptions.
+
 ## Issued Invoice Edit Policy (MVP)
 
 Issued invoices are immutable; changes require explicit adjustment rather than direct edits.
+
+## Adjustment Invoice (MVP)
+
+A follow-up invoice that corrects or offsets a previously issued invoice. An adjustment invoice must be linked to the issued invoice it adjusts and must carry a manager-provided reason.
 
 ## Payment Scope (MVP)
 

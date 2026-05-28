@@ -1,11 +1,11 @@
 # API Schema State
 
-- **Verification date**: 2026-05-25
+- **Verification date**: 2026-05-28
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
-- **Final migration version**: 10 (clean)
+- **Final migration version**: 12 (clean)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (14)
+## Application Tables (18)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -47,6 +47,15 @@
 |---|---|---|
 | `funding_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `billing_month DATE`, `funded_allowance_minutes INTEGER`, `created_at`, `updated_at` | Unique `(tenant_id, branch_id, child_id, billing_month)`. `billing_month` must be first day of month. Allowance bounds: 0–44640. FK to `branches(tenant_id, id)` and `children(tenant_id, branch_id, id)`. |
 
+### Invoicing
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `invoice_runs` | `id UUID PK`, `tenant_id`, `branch_id`, `billing_month DATE`, `run_type TEXT`, `status TEXT`, `started_at`, `completed_at`, `requested_by_user_id FK`, `requested_by_membership_id`, `request_id`, `eligible/success/blocked/failed_count`, `details JSONB` | Composite unique `(tenant_id, branch_id, id)`. `run_type IN ('draft_generation', 'issue')`. `status IN ('started', 'completed', 'completed_with_exceptions', 'failed')`. `completed_at IS NULL` only while `started`. |
+| `invoices` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `billing_month DATE`, `invoice_kind TEXT`, `status TEXT`, `invoice_number TEXT`, `issued_sequence INTEGER`, `generated_run_id FK`, `issued_run_id FK`, `issued_at`, `issued_by_user_id FK`, `issued_by_membership_id`, `locked_at`, `due_at`, `currency_code CHAR(3)`, `subtotal_minor`, `funded_deduction_minor`, `total_due_minor`, `amount_paid_minor`, `paid_at`, `payment_failed_at`, `payment_status_updated_at`, `adjusts_invoice_id FK (self)`, `adjustment_reason_code`, `adjustment_reason_note`, `period_start_date`, `period_end_date`, `calculation_details JSONB` | Composite unique `(tenant_id, branch_id, id)`. Partial unique monthly `(tenant_id, branch_id, child_id, billing_month) WHERE invoice_kind = 'monthly'`. `invoice_kind IN ('monthly', 'adjustment')`. `status IN ('draft', 'issued', 'payment_failed', 'paid', 'overdue')`. Draft shape: issue fields null. Issued shape: issue fields non-null. Paid shape: `paid_at IS NOT NULL`, `amount_paid_minor = total_due_minor`. Adjustment shape: requires `adjusts_invoice_id` + non-empty reason. Monthly shape: adjustment fields null. `funded_deduction_minor` stored as positive reporting amount. |
+| `invoice_lines` | `id UUID PK`, `tenant_id`, `branch_id`, `invoice_id FK`, `line_kind TEXT`, `description TEXT`, `sort_order INTEGER`, `quantity_minutes INTEGER`, `unit_amount_minor INTEGER`, `line_amount_minor INTEGER`, `raw_attended_minutes`, `rounded_attended_minutes`, `funded_allowance_minutes`, `funded_deduction_minutes`, `core_billable_minutes`, `session_count`, `details JSONB` | Composite unique `(tenant_id, branch_id, id)`. `line_kind IN ('core_childcare', 'funded_deduction', 'extra', 'adjustment')`. `core_childcare` and `extra`: `line_amount_minor >= 0`. `funded_deduction`: `line_amount_minor <= 0`. `adjustment`: signed either direction. |
+| `invoice_number_sequences` | `tenant_id`, `branch_id`, `billing_year INTEGER`, `billing_month INTEGER`, `next_sequence INTEGER DEFAULT 1` | PK `(tenant_id, branch_id, billing_year, billing_month)`. `billing_year >= 2000`, `billing_month 1–12`, `next_sequence >= 1`. |
+
 ### Audit
 
 | Table | Key columns | Notes |
@@ -68,6 +77,9 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `parent_membership_guardians_role_check` | `parent_membership_guardians` (BEFORE INSERT OR UPDATE) | `enforce_parent_membership_guardian_role()` | Membership must have `parent` role. |
 | `parent_membership_guardians_active_entity_check` | `parent_membership_guardians` (BEFORE INSERT OR UPDATE) | `enforce_parent_mapping_active_entities()` | Membership must be active, guardian must be active. |
 | `memberships_role_guardian_mapping_check` | `memberships` (BEFORE UPDATE OF role) | `prevent_non_parent_with_active_guardian_mapping()` | Cannot change role away from `parent` while active guardian mapping exists. |
+| `trg_invoice_status_transition` | `invoices` (BEFORE UPDATE OF status) | `enforce_invoice_status_transition()` | Legal transitions: `draft→issued`, `issued→overdue/paid/payment_failed`, `overdue→paid/payment_failed`, `payment_failed→paid`. `paid` is terminal. No return to `draft`. `payment_failed→overdue` blocked. |
+| `trg_invoice_immutability` | `invoices` (BEFORE UPDATE) | `protect_issued_invoice_immutability()` | Non-draft invoices can only change `status`, `amount_paid_minor`, `paid_at`, `payment_failed_at`, `payment_status_updated_at`, `updated_at`. |
+| `trg_invoice_lines_immutability` | `invoice_lines` (BEFORE INSERT OR UPDATE OR DELETE) | `protect_issued_invoice_lines()` | Rejects line changes when parent invoice status is not `draft`. |
 
 ## Key Indexes
 
@@ -92,3 +104,15 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `funding_profiles_scope_child_month_unique` | `funding_profiles` | UNIQUE btree | One profile per child per billing month in scope |
 | `idx_funding_profiles_scope_month` | `funding_profiles` | btree | Lookup by tenant/branch/month |
 | `idx_funding_profiles_child_month` | `funding_profiles` | btree | Lookup by tenant/branch/child/month |
+| `idx_invoice_runs_scope_id` | `invoice_runs` | UNIQUE btree | Scope composite key |
+| `idx_invoice_runs_billing_scope` | `invoice_runs` | btree | Lookup by tenant/branch/month/type/time |
+| `idx_invoice_runs_request_id` | `invoice_runs` | btree (partial) | Request ID lookup where non-null |
+| `idx_invoices_scope_id` | `invoices` | UNIQUE btree | Scope composite key |
+| `idx_invoices_monthly_unique` | `invoices` | UNIQUE btree (partial) | One monthly invoice per child/month where `invoice_kind = 'monthly'` |
+| `idx_invoices_invoice_number_unique` | `invoices` | UNIQUE btree (partial) | Invoice number per tenant/branch where non-null |
+| `idx_invoices_billing_status` | `invoices` | btree | Lookup by tenant/branch/month/status |
+| `idx_invoices_child_billing` | `invoices` | btree | Lookup by tenant/branch/child/month |
+| `idx_invoices_adjusts` | `invoices` | btree (partial) | Adjustment lookup where non-null |
+| `idx_invoices_due_at_outstanding` | `invoices` | btree (partial) | Outstanding invoices by due date |
+| `idx_invoice_lines_scope_id` | `invoice_lines` | UNIQUE btree | Scope composite key |
+| `idx_invoice_lines_invoice_order` | `invoice_lines` | btree | Lines by invoice + sort order |

@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -25,12 +27,13 @@ type CreateChildParams struct {
 }
 
 type CreateChild struct {
-	repo domain.Repository
+	repo  domain.Repository
 	audit *audit.Writer
+	pool  *pgxpool.Pool
 }
 
-func NewCreateChild(repo domain.Repository, auditWriter *audit.Writer) *CreateChild {
-	return &CreateChild{repo: repo, audit: auditWriter}
+func NewCreateChild(repo domain.Repository, auditWriter *audit.Writer, pool *pgxpool.Pool) *CreateChild {
+	return &CreateChild{repo: repo, audit: auditWriter, pool: pool}
 }
 
 func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, params CreateChildParams) (domain.Child, error) {
@@ -86,7 +89,7 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 		return domain.Child{}, domainerrors.Internal(fmt.Errorf("fetch created child: %w", err))
 	}
 
-	if err := uc.audit.Write(ctx, nil, actor, audit.WriteParams{
+	if err := uc.audit.Write(ctx, uc.pool, actor, audit.WriteParams{
 		ActionType: "child_created",
 		EntityType: "child",
 		EntityID:   child.ID,

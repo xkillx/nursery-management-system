@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 
@@ -25,10 +27,11 @@ type UpdateChildParams struct {
 type UpdateChild struct {
 	repo  domain.Repository
 	audit *audit.Writer
+	pool  *pgxpool.Pool
 }
 
-func NewUpdateChild(repo domain.Repository, auditWriter *audit.Writer) *UpdateChild {
-	return &UpdateChild{repo: repo, audit: auditWriter}
+func NewUpdateChild(repo domain.Repository, auditWriter *audit.Writer, pool *pgxpool.Pool) *UpdateChild {
+	return &UpdateChild{repo: repo, audit: auditWriter, pool: pool}
 }
 
 func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, childID string, params UpdateChildParams) (domain.Child, error) {
@@ -100,7 +103,7 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 		return domain.Child{}, domainerrors.Internal(fmt.Errorf("fetch updated child: %w", err))
 	}
 
-	if err := uc.audit.Write(ctx, nil, actor, audit.WriteParams{
+	if err := uc.audit.Write(ctx, uc.pool, actor, audit.WriteParams{
 		ActionType: "child_updated",
 		EntityType: "child",
 		EntityID:   id,
