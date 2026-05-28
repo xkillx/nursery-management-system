@@ -47,6 +47,10 @@ import (
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 
+	billingapp "nursery-management-system/api/internal/modules/billing/application"
+	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
+	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
@@ -192,6 +196,11 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter),
 	)
 	fundingHandler.RegisterRoutes(manager)
+
+	// Billing module
+	billingRepo := billingpostgres.NewRepository(pool)
+	billingHandler := billinghandler.NewHandler(billingapp.NewPreflightDraftInvoices(billingRepo))
+	billingHandler.RegisterRoutes(manager)
 
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)

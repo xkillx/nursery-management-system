@@ -44,6 +44,10 @@ A child's funded-hours allowance for a single billing month.
 
 A child-month without a recorded funding profile. This is distinct from a funding profile with a zero-minute allowance.
 
+## Missing Funding Profile Invoice Block (MVP)
+
+A missing funding profile blocks invoice draft preflight for that child-month; an explicit zero-minute allowance does not.
+
 ## Funding Profile Enrollment Scope (MVP)
 
 Funding profiles are valid for billing months that overlap the child's enrollment window, including historical months after the child has left.
@@ -228,6 +232,10 @@ Core billable minutes are the remaining core attended minutes after funded deduc
 
 Core due hours are calculated as `max(0, rounded core attendance minutes - funded hours allowance)` before pricing is applied. Rounded core attendance minutes are the sum of per-session billable minutes rather than raw elapsed minutes.
 
+## Core Billing Price Rounding (MVP)
+
+Core childcare amounts are converted from minutes and hourly minor-unit rates by rounding any fractional minor unit up to the next minor unit.
+
 ## Attendance Billing Rounding (MVP)
 
 Each attendance session is rounded up to the nearest 15 minutes for billing. Any positive elapsed-time remainder beyond a 15-minute boundary rounds up; exact 15-minute boundaries do not add another block.
@@ -247,6 +255,26 @@ Attendance records missing check-out are excluded from automatic billing until a
 ## Invoice Generation Flow (MVP)
 
 Managers manually generate monthly draft invoices before any invoice is issued.
+
+## Invoice Draft Preflight (MVP)
+
+A manager-facing readiness preview for one billing month before draft invoice generation. It identifies which child-months are eligible or blocked without being an invoice run.
+
+## Invoice Draft Preflight Population (MVP)
+
+Invoice draft preflight considers child-months whose enrollment window overlaps the billing month, even if the child is no longer currently active.
+
+## Invoice Draft Preflight Existing Invoice Rule (MVP)
+
+An existing draft monthly invoice does not block invoice draft preflight for that child-month, while an issued-or-later monthly invoice does.
+
+## Invoice Draft Preflight Totals (MVP)
+
+Invoice draft preflight totals are estimated aggregate invoice amounts for eligible child-months before draft invoice generation.
+
+## Zero-Attendance Invoice Eligibility (MVP)
+
+A child-month with no completed attendance sessions can still pass invoice draft preflight when enrollment, billing, funding, and attendance-completeness data are present.
 
 ## Invoice Issue Mode (MVP)
 
@@ -363,6 +391,10 @@ Managers may create a child record before linking a guardian, but attendance and
 ## Child Billing Rate Source (MVP)
 
 Each child has one current core billing rate in enrollment data, while issued invoices preserve the applied rate in invoice lines for historical explainability.
+
+## Zero Core Billing Rate (MVP)
+
+A core billing rate of zero is an explicit valid rate, not missing billing data.
 
 ## Child Enrollment Lifecycle (MVP)
 
@@ -783,6 +815,14 @@ Invoice issue runs can proceed for eligible children while children with incompl
 ## Invoice Run Blocked Child (MVP)
 
 A child excluded from a specific monthly invoice run because billing readiness checks found a resolvable issue, such as incomplete attendance. This is a run/month-specific billing state, not a child lifecycle state.
+
+## Invoice Preflight Blocker (MVP)
+
+A child-month readiness exception returned by invoice draft preflight. A blocked child may have multiple preflight blockers, and each blocker should be exposed with a stable code.
+
+## Invoice Preflight Enrollment Blocker Codes (MVP)
+
+Invoice draft preflight explains enrollment incompleteness with granular stable blocker codes rather than only a generic enrollment-incomplete label.
 
 ## Draft Invoice Regeneration (MVP)
 

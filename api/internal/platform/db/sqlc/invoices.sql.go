@@ -201,3 +201,168 @@ func (q *Queries) InvoiceRunGet(ctx context.Context, arg InvoiceRunGetParams) (I
 	)
 	return i, err
 }
+
+const preflightListAttendanceSessions = `-- name: PreflightListAttendanceSessions :many
+SELECT
+    id,
+    child_id,
+    status,
+    check_in_at,
+    check_out_at,
+    check_in_local_date,
+    check_out_local_date
+FROM attendance_sessions
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND check_in_local_date >= $3
+  AND check_in_local_date < $4
+  AND status IN ('open', 'complete', 'corrected')
+ORDER BY child_id, check_in_local_date, check_in_at, id
+`
+
+type PreflightListAttendanceSessionsParams struct {
+	TenantID           pgtype.UUID
+	BranchID           pgtype.UUID
+	CheckInLocalDate   pgtype.Date
+	CheckInLocalDate_2 pgtype.Date
+}
+
+type PreflightListAttendanceSessionsRow struct {
+	ID                pgtype.UUID
+	ChildID           pgtype.UUID
+	Status            string
+	CheckInAt         pgtype.Timestamptz
+	CheckOutAt        pgtype.Timestamptz
+	CheckInLocalDate  pgtype.Date
+	CheckOutLocalDate pgtype.Date
+}
+
+func (q *Queries) PreflightListAttendanceSessions(ctx context.Context, arg PreflightListAttendanceSessionsParams) ([]PreflightListAttendanceSessionsRow, error) {
+	rows, err := q.db.Query(ctx, preflightListAttendanceSessions,
+		arg.TenantID,
+		arg.BranchID,
+		arg.CheckInLocalDate,
+		arg.CheckInLocalDate_2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PreflightListAttendanceSessionsRow
+	for rows.Next() {
+		var i PreflightListAttendanceSessionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChildID,
+			&i.Status,
+			&i.CheckInAt,
+			&i.CheckOutAt,
+			&i.CheckInLocalDate,
+			&i.CheckOutLocalDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const preflightListChildren = `-- name: PreflightListChildren :many
+SELECT
+    c.id AS child_id,
+    c.full_name,
+    c.date_of_birth,
+    c.start_date,
+    c.end_date,
+    c.core_hourly_rate_minor,
+    EXISTS (
+        SELECT 1
+        FROM guardian_child_links gcl
+        WHERE gcl.tenant_id = c.tenant_id
+          AND gcl.branch_id = c.branch_id
+          AND gcl.child_id = c.id
+          AND gcl.ended_at IS NULL
+    ) AS has_guardian_link,
+    fp.id AS funding_profile_id,
+    fp.funded_allowance_minutes,
+    i.id AS existing_invoice_id,
+    i.status AS existing_invoice_status
+FROM children c
+LEFT JOIN funding_profiles fp
+    ON fp.tenant_id = c.tenant_id
+    AND fp.branch_id = c.branch_id
+    AND fp.child_id = c.id
+    AND fp.billing_month = $3
+LEFT JOIN invoices i
+    ON i.tenant_id = c.tenant_id
+    AND i.branch_id = c.branch_id
+    AND i.child_id = c.id
+    AND i.billing_month = $3
+    AND i.invoice_kind = 'monthly'
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < $4
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+ORDER BY c.full_name, c.id
+`
+
+type PreflightListChildrenParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+	StartDate    pgtype.Date
+}
+
+type PreflightListChildrenRow struct {
+	ChildID                pgtype.UUID
+	FullName               string
+	DateOfBirth            pgtype.Date
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	CoreHourlyRateMinor    int32
+	HasGuardianLink        bool
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+	ExistingInvoiceID      pgtype.UUID
+	ExistingInvoiceStatus  pgtype.Text
+}
+
+func (q *Queries) PreflightListChildren(ctx context.Context, arg PreflightListChildrenParams) ([]PreflightListChildrenRow, error) {
+	rows, err := q.db.Query(ctx, preflightListChildren,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.StartDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PreflightListChildrenRow
+	for rows.Next() {
+		var i PreflightListChildrenRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.FullName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.CoreHourlyRateMinor,
+			&i.HasGuardianLink,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+			&i.ExistingInvoiceID,
+			&i.ExistingInvoiceStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

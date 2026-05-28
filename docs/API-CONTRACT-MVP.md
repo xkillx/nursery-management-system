@@ -928,6 +928,116 @@ Roles: manager. Query: `event_type=check_in|check_out|correction`.
 
 ---
 
+## Invoice Draft Preflight
+
+Manager-only, read-only endpoint that returns child-month readiness for draft invoice generation. No side effects: does not create invoice runs, invoices, invoice lines, or audit logs.
+
+**Route is manager-only.** Unauthenticated requests receive `401 unauthorized`. Practitioner and parent requests receive `403 forbidden_role`.
+
+### GET /api/v1/invoices/drafts/preflight?billing_month=YYYY-MM
+
+Returns eligible children, blocked children with stable blocker codes, and summary totals for eligible children only.
+
+**Request:**
+
+| Parameter | Location | Required | Description |
+|-----------|----------|----------|-------------|
+| `billing_month` | query | yes | Billing month as `YYYY-MM` |
+
+**Response 200** (always 200, even when children are blocked):
+
+```json
+{
+  "billing_month": "2026-05",
+  "currency_code": "GBP",
+  "period": {
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-31",
+    "end_exclusive_date": "2026-06-01"
+  },
+  "summary": {
+    "total_children_count": 3,
+    "eligible_children_count": 1,
+    "blocked_children_count": 2,
+    "included_session_count": 2,
+    "raw_attended_minutes": 615,
+    "rounded_attended_minutes": 630,
+    "funded_allowance_minutes": 300,
+    "funded_deduction_minutes": 300,
+    "core_billable_minutes": 330,
+    "subtotal_minor": 5250,
+    "funded_deduction_minor": 2500,
+    "total_due_minor": 2750,
+    "blocker_counts": [
+      { "code": "missing_funding_profile", "children_count": 1 },
+      { "code": "incomplete_attendance", "children_count": 1 }
+    ]
+  },
+  "eligible_children": [
+    {
+      "child_id": "uuid",
+      "child_name": "Alex Child",
+      "core_hourly_rate_minor": 500,
+      "funding_profile_id": "uuid",
+      "funded_allowance_minutes": 300,
+      "raw_attended_minutes": 615,
+      "rounded_attended_minutes": 630,
+      "included_session_count": 2,
+      "funded_deduction_minutes": 300,
+      "core_billable_minutes": 330,
+      "subtotal_minor": 5250,
+      "funded_deduction_minor": 2500,
+      "total_due_minor": 2750,
+      "existing_invoice": null
+    }
+  ],
+  "blocked_children": [
+    {
+      "child_id": "uuid",
+      "child_name": "Bailey Child",
+      "blockers": [
+        {
+          "code": "missing_funding_profile",
+          "message": "Funding profile is missing for this billing month.",
+          "field": "funding_profile"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Stable blocker codes** (listed in priority order):
+
+| Code | Meaning |
+|------|---------|
+| `missing_child_name` | Child full name is blank |
+| `missing_child_date_of_birth` | Child date of birth is zero |
+| `missing_child_start_date` | Child start date is zero |
+| `missing_guardian_link` | No active guardian-child link |
+| `missing_billing_rate` | Core hourly rate is negative |
+| `missing_funding_profile` | No funding profile for this child/month |
+| `incomplete_attendance` | Attendance session missing check-out |
+| `invoice_already_issued` | Monthly invoice in issued/paid/overdue status |
+
+A child can have multiple blockers. Blocked children contribute to counts and blocker breakdowns only; they do not affect money or minute totals.
+
+**Existing invoice handling:**
+- Existing monthly draft: child is eligible, `existing_invoice` field populated.
+- Existing monthly invoice in `issued`, `payment_failed`, `paid`, or `overdue`: blocked with `invoice_already_issued`.
+
+**Summary money totals** include eligible children only. Money calculation uses deterministic integer ceiling: `amount_minor = ceil(minutes * hourly_rate_minor / 60)`.
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Missing or malformed `billing_month` |
+| 401 | `unauthorized` | No valid token |
+| 403 | `forbidden_role` | Non-manager role |
+
+---
+
 ## Funding v1
 
 Manager-only endpoints for maintaining a child's funded-hours allowance per billing month. Parents see funding effects through issued invoices, not through these routes.
