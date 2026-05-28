@@ -21,12 +21,12 @@ type PreflightChildRow struct {
 }
 
 type PreflightAttendanceSessionRow struct {
-	SessionID        uuid.UUID
-	ChildID          uuid.UUID
-	Status           AttendanceSessionStatus
-	CheckInAt        time.Time
-	CheckOutAt       *time.Time
-	CheckInLocalDate time.Time
+	SessionID         uuid.UUID
+	ChildID           uuid.UUID
+	Status            AttendanceSessionStatus
+	CheckInAt         time.Time
+	CheckOutAt        *time.Time
+	CheckInLocalDate  time.Time
 	CheckOutLocalDate *time.Time
 }
 
@@ -55,14 +55,14 @@ var BlockerPriority = []BlockerCode{
 }
 
 type PreflightBlocker struct {
-	Code          BlockerCode `json:"code"`
-	Message       string      `json:"message"`
-	SessionID     *uuid.UUID  `json:"session_id,omitempty"`
-	CheckInAt     *time.Time  `json:"check_in_at,omitempty"`
-	CheckInLocalDate *string  `json:"check_in_local_date,omitempty"`
-	InvoiceID     *uuid.UUID  `json:"invoice_id,omitempty"`
-	InvoiceStatus *string     `json:"invoice_status,omitempty"`
-	Field         *string     `json:"field,omitempty"`
+	Code             BlockerCode `json:"code"`
+	Message          string      `json:"message"`
+	SessionID        *uuid.UUID  `json:"session_id,omitempty"`
+	CheckInAt        *time.Time  `json:"check_in_at,omitempty"`
+	CheckInLocalDate *string     `json:"check_in_local_date,omitempty"`
+	InvoiceID        *uuid.UUID  `json:"invoice_id,omitempty"`
+	InvoiceStatus    *string     `json:"invoice_status,omitempty"`
+	Field            *string     `json:"field,omitempty"`
 }
 
 type ExistingInvoiceRef struct {
@@ -71,25 +71,25 @@ type ExistingInvoiceRef struct {
 }
 
 type EligibleChild struct {
-	ChildID                uuid.UUID         `json:"child_id"`
-	ChildName              string            `json:"child_name"`
-	CoreHourlyRateMinor    int               `json:"core_hourly_rate_minor"`
-	FundingProfileID       *uuid.UUID        `json:"funding_profile_id"`
-	FundedAllowanceMinutes int               `json:"funded_allowance_minutes"`
-	RawAttendedMinutes     int               `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int               `json:"rounded_attended_minutes"`
-	IncludedSessionCount   int               `json:"included_session_count"`
-	FundedDeductionMinutes int               `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int               `json:"core_billable_minutes"`
-	SubtotalMinor          int               `json:"subtotal_minor"`
-	FundedDeductionMinor   int               `json:"funded_deduction_minor"`
-	TotalDueMinor          int               `json:"total_due_minor"`
+	ChildID                uuid.UUID           `json:"child_id"`
+	ChildName              string              `json:"child_name"`
+	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
+	FundingProfileID       *uuid.UUID          `json:"funding_profile_id"`
+	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
+	RawAttendedMinutes     int                 `json:"raw_attended_minutes"`
+	RoundedAttendedMinutes int                 `json:"rounded_attended_minutes"`
+	IncludedSessionCount   int                 `json:"included_session_count"`
+	FundedDeductionMinutes int                 `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int                 `json:"core_billable_minutes"`
+	SubtotalMinor          int                 `json:"subtotal_minor"`
+	FundedDeductionMinor   int                 `json:"funded_deduction_minor"`
+	TotalDueMinor          int                 `json:"total_due_minor"`
 	ExistingInvoice        *ExistingInvoiceRef `json:"existing_invoice"`
 }
 
 type BlockedChild struct {
-	ChildID   uuid.UUID         `json:"child_id"`
-	ChildName string            `json:"child_name"`
+	ChildID   uuid.UUID          `json:"child_id"`
+	ChildName string             `json:"child_name"`
 	Blockers  []PreflightBlocker `json:"blockers"`
 }
 
@@ -99,32 +99,32 @@ type BlockerCount struct {
 }
 
 type PreflightResult struct {
-	BillingMonth     string            `json:"billing_month"`
-	CurrencyCode     string            `json:"currency_code"`
-	Period           PreflightPeriod   `json:"period"`
-	Summary          PreflightSummary  `json:"summary"`
-	EligibleChildren []EligibleChild   `json:"eligible_children"`
-	BlockedChildren  []BlockedChild    `json:"blocked_children"`
+	BillingMonth     string           `json:"billing_month"`
+	CurrencyCode     string           `json:"currency_code"`
+	Period           PreflightPeriod  `json:"period"`
+	Summary          PreflightSummary `json:"summary"`
+	EligibleChildren []EligibleChild  `json:"eligible_children"`
+	BlockedChildren  []BlockedChild   `json:"blocked_children"`
 }
 
 type PreflightPeriod struct {
-	StartDate         string `json:"start_date"`
-	EndDate           string `json:"end_date"`
-	EndExclusiveDate  string `json:"end_exclusive_date"`
+	StartDate        string `json:"start_date"`
+	EndDate          string `json:"end_date"`
+	EndExclusiveDate string `json:"end_exclusive_date"`
 }
 
 type PreflightSummary struct {
-	TotalChildrenCount     int           `json:"total_children_count"`
-	EligibleChildrenCount  int           `json:"eligible_children_count"`
-	BlockedChildrenCount   int           `json:"blocked_children_count"`
-	IncludedSessionCount   int           `json:"included_session_count"`
-	RawAttendedMinutes     int           `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int           `json:"rounded_attended_minutes"`
-	FundedAllowanceMinutes int           `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int           `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int           `json:"core_billable_minutes"`
-	SubtotalMinor          int           `json:"subtotal_minor"`
-	FundedDeductionMinor   int           `json:"funded_deduction_minor"`
-	TotalDueMinor          int           `json:"total_due_minor"`
+	TotalChildrenCount     int            `json:"total_children_count"`
+	EligibleChildrenCount  int            `json:"eligible_children_count"`
+	BlockedChildrenCount   int            `json:"blocked_children_count"`
+	IncludedSessionCount   int            `json:"included_session_count"`
+	RawAttendedMinutes     int            `json:"raw_attended_minutes"`
+	RoundedAttendedMinutes int            `json:"rounded_attended_minutes"`
+	FundedAllowanceMinutes int            `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int            `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int            `json:"core_billable_minutes"`
+	SubtotalMinor          int            `json:"subtotal_minor"`
+	FundedDeductionMinor   int            `json:"funded_deduction_minor"`
+	TotalDueMinor          int            `json:"total_due_minor"`
 	BlockerCounts          []BlockerCount `json:"blocker_counts"`
 }

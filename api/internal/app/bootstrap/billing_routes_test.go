@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -76,6 +77,7 @@ func TestBillingRouteInventory(t *testing.T) {
 
 	expected := []string{
 		"GET /api/v1/invoices/drafts/preflight",
+		"POST /api/v1/invoice-runs/drafts",
 	}
 	for _, want := range expected {
 		if _, ok := have[want]; !ok {
@@ -543,6 +545,543 @@ func TestBillingPreflightCrossMonthAllocation(t *testing.T) {
 	}
 }
 
+// --- Draft Generation Tests (API-17) ---
+
+func TestBillingGenerationRouteInventory(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	have := make(map[string]struct{})
+	for _, route := range h.router.Routes() {
+		have[route.Method+" "+route.Path] = struct{}{}
+	}
+
+	expected := []string{
+		"POST /api/v1/invoice-runs/drafts",
+	}
+	for _, want := range expected {
+		if _, ok := have[want]; !ok {
+			t.Fatalf("expected route %s to be registered", want)
+		}
+	}
+}
+
+func TestBillingGenerationUnauthenticated(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", "", `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusUnauthorized)
+}
+
+func TestBillingGenerationRoleGuards(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	for _, token := range []string{h.practitionerToken, h.parentToken} {
+		w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", token, `{"billing_month":"2026-05"}`)
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	}
+}
+
+func TestBillingGenerationValidationErrors(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	// Missing billing_month
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{}`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+
+	// Malformed billing_month
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"invalid"}`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+
+	// Invalid child_id
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":["not-a-uuid"]}`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+}
+
+func TestBillingGenerationFullMonthCreatesDrafts(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	// Seed one eligible child
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000001")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000001")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000001")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000001")
+	session1 := uuid.MustParse("c9000000-0000-0000-0000-000000000001")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Alice Eligible",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Alice", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 300)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+	checkIn1 := time.Date(2026, 5, 15, 8, 0, 0, 0, time.UTC)
+	checkOut1 := time.Date(2026, 5, 15, 16, 0, 0, 0, time.UTC)
+	localDate1 := dbtest.DateAt(2026, 5, 15)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session1, h.tenantID, h.branchID, child1, checkIn1, checkOut1, localDate1, localDate1)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
+	}
+
+	// Generate
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 1 {
+		t.Fatalf("success_count = %d, want 1", resp.Summary.SuccessCount)
+	}
+	if resp.Summary.BlockedCount != 0 {
+		t.Fatalf("blocked_count = %d, want 0", resp.Summary.BlockedCount)
+	}
+	if resp.Status != "completed" {
+		t.Fatalf("status = %s, want completed", resp.Status)
+	}
+	if len(resp.Generated) != 1 {
+		t.Fatalf("generated = %d, want 1", len(resp.Generated))
+	}
+	if resp.Generated[0].Action != "created" {
+		t.Fatalf("action = %s, want created", resp.Generated[0].Action)
+	}
+	if resp.Generated[0].ChildName != "Alice Eligible" {
+		t.Fatalf("child_name = %s, want Alice Eligible", resp.Generated[0].ChildName)
+	}
+
+	// Verify DB state: 1 run, 1 invoice, 2 lines, 1 audit
+	var runCount, invoiceCount, lineCount, auditCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_runs WHERE tenant_id = $1", h.tenantID).Scan(&runCount)
+	if runCount != 1 {
+		t.Fatalf("invoice_runs = %d, want 1", runCount)
+	}
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoices WHERE tenant_id = $1 AND status = 'draft'", h.tenantID).Scan(&invoiceCount)
+	if invoiceCount != 1 {
+		t.Fatalf("draft invoices = %d, want 1", invoiceCount)
+	}
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_lines WHERE tenant_id = $1", h.tenantID).Scan(&lineCount)
+	if lineCount != 2 {
+		t.Fatalf("invoice_lines = %d, want 2 (core + deduction)", lineCount)
+	}
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM audit_logs WHERE tenant_id = $1 AND action_type = 'invoice_draft_generated'", h.tenantID).Scan(&auditCount)
+	if auditCount != 1 {
+		t.Fatalf("audit logs = %d, want 1", auditCount)
+	}
+
+	// Verify totals: 480min * 500/hr = 4000, funded 300min * 500/hr = 2500, total = 1500
+	if resp.Generated[0].SubtotalMinor != 4000 {
+		t.Fatalf("subtotal = %d, want 4000", resp.Generated[0].SubtotalMinor)
+	}
+	if resp.Generated[0].FundedDeductionMinor != 2500 {
+		t.Fatalf("funded_deduction = %d, want 2500", resp.Generated[0].FundedDeductionMinor)
+	}
+	if resp.Generated[0].TotalDueMinor != 1500 {
+		t.Fatalf("total_due = %d, want 1500", resp.Generated[0].TotalDueMinor)
+	}
+}
+
+func TestBillingGenerationRerunUpdatesSameDraft(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000002")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000002")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000002")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000002")
+	session1 := uuid.MustParse("c9000000-0000-0000-0000-000000000002")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Bob Rerun",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Bob", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+	checkIn1 := time.Date(2026, 5, 10, 8, 0, 0, 0, time.UTC)
+	checkOut1 := time.Date(2026, 5, 10, 16, 0, 0, 0, time.UTC)
+	localDate1 := dbtest.DateAt(2026, 5, 10)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session1, h.tenantID, h.branchID, child1, checkIn1, checkOut1, localDate1, localDate1)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
+	}
+
+	// First generation
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp1 genDraftsResponse
+	decodeJSON(t, w, &resp1)
+	invoiceID := resp1.Generated[0].InvoiceID
+
+	// Second generation (rerun)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp2 genDraftsResponse
+	decodeJSON(t, w, &resp2)
+
+	if resp2.Generated[0].Action != "updated" {
+		t.Fatalf("rerun action = %s, want updated", resp2.Generated[0].Action)
+	}
+	if resp2.Generated[0].InvoiceID != invoiceID {
+		t.Fatalf("rerun invoice_id = %s, want %s (same as first)", resp2.Generated[0].InvoiceID, invoiceID)
+	}
+
+	// Still only 1 invoice
+	var invoiceCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoices WHERE tenant_id = $1 AND child_id = $2", h.tenantID, child1).Scan(&invoiceCount)
+	if invoiceCount != 1 {
+		t.Fatalf("invoices = %d, want 1 (not duplicated)", invoiceCount)
+	}
+
+	// Still 2 lines (replaced, not accumulated)
+	var lineCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_lines il JOIN invoices i ON il.invoice_id = i.id WHERE i.tenant_id = $1 AND i.child_id = $2", h.tenantID, child1).Scan(&lineCount)
+	if lineCount != 2 {
+		t.Fatalf("lines = %d, want 2 (core + deduction)", lineCount)
+	}
+
+	// Two runs
+	var runCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_runs WHERE tenant_id = $1", h.tenantID).Scan(&runCount)
+	if runCount != 2 {
+		t.Fatalf("runs = %d, want 2", runCount)
+	}
+
+	// Audit has both generated and regenerated
+	var genCount, regenCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM audit_logs WHERE action_type = 'invoice_draft_generated' AND action_entity_id::text = $1", invoiceID).Scan(&genCount)
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM audit_logs WHERE action_type = 'invoice_draft_regenerated' AND action_entity_id::text = $1", invoiceID).Scan(&regenCount)
+	if genCount != 1 {
+		t.Fatalf("draft_generated audits = %d, want 1", genCount)
+	}
+	if regenCount != 1 {
+		t.Fatalf("draft_regenerated audits = %d, want 1", regenCount)
+	}
+}
+
+func TestBillingGenerationIssuedInvoiceBlocked(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000003")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000003")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000003")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000003")
+	invoice1 := uuid.MustParse("ca000000-0000-0000-0000-000000000003")
+	run1 := uuid.MustParse("cb000000-0000-0000-0000-000000000003")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Grace Issued",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Grace", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 300)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+	managerUID := uuid.MustParse("b3000000-0000-0000-0000-000000000001")
+	managerMID := uuid.MustParse("b4000000-0000-0000-0000-000000000001")
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
+		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-issued-test')`,
+		run1, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1), managerUID, managerMID)
+	if err != nil {
+		t.Fatalf("insert run: %v", err)
+	}
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code,
+		  period_start_date, period_end_date, invoice_number, issued_sequence, generated_run_id, issued_run_id,
+		  issued_at, issued_by_user_id, issued_by_membership_id, locked_at, due_at)
+		 VALUES ($1, $2, $3, $4, $5, 'monthly', 'issued', 'GBP', $6, $7, 'INV-TEST', 1, $8, $8, now(), $9, $10, now(), now() + interval '7 days')`,
+		invoice1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31),
+		run1, managerUID, managerMID)
+	if err != nil {
+		t.Fatalf("insert issued invoice: %v", err)
+	}
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 0 {
+		t.Fatalf("success_count = %d, want 0", resp.Summary.SuccessCount)
+	}
+	if resp.Summary.BlockedCount != 1 {
+		t.Fatalf("blocked_count = %d, want 1", resp.Summary.BlockedCount)
+	}
+	if len(resp.Blocked) != 1 {
+		t.Fatalf("blocked = %d, want 1", len(resp.Blocked))
+	}
+	if resp.Blocked[0].Blockers[0].Code != "invoice_already_issued" {
+		t.Fatalf("blocker = %s, want invoice_already_issued", resp.Blocked[0].Blockers[0].Code)
+	}
+	if resp.Status != "completed_with_exceptions" {
+		t.Fatalf("status = %s, want completed_with_exceptions", resp.Status)
+	}
+
+	// Issued invoice not mutated
+	var status string
+	h.pool.QueryRow(ctx, "SELECT status FROM invoices WHERE id = $1", invoice1).Scan(&status)
+	if status != "issued" {
+		t.Fatalf("issued invoice status = %s, want issued (unchanged)", status)
+	}
+}
+
+func TestBillingGenerationSelectedChildren(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	// Two eligible children
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000010")
+	child2 := uuid.MustParse("c5000000-0000-0000-0000-000000000011")
+	for i, cid := range []uuid.UUID{child1, child2} {
+		name := fmt.Sprintf("Child %d", i+1)
+		gid := uuid.MustParse(fmt.Sprintf("c6000000-0000-0000-0000-%012d", i+10))
+		lid := uuid.MustParse(fmt.Sprintf("c7000000-0000-0000-0000-%012d", i+10))
+		fid := uuid.MustParse(fmt.Sprintf("c8000000-0000-0000-0000-%012d", i+10))
+
+		dbtest.InsertChild(t, h.pool, cid, h.tenantID, h.branchID, name,
+			dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.InsertGuardian(t, h.pool, gid, h.tenantID, h.branchID, "G "+name, true)
+		dbtest.InsertGuardianLink(t, h.pool, lid, h.tenantID, h.branchID, gid, cid)
+		_, err := h.pool.Exec(ctx,
+			"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+			fid, h.tenantID, h.branchID, cid, dbtest.DateAt(2026, 5, 1), 0)
+		if err != nil {
+			t.Fatalf("insert funding %d: %v", i, err)
+		}
+		sid := uuid.MustParse(fmt.Sprintf("c9000000-0000-0000-0000-%012d", i+10))
+		checkIn := time.Date(2026, 5, 15, 8, 0, 0, 0, time.UTC)
+		checkOut := time.Date(2026, 5, 15, 16, 0, 0, 0, time.UTC)
+		localDate := dbtest.DateAt(2026, 5, 15)
+		_, err = h.pool.Exec(ctx,
+			"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+			sid, h.tenantID, h.branchID, cid, checkIn, checkOut, localDate, localDate)
+		if err != nil {
+			t.Fatalf("insert session %d: %v", i, err)
+		}
+	}
+
+	// Generate only child1
+	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s"]}`, child1)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 1 {
+		t.Fatalf("success_count = %d, want 1", resp.Summary.SuccessCount)
+	}
+	if resp.Generated[0].ChildID != child1.String() {
+		t.Fatalf("generated child = %s, want %s", resp.Generated[0].ChildID, child1)
+	}
+
+	// Only child1 has an invoice
+	var invoiceCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoices WHERE tenant_id = $1", h.tenantID).Scan(&invoiceCount)
+	if invoiceCount != 1 {
+		t.Fatalf("invoices = %d, want 1 (only selected child)", invoiceCount)
+	}
+}
+
+func TestBillingGenerationSelectedUnknownChild(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	unknownID := uuid.MustParse("d0000000-0000-0000-0000-000000000001")
+	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s"]}`, unknownID)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.BlockedCount != 1 {
+		t.Fatalf("blocked_count = %d, want 1", resp.Summary.BlockedCount)
+	}
+	if len(resp.Blocked) != 1 {
+		t.Fatalf("blocked = %d, want 1", len(resp.Blocked))
+	}
+	if resp.Blocked[0].Blockers[0].Code != "child_not_found" {
+		t.Fatalf("blocker = %s, want child_not_found", resp.Blocked[0].Blockers[0].Code)
+	}
+}
+
+func TestBillingGenerationEmptyChildIDsNoop(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":[]}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 0 {
+		t.Fatalf("success_count = %d, want 0", resp.Summary.SuccessCount)
+	}
+	if resp.Summary.BlockedCount != 0 {
+		t.Fatalf("blocked_count = %d, want 0", resp.Summary.BlockedCount)
+	}
+}
+
+func TestBillingGenerationDuplicateChildIDsDeduped(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000020")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000020")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000020")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000020")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Dedup Child",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Dedup", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+
+	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s","%s"]}`, child1, child1)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 1 {
+		t.Fatalf("success_count = %d, want 1 (deduped)", resp.Summary.SuccessCount)
+	}
+
+	var invoiceCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoices WHERE tenant_id = $1 AND child_id = $2", h.tenantID, child1).Scan(&invoiceCount)
+	if invoiceCount != 1 {
+		t.Fatalf("invoices = %d, want 1 (deduped)", invoiceCount)
+	}
+}
+
+func TestBillingGenerationZeroAttendanceGetsDraft(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000030")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000030")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000030")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000030")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Zero Attendance",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Zero", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+	// No attendance sessions
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 1 {
+		t.Fatalf("success_count = %d, want 1", resp.Summary.SuccessCount)
+	}
+	if resp.Generated[0].TotalDueMinor != 0 {
+		t.Fatalf("total_due = %d, want 0", resp.Generated[0].TotalDueMinor)
+	}
+}
+
+func TestBillingGenerationPreservesExtraLines(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000040")
+	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000040")
+	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000040")
+	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000040")
+
+	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Extra Child",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Extra", true)
+	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+
+	// First generation
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+	var resp1 genDraftsResponse
+	decodeJSON(t, w, &resp1)
+	invoiceID := resp1.Generated[0].InvoiceID
+
+	// Insert an extra line manually
+	extraLineID := uuid.MustParse("cc000000-0000-0000-0000-000000000040")
+	extraInvoiceID, _ := uuid.Parse(invoiceID)
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, line_amount_minor, details)
+		 VALUES ($1, $2, $3, $4, 'extra', 'Late pickup fee', 3, 500, '{}'::jsonb)`,
+		extraLineID, h.tenantID, h.branchID, extraInvoiceID)
+	if err != nil {
+		t.Fatalf("insert extra line: %v", err)
+	}
+
+	// Rerun generation
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	// Extra line preserved
+	var extraCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_lines WHERE invoice_id = $1 AND line_kind = 'extra'", extraInvoiceID).Scan(&extraCount)
+	if extraCount != 1 {
+		t.Fatalf("extra lines = %d, want 1 (preserved)", extraCount)
+	}
+
+	// Total lines = 2 system + 1 extra = 3
+	var totalLines int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoice_lines WHERE invoice_id = $1", extraInvoiceID).Scan(&totalLines)
+	if totalLines != 3 {
+		t.Fatalf("total lines = %d, want 3", totalLines)
+	}
+
+	// Verify the response includes the extras in total
+	var resp2 genDraftsResponse
+	decodeJSON(t, w, &resp2)
+	// core_subtotal = 0 (zero attendance), extras = 500, subtotal = 500, funded_deduction = 0, total = 500
+	if resp2.Generated[0].TotalDueMinor != 500 {
+		t.Fatalf("total_due = %d, want 500 (0 core + 500 extra)", resp2.Generated[0].TotalDueMinor)
+	}
+}
+
 // JSON response types for test deserialization
 type preflightResponse struct {
 	BillingMonth     string                   `json:"billing_month"`
@@ -617,4 +1156,42 @@ type blockerResponse struct {
 type blockerCountResponse struct {
 	Code          string `json:"code"`
 	ChildrenCount int    `json:"children_count"`
+}
+
+// Generation response types
+type genDraftsResponse struct {
+	RunID        string                    `json:"run_id"`
+	BillingMonth string                    `json:"billing_month"`
+	Status       string                    `json:"status"`
+	Summary      genDraftsSummary          `json:"summary"`
+	Generated    []genDraftChildResponse   `json:"generated"`
+	Blocked      []genBlockedChildResponse `json:"blocked"`
+}
+
+type genDraftsSummary struct {
+	EligibleCount int `json:"eligible_count"`
+	SuccessCount  int `json:"success_count"`
+	BlockedCount  int `json:"blocked_count"`
+	TotalDueMinor int `json:"total_due_minor"`
+}
+
+type genDraftChildResponse struct {
+	ChildID              string `json:"child_id"`
+	ChildName            string `json:"child_name"`
+	Action               string `json:"action"`
+	InvoiceID            string `json:"invoice_id"`
+	SubtotalMinor        int    `json:"subtotal_minor"`
+	FundedDeductionMinor int    `json:"funded_deduction_minor"`
+	TotalDueMinor        int    `json:"total_due_minor"`
+}
+
+type genBlockedChildResponse struct {
+	ChildID   string               `json:"child_id"`
+	ChildName string               `json:"child_name,omitempty"`
+	Blockers  []genBlockerResponse `json:"blockers"`
+}
+
+type genBlockerResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }

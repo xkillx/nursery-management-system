@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/modules/billing/domain"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -85,79 +85,19 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 	blockerChildSet := make(map[domain.BlockerCode]map[uuid.UUID]struct{})
 
 	for _, child := range children {
-		var blockers []domain.PreflightBlocker
-
-		if child.FullName == "" {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingChildName,
-				Message: "Child full name is missing.",
-			})
-		}
-		if child.DateOfBirth.IsZero() {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingChildDateOfBirth,
-				Message: "Child date of birth is missing.",
-			})
-		}
-		if child.StartDate.IsZero() {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingChildStartDate,
-				Message: "Child start date is missing.",
-			})
-		}
-		if !child.HasGuardianLink {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingGuardianLink,
-				Message: "No active guardian linked to this child.",
-			})
-		}
-		if child.CoreHourlyRateMinor < 0 {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingBillingRate,
-				Message: "Billing rate is missing or invalid.",
-			})
-		}
-
-		if child.FundingProfileID == nil {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:    domain.BlockerMissingFundingProfile,
-				Message: "Funding profile is missing for this billing month.",
-				Field:   strPtr("funding_profile"),
-			})
-		}
-
 		childSessions := sessionsByChild[child.ChildID]
-		attendanceCalc, calcErr := domain.CalculateAttendanceMinutes(year, month, childSessions)
-		if calcErr != nil {
-			return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("attendance calc for child %s: %w", child.ChildID, calcErr))
-		}
-		for _, excl := range attendanceCalc.ExcludedIncompleteSessions {
-			localDateStr := excl.CheckInAt.In(londonLoc).Format("2006-01-02")
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:             domain.BlockerIncompleteAttendance,
-				Message:          "Attendance session is missing check-out.",
-				SessionID:        &excl.SessionID,
-				CheckInAt:        &excl.CheckInAt,
-				CheckInLocalDate: &localDateStr,
-			})
+		readiness, readinessErr := EvaluateChildReadiness(child, childSessions, year, int(month))
+		if readinessErr != nil {
+			return domain.PreflightResult{}, domainerrors.Internal(readinessErr)
 		}
 
-		if child.ExistingInvoiceStatus != nil && *child.ExistingInvoiceStatus != "draft" {
-			blockers = append(blockers, domain.PreflightBlocker{
-				Code:          domain.BlockerInvoiceAlreadyIssued,
-				Message:       "A monthly invoice has already been issued for this child and billing month.",
-				InvoiceID:     child.ExistingInvoiceID,
-				InvoiceStatus: child.ExistingInvoiceStatus,
-			})
-		}
-
-		if len(blockers) > 0 {
+		if len(readiness.Blockers) > 0 {
 			result.BlockedChildren = append(result.BlockedChildren, domain.BlockedChild{
 				ChildID:   child.ChildID,
 				ChildName: child.FullName,
-				Blockers:  blockers,
+				Blockers:  readiness.Blockers,
 			})
-			for _, b := range blockers {
+			for _, b := range readiness.Blockers {
 				if blockerChildSet[b.Code] == nil {
 					blockerChildSet[b.Code] = make(map[uuid.UUID]struct{})
 				}
@@ -165,26 +105,6 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 			}
 			continue
 		}
-
-		fundedAllowance := 0
-		if child.FundedAllowanceMinutes != nil {
-			fundedAllowance = *child.FundedAllowanceMinutes
-		}
-
-		fundingCalc, fundErr := domain.CalculateFundingDeduction(attendanceCalc, fundedAllowance)
-		if fundErr != nil {
-			return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("funding deduction for child %s: %w", child.ChildID, fundErr))
-		}
-
-		subtotalMinor, subErr := domain.CalculateHourlyAmountMinor(fundingCalc.CoreAttendedMinutes, child.CoreHourlyRateMinor)
-		if subErr != nil {
-			return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("subtotal calc: %w", subErr))
-		}
-		fundedDeductionMinor, dedErr := domain.CalculateHourlyAmountMinor(fundingCalc.FundedDeductionMinutes, child.CoreHourlyRateMinor)
-		if dedErr != nil {
-			return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("deduction calc: %w", dedErr))
-		}
-		totalDueMinor := max(0, subtotalMinor-fundedDeductionMinor)
 
 		var existingInvoice *domain.ExistingInvoiceRef
 		if child.ExistingInvoiceID != nil && child.ExistingInvoiceStatus != nil && *child.ExistingInvoiceStatus == "draft" {
@@ -199,15 +119,15 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 			ChildName:              child.FullName,
 			CoreHourlyRateMinor:    child.CoreHourlyRateMinor,
 			FundingProfileID:       child.FundingProfileID,
-			FundedAllowanceMinutes: fundedAllowance,
-			RawAttendedMinutes:     attendanceCalc.RawElapsedMinutes,
-			RoundedAttendedMinutes: attendanceCalc.RoundedBillableMinutes,
-			IncludedSessionCount:   attendanceCalc.IncludedSessionCount,
-			FundedDeductionMinutes: fundingCalc.FundedDeductionMinutes,
-			CoreBillableMinutes:    fundingCalc.CoreBillableMinutes,
-			SubtotalMinor:          subtotalMinor,
-			FundedDeductionMinor:   fundedDeductionMinor,
-			TotalDueMinor:          totalDueMinor,
+			FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,
+			RawAttendedMinutes:     readiness.RawAttendedMinutes,
+			RoundedAttendedMinutes: readiness.RoundedAttendedMinutes,
+			IncludedSessionCount:   readiness.IncludedSessionCount,
+			FundedDeductionMinutes: readiness.FundingCalc.FundedDeductionMinutes,
+			CoreBillableMinutes:    readiness.FundingCalc.CoreBillableMinutes,
+			SubtotalMinor:          readiness.SubtotalMinor,
+			FundedDeductionMinor:   readiness.FundedDeductionMinor,
+			TotalDueMinor:          readiness.TotalDueMinor,
 			ExistingInvoice:        existingInvoice,
 		}
 

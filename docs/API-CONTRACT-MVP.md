@@ -1038,6 +1038,89 @@ A child can have multiple blockers. Blocked children contribute to counts and bl
 
 ---
 
+## Draft Invoice Generation
+
+Manager-only endpoint that generates or regenerates draft monthly invoices for eligible child-months. Creates invoice runs, invoices, invoice lines, and audit logs inside a single transaction.
+
+**Route is manager-only.** Unauthenticated requests receive `401 unauthorized`. Practitioner and parent requests receive `403 forbidden_role`.
+
+### POST /api/v1/invoice-runs/drafts
+
+**Request body:**
+
+```json
+{
+  "billing_month": "2026-05",
+  "child_ids": ["uuid", "uuid"]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `billing_month` | string | yes | Billing month as `YYYY-MM` |
+| `child_ids` | string[] | no | Optional array of child UUIDs. Omit for full-month generation. Empty array = no-op. Duplicates are deduplicated. |
+
+**Response 200:**
+
+```json
+{
+  "run_id": "uuid",
+  "billing_month": "2026-05",
+  "status": "completed",
+  "summary": {
+    "eligible_count": 3,
+    "success_count": 2,
+    "blocked_count": 1,
+    "total_due_minor": 3000
+  },
+  "generated": [
+    {
+      "child_id": "uuid",
+      "child_name": "Alex Child",
+      "action": "created",
+      "invoice_id": "uuid",
+      "subtotal_minor": 4000,
+      "funded_deduction_minor": 2500,
+      "total_due_minor": 1500
+    }
+  ],
+  "blocked": [
+    {
+      "child_id": "uuid",
+      "child_name": "Bailey Child",
+      "blockers": [
+        { "code": "missing_funding_profile", "message": "Funding profile is missing for this billing month." }
+      ]
+    }
+  ]
+}
+```
+
+**`action` values:** `created` (new draft), `updated` (regenerated existing draft).
+
+**`status` values:** `completed` (all eligible children generated), `completed_with_exceptions` (one or more children blocked).
+
+**Blocker codes** include the same codes as preflight, plus:
+
+| Code | Meaning |
+|------|---------|
+| `child_not_found` | Selected child ID not found in tenant/branch scope |
+| `child_not_in_billing_month` | Selected child not active during the billing month |
+
+**Idempotency:** Regenerating a draft for the same child/month updates the existing draft invoice in place. The invoice ID stays stable. System-calculated lines (`core_childcare`, `funded_deduction`) are replaced. Manual `extra` lines are preserved.
+
+**Transaction semantics:** The entire operation runs in one database transaction. Unexpected errors roll back all changes. No partial state is left behind.
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Missing/malformed `billing_month`, malformed `child_ids` |
+| 401 | `unauthorized` | No valid token |
+| 403 | `forbidden_role` | Non-manager role |
+
+---
+
 ## Funding v1
 
 Manager-only endpoints for maintaining a child's funded-hours allowance per billing month. Parents see funding effects through issued invoices, not through these routes.

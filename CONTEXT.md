@@ -276,6 +276,10 @@ Invoice draft preflight totals are estimated aggregate invoice amounts for eligi
 
 A child-month with no completed attendance sessions can still pass invoice draft preflight when enrollment, billing, funding, and attendance-completeness data are present.
 
+## Zero-Total Draft Invoice (MVP)
+
+An eligible child-month can produce a draft monthly invoice with zero amount due; zero-total drafts still represent the monthly billing statement for that child-month.
+
 ## Invoice Issue Mode (MVP)
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
@@ -315,6 +319,14 @@ Sibling discounts are deferred and not part of month 1 billing rules.
 ## Extras Charging Model (MVP)
 
 Extras are added manually as invoice line items by managers.
+
+## Draft Invoice Extras Placeholder (MVP)
+
+Draft invoice generation does not create payable extras automatically; it preserves an explicit zero-value placeholder so later manager-entered extras remain outside attendance and funding calculations.
+
+## Draft Invoice Manual Extras Preservation (MVP)
+
+Regenerating a draft monthly invoice preserves existing manual extra lines while recalculating attendance-derived core childcare and funded-hours deduction lines.
 
 ## Attendance Capture Scope (MVP)
 
@@ -391,6 +403,10 @@ Managers may create a child record before linking a guardian, but attendance and
 ## Child Billing Rate Source (MVP)
 
 Each child has one current core billing rate in enrollment data, while issued invoices preserve the applied rate in invoice lines for historical explainability.
+
+## Draft Invoice Rate Source (MVP)
+
+Draft invoice generation uses the child's current stored core billing rate at generation time, including when generating drafts for historical billing months.
 
 ## Zero Core Billing Rate (MVP)
 
@@ -812,6 +828,26 @@ An unpaid issued invoice transitions to `overdue` at 00:00 the next local day in
 
 Invoice issue runs can proceed for eligible children while children with incomplete attendance are blocked and returned in an exception list for manager resolution.
 
+## Draft Invoice Generation Exception Handling (MVP)
+
+Draft invoice generation can proceed for eligible child-months while blocked child-months are skipped and returned as exceptions for manager resolution.
+
+## Draft Generation Transaction Boundary (MVP)
+
+Expected child-month blockers produce generation exceptions, while unexpected system failures leave no partial invoice generation result behind.
+
+## Empty Draft Generation Run (MVP)
+
+A draft invoice generation run can complete without creating invoices when no child-months are eligible; this is a valid billing outcome rather than a request failure.
+
+## Selected Draft Generation Child Exception (MVP)
+
+When a selected child-month cannot be found in the active billing scope or does not overlap the billing month, draft generation treats that child-month as an exception rather than failing the whole run.
+
+## Selected Draft Generation Uniqueness (MVP)
+
+Selected-child draft generation operates on unique child-months; duplicate selected child identifiers do not create duplicate invoice work.
+
 ## Invoice Run Blocked Child (MVP)
 
 A child excluded from a specific monthly invoice run because billing readiness checks found a resolvable issue, such as incomplete attendance. This is a run/month-specific billing state, not a child lifecycle state.
@@ -827,6 +863,14 @@ Invoice draft preflight explains enrollment incompleteness with granular stable 
 ## Draft Invoice Regeneration (MVP)
 
 After attendance corrections, managers can regenerate draft invoices for individual children without rerunning the full month batch.
+
+## Draft Invoice Generation Scope (MVP)
+
+Draft invoice generation can target all eligible child-months in a billing month or a manager-selected subset of child-months.
+
+## Draft Invoice Generation Outcome (MVP)
+
+Draft invoice generation reports the invoice run outcome and affected invoice references; detailed invoice review remains a separate manager billing view.
 
 ## Invoice Payment Retry (MVP)
 
@@ -976,9 +1020,29 @@ When a guardian-child relationship is re-linked with an active guardian-child li
 
 Regenerating draft invoices for the same month does not create duplicates; existing eligible drafts are replaced or updated unless already issued.
 
+## Draft Invoice Regeneration Identity (MVP)
+
+Regenerating an existing draft monthly invoice preserves the draft invoice identity while replacing its draft calculation contents.
+
+## Draft Invoice Generation Audit Scope (MVP)
+
+Draft invoice generation records audit history for each draft invoice that is created or recalculated; blocked child-months are represented as invoice run exceptions because no invoice changes for those child-months.
+
+## Invoice Run History (MVP)
+
+Repeated draft generation requests create separate invoice run history entries even when they update the same child-month draft invoice.
+
 ## Issued Invoice Regeneration Policy (MVP)
 
 Issued invoices are not regenerated after attendance changes; post-issue changes require an explicit adjustment flow.
+
+## Draft Regeneration Issue Race Rule (MVP)
+
+If a draft monthly invoice becomes issued while draft regeneration is being prepared, issued status takes precedence and the invoice is skipped rather than recalculated.
+
+## Stale Draft Blocked Regeneration (MVP)
+
+When an existing draft monthly invoice is no longer eligible for regeneration, the draft is left in place and the child-month is returned as blocked rather than silently removed.
 
 ## Adjustment Flow (MVP)
 
@@ -1007,6 +1071,14 @@ Domain entities use UUID primary keys (UUIDv7 preferred, UUIDv4 acceptable).
 ## Invoice Explainability Persistence (MVP)
 
 Invoice line storage preserves both intermediate billing components (core attended minutes, funded deduction minutes, core billable minutes, hourly rate) and final totals.
+
+## Invoice Attendance Source Snapshot (MVP)
+
+A generated draft invoice preserves a compact snapshot of the attendance sessions used to calculate it so managers can explain how the billed minutes were derived.
+
+## Draft Invoice Calculation Lines (MVP)
+
+Generated draft monthly invoices use consistent explanatory lines for core childcare and funded-hours deduction, including a zero-value funded deduction line when no deduction amount is applied.
 
 ## Parent Draft Invoice Visibility (MVP)
 

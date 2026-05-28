@@ -4,11 +4,11 @@ import "testing"
 
 func TestCalculateHourlyAmountMinor(t *testing.T) {
 	tests := []struct {
-		name           string
-		minutes        int
+		name            string
+		minutes         int
 		hourlyRateMinor int
-		want           int
-		wantErr        bool
+		want            int
+		wantErr         bool
 	}{
 		{name: "zero minutes", minutes: 0, hourlyRateMinor: 500, want: 0},
 		{name: "zero rate", minutes: 60, hourlyRateMinor: 0, want: 0},

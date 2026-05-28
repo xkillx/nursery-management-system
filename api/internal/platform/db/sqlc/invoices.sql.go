@@ -11,6 +11,257 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const completeInvoiceRun = `-- name: CompleteInvoiceRun :exec
+UPDATE invoice_runs
+SET status = $4,
+    eligible_count = $5,
+    success_count = $6,
+    blocked_count = $7,
+    details = $8,
+    completed_at = now()
+WHERE id = $1 AND tenant_id = $2 AND branch_id = $3
+`
+
+type CompleteInvoiceRunParams struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	Status        string
+	EligibleCount int32
+	SuccessCount  int32
+	BlockedCount  int32
+	Details       []byte
+}
+
+func (q *Queries) CompleteInvoiceRun(ctx context.Context, arg CompleteInvoiceRunParams) error {
+	_, err := q.db.Exec(ctx, completeInvoiceRun,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Status,
+		arg.EligibleCount,
+		arg.SuccessCount,
+		arg.BlockedCount,
+		arg.Details,
+	)
+	return err
+}
+
+const createDraftInvoice = `-- name: CreateDraftInvoice :exec
+INSERT INTO invoices (
+    id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
+    currency_code, generated_run_id, subtotal_minor, funded_deduction_minor, total_due_minor,
+    period_start_date, period_end_date, calculation_details
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7,
+    $8, $9, $10, $11, $12,
+    $13, $14, $15
+)
+`
+
+type CreateDraftInvoiceParams struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	ChildID              pgtype.UUID
+	BillingMonth         pgtype.Date
+	InvoiceKind          string
+	Status               string
+	CurrencyCode         string
+	GeneratedRunID       pgtype.UUID
+	SubtotalMinor        int32
+	FundedDeductionMinor int32
+	TotalDueMinor        int32
+	PeriodStartDate      pgtype.Date
+	PeriodEndDate        pgtype.Date
+	CalculationDetails   []byte
+}
+
+func (q *Queries) CreateDraftInvoice(ctx context.Context, arg CreateDraftInvoiceParams) error {
+	_, err := q.db.Exec(ctx, createDraftInvoice,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.BillingMonth,
+		arg.InvoiceKind,
+		arg.Status,
+		arg.CurrencyCode,
+		arg.GeneratedRunID,
+		arg.SubtotalMinor,
+		arg.FundedDeductionMinor,
+		arg.TotalDueMinor,
+		arg.PeriodStartDate,
+		arg.PeriodEndDate,
+		arg.CalculationDetails,
+	)
+	return err
+}
+
+const createInvoiceRun = `-- name: CreateInvoiceRun :exec
+INSERT INTO invoice_runs (
+    id, tenant_id, branch_id, billing_month, run_type, status,
+    started_at, requested_by_user_id, requested_by_membership_id, request_id
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    now(), $7, $8, $9
+)
+`
+
+type CreateInvoiceRunParams struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	BillingMonth            pgtype.Date
+	RunType                 string
+	Status                  string
+	RequestedByUserID       pgtype.UUID
+	RequestedByMembershipID pgtype.UUID
+	RequestID               pgtype.Text
+}
+
+func (q *Queries) CreateInvoiceRun(ctx context.Context, arg CreateInvoiceRunParams) error {
+	_, err := q.db.Exec(ctx, createInvoiceRun,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.RunType,
+		arg.Status,
+		arg.RequestedByUserID,
+		arg.RequestedByMembershipID,
+		arg.RequestID,
+	)
+	return err
+}
+
+const deleteDraftSystemInvoiceLines = `-- name: DeleteDraftSystemInvoiceLines :execrows
+DELETE FROM invoice_lines
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND line_kind IN ('core_childcare', 'funded_deduction')
+`
+
+type DeleteDraftSystemInvoiceLinesParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+func (q *Queries) DeleteDraftSystemInvoiceLines(ctx context.Context, arg DeleteDraftSystemInvoiceLinesParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteDraftSystemInvoiceLines, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getMonthlyInvoiceForUpdate = `-- name: GetMonthlyInvoiceForUpdate :one
+SELECT id, status, invoice_kind, subtotal_minor, funded_deduction_minor, total_due_minor, calculation_details
+FROM invoices
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND child_id = $3
+  AND billing_month = $4
+  AND invoice_kind = 'monthly'
+FOR UPDATE
+`
+
+type GetMonthlyInvoiceForUpdateParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	ChildID      pgtype.UUID
+	BillingMonth pgtype.Date
+}
+
+type GetMonthlyInvoiceForUpdateRow struct {
+	ID                   pgtype.UUID
+	Status               string
+	InvoiceKind          string
+	SubtotalMinor        int32
+	FundedDeductionMinor int32
+	TotalDueMinor        int32
+	CalculationDetails   []byte
+}
+
+func (q *Queries) GetMonthlyInvoiceForUpdate(ctx context.Context, arg GetMonthlyInvoiceForUpdateParams) (GetMonthlyInvoiceForUpdateRow, error) {
+	row := q.db.QueryRow(ctx, getMonthlyInvoiceForUpdate,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.BillingMonth,
+	)
+	var i GetMonthlyInvoiceForUpdateRow
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.InvoiceKind,
+		&i.SubtotalMinor,
+		&i.FundedDeductionMinor,
+		&i.TotalDueMinor,
+		&i.CalculationDetails,
+	)
+	return i, err
+}
+
+const insertInvoiceLine = `-- name: InsertInvoiceLine :exec
+INSERT INTO invoice_lines (
+    id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
+    quantity_minutes, unit_amount_minor, line_amount_minor,
+    raw_attended_minutes, rounded_attended_minutes, funded_allowance_minutes,
+    funded_deduction_minutes, core_billable_minutes, session_count, details
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7,
+    $8, $9, $10,
+    $11, $12, $13,
+    $14, $15, $16, $17
+)
+`
+
+type InsertInvoiceLineParams struct {
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	InvoiceID              pgtype.UUID
+	LineKind               string
+	Description            string
+	SortOrder              int32
+	QuantityMinutes        pgtype.Int4
+	UnitAmountMinor        pgtype.Int4
+	LineAmountMinor        int32
+	RawAttendedMinutes     pgtype.Int4
+	RoundedAttendedMinutes pgtype.Int4
+	FundedAllowanceMinutes pgtype.Int4
+	FundedDeductionMinutes pgtype.Int4
+	CoreBillableMinutes    pgtype.Int4
+	SessionCount           pgtype.Int4
+	Details                []byte
+}
+
+func (q *Queries) InsertInvoiceLine(ctx context.Context, arg InsertInvoiceLineParams) error {
+	_, err := q.db.Exec(ctx, insertInvoiceLine,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.InvoiceID,
+		arg.LineKind,
+		arg.Description,
+		arg.SortOrder,
+		arg.QuantityMinutes,
+		arg.UnitAmountMinor,
+		arg.LineAmountMinor,
+		arg.RawAttendedMinutes,
+		arg.RoundedAttendedMinutes,
+		arg.FundedAllowanceMinutes,
+		arg.FundedDeductionMinutes,
+		arg.CoreBillableMinutes,
+		arg.SessionCount,
+		arg.Details,
+	)
+	return err
+}
+
 const invoiceGet = `-- name: InvoiceGet :one
 SELECT id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
        invoice_number, issued_sequence, generated_run_id, issued_run_id,
@@ -202,6 +453,309 @@ func (q *Queries) InvoiceRunGet(ctx context.Context, arg InvoiceRunGetParams) (I
 	return i, err
 }
 
+const listAttendanceSessionsForGeneration = `-- name: ListAttendanceSessionsForGeneration :many
+SELECT
+    id,
+    child_id,
+    status,
+    check_in_at,
+    check_out_at,
+    check_in_local_date,
+    check_out_local_date
+FROM attendance_sessions
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND check_in_local_date >= $3
+  AND check_in_local_date < $4
+  AND status IN ('open', 'complete', 'corrected')
+ORDER BY child_id, check_in_local_date, check_in_at, id
+`
+
+type ListAttendanceSessionsForGenerationParams struct {
+	TenantID           pgtype.UUID
+	BranchID           pgtype.UUID
+	CheckInLocalDate   pgtype.Date
+	CheckInLocalDate_2 pgtype.Date
+}
+
+type ListAttendanceSessionsForGenerationRow struct {
+	ID                pgtype.UUID
+	ChildID           pgtype.UUID
+	Status            string
+	CheckInAt         pgtype.Timestamptz
+	CheckOutAt        pgtype.Timestamptz
+	CheckInLocalDate  pgtype.Date
+	CheckOutLocalDate pgtype.Date
+}
+
+func (q *Queries) ListAttendanceSessionsForGeneration(ctx context.Context, arg ListAttendanceSessionsForGenerationParams) ([]ListAttendanceSessionsForGenerationRow, error) {
+	rows, err := q.db.Query(ctx, listAttendanceSessionsForGeneration,
+		arg.TenantID,
+		arg.BranchID,
+		arg.CheckInLocalDate,
+		arg.CheckInLocalDate_2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAttendanceSessionsForGenerationRow
+	for rows.Next() {
+		var i ListAttendanceSessionsForGenerationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChildID,
+			&i.Status,
+			&i.CheckInAt,
+			&i.CheckOutAt,
+			&i.CheckInLocalDate,
+			&i.CheckOutLocalDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCandidateChildrenForUpdate = `-- name: ListCandidateChildrenForUpdate :many
+SELECT
+    c.id AS child_id,
+    c.full_name,
+    c.date_of_birth,
+    c.start_date,
+    c.end_date,
+    c.core_hourly_rate_minor,
+    EXISTS (
+        SELECT 1
+        FROM guardian_child_links gcl
+        WHERE gcl.tenant_id = c.tenant_id
+          AND gcl.branch_id = c.branch_id
+          AND gcl.child_id = c.id
+          AND gcl.ended_at IS NULL
+    ) AS has_guardian_link,
+    fp.id AS funding_profile_id,
+    fp.funded_allowance_minutes,
+    i.id AS existing_invoice_id,
+    i.status AS existing_invoice_status
+FROM children c
+LEFT JOIN funding_profiles fp
+    ON fp.tenant_id = c.tenant_id
+    AND fp.branch_id = c.branch_id
+    AND fp.child_id = c.id
+    AND fp.billing_month = $3
+LEFT JOIN invoices i
+    ON i.tenant_id = c.tenant_id
+    AND i.branch_id = c.branch_id
+    AND i.child_id = c.id
+    AND i.billing_month = $3
+    AND i.invoice_kind = 'monthly'
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < $4
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+ORDER BY c.full_name, c.id
+FOR UPDATE OF c
+`
+
+type ListCandidateChildrenForUpdateParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+	StartDate    pgtype.Date
+}
+
+type ListCandidateChildrenForUpdateRow struct {
+	ChildID                pgtype.UUID
+	FullName               string
+	DateOfBirth            pgtype.Date
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	CoreHourlyRateMinor    int32
+	HasGuardianLink        bool
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+	ExistingInvoiceID      pgtype.UUID
+	ExistingInvoiceStatus  pgtype.Text
+}
+
+func (q *Queries) ListCandidateChildrenForUpdate(ctx context.Context, arg ListCandidateChildrenForUpdateParams) ([]ListCandidateChildrenForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listCandidateChildrenForUpdate,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.StartDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCandidateChildrenForUpdateRow
+	for rows.Next() {
+		var i ListCandidateChildrenForUpdateRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.FullName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.CoreHourlyRateMinor,
+			&i.HasGuardianLink,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+			&i.ExistingInvoiceID,
+			&i.ExistingInvoiceStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDraftExtraLines = `-- name: ListDraftExtraLines :many
+SELECT id, line_kind, line_amount_minor, details
+FROM invoice_lines
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND line_kind = 'extra'
+ORDER BY sort_order
+`
+
+type ListDraftExtraLinesParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+type ListDraftExtraLinesRow struct {
+	ID              pgtype.UUID
+	LineKind        string
+	LineAmountMinor int32
+	Details         []byte
+}
+
+func (q *Queries) ListDraftExtraLines(ctx context.Context, arg ListDraftExtraLinesParams) ([]ListDraftExtraLinesRow, error) {
+	rows, err := q.db.Query(ctx, listDraftExtraLines, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDraftExtraLinesRow
+	for rows.Next() {
+		var i ListDraftExtraLinesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.LineKind,
+			&i.LineAmountMinor,
+			&i.Details,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSelectedChildrenForUpdate = `-- name: ListSelectedChildrenForUpdate :many
+SELECT
+    c.id AS child_id,
+    c.full_name,
+    c.date_of_birth,
+    c.start_date,
+    c.end_date,
+    c.core_hourly_rate_minor,
+    EXISTS (
+        SELECT 1
+        FROM guardian_child_links gcl
+        WHERE gcl.tenant_id = c.tenant_id
+          AND gcl.branch_id = c.branch_id
+          AND gcl.child_id = c.id
+          AND gcl.ended_at IS NULL
+    ) AS has_guardian_link,
+    fp.id AS funding_profile_id,
+    fp.funded_allowance_minutes,
+    i.id AS existing_invoice_id,
+    i.status AS existing_invoice_status
+FROM children c
+LEFT JOIN funding_profiles fp
+    ON fp.tenant_id = c.tenant_id
+    AND fp.branch_id = c.branch_id
+    AND fp.child_id = c.id
+LEFT JOIN invoices i
+    ON i.tenant_id = c.tenant_id
+    AND i.branch_id = c.branch_id
+    AND i.child_id = c.id
+    AND i.invoice_kind = 'monthly'
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.id = ANY($3::uuid[])
+ORDER BY c.full_name, c.id
+FOR UPDATE OF c
+`
+
+type ListSelectedChildrenForUpdateParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  []pgtype.UUID
+}
+
+type ListSelectedChildrenForUpdateRow struct {
+	ChildID                pgtype.UUID
+	FullName               string
+	DateOfBirth            pgtype.Date
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	CoreHourlyRateMinor    int32
+	HasGuardianLink        bool
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+	ExistingInvoiceID      pgtype.UUID
+	ExistingInvoiceStatus  pgtype.Text
+}
+
+func (q *Queries) ListSelectedChildrenForUpdate(ctx context.Context, arg ListSelectedChildrenForUpdateParams) ([]ListSelectedChildrenForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listSelectedChildrenForUpdate, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSelectedChildrenForUpdateRow
+	for rows.Next() {
+		var i ListSelectedChildrenForUpdateRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.FullName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.CoreHourlyRateMinor,
+			&i.HasGuardianLink,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+			&i.ExistingInvoiceID,
+			&i.ExistingInvoiceStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const preflightListAttendanceSessions = `-- name: PreflightListAttendanceSessions :many
 SELECT
     id,
@@ -365,4 +919,40 @@ func (q *Queries) PreflightListChildren(ctx context.Context, arg PreflightListCh
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateDraftInvoice = `-- name: UpdateDraftInvoice :exec
+UPDATE invoices
+SET generated_run_id = $4,
+    subtotal_minor = $5,
+    funded_deduction_minor = $6,
+    total_due_minor = $7,
+    calculation_details = $8,
+    updated_at = now()
+WHERE id = $1 AND tenant_id = $2 AND branch_id = $3 AND status = 'draft'
+`
+
+type UpdateDraftInvoiceParams struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	GeneratedRunID       pgtype.UUID
+	SubtotalMinor        int32
+	FundedDeductionMinor int32
+	TotalDueMinor        int32
+	CalculationDetails   []byte
+}
+
+func (q *Queries) UpdateDraftInvoice(ctx context.Context, arg UpdateDraftInvoiceParams) error {
+	_, err := q.db.Exec(ctx, updateDraftInvoice,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.GeneratedRunID,
+		arg.SubtotalMinor,
+		arg.FundedDeductionMinor,
+		arg.TotalDueMinor,
+		arg.CalculationDetails,
+	)
+	return err
 }

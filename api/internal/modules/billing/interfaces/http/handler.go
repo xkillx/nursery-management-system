@@ -13,15 +13,17 @@ import (
 )
 
 type Handler struct {
-	preflight *application.PreflightDraftInvoices
+	preflight  *application.PreflightDraftInvoices
+	generation *application.GenerateDraftInvoices
 }
 
-func NewHandler(preflight *application.PreflightDraftInvoices) *Handler {
-	return &Handler{preflight: preflight}
+func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices) *Handler {
+	return &Handler{preflight: preflight, generation: generation}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices/drafts/preflight", h.preflightHandler)
+	manager.POST("/invoice-runs/drafts", h.generateDraftsHandler)
 }
 
 func (h *Handler) preflightHandler(c *gin.Context) {
@@ -44,6 +46,34 @@ func (h *Handler) preflightHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toPreflightResponse(result))
+}
+
+func (h *Handler) generateDraftsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req generateDraftsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		return
+	}
+
+	req.BillingMonth = strings.TrimSpace(req.BillingMonth)
+	if req.BillingMonth == "" {
+		writeError(c, http.StatusBadRequest, "validation_error", "Missing billing_month.")
+		return
+	}
+
+	result, err := h.generation.Execute(c.Request.Context(), actor, req.BillingMonth, req.ChildIDs)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toGenerateDraftsResponse(result))
 }
 
 func handleError(c *gin.Context, err error) {
@@ -162,6 +192,51 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 		},
 		EligibleChildren: eligible,
 		BlockedChildren:  blocked,
+	}
+}
+
+func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResponse {
+	generated := make([]generatedDraftResponse, 0, len(r.Generated))
+	for _, g := range r.Generated {
+		generated = append(generated, generatedDraftResponse{
+			ChildID:              g.ChildID.String(),
+			ChildName:            g.ChildName,
+			Action:               string(g.Action),
+			InvoiceID:            g.InvoiceID.String(),
+			SubtotalMinor:        g.SubtotalMinor,
+			FundedDeductionMinor: g.FundedDeductionMinor,
+			TotalDueMinor:        g.TotalDueMinor,
+		})
+	}
+
+	blocked := make([]generateBlockedChildResponse, 0, len(r.Blocked))
+	for _, b := range r.Blocked {
+		blockers := make([]generateBlockerResponse, 0, len(b.Blockers))
+		for _, bl := range b.Blockers {
+			blockers = append(blockers, generateBlockerResponse{
+				Code:    string(bl.Code),
+				Message: bl.Message,
+			})
+		}
+		blocked = append(blocked, generateBlockedChildResponse{
+			ChildID:   b.ChildID.String(),
+			ChildName: b.ChildName,
+			Blockers:  blockers,
+		})
+	}
+
+	return generateDraftsResponse{
+		RunID:        r.RunID.String(),
+		BillingMonth: r.BillingMonth,
+		Status:       r.RunStatus,
+		Summary: generateDraftsSummary{
+			EligibleCount: r.Summary.EligibleCount,
+			SuccessCount:  r.Summary.SuccessCount,
+			BlockedCount:  r.Summary.BlockedCount,
+			TotalDueMinor: r.Summary.TotalDueMinor,
+		},
+		Generated: generated,
+		Blocked:   blocked,
 	}
 }
 

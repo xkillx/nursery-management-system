@@ -199,7 +199,10 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 
 	// Billing module
 	billingRepo := billingpostgres.NewRepository(pool)
-	billingHandler := billinghandler.NewHandler(billingapp.NewPreflightDraftInvoices(billingRepo))
+	billingHandler := billinghandler.NewHandler(
+		billingapp.NewPreflightDraftInvoices(billingRepo),
+		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter),
+	)
 	billingHandler.RegisterRoutes(manager)
 
 	// Invites module
