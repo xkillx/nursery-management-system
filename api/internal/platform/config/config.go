@@ -31,6 +31,8 @@ type Config struct {
 	PasswordResetTokenTTLMinutes int
 	InviteTokenSecret            string
 	InviteTokenTTLHours          int
+
+	SchedulerOwner bool
 }
 
 func Load() (Config, error) {
@@ -77,6 +79,8 @@ func Load() (Config, error) {
 		PasswordResetTokenTTLMinutes: resetTTLMin,
 		InviteTokenSecret:           strings.TrimSpace(os.Getenv("INVITE_TOKEN_SECRET")),
 		InviteTokenTTLHours:         inviteTTLMHours,
+
+		SchedulerOwner: strings.EqualFold(strings.TrimSpace(os.Getenv("SCHEDULER_OWNER")), "true"),
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {

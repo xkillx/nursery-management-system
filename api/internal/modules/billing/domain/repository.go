@@ -40,6 +40,10 @@ type BillingRepository interface {
 	ListSelectedInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, invoiceIDs []uuid.UUID) ([]InvoiceIssueCandidateRow, error)
 	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
 	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) error
+
+	// Overdue Transition (API-20) — transactional methods using Tx.
+	TryAcquireOverdueTransitionJobLock(ctx context.Context, tx Tx) (bool, error)
+	MarkIssuedInvoicesOverdue(ctx context.Context, tx Tx, cutoffUTC time.Time) ([]OverdueTransitionedInvoice, error)
 }
 
 // InvoiceRow maps a row from the invoices table.

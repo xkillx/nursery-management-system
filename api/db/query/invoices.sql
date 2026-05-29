@@ -384,3 +384,16 @@ WHERE id = $1
   AND tenant_id = $2
   AND branch_id = $3
   AND status = 'draft';
+
+-- name: TryAcquireOverdueTransitionJobLock :one
+SELECT pg_try_advisory_xact_lock(200020) AS acquired;
+
+-- name: MarkIssuedInvoicesOverdue :many
+UPDATE invoices
+SET status = 'overdue',
+    payment_status_updated_at = now(),
+    updated_at = now()
+WHERE status = 'issued'
+  AND amount_paid_minor < total_due_minor
+  AND due_at < $1
+RETURNING id, tenant_id, branch_id;

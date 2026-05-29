@@ -1338,7 +1338,7 @@ Issue a single draft invoice. Sets status to `issued`, assigns `invoice_number`,
   "status": "issued",
   "issued_at": "2026-05-29T14:00:00Z",
   "locked_at": "2026-05-29T14:00:00Z",
-  "due_at": "2026-06-28T23:59:59Z",
+  "due_at": "2026-05-29T14:00:00Z",
   "issued_run_id": "uuid",
   "total_due_minor": 1500
 }
@@ -1397,7 +1397,7 @@ Bulk-issue all draft invoices for a billing month. Each eligible draft invoice i
       "status": "issued",
       "issued_at": "2026-05-29T14:00:00Z",
       "locked_at": "2026-05-29T14:00:00Z",
-      "due_at": "2026-06-28T23:59:59Z",
+      "due_at": "2026-05-29T14:00:00Z",
       "total_due_minor": 1500
     }
   ],

@@ -502,6 +502,29 @@ func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params
 	return nil
 }
 
+// --- Overdue Transition (API-20) transactional methods ---
+
+func (r *Repository) TryAcquireOverdueTransitionJobLock(ctx context.Context, tx domain.Tx) (bool, error) {
+	return r.queriesTx(tx).TryAcquireOverdueTransitionJobLock(ctx)
+}
+
+func (r *Repository) MarkIssuedInvoicesOverdue(ctx context.Context, tx domain.Tx, cutoffUTC time.Time) ([]domain.OverdueTransitionedInvoice, error) {
+	rows, err := r.queriesTx(tx).MarkIssuedInvoicesOverdue(ctx, pgtype.Timestamptz{Time: cutoffUTC, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.OverdueTransitionedInvoice, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.OverdueTransitionedInvoice{
+			ID:       pgtypeUUIDToUUID(row.ID),
+			TenantID: pgtypeUUIDToUUID(row.TenantID),
+			BranchID: pgtypeUUIDToUUID(row.BranchID),
+		})
+	}
+	return result, nil
+}
+
 func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {
 	return domain.InvoiceIssueCandidateRow{
 		ID:            pgtypeUUIDToUUID(row.ID),

@@ -852,9 +852,17 @@ Creating a guardian-child link for a pair that already has an active link is tre
 
 Invoices are due on receipt when issued.
 
+## Unpaid Issued Invoice (MVP)
+
+An issued invoice with an outstanding positive balance. A zero-total issued invoice is not considered unpaid for overdue transition purposes.
+
 ## Invoice Overdue Transition (MVP)
 
 An unpaid issued invoice transitions to `overdue` at 00:00 the next local day in `Europe/London`.
+
+## Payment Failed Overdue Boundary (MVP)
+
+A `payment_failed` invoice remains payable but does not transition to `overdue`.
 
 ## Invoice Issue Exception Handling (MVP)
 

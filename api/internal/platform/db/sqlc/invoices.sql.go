@@ -1296,6 +1296,43 @@ func (q *Queries) MarkInvoiceIssued(ctx context.Context, arg MarkInvoiceIssuedPa
 	return result.RowsAffected(), nil
 }
 
+const markIssuedInvoicesOverdue = `-- name: MarkIssuedInvoicesOverdue :many
+UPDATE invoices
+SET status = 'overdue',
+    payment_status_updated_at = now(),
+    updated_at = now()
+WHERE status = 'issued'
+  AND amount_paid_minor < total_due_minor
+  AND due_at < $1
+RETURNING id, tenant_id, branch_id
+`
+
+type MarkIssuedInvoicesOverdueRow struct {
+	ID       pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+func (q *Queries) MarkIssuedInvoicesOverdue(ctx context.Context, dueAt pgtype.Timestamptz) ([]MarkIssuedInvoicesOverdueRow, error) {
+	rows, err := q.db.Query(ctx, markIssuedInvoicesOverdue, dueAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MarkIssuedInvoicesOverdueRow
+	for rows.Next() {
+		var i MarkIssuedInvoicesOverdueRow
+		if err := rows.Scan(&i.ID, &i.TenantID, &i.BranchID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const preflightListAttendanceSessions = `-- name: PreflightListAttendanceSessions :many
 SELECT
     id,
@@ -1459,6 +1496,17 @@ func (q *Queries) PreflightListChildren(ctx context.Context, arg PreflightListCh
 		return nil, err
 	}
 	return items, nil
+}
+
+const tryAcquireOverdueTransitionJobLock = `-- name: TryAcquireOverdueTransitionJobLock :one
+SELECT pg_try_advisory_xact_lock(200020) AS acquired
+`
+
+func (q *Queries) TryAcquireOverdueTransitionJobLock(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, tryAcquireOverdueTransitionJobLock)
+	var acquired bool
+	err := row.Scan(&acquired)
+	return acquired, err
 }
 
 const updateDraftInvoice = `-- name: UpdateDraftInvoice :exec

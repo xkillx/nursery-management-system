@@ -13,6 +13,10 @@ import (
 	"nursery-management-system/api/internal/app/bootstrap"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
+	billingapp "nursery-management-system/api/internal/modules/billing/application"
+	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
+	"nursery-management-system/api/internal/platform/jobs"
+	"nursery-management-system/api/internal/platform/transaction"
 )
 
 func main() {
@@ -34,6 +38,20 @@ func main() {
 	}
 	defer pool.Close()
 
+	var scheduler *jobs.Scheduler
+	if cfg.SchedulerOwner {
+		billingRepo := billingpostgres.NewRepository(pool)
+		txMgr := transaction.NewManager(pool)
+		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, txMgr, func() time.Time { return time.Now().UTC() })
+
+		var schedErr error
+		scheduler, schedErr = jobs.NewScheduler(logger, overdueUC)
+		if schedErr != nil {
+			logger.Error("failed to create scheduler", "error", schedErr)
+			os.Exit(1)
+		}
+	}
+
 	router := bootstrap.Bootstrap(cfg, logger, pool)
 
 	httpServer := &http.Server{
@@ -51,6 +69,10 @@ func main() {
 		errCh <- httpServer.ListenAndServe()
 	}()
 
+	if scheduler != nil {
+		scheduler.Start(ctx)
+	}
+
 	select {
 	case <-ctx.Done():
 		logger.Info("shutdown signal received")
@@ -63,6 +85,10 @@ func main() {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	if scheduler != nil {
+		scheduler.Stop(shutdownCtx)
+	}
 
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error("http server shutdown failed", "error", err)

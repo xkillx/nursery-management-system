@@ -48,6 +48,9 @@ func TestLoadDefaultsNonSecretAPIConfig(t *testing.T) {
 	if cfg.InviteTokenTTLHours != 168 {
 		t.Fatalf("expected default INVITE_TOKEN_TTL_HOURS 168, got %d", cfg.InviteTokenTTLHours)
 	}
+	if cfg.SchedulerOwner {
+		t.Fatalf("expected default SchedulerOwner false, got true")
+	}
 }
 
 func TestLoadFailsFastForMissingCriticalEnvVars(t *testing.T) {
@@ -156,4 +159,35 @@ func setBaseEnv(t *testing.T) {
 	t.Setenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "60")
 	t.Setenv("INVITE_TOKEN_SECRET", "invite-secret")
 	t.Setenv("INVITE_TOKEN_TTL_HOURS", "168")
+	t.Setenv("SCHEDULER_OWNER", "false")
+}
+
+func TestSchedulerOwnerConfig(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{name: "true enables", value: "true", want: true},
+		{name: "TRUE enables", value: "TRUE", want: true},
+		{name: "false stays disabled", value: "false", want: false},
+		{name: "empty stays disabled", value: "", want: false},
+		{name: "yes stays disabled", value: "yes", want: false},
+		{name: "1 stays disabled", value: "1", want: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setBaseEnv(t)
+			t.Setenv("SCHEDULER_OWNER", tc.value)
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if cfg.SchedulerOwner != tc.want {
+				t.Fatalf("expected SchedulerOwner %v, got %v", tc.want, cfg.SchedulerOwner)
+			}
+		})
+	}
 }
