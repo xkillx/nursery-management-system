@@ -1309,6 +1309,132 @@ Full detail for one invoice including lines, calculation, and run exceptions.
 
 ---
 
+## Invoice Issue
+
+Manager-only endpoints for issuing individual invoices or bulk-issuing all draft invoices for a billing month. Issuing locks invoice contents, assigns an invoice number, and sets due date. Issue does not recalculate invoice contents; full details remain available through `GET /api/v1/invoices/:invoice_id`.
+
+**Routes are manager-only.** Unauthenticated requests receive `401 unauthorized`. Practitioner and parent requests receive `403 forbidden_role`.
+
+### POST /api/v1/invoices/:invoice_id/issue
+
+Issue a single draft invoice. Sets status to `issued`, assigns `invoice_number`, populates `issued_at`, `locked_at`, and `due_at`.
+
+**Request:**
+
+```json
+{ "confirm": true }
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `confirm` | boolean | yes | Must be `true` to proceed |
+
+**Response 200:**
+
+```json
+{
+  "invoice_id": "uuid",
+  "invoice_number": "INV-2026-00001",
+  "status": "issued",
+  "issued_at": "2026-05-29T14:00:00Z",
+  "locked_at": "2026-05-29T14:00:00Z",
+  "due_at": "2026-06-28T23:59:59Z",
+  "issued_run_id": "uuid",
+  "total_due_minor": 1500
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Invalid `invoice_id` or `confirm` not `true` |
+| 401 | `unauthorized` | No valid token |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `invoice_not_found` | Invoice absent from tenant/branch scope |
+| 409 | `invoice_not_draft` | Invoice status is not `draft` |
+| 409 | `invoice_not_monthly` | Invoice kind is not `monthly` |
+
+### POST /api/v1/invoices/bulk-issue
+
+Bulk-issue all draft invoices for a billing month. Each eligible draft invoice is issued atomically. Invoices with blockers are skipped and reported in the `blocked` array. The entire operation runs in a single transaction; unexpected errors roll back all changes.
+
+**Request:**
+
+```json
+{
+  "billing_month": "2026-05",
+  "invoice_ids": ["uuid", "uuid"],
+  "confirm": true
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `billing_month` | string | yes | Billing month as `YYYY-MM` |
+| `invoice_ids` | string[] | no | Optional array of invoice UUIDs. Omit to issue all drafts for the billing month. Empty array = no-op. Duplicates are deduplicated. |
+| `confirm` | boolean | yes | Must be `true` to proceed |
+
+**Response 200:**
+
+```json
+{
+  "run_id": "uuid",
+  "billing_month": "2026-05",
+  "status": "completed_with_exceptions",
+  "summary": {
+    "total_count": 5,
+    "issued_count": 3,
+    "blocked_count": 2,
+    "total_due_minor": 8500
+  },
+  "issued": [
+    {
+      "invoice_id": "uuid",
+      "invoice_number": "INV-2026-00001",
+      "child_id": "uuid",
+      "child_name": "Alex Child",
+      "status": "issued",
+      "issued_at": "2026-05-29T14:00:00Z",
+      "locked_at": "2026-05-29T14:00:00Z",
+      "due_at": "2026-06-28T23:59:59Z",
+      "total_due_minor": 1500
+    }
+  ],
+  "blocked": [
+    {
+      "invoice_id": "uuid",
+      "child_id": "uuid",
+      "child_name": "Bailey Child",
+      "blockers": [
+        { "code": "invoice_not_draft", "message": "Invoice status is not draft." }
+      ]
+    }
+  ]
+}
+```
+
+**`status` values:** `completed` (all invoices issued), `completed_with_exceptions` (one or more invoices blocked).
+
+**Blocker codes:**
+
+| Code | Meaning |
+|------|---------|
+| `invoice_not_found` | Invoice ID not found in tenant/branch scope |
+| `invoice_not_in_billing_month` | Invoice does not belong to the requested billing month |
+| `invoice_not_draft` | Invoice status is not `draft` |
+| `invoice_not_monthly` | Invoice kind is not `monthly` |
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `validation_error` | Missing/malformed `billing_month`, `confirm` not `true`, or malformed `invoice_ids` |
+| 401 | `unauthorized` | No valid token |
+| 403 | `forbidden_role` | Non-manager role |
+
+---
+
 ## Funding v1
 
 Manager-only endpoints for maintaining a child's funded-hours allowance per billing month. Parents see funding effects through issued invoices, not through these routes.

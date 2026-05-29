@@ -243,3 +243,64 @@ type invoiceRunExceptionResponse struct {
 	ChildName    string   `json:"child_name"`
 	BlockerCodes []string `json:"blocker_codes"`
 }
+
+// --- Invoice Issue DTOs (API-19) ---
+
+type issueInvoiceRequest struct {
+	Confirm bool `json:"confirm"`
+}
+
+type issueInvoiceResponse struct {
+	InvoiceID     string `json:"invoice_id"`
+	InvoiceNumber string `json:"invoice_number"`
+	Status        string `json:"status"`
+	IssuedAt      string `json:"issued_at"`
+	LockedAt      string `json:"locked_at"`
+	DueAt         string `json:"due_at"`
+	IssuedRunID   string `json:"issued_run_id"`
+	TotalDueMinor int    `json:"total_due_minor"`
+}
+
+type bulkIssueInvoicesRequest struct {
+	BillingMonth string   `json:"billing_month" binding:"required"`
+	InvoiceIDs   []string `json:"invoice_ids"`
+	Confirm      bool     `json:"confirm"`
+}
+
+type bulkIssueInvoicesResponse struct {
+	RunID         string                   `json:"run_id"`
+	BillingMonth  string                   `json:"billing_month"`
+	Status        string                   `json:"status"`
+	Summary       bulkIssueSummary         `json:"summary"`
+	Issued        []issuedInvoiceResponse  `json:"issued"`
+	Blocked       []blockedInvoiceResponse `json:"blocked"`
+}
+
+type bulkIssueSummary struct {
+	EligibleCount int `json:"eligible_count"`
+	SuccessCount  int `json:"success_count"`
+	BlockedCount  int `json:"blocked_count"`
+	TotalDueMinor int `json:"total_due_minor"`
+}
+
+type issuedInvoiceResponse struct {
+	InvoiceID     string `json:"invoice_id"`
+	ChildID       string `json:"child_id"`
+	ChildName     string `json:"child_name"`
+	InvoiceNumber string `json:"invoice_number"`
+	IssuedAt      string `json:"issued_at"`
+	DueAt         string `json:"due_at"`
+	TotalDueMinor int    `json:"total_due_minor"`
+}
+
+type blockedInvoiceResponse struct {
+	InvoiceID string                      `json:"invoice_id"`
+	ChildID   *string                     `json:"child_id,omitempty"`
+	ChildName string                      `json:"child_name,omitempty"`
+	Blockers  []issueBlockerResponse      `json:"blockers"`
+}
+
+type issueBlockerResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}

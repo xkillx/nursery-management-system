@@ -280,13 +280,37 @@ A child-month with no completed attendance sessions can still pass invoice draft
 
 An eligible child-month can produce a draft monthly invoice with zero amount due; zero-total drafts still represent the monthly billing statement for that child-month.
 
+## Zero-Total Invoice Issue (MVP)
+
+A zero-total draft invoice can be issued like any other eligible draft invoice and receives an invoice number.
+
 ## Invoice Issue Mode (MVP)
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
 
+## Invoice Issue Confirmation (MVP)
+
+A manager's explicit approval that selected draft invoices should become immutable issued invoices. Confirmation applies to both one-by-one and bulk issue actions.
+
+## Invoice Issue Time (MVP)
+
+The business instant when a draft invoice becomes an issued invoice. In month 1, the invoice is also locked and due at that same instant.
+
+## Invoice Issue Validation Boundary (MVP)
+
+Issuing validates that the invoice is an existing draft invoice in the manager's billing scope. It does not recalculate billing readiness; managers regenerate drafts before issue when source data changes.
+
+## Bulk Invoice Issue (MVP)
+
+A manager-triggered issue action for all draft monthly invoices in one billing month or a manager-selected subset of those drafts. Bulk issue requires explicit manager confirmation before invoices become issued.
+
 ## Invoice Run (MVP)
 
 A manager-triggered monthly billing operation that prepares or issues per-child invoices as a batch. An invoice run may include successful invoices and child-specific exceptions.
+
+## Single Invoice Issue Run (MVP)
+
+A manager-triggered invoice run that issues exactly one draft invoice. It is still recorded as an invoice run so issued invoice history is consistent across single and bulk issue paths.
 
 ## Issued Invoice Edit Policy (MVP)
 
@@ -307,6 +331,14 @@ Failed or canceled payment attempts move invoices to a `payment_failed` state.
 ## Invoice Numbering (MVP)
 
 Invoice identifiers follow `INV-YYYYMM-####` sequence format.
+
+## Invoice Numbering Month (MVP)
+
+The `YYYYMM` segment of an invoice number is the invoice billing month, not the calendar month when the manager issues it.
+
+## Bulk Invoice Issue Sequence Order (MVP)
+
+Bulk-issued invoices receive invoice numbers in deterministic child-name order, with invoice identity used only as a tie-breaker.
 
 ## Invoice Granularity (MVP)
 
@@ -826,7 +858,7 @@ An unpaid issued invoice transitions to `overdue` at 00:00 the next local day in
 
 ## Invoice Issue Exception Handling (MVP)
 
-Invoice issue runs can proceed for eligible children while children with incomplete attendance are blocked and returned in an exception list for manager resolution.
+Invoice issue runs can proceed for eligible draft invoices while invoices that cannot be issued are blocked and returned in an exception list for manager resolution.
 
 ## Draft Invoice Generation Exception Handling (MVP)
 
@@ -836,9 +868,17 @@ Draft invoice generation can proceed for eligible child-months while blocked chi
 
 Expected child-month blockers produce generation exceptions, while unexpected system failures leave no partial invoice generation result behind.
 
+## Invoice Issue Transaction Boundary (MVP)
+
+Expected invoice issue blockers produce issue exceptions, while unexpected system failures leave no partial invoice issue result behind.
+
 ## Empty Draft Generation Run (MVP)
 
 A draft invoice generation run can complete without creating invoices when no child-months are eligible; this is a valid billing outcome rather than a request failure.
+
+## Empty Invoice Issue Run (MVP)
+
+An invoice issue run can complete without issuing invoices when no draft invoices are eligible; this is a valid billing outcome rather than a request failure.
 
 ## Selected Draft Generation Child Exception (MVP)
 
@@ -847,6 +887,10 @@ When a selected child-month cannot be found in the active billing scope or does 
 ## Selected Draft Generation Uniqueness (MVP)
 
 Selected-child draft generation operates on unique child-months; duplicate selected child identifiers do not create duplicate invoice work.
+
+## Selected Invoice Issue Uniqueness (MVP)
+
+Selected-invoice issue operates on unique invoices; duplicate selected invoice identifiers do not create duplicate issue work.
 
 ## Invoice Run Blocked Child (MVP)
 
@@ -1035,6 +1079,10 @@ Regenerating an existing draft monthly invoice preserves the draft invoice ident
 ## Draft Invoice Generation Audit Scope (MVP)
 
 Draft invoice generation records audit history for each draft invoice that is created or recalculated; blocked child-months are represented as invoice run exceptions because no invoice changes for those child-months.
+
+## Invoice Issue Audit Scope (MVP)
+
+Invoice issue records audit history for each invoice that becomes issued; blocked invoices are represented as invoice run exceptions because no invoice changes for those invoices.
 
 ## Invoice Run History (MVP)
 

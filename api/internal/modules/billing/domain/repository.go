@@ -33,6 +33,13 @@ type BillingRepository interface {
 	ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) ([]InvoiceReviewRow, error)
 	GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
 	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
+
+	// Invoice Issue (API-19) — transactional methods using Tx.
+	GetInvoiceForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (InvoiceIssueCandidateRow, bool, error)
+	ListDraftInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]InvoiceIssueCandidateRow, error)
+	ListSelectedInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, invoiceIDs []uuid.UUID) ([]InvoiceIssueCandidateRow, error)
+	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
+	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) error
 }
 
 // InvoiceRow maps a row from the invoices table.

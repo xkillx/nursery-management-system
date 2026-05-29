@@ -11,6 +11,38 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const allocateInvoiceNumberSequence = `-- name: AllocateInvoiceNumberSequence :one
+INSERT INTO invoice_number_sequences (
+    tenant_id, branch_id, billing_year, billing_month, next_sequence
+) VALUES (
+    $1, $2, $3, $4, 2
+)
+ON CONFLICT (tenant_id, branch_id, billing_year, billing_month)
+DO UPDATE SET
+    next_sequence = invoice_number_sequences.next_sequence + 1,
+    updated_at = now()
+RETURNING next_sequence - 1 AS issued_sequence
+`
+
+type AllocateInvoiceNumberSequenceParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingYear  int32
+	BillingMonth int32
+}
+
+func (q *Queries) AllocateInvoiceNumberSequence(ctx context.Context, arg AllocateInvoiceNumberSequenceParams) (int32, error) {
+	row := q.db.QueryRow(ctx, allocateInvoiceNumberSequence,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingYear,
+		arg.BillingMonth,
+	)
+	var issued_sequence int32
+	err := row.Scan(&issued_sequence)
+	return issued_sequence, err
+}
+
 const completeInvoiceRun = `-- name: CompleteInvoiceRun :exec
 UPDATE invoice_runs
 SET status = $4,
@@ -155,6 +187,46 @@ func (q *Queries) DeleteDraftSystemInvoiceLines(ctx context.Context, arg DeleteD
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const getInvoiceForIssueForUpdate = `-- name: GetInvoiceForIssueForUpdate :one
+SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+       i.invoice_kind, i.status, i.total_due_minor
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2 AND i.id = $3
+FOR UPDATE OF i
+`
+
+type GetInvoiceForIssueForUpdateParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+type GetInvoiceForIssueForUpdateRow struct {
+	ID            pgtype.UUID
+	ChildID       pgtype.UUID
+	ChildName     string
+	BillingMonth  pgtype.Date
+	InvoiceKind   string
+	Status        string
+	TotalDueMinor int32
+}
+
+func (q *Queries) GetInvoiceForIssueForUpdate(ctx context.Context, arg GetInvoiceForIssueForUpdateParams) (GetInvoiceForIssueForUpdateRow, error) {
+	row := q.db.QueryRow(ctx, getInvoiceForIssueForUpdate, arg.TenantID, arg.BranchID, arg.ID)
+	var i GetInvoiceForIssueForUpdateRow
+	err := row.Scan(
+		&i.ID,
+		&i.ChildID,
+		&i.ChildName,
+		&i.BillingMonth,
+		&i.InvoiceKind,
+		&i.Status,
+		&i.TotalDueMinor,
+	)
+	return i, err
 }
 
 const getMonthlyInvoiceForUpdate = `-- name: GetMonthlyInvoiceForUpdate :one
@@ -973,6 +1045,64 @@ func (q *Queries) ListDraftExtraLines(ctx context.Context, arg ListDraftExtraLin
 	return items, nil
 }
 
+const listDraftInvoicesForIssueForUpdate = `-- name: ListDraftInvoicesForIssueForUpdate :many
+SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+       i.invoice_kind, i.status, i.total_due_minor
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.billing_month = $3
+  AND i.invoice_kind = 'monthly'
+  AND i.status = 'draft'
+ORDER BY c.full_name ASC, i.id ASC
+FOR UPDATE OF i
+`
+
+type ListDraftInvoicesForIssueForUpdateParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+}
+
+type ListDraftInvoicesForIssueForUpdateRow struct {
+	ID            pgtype.UUID
+	ChildID       pgtype.UUID
+	ChildName     string
+	BillingMonth  pgtype.Date
+	InvoiceKind   string
+	Status        string
+	TotalDueMinor int32
+}
+
+func (q *Queries) ListDraftInvoicesForIssueForUpdate(ctx context.Context, arg ListDraftInvoicesForIssueForUpdateParams) ([]ListDraftInvoicesForIssueForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listDraftInvoicesForIssueForUpdate, arg.TenantID, arg.BranchID, arg.BillingMonth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDraftInvoicesForIssueForUpdateRow
+	for rows.Next() {
+		var i ListDraftInvoicesForIssueForUpdateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChildID,
+			&i.ChildName,
+			&i.BillingMonth,
+			&i.InvoiceKind,
+			&i.Status,
+			&i.TotalDueMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSelectedChildrenForUpdate = `-- name: ListSelectedChildrenForUpdate :many
 SELECT
     c.id AS child_id,
@@ -1060,6 +1190,110 @@ func (q *Queries) ListSelectedChildrenForUpdate(ctx context.Context, arg ListSel
 		return nil, err
 	}
 	return items, nil
+}
+
+const listSelectedInvoicesForIssueForUpdate = `-- name: ListSelectedInvoicesForIssueForUpdate :many
+SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+       i.invoice_kind, i.status, i.total_due_minor
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.id = ANY($3::uuid[])
+ORDER BY c.full_name ASC, i.id ASC
+FOR UPDATE OF i
+`
+
+type ListSelectedInvoicesForIssueForUpdateParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  []pgtype.UUID
+}
+
+type ListSelectedInvoicesForIssueForUpdateRow struct {
+	ID            pgtype.UUID
+	ChildID       pgtype.UUID
+	ChildName     string
+	BillingMonth  pgtype.Date
+	InvoiceKind   string
+	Status        string
+	TotalDueMinor int32
+}
+
+func (q *Queries) ListSelectedInvoicesForIssueForUpdate(ctx context.Context, arg ListSelectedInvoicesForIssueForUpdateParams) ([]ListSelectedInvoicesForIssueForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listSelectedInvoicesForIssueForUpdate, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSelectedInvoicesForIssueForUpdateRow
+	for rows.Next() {
+		var i ListSelectedInvoicesForIssueForUpdateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChildID,
+			&i.ChildName,
+			&i.BillingMonth,
+			&i.InvoiceKind,
+			&i.Status,
+			&i.TotalDueMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markInvoiceIssued = `-- name: MarkInvoiceIssued :execrows
+UPDATE invoices
+SET status = 'issued',
+    invoice_number = $4,
+    issued_sequence = $5,
+    issued_run_id = $6,
+    issued_at = $7,
+    issued_by_user_id = $8,
+    issued_by_membership_id = $9,
+    locked_at = $7,
+    due_at = $7,
+    updated_at = now()
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND status = 'draft'
+`
+
+type MarkInvoiceIssuedParams struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	InvoiceNumber        pgtype.Text
+	IssuedSequence       pgtype.Int4
+	IssuedRunID          pgtype.UUID
+	IssuedAt             pgtype.Timestamptz
+	IssuedByUserID       pgtype.UUID
+	IssuedByMembershipID pgtype.UUID
+}
+
+func (q *Queries) MarkInvoiceIssued(ctx context.Context, arg MarkInvoiceIssuedParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markInvoiceIssued,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.InvoiceNumber,
+		arg.IssuedSequence,
+		arg.IssuedRunID,
+		arg.IssuedAt,
+		arg.IssuedByUserID,
+		arg.IssuedByMembershipID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const preflightListAttendanceSessions = `-- name: PreflightListAttendanceSessions :many

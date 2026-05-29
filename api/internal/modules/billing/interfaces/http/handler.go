@@ -16,14 +16,16 @@ import (
 )
 
 type Handler struct {
-	preflight     *application.PreflightDraftInvoices
-	generation    *application.GenerateDraftInvoices
-	listInvoices  *application.ListInvoices
-	getInvoice    *application.GetInvoice
+	preflight         *application.PreflightDraftInvoices
+	generation        *application.GenerateDraftInvoices
+	listInvoices      *application.ListInvoices
+	getInvoice        *application.GetInvoice
+	issueInvoice      *application.IssueInvoice
+	bulkIssueInvoices *application.BulkIssueInvoices
 }
 
-func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice) *Handler {
-	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice}
+func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices) *Handler {
+	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -31,6 +33,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices", h.listInvoicesHandler)
 	manager.GET("/invoices/:invoice_id", h.getInvoiceHandler)
 	manager.POST("/invoice-runs/drafts", h.generateDraftsHandler)
+	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
+	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 }
 
 func (h *Handler) preflightHandler(c *gin.Context) {
@@ -119,6 +123,60 @@ func (h *Handler) getInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toInvoiceDetailResponse(result))
+}
+
+func (h *Handler) issueInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req issueInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		return
+	}
+
+	result, err := h.issueInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"), req.Confirm)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toIssueInvoiceResponse(result))
+}
+
+func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req bulkIssueInvoicesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		return
+	}
+
+	invoiceIDsProvided := false
+	var rawIDs []string
+	if c.Request.ContentLength > 0 {
+		// Check if invoice_ids was provided by re-reading the raw JSON.
+		// Gin's ShouldBindJSON sets InvoiceIDs to nil when omitted,
+		// and to an empty slice when explicitly set to [].
+		rawIDs = req.InvoiceIDs
+		invoiceIDsProvided = req.InvoiceIDs != nil
+	}
+
+	result, err := h.bulkIssueInvoices.Execute(c.Request.Context(), actor, req.BillingMonth, rawIDs, invoiceIDsProvided, req.Confirm)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toBulkIssueResponse(result))
 }
 
 func queryParamPtr(c *gin.Context, key string) *string {
@@ -487,6 +545,68 @@ func toCalculationResponse(calc domain.InvoiceReviewCalculation) invoiceCalculat
 		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
 		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
 		SourceSessions:         sessions,
+	}
+}
+
+func toIssueInvoiceResponse(r domain.IssueInvoiceResult) issueInvoiceResponse {
+	return issueInvoiceResponse{
+		InvoiceID:     r.InvoiceID.String(),
+		InvoiceNumber: r.InvoiceNumber,
+		Status:        r.Status,
+		IssuedAt:      formatTime(r.IssuedAt),
+		LockedAt:      formatTime(r.LockedAt),
+		DueAt:         formatTime(r.DueAt),
+		IssuedRunID:   r.IssuedRunID.String(),
+		TotalDueMinor: r.TotalDueMinor,
+	}
+}
+
+func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResponse {
+	issued := make([]issuedInvoiceResponse, 0, len(r.Issued))
+	for _, inv := range r.Issued {
+		issued = append(issued, issuedInvoiceResponse{
+			InvoiceID:     inv.InvoiceID.String(),
+			ChildID:       inv.ChildID.String(),
+			ChildName:     inv.ChildName,
+			InvoiceNumber: inv.InvoiceNumber,
+			IssuedAt:      formatTime(inv.IssuedAt),
+			DueAt:         formatTime(inv.DueAt),
+			TotalDueMinor: inv.TotalDueMinor,
+		})
+	}
+
+	blocked := make([]blockedInvoiceResponse, 0, len(r.Blocked))
+	for _, b := range r.Blocked {
+		blockers := make([]issueBlockerResponse, 0, len(b.Blockers))
+		for _, bl := range b.Blockers {
+			blockers = append(blockers, issueBlockerResponse{
+				Code:    bl.Code,
+				Message: bl.Message,
+			})
+		}
+		resp := blockedInvoiceResponse{
+			InvoiceID: b.InvoiceID.String(),
+			Blockers:  blockers,
+		}
+		if b.ChildID != nil {
+			resp.ChildID = strPtr(b.ChildID.String())
+			resp.ChildName = b.ChildName
+		}
+		blocked = append(blocked, resp)
+	}
+
+	return bulkIssueInvoicesResponse{
+		RunID:        r.RunID.String(),
+		BillingMonth: r.BillingMonth,
+		Status:       r.Status,
+		Summary: bulkIssueSummary{
+			EligibleCount: r.Summary.EligibleCount,
+			SuccessCount:  r.Summary.SuccessCount,
+			BlockedCount:  r.Summary.BlockedCount,
+			TotalDueMinor: r.Summary.TotalDueMinor,
+		},
+		Issued:  issued,
+		Blocked: blocked,
 	}
 }
 

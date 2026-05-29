@@ -48,7 +48,8 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"attendance_correction_future_time", "attendance_session_overlap",
 		"attendance_outside_enrollment_window",
 		"funding_month_outside_enrollment_window",
-		"absence_attendance_exists", "absence_marker_exists":
+		"absence_attendance_exists", "absence_marker_exists",
+			"invoice_not_draft", "invoice_not_monthly":
 		status = http.StatusConflict
 	default:
 		if len(domainErr.Code) > 10 && domainErr.Code[len(domainErr.Code)-10:] == "_not_found" {

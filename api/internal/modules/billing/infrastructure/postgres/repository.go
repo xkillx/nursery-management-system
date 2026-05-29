@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -420,6 +421,129 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
+}
+
+// --- Invoice Issue (API-19) transactional methods ---
+
+func (r *Repository) GetInvoiceForIssueForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) (domain.InvoiceIssueCandidateRow, bool, error) {
+	row, err := r.queriesTx(tx).GetInvoiceForIssueForUpdate(ctx, sqlc.GetInvoiceForIssueForUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.InvoiceIssueCandidateRow{}, false, nil
+		}
+		return domain.InvoiceIssueCandidateRow{}, false, err
+	}
+	return mapIssueCandidateRow(row), true, nil
+}
+
+func (r *Repository) ListDraftInvoicesForIssueForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.InvoiceIssueCandidateRow, error) {
+	rows, err := r.queriesTx(tx).ListDraftInvoicesForIssueForUpdate(ctx, sqlc.ListDraftInvoicesForIssueForUpdateParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		BillingMonth: timeToPgtypeDate(billingMonth),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapIssueCandidateRows(rows), nil
+}
+
+func (r *Repository) ListSelectedInvoicesForIssueForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, invoiceIDs []uuid.UUID) ([]domain.InvoiceIssueCandidateRow, error) {
+	pgIDs := make([]pgtype.UUID, len(invoiceIDs))
+	for i, id := range invoiceIDs {
+		pgIDs[i] = uuidToPgtype(id)
+	}
+	rows, err := r.queriesTx(tx).ListSelectedInvoicesForIssueForUpdate(ctx, sqlc.ListSelectedInvoicesForIssueForUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  pgIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSelectedIssueCandidateRows(rows), nil
+}
+
+func (r *Repository) AllocateInvoiceNumberSequence(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, year, month int) (int, error) {
+	seq, err := r.queriesTx(tx).AllocateInvoiceNumberSequence(ctx, sqlc.AllocateInvoiceNumberSequenceParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		BillingYear:  int32(year),
+		BillingMonth: int32(month),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(seq), nil
+}
+
+func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params domain.IssueInvoiceUpdateParams) error {
+	n, err := r.queriesTx(tx).MarkInvoiceIssued(ctx, sqlc.MarkInvoiceIssuedParams{
+		ID:                   uuidToPgtype(params.ID),
+		TenantID:             uuidToPgtype(params.TenantID),
+		BranchID:             uuidToPgtype(params.BranchID),
+		InvoiceNumber:        pgtype.Text{String: params.InvoiceNumber, Valid: true},
+		IssuedSequence:       pgtype.Int4{Int32: int32(params.IssuedSequence), Valid: true},
+		IssuedRunID:          uuidToPgtype(params.IssuedRunID),
+		IssuedAt:             pgtype.Timestamptz{Time: params.IssuedAt, Valid: true},
+		IssuedByUserID:       uuidToPgtype(params.IssuedByUserID),
+		IssuedByMembershipID: uuidToPgtype(params.IssuedByMembershipID),
+	})
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("mark invoice issued: expected 1 row affected, got %d", n)
+	}
+	return nil
+}
+
+func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {
+	return domain.InvoiceIssueCandidateRow{
+		ID:            pgtypeUUIDToUUID(row.ID),
+		ChildID:       pgtypeUUIDToUUID(row.ChildID),
+		ChildName:     row.ChildName,
+		BillingMonth:  pgtypeDateToTime(row.BillingMonth),
+		InvoiceKind:   row.InvoiceKind,
+		Status:        row.Status,
+		TotalDueMinor: int(row.TotalDueMinor),
+	}
+}
+
+func mapIssueCandidateRows(rows []sqlc.ListDraftInvoicesForIssueForUpdateRow) []domain.InvoiceIssueCandidateRow {
+	result := make([]domain.InvoiceIssueCandidateRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceIssueCandidateRow{
+			ID:            pgtypeUUIDToUUID(row.ID),
+			ChildID:       pgtypeUUIDToUUID(row.ChildID),
+			ChildName:     row.ChildName,
+			BillingMonth:  pgtypeDateToTime(row.BillingMonth),
+			InvoiceKind:   row.InvoiceKind,
+			Status:        row.Status,
+			TotalDueMinor: int(row.TotalDueMinor),
+		})
+	}
+	return result
+}
+
+func mapSelectedIssueCandidateRows(rows []sqlc.ListSelectedInvoicesForIssueForUpdateRow) []domain.InvoiceIssueCandidateRow {
+	result := make([]domain.InvoiceIssueCandidateRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceIssueCandidateRow{
+			ID:            pgtypeUUIDToUUID(row.ID),
+			ChildID:       pgtypeUUIDToUUID(row.ChildID),
+			ChildName:     row.ChildName,
+			BillingMonth:  pgtypeDateToTime(row.BillingMonth),
+			InvoiceKind:   row.InvoiceKind,
+			Status:        row.Status,
+			TotalDueMinor: int(row.TotalDueMinor),
+		})
+	}
+	return result
 }
 
 // --- Helpers ---

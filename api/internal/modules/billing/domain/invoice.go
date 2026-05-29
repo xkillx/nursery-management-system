@@ -38,6 +38,7 @@ const (
 // Invoice run type constants.
 const (
 	InvoiceRunTypeDraftGeneration = "draft_generation"
+	InvoiceRunTypeIssue            = "issue"
 )
 
 // Generation-selected child blocker codes (added by API-17).
@@ -151,8 +152,96 @@ type FundedDeductionLineDetails struct {
 const (
 	AuditInvoiceDraftGenerated   = "invoice_draft_generated"
 	AuditInvoiceDraftRegenerated = "invoice_draft_regenerated"
+	AuditInvoiceIssued           = "invoice_issued"
 	AuditEntityInvoice           = "invoice"
 )
+
+// Issue blocker codes.
+const (
+	IssueBlockerInvoiceNotFound          = "invoice_not_found"
+	IssueBlockerInvoiceNotInBillingMonth = "invoice_not_in_billing_month"
+	IssueBlockerInvoiceNotDraft          = "invoice_not_draft"
+	IssueBlockerInvoiceNotMonthly        = "invoice_not_monthly"
+)
+
+// IssueInvoiceResult is the result of a single invoice issue.
+type IssueInvoiceResult struct {
+	InvoiceID     uuid.UUID
+	InvoiceNumber string
+	Status        string
+	IssuedAt      time.Time
+	LockedAt      time.Time
+	DueAt         time.Time
+	IssuedRunID   uuid.UUID
+	TotalDueMinor int
+}
+
+// IssuedInvoiceResult is the per-invoice outcome of a bulk issue.
+type IssuedInvoiceResult struct {
+	InvoiceID     uuid.UUID
+	ChildID       uuid.UUID
+	ChildName     string
+	InvoiceNumber string
+	IssuedAt      time.Time
+	DueAt         time.Time
+	TotalDueMinor int
+}
+
+// InvoiceIssueBlocked represents an invoice that could not be issued.
+type InvoiceIssueBlocked struct {
+	InvoiceID uuid.UUID
+	ChildID   *uuid.UUID
+	ChildName string
+	Blockers  []InvoiceIssueBlocker
+}
+
+// InvoiceIssueBlocker is a single blocker reason for an invoice issue.
+type InvoiceIssueBlocker struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// BulkIssueInvoicesResult is the application-level result of a bulk issue run.
+type BulkIssueInvoicesResult struct {
+	RunID         uuid.UUID
+	BillingMonth  string
+	Status        string
+	Summary       InvoiceIssueSummary
+	Issued        []IssuedInvoiceResult
+	Blocked       []InvoiceIssueBlocked
+}
+
+// InvoiceIssueSummary holds aggregate counts and totals for an issue run.
+type InvoiceIssueSummary struct {
+	EligibleCount int
+	SuccessCount  int
+	BlockedCount  int
+	TotalDueMinor int
+}
+
+// InvoiceIssueCandidateRow maps a row from the invoices table for issue.
+type InvoiceIssueCandidateRow struct {
+	ID            uuid.UUID
+	ChildID       uuid.UUID
+	ChildName     string
+	BillingMonth  time.Time
+	InvoiceKind   string
+	Status        string
+	TotalDueMinor int
+}
+
+// IssueInvoiceUpdateParams holds fields needed to mark an invoice as issued.
+type IssueInvoiceUpdateParams struct {
+	ID                    uuid.UUID
+	TenantID              uuid.UUID
+	BranchID              uuid.UUID
+	InvoiceNumber         string
+	IssuedSequence        int
+	IssuedRunID           uuid.UUID
+	IssuedAt              time.Time
+	IssuedByUserID        uuid.UUID
+	IssuedByMembershipID  uuid.UUID
+}
 
 // InvoiceRunCreateParams holds fields needed to create an invoice_runs row.
 type InvoiceRunCreateParams struct {
