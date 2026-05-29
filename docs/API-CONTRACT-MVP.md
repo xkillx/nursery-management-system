@@ -1121,6 +1121,194 @@ Manager-only endpoint that generates or regenerates draft monthly invoices for e
 
 ---
 
+## Manager Invoice Review
+
+Manager-only endpoints for reviewing generated invoices across all statuses, including drafts. Parents see only issued-or-later invoices (future API-21).
+
+**Routes are manager-only.** Practitioner and parent requests receive `403 forbidden_role`.
+
+### `GET /api/v1/invoices`
+
+List invoices for the active tenant/branch scope.
+
+**Query parameters (all optional):**
+
+| Param | Type | Default | Notes |
+|-------|------|---------|-------|
+| `billing_month` | `YYYY-MM` | — | Filter to one month |
+| `status` | `draft`, `issued`, `payment_failed`, `paid`, `overdue` | — | Filter by invoice status |
+| `child_id` | `uuid` | — | Filter to one child |
+| `limit` | `int` | `50` | `1..200` |
+| `offset` | `int` | `0` | `0+` |
+
+**Ordering:** `billing_month DESC, child_name ASC, created_at DESC, id ASC`
+
+**Response `200`:**
+
+```json
+{
+  "items": [
+    {
+      "invoice_id": "uuid",
+      "invoice_kind": "monthly",
+      "invoice_number": null,
+      "invoice_number_display": "Draft",
+      "child_id": "uuid",
+      "child_name": "Alex Child",
+      "billing_month": "2026-05",
+      "period": { "start_date": "2026-05-01", "end_date": "2026-05-31" },
+      "status": "draft",
+      "due_status": "not_due",
+      "currency_code": "GBP",
+      "subtotal_minor": 4000,
+      "funded_deduction_minor": 2500,
+      "total_due_minor": 1500,
+      "amount_paid_minor": 0,
+      "due_at": null,
+      "issued_at": null,
+      "paid_at": null,
+      "payment_failed_at": null,
+      "payment_status_updated_at": null,
+      "generated_run_id": "uuid",
+      "generated_run_status": "completed_with_exceptions",
+      "generated_run_started_at": "2026-05-29T10:00:00Z",
+      "generated_run_completed_at": "2026-05-29T10:00:03Z",
+      "generated_run_exception_count": 2,
+      "created_at": "2026-05-29T10:00:03Z",
+      "updated_at": "2026-05-29T10:00:03Z"
+    }
+  ],
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Draft display rules:**
+- `invoice_number`: persisted `null`
+- `invoice_number_display`: `"Draft"`
+- `due_at`: persisted `null`
+- `due_status`: `"not_due"`
+
+**`due_status` values:**
+
+| Invoice status | `due_status` |
+|----------------|-------------|
+| `draft` | `not_due` |
+| `issued`, `payment_failed` | `due` |
+| `overdue` | `overdue` |
+| `paid` | `paid` |
+
+### `GET /api/v1/invoices/:invoice_id`
+
+Full detail for one invoice including lines, calculation, and run exceptions.
+
+**Response `200`:**
+
+```json
+{
+  "invoice_id": "uuid",
+  "invoice_kind": "monthly",
+  "invoice_number": null,
+  "invoice_number_display": "Draft",
+  "child_id": "uuid",
+  "child_name": "Alex Child",
+  "billing_month": "2026-05",
+  "period": { "start_date": "2026-05-01", "end_date": "2026-05-31" },
+  "status": "draft",
+  "due_status": "not_due",
+  "currency_code": "GBP",
+  "subtotal_minor": 4000,
+  "funded_deduction_minor": 2500,
+  "total_due_minor": 1500,
+  "amount_paid_minor": 0,
+  "issued_at": null,
+  "locked_at": null,
+  "due_at": null,
+  "paid_at": null,
+  "payment_failed_at": null,
+  "payment_status_updated_at": null,
+  "adjusts_invoice_id": null,
+  "adjustment_reason_code": null,
+  "adjustment_reason_note": null,
+  "generated_run_id": "uuid",
+  "generated_run_status": "completed_with_exceptions",
+  "generated_run_started_at": "2026-05-29T10:00:00Z",
+  "generated_run_completed_at": "2026-05-29T10:00:03Z",
+  "generated_run_exception_count": 2,
+  "generated_run_exceptions": [
+    {
+      "child_id": "uuid",
+      "child_name": "Blocked Child",
+      "blocker_codes": ["missing_funding_profile"]
+    }
+  ],
+  "calculation": {
+    "core_hourly_rate_minor": 500,
+    "raw_attended_minutes": 480,
+    "rounded_attended_minutes": 480,
+    "funded_allowance_minutes": 300,
+    "funded_deduction_minutes": 300,
+    "core_billable_minutes": 180,
+    "included_session_count": 1,
+    "core_subtotal_minor": 4000,
+    "extras_total_minor": 0,
+    "source_sessions": [
+      {
+        "session_id": "uuid",
+        "status": "complete",
+        "check_in_at": "2026-05-15T08:00:00Z",
+        "check_out_at": "2026-05-15T16:00:00Z",
+        "raw_elapsed_minutes": 480,
+        "rounded_billable_minutes": 480
+      }
+    ]
+  },
+  "lines": [
+    {
+      "line_id": "uuid",
+      "line_kind": "core_childcare",
+      "description": "Core childcare",
+      "sort_order": 1,
+      "quantity_minutes": 480,
+      "unit_amount_minor": 500,
+      "line_amount_minor": 4000,
+      "raw_attended_minutes": 480,
+      "rounded_attended_minutes": 480,
+      "funded_allowance_minutes": null,
+      "funded_deduction_minutes": null,
+      "core_billable_minutes": null,
+      "session_count": 1
+    },
+    {
+      "line_id": "uuid",
+      "line_kind": "funded_deduction",
+      "description": "Funded hours deduction",
+      "sort_order": 2,
+      "quantity_minutes": null,
+      "unit_amount_minor": null,
+      "line_amount_minor": -2500,
+      "funded_allowance_minutes": 300,
+      "funded_deduction_minutes": 300,
+      "core_billable_minutes": 180,
+      "session_count": null
+    }
+  ],
+  "created_at": "2026-05-29T10:00:03Z",
+  "updated_at": "2026-05-29T10:00:03Z"
+}
+```
+
+**Error responses:**
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `validation_error` | Malformed query param or invoice_id |
+| 401 | `unauthorized` | Missing/invalid token |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `invoice_not_found` | Invoice absent from tenant/branch scope |
+
+---
+
 ## Funding v1
 
 Manager-only endpoints for maintaining a child's funded-hours allowance per billing month. Parents see funding effects through issued invoices, not through these routes.

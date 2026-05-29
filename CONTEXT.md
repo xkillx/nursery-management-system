@@ -852,6 +852,10 @@ Selected-child draft generation operates on unique child-months; duplicate selec
 
 A child excluded from a specific monthly invoice run because billing readiness checks found a resolvable issue, such as incomplete attendance. This is a run/month-specific billing state, not a child lifecycle state.
 
+## Invoice Exception Reference (MVP)
+
+A manager-visible reference from invoice review to child-month blockers recorded on the invoice run that generated or processed related invoices. Exception references provide run context and do not represent invoice lines, adjustment invoices, or invoices for blocked child-months.
+
 ## Invoice Preflight Blocker (MVP)
 
 A child-month readiness exception returned by invoice draft preflight. A blocked child may have multiple preflight blockers, and each blocker should be exposed with a stable code.
@@ -871,6 +875,10 @@ Draft invoice generation can target all eligible child-months in a billing month
 ## Draft Invoice Generation Outcome (MVP)
 
 Draft invoice generation reports the invoice run outcome and affected invoice references; detailed invoice review remains a separate manager billing view.
+
+## Manager Invoice Review (MVP)
+
+A manager-facing billing view for inspecting generated invoice headers, line items, calculation quantities, status, and due/payment metadata across invoice statuses. Draft invoices are included so managers can review calculations before issue.
 
 ## Invoice Payment Retry (MVP)
 

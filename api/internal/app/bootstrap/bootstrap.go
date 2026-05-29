@@ -202,6 +202,8 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	billingHandler := billinghandler.NewHandler(
 		billingapp.NewPreflightDraftInvoices(billingRepo),
 		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter),
+		billingapp.NewListInvoices(billingRepo),
+		billingapp.NewGetInvoice(billingRepo),
 	)
 	billingHandler.RegisterRoutes(manager)
 

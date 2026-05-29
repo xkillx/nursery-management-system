@@ -28,6 +28,11 @@ type BillingRepository interface {
 	DeleteDraftSystemInvoiceLines(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) error
 	ListDraftExtraLines(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) ([]ExtraLineRow, error)
 	InsertInvoiceLine(ctx context.Context, tx Tx, params InvoiceLineCreateParams) error
+
+	// Manager Invoice Review (API-18) — read-only, no transaction required.
+	ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) ([]InvoiceReviewRow, error)
+	GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
+	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
 }
 
 // InvoiceRow maps a row from the invoices table.

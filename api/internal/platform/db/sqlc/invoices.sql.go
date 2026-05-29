@@ -321,6 +321,110 @@ func (q *Queries) InvoiceGet(ctx context.Context, arg InvoiceGetParams) (Invoice
 	return i, err
 }
 
+const invoiceGetForManagerReview = `-- name: InvoiceGetForManagerReview :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2 AND i.id = $3
+`
+
+type InvoiceGetForManagerReviewParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+type InvoiceGetForManagerReviewRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildName               string
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGetForManagerReviewParams) (InvoiceGetForManagerReviewRow, error) {
+	row := q.db.QueryRow(ctx, invoiceGetForManagerReview, arg.TenantID, arg.BranchID, arg.ID)
+	var i InvoiceGetForManagerReviewRow
+	err := row.Scan(
+		&i.ID,
+		&i.InvoiceKind,
+		&i.InvoiceNumber,
+		&i.Status,
+		&i.ChildID,
+		&i.ChildName,
+		&i.BillingMonth,
+		&i.PeriodStartDate,
+		&i.PeriodEndDate,
+		&i.CurrencyCode,
+		&i.SubtotalMinor,
+		&i.FundedDeductionMinor,
+		&i.TotalDueMinor,
+		&i.AmountPaidMinor,
+		&i.DueAt,
+		&i.IssuedAt,
+		&i.LockedAt,
+		&i.PaidAt,
+		&i.PaymentFailedAt,
+		&i.PaymentStatusUpdatedAt,
+		&i.AdjustsInvoiceID,
+		&i.AdjustmentReasonCode,
+		&i.AdjustmentReasonNote,
+		&i.GeneratedRunID,
+		&i.GeneratedRunStatus,
+		&i.GeneratedRunStartedAt,
+		&i.GeneratedRunCompletedAt,
+		&i.GeneratedRunDetails,
+		&i.CalculationDetails,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const invoiceLineListByInvoice = `-- name: InvoiceLineListByInvoice :many
 SELECT id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
        quantity_minutes, unit_amount_minor, line_amount_minor,
@@ -365,6 +469,208 @@ func (q *Queries) InvoiceLineListByInvoice(ctx context.Context, arg InvoiceLineL
 			&i.CoreBillableMinutes,
 			&i.SessionCount,
 			&i.Details,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceLinesForManagerReview = `-- name: InvoiceLinesForManagerReview :many
+SELECT
+    id, line_kind, description, sort_order,
+    quantity_minutes, unit_amount_minor, line_amount_minor,
+    raw_attended_minutes, rounded_attended_minutes,
+    funded_allowance_minutes, funded_deduction_minutes, core_billable_minutes,
+    session_count
+FROM invoice_lines
+WHERE tenant_id = $1 AND branch_id = $2 AND invoice_id = $3
+ORDER BY sort_order
+`
+
+type InvoiceLinesForManagerReviewParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+type InvoiceLinesForManagerReviewRow struct {
+	ID                     pgtype.UUID
+	LineKind               string
+	Description            string
+	SortOrder              int32
+	QuantityMinutes        pgtype.Int4
+	UnitAmountMinor        pgtype.Int4
+	LineAmountMinor        int32
+	RawAttendedMinutes     pgtype.Int4
+	RoundedAttendedMinutes pgtype.Int4
+	FundedAllowanceMinutes pgtype.Int4
+	FundedDeductionMinutes pgtype.Int4
+	CoreBillableMinutes    pgtype.Int4
+	SessionCount           pgtype.Int4
+}
+
+func (q *Queries) InvoiceLinesForManagerReview(ctx context.Context, arg InvoiceLinesForManagerReviewParams) ([]InvoiceLinesForManagerReviewRow, error) {
+	rows, err := q.db.Query(ctx, invoiceLinesForManagerReview, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceLinesForManagerReviewRow
+	for rows.Next() {
+		var i InvoiceLinesForManagerReviewRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.LineKind,
+			&i.Description,
+			&i.SortOrder,
+			&i.QuantityMinutes,
+			&i.UnitAmountMinor,
+			&i.LineAmountMinor,
+			&i.RawAttendedMinutes,
+			&i.RoundedAttendedMinutes,
+			&i.FundedAllowanceMinutes,
+			&i.FundedDeductionMinutes,
+			&i.CoreBillableMinutes,
+			&i.SessionCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForManagerReview = `-- name: InvoiceListForManagerReview :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::text IS NULL OR i.status = $4::text)
+  AND ($5::uuid IS NULL OR i.child_id = $5::uuid)
+ORDER BY i.billing_month DESC, c.full_name ASC, i.created_at DESC, i.id ASC
+LIMIT $7 OFFSET $6
+`
+
+type InvoiceListForManagerReviewParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+	Status       pgtype.Text
+	ChildID      pgtype.UUID
+	Offset       pgtype.Int4
+	Limit        pgtype.Int4
+}
+
+type InvoiceListForManagerReviewRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildName               string
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceListForManagerReviewParams) ([]InvoiceListForManagerReviewRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReview,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

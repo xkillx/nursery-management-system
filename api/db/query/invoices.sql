@@ -259,3 +259,67 @@ INSERT INTO invoice_lines (
     $11, $12, $13,
     $14, $15, $16, $17
 );
+
+-- name: InvoiceListForManagerReview :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+ORDER BY i.billing_month DESC, c.full_name ASC, i.created_at DESC, i.id ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: InvoiceGetForManagerReview :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2 AND i.id = $3;
+
+-- name: InvoiceLinesForManagerReview :many
+SELECT
+    id, line_kind, description, sort_order,
+    quantity_minutes, unit_amount_minor, line_amount_minor,
+    raw_attended_minutes, rounded_attended_minutes,
+    funded_allowance_minutes, funded_deduction_minutes, core_billable_minutes,
+    session_count
+FROM invoice_lines
+WHERE tenant_id = $1 AND branch_id = $2 AND invoice_id = $3
+ORDER BY sort_order;

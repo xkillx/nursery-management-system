@@ -278,6 +278,150 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 	})
 }
 
+// --- Manager Invoice Review (API-18) read-only methods ---
+
+func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) ([]domain.InvoiceReviewRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		BillingMonth: timeToPgtypeDatePtr(filters.BillingMonth),
+		Status:       strToPgtypeTextPtr(filters.Status),
+		ChildID:      uuidToPgtypePtr(filters.ChildID),
+		Limit:        pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
+		Offset:       pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.InvoiceReviewRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapInvoiceReviewRow(row))
+	}
+	return result, nil
+}
+
+func (r *Repository) GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.InvoiceGetForManagerReview(ctx, sqlc.InvoiceGetForManagerReviewParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.InvoiceReviewRow{}, false, nil
+		}
+		return domain.InvoiceReviewRow{}, false, err
+	}
+	return mapInvoiceReviewRowFromGet(row), true, nil
+}
+
+func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceLinesForManagerReview(ctx, sqlc.InvoiceLinesForManagerReviewParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		InvoiceID: uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.InvoiceReviewLineRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceReviewLineRow{
+			ID:                     pgtypeUUIDToUUID(row.ID),
+			LineKind:               row.LineKind,
+			Description:            row.Description,
+			SortOrder:              int(row.SortOrder),
+			QuantityMinutes:        pgtypeInt4ToIntPtr(row.QuantityMinutes),
+			UnitAmountMinor:        pgtypeInt4ToIntPtr(row.UnitAmountMinor),
+			LineAmountMinor:        int(row.LineAmountMinor),
+			RawAttendedMinutes:     pgtypeInt4ToIntPtr(row.RawAttendedMinutes),
+			RoundedAttendedMinutes: pgtypeInt4ToIntPtr(row.RoundedAttendedMinutes),
+			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
+			FundedDeductionMinutes: pgtypeInt4ToIntPtr(row.FundedDeductionMinutes),
+			CoreBillableMinutes:    pgtypeInt4ToIntPtr(row.CoreBillableMinutes),
+			SessionCount:           pgtypeInt4ToIntPtr(row.SessionCount),
+		})
+	}
+	return result, nil
+}
+
+func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.InvoiceReviewRow {
+	return domain.InvoiceReviewRow{
+		ID:                      pgtypeUUIDToUUID(row.ID),
+		InvoiceKind:             row.InvoiceKind,
+		InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
+		Status:                  row.Status,
+		ChildID:                 pgtypeUUIDToUUID(row.ChildID),
+		ChildName:               row.ChildName,
+		BillingMonth:            pgtypeDateToTime(row.BillingMonth),
+		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
+		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
+		CurrencyCode:            row.CurrencyCode,
+		SubtotalMinor:           int(row.SubtotalMinor),
+		FundedDeductionMinor:    int(row.FundedDeductionMinor),
+		TotalDueMinor:           int(row.TotalDueMinor),
+		AmountPaidMinor:         int(row.AmountPaidMinor),
+		DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
+		IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
+		LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
+		PaidAt:                  pgtypeTimestamptzToTimePtr(row.PaidAt),
+		PaymentFailedAt:         pgtypeTimestamptzToTimePtr(row.PaymentFailedAt),
+		PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(row.PaymentStatusUpdatedAt),
+		AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(row.AdjustsInvoiceID),
+		AdjustmentReasonCode:    pgtypeTextToStrPtr(row.AdjustmentReasonCode),
+		AdjustmentReasonNote:    pgtypeTextToStrPtr(row.AdjustmentReasonNote),
+		GeneratedRunID:          pgtypeUUIDToUUIDPtr(row.GeneratedRunID),
+		GeneratedRunStatus:      pgtypeTextToStrPtr(row.GeneratedRunStatus),
+		GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(row.GeneratedRunStartedAt),
+		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
+		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
+		CalculationDetails:      json.RawMessage(row.CalculationDetails),
+		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+}
+
+func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.InvoiceReviewRow {
+	return domain.InvoiceReviewRow{
+		ID:                      pgtypeUUIDToUUID(row.ID),
+		InvoiceKind:             row.InvoiceKind,
+		InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
+		Status:                  row.Status,
+		ChildID:                 pgtypeUUIDToUUID(row.ChildID),
+		ChildName:               row.ChildName,
+		BillingMonth:            pgtypeDateToTime(row.BillingMonth),
+		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
+		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
+		CurrencyCode:            row.CurrencyCode,
+		SubtotalMinor:           int(row.SubtotalMinor),
+		FundedDeductionMinor:    int(row.FundedDeductionMinor),
+		TotalDueMinor:           int(row.TotalDueMinor),
+		AmountPaidMinor:         int(row.AmountPaidMinor),
+		DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
+		IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
+		LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
+		PaidAt:                  pgtypeTimestamptzToTimePtr(row.PaidAt),
+		PaymentFailedAt:         pgtypeTimestamptzToTimePtr(row.PaymentFailedAt),
+		PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(row.PaymentStatusUpdatedAt),
+		AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(row.AdjustsInvoiceID),
+		AdjustmentReasonCode:    pgtypeTextToStrPtr(row.AdjustmentReasonCode),
+		AdjustmentReasonNote:    pgtypeTextToStrPtr(row.AdjustmentReasonNote),
+		GeneratedRunID:          pgtypeUUIDToUUIDPtr(row.GeneratedRunID),
+		GeneratedRunStatus:      pgtypeTextToStrPtr(row.GeneratedRunStatus),
+		GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(row.GeneratedRunStartedAt),
+		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
+		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
+		CalculationDetails:      json.RawMessage(row.CalculationDetails),
+		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+}
+
 // --- Helpers ---
 
 func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []domain.PreflightChildRow {
@@ -379,4 +523,25 @@ func pgtypeTextToStrPtr(t pgtype.Text) *string {
 
 func pgtypeInt4OrNil(v int) pgtype.Int4 {
 	return pgtype.Int4{Int32: int32(v), Valid: true}
+}
+
+func timeToPgtypeDatePtr(t *time.Time) pgtype.Date {
+	if t == nil {
+		return pgtype.Date{Valid: false}
+	}
+	return pgtype.Date{Time: *t, Valid: true}
+}
+
+func strToPgtypeTextPtr(s *string) pgtype.Text {
+	if s == nil {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: *s, Valid: true}
+}
+
+func uuidToPgtypePtr(u *uuid.UUID) pgtype.UUID {
+	if u == nil {
+		return pgtype.UUID{Valid: false}
+	}
+	return pgtype.UUID{Bytes: [16]byte(*u), Valid: true}
 }
