@@ -16,16 +16,18 @@ import (
 )
 
 type Handler struct {
-	preflight         *application.PreflightDraftInvoices
-	generation        *application.GenerateDraftInvoices
-	listInvoices      *application.ListInvoices
-	getInvoice        *application.GetInvoice
-	issueInvoice      *application.IssueInvoice
-	bulkIssueInvoices *application.BulkIssueInvoices
+	preflight          *application.PreflightDraftInvoices
+	generation         *application.GenerateDraftInvoices
+	listInvoices       *application.ListInvoices
+	getInvoice         *application.GetInvoice
+	issueInvoice       *application.IssueInvoice
+	bulkIssueInvoices  *application.BulkIssueInvoices
+	listParentInvoices *application.ListParentInvoices
+	getParentInvoice   *application.GetParentInvoice
 }
 
-func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices) *Handler {
-	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices}
+func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices, listParentInvoices *application.ListParentInvoices, getParentInvoice *application.GetParentInvoice) *Handler {
+	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices, listParentInvoices: listParentInvoices, getParentInvoice: getParentInvoice}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -35,6 +37,11 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoice-runs/drafts", h.generateDraftsHandler)
 	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
+}
+
+func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
+	parent.GET("/invoices", h.listParentInvoicesHandler)
+	parent.GET("/invoices/:invoice_id", h.getParentInvoiceHandler)
 }
 
 func (h *Handler) preflightHandler(c *gin.Context) {
@@ -163,9 +170,6 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	invoiceIDsProvided := false
 	var rawIDs []string
 	if c.Request.ContentLength > 0 {
-		// Check if invoice_ids was provided by re-reading the raw JSON.
-		// Gin's ShouldBindJSON sets InvoiceIDs to nil when omitted,
-		// and to an empty slice when explicitly set to [].
 		rawIDs = req.InvoiceIDs
 		invoiceIDsProvided = req.InvoiceIDs != nil
 	}
@@ -177,6 +181,44 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toBulkIssueResponse(result))
+}
+
+func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	result, err := h.listParentInvoices.Execute(c.Request.Context(), actor, application.ListParentInvoicesParams{
+		BillingMonth: queryParamPtr(c, "billing_month"),
+		Status:       queryParamPtr(c, "status"),
+		ChildID:      queryParamPtr(c, "child_id"),
+		Limit:        queryParamPtr(c, "limit"),
+		Offset:       queryParamPtr(c, "offset"),
+	})
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toParentInvoiceListResponse(result))
+}
+
+func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	result, err := h.getParentInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toParentInvoiceDetailResponse(result))
 }
 
 func queryParamPtr(c *gin.Context, key string) *string {
@@ -607,6 +649,97 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 		},
 		Issued:  issued,
 		Blocked: blocked,
+	}
+}
+
+func toParentInvoiceListResponse(r application.ListParentInvoicesResult) parentInvoiceListResponse {
+	items := make([]parentInvoiceListItemResponse, 0, len(r.Items))
+	for _, inv := range r.Items {
+		item := parentInvoiceListItemResponse{
+			InvoiceID:              inv.ID.String(),
+			InvoiceKind:            inv.InvoiceKind,
+			InvoiceNumber:          inv.InvoiceNumber,
+			InvoiceNumberDisplay:   invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
+			ChildID:                inv.ChildID.String(),
+			ChildName:              inv.ChildName,
+			BillingMonth:           formatBillingMonth(inv.BillingMonth),
+			Status:                 inv.Status,
+			DueStatus:              dueStatus(inv.Status),
+			CurrencyCode:           inv.CurrencyCode,
+			SubtotalMinor:          inv.SubtotalMinor,
+			FundedDeductionMinor:   inv.FundedDeductionMinor,
+			TotalDueMinor:          inv.TotalDueMinor,
+			AmountPaidMinor:        inv.AmountPaidMinor,
+			IssuedAt:               formatTimePtr(inv.IssuedAt),
+			DueAt:                  formatTimePtr(inv.DueAt),
+			PaidAt:                 formatTimePtr(inv.PaidAt),
+			PaymentFailedAt:        formatTimePtr(inv.PaymentFailedAt),
+			PaymentStatusUpdatedAt: formatTimePtr(inv.PaymentStatusUpdatedAt),
+		}
+		item.Period.StartDate = formatDate(inv.PeriodStartDate)
+		item.Period.EndDate = formatDate(inv.PeriodEndDate)
+		items = append(items, item)
+	}
+	return parentInvoiceListResponse{
+		Items:  items,
+		Limit:  r.Limit,
+		Offset: r.Offset,
+	}
+}
+
+func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentInvoiceDetailResponse {
+	inv := r.Invoice
+	resp := parentInvoiceDetailResponse{
+		InvoiceID:              inv.ID.String(),
+		InvoiceKind:            inv.InvoiceKind,
+		InvoiceNumber:          inv.InvoiceNumber,
+		InvoiceNumberDisplay:   invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
+		ChildID:                inv.ChildID.String(),
+		ChildName:              inv.ChildName,
+		BillingMonth:           formatBillingMonth(inv.BillingMonth),
+		Status:                 inv.Status,
+		DueStatus:              dueStatus(inv.Status),
+		CurrencyCode:           inv.CurrencyCode,
+		SubtotalMinor:          inv.SubtotalMinor,
+		FundedDeductionMinor:   inv.FundedDeductionMinor,
+		TotalDueMinor:          inv.TotalDueMinor,
+		AmountPaidMinor:        inv.AmountPaidMinor,
+		IssuedAt:               formatTimePtr(inv.IssuedAt),
+		DueAt:                  formatTimePtr(inv.DueAt),
+		PaidAt:                 formatTimePtr(inv.PaidAt),
+		PaymentFailedAt:        formatTimePtr(inv.PaymentFailedAt),
+		PaymentStatusUpdatedAt: formatTimePtr(inv.PaymentStatusUpdatedAt),
+		Calculation:            toParentCalculationResponse(r.Calculation),
+	}
+	resp.Period.StartDate = formatDate(inv.PeriodStartDate)
+	resp.Period.EndDate = formatDate(inv.PeriodEndDate)
+
+	resp.Lines = make([]parentInvoiceLineResponse, 0, len(r.Lines))
+	for _, line := range r.Lines {
+		resp.Lines = append(resp.Lines, parentInvoiceLineResponse{
+			LineKind:        line.LineKind,
+			Description:     line.Description,
+			SortOrder:       line.SortOrder,
+			QuantityMinutes: line.QuantityMinutes,
+			UnitAmountMinor: line.UnitAmountMinor,
+			LineAmountMinor: line.LineAmountMinor,
+		})
+	}
+
+	return resp
+}
+
+func toParentCalculationResponse(calc domain.InvoiceReviewCalculation) parentInvoiceCalculationResponse {
+	return parentInvoiceCalculationResponse{
+		CoreHourlyRateMinor:    calc.CoreHourlyRateMinor,
+		RawAttendedMinutes:     calc.RawAttendedMinutes,
+		RoundedAttendedMinutes: calc.RoundedAttendedMinutes,
+		FundedAllowanceMinutes: calc.FundedAllowanceMinutes,
+		FundedDeductionMinutes: calc.FundedDeductionMinutes,
+		CoreBillableMinutes:    calc.CoreBillableMinutes,
+		IncludedSessionCount:   calc.IncludedSessionCount,
+		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
+		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
 	}
 }
 

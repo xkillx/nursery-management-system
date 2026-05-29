@@ -92,6 +92,15 @@ func (s *stubBillingRepo) AllocateInvoiceNumberSequence(_ context.Context, _ dom
 func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ domain.IssueInvoiceUpdateParams) error {
 	panic("stub")
 }
+func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) GetInvoiceForParent(_ context.Context, _, _, _, _ uuid.UUID) (domain.ParentInvoiceRow, bool, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ListInvoiceLinesForParent(_ context.Context, _, _, _, _ uuid.UUID) ([]domain.ParentInvoiceLineRow, error) {
+	panic("stub")
+}
 
 type stubTxMgr struct {
 	repo *stubBillingRepo

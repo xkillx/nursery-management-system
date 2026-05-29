@@ -397,3 +397,122 @@ WHERE status = 'issued'
   AND amount_paid_minor < total_due_minor
   AND due_at < $1
 RETURNING id, tenant_id, branch_id;
+
+-- name: InvoiceListForParent :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.calculation_details
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+ORDER BY
+  CASE i.status
+    WHEN 'overdue' THEN 1
+    WHEN 'payment_failed' THEN 2
+    WHEN 'issued' THEN 3
+    WHEN 'paid' THEN 4
+    ELSE 5
+  END,
+  i.due_at ASC NULLS LAST,
+  i.billing_month DESC,
+  c.full_name ASC,
+  i.id ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: InvoiceGetForParent :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.calculation_details
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.id = $4
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue');
+
+-- name: InvoiceLinesForParent :many
+SELECT
+    il.line_kind, il.description, il.sort_order,
+    il.quantity_minutes, il.unit_amount_minor, il.line_amount_minor
+FROM invoice_lines il
+JOIN invoices i ON i.tenant_id = il.tenant_id AND i.branch_id = il.branch_id AND i.id = il.invoice_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE il.tenant_id = $1
+  AND il.branch_id = $2
+  AND il.invoice_id = $4
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+ORDER BY il.sort_order;

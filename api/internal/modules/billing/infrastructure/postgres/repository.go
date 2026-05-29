@@ -423,6 +423,99 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 	}
 }
 
+// --- Parent Invoice View (API-21) read-only methods ---
+
+func (r *Repository) ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceListForParent(ctx, sqlc.InvoiceListForParentParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		ID:           uuidToPgtype(membershipID),
+		BillingMonth: timeToPgtypeDatePtr(filters.BillingMonth),
+		Status:       strToPgtypeTextPtr(filters.Status),
+		ChildID:      uuidToPgtypePtr(filters.ChildID),
+		Limit:        pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
+		Offset:       pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.ParentInvoiceRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails))
+	}
+	return result, nil
+}
+
+func (r *Repository) GetInvoiceForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) (domain.ParentInvoiceRow, bool, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.InvoiceGetForParent(ctx, sqlc.InvoiceGetForParentParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(membershipID),
+		ID_2:     uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.ParentInvoiceRow{}, false, nil
+		}
+		return domain.ParentInvoiceRow{}, false, err
+	}
+	return mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails), true, nil
+}
+
+func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) ([]domain.ParentInvoiceLineRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceLinesForParent(ctx, sqlc.InvoiceLinesForParentParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		ID:        uuidToPgtype(membershipID),
+		InvoiceID: uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.ParentInvoiceLineRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.ParentInvoiceLineRow{
+			LineKind:        row.LineKind,
+			Description:     row.Description,
+			SortOrder:       int(row.SortOrder),
+			QuantityMinutes: pgtypeInt4ToIntPtr(row.QuantityMinutes),
+			UnitAmountMinor: pgtypeInt4ToIntPtr(row.UnitAmountMinor),
+			LineAmountMinor: int(row.LineAmountMinor),
+		})
+	}
+	return result, nil
+}
+
+func mapParentInvoiceRow(id pgtype.UUID, invoiceKind string, invoiceNumber pgtype.Text, status string, childID pgtype.UUID, childName string, billingMonth pgtype.Date, periodStartDate pgtype.Date, periodEndDate pgtype.Date, currencyCode string, subtotalMinor int32, fundedDeductionMinor int32, totalDueMinor int32, amountPaidMinor int32, dueAt pgtype.Timestamptz, issuedAt pgtype.Timestamptz, paidAt pgtype.Timestamptz, paymentFailedAt pgtype.Timestamptz, paymentStatusUpdatedAt pgtype.Timestamptz, calculationDetails []byte) domain.ParentInvoiceRow {
+	return domain.ParentInvoiceRow{
+		ID:                     pgtypeUUIDToUUID(id),
+		InvoiceKind:            invoiceKind,
+		InvoiceNumber:          pgtypeTextToStrPtr(invoiceNumber),
+		Status:                 status,
+		ChildID:                pgtypeUUIDToUUID(childID),
+		ChildName:              childName,
+		BillingMonth:           pgtypeDateToTime(billingMonth),
+		PeriodStartDate:        pgtypeDateToTime(periodStartDate),
+		PeriodEndDate:          pgtypeDateToTime(periodEndDate),
+		CurrencyCode:           currencyCode,
+		SubtotalMinor:          int(subtotalMinor),
+		FundedDeductionMinor:   int(fundedDeductionMinor),
+		TotalDueMinor:          int(totalDueMinor),
+		AmountPaidMinor:        int(amountPaidMinor),
+		DueAt:                  pgtypeTimestamptzToTimePtr(dueAt),
+		IssuedAt:               pgtypeTimestamptzToTimePtr(issuedAt),
+		PaidAt:                 pgtypeTimestamptzToTimePtr(paidAt),
+		PaymentFailedAt:        pgtypeTimestamptzToTimePtr(paymentFailedAt),
+		PaymentStatusUpdatedAt: pgtypeTimestamptzToTimePtr(paymentStatusUpdatedAt),
+		CalculationDetails:     json.RawMessage(calculationDetails),
+	}
+}
+
 // --- Invoice Issue (API-19) transactional methods ---
 
 func (r *Repository) GetInvoiceForIssueForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) (domain.InvoiceIssueCandidateRow, bool, error) {

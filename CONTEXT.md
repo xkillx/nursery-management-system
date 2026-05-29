@@ -932,6 +932,18 @@ Draft invoice generation reports the invoice run outcome and affected invoice re
 
 A manager-facing billing view for inspecting generated invoice headers, line items, calculation quantities, status, and due/payment metadata across invoice statuses. Draft invoices are included so managers can review calculations before issue.
 
+## Parent Invoice View (MVP)
+
+A parent-facing billing view for issued-or-later invoices belonging to children reachable through that parent's current membership-to-guardian access path. It explains payable invoice identity, child, period, status, totals, payment state, and parent-readable line items.
+
+## Parent Invoice Detail Disclosure (MVP)
+
+Parent invoice detail supports understanding and paying an issued invoice, not reviewing manager billing operations. Manager-only run context, invoice exceptions, lock metadata, adjustment internals, and attendance source-session snapshots are outside the parent disclosure boundary.
+
+## Issued-or-Later Invoice (MVP)
+
+An invoice whose lifecycle has moved beyond draft into `issued`, `payment_failed`, `paid`, or `overdue`. Parents can see issued-or-later invoices for linked children, while draft invoices remain manager-only.
+
 ## Invoice Payment Retry (MVP)
 
 Issued invoices remain payable after `payment_failed` or `overdue` states by creating a fresh Stripe checkout session for the same invoice.

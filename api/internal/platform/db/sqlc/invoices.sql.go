@@ -497,6 +497,107 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 	return i, err
 }
 
+const invoiceGetForParent = `-- name: InvoiceGetForParent :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.calculation_details
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.id = $4
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+`
+
+type InvoiceGetForParentParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+	ID_2     pgtype.UUID
+}
+
+type InvoiceGetForParentRow struct {
+	ID                     pgtype.UUID
+	InvoiceKind            string
+	InvoiceNumber          pgtype.Text
+	Status                 string
+	ChildID                pgtype.UUID
+	ChildName              string
+	BillingMonth           pgtype.Date
+	PeriodStartDate        pgtype.Date
+	PeriodEndDate          pgtype.Date
+	CurrencyCode           string
+	SubtotalMinor          int32
+	FundedDeductionMinor   int32
+	TotalDueMinor          int32
+	AmountPaidMinor        int32
+	DueAt                  pgtype.Timestamptz
+	IssuedAt               pgtype.Timestamptz
+	PaidAt                 pgtype.Timestamptz
+	PaymentFailedAt        pgtype.Timestamptz
+	PaymentStatusUpdatedAt pgtype.Timestamptz
+	CalculationDetails     []byte
+}
+
+func (q *Queries) InvoiceGetForParent(ctx context.Context, arg InvoiceGetForParentParams) (InvoiceGetForParentRow, error) {
+	row := q.db.QueryRow(ctx, invoiceGetForParent,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.ID_2,
+	)
+	var i InvoiceGetForParentRow
+	err := row.Scan(
+		&i.ID,
+		&i.InvoiceKind,
+		&i.InvoiceNumber,
+		&i.Status,
+		&i.ChildID,
+		&i.ChildName,
+		&i.BillingMonth,
+		&i.PeriodStartDate,
+		&i.PeriodEndDate,
+		&i.CurrencyCode,
+		&i.SubtotalMinor,
+		&i.FundedDeductionMinor,
+		&i.TotalDueMinor,
+		&i.AmountPaidMinor,
+		&i.DueAt,
+		&i.IssuedAt,
+		&i.PaidAt,
+		&i.PaymentFailedAt,
+		&i.PaymentStatusUpdatedAt,
+		&i.CalculationDetails,
+	)
+	return i, err
+}
+
 const invoiceLineListByInvoice = `-- name: InvoiceLineListByInvoice :many
 SELECT id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
        quantity_minutes, unit_amount_minor, line_amount_minor,
@@ -611,6 +712,85 @@ func (q *Queries) InvoiceLinesForManagerReview(ctx context.Context, arg InvoiceL
 			&i.FundedDeductionMinutes,
 			&i.CoreBillableMinutes,
 			&i.SessionCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceLinesForParent = `-- name: InvoiceLinesForParent :many
+SELECT
+    il.line_kind, il.description, il.sort_order,
+    il.quantity_minutes, il.unit_amount_minor, il.line_amount_minor
+FROM invoice_lines il
+JOIN invoices i ON i.tenant_id = il.tenant_id AND i.branch_id = il.branch_id AND i.id = il.invoice_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE il.tenant_id = $1
+  AND il.branch_id = $2
+  AND il.invoice_id = $4
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+ORDER BY il.sort_order
+`
+
+type InvoiceLinesForParentParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	ID        pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+type InvoiceLinesForParentRow struct {
+	LineKind        string
+	Description     string
+	SortOrder       int32
+	QuantityMinutes pgtype.Int4
+	UnitAmountMinor pgtype.Int4
+	LineAmountMinor int32
+}
+
+func (q *Queries) InvoiceLinesForParent(ctx context.Context, arg InvoiceLinesForParentParams) ([]InvoiceLinesForParentRow, error) {
+	rows, err := q.db.Query(ctx, invoiceLinesForParent,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.InvoiceID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceLinesForParentRow
+	for rows.Next() {
+		var i InvoiceLinesForParentRow
+		if err := rows.Scan(
+			&i.LineKind,
+			&i.Description,
+			&i.SortOrder,
+			&i.QuantityMinutes,
+			&i.UnitAmountMinor,
+			&i.LineAmountMinor,
 		); err != nil {
 			return nil, err
 		}
@@ -745,6 +925,143 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForParent = `-- name: InvoiceListForParent :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id, c.full_name AS child_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.calculation_details
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_guardians pmg
+  ON pmg.tenant_id = i.tenant_id
+ AND pmg.branch_id = i.branch_id
+ AND pmg.membership_id = m.id
+ AND pmg.ended_at IS NULL
+JOIN guardian_child_links gcl
+  ON gcl.tenant_id = i.tenant_id
+ AND gcl.branch_id = i.branch_id
+ AND gcl.guardian_id = pmg.guardian_id
+ AND gcl.child_id = i.child_id
+ AND gcl.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+  AND ($4::date IS NULL OR i.billing_month = $4::date)
+  AND ($5::text IS NULL OR i.status = $5::text)
+  AND ($6::uuid IS NULL OR i.child_id = $6::uuid)
+ORDER BY
+  CASE i.status
+    WHEN 'overdue' THEN 1
+    WHEN 'payment_failed' THEN 2
+    WHEN 'issued' THEN 3
+    WHEN 'paid' THEN 4
+    ELSE 5
+  END,
+  i.due_at ASC NULLS LAST,
+  i.billing_month DESC,
+  c.full_name ASC,
+  i.id ASC
+LIMIT $8 OFFSET $7
+`
+
+type InvoiceListForParentParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	ID           pgtype.UUID
+	BillingMonth pgtype.Date
+	Status       pgtype.Text
+	ChildID      pgtype.UUID
+	Offset       pgtype.Int4
+	Limit        pgtype.Int4
+}
+
+type InvoiceListForParentRow struct {
+	ID                     pgtype.UUID
+	InvoiceKind            string
+	InvoiceNumber          pgtype.Text
+	Status                 string
+	ChildID                pgtype.UUID
+	ChildName              string
+	BillingMonth           pgtype.Date
+	PeriodStartDate        pgtype.Date
+	PeriodEndDate          pgtype.Date
+	CurrencyCode           string
+	SubtotalMinor          int32
+	FundedDeductionMinor   int32
+	TotalDueMinor          int32
+	AmountPaidMinor        int32
+	DueAt                  pgtype.Timestamptz
+	IssuedAt               pgtype.Timestamptz
+	PaidAt                 pgtype.Timestamptz
+	PaymentFailedAt        pgtype.Timestamptz
+	PaymentStatusUpdatedAt pgtype.Timestamptz
+	CalculationDetails     []byte
+}
+
+func (q *Queries) InvoiceListForParent(ctx context.Context, arg InvoiceListForParentParams) ([]InvoiceListForParentRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForParent,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.BillingMonth,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForParentRow
+	for rows.Next() {
+		var i InvoiceListForParentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.CalculationDetails,
 		); err != nil {
 			return nil, err
 		}

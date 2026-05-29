@@ -23,6 +23,12 @@ type billingHarness struct {
 	tokens            *authtokens.TokenManager
 	tenantID          uuid.UUID
 	branchID          uuid.UUID
+	managerUID        uuid.UUID
+	managerMID        uuid.UUID
+	practitionerUID   uuid.UUID
+	practitionerMID   uuid.UUID
+	parentUID         uuid.UUID
+	parentMID         uuid.UUID
 	managerToken      string
 	practitionerToken string
 	parentToken       string
@@ -37,32 +43,31 @@ func setupBillingHarness(t *testing.T) *billingHarness {
 	dbtest.Reset(t, pool)
 
 	h := &billingHarness{
-		router:   Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
-		pool:     pool,
-		tokens:   authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
-		tenantID: uuid.MustParse("b1000000-0000-0000-0000-000000000001"),
-		branchID: uuid.MustParse("b2000000-0000-0000-0000-000000000001"),
+		router:          Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
+		pool:            pool,
+		tokens:          authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
+		tenantID:        uuid.MustParse("b1000000-0000-0000-0000-000000000001"),
+		branchID:        uuid.MustParse("b2000000-0000-0000-0000-000000000001"),
+		managerUID:      uuid.MustParse("b3000000-0000-0000-0000-000000000001"),
+		managerMID:      uuid.MustParse("b4000000-0000-0000-0000-000000000001"),
+		practitionerUID: uuid.MustParse("b3000000-0000-0000-0000-000000000002"),
+		practitionerMID: uuid.MustParse("b4000000-0000-0000-0000-000000000002"),
+		parentUID:       uuid.MustParse("b3000000-0000-0000-0000-000000000003"),
+		parentMID:       uuid.MustParse("b4000000-0000-0000-0000-000000000003"),
 	}
-
-	managerUID := uuid.MustParse("b3000000-0000-0000-0000-000000000001")
-	managerMID := uuid.MustParse("b4000000-0000-0000-0000-000000000001")
-	practitionerUID := uuid.MustParse("b3000000-0000-0000-0000-000000000002")
-	practitionerMID := uuid.MustParse("b4000000-0000-0000-0000-000000000002")
-	parentUID := uuid.MustParse("b3000000-0000-0000-0000-000000000003")
-	parentMID := uuid.MustParse("b4000000-0000-0000-0000-000000000003")
 
 	dbtest.InsertTenant(t, pool, h.tenantID, "Billing Test")
 	dbtest.InsertBranch(t, pool, h.tenantID, h.branchID, "Billing Branch")
-	dbtest.InsertUser(t, pool, managerUID, "billing-mgr@example.com", "hash", true)
-	dbtest.InsertUser(t, pool, practitionerUID, "billing-prac@example.com", "hash", true)
-	dbtest.InsertUser(t, pool, parentUID, "billing-parent@example.com", "hash", true)
-	dbtest.InsertMembership(t, pool, managerMID, h.tenantID, h.branchID, managerUID, "manager", true)
-	dbtest.InsertMembership(t, pool, practitionerMID, h.tenantID, h.branchID, practitionerUID, "practitioner", true)
-	dbtest.InsertMembership(t, pool, parentMID, h.tenantID, h.branchID, parentUID, "parent", true)
+	dbtest.InsertUser(t, pool, h.managerUID, "billing-mgr@example.com", "hash", true)
+	dbtest.InsertUser(t, pool, h.practitionerUID, "billing-prac@example.com", "hash", true)
+	dbtest.InsertUser(t, pool, h.parentUID, "billing-parent@example.com", "hash", true)
+	dbtest.InsertMembership(t, pool, h.managerMID, h.tenantID, h.branchID, h.managerUID, "manager", true)
+	dbtest.InsertMembership(t, pool, h.practitionerMID, h.tenantID, h.branchID, h.practitionerUID, "practitioner", true)
+	dbtest.InsertMembership(t, pool, h.parentMID, h.tenantID, h.branchID, h.parentUID, "parent", true)
 
-	h.managerToken = mustAccessToken(t, h.tokens, managerUID, managerMID, h.tenantID, h.branchID, "manager")
-	h.practitionerToken = mustAccessToken(t, h.tokens, practitionerUID, practitionerMID, h.tenantID, h.branchID, "practitioner")
-	h.parentToken = mustAccessToken(t, h.tokens, parentUID, parentMID, h.tenantID, h.branchID, "parent")
+	h.managerToken = mustAccessToken(t, h.tokens, h.managerUID, h.managerMID, h.tenantID, h.branchID, "manager")
+	h.practitionerToken = mustAccessToken(t, h.tokens, h.practitionerUID, h.practitionerMID, h.tenantID, h.branchID, "practitioner")
+	h.parentToken = mustAccessToken(t, h.tokens, h.parentUID, h.parentMID, h.tenantID, h.branchID, "parent")
 
 	return h
 }

@@ -41,6 +41,11 @@ type BillingRepository interface {
 	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
 	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) error
 
+	// Parent Invoice View (API-21) — read-only, no transaction required.
+	ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) ([]ParentInvoiceRow, error)
+	GetInvoiceForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) (ParentInvoiceRow, bool, error)
+	ListInvoiceLinesForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) ([]ParentInvoiceLineRow, error)
+
 	// Overdue Transition (API-20) — transactional methods using Tx.
 	TryAcquireOverdueTransitionJobLock(ctx context.Context, tx Tx) (bool, error)
 	MarkIssuedInvoicesOverdue(ctx context.Context, tx Tx, cutoffUTC time.Time) ([]OverdueTransitionedInvoice, error)

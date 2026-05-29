@@ -206,8 +206,15 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 		billingapp.NewGetInvoice(billingRepo),
 		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter),
 		billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
+		billingapp.NewListParentInvoices(billingRepo),
+		billingapp.NewGetParentInvoice(billingRepo),
 	)
 	billingHandler.RegisterRoutes(manager)
+
+	// Parent route group
+	parent := protected.Group("/parent")
+	parent.Use(httpserver.RequireRoles("parent"))
+	billingHandler.RegisterParentRoutes(parent)
 
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
