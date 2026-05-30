@@ -284,6 +284,10 @@ An eligible child-month can produce a draft monthly invoice with zero amount due
 
 A zero-total draft invoice can be issued like any other eligible draft invoice and receives an invoice number.
 
+## Payable Invoice (MVP)
+
+A parent-visible issued-or-later invoice with a positive outstanding balance. Zero-total issued invoices and paid invoices are not payable.
+
 ## Invoice Issue Mode (MVP)
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
@@ -323,6 +327,10 @@ A follow-up invoice that corrects or offsets a previously issued invoice. An adj
 ## Payment Scope (MVP)
 
 Parents pay invoices in full; partial payments are not supported in month 1.
+
+## Payment Attempt (MVP)
+
+A single try to collect a payable invoice through the payment provider. Each retry creates a new payment attempt for the same invoice.
 
 ## Payment Failure State (MVP)
 
@@ -491,6 +499,10 @@ One parent account can be linked to multiple children and can view invoices for 
 ## Parent Portal (MVP)
 
 The parent-side product surface where a parent-role user views issued invoices for linked children and initiates full invoice payment.
+
+## Parent Invoice Payment Initiation (MVP)
+
+Only parent-role users initiate payment for parent-visible payable invoices in month 1. Managers can review invoice and payment state but do not initiate parent payment.
 
 ## Login Identifier (MVP)
 

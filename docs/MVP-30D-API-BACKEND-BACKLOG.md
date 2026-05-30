@@ -143,7 +143,7 @@ Implementation notes:
 | ~~API-19~~ | ~~Implement invoice issue endpoints: one-by-one and bulk issue with confirmation. Assign `INV-YYYYMM-####`, set issued/due timestamps, enforce immutable issued state, and audit issue actions.~~ **Done 2026-05-29.** | ~~API-17~~ | ~~Bulk issue succeeds for eligible drafts and returns per-child exceptions; issued invoice cannot be directly edited or regenerated. Routes: `POST /api/v1/invoices/:invoice_id/issue`, `POST /api/v1/invoices/bulk-issue`. 133 tests pass.~~ |
 | ~~API-20~~ | ~~Add overdue transition job. A single scheduler instance, controlled by environment flag, marks unpaid issued invoices `overdue` at 00:00 next local day in `Europe/London`.~~ **Done 2026-05-29.** | ~~API-19~~ | ~~Job is idempotent; disabled by default unless env enables scheduler ownership; tests cover due/overdue boundaries.~~ |
 | ~~API-21~~ | ~~Add parent invoice list/detail endpoints. Parents see issued-or-later invoices only for children authorized through current parent membership -> guardian -> active guardian-child link.~~ **Done 2026-05-30.** | ~~API-19~~ | ~~Parent cannot see drafts, unlinked child invoices, wrong-tenant invoices, or practitioner/manager-only fields. 34 parent invoice tests pass (20 existing billing + 14 new). Routes: `GET /api/v1/parent/invoices`, `GET /api/v1/parent/invoices/:invoice_id`.~~ |
-| API-22 | Add Stripe Checkout session creation endpoint for issued, payment-failed, or overdue invoices. Full payment only, GBP only, hosted Checkout only, fresh session per retry. | API-19, Stripe config | Endpoint returns Checkout URL/session id; no custom card handling exists; paid invoices cannot create new checkout sessions. |
+| ~~API-22~~ | ~~Add Stripe Checkout session creation endpoint for issued, payment-failed, or overdue invoices. Full payment only, GBP only, hosted Checkout only, fresh session per retry.~~ **Done 2026-05-30.** | ~~API-19, Stripe config~~ | ~~Endpoint returns Checkout URL/session id; no custom card handling exists; paid invoices cannot create new checkout sessions. Route: `POST /api/v1/parent/invoices/:invoice_id/checkout-sessions`. 635 tests pass (48 new: 16 use case, 13 repo integration, 9 bootstrap integration, 7 handler, 3 error mapper).~~ |
 | API-23 | Add Stripe webhook endpoint: signature verification, idempotent event storage, payment reconciliation rows, invoice status updates to `paid` or `payment_failed`, and safe retry behavior. | API-22 | Duplicate webhook event is ignored safely; successful payment updates invoice once; failed/canceled payment sets `payment_failed`. |
 | API-24 | Add manager payment/reconciliation endpoints: invoice payment status, payment events, checkout retry availability, and webhook processing status. | API-23 | Manager can debug paid/unpaid/failed status without direct Stripe dashboard access for routine checks. |
 | API-25 | Add full adjustment invoice endpoint only if UAT or pilot operations require it. Otherwise leave schema hooks and document post-MVP work. | API-19 | Stretch only; any implemented adjustment requires manager reason and links to original issued invoice. |
@@ -214,7 +214,7 @@ New route groups to add:
 - `POST /api/v1/invoices/bulk-issue`
 - `GET /api/v1/parent/invoices`
 - `GET /api/v1/parent/invoices/:invoice_id`
-- `POST /api/v1/invoices/:invoice_id/checkout-sessions`
+- `POST /api/v1/parent/invoices/:invoice_id/checkout-sessions`
 - `POST /api/v1/stripe/webhooks`
 - `GET /api/v1/payments/events`
 - `GET /api/v1/invoices/:invoice_id/payments`

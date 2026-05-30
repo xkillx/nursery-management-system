@@ -1435,6 +1435,48 @@ Response includes `calculation` (without `source_sessions`) and `lines` (without
 
 ---
 
+## Parent Invoice Payment
+
+Parent-only endpoint for initiating Stripe Checkout payment for a payable monthly invoice.
+
+**Route is parent-only.** Unauthenticated requests receive `401 unauthorized`. Manager and practitioner requests receive `403 forbidden_role`.
+
+### POST /api/v1/parent/invoices/:invoice_id/checkout-sessions
+
+Creates a Stripe Checkout Session and returns the checkout URL. Empty request body.
+
+**Payable conditions:** `invoice_kind = monthly`, status in `issued`, `payment_failed`, `overdue`, `currency_code = GBP`, `total_due_minor > 0`, `amount_paid_minor = 0`.
+
+**Response 201:**
+
+```json
+{
+  "checkout_session_id": "cs_test_...",
+  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_...",
+  "payment_attempt_id": "uuid"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `checkout_session_id` | string | Stripe Checkout Session ID |
+| `checkout_url` | string | URL to redirect parent to Stripe hosted checkout |
+| `payment_attempt_id` | string | Local payment attempt UUID for correlation |
+
+#### Error responses
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `validation_error` | Malformed `invoice_id` |
+| 401 | `unauthorized` | Missing or invalid token |
+| 403 | `forbidden_role` | Manager or practitioner accessing parent route |
+| 404 | `invoice_not_found` | Invoice not visible to parent |
+| 409 | `invoice_not_payable` | Paid, zero-total, partial-paid, draft, non-monthly, non-GBP, or otherwise not payable |
+| 502 | `payment_provider_error` | Stripe failed to create Checkout Session |
+| 503 | `payment_provider_unconfigured` | Stripe secret key missing in local/dev runtime |
+
+---
+
 ## Invoice Issue
 
 Manager-only endpoints for issuing individual invoices or bulk-issuing all draft invoices for a billing month. Issuing locks invoice contents, assigns an invoice number, and sets due date. Issue does not recalculate invoice contents; full details remain available through `GET /api/v1/invoices/:invoice_id`.

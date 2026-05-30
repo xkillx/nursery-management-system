@@ -2,10 +2,10 @@
 
 - **Verification date**: 2026-05-28
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
-- **Final migration version**: 12 (clean)
+- **Final migration version**: 13 (clean)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (18)
+## Application Tables (19)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -55,6 +55,12 @@
 | `invoices` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `billing_month DATE`, `invoice_kind TEXT`, `status TEXT`, `invoice_number TEXT`, `issued_sequence INTEGER`, `generated_run_id FK`, `issued_run_id FK`, `issued_at`, `issued_by_user_id FK`, `issued_by_membership_id`, `locked_at`, `due_at`, `currency_code CHAR(3)`, `subtotal_minor`, `funded_deduction_minor`, `total_due_minor`, `amount_paid_minor`, `paid_at`, `payment_failed_at`, `payment_status_updated_at`, `adjusts_invoice_id FK (self)`, `adjustment_reason_code`, `adjustment_reason_note`, `period_start_date`, `period_end_date`, `calculation_details JSONB` | Composite unique `(tenant_id, branch_id, id)`. Partial unique monthly `(tenant_id, branch_id, child_id, billing_month) WHERE invoice_kind = 'monthly'`. `invoice_kind IN ('monthly', 'adjustment')`. `status IN ('draft', 'issued', 'payment_failed', 'paid', 'overdue')`. Draft shape: issue fields null. Issued shape: issue fields non-null. Paid shape: `paid_at IS NOT NULL`, `amount_paid_minor = total_due_minor`. Adjustment shape: requires `adjusts_invoice_id` + non-empty reason. Monthly shape: adjustment fields null. `funded_deduction_minor` stored as positive reporting amount. |
 | `invoice_lines` | `id UUID PK`, `tenant_id`, `branch_id`, `invoice_id FK`, `line_kind TEXT`, `description TEXT`, `sort_order INTEGER`, `quantity_minutes INTEGER`, `unit_amount_minor INTEGER`, `line_amount_minor INTEGER`, `raw_attended_minutes`, `rounded_attended_minutes`, `funded_allowance_minutes`, `funded_deduction_minutes`, `core_billable_minutes`, `session_count`, `details JSONB` | Composite unique `(tenant_id, branch_id, id)`. `line_kind IN ('core_childcare', 'funded_deduction', 'extra', 'adjustment')`. `core_childcare` and `extra`: `line_amount_minor >= 0`. `funded_deduction`: `line_amount_minor <= 0`. `adjustment`: signed either direction. |
 | `invoice_number_sequences` | `tenant_id`, `branch_id`, `billing_year INTEGER`, `billing_month INTEGER`, `next_sequence INTEGER DEFAULT 1` | PK `(tenant_id, branch_id, billing_year, billing_month)`. `billing_year >= 2000`, `billing_month 1–12`, `next_sequence >= 1`. |
+
+### Payments
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `payment_attempts` | `id UUID PK`, `tenant_id`, `branch_id`, `invoice_id FK`, `initiated_by_user_id FK`, `initiated_by_membership_id`, `request_id TEXT`, `status TEXT`, `amount_minor INTEGER`, `currency_code CHAR(3) DEFAULT 'GBP'`, `stripe_checkout_session_id TEXT`, `stripe_checkout_url TEXT`, `stripe_payment_intent_id TEXT`, `stripe_expires_at TIMESTAMPTZ`, `provider_error_code TEXT`, `provider_error_message TEXT`, `failure_reason TEXT`, `created_at`, `updated_at` | Composite unique `(tenant_id, branch_id, id)`. Composite FKs to branches, invoices, memberships. `status IN ('checkout_creation_started', 'checkout_created', 'checkout_creation_failed', 'paid', 'payment_failed', 'cancelled', 'expired')`. `amount_minor > 0`. `currency_code = 'GBP'`. CHECK: `checkout_created` requires non-null session ID and URL. Partial unique index on `stripe_checkout_session_id` where not null. Index on `(tenant_id, branch_id, invoice_id, created_at DESC)`. Partial index on open attempts. |
 
 ### Audit
 
@@ -116,3 +122,7 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `idx_invoices_due_at_outstanding` | `invoices` | btree (partial) | Outstanding invoices by due date |
 | `idx_invoice_lines_scope_id` | `invoice_lines` | UNIQUE btree | Scope composite key |
 | `idx_invoice_lines_invoice_order` | `invoice_lines` | btree | Lines by invoice + sort order |
+| `uq_payment_attempts_scoped_id` | `payment_attempts` | UNIQUE btree | Scope composite key |
+| `idx_payment_attempts_invoice_created` | `payment_attempts` | btree | Attempts by invoice + created desc |
+| `uq_payment_attempts_stripe_session_id` | `payment_attempts` | UNIQUE btree (partial) | Stripe session ID uniqueness where non-null |
+| `idx_payment_attempts_open_attempts` | `payment_attempts` | btree (partial) | Open/created attempts per invoice |

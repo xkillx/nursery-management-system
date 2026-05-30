@@ -127,3 +127,36 @@ func TestMapDomainError_AbsenceMarkerNotFound_404(t *testing.T) {
 		t.Fatalf("expected 404, got %d", status)
 	}
 }
+
+func TestMapDomainError_InvoiceNotPayable_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "invoice_not_payable" {
+		t.Fatalf("expected invoice_not_payable, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_PaymentProviderUnconfigured_503(t *testing.T) {
+	err := domainerrors.New("payment_provider_unconfigured", "Payment provider is not configured.")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", status)
+	}
+	if resp.Code != "payment_provider_unconfigured" {
+		t.Fatalf("expected payment_provider_unconfigured, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_PaymentProviderError_502(t *testing.T) {
+	err := domainerrors.New("payment_provider_error", "Payment provider failed to create checkout session.")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusBadGateway {
+		t.Fatalf("expected 502, got %d", status)
+	}
+	if resp.Code != "payment_provider_error" {
+		t.Fatalf("expected payment_provider_error, got %s", resp.Code)
+	}
+}

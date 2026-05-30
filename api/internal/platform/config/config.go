@@ -33,6 +33,10 @@ type Config struct {
 	InviteTokenTTLHours          int
 
 	SchedulerOwner bool
+
+	StripeSecretKey      string
+	StripeWebhookSecret  string
+	StripePublishableKey string
 }
 
 func Load() (Config, error) {
@@ -81,6 +85,10 @@ func Load() (Config, error) {
 		InviteTokenTTLHours:         inviteTTLMHours,
 
 		SchedulerOwner: strings.EqualFold(strings.TrimSpace(os.Getenv("SCHEDULER_OWNER")), "true"),
+
+		StripeSecretKey:      strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
+		StripeWebhookSecret:  strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
+		StripePublishableKey: strings.TrimSpace(os.Getenv("STRIPE_PUBLISHABLE_KEY")),
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -149,6 +157,10 @@ func Load() (Config, error) {
 	}
 	if cfg.InviteTokenTTLHours <= 0 {
 		return Config{}, errors.New("INVITE_TOKEN_TTL_HOURS must be > 0")
+	}
+
+	if cfg.AppEnv != "local" && cfg.StripeSecretKey == "" {
+		return Config{}, errors.New("STRIPE_SECRET_KEY is required when APP_ENV is not local")
 	}
 
 	return cfg, nil

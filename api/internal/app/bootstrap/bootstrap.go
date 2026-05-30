@@ -51,6 +51,12 @@ import (
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
 
+	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
+	paymentsdomain "nursery-management-system/api/internal/modules/payments/domain"
+	paymentspostgres "nursery-management-system/api/internal/modules/payments/infrastructure/postgres"
+	stripeclient "nursery-management-system/api/internal/modules/payments/infrastructure/stripe"
+	paymentshandler "nursery-management-system/api/internal/modules/payments/interfaces/http"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
@@ -64,7 +70,15 @@ import (
 	resethandler "nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 )
 
+type BootstrapOptions struct {
+	CheckoutProvider paymentsdomain.CheckoutProvider
+}
+
 func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.Engine {
+	return BootstrapWithOptions(cfg, logger, pool, BootstrapOptions{})
+}
+
+func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool, opts BootstrapOptions) *gin.Engine {
 	if cfg.AppEnv == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -216,6 +230,21 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 	parent.Use(httpserver.RequireRoles("parent"))
 	billingHandler.RegisterParentRoutes(parent)
 
+	// Payments module
+	paymentsRepo := paymentspostgres.NewRepository(pool)
+	var checkoutProvider paymentsdomain.CheckoutProvider
+	stripeConfigured := cfg.StripeSecretKey != ""
+	if opts.CheckoutProvider != nil {
+		checkoutProvider = opts.CheckoutProvider
+		stripeConfigured = true
+	} else if stripeConfigured {
+		checkoutProvider = stripeclient.NewClient(cfg.StripeSecretKey)
+	}
+	paymentsTxMgr := &txManagerAdapter{mgr: txManager}
+	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
+	paymentsHandler := paymentshandler.NewHandler(paymentsUC)
+	paymentsHandler.RegisterParentRoutes(parent)
+
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
 	inviteRepo := invitepostgres.NewRepository(pool, auditWriter)
@@ -236,6 +265,14 @@ func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.
 
 type healthPinger interface {
 	Ping(context.Context) error
+}
+
+type txManagerAdapter struct {
+	mgr *transaction.Manager
+}
+
+func (a *txManagerAdapter) ExecTx(ctx context.Context, fn func(tx paymentsdomain.Tx) error) error {
+	return a.mgr.ExecTx(ctx, fn)
 }
 
 func registerHealthRoutes(router *gin.Engine, basePath string, pinger healthPinger) *gin.RouterGroup {

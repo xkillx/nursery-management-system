@@ -160,6 +160,9 @@ func setBaseEnv(t *testing.T) {
 	t.Setenv("INVITE_TOKEN_SECRET", "invite-secret")
 	t.Setenv("INVITE_TOKEN_TTL_HOURS", "168")
 	t.Setenv("SCHEDULER_OWNER", "false")
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_abc")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_abc")
+	t.Setenv("STRIPE_PUBLISHABLE_KEY", "pk_test_abc")
 }
 
 func TestSchedulerOwnerConfig(t *testing.T) {
@@ -190,4 +193,48 @@ func TestSchedulerOwnerConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStripeConfig(t *testing.T) {
+	t.Run("loads Stripe fields from env", func(t *testing.T) {
+		setBaseEnv(t)
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.StripeSecretKey != "sk_test_abc" {
+			t.Fatalf("expected StripeSecretKey sk_test_abc, got %q", cfg.StripeSecretKey)
+		}
+		if cfg.StripeWebhookSecret != "whsec_abc" {
+			t.Fatalf("expected StripeWebhookSecret whsec_abc, got %q", cfg.StripeWebhookSecret)
+		}
+		if cfg.StripePublishableKey != "pk_test_abc" {
+			t.Fatalf("expected StripePublishableKey pk_test_abc, got %q", cfg.StripePublishableKey)
+		}
+	})
+
+	t.Run("staging without STRIPE_SECRET_KEY fails", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("APP_ENV", "staging")
+		t.Setenv("STRIPE_SECRET_KEY", "")
+		_, err := Load()
+		if err == nil {
+			t.Fatal("expected Load() to fail for missing STRIPE_SECRET_KEY in staging")
+		}
+		if !strings.Contains(err.Error(), "STRIPE_SECRET_KEY") {
+			t.Fatalf("expected error to mention STRIPE_SECRET_KEY, got %v", err)
+		}
+	})
+
+	t.Run("local without STRIPE_SECRET_KEY succeeds", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("STRIPE_SECRET_KEY", "")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.StripeSecretKey != "" {
+			t.Fatalf("expected empty StripeSecretKey, got %q", cfg.StripeSecretKey)
+		}
+	})
 }

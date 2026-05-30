@@ -49,8 +49,13 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"attendance_outside_enrollment_window",
 		"funding_month_outside_enrollment_window",
 		"absence_attendance_exists", "absence_marker_exists",
-			"invoice_not_draft", "invoice_not_monthly":
+			"invoice_not_draft", "invoice_not_monthly",
+			"invoice_not_payable":
 		status = http.StatusConflict
+	case "payment_provider_unconfigured":
+		status = http.StatusServiceUnavailable
+	case "payment_provider_error":
+		status = http.StatusBadGateway
 	default:
 		if len(domainErr.Code) > 10 && domainErr.Code[len(domainErr.Code)-10:] == "_not_found" {
 			status = http.StatusNotFound

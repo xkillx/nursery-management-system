@@ -291,6 +291,28 @@ type PasswordResetToken struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
+type PaymentAttempt struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	InvoiceID               pgtype.UUID
+	InitiatedByUserID       pgtype.UUID
+	InitiatedByMembershipID pgtype.UUID
+	RequestID               pgtype.Text
+	Status                  string
+	AmountMinor             int32
+	CurrencyCode            string
+	StripeCheckoutSessionID pgtype.Text
+	StripeCheckoutUrl       pgtype.Text
+	StripePaymentIntentID   pgtype.Text
+	StripeExpiresAt         pgtype.Timestamptz
+	ProviderErrorCode       pgtype.Text
+	ProviderErrorMessage    pgtype.Text
+	FailureReason           pgtype.Text
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
 type RefreshToken struct {
 	ID           pgtype.UUID
 	UserID       pgtype.UUID
