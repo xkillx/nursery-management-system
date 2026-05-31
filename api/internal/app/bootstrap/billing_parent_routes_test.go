@@ -947,8 +947,8 @@ func TestParentInvoiceListValidationErrors(t *testing.T) {
 
 type parentInvoiceListResponseTest struct {
 	Items  []parentInvoiceListItemResponseTest `json:"items"`
-	Limit  int                                  `json:"limit"`
-	Offset int                                  `json:"offset"`
+	Limit  int                                 `json:"limit"`
+	Offset int                                 `json:"offset"`
 }
 
 type parentInvoiceListItemResponseTest struct {
@@ -974,27 +974,27 @@ type parentInvoiceListItemResponseTest struct {
 }
 
 type parentInvoiceDetailResponseTest struct {
-	InvoiceID              string                                  `json:"invoice_id"`
-	InvoiceKind            string                                  `json:"invoice_kind"`
-	InvoiceNumber          *string                                 `json:"invoice_number"`
-	InvoiceNumberDisplay   string                                  `json:"invoice_number_display"`
-	ChildID                string                                  `json:"child_id"`
-	ChildName              string                                  `json:"child_name"`
-	BillingMonth           string                                  `json:"billing_month"`
-	Status                 string                                  `json:"status"`
-	DueStatus              string                                  `json:"due_status"`
-	CurrencyCode           string                                  `json:"currency_code"`
-	SubtotalMinor          int                                     `json:"subtotal_minor"`
-	FundedDeductionMinor   int                                     `json:"funded_deduction_minor"`
-	TotalDueMinor          int                                     `json:"total_due_minor"`
-	AmountPaidMinor        int                                     `json:"amount_paid_minor"`
-	IssuedAt               *string                                 `json:"issued_at"`
-	DueAt                  *string                                 `json:"due_at"`
-	PaidAt                 *string                                 `json:"paid_at"`
-	PaymentFailedAt        *string                                 `json:"payment_failed_at"`
-	PaymentStatusUpdatedAt *string                                 `json:"payment_status_updated_at"`
-	Calculation            parentInvoiceCalculationResponseTest     `json:"calculation"`
-	Lines                  []parentInvoiceLineResponseTest          `json:"lines"`
+	InvoiceID              string                               `json:"invoice_id"`
+	InvoiceKind            string                               `json:"invoice_kind"`
+	InvoiceNumber          *string                              `json:"invoice_number"`
+	InvoiceNumberDisplay   string                               `json:"invoice_number_display"`
+	ChildID                string                               `json:"child_id"`
+	ChildName              string                               `json:"child_name"`
+	BillingMonth           string                               `json:"billing_month"`
+	Status                 string                               `json:"status"`
+	DueStatus              string                               `json:"due_status"`
+	CurrencyCode           string                               `json:"currency_code"`
+	SubtotalMinor          int                                  `json:"subtotal_minor"`
+	FundedDeductionMinor   int                                  `json:"funded_deduction_minor"`
+	TotalDueMinor          int                                  `json:"total_due_minor"`
+	AmountPaidMinor        int                                  `json:"amount_paid_minor"`
+	IssuedAt               *string                              `json:"issued_at"`
+	DueAt                  *string                              `json:"due_at"`
+	PaidAt                 *string                              `json:"paid_at"`
+	PaymentFailedAt        *string                              `json:"payment_failed_at"`
+	PaymentStatusUpdatedAt *string                              `json:"payment_status_updated_at"`
+	Calculation            parentInvoiceCalculationResponseTest `json:"calculation"`
+	Lines                  []parentInvoiceLineResponseTest      `json:"lines"`
 }
 
 type parentInvoiceLineResponseTest struct {

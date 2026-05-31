@@ -44,10 +44,10 @@ func (c *Client) CreateCheckoutSession(ctx context.Context, params domain.Checko
 		ClientReferenceID: stripe.String(params.PaymentAttemptID),
 		Metadata: map[string]string{
 			"tenant_id":          params.TenantID,
-			"branch_id":         params.BranchID,
-			"invoice_id":        params.InvoiceID,
+			"branch_id":          params.BranchID,
+			"invoice_id":         params.InvoiceID,
 			"payment_attempt_id": params.PaymentAttemptID,
-			"invoice_number":    params.InvoiceNumber,
+			"invoice_number":     params.InvoiceNumber,
 		},
 	}
 

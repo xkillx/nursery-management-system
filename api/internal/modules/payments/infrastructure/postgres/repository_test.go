@@ -481,3 +481,216 @@ func TestRepository_GetInvoicePaymentState_NotFound(t *testing.T) {
 		t.Fatal("expected not found for nonexistent invoice")
 	}
 }
+
+func TestRepository_ManagerPaymentStatus_ReturnsInvoice(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool).ManagerRepo()
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-status", "issued", 5000)
+
+	status, found, err := repo.GetManagerInvoicePaymentStatus(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get manager status: %v", err)
+	}
+	if !found {
+		t.Fatal("expected invoice found")
+	}
+	if status.InvoiceID != invoiceID.String() {
+		t.Errorf("expected invoice_id %s, got %s", invoiceID, status.InvoiceID)
+	}
+	if status.InvoiceKind != "monthly" {
+		t.Errorf("expected monthly, got %s", status.InvoiceKind)
+	}
+	if status.Status != "issued" {
+		t.Errorf("expected issued, got %s", status.Status)
+	}
+	if status.CurrencyCode != "GBP" {
+		t.Errorf("expected GBP, got %s", status.CurrencyCode)
+	}
+	if status.TotalDueMinor != 5000 {
+		t.Errorf("expected 5000, got %d", status.TotalDueMinor)
+	}
+	if status.ChildName == "" {
+		t.Error("expected non-empty child_name")
+	}
+}
+
+func TestRepository_ManagerPaymentStatus_WrongTenant_NotFound(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool).ManagerRepo()
+	ctx := context.Background()
+
+	seedIssuedInvoice(t, h, "mgr-wrong", "issued", 5000)
+
+	_, found, err := repo.GetManagerInvoicePaymentStatus(ctx, uid.NewUUID().String(), h.branchID.String(), uid.NewUUID().String())
+	if err != nil {
+		t.Fatalf("get manager status: %v", err)
+	}
+	if found {
+		t.Error("expected not found for wrong tenant")
+	}
+}
+
+func TestRepository_ManagerPaymentStatus_NoAttempts_ReturnsNil(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool).ManagerRepo()
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-noatt", "issued", 5000)
+
+	attempt, err := repo.GetLatestPaymentAttemptForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get latest attempt: %v", err)
+	}
+	if attempt != nil {
+		t.Error("expected nil attempt when none exist")
+	}
+}
+
+func TestRepository_ManagerPaymentStatus_NoEvents_ReturnsNil(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool).ManagerRepo()
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-noev", "issued", 5000)
+
+	event, err := repo.GetLatestPaymentEventForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get latest event: %v", err)
+	}
+	if event != nil {
+		t.Error("expected nil event when none exist")
+	}
+}
+
+func TestRepository_ManagerPaymentStatus_WithAttempt(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-att", "issued", 5000)
+
+	attemptID := uid.NewUUID()
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO payment_attempts (id, tenant_id, branch_id, invoice_id, initiated_by_user_id, initiated_by_membership_id, status, amount_minor, currency_code)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'checkout_creation_started', 5000, 'GBP')`,
+		attemptID, h.tenantID, h.branchID, invoiceID, h.managerUID, h.managerMID)
+	if err != nil {
+		t.Fatalf("insert attempt: %v", err)
+	}
+
+	attempt, err := repo.ManagerRepo().GetLatestPaymentAttemptForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get latest attempt: %v", err)
+	}
+	if attempt == nil {
+		t.Fatal("expected attempt")
+	}
+	if attempt.PaymentAttemptID != attemptID.String() {
+		t.Errorf("expected attempt_id %s, got %s", attemptID, attempt.PaymentAttemptID)
+	}
+	if attempt.Status != "checkout_creation_started" {
+		t.Errorf("expected checkout_creation_started, got %s", attempt.Status)
+	}
+	if attempt.AmountMinor != 5000 {
+		t.Errorf("expected 5000, got %d", attempt.AmountMinor)
+	}
+}
+
+func TestRepository_ListPaymentEvents_NewestFirst(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-events", "issued", 5000)
+
+	attemptID := uid.NewUUID()
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO payment_attempts (id, tenant_id, branch_id, invoice_id, initiated_by_user_id, initiated_by_membership_id, status, amount_minor, currency_code)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'paid', 5000, 'GBP')`,
+		attemptID, h.tenantID, h.branchID, invoiceID, h.managerUID, h.managerMID)
+	if err != nil {
+		t.Fatalf("insert attempt: %v", err)
+	}
+
+	webhookEventID := uid.NewUUID()
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO stripe_webhook_events (id, stripe_event_id, event_type, livemode, processing_status, processing_reason, raw_payload, received_at, processed_at)
+		 VALUES ($1, 'evt_test_001', 'checkout.session.completed', false, 'processed', 'paid', '{}', now(), now())`,
+		webhookEventID)
+	if err != nil {
+		t.Fatalf("insert webhook event: %v", err)
+	}
+
+	recID := uid.NewUUID()
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO payment_reconciliation_records (id, tenant_id, branch_id, invoice_id, payment_attempt_id, stripe_webhook_event_id, stripe_event_id, stripe_event_type, stripe_checkout_session_id, outcome, reason_code, previous_invoice_status, new_invoice_status, attempt_previous_status, attempt_new_status, amount_minor, currency_code)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'evt_test_001', 'checkout.session.completed', 'cs_test', 'paid', 'paid', 'issued', 'paid', 'checkout_created', 'paid', 5000, 'GBP')`,
+		recID, h.tenantID, h.branchID, invoiceID, attemptID, webhookEventID)
+	if err != nil {
+		t.Fatalf("insert reconciliation: %v", err)
+	}
+
+	events, err := repo.ManagerRepo().ListPaymentEventsForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String(), domain.PaymentEventFilters{Limit: 50, Offset: 0})
+	if err != nil {
+		t.Fatalf("list events: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].PaymentEventID != recID.String() {
+		t.Errorf("expected event_id %s, got %s", recID, events[0].PaymentEventID)
+	}
+	if events[0].WebhookProcessingStatus != "processed" {
+		t.Errorf("expected processed, got %s", events[0].WebhookProcessingStatus)
+	}
+	if events[0].Outcome != "paid" {
+		t.Errorf("expected paid, got %s", events[0].Outcome)
+	}
+}
+
+func TestRepository_ListPaymentEvents_RespectsLimitOffset(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "mgr-pag", "issued", 5000)
+
+	attemptID := uid.NewUUID()
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO payment_attempts (id, tenant_id, branch_id, invoice_id, initiated_by_user_id, initiated_by_membership_id, status, amount_minor, currency_code)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'paid', 5000, 'GBP')`,
+		attemptID, h.tenantID, h.branchID, invoiceID, h.managerUID, h.managerMID)
+	if err != nil {
+		t.Fatalf("insert attempt: %v", err)
+	}
+
+	for i := 0; i < 3; i++ {
+		webhookEventID := uid.NewUUID()
+		_, err = h.pool.Exec(ctx,
+			`INSERT INTO stripe_webhook_events (id, stripe_event_id, event_type, livemode, processing_status, processing_reason, raw_payload, received_at, processed_at)
+			 VALUES ($1, $2, 'checkout.session.completed', false, 'processed', 'paid', '{}', now(), now())`,
+			webhookEventID, fmt.Sprintf("evt_pag_%d", i))
+		if err != nil {
+			t.Fatalf("insert webhook event %d: %v", i, err)
+		}
+
+		recID := uid.NewUUID()
+		_, err = h.pool.Exec(ctx,
+			`INSERT INTO payment_reconciliation_records (id, tenant_id, branch_id, invoice_id, payment_attempt_id, stripe_webhook_event_id, stripe_event_id, stripe_event_type, stripe_checkout_session_id, outcome, reason_code, previous_invoice_status, new_invoice_status, attempt_previous_status, attempt_new_status, amount_minor, currency_code)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, 'checkout.session.completed', 'cs_pag', 'paid', 'paid', 'issued', 'paid', 'checkout_created', 'paid', 5000, 'GBP')`,
+			recID, h.tenantID, h.branchID, invoiceID, attemptID, webhookEventID, fmt.Sprintf("evt_pag_%d", i))
+		if err != nil {
+			t.Fatalf("insert reconciliation %d: %v", i, err)
+		}
+	}
+
+	events, err := repo.ManagerRepo().ListPaymentEventsForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String(), domain.PaymentEventFilters{Limit: 2, Offset: 1})
+	if err != nil {
+		t.Fatalf("list events: %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events with limit 2 offset 1, got %d", len(events))
+	}
+}

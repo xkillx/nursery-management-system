@@ -14,9 +14,9 @@ import (
 )
 
 var payableStatuses = map[string]bool{
-	"issued":        true,
+	"issued":         true,
 	"payment_failed": true,
-	"overdue":       true,
+	"overdue":        true,
 }
 
 type CreateCheckoutSession struct {

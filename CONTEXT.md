@@ -332,6 +332,10 @@ Parents pay invoices in full; partial payments are not supported in month 1.
 
 A single try to collect a payable invoice through the payment provider. Each retry creates a new payment attempt for the same invoice.
 
+## Checkout Retry Availability (MVP)
+
+A manager-visible indication that a parent can currently start a fresh payment attempt for a payable invoice. It is diagnostic only and is not itself checkout session creation.
+
 ## Payment Outcome Authority (MVP)
 
 Invoice payment state changes only after a payment provider-confirmed outcome. Browser return or cancel navigation after payment initiation is not itself a payment outcome.
@@ -339,6 +343,14 @@ Invoice payment state changes only after a payment provider-confirmed outcome. B
 ## Payment Reconciliation Record (MVP)
 
 A manager-facing record of a handled payment outcome for one invoice payment attempt. It explains whether the attempt paid, failed, expired, or was ignored without relying on raw provider webhook payloads as the operational timeline.
+
+## Payment Event (MVP)
+
+A manager-facing payment timeline item backed by a payment reconciliation record. Avoid using payment event to mean the raw payment provider webhook payload.
+
+## Webhook Processing Status (MVP)
+
+The local result of processing a verified payment provider webhook event, such as processed, ignored, or rejected. It is distinct from the provider's webhook delivery status.
 
 ## Payment Failure State (MVP)
 

@@ -16,6 +16,19 @@ import (
 )
 
 type Repository struct {
+	pool        *pgxpool.Pool
+	managerRepo domain.ManagerPaymentRepository
+}
+
+// ManagerRepo returns the ManagerPaymentRepository interface for manager diagnostics.
+func (r *Repository) ManagerRepo() domain.ManagerPaymentRepository {
+	if r.managerRepo == nil {
+		r.managerRepo = &managerQueries{pool: r.pool}
+	}
+	return r.managerRepo
+}
+
+type managerQueries struct {
 	pool *pgxpool.Pool
 }
 
@@ -326,4 +339,216 @@ func (r *Repository) InsertReconciliationRecord(ctx context.Context, tx pgx.Tx, 
 		CurrencyCode:            strToPgtypeText(params.CurrencyCode),
 		Details:                 []byte(params.Details),
 	})
+}
+
+func (m *managerQueries) GetManagerInvoicePaymentStatus(ctx context.Context, tenantID, branchID, invoiceID string) (domain.ManagerInvoicePaymentStatus, bool, error) {
+	row, err := sqlc.New(m.pool).GetManagerInvoicePaymentStatus(ctx, sqlc.GetManagerInvoicePaymentStatusParams{
+		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID: uuidToPgtype(mustParseUUID(branchID)),
+		ID:       uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ManagerInvoicePaymentStatus{}, false, nil
+		}
+		return domain.ManagerInvoicePaymentStatus{}, false, err
+	}
+
+	result := domain.ManagerInvoicePaymentStatus{
+		InvoiceID:            pgtypeUUIDToStr(row.InvoiceID),
+		InvoiceKind:          row.InvoiceKind,
+		InvoiceNumber:        pgtypeTextToStr(row.InvoiceNumber),
+		InvoiceNumberDisplay: row.InvoiceNumberDisplay,
+		ChildID:              pgtypeUUIDToStr(row.ChildID),
+		ChildName:            row.ChildName,
+		BillingMonth:         pgtypeDateToStr(row.BillingMonth),
+		Status:               row.Status,
+		CurrencyCode:         row.CurrencyCode,
+		TotalDueMinor:        int(row.TotalDueMinor),
+		AmountPaidMinor:      int(row.AmountPaidMinor),
+		CreatedAt:            row.CreatedAt.Time,
+		UpdatedAt:            row.UpdatedAt.Time,
+	}
+	if row.IssuedAt.Valid {
+		result.IssuedAt = &row.IssuedAt.Time
+	}
+	if row.DueAt.Valid {
+		result.DueAt = &row.DueAt.Time
+	}
+	if row.PaidAt.Valid {
+		result.PaidAt = &row.PaidAt.Time
+	}
+	if row.PaymentFailedAt.Valid {
+		result.PaymentFailedAt = &row.PaymentFailedAt.Time
+	}
+	if row.PaymentStatusUpdatedAt.Valid {
+		result.PaymentStatusUpdatedAt = &row.PaymentStatusUpdatedAt.Time
+	}
+	return result, true, nil
+}
+
+func (m *managerQueries) GetLatestPaymentAttemptForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*domain.PaymentAttemptDiagnostic, error) {
+	row, err := sqlc.New(m.pool).GetLatestPaymentAttemptForInvoice(ctx, sqlc.GetLatestPaymentAttemptForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	result := &domain.PaymentAttemptDiagnostic{
+		PaymentAttemptID: pgtypeUUIDToStr(row.PaymentAttemptID),
+		Status:           row.Status,
+		AmountMinor:      int(row.AmountMinor),
+		CurrencyCode:     row.CurrencyCode,
+		CreatedAt:        row.CreatedAt.Time,
+		UpdatedAt:        row.UpdatedAt.Time,
+	}
+	if row.StripeCheckoutSessionID.Valid {
+		result.StripeCheckoutSessionID = &row.StripeCheckoutSessionID.String
+	}
+	if row.StripePaymentIntentID.Valid {
+		result.StripePaymentIntentID = &row.StripePaymentIntentID.String
+	}
+	if row.StripeExpiresAt.Valid {
+		result.StripeExpiresAt = &row.StripeExpiresAt.Time
+	}
+	if row.FailureReason.Valid {
+		result.FailureReason = &row.FailureReason.String
+	}
+	if row.ProviderErrorCode.Valid {
+		result.ProviderErrorCode = &row.ProviderErrorCode.String
+	}
+	if row.ProviderErrorMessage.Valid {
+		result.ProviderErrorMessage = &row.ProviderErrorMessage.String
+	}
+	return result, nil
+}
+
+func (m *managerQueries) GetLatestPaymentEventForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*domain.PaymentEventDiagnostic, error) {
+	row, err := sqlc.New(m.pool).GetLatestPaymentEventForInvoice(ctx, sqlc.GetLatestPaymentEventForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	result := &domain.PaymentEventDiagnostic{
+		PaymentEventID:          pgtypeUUIDToStr(row.PaymentEventID),
+		PaymentAttemptID:        pgtypeUUIDToStr(row.PaymentAttemptID),
+		StripeEventID:           row.StripeEventID,
+		StripeEventType:         row.StripeEventType,
+		StripeCheckoutSessionID: row.StripeCheckoutSessionID,
+		Outcome:                 row.Outcome,
+		ReasonCode:              row.ReasonCode,
+		WebhookProcessingStatus: row.WebhookProcessingStatus,
+		CreatedAt:               row.CreatedAt.Time,
+	}
+	if row.StripePaymentIntentID.Valid {
+		result.StripePaymentIntentID = row.StripePaymentIntentID.String
+	}
+	if row.PreviousInvoiceStatus.Valid {
+		result.PreviousInvoiceStatus = row.PreviousInvoiceStatus.String
+	}
+	if row.NewInvoiceStatus.Valid {
+		result.NewInvoiceStatus = row.NewInvoiceStatus.String
+	}
+	if row.AttemptPreviousStatus.Valid {
+		result.AttemptPreviousStatus = row.AttemptPreviousStatus.String
+	}
+	if row.AttemptNewStatus.Valid {
+		result.AttemptNewStatus = row.AttemptNewStatus.String
+	}
+	if row.AmountMinor.Valid {
+		result.AmountMinor = int(row.AmountMinor.Int32)
+	}
+	if row.CurrencyCode.Valid {
+		result.CurrencyCode = row.CurrencyCode.String
+	}
+	if row.WebhookProcessingReason.Valid {
+		result.WebhookProcessingReason = row.WebhookProcessingReason.String
+	}
+	if row.WebhookReceivedAt.Valid {
+		result.WebhookReceivedAt = &row.WebhookReceivedAt.Time
+	}
+	if row.WebhookProcessedAt.Valid {
+		result.WebhookProcessedAt = &row.WebhookProcessedAt.Time
+	}
+	return result, nil
+}
+
+func (m *managerQueries) ListPaymentEventsForInvoice(ctx context.Context, tenantID, branchID, invoiceID string, filters domain.PaymentEventFilters) ([]domain.PaymentEventDiagnostic, error) {
+	rows, err := sqlc.New(m.pool).ListPaymentEventsForInvoice(ctx, sqlc.ListPaymentEventsForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+		Limit:     int32(filters.Limit),
+		Offset:    int32(filters.Offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.PaymentEventDiagnostic, 0, len(rows))
+	for _, row := range rows {
+		event := domain.PaymentEventDiagnostic{
+			PaymentEventID:          pgtypeUUIDToStr(row.PaymentEventID),
+			PaymentAttemptID:        pgtypeUUIDToStr(row.PaymentAttemptID),
+			StripeEventID:           row.StripeEventID,
+			StripeEventType:         row.StripeEventType,
+			StripeCheckoutSessionID: row.StripeCheckoutSessionID,
+			Outcome:                 row.Outcome,
+			ReasonCode:              row.ReasonCode,
+			WebhookProcessingStatus: row.WebhookProcessingStatus,
+			CreatedAt:               row.CreatedAt.Time,
+		}
+		if row.StripePaymentIntentID.Valid {
+			event.StripePaymentIntentID = row.StripePaymentIntentID.String
+		}
+		if row.PreviousInvoiceStatus.Valid {
+			event.PreviousInvoiceStatus = row.PreviousInvoiceStatus.String
+		}
+		if row.NewInvoiceStatus.Valid {
+			event.NewInvoiceStatus = row.NewInvoiceStatus.String
+		}
+		if row.AttemptPreviousStatus.Valid {
+			event.AttemptPreviousStatus = row.AttemptPreviousStatus.String
+		}
+		if row.AttemptNewStatus.Valid {
+			event.AttemptNewStatus = row.AttemptNewStatus.String
+		}
+		if row.AmountMinor.Valid {
+			event.AmountMinor = int(row.AmountMinor.Int32)
+		}
+		if row.CurrencyCode.Valid {
+			event.CurrencyCode = row.CurrencyCode.String
+		}
+		if row.WebhookProcessingReason.Valid {
+			event.WebhookProcessingReason = row.WebhookProcessingReason.String
+		}
+		if row.WebhookReceivedAt.Valid {
+			event.WebhookReceivedAt = &row.WebhookReceivedAt.Time
+		}
+		if row.WebhookProcessedAt.Valid {
+			event.WebhookProcessedAt = &row.WebhookProcessedAt.Time
+		}
+		result = append(result, event)
+	}
+	return result, nil
+}
+
+func pgtypeDateToStr(d pgtype.Date) string {
+	if !d.Valid {
+		return ""
+	}
+	return d.Time.Format("2006-01-02")
 }

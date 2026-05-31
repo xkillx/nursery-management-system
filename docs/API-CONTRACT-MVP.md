@@ -1512,6 +1512,162 @@ Other event types (including `payment_intent.*`) are stored but ignored.
 
 ---
 
+## Manager Payment Diagnostics
+
+Manager-only, invoice-scoped endpoints for inspecting payment state, latest payment attempt diagnostics, and payment event timeline. Payment events are backed by `payment_reconciliation_records` joined to `stripe_webhook_events` for local webhook processing status. Raw Stripe webhook payloads and `stripe_checkout_url` are never returned.
+
+**Routes are manager-only.** Unauthenticated requests receive `401 unauthorized`. Practitioner and parent requests receive `403 forbidden_role`.
+
+### `GET /api/v1/invoices/:invoice_id/payment-status`
+
+Returns invoice payment state summary with latest payment attempt diagnostics and latest payment event.
+
+**Payment events are reconciliation records, not raw Stripe payloads.** `stripe_checkout_url` is not returned.
+
+**Response 200:**
+
+```json
+{
+  "invoice_id": "uuid",
+  "invoice_kind": "monthly",
+  "invoice_number": "INV-202605-0001",
+  "invoice_number_display": "INV-202605-0001",
+  "child_id": "uuid",
+  "child_name": "Alex Child",
+  "billing_month": "2026-05",
+  "status": "payment_failed",
+  "due_status": "due",
+  "currency_code": "GBP",
+  "total_due_minor": 1500,
+  "amount_paid_minor": 0,
+  "issued_at": "2026-05-29T10:00:00Z",
+  "due_at": "2026-05-29T10:00:00Z",
+  "paid_at": null,
+  "payment_failed_at": "2026-05-31T12:00:00Z",
+  "payment_status_updated_at": "2026-05-31T12:00:00Z",
+  "checkout_retry_available": true,
+  "checkout_retry_reason_code": "available",
+  "latest_payment_attempt": {
+    "payment_attempt_id": "uuid",
+    "status": "payment_failed",
+    "amount_minor": 1500,
+    "currency_code": "GBP",
+    "stripe_checkout_session_id": "cs_test_123",
+    "stripe_payment_intent_id": "pi_test_123",
+    "stripe_expires_at": "2026-05-31T13:00:00Z",
+    "failure_reason": null,
+    "provider_error_code": null,
+    "provider_error_message": null,
+    "created_at": "2026-05-31T11:55:00Z",
+    "updated_at": "2026-05-31T12:00:00Z"
+  },
+  "latest_payment_event": {
+    "payment_event_id": "uuid",
+    "payment_attempt_id": "uuid",
+    "stripe_event_id": "evt_123",
+    "stripe_event_type": "checkout.session.async_payment_failed",
+    "stripe_checkout_session_id": "cs_test_123",
+    "stripe_payment_intent_id": "pi_test_123",
+    "outcome": "payment_failed",
+    "reason_code": "payment_failed",
+    "previous_invoice_status": "issued",
+    "new_invoice_status": "payment_failed",
+    "attempt_previous_status": "checkout_created",
+    "attempt_new_status": "payment_failed",
+    "amount_minor": 1500,
+    "currency_code": "GBP",
+    "webhook_processing_status": "processed",
+    "webhook_processing_reason": "payment_failed",
+    "webhook_received_at": "2026-05-31T12:00:00Z",
+    "webhook_processed_at": "2026-05-31T12:00:00Z",
+    "created_at": "2026-05-31T12:00:00Z"
+  }
+}
+```
+
+**Nullability:**
+
+- `latest_payment_attempt` is `null` when no attempt exists.
+- `latest_payment_event` is `null` when no reconciliation record exists.
+- Provider IDs and timestamps are nullable when absent.
+
+**Retry reason codes:**
+
+| Code | Condition |
+|------|-----------|
+| `available` | Monthly, issued/payment_failed/overdue, GBP, positive balance, fully unpaid |
+| `invoice_not_issued` | Status not in issued/payment_failed/overdue (e.g. draft) |
+| `invoice_already_paid` | Status is paid |
+| `invoice_zero_total` | `total_due_minor <= 0` |
+| `invoice_partial_paid` | `amount_paid_minor > 0` |
+| `invoice_not_monthly` | `invoice_kind` is not monthly |
+| `currency_not_supported` | Currency is not GBP |
+
+**Retry availability:** `checkout_retry_available` is `true` only when `invoice_kind = monthly`, `status IN ('issued', 'payment_failed', 'overdue')`, `currency_code = GBP`, `total_due_minor > 0`, and `amount_paid_minor = 0`. Existing open or previous attempts do not block retry. `payment_failed` and `overdue` are retryable.
+
+**Errors:**
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `validation_error` | Malformed `invoice_id` |
+| 401 | `unauthorized` | Missing or invalid token |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `invoice_not_found` | Invoice absent from tenant/branch scope |
+
+### `GET /api/v1/invoices/:invoice_id/payment-events`
+
+Returns a paginated list of payment events (reconciliation records) for an invoice, newest first.
+
+| Parameter | Type | Default | Valid |
+|-----------|------|---------|-------|
+| `limit` | `int` | `50` | `1..200` |
+| `offset` | `int` | `0` | `0+` |
+
+**Ordering:** `created_at DESC, id DESC`.
+
+**Response 200:**
+
+```json
+{
+  "items": [
+    {
+      "payment_event_id": "uuid",
+      "payment_attempt_id": "uuid",
+      "stripe_event_id": "evt_123",
+      "stripe_event_type": "checkout.session.completed",
+      "stripe_checkout_session_id": "cs_test_123",
+      "stripe_payment_intent_id": "pi_test_123",
+      "outcome": "paid",
+      "reason_code": "paid",
+      "previous_invoice_status": "issued",
+      "new_invoice_status": "paid",
+      "attempt_previous_status": "checkout_created",
+      "attempt_new_status": "paid",
+      "amount_minor": 1500,
+      "currency_code": "GBP",
+      "webhook_processing_status": "processed",
+      "webhook_processing_reason": "paid",
+      "webhook_received_at": "2026-05-31T12:00:00Z",
+      "webhook_processed_at": "2026-05-31T12:00:00Z",
+      "created_at": "2026-05-31T12:00:00Z"
+    }
+  ],
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Errors:**
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `validation_error` | Malformed `invoice_id`, invalid `limit`, invalid `offset` |
+| 401 | `unauthorized` | Missing or invalid token |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `invoice_not_found` | Invoice absent from tenant/branch scope |
+
+---
+
 ## Invoice Issue
 
 Manager-only endpoints for issuing individual invoices or bulk-issuing all draft invoices for a billing month. Issuing locks invoice contents, assigns an invoice number, and sets due date. Issue does not recalculate invoice contents; full details remain available through `GET /api/v1/invoices/:invoice_id`.

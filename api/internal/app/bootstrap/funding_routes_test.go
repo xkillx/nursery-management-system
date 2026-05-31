@@ -37,12 +37,12 @@ func setupFundingHarness(t *testing.T) *fundingHarness {
 	dbtest.Reset(t, pool)
 
 	h := &fundingHarness{
-		router:  Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
-		pool:    pool,
-		tokens:  authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
-		tenantID: uuid.MustParse("f1000000-0000-0000-0000-000000000001"),
-		branchID: uuid.MustParse("f2000000-0000-0000-0000-000000000001"),
-		childID:  uuid.MustParse("f5000000-0000-0000-0000-000000000001"),
+		router:         Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
+		pool:           pool,
+		tokens:         authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
+		tenantID:       uuid.MustParse("f1000000-0000-0000-0000-000000000001"),
+		branchID:       uuid.MustParse("f2000000-0000-0000-0000-000000000001"),
+		childID:        uuid.MustParse("f5000000-0000-0000-0000-000000000001"),
 		childWithEndID: uuid.MustParse("f5000000-0000-0000-0000-000000000002"),
 	}
 

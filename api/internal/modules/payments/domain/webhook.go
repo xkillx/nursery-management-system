@@ -17,19 +17,19 @@ const (
 
 // Reason codes
 const (
-	ReasonPaid                   = "paid"
-	ReasonPaymentFailed          = "payment_failed"
-	ReasonExpired                = "expired"
-	ReasonAwaitingAsyncPayment   = "awaiting_async_payment"
-	ReasonUnsupportedEventType   = "unsupported_event_type"
-	ReasonMetadataMissing        = "metadata_missing"
-	ReasonUnknownPaymentAttempt  = "unknown_payment_attempt"
-	ReasonInvoiceMismatch        = "invoice_mismatch"
-	ReasonSessionMismatch        = "session_mismatch"
-	ReasonAmountMismatch         = "amount_mismatch"
-	ReasonCurrencyMismatch       = "currency_mismatch"
-	ReasonAlreadyPaid            = "already_paid"
-	ReasonAlreadyPaymentFailed   = "already_payment_failed"
+	ReasonPaid                  = "paid"
+	ReasonPaymentFailed         = "payment_failed"
+	ReasonExpired               = "expired"
+	ReasonAwaitingAsyncPayment  = "awaiting_async_payment"
+	ReasonUnsupportedEventType  = "unsupported_event_type"
+	ReasonMetadataMissing       = "metadata_missing"
+	ReasonUnknownPaymentAttempt = "unknown_payment_attempt"
+	ReasonInvoiceMismatch       = "invoice_mismatch"
+	ReasonSessionMismatch       = "session_mismatch"
+	ReasonAmountMismatch        = "amount_mismatch"
+	ReasonCurrencyMismatch      = "currency_mismatch"
+	ReasonAlreadyPaid           = "already_paid"
+	ReasonAlreadyPaymentFailed  = "already_payment_failed"
 )
 
 // Audit constants for webhook-driven payment status updates
@@ -40,10 +40,10 @@ const (
 
 // Checkout session event types
 const (
-	EventTypeCheckoutCompleted          = "checkout.session.completed"
-	EventTypeCheckoutAsyncSucceeded     = "checkout.session.async_payment_succeeded"
-	EventTypeCheckoutAsyncFailed        = "checkout.session.async_payment_failed"
-	EventTypeCheckoutExpired            = "checkout.session.expired"
+	EventTypeCheckoutCompleted      = "checkout.session.completed"
+	EventTypeCheckoutAsyncSucceeded = "checkout.session.async_payment_succeeded"
+	EventTypeCheckoutAsyncFailed    = "checkout.session.async_payment_failed"
+	EventTypeCheckoutExpired        = "checkout.session.expired"
 )
 
 var CheckoutMutatingEventTypes = map[string]bool{
@@ -105,25 +105,25 @@ type WebhookAttemptInvoice struct {
 }
 
 type ReconciliationRecordParams struct {
-	ID                      string
-	TenantID                string
-	BranchID                string
-	InvoiceID               string
-	PaymentAttemptID        string
-	WebhookEventID          string
-	StripeEventID           string
-	StripeEventType         string
-	CheckoutSessionID       string
-	PaymentIntentID         string
-	Outcome                 string
-	ReasonCode              string
-	PreviousInvoiceStatus   string
-	NewInvoiceStatus        string
-	AttemptPreviousStatus   string
-	AttemptNewStatus        string
-	AmountMinor             int32
-	CurrencyCode            string
-	Details                 string
+	ID                    string
+	TenantID              string
+	BranchID              string
+	InvoiceID             string
+	PaymentAttemptID      string
+	WebhookEventID        string
+	StripeEventID         string
+	StripeEventType       string
+	CheckoutSessionID     string
+	PaymentIntentID       string
+	Outcome               string
+	ReasonCode            string
+	PreviousInvoiceStatus string
+	NewInvoiceStatus      string
+	AttemptPreviousStatus string
+	AttemptNewStatus      string
+	AmountMinor           int32
+	CurrencyCode          string
+	Details               string
 }
 
 type WebhookVerifier interface {

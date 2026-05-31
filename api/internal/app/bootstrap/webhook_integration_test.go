@@ -24,12 +24,12 @@ import (
 const testWebhookSecret = "whsec_test_integration_secret_key_12345"
 
 type webhookHarness struct {
-	router   *gin.Engine
-	pool     *pgxpool.Pool
-	tenantID uuid.UUID
-	branchID uuid.UUID
-	parentUID uuid.UUID
-	parentMID uuid.UUID
+	router     *gin.Engine
+	pool       *pgxpool.Pool
+	tenantID   uuid.UUID
+	branchID   uuid.UUID
+	parentUID  uuid.UUID
+	parentMID  uuid.UUID
 	managerUID uuid.UUID
 	managerMID uuid.UUID
 }
@@ -308,8 +308,8 @@ func TestWebhook_WorksNoBearerToken(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": uuid.New().String(),
 	}
 	payload, sig := buildCheckoutCompletedPayload(t, "evt_noauth_"+uuid.New().String()[:8], "cs_test_wh", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
@@ -352,8 +352,8 @@ func TestWebhook_CheckoutCompletedPaid_MarksPaid(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_completed_paid_" + uuid.New().String()[:8]
@@ -383,8 +383,8 @@ func TestWebhook_CheckoutCompletedUnpaid_Ignores(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_completed_unpaid_" + uuid.New().String()[:8]
@@ -405,8 +405,8 @@ func TestWebhook_AsyncPaymentSucceeded_MarksPaid(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_async_success_" + uuid.New().String()[:8]
@@ -427,8 +427,8 @@ func TestWebhook_AsyncPaymentFailed_MarksPaymentFailed(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_async_fail_" + uuid.New().String()[:8]
@@ -452,8 +452,8 @@ func TestWebhook_Expired_MarksPaymentFailed(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_expired_" + uuid.New().String()[:8]
@@ -477,8 +477,8 @@ func TestWebhook_DuplicateEvent_ReturnsDuplicate(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_dup_" + uuid.New().String()[:8]
@@ -506,8 +506,8 @@ func TestWebhook_AlreadyPaid_IgnoresFailure(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_fail_paid_" + uuid.New().String()[:8]
@@ -528,8 +528,8 @@ func TestWebhook_PaymentFailedToPaid(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_recover_" + uuid.New().String()[:8]
@@ -556,8 +556,8 @@ func TestWebhook_AlreadyPaymentFailed_NoTimestampRewrite(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_dup_fail_" + uuid.New().String()[:8]
@@ -583,8 +583,8 @@ func TestWebhook_AmountMismatch_Rejected(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_amt_mismatch_" + uuid.New().String()[:8]
@@ -605,8 +605,8 @@ func TestWebhook_CurrencyMismatch_Rejected(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_cur_mismatch_" + uuid.New().String()[:8]
@@ -639,8 +639,8 @@ func TestWebhook_UnknownAttempt_Rejected(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        uuid.New().String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         uuid.New().String(),
 		"payment_attempt_id": uuid.New().String(),
 	}
 	evtID := "evt_unknown_" + uuid.New().String()[:8]
@@ -675,8 +675,8 @@ func TestWebhook_OverdueToPaid(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_overdue_paid_" + uuid.New().String()[:8]
@@ -697,8 +697,8 @@ func TestWebhook_AlreadyPaid_IgnoresLaterSuccess(t *testing.T) {
 
 	meta := map[string]string{
 		"tenant_id":          h.tenantID.String(),
-		"branch_id":         h.branchID.String(),
-		"invoice_id":        invoiceID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
 		"payment_attempt_id": attemptID.String(),
 	}
 	evtID := "evt_late_success_" + uuid.New().String()[:8]

@@ -263,9 +263,15 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		)
 	}
 
-	paymentsHandler := paymentshandler.NewHandler(paymentsUC, handleWebhookUC)
+	paymentsHandler := paymentshandler.NewHandler(
+		paymentsUC,
+		handleWebhookUC,
+		paymentsapp.NewGetManagerPaymentStatus(paymentsRepo.ManagerRepo()),
+		paymentsapp.NewListManagerPaymentEvents(paymentsRepo.ManagerRepo()),
+	)
 	paymentsHandler.RegisterParentRoutes(parent)
 	paymentsHandler.RegisterStripeRoutes(api)
+	paymentsHandler.RegisterManagerRoutes(manager)
 
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)

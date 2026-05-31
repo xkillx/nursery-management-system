@@ -17,8 +17,8 @@ const (
 )
 
 const (
-	FailureReasonStripeError              = "stripe_error"
-	FailureReasonInvoiceNoLongerPayable   = "invoice_no_longer_payable"
+	FailureReasonStripeError                 = "stripe_error"
+	FailureReasonInvoiceNoLongerPayable      = "invoice_no_longer_payable"
 	FailureReasonPaymentProviderUnconfigured = "payment_provider_unconfigured"
 )
 
@@ -42,33 +42,33 @@ type InvoicePaymentState struct {
 }
 
 type PaymentAttemptCreateParams struct {
-	ID                string
-	TenantID          string
-	BranchID          string
-	InvoiceID         string
-	InitiatedByUserID string
+	ID                      string
+	TenantID                string
+	BranchID                string
+	InvoiceID               string
+	InitiatedByUserID       string
 	InitiatedByMembershipID string
-	RequestID         string
-	Status            string
-	AmountMinor       int
-	CurrencyCode      string
+	RequestID               string
+	Status                  string
+	AmountMinor             int
+	CurrencyCode            string
 }
 
 type PaymentAttemptCheckoutCreatedParams struct {
-	TenantID                   string
-	BranchID                   string
-	AttemptID                  string
-	StripeCheckoutSessionID    string
-	StripeCheckoutURL          string
-	StripePaymentIntentID      string
-	StripeExpiresAt            *time.Time
+	TenantID                string
+	BranchID                string
+	AttemptID               string
+	StripeCheckoutSessionID string
+	StripeCheckoutURL       string
+	StripePaymentIntentID   string
+	StripeExpiresAt         *time.Time
 }
 
 type PaymentAttemptCheckoutCreationFailedParams struct {
-	TenantID              string
-	BranchID              string
-	AttemptID             string
-	FailureReason         string
-	ProviderErrorCode     string
-	ProviderErrorMessage  string
+	TenantID             string
+	BranchID             string
+	AttemptID            string
+	FailureReason        string
+	ProviderErrorCode    string
+	ProviderErrorMessage string
 }

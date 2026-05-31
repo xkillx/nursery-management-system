@@ -1089,12 +1089,12 @@ func TestBillingGenerationPreservesExtraLines(t *testing.T) {
 
 // JSON response types for test deserialization
 type preflightResponse struct {
-	BillingMonth     string                   `json:"billing_month"`
-	CurrencyCode     string                   `json:"currency_code"`
-	Period           periodResponse           `json:"period"`
-	Summary          summaryResponse          `json:"summary"`
-	EligibleChildren []eligibleChildResponse  `json:"eligible_children"`
-	BlockedChildren  []blockedChildResponse   `json:"blocked_children"`
+	BillingMonth     string                  `json:"billing_month"`
+	CurrencyCode     string                  `json:"currency_code"`
+	Period           periodResponse          `json:"period"`
+	Summary          summaryResponse         `json:"summary"`
+	EligibleChildren []eligibleChildResponse `json:"eligible_children"`
+	BlockedChildren  []blockedChildResponse  `json:"blocked_children"`
 }
 
 type periodResponse struct {
@@ -1148,14 +1148,14 @@ type blockedChildResponse struct {
 }
 
 type blockerResponse struct {
-	Code             string   `json:"code"`
-	Message          string   `json:"message"`
-	SessionID        *string  `json:"session_id,omitempty"`
-	CheckInAt        *string  `json:"check_in_at,omitempty"`
-	CheckInLocalDate *string  `json:"check_in_local_date,omitempty"`
-	InvoiceID        *string  `json:"invoice_id,omitempty"`
-	InvoiceStatus    *string  `json:"invoice_status,omitempty"`
-	Field            *string  `json:"field,omitempty"`
+	Code             string  `json:"code"`
+	Message          string  `json:"message"`
+	SessionID        *string `json:"session_id,omitempty"`
+	CheckInAt        *string `json:"check_in_at,omitempty"`
+	CheckInLocalDate *string `json:"check_in_local_date,omitempty"`
+	InvoiceID        *string `json:"invoice_id,omitempty"`
+	InvoiceStatus    *string `json:"invoice_status,omitempty"`
+	Field            *string `json:"field,omitempty"`
 }
 
 type blockerCountResponse struct {
@@ -1698,49 +1698,49 @@ type invoiceListItemResponseTest struct {
 }
 
 type invoiceDetailResponseTest struct {
-	InvoiceID                  string                             `json:"invoice_id"`
-	InvoiceKind                string                             `json:"invoice_kind"`
-	InvoiceNumber              *string                            `json:"invoice_number"`
-	InvoiceNumberDisplay       string                             `json:"invoice_number_display"`
-	ChildID                    string                             `json:"child_id"`
-	ChildName                  string                             `json:"child_name"`
-	BillingMonth               string                             `json:"billing_month"`
-	Status                     string                             `json:"status"`
-	DueStatus                  string                             `json:"due_status"`
-	CurrencyCode               string                             `json:"currency_code"`
-	SubtotalMinor              int                                `json:"subtotal_minor"`
-	FundedDeductionMinor       int                                `json:"funded_deduction_minor"`
-	TotalDueMinor              int                                `json:"total_due_minor"`
-	AmountPaidMinor            int                                `json:"amount_paid_minor"`
-	GeneratedRunExceptionCount int                                `json:"generated_run_exception_count"`
-	GeneratedRunExceptions     []invoiceRunExceptionResponseTest  `json:"generated_run_exceptions"`
-	Calculation                invoiceCalculationResponseTest      `json:"calculation"`
-	Lines                      []invoiceLineResponseTest          `json:"lines"`
-	CreatedAt                  string                              `json:"created_at"`
-	UpdatedAt                  string                              `json:"updated_at"`
+	InvoiceID                  string                            `json:"invoice_id"`
+	InvoiceKind                string                            `json:"invoice_kind"`
+	InvoiceNumber              *string                           `json:"invoice_number"`
+	InvoiceNumberDisplay       string                            `json:"invoice_number_display"`
+	ChildID                    string                            `json:"child_id"`
+	ChildName                  string                            `json:"child_name"`
+	BillingMonth               string                            `json:"billing_month"`
+	Status                     string                            `json:"status"`
+	DueStatus                  string                            `json:"due_status"`
+	CurrencyCode               string                            `json:"currency_code"`
+	SubtotalMinor              int                               `json:"subtotal_minor"`
+	FundedDeductionMinor       int                               `json:"funded_deduction_minor"`
+	TotalDueMinor              int                               `json:"total_due_minor"`
+	AmountPaidMinor            int                               `json:"amount_paid_minor"`
+	GeneratedRunExceptionCount int                               `json:"generated_run_exception_count"`
+	GeneratedRunExceptions     []invoiceRunExceptionResponseTest `json:"generated_run_exceptions"`
+	Calculation                invoiceCalculationResponseTest    `json:"calculation"`
+	Lines                      []invoiceLineResponseTest         `json:"lines"`
+	CreatedAt                  string                            `json:"created_at"`
+	UpdatedAt                  string                            `json:"updated_at"`
 }
 
 type invoiceLineResponseTest struct {
-	LineID                 string `json:"line_id"`
-	LineKind               string `json:"line_kind"`
-	Description            string `json:"description"`
-	SortOrder              int    `json:"sort_order"`
-	LineAmountMinor        int    `json:"line_amount_minor"`
+	LineID          string `json:"line_id"`
+	LineKind        string `json:"line_kind"`
+	Description     string `json:"description"`
+	SortOrder       int    `json:"sort_order"`
+	LineAmountMinor int    `json:"line_amount_minor"`
 }
 
 type invoiceCalculationResponseTest struct {
-	CoreHourlyRateMinor    int                             `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int                             `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                             `json:"rounded_attended_minutes"`
-	CoreBillableMinutes    int                             `json:"core_billable_minutes"`
-	IncludedSessionCount   int                             `json:"included_session_count"`
-	SourceSessions         []sourceSessionResponseTest     `json:"source_sessions"`
+	CoreHourlyRateMinor    int                         `json:"core_hourly_rate_minor"`
+	RawAttendedMinutes     int                         `json:"raw_attended_minutes"`
+	RoundedAttendedMinutes int                         `json:"rounded_attended_minutes"`
+	CoreBillableMinutes    int                         `json:"core_billable_minutes"`
+	IncludedSessionCount   int                         `json:"included_session_count"`
+	SourceSessions         []sourceSessionResponseTest `json:"source_sessions"`
 }
 
 type sourceSessionResponseTest struct {
-	SessionID              string `json:"session_id"`
-	Status                 string `json:"status"`
-	CheckInAt              string `json:"check_in_at"`
+	SessionID string `json:"session_id"`
+	Status    string `json:"status"`
+	CheckInAt string `json:"check_in_at"`
 }
 
 type invoiceRunExceptionResponseTest struct {

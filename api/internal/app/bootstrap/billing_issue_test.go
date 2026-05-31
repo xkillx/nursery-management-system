@@ -634,12 +634,12 @@ type issueInvoiceResponseTest struct {
 }
 
 type bulkIssueResponseTest struct {
-	RunID        string                     `json:"run_id"`
-	BillingMonth string                     `json:"billing_month"`
-	Status       string                     `json:"status"`
-	Summary      bulkIssueSummaryTest       `json:"summary"`
+	RunID        string                      `json:"run_id"`
+	BillingMonth string                      `json:"billing_month"`
+	Status       string                      `json:"status"`
+	Summary      bulkIssueSummaryTest        `json:"summary"`
 	Issued       []issuedInvoiceResponseTest `json:"issued"`
-	Blocked      []blockedInvoiceTest       `json:"blocked"`
+	Blocked      []blockedInvoiceTest        `json:"blocked"`
 }
 
 type bulkIssueSummaryTest struct {
@@ -660,10 +660,10 @@ type issuedInvoiceResponseTest struct {
 }
 
 type blockedInvoiceTest struct {
-	InvoiceID string               `json:"invoice_id"`
-	ChildID   *string              `json:"child_id,omitempty"`
-	ChildName string               `json:"child_name,omitempty"`
-	Blockers  []issueBlockerTest   `json:"blockers"`
+	InvoiceID string             `json:"invoice_id"`
+	ChildID   *string            `json:"child_id,omitempty"`
+	ChildName string             `json:"child_name,omitempty"`
+	Blockers  []issueBlockerTest `json:"blockers"`
 }
 
 type issueBlockerTest struct {

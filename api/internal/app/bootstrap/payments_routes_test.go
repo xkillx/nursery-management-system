@@ -31,15 +31,15 @@ type paymentsHarness struct {
 	router       *gin.Engine
 	pool         *pgxpool.Pool
 	tokens       *tokens.TokenManager
-	tenantID      uuid.UUID
-	branchID      uuid.UUID
-	parentUID     uuid.UUID
-	parentMID     uuid.UUID
-	managerUID    uuid.UUID
-	managerMID    uuid.UUID
-	parentToken   string
-	managerToken  string
-	pracToken     string
+	tenantID     uuid.UUID
+	branchID     uuid.UUID
+	parentUID    uuid.UUID
+	parentMID    uuid.UUID
+	managerUID   uuid.UUID
+	managerMID   uuid.UUID
+	parentToken  string
+	managerToken string
+	pracToken    string
 }
 
 func setupPaymentsHarness(t *testing.T, provider *fakeCheckoutProvider) *paymentsHarness {
