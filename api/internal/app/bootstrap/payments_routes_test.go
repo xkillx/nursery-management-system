@@ -158,6 +158,7 @@ func TestPaymentsRouteInventory(t *testing.T) {
 
 	expected := []string{
 		"POST /api/v1/parent/invoices/:invoice_id/checkout-sessions",
+		"POST /api/v1/stripe/webhooks",
 	}
 	for _, want := range expected {
 		if _, ok := have[want]; !ok {

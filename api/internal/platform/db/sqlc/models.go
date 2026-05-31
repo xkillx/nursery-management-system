@@ -313,6 +313,29 @@ type PaymentAttempt struct {
 	UpdatedAt               pgtype.Timestamptz
 }
 
+type PaymentReconciliationRecord struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	InvoiceID               pgtype.UUID
+	PaymentAttemptID        pgtype.UUID
+	StripeWebhookEventID    pgtype.UUID
+	StripeEventID           string
+	StripeEventType         string
+	StripeCheckoutSessionID string
+	StripePaymentIntentID   pgtype.Text
+	Outcome                 string
+	ReasonCode              string
+	PreviousInvoiceStatus   pgtype.Text
+	NewInvoiceStatus        pgtype.Text
+	AttemptPreviousStatus   pgtype.Text
+	AttemptNewStatus        pgtype.Text
+	AmountMinor             pgtype.Int4
+	CurrencyCode            pgtype.Text
+	Details                 []byte
+	CreatedAt               pgtype.Timestamptz
+}
+
 type RefreshToken struct {
 	ID           pgtype.UUID
 	UserID       pgtype.UUID
@@ -324,6 +347,24 @@ type RefreshToken struct {
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 	MembershipID pgtype.UUID
+}
+
+type StripeWebhookEvent struct {
+	ID                pgtype.UUID
+	StripeEventID     string
+	EventType         string
+	Livemode          bool
+	ApiVersion        pgtype.Text
+	ProviderCreatedAt pgtype.Timestamptz
+	ReceivedAt        pgtype.Timestamptz
+	ProcessedAt       pgtype.Timestamptz
+	ProcessingStatus  string
+	ProcessingReason  pgtype.Text
+	RequestID         pgtype.Text
+	RawPayload        []byte
+	ErrorMessage      pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
 }
 
 type Tenant struct {

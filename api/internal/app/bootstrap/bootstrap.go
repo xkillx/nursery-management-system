@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	authapp "nursery-management-system/api/internal/modules/authentication/application"
@@ -72,6 +74,7 @@ import (
 
 type BootstrapOptions struct {
 	CheckoutProvider paymentsdomain.CheckoutProvider
+	WebhookVerifier  paymentsdomain.WebhookVerifier
 }
 
 func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.Engine {
@@ -242,8 +245,27 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	}
 	paymentsTxMgr := &txManagerAdapter{mgr: txManager}
 	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
-	paymentsHandler := paymentshandler.NewHandler(paymentsUC)
+
+	var webhookVerifier paymentsdomain.WebhookVerifier
+	if opts.WebhookVerifier != nil {
+		webhookVerifier = opts.WebhookVerifier
+	} else if cfg.StripeWebhookSecret != "" {
+		webhookVerifier = stripeclient.NewWebhookVerifier(cfg.StripeWebhookSecret)
+	}
+
+	var handleWebhookUC *paymentsapp.HandleStripeWebhook
+	if webhookVerifier != nil {
+		handleWebhookUC = paymentsapp.NewHandleStripeWebhook(
+			paymentsRepo,
+			webhookVerifier,
+			paymentsTxMgr,
+			&auditSystemWriterAdapter{w: auditWriter},
+		)
+	}
+
+	paymentsHandler := paymentshandler.NewHandler(paymentsUC, handleWebhookUC)
 	paymentsHandler.RegisterParentRoutes(parent)
+	paymentsHandler.RegisterStripeRoutes(api)
 
 	// Invites module
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
@@ -335,4 +357,22 @@ func parentLinkProbeHandler() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	}
+}
+
+type auditSystemWriterAdapter struct {
+	w *audit.Writer
+}
+
+func (a *auditSystemWriterAdapter) WriteSystemWithTx(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, requestID string, params paymentsapp.SystemAuditParams) error {
+	var reasonCode *string
+	if params.ReasonCode != nil {
+		reasonCode = params.ReasonCode
+	}
+	return a.w.WriteSystemWithTx(ctx, tx, tenantID, branchID, requestID, audit.WriteParams{
+		ActionType: params.ActionType,
+		EntityType: params.EntityType,
+		EntityID:   params.EntityID,
+		ReasonCode: reasonCode,
+		Details:    params.Details,
+	})
 }

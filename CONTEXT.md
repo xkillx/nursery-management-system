@@ -332,6 +332,14 @@ Parents pay invoices in full; partial payments are not supported in month 1.
 
 A single try to collect a payable invoice through the payment provider. Each retry creates a new payment attempt for the same invoice.
 
+## Payment Outcome Authority (MVP)
+
+Invoice payment state changes only after a payment provider-confirmed outcome. Browser return or cancel navigation after payment initiation is not itself a payment outcome.
+
+## Payment Reconciliation Record (MVP)
+
+A manager-facing record of a handled payment outcome for one invoice payment attempt. It explains whether the attempt paid, failed, expired, or was ignored without relying on raw provider webhook payloads as the operational timeline.
+
 ## Payment Failure State (MVP)
 
 Failed or canceled payment attempts move invoices to a `payment_failed` state.

@@ -1475,6 +1475,41 @@ Creates a Stripe Checkout Session and returns the checkout URL. Empty request bo
 | 502 | `payment_provider_error` | Stripe failed to create Checkout Session |
 | 503 | `payment_provider_unconfigured` | Stripe secret key missing in local/dev runtime |
 
+### POST /api/v1/stripe/webhooks
+
+Public route. No bearer auth, no cookies, no CSRF required.
+
+Receives Stripe webhook events and reconciles Checkout Session outcomes to local payment attempts and invoices.
+
+**Request:**
+- Headers: `Stripe-Signature` (required)
+- Body: Raw Stripe event payload (max 64 KB)
+
+**Response 200:**
+```json
+{ "status": "processed" }
+```
+
+Status can be: `processed`, `ignored`, `rejected`, `duplicate`.
+
+**Errors:**
+- `400 validation_error` — unreadable/oversized body
+- `400 payment_webhook_invalid_signature` — invalid Stripe signature
+- `503 payment_provider_unconfigured` — webhook secret not configured (local env only)
+- `500 internal_error` — transient processing failure (Stripe may retry)
+
+**Event types handled:**
+- `checkout.session.completed` (when `payment_status == paid`)
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
+
+Other event types (including `payment_intent.*`) are stored but ignored.
+
+**Idempotency:** Duplicate Stripe event IDs return `200` with status `duplicate` and do not reprocess.
+
+**Retry safety:** Transient DB errors roll back all changes and return `500` so Stripe retries the same event.
+
 ---
 
 ## Invoice Issue

@@ -62,6 +62,55 @@
 |---|---|---|
 | `payment_attempts` | `id UUID PK`, `tenant_id`, `branch_id`, `invoice_id FK`, `initiated_by_user_id FK`, `initiated_by_membership_id`, `request_id TEXT`, `status TEXT`, `amount_minor INTEGER`, `currency_code CHAR(3) DEFAULT 'GBP'`, `stripe_checkout_session_id TEXT`, `stripe_checkout_url TEXT`, `stripe_payment_intent_id TEXT`, `stripe_expires_at TIMESTAMPTZ`, `provider_error_code TEXT`, `provider_error_message TEXT`, `failure_reason TEXT`, `created_at`, `updated_at` | Composite unique `(tenant_id, branch_id, id)`. Composite FKs to branches, invoices, memberships. `status IN ('checkout_creation_started', 'checkout_created', 'checkout_creation_failed', 'paid', 'payment_failed', 'cancelled', 'expired')`. `amount_minor > 0`. `currency_code = 'GBP'`. CHECK: `checkout_created` requires non-null session ID and URL. Partial unique index on `stripe_checkout_session_id` where not null. Index on `(tenant_id, branch_id, invoice_id, created_at DESC)`. Partial index on open attempts. |
 
+#### stripe_webhook_events
+
+Raw inbox of verified Stripe webhook events.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | Internal ID |
+| stripe_event_id | TEXT UNIQUE | Stripe event ID |
+| event_type | TEXT | Stripe event type |
+| livemode | BOOLEAN | Live or test mode |
+| api_version | TEXT | Stripe API version |
+| provider_created_at | TIMESTAMPTZ | When Stripe created the event |
+| received_at | TIMESTAMPTZ | When we received it |
+| processed_at | TIMESTAMPTZ | When processing completed |
+| processing_status | TEXT | `processed`, `ignored`, or `rejected` |
+| processing_reason | TEXT | Machine-readable reason |
+| request_id | TEXT | HTTP request ID |
+| raw_payload | JSONB | Full verified raw payload |
+| error_message | TEXT | Error if any |
+| created_at | TIMESTAMPTZ | |
+| updated_at | TIMESTAMPTZ | |
+
+#### payment_reconciliation_records
+
+Manager-facing payment timeline records.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | Internal ID |
+| tenant_id | UUID FK | Tenant scope |
+| branch_id | UUID FK | Branch scope |
+| invoice_id | UUID FK | Invoice |
+| payment_attempt_id | UUID FK | Payment attempt |
+| stripe_webhook_event_id | UUID FK | Triggering webhook event |
+| stripe_event_id | TEXT | Stripe event ID |
+| stripe_event_type | TEXT | Stripe event type |
+| stripe_checkout_session_id | TEXT | Checkout session |
+| stripe_payment_intent_id | TEXT | Payment intent |
+| outcome | TEXT | `paid`, `payment_failed`, `expired`, `ignored`, `rejected` |
+| reason_code | TEXT | Machine-readable reason |
+| previous_invoice_status | TEXT | Invoice status before |
+| new_invoice_status | TEXT | Invoice status after |
+| attempt_previous_status | TEXT | Attempt status before |
+| attempt_new_status | TEXT | Attempt status after |
+| amount_minor | INTEGER | Amount in minor units |
+| currency_code | CHAR(3) | Currency |
+| details | JSONB | Additional details |
+| created_at | TIMESTAMPTZ | |
+
 ### Audit
 
 | Table | Key columns | Notes |

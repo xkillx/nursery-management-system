@@ -163,6 +163,10 @@ func Load() (Config, error) {
 		return Config{}, errors.New("STRIPE_SECRET_KEY is required when APP_ENV is not local")
 	}
 
+	if cfg.AppEnv != "local" && cfg.StripeSecretKey != "" && cfg.StripeWebhookSecret == "" {
+		return Config{}, errors.New("STRIPE_WEBHOOK_SECRET is required when APP_ENV is not local")
+	}
+
 	return cfg, nil
 }
 

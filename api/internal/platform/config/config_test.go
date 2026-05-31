@@ -237,4 +237,29 @@ func TestStripeConfig(t *testing.T) {
 			t.Fatalf("expected empty StripeSecretKey, got %q", cfg.StripeSecretKey)
 		}
 	})
+
+	t.Run("staging without STRIPE_WEBHOOK_SECRET fails", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("APP_ENV", "staging")
+		t.Setenv("STRIPE_WEBHOOK_SECRET", "")
+		_, err := Load()
+		if err == nil {
+			t.Fatal("expected Load() to fail for missing STRIPE_WEBHOOK_SECRET in staging")
+		}
+		if !strings.Contains(err.Error(), "STRIPE_WEBHOOK_SECRET") {
+			t.Fatalf("expected error to mention STRIPE_WEBHOOK_SECRET, got %v", err)
+		}
+	})
+
+	t.Run("local without STRIPE_WEBHOOK_SECRET succeeds", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("STRIPE_WEBHOOK_SECRET", "")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.StripeWebhookSecret != "" {
+			t.Fatalf("expected empty StripeWebhookSecret, got %q", cfg.StripeWebhookSecret)
+		}
+	})
 }

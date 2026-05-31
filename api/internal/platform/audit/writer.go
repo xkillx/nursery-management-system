@@ -71,6 +71,39 @@ func (w *Writer) WriteWithTx(ctx context.Context, tx pgx.Tx, actor tenant.ActorC
 	return w.Write(ctx, tx, actor, params)
 }
 
+func (w *Writer) WriteSystemWithTx(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, requestID string, params WriteParams) error {
+	if params.Details == nil {
+		params.Details = map[string]any{}
+	}
+	if params.ReasonCode != nil {
+		params.Details["reason_code"] = *params.ReasonCode
+	}
+	detailsJSON, err := json.Marshal(params.Details)
+	if err != nil {
+		return fmt.Errorf("marshal audit details: %w", err)
+	}
+
+	const insertQ = `
+INSERT INTO audit_logs (
+    id, tenant_id, branch_id, actor_user_id, actor_membership_id,
+    action_type, action_entity_type, action_entity_id,
+    reason_code, reason_note, request_id, details
+)
+VALUES ($1, $2, $3, NULL, NULL, $4, $5, $6, NULL, NULL, $7, $8::jsonb)`
+
+	_, err = tx.Exec(ctx, insertQ,
+		uid.NewUUID(),
+		tenantID,
+		branchID,
+		params.ActionType,
+		params.EntityType,
+		params.EntityID,
+		requestID,
+		string(detailsJSON),
+	)
+	return err
+}
+
 type WriteParams struct {
 	ActionType string
 	EntityType string
