@@ -926,6 +926,110 @@ Roles: manager. Query: `event_type=check_in|check_out|correction`.
 }
 ```
 
+### POST /api/v1/invoices/:invoice_id/adjustments
+
+**Deferred / not implemented.** This route must not be added during month 1 unless UAT or pilot operations produce a real post-issue correction that must be handled inside the product before the next invoice/payment cycle.
+
+Creates a manager-only follow-up adjustment invoice linked to the original monthly invoice. The original invoice is never edited, regenerated, deleted, refunded, or directly offset by this endpoint.
+
+**Role:** `manager` only.
+
+**Original invoice requirements:**
+
+- The `:invoice_id` invoice is in the manager's current tenant and branch scope.
+- `invoice_kind = monthly`.
+- `status` is one of `issued`, `payment_failed`, `overdue`, or `paid`.
+- `draft` invoices are rejected because existing draft regeneration remains the correction path.
+- Adjustment invoices are rejected as adjustment targets; adjustment chains are not supported.
+
+**Request:**
+
+```json
+{
+  "confirm": true,
+  "reason_code": "attendance_correction",
+  "reason_note": "Late checkout correction for 2026-05-15 after invoice issue.",
+  "lines": [
+    {
+      "description": "Additional childcare after corrected checkout",
+      "line_amount_minor": 750
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `confirm` | boolean | yes | Must be `true` to create and issue the adjustment invoice |
+| `reason_code` | string | yes | One of `attendance_correction`, `funding_correction`, `extra_correction`, `billing_error`, `other` |
+| `reason_note` | string | yes | Non-empty manager explanation for the adjustment |
+| `lines` | array | yes | One or more adjustment lines |
+| `lines[].description` | string | yes | Parent/manager readable line description |
+| `lines[].line_amount_minor` | integer | yes | Signed line amount in GBP minor units |
+
+The first deferred version allows signed adjustment lines, but the net adjustment invoice total must be non-negative to match the current schema. Negative net credits, refunds, credit carry-forward, partial offsets, account balances, and Stripe payment/refund behavior are separate post-MVP settlement design work.
+
+**Creation behavior:**
+
+- Creates a separate `invoice_kind = adjustment` invoice.
+- Sets `adjusts_invoice_id` to the original monthly invoice.
+- Persists both `adjustment_reason_code` and non-empty `adjustment_reason_note`.
+- Creates the invoice already issued in one confirmed action.
+- Assigns an invoice number using the adjustment invoice billing month.
+- Sets `issued_at`, `locked_at`, and `due_at` to the creation instant.
+- Records an `invoice_runs` row with `run_type = issue` and details including `mode: "adjustment_issue"`.
+- Writes an audit event for the adjustment invoice creation/issue action.
+- Inserts only `line_kind = adjustment` invoice lines for the adjustment invoice.
+
+**Response 201:**
+
+```json
+{
+  "invoice_id": "adjustment-invoice-uuid",
+  "invoice_kind": "adjustment",
+  "invoice_number": "INV-202605-0007",
+  "status": "issued",
+  "adjusts_invoice_id": "original-invoice-uuid",
+  "adjustment_reason_code": "attendance_correction",
+  "adjustment_reason_note": "Late checkout correction for 2026-05-15 after invoice issue.",
+  "issued_at": "2026-06-01T10:00:00Z",
+  "locked_at": "2026-06-01T10:00:00Z",
+  "due_at": "2026-06-01T10:00:00Z",
+  "issued_run_id": "uuid",
+  "currency_code": "GBP",
+  "total_due_minor": 750,
+  "lines": [
+    {
+      "line_kind": "adjustment",
+      "description": "Additional childcare after corrected checkout",
+      "sort_order": 1,
+      "line_amount_minor": 750
+    }
+  ]
+}
+```
+
+**Payment and parent disclosure boundaries:**
+
+- Parent checkout remains limited to `invoice_kind = monthly`; adjustment invoices are not payable through Stripe.
+- Parent invoice list/detail remains monthly-invoice only unless a later parent disclosure design explicitly changes that boundary.
+- Manager invoice review may show adjustment invoices and their link to the original invoice.
+
+**Errors:**
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `validation_error` | Malformed invoice ID, missing `confirm`, empty lines, invalid amount, or invalid field shape |
+| 400 | `adjustment_reason_required` | Missing `reason_code` or `reason_note` |
+| 400 | `adjustment_reason_invalid` | Unknown `reason_code` |
+| 400 | `adjustment_negative_total_not_supported` | Signed lines produce a negative net total |
+| 401 | `unauthorized` | Missing or invalid token |
+| 403 | `forbidden_role` | Non-manager role |
+| 404 | `invoice_not_found` | Original invoice absent from tenant/branch scope |
+| 409 | `invoice_not_monthly` | Original invoice is not a monthly invoice |
+| 409 | `invoice_not_issued` | Original invoice is still draft |
+| 409 | `adjustment_chain_not_supported` | Original invoice is itself an adjustment invoice |
+
 ---
 
 ## Invoice Draft Preflight

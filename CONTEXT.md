@@ -1154,7 +1154,7 @@ When an existing draft monthly invoice is no longer eligible for regeneration, t
 
 ## Adjustment Flow (MVP)
 
-Post-issue billing changes are handled through a manager-created follow-up adjustment invoice linked to the original issued invoice, with a required reason.
+Post-issue billing changes are represented by a manager-created follow-up adjustment invoice linked to the original issued invoice, with a required reason. Month-1 operation may defer creating adjustment invoices until a validated pilot need exists.
 
 ## API Versioning (MVP)
 
