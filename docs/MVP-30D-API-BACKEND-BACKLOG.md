@@ -75,7 +75,7 @@ These are preferred implementation defaults for the MVP API backlog. Keep them w
 | Area | Recommended choice | Backlog fit |
 |---|---|---|
 | HTTP framework | Keep existing Gin | Matches the current API bootstrap, `/api/v1` routing, middleware model, and PRD requirement to follow the existing architecture. |
-| Gin request logging | `github.com/gin-contrib/zap` with Uber Zap, or a small custom Gin middleware around `github.com/rs/zerolog` | Supports API-01 and API-28 structured request logs, request IDs, actor/scope fields, auth denial logs, and webhook status logs. Pick one logger family and use it consistently. |
+| Gin request logging | `github.com/gin-contrib/zap` with Uber Zap, or a small custom Gin middleware around `github.com/rs/zerolog` | Supports API-01 and API-28 structured request/debug logs, request IDs, trace/correlation IDs, actor/scope fields, auth denial logs, invoice/job breadcrumbs, and webhook status logs. Pick one logger family and use it consistently. |
 | Metrics | `github.com/prometheus/client_golang/prometheus` plus `promhttp.Handler()` mounted from Gin | Covers API-28 minimal metrics for auth failures, authorization denials, invoice generation outcomes, Stripe webhook outcomes, and basic HTTP latency/status counts. |
 | DB driver and codegen | `sqlc` configured for `pgx/v5` | Required for new funding, invoicing, payments, invites, password-reset, and job persistence while avoiding risky refactors of existing hand-written repositories. |
 | Migrations | Existing `github.com/golang-migrate/migrate` workflow | Verified in API-02: `make migrate-verify` (up, down -all, up) on disposable database. Use `migrate-down-all` or `migrate-reset` for full rollback. |
@@ -154,7 +154,7 @@ Implementation notes:
 |---|---|---|---|
 | API-26 | Add route-by-route authorization test matrix for all MVP endpoints. Cover unauthenticated, wrong role, wrong tenant/branch, parent relationship failure, and allowed access. | Core routes | Tests prove default-deny behavior and stable denial codes. |
 | API-27 | Add billing/payment critical tests: funding formula, invoice generation, invoice state transitions, invoice numbering, draft idempotency, issued immutability, overdue job, Stripe webhook idempotency. | API-13 to API-23 | `go test ./...` covers the highest-risk money paths. |
-| API-28 | Add structured logs and minimal metrics hooks for webhook outcomes, invoice-generation health, auth failures, and authorization denials. | API-20, API-23 | Logs include request id, actor/scope where available, denial/retry/status codes, and no secrets. |
+| API-28 | Add structured logs, request trace context, and minimal metrics hooks for webhook outcomes, invoice-generation health, auth failures, authorization denials, scheduler runs, and payment-state transitions. | API-20, API-23 | Logs include request id, trace/correlation id, route, method, status, latency, actor/scope where available, operation names, denial/retry/status codes, safe external ids, and no secrets. Debug-level breadcrumbs for auth, invoice generation, overdue jobs, Stripe webhooks, and repository failures are env-gated and safe for pilot troubleshooting. |
 | API-29 | Add API Dockerfile and production Docker Compose files for single-VM deployment with API, web, PostgreSQL, reverse proxy/HTTPS expectations, and environment file contract. | Core API stable | Compose files exist and document required secrets; no local absolute paths. |
 | API-30 | Add backup and restore runbook/checklist for production PostgreSQL. Include daily backup command, restore rehearsal steps, and where backup artifacts live. | API-29 | A developer can perform and verify one local restore rehearsal from the documented steps. |
 | API-31 | Add Stripe operational runbook: webhook endpoint setup, webhook secret handling, retry inspection, event replay procedure, and failure triage. | API-23 | Pilot operator can diagnose a failed or duplicated Stripe event. |
@@ -244,6 +244,7 @@ Expected backend files and folders:
 - `api/internal/platform/db/sqlc/**`
 - `api/internal/platform/email/**`
 - `api/internal/platform/jobs/**`
+- `api/internal/platform/logging/**`
 - `api/internal/platform/metrics/**`
 - `api/internal/modules/invites/**`
 - `api/internal/modules/passwordreset/**`
@@ -295,6 +296,10 @@ Existing hand-written repositories may remain in place unless a task explicitly 
   - failed/canceled event sets `payment_failed`
   - duplicate success webhook is idempotent
   - paid invoice cannot create another checkout session
+- Verify observability:
+  - request id and trace/correlation id appear in access logs, mapped errors, audit-linked actions, webhook logs, and job logs
+  - debug breadcrumbs can be enabled by environment without exposing tokens, cookies, passwords, raw webhook payloads, or payment secrets
+  - logs make invoice generation, authorization denials, Stripe retries, and scheduler decisions traceable across a single request or job run
 - Verify backend operations:
   - production env variables are documented
   - Docker Compose config references required services and secrets
