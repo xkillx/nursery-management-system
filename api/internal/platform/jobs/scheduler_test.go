@@ -97,6 +97,45 @@ func TestScheduler_SkippedWhenLockHeld(t *testing.T) {
 	}
 }
 
+func TestScheduler_OverdueJobNextRunUsesLondonMidnight(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	runner := &stubRunner{}
+
+	s, err := NewScheduler(logger, runner)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	london, _ := time.LoadLocation("Europe/London")
+
+	s.Start(context.Background())
+	defer s.Stop(context.Background())
+
+	entries := s.cron.Entries()
+	if len(entries) == 0 {
+		t.Fatal("expected at least one cron entry")
+	}
+	sched := entries[0].Schedule
+
+	t.Run("BST next run from 2026-07-14 22:30 UTC", func(t *testing.T) {
+		from := time.Date(2026, 7, 14, 22, 30, 0, 0, time.UTC).In(london)
+		next := sched.Next(from)
+		want := time.Date(2026, 7, 14, 23, 0, 0, 0, time.UTC)
+		if !next.Equal(want) {
+			t.Fatalf("BST next run = %v, want %v (London midnight during BST = 23:00 UTC)", next, want)
+		}
+	})
+
+	t.Run("GMT next run from 2026-01-14 23:30 UTC", func(t *testing.T) {
+		from := time.Date(2026, 1, 14, 23, 30, 0, 0, time.UTC).In(london)
+		next := sched.Next(from)
+		want := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
+		if !next.Equal(want) {
+			t.Fatalf("GMT next run = %v, want %v (London midnight during GMT = 00:00 UTC)", next, want)
+		}
+	})
+}
+
 func TestScheduler_StopWithoutStart(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	runner := &stubRunner{}

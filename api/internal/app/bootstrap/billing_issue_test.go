@@ -91,6 +91,32 @@ func seedDraftInvoice(t *testing.T, h *billingIssueHarness, suffix string, child
 	return childID, invoiceID
 }
 
+func seedDraftInvoiceForMonth(t *testing.T, h *billingIssueHarness, suffix string, childName string, totalDueMinor int, year int, month time.Month) (childID, invoiceID uuid.UUID) {
+	t.Helper()
+	ctx := context.Background()
+
+	childID = uuid.MustParse(fmt.Sprintf("e5000000-0000-0000-0000-%012s", suffix))
+	invoiceID = uuid.MustParse(fmt.Sprintf("e6000000-0000-0000-0000-%012s", suffix))
+
+	billingMonth := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	periodStart := billingMonth
+	periodEnd := billingMonth.AddDate(0, 1, -1)
+
+	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, childName,
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date)
+		 VALUES ($1, $2, $3, $4, $5, 'monthly', 'draft', 'GBP', $6, 0, $7, $8, $9)`,
+		invoiceID, h.tenantID, h.branchID, childID, billingMonth,
+		totalDueMinor, totalDueMinor, periodStart, periodEnd)
+	if err != nil {
+		t.Fatalf("insert draft invoice for month: %v", err)
+	}
+
+	return childID, invoiceID
+}
+
 // --- Route Registration ---
 
 func TestInvoiceIssueRouteInventory(t *testing.T) {
@@ -617,6 +643,120 @@ func TestInvoiceIssueRegenerationGuard(t *testing.T) {
 	h.pool.QueryRow(ctx, "SELECT status FROM invoices WHERE id = $1", invoiceID).Scan(&status)
 	if status != "issued" {
 		t.Fatalf("invoice status = %s, want issued (unchanged)", status)
+	}
+}
+
+func TestInvoiceNumberingContinuesAcrossSingleAndBulkAndResetsByMonth(t *testing.T) {
+	h := setupBillingIssueHarness(t)
+	ctx := context.Background()
+
+	betaChildID, betaInvID := seedDraftInvoice(t, h, "000000000700", "Beta Numbering", 1000)
+	_, alphaInvID := seedDraftInvoice(t, h, "000000000701", "Alpha Numbering", 2000)
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/"+betaInvID.String()+"/issue", h.managerToken, `{"confirm":true}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var singleResp issueInvoiceResponseTest
+	decodeJSON(t, w, &singleResp)
+	if singleResp.InvoiceNumber != "INV-202605-0001" {
+		t.Fatalf("single issue number = %s, want INV-202605-0001", singleResp.InvoiceNumber)
+	}
+
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-05","confirm":true}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var bulkResp bulkIssueResponseTest
+	decodeJSON(t, w, &bulkResp)
+
+	if bulkResp.Summary.SuccessCount != 1 {
+		t.Fatalf("bulk success = %d, want 1 (only Alpha remaining)", bulkResp.Summary.SuccessCount)
+	}
+	if bulkResp.Issued[0].InvoiceID != alphaInvID.String() {
+		t.Fatalf("bulk issued = %s, want %s", bulkResp.Issued[0].InvoiceID, alphaInvID)
+	}
+	if bulkResp.Issued[0].InvoiceNumber != "INV-202605-0002" {
+		t.Fatalf("alpha number = %s, want INV-202605-0002", bulkResp.Issued[0].InvoiceNumber)
+	}
+
+	_, juneInvID := seedDraftInvoiceForMonth(t, h, "000000000710", "June Child", 1000, 2026, 6)
+
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-06","confirm":true}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var juneResp bulkIssueResponseTest
+	decodeJSON(t, w, &juneResp)
+
+	if juneResp.Issued[0].InvoiceNumber != "INV-202606-0001" {
+		t.Fatalf("june number = %s, want INV-202606-0001", juneResp.Issued[0].InvoiceNumber)
+	}
+
+	var betaNumber, alphaNumber, juneNumber string
+	h.pool.QueryRow(ctx, "SELECT invoice_number FROM invoices WHERE id = $1", betaInvID).Scan(&betaNumber)
+	h.pool.QueryRow(ctx, "SELECT invoice_number FROM invoices WHERE id = $1", alphaInvID).Scan(&alphaNumber)
+	h.pool.QueryRow(ctx, "SELECT invoice_number FROM invoices WHERE id = $1", juneInvID).Scan(&juneNumber)
+	if betaNumber != "INV-202605-0001" {
+		t.Fatalf("beta db number = %s, want INV-202605-0001", betaNumber)
+	}
+	if alphaNumber != "INV-202605-0002" {
+		t.Fatalf("alpha db number = %s, want INV-202605-0002", alphaNumber)
+	}
+	if juneNumber != "INV-202606-0001" {
+		t.Fatalf("june db number = %s, want INV-202606-0001", juneNumber)
+	}
+
+	_ = betaChildID
+}
+
+func TestBulkIssueInvoiceNumberingTieBreaksSameNameByInvoiceID(t *testing.T) {
+	h := setupBillingIssueHarness(t)
+
+	lowID := uuid.MustParse("e6000000-0000-0000-0000-000000000800")
+	highID := uuid.MustParse("e6000000-0000-0000-0000-000000000801")
+	lowChild := uuid.MustParse("e5000000-0000-0000-0000-000000000800")
+	highChild := uuid.MustParse("e5000000-0000-0000-0000-000000000801")
+
+	for i, pair := range []struct {
+		childID, invoiceID uuid.UUID
+	}{
+		{lowChild, lowID},
+		{highChild, highID},
+	} {
+		dbtest.InsertChild(t, h.pool, pair.childID, h.tenantID, h.branchID, "Same Name Child",
+			dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		_, err := h.pool.Exec(context.Background(),
+			`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date)
+			 VALUES ($1, $2, $3, $4, $5, 'monthly', 'draft', 'GBP', 1000, 0, 1000, $6, $7)`,
+			pair.invoiceID, h.tenantID, h.branchID, pair.childID, dbtest.DateAt(2026, 5, 1),
+			dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31))
+		if err != nil {
+			t.Fatalf("insert draft %d: %v", i, err)
+		}
+	}
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-05","confirm":true}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp bulkIssueResponseTest
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 2 {
+		t.Fatalf("success = %d, want 2", resp.Summary.SuccessCount)
+	}
+
+	lowNum, highNum := "", ""
+	for _, issued := range resp.Issued {
+		if issued.InvoiceID == lowID.String() {
+			lowNum = issued.InvoiceNumber
+		}
+		if issued.InvoiceID == highID.String() {
+			highNum = issued.InvoiceNumber
+		}
+	}
+	if lowNum != "INV-202605-0001" {
+		t.Fatalf("lower ID number = %s, want INV-202605-0001", lowNum)
+	}
+	if highNum != "INV-202605-0002" {
+		t.Fatalf("higher ID number = %s, want INV-202605-0002", highNum)
 	}
 }
 

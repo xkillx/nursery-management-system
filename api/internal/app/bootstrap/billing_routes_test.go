@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -1199,6 +1200,307 @@ type genBlockedChildResponse struct {
 type genBlockerResponse struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+}
+
+func TestBillingGenerationCriticalCalculationSnapshot(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	childID := uuid.MustParse("f5000000-0000-0000-0000-000000000001")
+	guardianID := uuid.MustParse("f6000000-0000-0000-0000-000000000001")
+	linkID := uuid.MustParse("f7000000-0000-0000-0000-000000000001")
+	fundingID := uuid.MustParse("f8000000-0000-0000-0000-000000000001")
+
+	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Snapshot Child",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 401, true)
+	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Snapshot", true)
+	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 30)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+
+	session1 := uuid.MustParse("f9000000-0000-0000-0000-000000000001")
+	session2 := uuid.MustParse("f9000000-0000-0000-0000-000000000002")
+
+	checkIn1 := time.Date(2026, 5, 12, 8, 0, 0, 0, time.UTC)
+	checkOut1 := time.Date(2026, 5, 12, 9, 1, 0, 0, time.UTC)
+	localDate1 := dbtest.DateAt(2026, 5, 12)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session1, h.tenantID, h.branchID, childID, checkIn1, checkOut1, localDate1, localDate1)
+	if err != nil {
+		t.Fatalf("insert session 1: %v", err)
+	}
+
+	checkIn2 := time.Date(2026, 5, 12, 10, 0, 0, 0, time.UTC)
+	checkOut2 := time.Date(2026, 5, 12, 10, 15, 0, 0, time.UTC)
+	localDate2 := dbtest.DateAt(2026, 5, 12)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session2, h.tenantID, h.branchID, childID, checkIn2, checkOut2, localDate2, localDate2)
+	if err != nil {
+		t.Fatalf("insert session 2: %v", err)
+	}
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp genDraftsResponse
+	decodeJSON(t, w, &resp)
+
+	if resp.Summary.SuccessCount != 1 {
+		t.Fatalf("success_count = %d, want 1", resp.Summary.SuccessCount)
+	}
+	gen := resp.Generated[0]
+	if gen.Action != "created" {
+		t.Fatalf("action = %s, want created", gen.Action)
+	}
+	if gen.SubtotalMinor != 602 {
+		t.Fatalf("subtotal_minor = %d, want 602", gen.SubtotalMinor)
+	}
+	if gen.FundedDeductionMinor != 201 {
+		t.Fatalf("funded_deduction_minor = %d, want 201", gen.FundedDeductionMinor)
+	}
+	if gen.TotalDueMinor != 401 {
+		t.Fatalf("total_due_minor = %d, want 401", gen.TotalDueMinor)
+	}
+
+	invoiceUUID, _ := uuid.Parse(gen.InvoiceID)
+
+	var subtotalMinor, fundedDeductMinor, totalDueMinor int
+	var calcDetails string
+	err = h.pool.QueryRow(ctx,
+		`SELECT subtotal_minor, funded_deduction_minor, total_due_minor, calculation_details
+		 FROM invoices WHERE id = $1`, invoiceUUID).
+		Scan(&subtotalMinor, &fundedDeductMinor, &totalDueMinor, &calcDetails)
+	if err != nil {
+		t.Fatalf("query invoice: %v", err)
+	}
+
+	if subtotalMinor != 602 {
+		t.Fatalf("subtotal_minor = %d, want 602", subtotalMinor)
+	}
+	if fundedDeductMinor != 201 {
+		t.Fatalf("funded_deduction_minor = %d, want 201", fundedDeductMinor)
+	}
+	if totalDueMinor != 401 {
+		t.Fatalf("total_due_minor = %d, want 401", totalDueMinor)
+	}
+
+	type calcDetailJSON struct {
+		RawAttendedMinutes     int `json:"raw_attended_minutes"`
+		RoundedAttendedMinutes int `json:"rounded_attended_minutes"`
+		FundedAllowanceMinutes int `json:"funded_allowance_minutes"`
+		FundedDeductionMinutes int `json:"funded_deduction_minutes"`
+		CoreBillableMinutes    int `json:"core_billable_minutes"`
+		IncludedSessionCount   int `json:"included_session_count"`
+		SourceSessions         []struct {
+			SessionID string `json:"session_id"`
+		} `json:"source_sessions"`
+	}
+	var cd calcDetailJSON
+	if err := json.Unmarshal([]byte(calcDetails), &cd); err != nil {
+		t.Fatalf("parse calculation_details: %v", err)
+	}
+	if cd.RawAttendedMinutes != 76 {
+		t.Fatalf("calc raw_attended_minutes = %d, want 76", cd.RawAttendedMinutes)
+	}
+	if cd.RoundedAttendedMinutes != 90 {
+		t.Fatalf("calc rounded_attended_minutes = %d, want 90", cd.RoundedAttendedMinutes)
+	}
+	if cd.FundedAllowanceMinutes != 30 {
+		t.Fatalf("calc funded_allowance_minutes = %d, want 30", cd.FundedAllowanceMinutes)
+	}
+	if cd.FundedDeductionMinutes != 30 {
+		t.Fatalf("calc funded_deduction_minutes = %d, want 30", cd.FundedDeductionMinutes)
+	}
+	if cd.CoreBillableMinutes != 60 {
+		t.Fatalf("calc core_billable_minutes = %d, want 60", cd.CoreBillableMinutes)
+	}
+	if cd.IncludedSessionCount != 2 {
+		t.Fatalf("included_session_count = %d, want 2", cd.IncludedSessionCount)
+	}
+	if len(cd.SourceSessions) != 2 {
+		t.Fatalf("source_sessions length = %d, want 2", len(cd.SourceSessions))
+	}
+
+	var coreLineCount int
+	err = h.pool.QueryRow(ctx,
+		`SELECT count(*) FROM invoice_lines WHERE invoice_id = $1 AND line_kind = 'core_childcare'`, invoiceUUID).Scan(&coreLineCount)
+	if err != nil {
+		t.Fatalf("count core lines: %v", err)
+	}
+	if coreLineCount != 1 {
+		t.Fatalf("core_childcare lines = %d, want 1", coreLineCount)
+	}
+
+	var coreQty, coreAmount, coreRaw, coreRounded, coreBillableLine, coreSessions int
+	err = h.pool.QueryRow(ctx,
+		`SELECT quantity_minutes, line_amount_minor, raw_attended_minutes, rounded_attended_minutes, core_billable_minutes, session_count
+		 FROM invoice_lines WHERE invoice_id = $1 AND line_kind = 'core_childcare'`, invoiceUUID).
+		Scan(&coreQty, &coreAmount, &coreRaw, &coreRounded, &coreBillableLine, &coreSessions)
+	if err != nil {
+		t.Fatalf("query core line: %v", err)
+	}
+	if coreQty != 90 {
+		t.Fatalf("core quantity_minutes = %d, want 90", coreQty)
+	}
+	if coreAmount != 602 {
+		t.Fatalf("core line_amount_minor = %d, want 602", coreAmount)
+	}
+	if coreRaw != 76 {
+		t.Fatalf("core raw_attended_minutes = %d, want 76", coreRaw)
+	}
+	if coreRounded != 90 {
+		t.Fatalf("core rounded_attended_minutes = %d, want 90", coreRounded)
+	}
+	if coreBillableLine != 0 {
+		t.Fatalf("core core_billable_minutes = %d, want 0 (populated only on funded_deduction lines)", coreBillableLine)
+	}
+	if coreSessions != 2 {
+		t.Fatalf("core session_count = %d, want 2", coreSessions)
+	}
+
+	var fundAllow, fundDeduct, fundBillable, fundAmount int
+	err = h.pool.QueryRow(ctx,
+		`SELECT funded_allowance_minutes, funded_deduction_minutes, core_billable_minutes, line_amount_minor
+		 FROM invoice_lines WHERE invoice_id = $1 AND line_kind = 'funded_deduction'`, invoiceUUID).
+		Scan(&fundAllow, &fundDeduct, &fundBillable, &fundAmount)
+	if err != nil {
+		t.Fatalf("query funded line: %v", err)
+	}
+	if fundAllow != 30 {
+		t.Fatalf("funded allowance = %d, want 30", fundAllow)
+	}
+	if fundDeduct != 30 {
+		t.Fatalf("funded deduction = %d, want 30", fundDeduct)
+	}
+	if fundBillable != 60 {
+		t.Fatalf("funded core_billable = %d, want 60", fundBillable)
+	}
+	if fundAmount != -201 {
+		t.Fatalf("funded line_amount = %d, want -201", fundAmount)
+	}
+}
+
+func TestBillingGenerationRerunRecalculatesSameDraftAndReplacesSystemLines(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	childID := uuid.MustParse("f5000000-0000-0000-0000-000000000010")
+	guardianID := uuid.MustParse("f6000000-0000-0000-0000-000000000010")
+	linkID := uuid.MustParse("f7000000-0000-0000-0000-000000000010")
+	fundingID := uuid.MustParse("f8000000-0000-0000-0000-000000000010")
+	session1 := uuid.MustParse("f9000000-0000-0000-0000-000000000010")
+
+	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Rerun Calc Child",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 600, true)
+	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Rerun", true)
+	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
+	_, err := h.pool.Exec(ctx,
+		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
+		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 0)
+	if err != nil {
+		t.Fatalf("insert funding: %v", err)
+	}
+
+	checkIn1 := time.Date(2026, 5, 10, 8, 0, 0, 0, time.UTC)
+	checkOut1 := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
+	localDate1 := dbtest.DateAt(2026, 5, 10)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session1, h.tenantID, h.branchID, childID, checkIn1, checkOut1, localDate1, localDate1)
+	if err != nil {
+		t.Fatalf("insert session 1: %v", err)
+	}
+
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp1 genDraftsResponse
+	decodeJSON(t, w, &resp1)
+
+	if resp1.Summary.SuccessCount != 1 {
+		t.Fatalf("first run success = %d, want 1", resp1.Summary.SuccessCount)
+	}
+	invoiceID := resp1.Generated[0].InvoiceID
+	if resp1.Generated[0].TotalDueMinor != 600 {
+		t.Fatalf("first total_due = %d, want 600", resp1.Generated[0].TotalDueMinor)
+	}
+
+	var initialSystemLines int
+	h.pool.QueryRow(ctx,
+		"SELECT count(*) FROM invoice_lines WHERE invoice_id = $1 AND line_kind IN ('core_childcare','funded_deduction')", invoiceID).
+		Scan(&initialSystemLines)
+	if initialSystemLines != 2 {
+		t.Fatalf("initial system lines = %d, want 2", initialSystemLines)
+	}
+
+	session2 := uuid.MustParse("f9000000-0000-0000-0000-000000000011")
+	checkIn2 := time.Date(2026, 5, 11, 8, 0, 0, 0, time.UTC)
+	checkOut2 := time.Date(2026, 5, 11, 8, 15, 0, 0, time.UTC)
+	localDate2 := dbtest.DateAt(2026, 5, 11)
+	_, err = h.pool.Exec(ctx,
+		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
+		session2, h.tenantID, h.branchID, childID, checkIn2, checkOut2, localDate2, localDate2)
+	if err != nil {
+		t.Fatalf("insert session 2: %v", err)
+	}
+
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	requireStatus(t, w, http.StatusOK)
+
+	var resp2 genDraftsResponse
+	decodeJSON(t, w, &resp2)
+
+	if resp2.Generated[0].Action != "updated" {
+		t.Fatalf("rerun action = %s, want updated", resp2.Generated[0].Action)
+	}
+	if resp2.Generated[0].InvoiceID != invoiceID {
+		t.Fatalf("rerun invoice_id changed: %s vs %s", resp2.Generated[0].InvoiceID, invoiceID)
+	}
+
+	var invoiceCount int
+	h.pool.QueryRow(ctx, "SELECT count(*) FROM invoices WHERE tenant_id = $1 AND child_id = $2", h.tenantID, childID).Scan(&invoiceCount)
+	if invoiceCount != 1 {
+		t.Fatalf("invoice count = %d, want 1 (no duplication)", invoiceCount)
+	}
+
+	var systemLines int
+	h.pool.QueryRow(ctx,
+		"SELECT count(*) FROM invoice_lines WHERE invoice_id = $1 AND line_kind IN ('core_childcare','funded_deduction')", invoiceID).
+		Scan(&systemLines)
+	if systemLines != 2 {
+		t.Fatalf("system lines = %d, want 2 (replaced, not accumulated)", systemLines)
+	}
+
+	var roundedAtt int
+	h.pool.QueryRow(ctx,
+		"SELECT rounded_attended_minutes FROM invoice_lines WHERE invoice_id = $1 AND line_kind = 'core_childcare'", invoiceID).
+		Scan(&roundedAtt)
+	if roundedAtt != 75 {
+		t.Fatalf("core rounded = %d, want 75 (60+15)", roundedAtt)
+	}
+
+	if resp2.Generated[0].TotalDueMinor != 750 {
+		t.Fatalf("rerun total_due = %d, want 750", resp2.Generated[0].TotalDueMinor)
+	}
+
+	invoiceUUID, _ := uuid.Parse(invoiceID)
+	var genAuditCount, regenAuditCount int
+	h.pool.QueryRow(ctx,
+		"SELECT count(*) FROM audit_logs WHERE action_type = 'invoice_draft_generated' AND action_entity_id = $1", invoiceUUID).Scan(&genAuditCount)
+	h.pool.QueryRow(ctx,
+		"SELECT count(*) FROM audit_logs WHERE action_type = 'invoice_draft_regenerated' AND action_entity_id = $1", invoiceUUID).Scan(&regenAuditCount)
+	if genAuditCount != 1 {
+		t.Fatalf("draft_generated audits = %d, want 1", genAuditCount)
+	}
+	if regenAuditCount != 1 {
+		t.Fatalf("draft_regenerated audits = %d, want 1", regenAuditCount)
+	}
 }
 
 // --- API-18 Manager Invoice Review tests ---

@@ -484,19 +484,46 @@ func TestWebhook_DuplicateEvent_ReturnsDuplicate(t *testing.T) {
 	evtID := "evt_dup_" + uuid.New().String()[:8]
 	payload, sig := buildCheckoutCompletedPayload(t, evtID, "cs_test_wh", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
 
+	// First delivery
 	w1 := doWebhookRawRequest(t, h.router, payload, sig)
 	requireStatus(t, w1, http.StatusOK)
 	requireWebhookStatus(t, w1, "processed")
 
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("first delivery: invoice status = %s, want paid", s)
+	}
+	if s := fetchAttemptStatus(t, h.pool, attemptID); s != "paid" {
+		t.Fatalf("first delivery: attempt status = %s, want paid", s)
+	}
+	if n := countWebhookEvents(t, h.pool, evtID); n != 1 {
+		t.Fatalf("first delivery: webhook events = %d, want 1", n)
+	}
+	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 1 {
+		t.Fatalf("first delivery: reconciliation records = %d, want 1", n)
+	}
+	if n := countSystemAuditRows(t, h.pool, invoiceID); n != 1 {
+		t.Fatalf("first delivery: system audit rows = %d, want 1", n)
+	}
+
+	// Duplicate delivery
 	w2 := doWebhookRawRequest(t, h.router, payload, sig)
 	requireStatus(t, w2, http.StatusOK)
 	requireWebhookStatus(t, w2, "duplicate")
 
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("duplicate: invoice status = %s, want paid (unchanged)", s)
+	}
+	if s := fetchAttemptStatus(t, h.pool, attemptID); s != "paid" {
+		t.Fatalf("duplicate: attempt status = %s, want paid (unchanged)", s)
+	}
+	if n := countWebhookEvents(t, h.pool, evtID); n != 1 {
+		t.Fatalf("duplicate: webhook events = %d, want 1 (no duplicate)", n)
+	}
 	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 1 {
-		t.Fatalf("expected 1 reconciliation record (no duplicate), got %d", n)
+		t.Fatalf("duplicate: reconciliation records = %d, want 1 (no duplicate)", n)
 	}
 	if n := countSystemAuditRows(t, h.pool, invoiceID); n != 1 {
-		t.Fatalf("expected 1 audit row (no duplicate), got %d", n)
+		t.Fatalf("duplicate: system audit rows = %d, want 1 (no duplicate)", n)
 	}
 }
 
