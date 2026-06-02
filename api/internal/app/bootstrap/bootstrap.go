@@ -75,6 +75,7 @@ import (
 type BootstrapOptions struct {
 	CheckoutProvider paymentsdomain.CheckoutProvider
 	WebhookVerifier  paymentsdomain.WebhookVerifier
+	EmailSender      email.Sender
 }
 
 func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.Engine {
@@ -107,8 +108,11 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	resetTokenMgr := resettokens.NewManager(cfg.PasswordResetTokenSecret, cfg.PasswordResetTokenTTLMinutes)
 	resetRepo := resetpostgres.NewRepository(pool)
 	resetTokenGen := resetapp.NewTokenGeneratorAdapter(resetTokenMgr)
-	smtpSender := email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
-	resetEmailAdapter := resetapp.NewEmailAdapter(smtpSender)
+	emailSender := opts.EmailSender
+	if emailSender == nil {
+		emailSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
+	}
+	resetEmailAdapter := resetapp.NewEmailAdapter(emailSender)
 	requestResetUC := resetapp.NewRequestResetUseCase(resetRepo, resetEmailAdapter, resetTokenGen, cfg.WebBaseURL, logger)
 	setPasswordUC := resetapp.NewSetNewPasswordUseCase(resetRepo, logger)
 	resetEmailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
@@ -277,7 +281,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
 	inviteRepo := invitepostgres.NewRepository(pool, auditWriter)
 	inviteTokenGen := inviteapp.NewTokenGeneratorAdapter(inviteTokenMgr)
-	inviteEmailAdapter := inviteapp.NewInviteEmailAdapter(smtpSender)
+	inviteEmailAdapter := inviteapp.NewInviteEmailAdapter(emailSender)
 	createInviteUC := inviteapp.NewCreateInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)
 	listInvitesUC := inviteapp.NewListInvitesUseCase(inviteRepo)
 	resendInviteUC := inviteapp.NewResendInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)

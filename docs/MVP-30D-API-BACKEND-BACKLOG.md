@@ -152,7 +152,7 @@ Implementation notes:
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| API-26 | Add route-by-route authorization test matrix for all MVP endpoints. Cover unauthenticated, wrong role, wrong tenant/branch, parent relationship failure, and allowed access. | Core routes | Tests prove default-deny behavior and stable denial codes. |
+| ~~API-26~~ | ~~Add route-by-route authorization test matrix for all MVP endpoints. Cover unauthenticated, wrong role, wrong tenant/branch, parent relationship failure, and allowed access.~~ **Done 2026-06-02.** | ~~Core routes~~ | ~~372 tests pass (161 matrix + 211 existing). Route classification completeness guard, public route assertions, protected route unauthenticated/wrong-role/wrong-scope matrix, parent relationship enforcement, and stable denial codes verified against real PostgreSQL.~~ |
 | API-27 | Add billing/payment critical tests: funding formula, invoice generation, invoice state transitions, invoice numbering, draft idempotency, issued immutability, overdue job, Stripe webhook idempotency. | API-13 to API-23 | `go test ./...` covers the highest-risk money paths. |
 | API-28 | Add structured logs, request trace context, and minimal metrics hooks for webhook outcomes, invoice-generation health, auth failures, authorization denials, scheduler runs, and payment-state transitions. | API-20, API-23 | Logs include request id, trace/correlation id, route, method, status, latency, actor/scope where available, operation names, denial/retry/status codes, safe external ids, and no secrets. Debug-level breadcrumbs for auth, invoice generation, overdue jobs, Stripe webhooks, and repository failures are env-gated and safe for pilot troubleshooting. |
 | API-29 | Add API Dockerfile and production Docker Compose files for single-VM deployment with API, web, PostgreSQL, reverse proxy/HTTPS expectations, and environment file contract. | Core API stable | Compose files exist and document required secrets; no local absolute paths. |
@@ -224,8 +224,8 @@ New route groups to add:
 - `GET /api/v1/parent/invoices/:invoice_id`
 - `POST /api/v1/parent/invoices/:invoice_id/checkout-sessions`
 - `POST /api/v1/stripe/webhooks`
-- `GET /api/v1/payments/events`
-- `GET /api/v1/invoices/:invoice_id/payments`
+- `GET /api/v1/invoices/:invoice_id/payment-status`
+- `GET /api/v1/invoices/:invoice_id/payment-events`
 
 Exact path names may be adjusted to match existing handler naming, but the resource boundaries and role access rules must remain stable.
 
