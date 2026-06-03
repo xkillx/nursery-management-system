@@ -64,7 +64,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| FE-01 | Audit current Angular app and remove TailAdmin demo navigation from production shell: ecommerce, charts, forms, UI elements, calendar, generic invoice demo, public signup links. | Existing `web/` app | Sidebar/header only show role-relevant MVP routes; hidden demo routes cannot be reached from app navigation. |
+| FE-01 ~~done~~ | ~~Audit current Angular app and remove TailAdmin demo navigation from production shell: ecommerce, charts, forms, UI elements, calendar, generic invoice demo, public signup links.~~ | Existing `web/` app | ~~Sidebar/header only show role-relevant MVP routes; hidden demo routes cannot be reached from app navigation.~~ |
 | FE-02 | Create role-specific route map and default routes: manager dashboard, practitioner attendance, parent invoices. | FE-01 | `defaultRouteForRole(parent)` points to parent invoices; wrong-role routes redirect to the user's default route. |
 | FE-03 | Build shared MVP UI foundation: page header, action button styles, status badges, form field wrapper, inline alert, empty state, loading state, data table pattern, drawer/modal, confirmation dialog, toast/notification pattern. | FE-01 | New screens use consistent primitives instead of one-off TailAdmin fragments. |
 | FE-04 | Replace generic dashboard with manager operations dashboard. Show today's attendance summary, incomplete attendance, invoice run status, unpaid/overdue invoices, and quick actions using mock data first. | FE-02, FE-03 | Manager lands on operational dashboard with no ecommerce/template copy. |

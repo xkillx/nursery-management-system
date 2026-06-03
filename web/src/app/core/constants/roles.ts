@@ -13,7 +13,7 @@ export function defaultRouteForRole(role: AppRole | null): string {
     case ROLES.practitioner:
       return '/staff/practitioner/attendance-children';
     case ROLES.parent:
-      return '/blank';
+      return '/parent/invoices';
     default:
       return '/signin';
   }
