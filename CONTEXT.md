@@ -356,6 +356,10 @@ The local result of processing a verified payment provider webhook event, such a
 
 Failed or canceled payment attempts move invoices to a `payment_failed` state.
 
+## Payment-State Transition Telemetry (MVP)
+
+Payment-state transition telemetry describes operational monitoring of local payment attempt and invoice status changes caused by checkout creation, verified payment-provider webhook outcomes, or overdue scheduler transitions. It is distinct from payment reconciliation records, which remain the manager-facing history.
+
 ## Invoice Numbering (MVP)
 
 Invoice identifiers follow `INV-YYYYMM-####` sequence format.
@@ -544,6 +548,10 @@ Audit logs are mandatory for user provisioning changes, child record updates, at
 
 Persisted audit events include request identifier correlation so domain changes can be traced to individual API requests.
 
+## Request Correlation Context (MVP)
+
+A shared operational correlation context connects API request handling, audit-visible domain changes, payment-provider webhook handling, and scheduler telemetry for one troubleshooting flow. In month 1, this means correlation identifiers in logs and headers, low-cardinality metrics for correlated operations, and audit-linked request identifiers rather than full distributed tracing spans.
+
 ## Audit Actor Semantics (MVP)
 
 Audit events include actor membership identity for user-initiated actions and may omit actor identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
@@ -679,6 +687,10 @@ Membership scope switch actions are persisted as audit events with actor, previo
 ## Authentication Event Persistence Scope (MVP)
 
 Login, refresh, logout, and password reset activity are treated as authentication/security telemetry in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+
+## Authentication Failure Telemetry (MVP)
+
+Authentication failure telemetry covers failed identity, credential, session-token, and reset-token validation. It is distinct from ordinary request validation errors and from authorization denials after a user or session scope is known.
 
 ## Token Transport Policy (MVP)
 
