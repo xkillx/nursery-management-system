@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 
 	"nursery-management-system/api/internal/modules/payments/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
+	"nursery-management-system/api/internal/platform/logging"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
@@ -26,6 +29,8 @@ type CreateCheckoutSession struct {
 	webBaseURL       string
 	stripeConfigured bool
 	newUUID          func() uuid.UUID
+	logger           *slog.Logger
+	recorder         *metrics.Recorder
 }
 
 func NewCreateCheckoutSession(
@@ -45,6 +50,31 @@ func NewCreateCheckoutSession(
 	}
 }
 
+func (uc *CreateCheckoutSession) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *CreateCheckoutSession {
+	return &CreateCheckoutSession{
+		repo:             uc.repo,
+		txMgr:            uc.txMgr,
+		provider:         uc.provider,
+		webBaseURL:       uc.webBaseURL,
+		stripeConfigured: uc.stripeConfigured,
+		newUUID:          uc.newUUID,
+		logger:           logger,
+		recorder:         recorder,
+	}
+}
+
+func (uc *CreateCheckoutSession) recordTransition(operation, entityType, previousStatus, newStatus, reason string) {
+	if uc.recorder != nil {
+		uc.recorder.PaymentStateTransition(operation, entityType, previousStatus, newStatus, reason)
+	}
+}
+
+func (uc *CreateCheckoutSession) logDebug(msg string, args ...any) {
+	if uc.logger != nil {
+		uc.logger.Debug(msg, args...)
+	}
+}
+
 type CreateCheckoutSessionResult struct {
 	CheckoutSessionID string
 	CheckoutURL       string
@@ -58,6 +88,7 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 	}
 
 	if !uc.stripeConfigured {
+		uc.recordTransition("parent_checkout", "payment_attempt", "none", "checkout_creation_failed", "payment_provider_unconfigured")
 		return CreateCheckoutSessionResult{}, domainerrors.New("payment_provider_unconfigured", "Payment provider is not configured.")
 	}
 
@@ -67,6 +98,12 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
 		row, found, err := uc.repo.GetParentInvoiceForCheckoutForUpdate(ctx, tx, tenantID, branchID, membershipID, invoiceID.String())
 		if err != nil {
+			uc.logDebug("checkout_session_repo",
+				"operation", "get_parent_invoice_for_checkout",
+				"request_id", requestID,
+				"invoice_id", invoiceID.String(),
+				"error", logging.SafeErr(err),
+			)
 			return fmt.Errorf("get parent invoice for checkout: %w", err)
 		}
 		if !found {
@@ -98,6 +135,8 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 		return CreateCheckoutSessionResult{}, txErr
 	}
 
+	uc.recordTransition("parent_checkout", "payment_attempt", "none", "checkout_creation_started", "parent_checkout_requested")
+
 	productDesc := ""
 	if candidate.InvoiceNumber != "" {
 		productDesc = "Invoice " + candidate.InvoiceNumber
@@ -128,6 +167,14 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 			ProviderErrorCode:    safeProviderCode(providerErr),
 			ProviderErrorMessage: safeProviderMessage(providerErr),
 		})
+		uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_creation_failed", "stripe_error")
+		uc.logDebug("checkout_session_provider",
+			"operation", "create_checkout_session",
+			"request_id", requestID,
+			"invoice_id", invoiceID.String(),
+			"attempt_id", attemptID.String(),
+			"error", logging.SafeErr(providerErr),
+		)
 		return CreateCheckoutSessionResult{}, domainerrors.New("payment_provider_error", "Payment provider failed to create checkout session.")
 	}
 
@@ -139,6 +186,13 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 			AttemptID:     attemptID.String(),
 			FailureReason: domain.FailureReasonInvoiceNoLongerPayable,
 		})
+		uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_creation_failed", "invoice_no_longer_payable")
+		uc.logDebug("checkout_session_state",
+			"operation", "check_invoice_payment_state",
+			"request_id", requestID,
+			"invoice_id", invoiceID.String(),
+			"attempt_id", attemptID.String(),
+		)
 		return CreateCheckoutSessionResult{}, domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
 	}
 
@@ -158,8 +212,25 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 		StripePaymentIntentID:   result.PaymentIntentID,
 		StripeExpiresAt:         expiresAt,
 	}); markErr != nil {
+		uc.logDebug("checkout_session_repo",
+			"operation", "mark_payment_attempt_checkout_created",
+			"request_id", requestID,
+			"invoice_id", invoiceID.String(),
+			"attempt_id", attemptID.String(),
+			"error", logging.SafeErr(markErr),
+		)
 		return CreateCheckoutSessionResult{}, domainerrors.Internal(fmt.Errorf("mark payment attempt created: %w", markErr))
 	}
+
+	uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_created", "checkout_created")
+	uc.logDebug("checkout_session_created",
+		"operation", "create_checkout_session",
+		"request_id", requestID,
+		"invoice_id", invoiceID.String(),
+		"attempt_id", attemptID.String(),
+		"checkout_session_id", result.CheckoutSessionID,
+		"payment_intent_id", result.PaymentIntentID,
+	)
 
 	return CreateCheckoutSessionResult{
 		CheckoutSessionID: result.CheckoutSessionID,

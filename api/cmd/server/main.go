@@ -13,6 +13,10 @@ import (
 	"nursery-management-system/api/internal/app/bootstrap"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
+	"nursery-management-system/api/internal/platform/logging"
+	"nursery-management-system/api/internal/platform/metrics"
+
+	"github.com/prometheus/client_golang/prometheus"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/jobs"
@@ -20,12 +24,26 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := logging.NewJSONLogger(os.Stdout, slog.LevelInfo)
 
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Error("failed to load config", "error", err)
 		os.Exit(1)
+	}
+
+	logLevel, err := logging.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		logger.Error("invalid log level", "error", err)
+		os.Exit(1)
+	}
+	logger = logging.NewJSONLogger(os.Stdout, logLevel)
+
+	var registry *prometheus.Registry
+	var recorder *metrics.Recorder
+	if cfg.MetricsEnabled {
+		registry = metrics.NewRegistry()
+		recorder = metrics.NewRecorder(registry)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -45,14 +63,17 @@ func main() {
 		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, txMgr, func() time.Time { return time.Now().UTC() })
 
 		var schedErr error
-		scheduler, schedErr = jobs.NewScheduler(logger, overdueUC)
+		scheduler, schedErr = jobs.NewScheduler(logger, overdueUC, recorder)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)
 		}
 	}
 
-	router := bootstrap.Bootstrap(cfg, logger, pool)
+	router := bootstrap.BootstrapWithOptions(cfg, logger, pool, bootstrap.BootstrapOptions{
+		MetricsRegistry: registry,
+		MetricsRecorder: recorder,
+	})
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.APIPort,

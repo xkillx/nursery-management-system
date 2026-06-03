@@ -52,7 +52,7 @@ func (uc *RequestResetUseCase) Execute(ctx context.Context, email string) (Reque
 	}
 
 	if !found || !user.IsActive {
-		uc.logger.Info("password_reset_request_accepted_silent", "email_normalized", emailNormalized)
+		uc.logger.Info("password_reset_request_accepted_silent")
 		return RequestResetResult{Accepted: true}, nil
 	}
 

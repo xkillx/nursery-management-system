@@ -37,6 +37,9 @@ type Config struct {
 	StripeSecretKey      string
 	StripeWebhookSecret  string
 	StripePublishableKey string
+
+	LogLevel        string
+	MetricsEnabled  bool
 }
 
 func Load() (Config, error) {
@@ -89,6 +92,9 @@ func Load() (Config, error) {
 		StripeSecretKey:      strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
 		StripeWebhookSecret:  strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
 		StripePublishableKey: strings.TrimSpace(os.Getenv("STRIPE_PUBLISHABLE_KEY")),
+
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		MetricsEnabled: resolveMetricsEnabled(os.Getenv("METRICS_ENABLED"), getEnv("APP_ENV", "local")),
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -167,6 +173,10 @@ func Load() (Config, error) {
 		return Config{}, errors.New("STRIPE_WEBHOOK_SECRET is required when APP_ENV is not local")
 	}
 
+	if !isAllowedLogLevel(cfg.LogLevel) {
+		return Config{}, fmt.Errorf("LOG_LEVEL must be one of debug, info, warn, error: %q", cfg.LogLevel)
+	}
+
 	return cfg, nil
 }
 
@@ -210,4 +220,21 @@ func validatePort(v string) error {
 		return fmt.Errorf("API_PORT must be between 1 and 65535: %q", v)
 	}
 	return nil
+}
+
+func isAllowedLogLevel(v string) bool {
+	switch v {
+	case "debug", "info", "warn", "error":
+		return true
+	default:
+		return false
+	}
+}
+
+func resolveMetricsEnabled(raw, appEnv string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return appEnv == "local" || appEnv == "staging"
+	}
+	return strings.EqualFold(raw, "true")
 }

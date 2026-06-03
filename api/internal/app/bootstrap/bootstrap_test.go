@@ -4,13 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 
+	"nursery-management-system/api/internal/platform/config"
+	"nursery-management-system/api/internal/platform/dbtest"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/metrics"
 )
 
 func TestHealthRoutesRespondWithRequestID(t *testing.T) {
@@ -87,4 +93,109 @@ type fakeHealthPinger struct {
 
 func (p *fakeHealthPinger) Ping(context.Context) error {
 	return p.err
+}
+
+func TestMetricsRouteExposedWhenEnabled(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	pool := dbtest.RequirePostgres(t)
+	t.Cleanup(func() { pool.Close() })
+
+	cfg := baseTestConfig(t)
+	cfg.MetricsEnabled = true
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	registry := metrics.NewRegistry()
+	recorder := metrics.NewRecorder(registry)
+
+	router := BootstrapWithOptions(cfg, logger, pool, BootstrapOptions{
+		MetricsRegistry: registry,
+		MetricsRecorder: recorder,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for /metrics, got %d", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "nursery_api_http_requests_total") {
+		t.Fatal("expected nursery_api metrics in response")
+	}
+}
+
+func TestMetricsRouteNotExposedWhenDisabled(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	pool := dbtest.RequirePostgres(t)
+	t.Cleanup(func() { pool.Close() })
+
+	cfg := baseTestConfig(t)
+	cfg.MetricsEnabled = false
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router := BootstrapWithOptions(cfg, logger, pool, BootstrapOptions{})
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for /metrics when disabled, got %d", w.Code)
+	}
+}
+
+func TestMetricsRouteNotUnderAPIV1(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	pool := dbtest.RequirePostgres(t)
+	t.Cleanup(func() { pool.Close() })
+
+	cfg := baseTestConfig(t)
+	cfg.MetricsEnabled = true
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	registry := metrics.NewRegistry()
+	recorder := metrics.NewRecorder(registry)
+
+	router := BootstrapWithOptions(cfg, logger, pool, BootstrapOptions{
+		MetricsRegistry: registry,
+		MetricsRecorder: recorder,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for /api/v1/metrics, got %d", w.Code)
+	}
+}
+
+func baseTestConfig(t *testing.T) config.Config {
+	t.Helper()
+	cfg := config.Config{
+		AppEnv:         "local",
+		APIPort:        "8080",
+		APIBasePath:    "/api/v1",
+		DatabaseURL:    "",
+		JWTAccessSecret:    "access-secret-for-testing",
+		JWTRefreshSecret:   "refresh-secret-for-testing",
+		JWTAccessTTLMin:    15,
+		JWTRefreshTTLHours: 720,
+		WebBaseURL:         "http://localhost:4200",
+		EmailProvider:      "smtp",
+		SMTPHost:           "localhost",
+		SMTPPort:           1025,
+		SMTPFrom:           "test@example.com",
+		PasswordResetTokenSecret:    "reset-secret",
+		PasswordResetTokenTTLMinutes: 60,
+		InviteTokenSecret:           "invite-secret",
+		InviteTokenTTLHours:         168,
+		LogLevel:       "info",
+		MetricsEnabled: true,
+	}
+	return cfg
 }

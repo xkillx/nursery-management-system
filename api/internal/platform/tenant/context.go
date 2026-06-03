@@ -8,20 +8,24 @@ import (
 const AuthContextKey = "auth_context"
 
 type AuthorizationContext struct {
-	UserID       string `json:"user_id"`
-	MembershipID string `json:"membership_id"`
-	TenantID     string `json:"tenant_id"`
-	BranchID     string `json:"branch_id"`
-	Role         string `json:"role"`
-	RequestID    string `json:"request_id"`
+	UserID        string `json:"user_id"`
+	MembershipID  string `json:"membership_id"`
+	TenantID      string `json:"tenant_id"`
+	BranchID      string `json:"branch_id"`
+	Role          string `json:"role"`
+	RequestID     string `json:"request_id"`
+	CorrelationID string `json:"correlation_id"`
+	TraceID       string `json:"trace_id"`
 }
 
 type ActorContext struct {
-	UserID       uuid.UUID
-	MembershipID uuid.UUID
-	TenantID     uuid.UUID
-	BranchID     uuid.UUID
-	RequestID    string
+	UserID        uuid.UUID
+	MembershipID  uuid.UUID
+	TenantID      uuid.UUID
+	BranchID      uuid.UUID
+	RequestID     string
+	CorrelationID string
+	TraceID       string
 }
 
 func ActorFromGinContext(c *gin.Context) (ActorContext, bool) {
@@ -53,10 +57,12 @@ func ActorFromGinContext(c *gin.Context) (ActorContext, bool) {
 	}
 
 	return ActorContext{
-		UserID:       userID,
-		MembershipID: membershipID,
-		TenantID:     tenantID,
-		BranchID:     branchID,
-		RequestID:    authCtx.RequestID,
+		UserID:        userID,
+		MembershipID:  membershipID,
+		TenantID:      tenantID,
+		BranchID:      branchID,
+		RequestID:     authCtx.RequestID,
+		CorrelationID: authCtx.CorrelationID,
+		TraceID:       authCtx.TraceID,
 	}, true
 }

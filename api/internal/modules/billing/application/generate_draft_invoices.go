@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,15 +12,18 @@ import (
 	"nursery-management-system/api/internal/modules/billing/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/transaction"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
 type GenerateDraftInvoices struct {
-	repo   domain.BillingRepository
-	txMgr  *transaction.Manager
-	auditW *audit.Writer
+	repo     domain.BillingRepository
+	txMgr    *transaction.Manager
+	auditW   *audit.Writer
+	logger   *slog.Logger
+	recorder *metrics.Recorder
 }
 
 func NewGenerateDraftInvoices(
@@ -30,7 +34,19 @@ func NewGenerateDraftInvoices(
 	return &GenerateDraftInvoices{repo: repo, txMgr: txMgr, auditW: auditW}
 }
 
+func (uc *GenerateDraftInvoices) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *GenerateDraftInvoices {
+	return &GenerateDraftInvoices{
+		repo:     uc.repo,
+		txMgr:    uc.txMgr,
+		auditW:   uc.auditW,
+		logger:   logger,
+		recorder: recorder,
+	}
+}
+
 func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string, rawChildIDs []string) (domain.DraftGenerationResult, error) {
+	startedAt := time.Now()
+
 	billingMonth, err := ParseBillingMonth(billingMonthRaw)
 	if err != nil {
 		return domain.DraftGenerationResult{}, domainerrors.Validation("Invalid billing month format.", "billing_month")
@@ -430,8 +446,19 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 	})
 
 	if txErr != nil {
+		uc.recordOutcome("full_month", "error", startedAt, result, actor)
 		return domain.DraftGenerationResult{}, domainerrors.Internal(txErr)
 	}
+
+	mode := "full_month"
+	if len(rawChildIDs) > 0 {
+		mode = "selected_children"
+	}
+	outcome := "completed"
+	if result.RunStatus == domain.InvoiceRunStatusCompletedWithExceptions {
+		outcome = "completed_with_exceptions"
+	}
+	uc.recordOutcome(mode, outcome, startedAt, result, actor)
 
 	return result, nil
 }
@@ -498,4 +525,40 @@ func childInBillingMonth(child domain.PreflightChildRow, billingMonth, nextBilli
 		return false
 	}
 	return true
+}
+
+func (uc *GenerateDraftInvoices) recordOutcome(mode, outcome string, startedAt time.Time, result domain.DraftGenerationResult, actor tenant.ActorContext) {
+	elapsed := time.Since(startedAt).Seconds()
+	if uc.recorder != nil {
+		uc.recorder.InvoiceGenerationRun(mode, outcome, elapsed)
+		blockerCounts := make(map[string]int)
+		for _, b := range result.Blocked {
+			for _, bl := range b.Blockers {
+				blockerCounts[string(bl.Code)]++
+			}
+		}
+		for code, count := range blockerCounts {
+			uc.recorder.InvoiceGenerationBlocker(code, count)
+		}
+	}
+	if uc.logger != nil {
+		args := []any{
+			"operation", "draft_invoice_generation",
+			"outcome", outcome,
+			"run_id", result.RunID.String(),
+			"billing_month", result.BillingMonth,
+			"mode", mode,
+			"eligible_count", result.Summary.EligibleCount,
+			"success_count", result.Summary.SuccessCount,
+			"blocked_count", result.Summary.BlockedCount,
+			"total_due_minor", result.Summary.TotalDueMinor,
+			"latency_ms", time.Since(startedAt).Milliseconds(),
+			"request_id", actor.RequestID,
+			"correlation_id", actor.CorrelationID,
+		}
+		if actor.TraceID != "" {
+			args = append(args, "trace_id", actor.TraceID)
+		}
+		uc.logger.Info("draft_invoice_generation", args...)
+	}
 }

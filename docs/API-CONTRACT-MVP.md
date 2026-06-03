@@ -38,6 +38,14 @@ The `details` object is optional and only present when a specific field is ident
   - Trusted `Origin` or `Referer` header matching the request host.
   - `credentials: "include"` (browser clients) so cookies are sent.
 
+**Request correlation headers** (all responses):
+
+| Header | Direction | Description |
+|--------|-----------|-------------|
+| `X-Request-ID` | Request/Response | Accepted on request (preserved when safe, otherwise generated). Always present on response. |
+| `X-Correlation-ID` | Request/Response | Accepted on request (preserved when safe, otherwise generated). Always present on response. |
+| `traceparent` | Request only | W3C traceparent parsed for trace ID; only the trace ID appears in logs, never returned. |
+
 **Lifecycle reason codes** (used by mark-inactive, deactivate, end link, end mapping):
 
 | Code | Label |

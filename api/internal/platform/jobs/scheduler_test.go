@@ -35,7 +35,7 @@ func TestScheduler_CreationRegistersJob(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	runner := &stubRunner{}
 
-	s, err := NewScheduler(logger, runner)
+	s, err := NewScheduler(logger, runner, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestScheduler_StartTriggersStartupRun(t *testing.T) {
 		},
 	}
 
-	s, err := NewScheduler(logger, runner)
+	s, err := NewScheduler(logger, runner, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestScheduler_SkippedWhenLockHeld(t *testing.T) {
 		},
 	}
 
-	s, _ := NewScheduler(logger, runner)
+	s, _ := NewScheduler(logger, runner, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -101,7 +101,7 @@ func TestScheduler_OverdueJobNextRunUsesLondonMidnight(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	runner := &stubRunner{}
 
-	s, err := NewScheduler(logger, runner)
+	s, err := NewScheduler(logger, runner, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestScheduler_StopWithoutStart(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	runner := &stubRunner{}
 
-	s, _ := NewScheduler(logger, runner)
+	s, _ := NewScheduler(logger, runner, nil)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 

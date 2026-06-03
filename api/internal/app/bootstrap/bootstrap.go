@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	authapp "nursery-management-system/api/internal/modules/authentication/application"
 	authpostgres "nursery-management-system/api/internal/modules/authentication/infrastructure/postgres"
@@ -63,6 +65,7 @@ import (
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
 
@@ -76,6 +79,8 @@ type BootstrapOptions struct {
 	CheckoutProvider paymentsdomain.CheckoutProvider
 	WebhookVerifier  paymentsdomain.WebhookVerifier
 	EmailSender      email.Sender
+	MetricsRegistry  *prometheus.Registry
+	MetricsRecorder  *metrics.Recorder
 }
 
 func Bootstrap(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) *gin.Engine {
@@ -89,7 +94,23 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	router := gin.New()
 	router.Use(httpserver.RequestIDMiddleware())
-	router.Use(httpserver.AccessLogMiddleware(logger))
+
+	var recorder *metrics.Recorder
+	if cfg.MetricsEnabled {
+		registry := opts.MetricsRegistry
+		if registry == nil {
+			registry = metrics.NewRegistry()
+		}
+		recorder = opts.MetricsRecorder
+		if recorder == nil {
+			recorder = metrics.NewRecorder(registry)
+		}
+		router.Use(httpserver.AccessLogMiddlewareWithMetrics(logger, recorder))
+		router.GET("/metrics", gin.WrapH(promhttp.HandlerFor(registry, promhttp.HandlerOpts{Registry: registry})))
+	} else {
+		router.Use(httpserver.AccessLogMiddleware(logger))
+	}
+
 	router.Use(httpserver.RecoveryMiddleware(logger))
 
 	api := registerHealthRoutes(router, cfg.APIBasePath, pool)
@@ -101,7 +122,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	refreshUC := authapp.NewRefreshUseCase(authRepo, authRepo, tokenManager)
 	logoutUC := authapp.NewLogoutUseCase(authRepo, tokenManager)
 	switchUC := authapp.NewSwitchMembershipUseCase(authRepo, authRepo, tokenManager)
-	authHandler := authhandler.NewHandler(loginUC, refreshUC, logoutUC, switchUC, cfg)
+	authHandler := authhandler.NewHandler(loginUC, refreshUC, logoutUC, switchUC, cfg).WithObservability(logger, recorder)
 	authHandler.RegisterRoutes(api)
 
 	// Password reset module
@@ -117,19 +138,19 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	setPasswordUC := resetapp.NewSetNewPasswordUseCase(resetRepo, logger)
 	resetEmailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
 	resetIPLimiter := ratelimit.NewFixedWindowLimiter(20, 15*time.Minute)
-	resetHandler := resethandler.NewHandler(requestResetUC, setPasswordUC, resetEmailLimiter, resetIPLimiter)
+	resetHandler := resethandler.NewHandler(requestResetUC, setPasswordUC, resetEmailLimiter, resetIPLimiter).WithObservability(logger, recorder)
 	resetHandler.RegisterRoutes(api)
 
 	// Middleware
 	tokenParser := &tokenParserAdapter{tm: tokenManager}
 	protected := api.Group("")
-	protected.Use(httpserver.AuthnMiddleware(tokenParser))
-	protected.GET("/me", httpserver.RequireRoles("manager", "practitioner", "parent"), meHandler())
-	protected.GET("/authz/probe/manager", httpserver.RequireRoles("manager"), meHandler())
-	protected.GET("/authz/probe/practitioner", httpserver.RequireRoles("practitioner"), meHandler())
-	protected.GET("/authz/probe/parent", httpserver.RequireRoles("parent"), meHandler())
-	protected.GET("/authz/probe/scope/:tenant_id/:branch_id", httpserver.RequireRoles("manager", "practitioner", "parent"), scopeProbeHandler())
-	protected.GET("/authz/probe/parent-link/:child_id", httpserver.RequireRoles("parent"), parentLinkProbeHandler())
+	protected.Use(httpserver.AuthnMiddlewareWithObservability(tokenParser, logger, recorder))
+	protected.GET("/me", httpserver.RequireRolesWithObservability(logger, recorder, "manager", "practitioner", "parent"), meHandler())
+	protected.GET("/authz/probe/manager", httpserver.RequireRolesWithObservability(logger, recorder, "manager"), meHandler())
+	protected.GET("/authz/probe/practitioner", httpserver.RequireRolesWithObservability(logger, recorder, "practitioner"), meHandler())
+	protected.GET("/authz/probe/parent", httpserver.RequireRolesWithObservability(logger, recorder, "parent"), meHandler())
+	protected.GET("/authz/probe/scope/:tenant_id/:branch_id", httpserver.RequireRolesWithObservability(logger, recorder, "manager", "practitioner", "parent"), scopeProbeHandler(logger, recorder))
+	protected.GET("/authz/probe/parent-link/:child_id", httpserver.RequireRolesWithObservability(logger, recorder, "parent"), parentLinkProbeHandler(logger, recorder))
 
 	// Shared infrastructure
 	txManager := transaction.NewManager(pool)
@@ -199,7 +220,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	childrenHandler.RegisterRoutes(protected)
 
 	manager := protected.Group("")
-	manager.Use(httpserver.RequireRoles("manager"))
+	manager.Use(httpserver.RequireRolesWithObservability(logger, recorder, "manager"))
 	guardiansHandler.RegisterRoutes(manager)
 	linksHandler.RegisterRoutes(manager)
 	mappingsHandler.RegisterRoutes(manager)
@@ -222,7 +243,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	billingRepo := billingpostgres.NewRepository(pool)
 	billingHandler := billinghandler.NewHandler(
 		billingapp.NewPreflightDraftInvoices(billingRepo),
-		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter),
+		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter).WithObservability(logger, recorder),
 		billingapp.NewListInvoices(billingRepo),
 		billingapp.NewGetInvoice(billingRepo),
 		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter),
@@ -234,7 +255,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Parent route group
 	parent := protected.Group("/parent")
-	parent.Use(httpserver.RequireRoles("parent"))
+	parent.Use(httpserver.RequireRolesWithObservability(logger, recorder, "parent"))
 	billingHandler.RegisterParentRoutes(parent)
 
 	// Payments module
@@ -248,7 +269,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		checkoutProvider = stripeclient.NewClient(cfg.StripeSecretKey)
 	}
 	paymentsTxMgr := &txManagerAdapter{mgr: txManager}
-	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
+	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured).WithObservability(logger, recorder)
 
 	var webhookVerifier paymentsdomain.WebhookVerifier
 	if opts.WebhookVerifier != nil {
@@ -264,7 +285,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			webhookVerifier,
 			paymentsTxMgr,
 			&auditSystemWriterAdapter{w: auditWriter},
-		)
+		).WithObservability(logger, recorder)
 	}
 
 	paymentsHandler := paymentshandler.NewHandler(
@@ -272,7 +293,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		handleWebhookUC,
 		paymentsapp.NewGetManagerPaymentStatus(paymentsRepo.ManagerRepo()),
 		paymentsapp.NewListManagerPaymentEvents(paymentsRepo.ManagerRepo()),
-	)
+	).WithObservability(logger, recorder)
 	paymentsHandler.RegisterParentRoutes(parent)
 	paymentsHandler.RegisterStripeRoutes(api)
 	paymentsHandler.RegisterManagerRoutes(manager)
@@ -343,7 +364,7 @@ func meHandler() gin.HandlerFunc {
 	}
 }
 
-func scopeProbeHandler() gin.HandlerFunc {
+func scopeProbeHandler(logger *slog.Logger, recorder *metrics.Recorder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authCtx, ok := httpserver.AuthContextFromContext(c)
 		if !ok {
@@ -351,6 +372,7 @@ func scopeProbeHandler() gin.HandlerFunc {
 			return
 		}
 		if c.Param("tenant_id") != authCtx.TenantID || c.Param("branch_id") != authCtx.BranchID {
+			httpserver.RecordAuthorizationDenial(c, logger, recorder, "scope_probe", "forbidden_scope")
 			httpserver.WriteError(c, http.StatusForbidden, "forbidden_scope", "Access denied.", nil)
 			return
 		}
@@ -358,10 +380,11 @@ func scopeProbeHandler() gin.HandlerFunc {
 	}
 }
 
-func parentLinkProbeHandler() gin.HandlerFunc {
+func parentLinkProbeHandler(logger *slog.Logger, recorder *metrics.Recorder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		linkedChildID := c.Query("linked_child_id")
 		if linkedChildID == "" || linkedChildID != c.Param("child_id") {
+			httpserver.RecordAuthorizationDenial(c, logger, recorder, "parent_link_probe", "forbidden_parent_child_link")
 			httpserver.WriteError(c, http.StatusForbidden, "forbidden_parent_child_link", "Access denied.", nil)
 			return
 		}

@@ -3,6 +3,7 @@ package httpayment
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,7 @@ import (
 	"nursery-management-system/api/internal/modules/payments/application"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -35,6 +37,8 @@ type Handler struct {
 	handleWebhook         HandleWebhookUseCase
 	getManagerStatus      GetManagerPaymentStatusUseCase
 	listManagerEvents     ListManagerPaymentEventsUseCase
+	logger                *slog.Logger
+	recorder              *metrics.Recorder
 }
 
 func NewHandler(
@@ -52,6 +56,29 @@ func NewHandler(
 		handleWebhook:         hw,
 		getManagerStatus:      getManagerStatus,
 		listManagerEvents:     listManagerEvents,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
+	return &Handler{
+		createCheckoutSession: h.createCheckoutSession,
+		handleWebhook:         h.handleWebhook,
+		getManagerStatus:      h.getManagerStatus,
+		listManagerEvents:     h.listManagerEvents,
+		logger:                logger,
+		recorder:              recorder,
+	}
+}
+
+func (h *Handler) recordWebhookOutcome(provider, eventType, outcome, reason string) {
+	if h.recorder != nil {
+		h.recorder.WebhookOutcome(provider, eventType, outcome, reason)
+	}
+}
+
+func (h *Handler) logInfo(msg string, args ...any) {
+	if h.logger != nil {
+		h.logger.Info(msg, args...)
 	}
 }
 
@@ -152,6 +179,13 @@ func (h *Handler) createCheckoutSessionHandler(c *gin.Context) {
 func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 	if h.handleWebhook == nil {
 		requestID := httpserver.RequestIDFromContext(c)
+		h.recordWebhookOutcome("stripe", "unknown", "unconfigured", "payment_provider_unconfigured")
+		h.logInfo("stripe_webhook",
+			"operation", "stripe_webhook",
+			"outcome", "unconfigured",
+			"reason", "payment_provider_unconfigured",
+			"request_id", requestID,
+		)
 		status, resp := httpserver.MapDomainError(
 			domainErrorPaymentProviderUnconfigured(),
 			requestID,
@@ -172,6 +206,10 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 	requestID := httpserver.RequestIDFromContext(c)
 	result, err := h.handleWebhook.Execute(c.Request.Context(), payload, sigHeader, requestID)
 	if err != nil {
+		if isInvalidSignatureError(err) {
+			eventType := "unknown"
+			h.recordWebhookOutcome("stripe", eventType, "invalid_signature", "payment_webhook_invalid_signature")
+		}
 		handleError(c, err)
 		return
 	}
@@ -187,6 +225,13 @@ func handleError(c *gin.Context, err error) {
 
 func domainErrorPaymentProviderUnconfigured() *domainerrors.DomainError {
 	return domainerrors.New("payment_provider_unconfigured", "Payment provider is not configured.")
+}
+
+func isInvalidSignatureError(err error) bool {
+	if de, ok := err.(*domainerrors.DomainError); ok {
+		return de.Code == "payment_webhook_invalid_signature"
+	}
+	return false
 }
 
 func toManagerPaymentStatusResponse(r application.ManagerPaymentStatusResult) managerPaymentStatusResponse {

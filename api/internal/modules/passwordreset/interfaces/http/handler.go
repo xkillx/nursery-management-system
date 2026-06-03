@@ -2,6 +2,7 @@ package httpreset
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/passwordreset/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
 )
 
@@ -17,6 +19,8 @@ type Handler struct {
 	setPassword  *application.SetNewPasswordUseCase
 	emailLimiter *ratelimit.FixedWindowLimiter
 	ipLimiter    *ratelimit.FixedWindowLimiter
+	logger       *slog.Logger
+	recorder     *metrics.Recorder
 }
 
 func NewHandler(
@@ -30,6 +34,17 @@ func NewHandler(
 		setPassword:  setPassword,
 		emailLimiter: emailLimiter,
 		ipLimiter:    ipLimiter,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
+	return &Handler{
+		requestReset: h.requestReset,
+		setPassword:  h.setPassword,
+		emailLimiter: h.emailLimiter,
+		ipLimiter:    h.ipLimiter,
+		logger:       logger,
+		recorder:     recorder,
 	}
 }
 
@@ -58,8 +73,8 @@ func (h *Handler) requestResetHandler(c *gin.Context) {
 	emailNormalized := strings.ToLower(strings.TrimSpace(req.Email))
 	clientIP := c.ClientIP()
 
-	if !h.emailLimiter.Allow("password_reset_email:" + emailNormalized) ||
-		!h.ipLimiter.Allow("password_reset_ip:" + clientIP) {
+	if !h.emailLimiter.Allow("password_reset_email:"+emailNormalized) ||
+		!h.ipLimiter.Allow("password_reset_ip:"+clientIP) {
 		httpserver.WriteError(c, http.StatusTooManyRequests, "rate_limited", "Too many requests.", nil)
 		return
 	}
@@ -89,10 +104,13 @@ func (h *Handler) resetPasswordHandler(c *gin.Context) {
 			errMsg := domainErr.Error()
 			switch {
 			case strings.Contains(errMsg, "password_reset_token_invalid"):
+				h.recordAuthFailure(c, "password_reset", "password_reset_invalid_token")
 				httpserver.WriteError(c, http.StatusBadRequest, "password_reset_token_invalid", "Invalid reset token.", nil)
 			case strings.Contains(errMsg, "password_reset_token_expired"):
+				h.recordAuthFailure(c, "password_reset", "password_reset_expired_token")
 				httpserver.WriteError(c, http.StatusBadRequest, "password_reset_token_expired", "Reset token has expired.", nil)
 			case strings.Contains(errMsg, "password_reset_token_used"):
+				h.recordAuthFailure(c, "password_reset", "password_reset_used_token")
 				httpserver.WriteError(c, http.StatusBadRequest, "password_reset_token_used", "Reset token has already been used.", nil)
 			case strings.Contains(errMsg, "validation_error"):
 				httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Password must be at least 8 characters.", nil)
@@ -106,4 +124,18 @@ func (h *Handler) resetPasswordHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) recordAuthFailure(c *gin.Context, operation, reason string) {
+	if h.logger != nil {
+		h.logger.Warn("auth_failure",
+			"operation", operation,
+			"reason", reason,
+			"request_id", httpserver.RequestIDFromContext(c),
+			"correlation_id", httpserver.CorrelationIDFromContext(c),
+		)
+	}
+	if h.recorder != nil {
+		h.recorder.AuthFailure(operation, reason)
+	}
 }

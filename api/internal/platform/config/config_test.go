@@ -263,3 +263,122 @@ func TestStripeConfig(t *testing.T) {
 		}
 	})
 }
+
+func TestLogLevelConfig(t *testing.T) {
+	t.Run("default is info", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("LOG_LEVEL", "")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.LogLevel != "info" {
+			t.Fatalf("expected default LogLevel info, got %q", cfg.LogLevel)
+		}
+	})
+
+	for _, level := range []string{"debug", "info", "warn", "error"} {
+		t.Run("allowed level "+level, func(t *testing.T) {
+			setBaseEnv(t)
+			t.Setenv("LOG_LEVEL", level)
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if cfg.LogLevel != level {
+				t.Fatalf("expected LogLevel %q, got %q", level, cfg.LogLevel)
+			}
+		})
+	}
+
+	t.Run("invalid level rejected", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("LOG_LEVEL", "verbose")
+		_, err := Load()
+		if err == nil {
+			t.Fatal("expected Load() to fail for invalid LOG_LEVEL")
+		}
+		if !strings.Contains(err.Error(), "LOG_LEVEL") {
+			t.Fatalf("expected error to mention LOG_LEVEL, got %v", err)
+		}
+	})
+}
+
+func TestMetricsEnabledConfig(t *testing.T) {
+	t.Run("default local is true", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "")
+		t.Setenv("APP_ENV", "local")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled true for local")
+		}
+	})
+
+	t.Run("default staging is true", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "")
+		t.Setenv("APP_ENV", "staging")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled true for staging")
+		}
+	})
+
+	t.Run("default prod is false", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "")
+		t.Setenv("APP_ENV", "prod")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled false for prod")
+		}
+	})
+
+	t.Run("explicit true overrides prod default", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "true")
+		t.Setenv("APP_ENV", "prod")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled true when explicitly set")
+		}
+	})
+
+	t.Run("explicit false overrides local default", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "false")
+		t.Setenv("APP_ENV", "local")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled false when explicitly set")
+		}
+	})
+
+	t.Run("non-boolean value treated as false", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("METRICS_ENABLED", "yes")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.MetricsEnabled {
+			t.Fatal("expected MetricsEnabled false for non-boolean value")
+		}
+	})
+}

@@ -2,6 +2,7 @@ package httpauth
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"nursery-management-system/api/internal/modules/authentication/application"
 	"nursery-management-system/api/internal/modules/authentication/domain"
 	"nursery-management-system/api/internal/platform/config"
+	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
@@ -20,11 +23,13 @@ const csrfCookieName = "csrf_token"
 const csrfHeaderName = "X-CSRF-Token"
 
 type Handler struct {
-	login   *application.LoginUseCase
-	refresh *application.RefreshUseCase
-	logout  *application.LogoutUseCase
-	switch_ *application.SwitchMembershipUseCase
-	cfg     config.Config
+	login    *application.LoginUseCase
+	refresh  *application.RefreshUseCase
+	logout   *application.LogoutUseCase
+	switch_  *application.SwitchMembershipUseCase
+	cfg      config.Config
+	logger   *slog.Logger
+	recorder *metrics.Recorder
 }
 
 func NewHandler(
@@ -40,6 +45,18 @@ func NewHandler(
 		logout:  logout,
 		switch_: switch_,
 		cfg:     cfg,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
+	return &Handler{
+		login:    h.login,
+		refresh:  h.refresh,
+		logout:   h.logout,
+		switch_:  h.switch_,
+		cfg:      h.cfg,
+		logger:   logger,
+		recorder: recorder,
 	}
 }
 
@@ -100,6 +117,7 @@ func (h *Handler) loginHandler(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidCredentials):
+			h.recordAuthFailure(c, "login", "login_invalid_credentials")
 			h.unauthorized(c)
 		case errors.Is(err, domain.ErrInvalidMembership):
 			if req.MembershipID == "" {
@@ -125,6 +143,7 @@ func (h *Handler) loginHandler(c *gin.Context) {
 func (h *Handler) refreshHandler(c *gin.Context) {
 	rawRefresh, err := c.Cookie(refreshCookieName)
 	if err != nil || strings.TrimSpace(rawRefresh) == "" {
+		h.recordAuthFailure(c, "refresh", "refresh_invalid_or_missing_token")
 		h.unauthorized(c)
 		return
 	}
@@ -138,6 +157,7 @@ func (h *Handler) refreshHandler(c *gin.Context) {
 	result, err := h.refresh.Execute(ctx, rawRefresh)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidToken) {
+			h.recordAuthFailure(c, "refresh", "refresh_invalid_or_missing_token")
 			h.unauthorized(c)
 		} else {
 			h.internalError(c)
@@ -154,6 +174,7 @@ func (h *Handler) logoutHandler(c *gin.Context) {
 	rawRefresh, err := c.Cookie(refreshCookieName)
 	if err == nil && strings.TrimSpace(rawRefresh) != "" {
 		if !h.validateCSRFSessionAction(c) {
+			h.recordAuthFailure(c, "logout", "logout_csrf_denied")
 			return
 		}
 
@@ -179,11 +200,13 @@ func (h *Handler) switchMembershipHandler(c *gin.Context) {
 
 	rawRefresh, err := c.Cookie(refreshCookieName)
 	if err != nil || strings.TrimSpace(rawRefresh) == "" {
+		h.recordAuthFailure(c, "switch_membership", "switch_membership_invalid_or_missing_token")
 		h.unauthorized(c)
 		return
 	}
 
 	if !h.validateCSRFSessionAction(c) {
+		h.recordAuthFailure(c, "switch_membership", "switch_membership_csrf_denied")
 		return
 	}
 
@@ -194,6 +217,7 @@ func (h *Handler) switchMembershipHandler(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidToken):
+			h.recordAuthFailure(c, "switch_membership", "switch_membership_invalid_or_missing_token")
 			h.unauthorized(c)
 		case errors.Is(err, domain.ErrInvalidMembership):
 			h.forbiddenScopeSelection(c, "Invalid membership selection.")
@@ -336,9 +360,26 @@ func (h *Handler) internalError(c *gin.Context) {
 }
 
 func (h *Handler) forbiddenScopeSelection(c *gin.Context, message string) {
+	if h.logger != nil || h.recorder != nil {
+		httpserver.RecordAuthorizationDenial(c, h.logger, h.recorder, "session_action", "forbidden_scope_selection")
+	}
 	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 		"code":       "forbidden_scope_selection",
 		"message":    message,
 		"request_id": c.Writer.Header().Get("X-Request-ID"),
 	})
+}
+
+func (h *Handler) recordAuthFailure(c *gin.Context, operation, reason string) {
+	if h.logger != nil {
+		h.logger.Warn("auth_failure",
+			"operation", operation,
+			"reason", reason,
+			"request_id", httpserver.RequestIDFromContext(c),
+			"correlation_id", httpserver.CorrelationIDFromContext(c),
+		)
+	}
+	if h.recorder != nil {
+		h.recorder.AuthFailure(operation, reason)
+	}
 }
