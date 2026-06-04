@@ -3,6 +3,9 @@ import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/
 import { FormsModule } from '@angular/forms';
 
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 
 type ChildFormValue = {
   full_name: string;
@@ -15,7 +18,13 @@ type ChildFormValue = {
 
 @Component({
   selector: 'app-child-form',
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    FormFieldComponent,
+    ButtonComponent,
+    AlertComponent,
+  ],
   templateUrl: './child-form.component.html',
 })
 export class ChildFormComponent {

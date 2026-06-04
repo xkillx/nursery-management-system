@@ -5,10 +5,29 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
+import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
+import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
+import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-manager-children',
-  imports: [CommonModule, ChildFormComponent],
+  imports: [
+    CommonModule,
+    ChildFormComponent,
+    PageHeaderComponent,
+    ButtonComponent,
+    AlertComponent,
+    StatusBadgeComponent,
+    TableShellComponent,
+    TablePaginationComponent,
+    EmptyStateComponent,
+    LoadingStateComponent,
+  ],
   templateUrl: './manager-children.component.html',
 })
 export class ManagerChildrenComponent {

@@ -4,12 +4,26 @@ import { Component, inject } from '@angular/core';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
+import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
 type StatusFilter = 'all' | 'not_checked_in' | 'checked_in';
 
 @Component({
   selector: 'app-practitioner-attendance-children',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    PageHeaderComponent,
+    ButtonComponent,
+    AlertComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent,
+    LoadingStateComponent,
+  ],
   templateUrl: './practitioner-attendance-children.component.html',
 })
 export class PractitionerAttendanceChildrenComponent {

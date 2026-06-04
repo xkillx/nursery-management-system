@@ -16,19 +16,23 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [max]="max"
         [step]="step"
         [disabled]="disabled"
+        [attr.aria-invalid]="error"
+        [attr.aria-describedby]="describedBy || null"
         [ngClass]="inputClasses"
         (input)="onInput($event)"
       />
 
       @if (hint) {
-      <p class="mt-1.5 text-xs"
-        [ngClass]="{
-          'text-error-500': error,
-          'text-success-500': success,
-          'text-gray-500': !error && !success
-        }">
-        {{ hint }}
-      </p>
+        <p
+          class="mt-1.5 text-xs"
+          [ngClass]="{
+            'text-error-500': error,
+            'text-success-500': success,
+            'text-gray-500': !error && !success
+          }"
+        >
+          {{ hint }}
+        </p>
       }
     </div>
   `,
@@ -48,6 +52,7 @@ export class InputFieldComponent {
   @Input() error: boolean = false;
   @Input() hint?: string;
   @Input() className: string = '';
+  @Input() describedBy?: string;
 
   @Output() valueChange = new EventEmitter<string | number>();
 

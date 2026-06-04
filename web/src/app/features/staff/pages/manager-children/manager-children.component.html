@@ -1,11 +1,10 @@
 <div class="space-y-5">
-  <div class="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 md:flex-row md:items-center md:justify-between dark:border-gray-800 dark:bg-white/[0.03]">
-    <div>
-      <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Manager children</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Create and edit child enrollment basics with active-first listings.</p>
-    </div>
-
-    <div class="flex items-center gap-3">
+  <app-page-header
+    title="Manager children"
+    description="Create and edit child enrollment basics with active-first listings."
+    [hasActions]="true"
+  >
+    <div class="flex items-center gap-3" actions>
       <label class="text-sm text-gray-600 dark:text-gray-300">Status</label>
       <select
         [value]="status"
@@ -16,15 +15,9 @@
           <option [value]="option">{{ option }}</option>
         }
       </select>
-      <button
-        type="button"
-        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
-        (click)="openCreate()"
-      >
-        Add child
-      </button>
+      <app-button variant="primary" size="sm" (btnClick)="openCreate()">Add child</app-button>
     </div>
-  </div>
+  </app-page-header>
 
   @if (showForm) {
     <app-child-form
@@ -38,80 +31,63 @@
     />
   }
 
-  <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+  <app-table-shell>
     @if (errorMessage && !showForm) {
-      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700/40 dark:bg-red-500/10 dark:text-red-300">
-        {{ errorMessage }}
-      </div>
+      <app-alert variant="error" [message]="errorMessage" class="mb-4"></app-alert>
     }
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-            <th class="py-2 pr-3">Name</th>
-            <th class="py-2 pr-3">DOB</th>
-            <th class="py-2 pr-3">Start</th>
-            <th class="py-2 pr-3">Rate</th>
-            <th class="py-2 pr-3">Active</th>
-            <th class="py-2 pr-3">Enrollment</th>
-            <th class="py-2 pr-3">Missing requirements</th>
-            <th class="py-2">Actions</th>
+    <table class="min-w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+          <th class="py-2 pr-3">Name</th>
+          <th class="py-2 pr-3">DOB</th>
+          <th class="py-2 pr-3">Start</th>
+          <th class="py-2 pr-3">Rate</th>
+          <th class="py-2 pr-3">Active</th>
+          <th class="py-2 pr-3">Enrollment</th>
+          <th class="py-2 pr-3">Missing requirements</th>
+          <th class="py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (isLoading) {
+          <app-loading-state variant="table-row" [colspan]="8" label="Loading children..."></app-loading-state>
+        } @else if (children.length === 0) {
+          <tr>
+            <td colspan="8">
+              <app-empty-state title="No children found" message="Adjust filters or add a new child."></app-empty-state>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @if (isLoading) {
-            <tr>
-              <td class="py-3 text-gray-500 dark:text-gray-400" colspan="8">Loading children...</td>
+        } @else {
+          @for (child of children; track child.id) {
+            <tr class="border-b border-gray-100 dark:border-gray-800/60">
+              <td class="py-3 pr-3 text-gray-800 dark:text-white/90">{{ child.fullName }}</td>
+              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.dateOfBirth }}</td>
+              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.startDate }}</td>
+              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.coreHourlyRateMinor }}</td>
+              <td class="py-3 pr-3">
+                <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
+              </td>
+              <td class="py-3 pr-3">
+                <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+              </td>
+              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.missingRequirements.join(', ') || '-' }}</td>
+              <td class="py-3">
+                <app-button variant="outline" size="xs" (btnClick)="openEdit(child)">Edit</app-button>
+              </td>
             </tr>
-          } @else if (children.length === 0) {
-            <tr>
-              <td class="py-3 text-gray-500 dark:text-gray-400" colspan="8">No children found.</td>
-            </tr>
-          } @else {
-            @for (child of children; track child.id) {
-              <tr class="border-b border-gray-100 dark:border-gray-800/60">
-                <td class="py-3 pr-3 text-gray-800 dark:text-white/90">{{ child.fullName }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.dateOfBirth }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.startDate }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.coreHourlyRateMinor }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.isActive ? 'Yes' : 'No' }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.enrollmentComplete ? 'Complete' : 'Incomplete' }}</td>
-                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.missingRequirements.join(', ') || '-' }}</td>
-                <td class="py-3">
-                  <button
-                    type="button"
-                    class="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                    (click)="openEdit(child)"
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            }
           }
-        </tbody>
-      </table>
-    </div>
+        }
+      </tbody>
+    </table>
 
-    <div class="mt-4 flex items-center justify-end gap-2">
-      <button
-        type="button"
-        class="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-        [disabled]="offset === 0 || isLoading"
-        (click)="previousPage()"
-      >
-        Previous
-      </button>
-      <span class="text-xs text-gray-500 dark:text-gray-400">Offset {{ offset }} / Limit {{ limit }}</span>
-      <button
-        type="button"
-        class="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-        [disabled]="children.length < limit || isLoading"
-        (click)="nextPage()"
-      >
-        Next
-      </button>
-    </div>
-  </div>
+    <app-table-pagination
+      [offset]="offset"
+      [limit]="limit"
+      [itemCount]="children.length"
+      [loading]="isLoading"
+      (previous)="previousPage()"
+      (next)="nextPage()"
+    />
+  </app-table-shell>
 </div>

@@ -6,10 +6,29 @@ import { GuardianFormComponent } from '../../components/guardian-form/guardian-f
 import { StaffApiService } from '../../data/staff-api.service';
 import { StatusFilter } from '../../models/children.models';
 import { GuardianRecord, GuardianWritePayload } from '../../models/guardians.models';
+import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
+import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
+import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-manager-guardians',
-  imports: [CommonModule, GuardianFormComponent],
+  imports: [
+    CommonModule,
+    GuardianFormComponent,
+    PageHeaderComponent,
+    ButtonComponent,
+    AlertComponent,
+    StatusBadgeComponent,
+    TableShellComponent,
+    TablePaginationComponent,
+    EmptyStateComponent,
+    LoadingStateComponent,
+  ],
   templateUrl: './manager-guardians.component.html',
 })
 export class ManagerGuardiansComponent {

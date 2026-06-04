@@ -5,7 +5,7 @@ import {
   EventEmitter,
   HostListener,
   Input,
-  Output
+  Output,
 } from '@angular/core';
 
 @Component({
@@ -14,7 +14,7 @@ import {
     CommonModule,
   ],
   templateUrl: './modal.component.html',
-  styles: ``
+  styles: ``,
 })
 export class ModalComponent {
 
@@ -23,25 +23,37 @@ export class ModalComponent {
   @Input() className = '';
   @Input() showCloseButton = true;
   @Input() isFullscreen = false;
+  @Input() ariaLabel = '';
+  @Input() ariaLabelledBy = '';
+  @Input() closeOnBackdrop = true;
+  @Input() closeOnEscape = true;
+  @Input() initialFocusSelector = '';
+
+  private static openCount = 0;
+  private previousFocus: Element | null = null;
 
   constructor(private el: ElementRef) {}
 
   ngOnInit() {
     if (this.isOpen) {
-      document.body.style.overflow = 'hidden';
+      this.onOpen();
     }
   }
 
   ngOnDestroy() {
-    document.body.style.overflow = 'unset';
+    this.onCloseCleanup();
   }
 
   ngOnChanges() {
-    document.body.style.overflow = this.isOpen ? 'hidden' : 'unset';
+    if (this.isOpen) {
+      this.onOpen();
+    } else {
+      this.onCloseCleanup();
+    }
   }
 
   onBackdropClick(event: MouseEvent) {
-    if (!this.isFullscreen) {
+    if (!this.isFullscreen && this.closeOnBackdrop) {
       this.close.emit();
     }
   }
@@ -50,10 +62,36 @@ export class ModalComponent {
     event.stopPropagation();
   }
 
- @HostListener('document:keydown.escape')
+  @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.isOpen) {
+    if (this.isOpen && this.closeOnEscape) {
       this.close.emit();
+    }
+  }
+
+  private onOpen() {
+    ModalComponent.openCount++;
+    document.body.style.overflow = 'hidden';
+    this.previousFocus = document.activeElement;
+
+    if (this.initialFocusSelector) {
+      setTimeout(() => {
+        const target = this.el.nativeElement.querySelector(this.initialFocusSelector);
+        if (target) (target as HTMLElement).focus();
+      });
+    }
+  }
+
+  private onCloseCleanup() {
+    if (ModalComponent.openCount > 0) {
+      ModalComponent.openCount--;
+    }
+    if (ModalComponent.openCount === 0) {
+      document.body.style.overflow = 'unset';
+    }
+    if (this.previousFocus && typeof (this.previousFocus as HTMLElement).focus === 'function') {
+      (this.previousFocus as HTMLElement).focus();
+      this.previousFocus = null;
     }
   }
 }

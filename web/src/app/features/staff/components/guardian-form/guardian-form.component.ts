@@ -3,6 +3,9 @@ import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/
 import { FormsModule } from '@angular/forms';
 
 import { GuardianRecord, GuardianWritePayload } from '../../models/guardians.models';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 
 type GuardianFormValue = {
   full_name: string;
@@ -13,7 +16,13 @@ type GuardianFormValue = {
 
 @Component({
   selector: 'app-guardian-form',
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    FormFieldComponent,
+    ButtonComponent,
+    AlertComponent,
+  ],
   templateUrl: './guardian-form.component.html',
 })
 export class GuardianFormComponent {
