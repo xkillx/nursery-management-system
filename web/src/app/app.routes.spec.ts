@@ -31,8 +31,10 @@ describe('app.routes', () => {
   }
 
   const mvpPaths = [
+    'staff/manager/dashboard',
     'staff/manager/children',
     'staff/manager/guardians',
+    'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
     'parent/invoices',
     'signin',
@@ -43,4 +45,14 @@ describe('app.routes', () => {
       expect(paths).toContain(mvp);
     });
   }
+
+  it('legacy attendance-children route is a redirect, not a component route', () => {
+    const legacyRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/practitioner/attendance-children');
+
+    expect(legacyRoute).toBeDefined();
+    expect(legacyRoute!.redirectTo).toBe('staff/practitioner/attendance');
+    expect(legacyRoute!.component).toBeUndefined();
+  });
 });

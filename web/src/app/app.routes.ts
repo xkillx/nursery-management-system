@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleDefaultRedirectGuard } from './core/guards/role-default-redirect.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { ManagerDashboardComponent } from './features/staff/pages/manager-dashboard/manager-dashboard.component';
 import { ManagerChildrenComponent } from './features/staff/pages/manager-children/manager-children.component';
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
@@ -23,6 +24,13 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     children: [
       {
+        path: 'staff/manager/dashboard',
+        component: ManagerDashboardComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Manager Dashboard | Nursery Management',
+      },
+      {
         path: 'staff/manager/children',
         component: ManagerChildrenComponent,
         canActivate: [authGuard, roleGuard],
@@ -37,11 +45,16 @@ export const routes: Routes = [
         title: 'Manager Guardians | Nursery Management',
       },
       {
-        path: 'staff/practitioner/attendance-children',
+        path: 'staff/practitioner/attendance',
         component: PractitionerAttendanceChildrenComponent,
         canActivate: [authGuard, roleGuard],
         data: { roles: ['manager', 'practitioner'] },
-        title: 'Attendance Children | Nursery Management',
+        title: 'Attendance | Nursery Management',
+      },
+      {
+        path: 'staff/practitioner/attendance-children',
+        pathMatch: 'full',
+        redirectTo: 'staff/practitioner/attendance',
       },
       {
         path: 'parent/invoices',

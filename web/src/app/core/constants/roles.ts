@@ -6,15 +6,25 @@ export const ROLES = {
 
 export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 
+export const ROLE_ROUTES = {
+  managerDashboard: '/staff/manager/dashboard',
+  managerChildren: '/staff/manager/children',
+  managerGuardians: '/staff/manager/guardians',
+  practitionerAttendance: '/staff/practitioner/attendance',
+  practitionerAttendanceLegacy: '/staff/practitioner/attendance-children',
+  parentInvoices: '/parent/invoices',
+  signIn: '/signin',
+} as const;
+
 export function defaultRouteForRole(role: AppRole | null): string {
   switch (role) {
     case ROLES.manager:
-      return '/staff/manager/children';
+      return ROLE_ROUTES.managerDashboard;
     case ROLES.practitioner:
-      return '/staff/practitioner/attendance-children';
+      return ROLE_ROUTES.practitionerAttendance;
     case ROLES.parent:
-      return '/parent/invoices';
+      return ROLE_ROUTES.parentInvoices;
     default:
-      return '/signin';
+      return ROLE_ROUTES.signIn;
   }
 }

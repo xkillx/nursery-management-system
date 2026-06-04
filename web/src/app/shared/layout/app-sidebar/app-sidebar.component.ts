@@ -4,7 +4,7 @@ import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-import { ROLES } from '../../../core/constants/roles';
+import { ROLES, ROLE_ROUTES } from '../../../core/constants/roles';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -77,21 +77,22 @@ export class AppSidebarComponent {
 
     if (role === ROLES.manager) {
       return [
-        { label: 'Children', path: '/staff/manager/children', testId: 'staff-link-manager-children' },
-        { label: 'Guardians', path: '/staff/manager/guardians', testId: 'staff-link-manager-guardians' },
-        { label: 'Attendance', path: '/staff/practitioner/attendance-children', testId: 'staff-link-practitioner-attendance' },
+        { label: 'Dashboard', path: ROLE_ROUTES.managerDashboard, testId: 'staff-link-manager-dashboard' },
+        { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children' },
+        { label: 'Guardians', path: ROLE_ROUTES.managerGuardians, testId: 'staff-link-manager-guardians' },
+        { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
       ];
     }
 
     if (role === ROLES.practitioner) {
       return [
-        { label: 'Attendance', path: '/staff/practitioner/attendance-children', testId: 'staff-link-practitioner-attendance' },
+        { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
       ];
     }
 
     if (role === ROLES.parent) {
       return [
-        { label: 'Invoices', path: '/parent/invoices', testId: 'parent-link-invoices' },
+        { label: 'Invoices', path: ROLE_ROUTES.parentInvoices, testId: 'parent-link-invoices' },
       ];
     }
 

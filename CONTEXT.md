@@ -24,6 +24,10 @@ A nursery staff role focused on day-to-day child attendance operations.
 
 A guardian-side role that views invoices and completes payments.
 
+## Manager Operations Dashboard (MVP)
+
+The manager-facing landing surface for operational oversight across attendance, invoicing, and payment status. Avoid generic dashboard or ecommerce dashboard.
+
 ## Membership
 
 A user's role-bearing participation in one tenant and one branch. A user may have multiple active memberships, but each authenticated session acts through exactly one membership.

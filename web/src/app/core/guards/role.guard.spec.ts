@@ -17,7 +17,7 @@ describe('roleGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  it('blocks navigation for wrong role', () => {
+  it('redirects practitioner accessing manager-only route to /staff/practitioner/attendance', () => {
     spyOn(authService, 'currentRole').and.returnValue('practitioner');
 
     const result = TestBed.runInInjectionContext(() =>
@@ -25,7 +25,39 @@ describe('roleGuard', () => {
     );
 
     expect(result instanceof UrlTree).toBeTrue();
-    expect(router.serializeUrl(result as UrlTree)).toBe('/staff/practitioner/attendance-children');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/staff/practitioner/attendance');
+  });
+
+  it('redirects parent accessing manager-only route to /parent/invoices', () => {
+    spyOn(authService, 'currentRole').and.returnValue('parent');
+
+    const result = TestBed.runInInjectionContext(() =>
+      roleGuard({ data: { roles: ['manager'] } } as never, {} as never),
+    );
+
+    expect(result instanceof UrlTree).toBeTrue();
+    expect(router.serializeUrl(result as UrlTree)).toBe('/parent/invoices');
+  });
+
+  it('redirects manager accessing parent-only route to /staff/manager/dashboard', () => {
+    spyOn(authService, 'currentRole').and.returnValue('manager');
+
+    const result = TestBed.runInInjectionContext(() =>
+      roleGuard({ data: { roles: ['parent'] } } as never, {} as never),
+    );
+
+    expect(result instanceof UrlTree).toBeTrue();
+    expect(router.serializeUrl(result as UrlTree)).toBe('/staff/manager/dashboard');
+  });
+
+  it('allows manager on manager+practitioner route', () => {
+    spyOn(authService, 'currentRole').and.returnValue('manager');
+
+    const result = TestBed.runInInjectionContext(() =>
+      roleGuard({ data: { roles: ['manager', 'practitioner'] } } as never, {} as never),
+    );
+
+    expect(result).toBeTrue();
   });
 
   it('allows navigation for matching role', () => {
