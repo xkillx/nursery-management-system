@@ -52,7 +52,7 @@ Out of scope for the first implementation:
 
 2. Re-read current docs and schema.
    - `CONTEXT.md`
-   - `docs/API-CONTRACT-MVP.md`
+   - `docs/API-CONTRACT-MVP.openapi.yaml`
    - `docs/API-SCHEMA-STATE.md`
    - `docs/MVP-30D-API-BACKEND-BACKLOG.md`
    - `api/db/migrations/000012_add_invoice_schema.up.sql`
@@ -93,7 +93,7 @@ Out of scope for the first implementation:
 6. Add HTTP route.
    - Register manager route `POST /api/v1/invoices/:invoice_id/adjustments`.
    - Use existing auth middleware and manager guard.
-   - Map domain errors to the error codes documented in `docs/API-CONTRACT-MVP.md`.
+   - Map domain errors to the error codes documented in `docs/API-CONTRACT-MVP.openapi.yaml`.
    - Return HTTP 201 with the adjustment invoice response.
 
 7. Keep payment behavior unchanged.
@@ -112,7 +112,7 @@ Out of scope for the first implementation:
    - If manager list filters need invoice kind support, add it only when the UI/API consumer requires it.
 
 10. Update docs after implementation.
-   - Move `POST /api/v1/invoices/:invoice_id/adjustments` from Deferred to the live invoice section in `docs/API-CONTRACT-MVP.md`.
+   - Change the OpenAPI operation `x-implementation-status` from `deferred` to `implemented` in `docs/API-CONTRACT-MVP.openapi.yaml`.
    - Update `docs/API-SCHEMA-STATE.md` if migrations or constraints change.
    - Mark API-PM-01 complete in `docs/MVP-30D-API-BACKEND-BACKLOG.md`.
    - Update frontend backlog only if an adjustment UI is now in scope.
@@ -122,7 +122,7 @@ Out of scope for the first implementation:
 Current API-25 documentation outcome:
 
 - `CONTEXT.md`
-- `docs/API-CONTRACT-MVP.md`
+- `docs/API-CONTRACT-MVP.openapi.yaml`
 - `docs/MVP-30D-API-BACKEND-BACKLOG.md`
 - `docs/adjustment-invoice-endpoint-plan.md`
 
