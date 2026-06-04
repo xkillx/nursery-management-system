@@ -244,6 +244,7 @@ All tenant-owned records include `tenant_id`, `branch_id`, `created_at`, and `up
 ## 14. Post-MVP Expansion (Not Month 1)
 
 - Incident/safeguarding module
+- Digital child registration, enrolment, consent, medical, and document-check workflows from the owner-provided forms in `docs/forms/`
 - Ratio engine
 - Messaging and parent communications
 - LA-specific funding rule packs

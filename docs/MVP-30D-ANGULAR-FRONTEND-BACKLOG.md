@@ -116,6 +116,17 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 | FE-35 | Pilot copy and terminology pass. Replace internal/template wording with nursery domain terms from `CONTEXT.md`. | Core screens | UI consistently uses Manager, Practitioner, Parent, Guardian, Child, check-in, check-out, invoice, funded-hours allowance. |
 | FE-36 | Final frontend production readiness pass. Remove dead demo imports/routes where safe, confirm environment API base URL, run build/tests, and document remaining API blockers. | FE-30 to FE-35 | `npm run build` passes and remaining blockers are explicit. |
 
+## Post-MVP Frontend Feature Backlog
+
+These items are product features intentionally outside the month-1 pilot critical path unless UAT or pilot operation makes them necessary. Source forms live in `docs/forms/`.
+
+| ID | Task | Dependencies | Done check |
+|---|---|---|---|
+| FE-PM-01 | Build manager child registration/enrolment editor based on `docs/forms/child-application-form.md`. Use sectioned forms for child demographics, medical information, doctor/health visitor, social-services contact, developmental concerns/referrals, dietary requirements, parent/carer details, parental responsibility, emergency contacts, authorised collectors, benefits/funding notes, routines/free-text notes, and office-use fields. | FE-11; API-PM-02 | Manager can save partial sections, see completion state, and review missing registration requirements without losing existing child/guardian CRUD behavior. |
+| FE-PM-02 | Build parent/guardian digital registration and consent journey based on `docs/forms/child-application-form.md` and `docs/forms/parental-consent-form.md`. Support draft save, clear review before submission, signer details, date capture, and confirmation of GDPR/safeguarding acknowledgements. | Parent portal shell; API-PM-02; API-PM-03 | Parent/guardian can complete required registration and consent fields on mobile and desktop; validation explains missing required fields; submitted consent state is read-only except through an explicit supersede/update flow. |
+| FE-PM-03 | Add consent review/history UI for managers. Show current consent decisions and historical superseded records for urgent medical treatment, plasters, SENCO, health visitor, transition documents, outings, face painting, sun cream, nappy cream, photographs, website/promotional use, coursework, and social media. | FE-PM-01; API-PM-03 | Manager can quickly inspect current consent before operational decisions and can trace who changed a decision and when. |
+| FE-PM-04 | Add registration office-use checklist UI for deposit, application/start/date-left, sessions/days requested, term-time-only status, contract/handbook handoff, Red Book check, birth certificate/passport check, and proof-of-address check. | FE-PM-01; API-PM-04 | Manager can mark document/checklist completion from child enrollment; checklist status feeds the child detail readiness summary. |
+
 ## Files to Create or Change
 
 Expected Angular files and folders:
@@ -141,6 +152,7 @@ Expected Angular files and folders:
 - `web/src/app/features/invoicing/**`
 - `web/src/app/features/payments/**`
 - `web/src/app/features/parent-portal/**`
+- `web/src/app/features/registration/**` for post-MVP registration and consent workflows.
 - `web/src/environments/environment.ts`
 - `web/src/environments/environment.development.ts`
 - `web/package.json` for Playwright scripts when FE-31 starts.
@@ -167,6 +179,7 @@ Existing TailAdmin demo pages can remain temporarily if needed, but production n
 - parent invoice list/detail endpoints
 - checkout session creation endpoint
 - payment/reconciliation event endpoints
+- post-MVP registration profile, consent ledger, and office-use checklist endpoints from API-PM-02 to API-PM-04
 
 When an API is unavailable, build the UI with a typed local mock adapter and keep the real service method shape aligned to the expected `/api/v1` contract.
 

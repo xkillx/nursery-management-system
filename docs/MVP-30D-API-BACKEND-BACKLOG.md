@@ -179,6 +179,9 @@ These items are product features intentionally outside the month-1 pilot critica
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
 | API-PM-01 | Implement full manager adjustment invoice endpoint for post-issue billing corrections, following the deferred contract in `docs/API-CONTRACT-MVP.openapi.yaml` and the implementation plan in `docs/plans/adjustment-invoice-endpoint-plan.md`. | API-19; API-25 trigger condition met or post-MVP prioritization | Manager can create a linked, already-issued adjustment invoice with required reason; original invoice is not mutated; parent payment and parent invoice views remain monthly-invoice only; tests cover role/scope, status, reason, immutability, numbering, audit, and non-payable behavior. |
+| API-PM-02 | Implement owner-provided child registration/enrolment profile data from `docs/forms/child-application-form.md`. Cover child demographics, home contact details, language/religion/ethnicity, disability/access requirements, medical/allergy/medication/immunisation notes, doctor and health visitor contacts, social-services contact details, developmental concerns/referrals, dietary requirements, parent/carer details, parental responsibility, emergency contacts, authorised collectors, collection password policy, benefits/funding notes, routines/comforter/free-text notes, GDPR declaration metadata, and office-use application/start/session/document-check fields. | API-07; API-TD-01; post-MVP prioritization | Manager can create/read/update registration profile sections for a child through tenant/branch-scoped APIs; sensitive fields are excluded from practitioner and parent invoice surfaces; collection password handling is explicitly protected from logs and broad API responses; state-changing updates are audited; migration and `sqlc` query generation pass. |
+| API-PM-03 | Implement consent and acknowledgement ledger from `docs/forms/parental-consent-form.md` and the consent blocks inside the child application form. Track consent version, child, guardian/parent signer, signed_at, optional expiry/review date, and consent decisions for urgent medical treatment, plasters, safeguarding/reporting acknowledgement, SENCO discussion, health visitor discussion, transition documents, local outings, face painting, sun cream, nappy cream, development/profile photos, display boards, promotional literature, website, staff/student coursework, and social media channels. | API-PM-02; parent/guardian access model | Parent/guardian or manager-on-behalf workflows can record and supersede consent decisions without deleting historical consent records; manager can review current and historical consent state; audit events identify actor, child, consent type, old/new value, and request id; tests cover role/scope, signer linkage, history, and sensitive-data redaction. |
+| API-PM-04 | Add enrolment document/checklist metadata for the owner form office-use requirements: deposit paid/date, date left, sessions/days requested, term-time-only flag, contract handed/signature obtained, handbook given, Red Book checked/date received, birth certificate/passport checked/date received, and proof of address checked/date received. Keep actual document upload/storage as a separate follow-up unless prioritized. | API-PM-02 | Manager can track registration completion without file uploads; checklist values are tenant/branch scoped, audited, and visible on child enrollment readiness APIs; practitioner attendance APIs expose only the minimum readiness flag needed for check-in decisions. |
 
 ## Expected API Routes
 
@@ -226,6 +229,12 @@ New route groups to add:
 - `POST /api/v1/stripe/webhooks`
 - `GET /api/v1/invoices/:invoice_id/payment-status`
 - `GET /api/v1/invoices/:invoice_id/payment-events`
+
+Post-MVP route groups to define when API-PM-02 to API-PM-04 are prioritized:
+
+- child registration/enrolment profile read/update endpoints
+- child consent current/history read endpoints and consent create/supersede endpoints
+- child office-use registration checklist read/update endpoints
 
 Exact path names may be adjusted to match existing handler naming, but the resource boundaries and role access rules must remain stable.
 
