@@ -145,12 +145,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	tokenParser := &tokenParserAdapter{tm: tokenManager}
 	protected := api.Group("")
 	protected.Use(httpserver.AuthnMiddlewareWithObservability(tokenParser, logger, recorder))
-	protected.GET("/me", httpserver.RequireRolesWithObservability(logger, recorder, "manager", "practitioner", "parent"), meHandler())
-	protected.GET("/authz/probe/manager", httpserver.RequireRolesWithObservability(logger, recorder, "manager"), meHandler())
-	protected.GET("/authz/probe/practitioner", httpserver.RequireRolesWithObservability(logger, recorder, "practitioner"), meHandler())
-	protected.GET("/authz/probe/parent", httpserver.RequireRolesWithObservability(logger, recorder, "parent"), meHandler())
-	protected.GET("/authz/probe/scope/:tenant_id/:branch_id", httpserver.RequireRolesWithObservability(logger, recorder, "manager", "practitioner", "parent"), scopeProbeHandler(logger, recorder))
-	protected.GET("/authz/probe/parent-link/:child_id", httpserver.RequireRolesWithObservability(logger, recorder, "parent"), parentLinkProbeHandler(logger, recorder))
 
 	// Shared infrastructure
 	txManager := transaction.NewManager(pool)
@@ -350,45 +344,6 @@ func healthHandler(pinger healthPinger) gin.HandlerFunc {
 			"timestamp":  time.Now().UTC().Format(time.RFC3339),
 			"request_id": httpserver.RequestIDFromContext(c),
 		})
-	}
-}
-
-func meHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authCtx, ok := httpserver.AuthContextFromContext(c)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"auth": authCtx})
-	}
-}
-
-func scopeProbeHandler(logger *slog.Logger, recorder *metrics.Recorder) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authCtx, ok := httpserver.AuthContextFromContext(c)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-		if c.Param("tenant_id") != authCtx.TenantID || c.Param("branch_id") != authCtx.BranchID {
-			httpserver.RecordAuthorizationDenial(c, logger, recorder, "scope_probe", "forbidden_scope")
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_scope", "Access denied.", nil)
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	}
-}
-
-func parentLinkProbeHandler(logger *slog.Logger, recorder *metrics.Recorder) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		linkedChildID := c.Query("linked_child_id")
-		if linkedChildID == "" || linkedChildID != c.Param("child_id") {
-			httpserver.RecordAuthorizationDenial(c, logger, recorder, "parent_link_probe", "forbidden_parent_child_link")
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_parent_child_link", "Access denied.", nil)
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	}
 }
 

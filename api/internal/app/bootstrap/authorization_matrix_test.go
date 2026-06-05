@@ -385,7 +385,6 @@ type routeClass string
 
 const (
 	classPublic             routeClass = "public"
-	classProtectedDiagnostic routeClass = "protected_diagnostic"
 	classProtectedBusiness  routeClass = "protected_business"
 )
 
@@ -409,14 +408,6 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		{"POST", "/api/v1/auth/password-resets", classPublic, nil},
 		{"POST", "/api/v1/invites/accept", classPublic, nil},
 		{"POST", "/api/v1/stripe/webhooks", classPublic, nil},
-
-		// Protected diagnostic
-		{"GET", "/api/v1/me", classProtectedDiagnostic, []string{"manager", "practitioner", "parent"}},
-		{"GET", "/api/v1/authz/probe/manager", classProtectedDiagnostic, []string{"manager"}},
-		{"GET", "/api/v1/authz/probe/practitioner", classProtectedDiagnostic, []string{"practitioner"}},
-		{"GET", "/api/v1/authz/probe/parent", classProtectedDiagnostic, []string{"parent"}},
-		{"GET", "/api/v1/authz/probe/scope/:tenant_id/:branch_id", classProtectedDiagnostic, []string{"manager", "practitioner", "parent"}},
-		{"GET", "/api/v1/authz/probe/parent-link/:child_id", classProtectedDiagnostic, []string{"parent"}},
 
 		// Children (manager)
 		{"GET", "/api/v1/children", classProtectedBusiness, []string{"manager"}},
@@ -596,14 +587,6 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		path   string
 		body   string
 	}{
-		// Diagnostic
-		{"me", "GET", "/api/v1/me", ""},
-		{"probe manager", "GET", "/api/v1/authz/probe/manager", ""},
-		{"probe practitioner", "GET", "/api/v1/authz/probe/practitioner", ""},
-		{"probe parent", "GET", "/api/v1/authz/probe/parent", ""},
-		{"probe scope", "GET", "/api/v1/authz/probe/scope/" + h.tenantA.String() + "/" + h.branchA.String(), ""},
-		{"probe parent-link", "GET", "/api/v1/authz/probe/parent-link/" + h.childA.String() + "?linked_child_id=" + h.childA.String(), ""},
-
 		// Children
 		{"list children", "GET", "/api/v1/children", ""},
 		{"get child", "GET", "/api/v1/children/" + h.childA.String(), ""},
@@ -723,8 +706,6 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
 
-		// probe: practitioner and parent forbidden on manager probe
-		{"probe manager", "GET", "/api/v1/authz/probe/manager", ""},
 	}
 
 	for _, tc := range managerOnlyRoutes {
@@ -769,8 +750,6 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		{"parent list invoices", "GET", "/api/v1/parent/invoices", ""},
 		{"parent get invoice", "GET", "/api/v1/parent/invoices/" + h.invoiceA.String(), ""},
 		{"parent checkout", "POST", "/api/v1/parent/invoices/" + h.invoiceA.String() + "/checkout-sessions", ""},
-		{"probe parent", "GET", "/api/v1/authz/probe/parent", ""},
-		{"probe parent-link", "GET", "/api/v1/authz/probe/parent-link/" + h.childA.String() + "?linked_child_id=" + h.childA.String(), ""},
 	}
 
 	for _, tc := range parentOnlyRoutes {
@@ -784,15 +763,6 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		})
 	}
 
-	// Practitioner probe → manager and parent forbidden
-	t.Run("probe practitioner_manager_forbidden", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/practitioner", h.managerAToken)
-		assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
-	})
-	t.Run("probe practitioner_parent_forbidden", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/practitioner", h.parentAToken)
-		assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
-	})
 }
 
 // ---------------------------------------------------------------------------
@@ -917,20 +887,6 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 		}
 	})
 
-	t.Run("scope probe wrong tenant returns 403", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/scope/"+h.tenantB.String()+"/"+h.branchA.String(), h.managerAToken)
-		assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_scope")
-	})
-
-	t.Run("scope probe wrong branch returns 403", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/scope/"+h.tenantA.String()+"/"+h.branchB.String(), h.managerAToken)
-		assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_scope")
-	})
-
-	t.Run("scope probe correct scope returns 200", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/scope/"+h.tenantA.String()+"/"+h.branchA.String(), h.managerAToken)
-		assertStatus(t, w, http.StatusOK)
-	})
 
 	// Parent invoice routes with scope B invoice
 	t.Run("parent invoice detail scope B not found", func(t *testing.T) {
@@ -1119,15 +1075,6 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 		assertStatus(t, w, http.StatusCreated)
 	})
 
-	t.Run("parent-link probe matching returns 200", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/parent-link/"+h.childA.String()+"?linked_child_id="+h.childA.String(), h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-	})
-
-	t.Run("parent-link probe mismatched returns 403", func(t *testing.T) {
-		w := h.get(t, "/api/v1/authz/probe/parent-link/"+h.childA.String()+"?linked_child_id="+uuid.NewString(), h.parentAToken)
-		assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_parent_child_link")
-	})
 }
 
 }

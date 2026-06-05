@@ -192,7 +192,6 @@ Existing routes should be verified before adding new variants:
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
 - `POST /api/v1/auth/switch-membership`
-- `GET /api/v1/me`
 - `GET /api/v1/children`
 - `GET /api/v1/children/:child_id`
 - `POST /api/v1/children`
