@@ -256,6 +256,10 @@ Attendance event times are captured as absolute instants while attendance day gr
 
 Attendance records missing check-out are excluded from automatic billing until a manager correction establishes the full effective attendance interval.
 
+## Incomplete Attendance Triage (MVP)
+
+Manager-facing review of unresolved attendance sessions for the current billing month, with today's unresolved sessions surfaced first. This is billing readiness triage rather than a historical attendance report.
+
 ## Invoice Generation Flow (MVP)
 
 Managers manually generate monthly draft invoices before any invoice is issued.
@@ -292,6 +296,10 @@ A zero-total draft invoice can be issued like any other eligible draft invoice a
 
 A parent-visible issued-or-later invoice with a positive outstanding balance. Zero-total issued invoices and paid invoices are not payable.
 
+## Payment Follow-up Queue (MVP)
+
+Manager-facing work queue for invoices that need payment attention, sorted by urgency: overdue invoices, payment-failed invoices, then issued unpaid invoices. Avoid splitting these into unrelated dashboard concerns.
+
 ## Invoice Issue Mode (MVP)
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
@@ -315,6 +323,10 @@ A manager-triggered issue action for all draft monthly invoices in one billing m
 ## Invoice Run (MVP)
 
 A manager-triggered monthly billing operation that prepares or issues per-child invoices as a batch. An invoice run may include successful invoices and child-specific exceptions.
+
+## Invoice Run Status (MVP)
+
+Manager-facing current billing-month readiness and progress for invoice generation and issue. It summarizes eligible, blocked, draft, and issued child-months, with the latest run time where one exists.
 
 ## Single Invoice Issue Run (MVP)
 
