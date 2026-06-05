@@ -9,6 +9,7 @@ import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardi
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ParentInvoicesPlaceholderComponent } from './features/parent-portal/pages/parent-invoices-placeholder/parent-invoices-placeholder.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
+import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 
@@ -69,6 +70,11 @@ export const routes: Routes = [
     path: 'signin',
     component: SignInComponent,
     title: 'Sign In | Nursery Management',
+  },
+  {
+    path: 'signup',
+    component: SignUpComponent,
+    title: 'Invitation Only | Nursery Management',
   },
   {
     path: '**',

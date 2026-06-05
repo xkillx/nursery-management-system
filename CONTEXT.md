@@ -610,7 +610,7 @@ The initial stable authorization denial code set includes role, scope, unknown-r
 
 ## Scope Selection Error Semantics (MVP)
 
-Missing or malformed membership selection at authentication time returns a validation error, while a well-formed selection outside the user's allowed memberships returns an authorization error.
+Authentication-time membership selection does not create a session until a valid active membership is selected. Missing selection after valid credentials returns a membership selection challenge when multiple active memberships are available; malformed selection remains a validation error; an unavailable selected membership returns the challenge again when alternatives remain and a generic sign-in failure when none remain. Authenticated session actions with a well-formed selection outside the user's allowed memberships return an authorization error.
 
 ## Persistence Strategy (MVP)
 
@@ -635,6 +635,22 @@ When a user has multiple memberships, the active session scope is chosen explici
 ## Session Single-Scope Auto-Selection (MVP)
 
 Authentication auto-selects the active membership scope when exactly one active membership is available.
+
+## Login Membership Selection Challenge (MVP)
+
+A pre-session sign-in state reached after a login identity is verified but before an authenticated session exists, when more than one active membership is available and the user must choose one.
+
+## Membership Choice Label (MVP)
+
+A user-facing label that helps a person recognize an available membership by nursery, branch, and role. Raw membership, tenant, and branch identifiers are not suitable labels for human selection.
+
+## Membership Selection Retry (MVP)
+
+The continuation of the same sign-in flow after a membership selection challenge, where the user chooses one available membership without re-entering credentials. Editing the login identity or password starts a new sign-in flow.
+
+## Unavailable Membership Choice (MVP)
+
+A membership choice that was offered during sign-in but can no longer be selected by the time the user retries. The user should be guided back to another available choice when possible, without creating an authenticated session.
 
 ## Session Scope Selection Identifier (MVP)
 

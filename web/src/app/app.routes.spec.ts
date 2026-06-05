@@ -19,7 +19,7 @@ describe('app.routes', () => {
   const paths = flattenPaths(routes);
 
   const removedDemoPaths = [
-    'signup', 'calendar', 'profile', 'form-elements', 'basic-tables',
+    'calendar', 'profile', 'form-elements', 'basic-tables',
     'blank', 'invoice', 'line-chart', 'bar-chart', 'alerts', 'avatars',
     'badge', 'buttons', 'images', 'videos',
   ];
@@ -38,6 +38,7 @@ describe('app.routes', () => {
     'staff/practitioner/attendance-children',
     'parent/invoices',
     'signin',
+    'signup',
   ];
 
   for (const mvp of mvpPaths) {
