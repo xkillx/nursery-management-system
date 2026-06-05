@@ -88,6 +88,14 @@ A charge, deduction, extra, or adjustment entry that explains how an invoice tot
 
 Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
 
+## Password Reset Request Privacy (MVP)
+
+Password reset requests do not reveal whether an email address belongs to an account; the user sees the same accepted outcome either way.
+
+## Password Reset Link State (MVP)
+
+Invalid, expired, and already-used password reset links are unusable link states; the user must request a fresh reset link or return to sign-in.
+
 ## Manager Invite Access Grant Timing (MVP)
 
 A manager invitation does not grant usable access by itself; invited access becomes usable only after the invitee accepts the invitation and sets a password.

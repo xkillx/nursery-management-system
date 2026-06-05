@@ -245,7 +245,9 @@ All tenant-owned records include `tenant_id`, `branch_id`, `created_at`, and `up
 
 - Incident/safeguarding module
 - Digital child registration, enrolment, consent, medical, and document-check workflows from the owner-provided forms in `docs/forms/`
-- Ratio engine
+- Room/session planning, capacity checks, and booking requests
+- Staff-to-child ratio engine with live safety alerts
+- Learning journey and EYFS observations
 - Messaging and parent communications
 - LA-specific funding rule packs
 - Multi-branch dashboards and governance
