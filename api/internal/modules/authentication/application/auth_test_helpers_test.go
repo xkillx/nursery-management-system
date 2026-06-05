@@ -49,21 +49,25 @@ func fixtureUser() domain.User {
 
 func makeMembership(id, tenantID, branchID uuid.UUID, role string) domain.Membership {
 	return domain.Membership{
-		ID:       id,
-		TenantID: tenantID,
-		BranchID: branchID,
-		Role:     role,
-		IsActive: true,
+		ID:         id,
+		TenantID:   tenantID,
+		TenantName: "Little Sprouts Nursery",
+		BranchID:   branchID,
+		BranchName: "Main Branch",
+		Role:       role,
+		IsActive:   true,
 	}
 }
 
 func makeInactiveMembership(id, tenantID, branchID uuid.UUID, role string) domain.Membership {
 	return domain.Membership{
-		ID:       id,
-		TenantID: tenantID,
-		BranchID: branchID,
-		Role:     role,
-		IsActive: false,
+		ID:         id,
+		TenantID:   tenantID,
+		TenantName: "Little Sprouts Nursery",
+		BranchID:   branchID,
+		BranchName: "Main Branch",
+		Role:       role,
+		IsActive:   false,
 	}
 }
 

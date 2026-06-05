@@ -14,11 +14,13 @@ type User struct {
 }
 
 type Membership struct {
-	ID       uuid.UUID
-	TenantID uuid.UUID
-	BranchID uuid.UUID
-	Role     string
-	IsActive bool
+	ID         uuid.UUID
+	TenantID   uuid.UUID
+	TenantName string
+	BranchID   uuid.UUID
+	BranchName string
+	Role       string
+	IsActive   bool
 }
 
 type RefreshToken struct {

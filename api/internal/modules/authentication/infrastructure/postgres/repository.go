@@ -48,11 +48,13 @@ func (r *Repository) ListMembershipsByUserID(ctx context.Context, userID uuid.UU
 	out := make([]domain.Membership, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, domain.Membership{
-			ID:       pgtypeUUIDToUUID(row.ID),
-			TenantID: pgtypeUUIDToUUID(row.TenantID),
-			BranchID: pgtypeUUIDToUUID(row.BranchID),
-			Role:     row.Role,
-			IsActive: row.IsActive,
+			ID:         pgtypeUUIDToUUID(row.ID),
+			TenantID:   pgtypeUUIDToUUID(row.TenantID),
+			TenantName: row.TenantName,
+			BranchID:   pgtypeUUIDToUUID(row.BranchID),
+			BranchName: row.BranchName,
+			Role:       row.Role,
+			IsActive:   row.IsActive,
 		})
 	}
 	return out, nil
@@ -96,11 +98,13 @@ func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash strin
 		IsActive:     row.UserIsActive,
 	}
 	membership := domain.Membership{
-		ID:       pgtypeUUIDToUUID(row.MembershipTableID),
-		TenantID: pgtypeUUIDToUUID(row.MembershipTenantID),
-		BranchID: pgtypeUUIDToUUID(row.MembershipBranchID),
-		Role:     row.MembershipRole,
-		IsActive: row.MembershipIsActive,
+		ID:         pgtypeUUIDToUUID(row.MembershipTableID),
+		TenantID:   pgtypeUUIDToUUID(row.MembershipTenantID),
+		TenantName: row.MembershipTenantName,
+		BranchID:   pgtypeUUIDToUUID(row.MembershipBranchID),
+		BranchName: row.MembershipBranchName,
+		Role:       row.MembershipRole,
+		IsActive:   row.MembershipIsActive,
 	}
 
 	if token.RevokedAt != nil || time.Now().UTC().After(token.ExpiresAt) || !user.IsActive {

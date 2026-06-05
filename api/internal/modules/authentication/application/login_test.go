@@ -78,26 +78,88 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		}
 	})
 
-	t.Run("multi-membership without selection returns ErrInvalidMembership and no refresh token", func(t *testing.T) {
+	t.Run("zero memberships returns ErrInvalidCredentials and no refresh token", func(t *testing.T) {
 		uc, ur, sr, _ := setup()
 		ur.addUser(fixtureUser())
-		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
+		ur.setMemberships(fixtureUserID, nil)
 
 		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
-		assertErrorIs(t, err, domain.ErrInvalidMembership)
+		assertErrorIs(t, err, domain.ErrInvalidCredentials)
 		creates := sr.callsByMethod("CreateRefreshToken")
 		if len(creates) != 0 {
 			t.Fatalf("expected 0 creates, got %d", len(creates))
 		}
 	})
 
-	t.Run("multi-membership invalid selection returns ErrInvalidMembership and no refresh token", func(t *testing.T) {
+	t.Run("multi-membership without selection returns MembershipSelectionRequiredError and no refresh token", func(t *testing.T) {
+		uc, ur, sr, _ := setup()
+		ur.addUser(fixtureUser())
+		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
+
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
+		var selErr *domain.MembershipSelectionRequiredError
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !isMembershipSelectionRequired(err) {
+			t.Fatalf("expected MembershipSelectionRequiredError, got %T: %v", err, err)
+		}
+		selErr = err.(*domain.MembershipSelectionRequiredError)
+		if selErr.IsStaleChoice {
+			t.Fatal("expected IsStaleChoice=false for initial challenge")
+		}
+		if len(selErr.Memberships) != 2 {
+			t.Fatalf("expected 2 choices, got %d", len(selErr.Memberships))
+		}
+		creates := sr.callsByMethod("CreateRefreshToken")
+		if len(creates) != 0 {
+			t.Fatalf("expected 0 creates, got %d", len(creates))
+		}
+	})
+
+	t.Run("multi-membership malformed selection returns validation error and no refresh token", func(t *testing.T) {
+		uc, ur, sr, _ := setup()
+		ur.addUser(fixtureUser())
+		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
+
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "not-a-uuid")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		var valErr *domain.ValidationError
+		if !isValidationError(err) {
+			t.Fatalf("expected ValidationError, got %T: %v", err, err)
+		}
+		valErr = err.(*domain.ValidationError)
+		if valErr.Field != "membership_id" {
+			t.Fatalf("expected field membership_id, got %s", valErr.Field)
+		}
+		creates := sr.callsByMethod("CreateRefreshToken")
+		if len(creates) != 0 {
+			t.Fatalf("expected 0 creates, got %d", len(creates))
+		}
+	})
+
+	t.Run("multi-membership stale selection returns MembershipSelectionRequiredError with stale flag", func(t *testing.T) {
 		uc, ur, sr, _ := setup()
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
 
 		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, fixtureMembership3.String())
-		assertErrorIs(t, err, domain.ErrInvalidMembership)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		var selErr *domain.MembershipSelectionRequiredError
+		if !isMembershipSelectionRequired(err) {
+			t.Fatalf("expected MembershipSelectionRequiredError, got %T: %v", err, err)
+		}
+		selErr = err.(*domain.MembershipSelectionRequiredError)
+		if !selErr.IsStaleChoice {
+			t.Fatal("expected IsStaleChoice=true for stale selection")
+		}
+		if len(selErr.Memberships) != 2 {
+			t.Fatalf("expected 2 choices, got %d", len(selErr.Memberships))
+		}
 		creates := sr.callsByMethod("CreateRefreshToken")
 		if len(creates) != 0 {
 			t.Fatalf("expected 0 creates, got %d", len(creates))
@@ -157,4 +219,9 @@ func assertErrorIs(t *testing.T, got, want error) {
 	if got.Error() != want.Error() {
 		t.Fatalf("expected error %v, got %v", want, got)
 	}
+}
+
+func isValidationError(err error) bool {
+	_, ok := err.(*domain.ValidationError)
+	return ok
 }

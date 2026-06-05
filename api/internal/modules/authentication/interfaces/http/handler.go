@@ -81,7 +81,9 @@ type switchMembershipRequest struct {
 type membershipResponse struct {
 	MembershipID string `json:"membership_id"`
 	TenantID     string `json:"tenant_id"`
+	TenantName   string `json:"tenant_name"`
 	BranchID     string `json:"branch_id"`
+	BranchName   string `json:"branch_name"`
 	Role         string `json:"role"`
 }
 
@@ -115,20 +117,34 @@ func (h *Handler) loginHandler(c *gin.Context) {
 
 	result, err := h.login.Execute(ctx, req.Email, req.Password, req.MembershipID)
 	if err != nil {
+		var selErr *domain.MembershipSelectionRequiredError
+		var valErr *domain.ValidationError
 		switch {
 		case errors.Is(err, domain.ErrInvalidCredentials):
 			h.recordAuthFailure(c, "login", "login_invalid_credentials")
 			h.unauthorized(c)
-		case errors.Is(err, domain.ErrInvalidMembership):
-			if req.MembershipID == "" {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"code":       "validation_error",
-					"message":    "Membership selection is required.",
-					"request_id": c.Writer.Header().Get("X-Request-ID"),
-				})
-			} else {
-				h.forbiddenScopeSelection(c, "Invalid membership selection.")
+		case errors.As(err, &valErr):
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code":       "validation_error",
+				"message":    "Invalid request payload.",
+				"request_id": c.Writer.Header().Get("X-Request-ID"),
+				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
+			})
+		case errors.As(err, &selErr):
+			msg := "Choose a nursery to continue."
+			if selErr.IsStaleChoice {
+				msg = "That access is no longer available. Choose another nursery or contact your manager."
 			}
+			choices := make([]membershipResponse, 0, len(selErr.Memberships))
+			for _, m := range selErr.Memberships {
+				choices = append(choices, toMembershipResponse(m))
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code":                  "membership_selection_required",
+				"message":               msg,
+				"request_id":            c.Writer.Header().Get("X-Request-ID"),
+				"available_memberships": choices,
+			})
 		default:
 			h.internalError(c)
 		}
@@ -317,12 +333,7 @@ func isTrustedOriginOrReferer(c *gin.Context) bool {
 func (h *Handler) buildAuthResponse(accessToken string, user domain.User, memberships []domain.Membership, activeMembership domain.Membership) authResponse {
 	out := make([]membershipResponse, 0, len(memberships))
 	for _, m := range memberships {
-		out = append(out, membershipResponse{
-			MembershipID: m.ID.String(),
-			TenantID:     m.TenantID.String(),
-			BranchID:     m.BranchID.String(),
-			Role:         m.Role,
-		})
+		out = append(out, toMembershipResponse(m))
 	}
 
 	return authResponse{
@@ -333,13 +344,19 @@ func (h *Handler) buildAuthResponse(accessToken string, user domain.User, member
 			ID:    user.ID.String(),
 			Email: user.Email,
 		},
-		ActiveMembership: membershipResponse{
-			MembershipID: activeMembership.ID.String(),
-			TenantID:     activeMembership.TenantID.String(),
-			BranchID:     activeMembership.BranchID.String(),
-			Role:         activeMembership.Role,
-		},
+		ActiveMembership:     toMembershipResponse(activeMembership),
 		AvailableMemberships: out,
+	}
+}
+
+func toMembershipResponse(m domain.Membership) membershipResponse {
+	return membershipResponse{
+		MembershipID: m.ID.String(),
+		TenantID:     m.TenantID.String(),
+		TenantName:   m.TenantName,
+		BranchID:     m.BranchID.String(),
+		BranchName:   m.BranchName,
+		Role:         m.Role,
 	}
 }
 

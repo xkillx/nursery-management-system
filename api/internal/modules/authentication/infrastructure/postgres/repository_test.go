@@ -364,8 +364,8 @@ func TestCreateScopeSwitchAuditLog(t *testing.T) {
 	dbtest.InsertMembership(t, pool, toMID, tenantID, branchID2, userID, "practitioner", true)
 
 	repo := authpostgres.NewRepository(pool)
-	fromM := domain.Membership{ID: fromMID, TenantID: tenantID, BranchID: branchID, Role: "manager", IsActive: true}
-	toM := domain.Membership{ID: toMID, TenantID: tenantID, BranchID: branchID2, Role: "practitioner", IsActive: true}
+	fromM := domain.Membership{ID: fromMID, TenantID: tenantID, TenantName: "Test Tenant", BranchID: branchID, BranchName: "Test Branch", Role: "manager", IsActive: true}
+	toM := domain.Membership{ID: toMID, TenantID: tenantID, TenantName: "Test Tenant", BranchID: branchID2, BranchName: "Test Branch 2", Role: "practitioner", IsActive: true}
 	if err := repo.CreateScopeSwitchAuditLog(ctx, userID, fromM, toM, "req-123"); err != nil {
 		t.Fatalf("CreateScopeSwitchAuditLog: %v", err)
 	}

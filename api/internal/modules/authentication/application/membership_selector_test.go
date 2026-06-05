@@ -15,13 +15,15 @@ func TestSelectLoginMembership(t *testing.T) {
 		memberships    []domain.Membership
 		selectedID     string
 		wantErr        error
+		wantSelection  bool
+		wantStale      bool
 		wantMembership domain.Membership
 	}{
 		{
-			name:        "zero memberships returns error",
+			name:    "zero memberships returns invalid credentials",
 			memberships: nil,
 			selectedID:  "",
-			wantErr:     domain.ErrInvalidMembership,
+			wantErr:     domain.ErrInvalidCredentials,
 		},
 		{
 			name:           "one membership empty selection auto selects",
@@ -36,28 +38,32 @@ func TestSelectLoginMembership(t *testing.T) {
 			wantMembership: m1,
 		},
 		{
-			name:        "one membership malformed selection",
-			memberships: []domain.Membership{m1},
-			selectedID:  "not-a-uuid",
-			wantErr:     domain.ErrInvalidMembership,
+			name:          "one membership malformed selection",
+			memberships:   []domain.Membership{m1},
+			selectedID:    "not-a-uuid",
+			wantSelection: false,
+			wantErr:       &domain.ErrMalformedMembershipID,
 		},
 		{
-			name:        "one membership wrong uuid",
-			memberships: []domain.Membership{m1},
-			selectedID:  fixtureMembership2.String(),
-			wantErr:     domain.ErrInvalidMembership,
+			name:          "one membership wrong uuid",
+			memberships:   []domain.Membership{m1},
+			selectedID:    fixtureMembership2.String(),
+			wantSelection: true,
+			wantStale:     true,
 		},
 		{
-			name:        "multiple memberships empty selection requires explicit",
-			memberships: []domain.Membership{m1, m2},
-			selectedID:  "",
-			wantErr:     domain.ErrInvalidMembership,
+			name:          "multiple memberships empty selection requires selection",
+			memberships:   []domain.Membership{m1, m2},
+			selectedID:    "",
+			wantSelection: true,
+			wantStale:     false,
 		},
 		{
-			name:        "multiple memberships malformed selection",
-			memberships: []domain.Membership{m1, m2},
-			selectedID:  "garbage",
-			wantErr:     domain.ErrInvalidMembership,
+			name:          "multiple memberships malformed selection",
+			memberships:   []domain.Membership{m1, m2},
+			selectedID:    "garbage",
+			wantSelection: false,
+			wantErr:       &domain.ErrMalformedMembershipID,
 		},
 		{
 			name:           "multiple memberships valid selection first",
@@ -72,10 +78,11 @@ func TestSelectLoginMembership(t *testing.T) {
 			wantMembership: m2,
 		},
 		{
-			name:        "multiple memberships uuid not in list",
-			memberships: []domain.Membership{m1, m2},
-			selectedID:  fixtureMembership3.String(),
-			wantErr:     domain.ErrInvalidMembership,
+			name:          "multiple memberships uuid not in list",
+			memberships:   []domain.Membership{m1, m2},
+			selectedID:    fixtureMembership3.String(),
+			wantSelection: true,
+			wantStale:     true,
 		},
 		{
 			name:           "whitespace trimmed around membership_id",
@@ -88,6 +95,25 @@ func TestSelectLoginMembership(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := SelectLoginMembership(tt.memberships, tt.selectedID)
+
+			if tt.wantSelection {
+				if err == nil {
+					t.Fatalf("expected MembershipSelectionRequiredError, got nil")
+				}
+				var selErr *domain.MembershipSelectionRequiredError
+				if !isMembershipSelectionRequired(err) {
+					t.Fatalf("expected MembershipSelectionRequiredError, got %T: %v", err, err)
+				}
+				selErr = err.(*domain.MembershipSelectionRequiredError)
+				if selErr.IsStaleChoice != tt.wantStale {
+					t.Fatalf("expected IsStaleChoice=%v, got %v", tt.wantStale, selErr.IsStaleChoice)
+				}
+				if len(selErr.Memberships) != len(tt.memberships) {
+					t.Fatalf("expected %d choices, got %d", len(tt.memberships), len(selErr.Memberships))
+				}
+				return
+			}
+
 			if tt.wantErr != nil {
 				if err == nil {
 					t.Fatalf("expected error %v, got nil", tt.wantErr)
@@ -105,4 +131,9 @@ func TestSelectLoginMembership(t *testing.T) {
 			}
 		})
 	}
+}
+
+func isMembershipSelectionRequired(err error) bool {
+	_, ok := err.(*domain.MembershipSelectionRequiredError)
+	return ok
 }

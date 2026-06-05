@@ -16,14 +16,18 @@ const mockAuthResponse: AuthResponse = {
   active_membership: {
     membership_id: 'membership-1',
     tenant_id: 'tenant-1',
+    tenant_name: 'Little Sprouts Nursery',
     branch_id: 'branch-1',
+    branch_name: 'Main Branch',
     role: 'manager',
   },
   available_memberships: [
     {
       membership_id: 'membership-1',
       tenant_id: 'tenant-1',
+      tenant_name: 'Little Sprouts Nursery',
       branch_id: 'branch-1',
+      branch_name: 'Main Branch',
       role: 'manager',
     },
   ],
@@ -88,5 +92,18 @@ describe('AuthService', () => {
 
     expect(service.isAuthenticated()).toBeFalse();
     expect(service.accessToken()).toBeNull();
+  });
+
+  it('sends membership_id in login request body when provided', () => {
+    service.login('manager@example.com', 'password123', 'membership-1').subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/login');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      email: 'manager@example.com',
+      password: 'password123',
+      membership_id: 'membership-1',
+    });
+    request.flush(mockAuthResponse);
   });
 });

@@ -23,9 +23,9 @@ import (
 // --- HTTP test fakes ---
 
 type htFakeUserRepo struct {
-ByEmail     map[string]domain.User
-	Mships     map[uuid.UUID][]domain.Membership
-	capEmail   string
+	ByEmail map[string]domain.User
+	Mships  map[uuid.UUID][]domain.Membership
+	capEmail string
 }
 
 func (r *htFakeUserRepo) FindUserByEmail(_ context.Context, email string) (domain.User, error) {
@@ -42,10 +42,10 @@ func (r *htFakeUserRepo) ListMembershipsByUserID(_ context.Context, uid uuid.UUI
 }
 
 type htFakeSessionRepo struct {
-	tokens   map[string]domain.RefreshToken
-	users    map[uuid.UUID]domain.User
-	mships   map[uuid.UUID]domain.Membership
-	calls    []string
+	tokens map[string]domain.RefreshToken
+	users  map[uuid.UUID]domain.User
+	mships map[uuid.UUID]domain.Membership
+	calls  []string
 }
 
 func newHTFakeSessionRepo() *htFakeSessionRepo {
@@ -138,8 +138,12 @@ func htUser() domain.User {
 	return domain.User{ID: hUID, Email: "u@test.com", PasswordHash: htHash("password1"), IsActive: true}
 }
 
-func htM1() domain.Membership { return domain.Membership{ID: hM1, TenantID: hTID, BranchID: hBID, Role: "manager", IsActive: true} }
-func htM2() domain.Membership { return domain.Membership{ID: hM2, TenantID: hTID, BranchID: hBID, Role: "practitioner", IsActive: true} }
+func htM1() domain.Membership {
+	return domain.Membership{ID: hM1, TenantID: hTID, TenantName: "Little Sprouts Nursery", BranchID: hBID, BranchName: "Main Branch", Role: "manager", IsActive: true}
+}
+func htM2() domain.Membership {
+	return domain.Membership{ID: hM2, TenantID: hTID, TenantName: "Little Sprouts Nursery", BranchID: hBID, BranchName: "Main Branch", Role: "practitioner", IsActive: true}
+}
 
 // --- Router setup ---
 
@@ -265,7 +269,7 @@ func TestLoginHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("multi-membership without membership_id returns 400 validation_error", func(t *testing.T) {
+	t.Run("multi-membership without membership_id returns 400 membership_selection_required with choices", func(t *testing.T) {
 		ur := &htFakeUserRepo{ByEmail: map[string]domain.User{"u@test.com": htUser()}, Mships: map[uuid.UUID][]domain.Membership{hUID: {htM1(), htM2()}}}
 		sr := newHTFakeSessionRepo()
 		r := htRouter(ur, sr)
@@ -277,11 +281,22 @@ func TestLoginHandler(t *testing.T) {
 			t.Fatalf("expected 400, got %d", w.Code)
 		}
 		body := parseBody(t, w)
-		if body["code"] != "validation_error" {
-			t.Fatalf("expected validation_error, got %v", body["code"])
+		if body["code"] != "membership_selection_required" {
+			t.Fatalf("expected membership_selection_required, got %v", body["code"])
 		}
-		if body["message"] != "Membership selection is required." {
-			t.Fatalf("expected membership message, got %v", body["message"])
+		if body["message"] != "Choose a nursery to continue." {
+			t.Fatalf("expected picker message, got %v", body["message"])
+		}
+		choices, ok := body["available_memberships"].([]interface{})
+		if !ok || len(choices) != 2 {
+			t.Fatalf("expected 2 available_memberships, got %v", body["available_memberships"])
+		}
+		first := choices[0].(map[string]interface{})
+		if first["tenant_name"] != "Little Sprouts Nursery" {
+			t.Fatalf("expected tenant_name in choice, got %v", first)
+		}
+		if first["branch_name"] != "Main Branch" {
+			t.Fatalf("expected branch_name in choice, got %v", first)
 		}
 		rc := findCookie(w, "refresh_token")
 		if rc != nil {
@@ -289,7 +304,7 @@ func TestLoginHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid explicit membership returns 403 forbidden_scope_selection", func(t *testing.T) {
+	t.Run("stale explicit membership returns 400 membership_selection_required with stale message", func(t *testing.T) {
 		ur := &htFakeUserRepo{ByEmail: map[string]domain.User{"u@test.com": htUser()}, Mships: map[uuid.UUID][]domain.Membership{hUID: {htM1(), htM2()}}}
 		sr := newHTFakeSessionRepo()
 		r := htRouter(ur, sr)
@@ -297,12 +312,40 @@ func TestLoginHandler(t *testing.T) {
 		req := htJSON(t, http.MethodPost, "/api/v1/auth/login", `{"email":"u@test.com","password":"password1","membership_id":"00000000-0000-0000-0000-999999999999"}`)
 		w := htDo(r, req)
 
-		if w.Code != 403 {
-			t.Fatalf("expected 403, got %d", w.Code)
+		if w.Code != 400 {
+			t.Fatalf("expected 400, got %d", w.Code)
 		}
 		body := parseBody(t, w)
-		if body["code"] != "forbidden_scope_selection" {
-			t.Fatalf("expected forbidden_scope_selection, got %v", body["code"])
+		if body["code"] != "membership_selection_required" {
+			t.Fatalf("expected membership_selection_required, got %v", body["code"])
+		}
+		if body["message"] != "That access is no longer available. Choose another nursery or contact your manager." {
+			t.Fatalf("expected stale message, got %v", body["message"])
+		}
+		choices, ok := body["available_memberships"].([]interface{})
+		if !ok || len(choices) != 2 {
+			t.Fatalf("expected 2 available_memberships, got %v", body["available_memberships"])
+		}
+		rc := findCookie(w, "refresh_token")
+		if rc != nil {
+			t.Fatal("expected no session cookies")
+		}
+	})
+
+	t.Run("malformed membership_id returns 400 validation_error", func(t *testing.T) {
+		ur := &htFakeUserRepo{ByEmail: map[string]domain.User{"u@test.com": htUser()}, Mships: map[uuid.UUID][]domain.Membership{hUID: {htM1(), htM2()}}}
+		sr := newHTFakeSessionRepo()
+		r := htRouter(ur, sr)
+
+		req := htJSON(t, http.MethodPost, "/api/v1/auth/login", `{"email":"u@test.com","password":"password1","membership_id":"not-a-uuid"}`)
+		w := htDo(r, req)
+
+		if w.Code != 400 {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+		body := parseBody(t, w)
+		if body["code"] != "validation_error" {
+			t.Fatalf("expected validation_error, got %v", body["code"])
 		}
 	})
 }

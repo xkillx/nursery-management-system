@@ -8,7 +8,9 @@ export interface UserModel {
 export interface MembershipModel {
   membership_id: string;
   tenant_id: string;
+  tenant_name: string;
   branch_id: string;
+  branch_name: string;
   role: AppRole;
 }
 

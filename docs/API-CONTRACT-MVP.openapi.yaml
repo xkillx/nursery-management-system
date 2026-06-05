@@ -160,12 +160,37 @@ components:
         tenant_id:
           type: string
           format: uuid
+        tenant_name:
+          type: string
+          description: Display-safe nursery/tenant name for picker labels
         branch_id:
           type: string
           format: uuid
+        branch_name:
+          type: string
+          description: Display-safe branch name for picker labels
         role:
           type: string
           enum: [manager, practitioner, parent]
+
+    MembershipSelectionRequiredResponse:
+      type: object
+      description: Pre-session membership selection challenge. No auth cookies, no access token, no session.
+      required: [code, message, request_id, available_memberships]
+      properties:
+        code:
+          type: string
+          example: membership_selection_required
+        message:
+          type: string
+          description: "Initial: 'Choose a nursery to continue.' Stale: 'That access is no longer available. Choose another nursery or contact your manager.'"
+        request_id:
+          type: string
+          format: uuid
+        available_memberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/MembershipResponse"
 
     Child:
       type: object
@@ -1587,7 +1612,7 @@ paths:
                 membership_id:
                   type: string
                   format: uuid
-                  description: Required when user has multiple memberships
+                  description: Required after a membership_selection_required challenge, or when the client already knows the intended membership. Omit for initial sign-in.
       responses:
         "200":
           description: Authenticated
@@ -1601,11 +1626,35 @@ paths:
               schema:
                 type: string
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error or membership selection challenge
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+                  - $ref: "#/components/schemas/MembershipSelectionRequiredResponse"
+              examples:
+                validation_error:
+                  value:
+                    code: validation_error
+                    message: Invalid request payload.
+                    request_id: "00000000-0000-0000-0000-000000000001"
+                    details:
+                      field: membership_id
+                membership_selection_required:
+                  value:
+                    code: membership_selection_required
+                    message: "Choose a nursery to continue."
+                    request_id: "00000000-0000-0000-0000-000000000001"
+                    available_memberships:
+                      - membership_id: "00000000-0000-0000-0000-000000000010"
+                        tenant_id: "00000000-0000-0000-0000-000000000020"
+                        tenant_name: "Little Sprouts Nursery"
+                        branch_id: "00000000-0000-0000-0000-000000000030"
+                        branch_name: "Main Branch"
+                        role: manager
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenScopeSelection"
 
   /api/v1/auth/refresh:
     post:

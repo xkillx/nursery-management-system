@@ -13,7 +13,7 @@ import (
 // If the user has multiple memberships, an explicit selection is required.
 func SelectLoginMembership(memberships []domain.Membership, selectedMembershipID string) (domain.Membership, error) {
 	if len(memberships) == 0 {
-		return domain.Membership{}, domain.ErrInvalidMembership
+		return domain.Membership{}, domain.ErrInvalidCredentials
 	}
 
 	selectedMembershipID = strings.TrimSpace(selectedMembershipID)
@@ -25,19 +25,37 @@ func SelectLoginMembership(memberships []domain.Membership, selectedMembershipID
 		}
 		selectedID, err := uuid.Parse(selectedMembershipID)
 		if err != nil {
-			return domain.Membership{}, domain.ErrInvalidMembership
+			return domain.Membership{}, &domain.ErrMalformedMembershipID
 		}
 		if selectedID != only.ID {
-			return domain.Membership{}, domain.ErrInvalidMembership
+			return domain.Membership{}, &domain.MembershipSelectionRequiredError{
+				Memberships:   memberships,
+				IsStaleChoice: true,
+			}
 		}
 		return only, nil
 	}
 
 	if selectedMembershipID == "" {
-		return domain.Membership{}, domain.ErrInvalidMembership
+		return domain.Membership{}, &domain.MembershipSelectionRequiredError{
+			Memberships:   memberships,
+			IsStaleChoice: false,
+		}
 	}
 
-	return SelectExplicitMembership(memberships, selectedMembershipID)
+	selectedID, err := uuid.Parse(selectedMembershipID)
+	if err != nil {
+		return domain.Membership{}, &domain.ErrMalformedMembershipID
+	}
+
+	if m, found := findMembershipByID(memberships, selectedID); found {
+		return m, nil
+	}
+
+	return domain.Membership{}, &domain.MembershipSelectionRequiredError{
+		Memberships:   memberships,
+		IsStaleChoice: true,
+	}
 }
 
 // SelectExplicitMembership finds a membership by ID from the user's membership list.
@@ -54,6 +72,15 @@ func SelectExplicitMembership(memberships []domain.Membership, selectedMembershi
 	}
 
 	return domain.Membership{}, domain.ErrInvalidMembership
+}
+
+func findMembershipByID(memberships []domain.Membership, membershipID uuid.UUID) (domain.Membership, bool) {
+	for _, m := range memberships {
+		if m.ID == membershipID {
+			return m, true
+		}
+	}
+	return domain.Membership{}, false
 }
 
 func containsMembership(memberships []domain.Membership, membershipID uuid.UUID) bool {

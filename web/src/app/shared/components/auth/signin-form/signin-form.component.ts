@@ -10,6 +10,8 @@ import { FormsModule } from '@angular/forms';
 import { defaultRouteForRole } from '../../../../core/constants/roles';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { AuthService } from '../../../../core/services/auth.service';
+import { MembershipModel } from '../../../../core/models/auth.models';
+import { isMembershipSelectionRequired } from '../../../../core/models/api-error.models';
 
 @Component({
   selector: 'app-signin-form',
@@ -41,37 +43,102 @@ export class SigninFormComponent {
   emailError: string | null = null;
   passwordError: string | null = null;
 
+  membershipChoices: MembershipModel[] = [];
+  selectedMembershipId: string | null = null;
+  membershipChallengeMessage: string | null = null;
+
+  get isMembershipChallenge(): boolean {
+    return this.membershipChoices.length > 0;
+  }
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
 
   onSignIn() {
+    this.clearErrors();
+
+    if (this.isMembershipChallenge) {
+      this.onSelectMembership();
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.authService.login(this.email.trim(), this.password).subscribe({
+      next: () => this.handleSuccess(),
+      error: (error) => this.handleError(error),
+    });
+  }
+
+  onSelectMembership() {
+    if (!this.selectedMembershipId) return;
+    this.clearErrors();
+    this.isSubmitting = true;
+
+    this.authService.login(this.email.trim(), this.password, this.selectedMembershipId).subscribe({
+      next: () => this.handleSuccess(),
+      error: (error) => this.handleError(error),
+    });
+  }
+
+  selectMembership(membershipId: string) {
+    this.selectedMembershipId = membershipId;
+  }
+
+  onEmailChange(value: string) {
+    this.email = value;
+    this.clearChallenge();
+  }
+
+  onPasswordChange(value: string) {
+    this.password = value;
+    this.clearChallenge();
+  }
+
+  private handleSuccess() {
+    this.isSubmitting = false;
+    const role = this.authService.currentRole();
+    this.router.navigateByUrl(defaultRouteForRole(role));
+  }
+
+  private handleError(error: any) {
+    this.isSubmitting = false;
+
+    const body = error?.error;
+    if (isMembershipSelectionRequired(body)) {
+      this.membershipChoices = body.available_memberships;
+      this.membershipChallengeMessage = body.message;
+      this.selectedMembershipId = null;
+      return;
+    }
+
+    this.membershipChoices = [];
+    this.membershipChallengeMessage = null;
+    this.selectedMembershipId = null;
+
+    const mapped = this.errorMapper.mapAndHandle(error);
+
+    if (mapped.fieldErrors['email']) {
+      this.emailError = mapped.fieldErrors['email'];
+    }
+    if (mapped.fieldErrors['password']) {
+      this.passwordError = mapped.fieldErrors['password'];
+    }
+
+    this.formError = mapped.requestId
+      ? `${mapped.message} (Request: ${mapped.requestId})`
+      : mapped.message;
+  }
+
+  private clearErrors() {
     this.formError = null;
     this.emailError = null;
     this.passwordError = null;
-    this.isSubmitting = true;
+  }
 
-    this.authService.login(this.email.trim(), this.password).subscribe({
-      next: () => {
-        this.isSubmitting = false;
-        const role = this.authService.currentRole();
-        this.router.navigateByUrl(defaultRouteForRole(role));
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-
-        if (mapped.fieldErrors['email']) {
-          this.emailError = mapped.fieldErrors['email'];
-        }
-        if (mapped.fieldErrors['password']) {
-          this.passwordError = mapped.fieldErrors['password'];
-        }
-
-        this.formError = mapped.requestId
-          ? `${mapped.message} (Request: ${mapped.requestId})`
-          : mapped.message;
-      },
-    });
+  private clearChallenge() {
+    this.membershipChoices = [];
+    this.selectedMembershipId = null;
+    this.membershipChallengeMessage = null;
   }
 }

@@ -78,30 +78,34 @@ func (q *Queries) AuthCreateScopeSwitchAuditLog(ctx context.Context, arg AuthCre
 const authFindActiveRefreshToken = `-- name: AuthFindActiveRefreshToken :one
 SELECT rt.id, rt.user_id, rt.membership_id, rt.token_hash, rt.expires_at, rt.revoked_at,
        u.id AS user_table_id, u.email AS user_email, u.password_hash AS user_password_hash, u.is_active AS user_is_active,
-       m.id AS membership_table_id, m.tenant_id AS membership_tenant_id, m.branch_id AS membership_branch_id, m.role AS membership_role, m.is_active AS membership_is_active
+       m.id AS membership_table_id, m.tenant_id AS membership_tenant_id, t.name AS membership_tenant_name, m.branch_id AS membership_branch_id, b.name AS membership_branch_name, m.role AS membership_role, m.is_active AS membership_is_active
 FROM refresh_tokens rt
 JOIN users u ON u.id = rt.user_id
 JOIN memberships m ON m.id = rt.membership_id AND m.user_id = u.id AND m.is_active = true AND m.ended_at IS NULL
+JOIN tenants t ON t.id = m.tenant_id
+JOIN branches b ON b.id = m.branch_id
 WHERE rt.token_hash = $1
 LIMIT 1
 `
 
 type AuthFindActiveRefreshTokenRow struct {
-	ID                 pgtype.UUID
-	UserID             pgtype.UUID
-	MembershipID       pgtype.UUID
-	TokenHash          string
-	ExpiresAt          pgtype.Timestamptz
-	RevokedAt          pgtype.Timestamptz
-	UserTableID        pgtype.UUID
-	UserEmail          string
-	UserPasswordHash   string
-	UserIsActive       bool
-	MembershipTableID  pgtype.UUID
-	MembershipTenantID pgtype.UUID
-	MembershipBranchID pgtype.UUID
-	MembershipRole     string
-	MembershipIsActive bool
+	ID                   pgtype.UUID
+	UserID               pgtype.UUID
+	MembershipID         pgtype.UUID
+	TokenHash            string
+	ExpiresAt            pgtype.Timestamptz
+	RevokedAt            pgtype.Timestamptz
+	UserTableID          pgtype.UUID
+	UserEmail            string
+	UserPasswordHash     string
+	UserIsActive         bool
+	MembershipTableID    pgtype.UUID
+	MembershipTenantID   pgtype.UUID
+	MembershipTenantName string
+	MembershipBranchID   pgtype.UUID
+	MembershipBranchName string
+	MembershipRole       string
+	MembershipIsActive   bool
 }
 
 func (q *Queries) AuthFindActiveRefreshToken(ctx context.Context, tokenHash string) (AuthFindActiveRefreshTokenRow, error) {
@@ -120,7 +124,9 @@ func (q *Queries) AuthFindActiveRefreshToken(ctx context.Context, tokenHash stri
 		&i.UserIsActive,
 		&i.MembershipTableID,
 		&i.MembershipTenantID,
+		&i.MembershipTenantName,
 		&i.MembershipBranchID,
+		&i.MembershipBranchName,
 		&i.MembershipRole,
 		&i.MembershipIsActive,
 	)
@@ -154,18 +160,22 @@ func (q *Queries) AuthFindUserByEmail(ctx context.Context, emailNormalized strin
 }
 
 const authListMembershipsByUserID = `-- name: AuthListMembershipsByUserID :many
-SELECT id, tenant_id, branch_id, role, is_active
-FROM memberships
-WHERE user_id = $1 AND is_active = true AND ended_at IS NULL
-ORDER BY created_at ASC
+SELECT m.id, m.tenant_id, t.name AS tenant_name, m.branch_id, b.name AS branch_name, m.role, m.is_active
+FROM memberships m
+JOIN tenants t ON t.id = m.tenant_id
+JOIN branches b ON b.id = m.branch_id
+WHERE m.user_id = $1 AND m.is_active = true AND m.ended_at IS NULL
+ORDER BY m.created_at ASC
 `
 
 type AuthListMembershipsByUserIDRow struct {
-	ID       pgtype.UUID
-	TenantID pgtype.UUID
-	BranchID pgtype.UUID
-	Role     string
-	IsActive bool
+	ID         pgtype.UUID
+	TenantID   pgtype.UUID
+	TenantName string
+	BranchID   pgtype.UUID
+	BranchName string
+	Role       string
+	IsActive   bool
 }
 
 func (q *Queries) AuthListMembershipsByUserID(ctx context.Context, userID pgtype.UUID) ([]AuthListMembershipsByUserIDRow, error) {
@@ -180,7 +190,9 @@ func (q *Queries) AuthListMembershipsByUserID(ctx context.Context, userID pgtype
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.TenantName,
 			&i.BranchID,
+			&i.BranchName,
 			&i.Role,
 			&i.IsActive,
 		); err != nil {
