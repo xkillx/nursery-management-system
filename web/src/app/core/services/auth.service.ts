@@ -4,7 +4,7 @@ import { Observable, catchError, map, of, tap } from 'rxjs';
 
 import { apiUrl } from '../config/api.config';
 import { AppRole } from '../constants/roles';
-import { AuthResponse, AuthState, LoginRequest, MembershipModel, UserModel } from '../models/auth.models';
+import { AuthResponse, AuthState, LoginRequest, MembershipModel, PasswordResetAcceptedResponse, UserModel } from '../models/auth.models';
 import { getCookie } from '../utils/cookie.util';
 
 const initialState: AuthState = {
@@ -82,6 +82,20 @@ export class AuthService {
 
   clearSession(): void {
     this.state.set(initialState);
+  }
+
+  requestPasswordReset(email: string): Observable<PasswordResetAcceptedResponse> {
+    return this.http.post<PasswordResetAcceptedResponse>(
+      apiUrl('/auth/password-reset-requests'),
+      { email },
+    );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(
+      apiUrl('/auth/password-resets'),
+      { token, new_password: newPassword },
+    );
   }
 
   private applySession(response: AuthResponse): void {

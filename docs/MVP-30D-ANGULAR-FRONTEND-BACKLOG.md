@@ -70,7 +70,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 | FE-04 ~~done~~ | ~~Replace generic dashboard with manager operations dashboard. Show today's attendance summary, incomplete attendance, invoice run status, unpaid/overdue invoices, and quick actions using mock data first.~~ | ~~FE-02, FE-03~~ | ~~Manager lands on operational dashboard with no ecommerce/template copy.~~ |
 | FE-05 ~~done 2026-06-05~~ | ~~Update sign-in UX for session scope model. Auto-enter when one membership is returned; show a minimal membership picker only when multiple memberships require explicit selection.~~ | ~~Auth API contract~~ | ~~Login works for one-scope users and supports explicit `membership_id` retry for multi-scope users. Verified: 67 Go tests, 114 Angular tests pass.~~ |
 | FE-06 ~~done 2026-06-06~~ | ~~Remove/block public signup. Replace `/signup` with a no-public-signup message or remove route entirely.~~ | ~~FE-01~~ | ~~No public account creation form is visible or linked. `/signup` shows invitation-only message. Unused `SignupFormComponent` deleted. 120 tests pass.~~ |
-| FE-07 | Add forgot-password and reset-password screens with invalid/expired link states. | Password reset API contract | User can request reset, submit new password from token route, and return to sign-in. |
+| FE-07 ~~done 2026-06-06~~ | ~~Add forgot-password and reset-password screens with invalid/expired link states.~~ | ~~Password reset API contract~~ | ~~User can request reset, submit new password from token route, and return to sign-in. Verified: forgot-password and reset-password routes, account-enumeration-safe confirmation, terminal link states, 145 Angular tests pass.~~ |
 | FE-08 | Add invite acceptance and set-password screens for manager-invited practitioner/parent users. | Invite API contract | Invite token route supports valid, expired, already-used, and invalid token states. |
 | FE-09 | Add manager user-invite screen for practitioner and parent roles. Include send invite, invite status list, resend/revoke actions when API supports them. | FE-03, invite API contract | Manager can invite non-manager users; manager role is unavailable in the invite UI. |
 | FE-10 | Improve manager child and guardian list UX. Keep separate screens, add cross-links/placeholders for linked records, better status filters, GBP rate formatting, enrollment badges, and no hard-delete actions. | Existing child/guardian screens | Existing screens become pilot-usable and remove raw minor-unit display. |
@@ -126,6 +126,10 @@ These items are product features intentionally outside the month-1 pilot critica
 | FE-PM-02 | Build parent/guardian digital registration and consent journey based on `docs/forms/child-application-form.md` and `docs/forms/parental-consent-form.md`. Support draft save, clear review before submission, signer details, date capture, and confirmation of GDPR/safeguarding acknowledgements. | Parent portal shell; API-PM-02; API-PM-03 | Parent/guardian can complete required registration and consent fields on mobile and desktop; validation explains missing required fields; submitted consent state is read-only except through an explicit supersede/update flow. |
 | FE-PM-03 | Add consent review/history UI for managers. Show current consent decisions and historical superseded records for urgent medical treatment, plasters, SENCO, health visitor, transition documents, outings, face painting, sun cream, nappy cream, photographs, website/promotional use, coursework, and social media. | FE-PM-01; API-PM-03 | Manager can quickly inspect current consent before operational decisions and can trace who changed a decision and when. |
 | FE-PM-04 | Add registration office-use checklist UI for deposit, application/start/date-left, sessions/days requested, term-time-only status, contract/handbook handoff, Red Book check, birth certificate/passport check, and proof-of-address check. | FE-PM-01; API-PM-04 | Manager can mark document/checklist completion from child enrollment; checklist status feeds the child detail readiness summary. |
+| FE-PM-05 | Build room/session planning and booking UI. Include room setup, session templates, child bookings, extra-session requests, capacity warnings, eligibility messages, and links from child detail to booked sessions. | FE-PM-01; API-PM-05 | Manager can plan and adjust booked attendance from a calendar/list workflow; capacity and child-eligibility failures are visible before save; practitioners see only the operational session list needed for attendance. |
+| FE-PM-06 | Build ratio safety dashboard and live room checks. Show room-level ratio state, staff assignment, child age-band counts, at-risk sessions, and manager override flow where the API allows it. | FE-PM-05; API-PM-06 | Manager can see unsafe or near-limit sessions before and during the day; practitioner attendance surfaces clear ratio warnings without exposing unnecessary staff or child-sensitive data; override actions require reason and confirmation. |
+| FE-PM-07 | Build safeguarding and incident record screens. Support practitioner incident submission, manager restricted review, status/follow-up actions, confidential notes, and clear separation from normal child profile data. | API-PM-07 | Practitioners can submit permitted incidents; managers can triage and close records with history; restricted safeguarding data is not visible in parent, invoice, or routine attendance surfaces. |
+| FE-PM-08 | Build learning journey and EYFS observation screens. Support practitioner observation drafts, EYFS tagging, next steps, manager review, and parent-visible approved entries. | API-PM-08 | Practitioners can capture observations; managers can approve entries; parents see only approved learning journey content for linked children; draft/rejected content stays staff-only. |
 
 ## Files to Create or Change
 
@@ -153,6 +157,10 @@ Expected Angular files and folders:
 - `web/src/app/features/payments/**`
 - `web/src/app/features/parent-portal/**`
 - `web/src/app/features/registration/**` for post-MVP registration and consent workflows.
+- `web/src/app/features/planning/**` for post-MVP room, session, and booking workflows.
+- `web/src/app/features/ratios/**` for post-MVP staff-to-child ratio safety workflows.
+- `web/src/app/features/safeguarding/**` for post-MVP incident and safeguarding workflows.
+- `web/src/app/features/learning/**` for post-MVP learning journey and EYFS workflows.
 - `web/src/environments/environment.ts`
 - `web/src/environments/environment.development.ts`
 - `web/package.json` for Playwright scripts when FE-31 starts.
@@ -179,7 +187,7 @@ Existing TailAdmin demo pages can remain temporarily if needed, but production n
 - parent invoice list/detail endpoints
 - checkout session creation endpoint
 - payment/reconciliation event endpoints
-- post-MVP registration profile, consent ledger, and office-use checklist endpoints from API-PM-02 to API-PM-04
+- post-MVP registration profile, consent ledger, office-use checklist, planning, ratio, safeguarding, and learning endpoints from API-PM-02 to API-PM-08
 
 When an API is unavailable, build the UI with a typed local mock adapter and keep the real service method shape aligned to the expected `/api/v1` contract.
 

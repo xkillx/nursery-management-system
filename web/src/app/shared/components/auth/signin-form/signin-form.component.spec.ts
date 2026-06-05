@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { SigninFormComponent } from './signin-form.component';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -42,6 +42,7 @@ describe('SigninFormComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SigninFormComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: Router, useValue: routerMock },
         provideHttpClient(),
         provideHttpClientTesting(),

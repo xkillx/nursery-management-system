@@ -10,6 +10,8 @@ import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/
 import { ParentInvoicesPlaceholderComponent } from './features/parent-portal/pages/parent-invoices-placeholder/parent-invoices-placeholder.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
+import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 
@@ -75,6 +77,16 @@ export const routes: Routes = [
     path: 'signup',
     component: SignUpComponent,
     title: 'Invitation Only | Nursery Management',
+  },
+  {
+    path: 'forgot-password',
+    component: ForgotPasswordComponent,
+    title: 'Forgot Password | Nursery Management',
+  },
+  {
+    path: 'reset-password',
+    component: ResetPasswordComponent,
+    title: 'Reset Password | Nursery Management',
   },
   {
     path: '**',

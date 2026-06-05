@@ -106,4 +106,22 @@ describe('AuthService', () => {
     });
     request.flush(mockAuthResponse);
   });
+
+  it('requestPasswordReset posts email to password-reset-requests', () => {
+    service.requestPasswordReset('user@example.com').subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/password-reset-requests');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ email: 'user@example.com' });
+    request.flush({ status: 'accepted' });
+  });
+
+  it('resetPassword posts token and new_password to password-resets', () => {
+    service.resetPassword('test-token', 'newpassword1').subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/password-resets');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ token: 'test-token', new_password: 'newpassword1' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

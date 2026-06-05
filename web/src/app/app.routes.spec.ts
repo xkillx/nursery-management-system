@@ -39,6 +39,8 @@ describe('app.routes', () => {
     'parent/invoices',
     'signin',
     'signup',
+    'forgot-password',
+    'reset-password',
   ];
 
   for (const mvp of mvpPaths) {

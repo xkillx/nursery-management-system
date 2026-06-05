@@ -29,6 +29,19 @@ export interface LoginRequest {
   membership_id?: string;
 }
 
+export interface PasswordResetRequestPayload {
+  email: string;
+}
+
+export interface PasswordResetAcceptedResponse {
+  status: 'accepted';
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  new_password: string;
+}
+
 export interface AuthState {
   accessToken: string | null;
   user: UserModel | null;
