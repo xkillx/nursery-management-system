@@ -41,6 +41,7 @@ describe('app.routes', () => {
     'signup',
     'forgot-password',
     'reset-password',
+    'invite-accept',
   ];
 
   for (const mvp of mvpPaths) {

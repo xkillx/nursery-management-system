@@ -98,6 +98,13 @@ export class AuthService {
     );
   }
 
+  acceptInvite(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(
+      apiUrl('/invites/accept'),
+      { token, new_password: newPassword },
+    );
+  }
+
   private applySession(response: AuthResponse): void {
     this.state.set({
       accessToken: response.access_token,

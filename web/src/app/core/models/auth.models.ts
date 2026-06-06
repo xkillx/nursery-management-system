@@ -42,6 +42,11 @@ export interface ResetPasswordPayload {
   new_password: string;
 }
 
+export interface AcceptInvitePayload {
+  token: string;
+  new_password: string;
+}
+
 export interface AuthState {
   accessToken: string | null;
   user: UserModel | null;

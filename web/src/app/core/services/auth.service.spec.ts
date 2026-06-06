@@ -124,4 +124,13 @@ describe('AuthService', () => {
     expect(request.request.body).toEqual({ token: 'test-token', new_password: 'newpassword1' });
     request.flush(null, { status: 204, statusText: 'No Content' });
   });
+
+  it('acceptInvite posts token and new_password to invites/accept', () => {
+    service.acceptInvite('invite-token', 'newpassword1').subscribe();
+
+    const request = httpMock.expectOne('/api/v1/invites/accept');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ token: 'invite-token', new_password: 'newpassword1' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

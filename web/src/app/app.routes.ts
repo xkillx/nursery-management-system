@@ -12,6 +12,7 @@ import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
+import { InviteAcceptComponent } from './pages/auth-pages/invite-accept/invite-accept.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 
@@ -87,6 +88,11 @@ export const routes: Routes = [
     path: 'reset-password',
     component: ResetPasswordComponent,
     title: 'Reset Password | Nursery Management',
+  },
+  {
+    path: 'invite-accept',
+    component: InviteAcceptComponent,
+    title: 'Accept Invitation | Nursery Management',
   },
   {
     path: '**',

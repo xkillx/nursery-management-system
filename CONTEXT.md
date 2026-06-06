@@ -848,6 +848,10 @@ Manager invitation revocation does not require a reason code or note in month 1;
 
 Invalid, expired, revoked, and already-accepted manager invitation links return distinct stable error codes with generic human-readable messages.
 
+## Already-Accepted Manager Invitation Link (MVP)
+
+A manager invitation link whose invitation has already been accepted by an invitee. It cannot provision another user or membership; avoid calling it an already-used invitation link.
+
 ## Manager Invite Acceptance Idempotency (MVP)
 
 Invitation acceptance is single-use; after one successful acceptance, later attempts with the same invitation link return an already-accepted result and do not create additional users or memberships.
