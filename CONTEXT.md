@@ -830,7 +830,7 @@ Manager invitations target the manager's active tenant-branch session scope; cli
 
 ## Manager Invite List Visibility (MVP)
 
-Manager invitation lists default to currently pending invitations in the active tenant-branch scope, while accepted, revoked, expired, and all-invite history are available only through explicit status filtering.
+Manager invitation lists default to currently pending invitations in the active tenant-branch scope, while accepted, revoked, expired, and all-invite history are available only through explicit status filtering. Status-changing manager actions are available only for currently pending invitations; expired invitations are treated as historical in the manager UI.
 
 ## Manager Invite Expiry State (MVP)
 

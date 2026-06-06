@@ -87,4 +87,32 @@ describe('StatusBadgeComponent', () => {
     component.status = 'ACTIVE';
     expect(component.resolvedMapping.color).toBe('success');
   });
+
+  it('maps pending status to warning', () => {
+    component.status = 'pending';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('warning');
+    expect(mapping.label).toBe('Pending');
+  });
+
+  it('maps accepted status to success', () => {
+    component.status = 'accepted';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('success');
+    expect(mapping.label).toBe('Accepted');
+  });
+
+  it('maps revoked status to error', () => {
+    component.status = 'revoked';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('error');
+    expect(mapping.label).toBe('Revoked');
+  });
+
+  it('maps expired status to light', () => {
+    component.status = 'expired';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('light');
+    expect(mapping.label).toBe('Expired');
+  });
 });

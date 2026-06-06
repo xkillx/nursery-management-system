@@ -42,6 +42,10 @@ export class StatusBadgeComponent {
     payment_failed: { color: 'error', label: 'Payment failed' },
     payable: { color: 'success', label: 'Payable' },
     not_payable: { color: 'light', label: 'Not payable' },
+    pending: { color: 'warning', label: 'Pending' },
+    accepted: { color: 'success', label: 'Accepted' },
+    revoked: { color: 'error', label: 'Revoked' },
+    expired: { color: 'light', label: 'Expired' },
   };
 
   get resolvedMapping(): StatusMapping {

@@ -6,6 +6,7 @@ import { apiUrl } from '../../../core/config/api.config';
 import { AttendanceChildRecord, AttendanceSessionRecord, AttendanceState } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload } from '../models/guardians.models';
+import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 
 interface StaffListResponse<T> {
   items: T[];
@@ -62,6 +63,18 @@ interface AttendanceSessionApiModel {
   check_in_local_date: string;
   check_out_local_date?: string;
   duration_minutes?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface InviteApiModel {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expires_at: string;
+  accepted_at?: string | null;
+  revoked_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +153,32 @@ export class StaffApiService {
       .pipe(map((session) => this.toAttendanceSessionRecord(session)));
   }
 
+  listInvites(status: InviteStatusFilter = 'pending'): Observable<InviteRecord[]> {
+    return this.http
+      .get<StaffListResponse<InviteApiModel>>(apiUrl('/invites'), {
+        params: new HttpParams({ fromObject: { status } }),
+      })
+      .pipe(map((response) => response.items.map((invite) => this.toInviteRecord(invite))));
+  }
+
+  createInvite(payload: InviteCreatePayload): Observable<InviteRecord> {
+    return this.http
+      .post<InviteApiModel>(apiUrl('/invites'), payload)
+      .pipe(map((invite) => this.toInviteRecord(invite)));
+  }
+
+  resendInvite(inviteId: string): Observable<InviteRecord> {
+    return this.http
+      .post<InviteApiModel>(apiUrl(`/invites/${inviteId}/resend`), null)
+      .pipe(map((invite) => this.toInviteRecord(invite)));
+  }
+
+  revokeInvite(inviteId: string): Observable<InviteRecord> {
+    return this.http
+      .post<InviteApiModel>(apiUrl(`/invites/${inviteId}/revoke`), null)
+      .pipe(map((invite) => this.toInviteRecord(invite)));
+  }
+
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
     return new HttpParams({
       fromObject: {
@@ -198,6 +237,20 @@ export class StaffApiService {
       deactivationReasonNote: guardian.deactivation_reason_note ?? null,
       createdAt: guardian.created_at,
       updatedAt: guardian.updated_at,
+    };
+  }
+
+  private toInviteRecord(invite: InviteApiModel): InviteRecord {
+    return {
+      id: invite.id,
+      email: invite.email,
+      role: invite.role as InviteRole,
+      status: invite.status as InviteStatus,
+      expiresAt: invite.expires_at,
+      acceptedAt: invite.accepted_at ?? null,
+      revokedAt: invite.revoked_at ?? null,
+      createdAt: invite.created_at,
+      updatedAt: invite.updated_at,
     };
   }
 }

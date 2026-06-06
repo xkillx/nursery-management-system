@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord } from '../models/attendance-child.models';
+import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
 
 describe('StaffApiService — Attendance', () => {
@@ -126,5 +127,115 @@ describe('StaffApiService — Attendance', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ child_id: 'child-1' });
     req.flush(checkoutResponse);
+  });
+});
+
+describe('StaffApiService — Invites', () => {
+  let service: StaffApiService;
+  let httpMock: HttpTestingController;
+
+  const inviteApiModel = {
+    id: 'invite-1',
+    email: 'practitioner@example.com',
+    role: 'practitioner',
+    status: 'pending',
+    expires_at: '2026-06-13T00:00:00Z',
+    accepted_at: null,
+    revoked_at: null,
+    created_at: '2026-06-06T10:00:00Z',
+    updated_at: '2026-06-06T10:00:00Z',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(StaffApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('listInvites defaults to status=pending', () => {
+    service.listInvites().subscribe((invites: InviteRecord[]) => {
+      expect(invites.length).toBe(1);
+      expect(invites[0]).toEqual({
+        id: 'invite-1',
+        email: 'practitioner@example.com',
+        role: 'practitioner',
+        status: 'pending',
+        expiresAt: '2026-06-13T00:00:00Z',
+        acceptedAt: null,
+        revokedAt: null,
+        createdAt: '2026-06-06T10:00:00Z',
+        updatedAt: '2026-06-06T10:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/invites');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('status')).toBe('pending');
+    req.flush({ items: [inviteApiModel] });
+  });
+
+  it('listInvites passes status filter to query params', () => {
+    service.listInvites('all').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/invites');
+    expect(req.request.params.get('status')).toBe('all');
+    req.flush({ items: [] });
+  });
+
+  it('createInvite posts email and role', () => {
+    service.createInvite({ email: 'parent@example.com', role: 'parent' }).subscribe((invite: InviteRecord) => {
+      expect(invite.role).toBe('parent');
+      expect(invite.email).toBe('parent@example.com');
+    });
+
+    const req = httpMock.expectOne('/api/v1/invites');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ email: 'parent@example.com', role: 'parent' });
+    req.flush({ ...inviteApiModel, email: 'parent@example.com', role: 'parent' });
+  });
+
+  it('resendInvite posts to /invites/{id}/resend', () => {
+    service.resendInvite('invite-1').subscribe((invite: InviteRecord) => {
+      expect(invite.id).toBe('invite-1');
+    });
+
+    const req = httpMock.expectOne('/api/v1/invites/invite-1/resend');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(inviteApiModel);
+  });
+
+  it('revokeInvite posts to /invites/{id}/revoke', () => {
+    service.revokeInvite('invite-1').subscribe((invite: InviteRecord) => {
+      expect(invite.status).toBe('pending');
+    });
+
+    const req = httpMock.expectOne('/api/v1/invites/invite-1/revoke');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(inviteApiModel);
+  });
+
+  it('maps nullable accepted_at and revoked_at to null', () => {
+    const acceptedModel = {
+      ...inviteApiModel,
+      status: 'accepted',
+      accepted_at: '2026-06-07T09:00:00Z',
+    };
+
+    service.listInvites('accepted').subscribe((invites: InviteRecord[]) => {
+      expect(invites[0].acceptedAt).toBe('2026-06-07T09:00:00Z');
+      expect(invites[0].revokedAt).toBeNull();
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/invites');
+    req.flush({ items: [acceptedModel] });
   });
 });

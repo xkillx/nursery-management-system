@@ -34,6 +34,7 @@ describe('app.routes', () => {
     'staff/manager/dashboard',
     'staff/manager/children',
     'staff/manager/guardians',
+    'staff/manager/invites',
     'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
     'parent/invoices',
@@ -58,5 +59,14 @@ describe('app.routes', () => {
     expect(legacyRoute).toBeDefined();
     expect(legacyRoute!.redirectTo).toBe('staff/practitioner/attendance');
     expect(legacyRoute!.component).toBeUndefined();
+  });
+
+  it('manager invites route requires manager role only', () => {
+    const invitesRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/manager/invites');
+
+    expect(invitesRoute).toBeDefined();
+    expect(invitesRoute!.data?.['roles']).toEqual(['manager']);
   });
 });
