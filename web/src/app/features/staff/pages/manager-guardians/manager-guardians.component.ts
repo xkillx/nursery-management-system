@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { GuardianFormComponent } from '../../components/guardian-form/guardian-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StatusFilter } from '../../models/children.models';
 import { GuardianRecord, GuardianWritePayload } from '../../models/guardians.models';
+import { statusFilterLabel } from '../../utils/manager-list-formatters';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -19,6 +21,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
   selector: 'app-manager-guardians',
   imports: [
     CommonModule,
+    RouterLink,
     GuardianFormComponent,
     PageHeaderComponent,
     ButtonComponent,
@@ -36,6 +39,8 @@ export class ManagerGuardiansComponent {
   private readonly errorMapper = inject(ApiErrorMapper);
 
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
+
+  readonly statusLabel = statusFilterLabel;
 
   guardians: GuardianRecord[] = [];
   status: StatusFilter = 'active';

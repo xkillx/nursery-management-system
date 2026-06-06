@@ -37,13 +37,15 @@
       />
     </app-form-field>
 
-    <app-form-field label="Core hourly rate (minor)" [required]="true" [error]="fieldErrors['core_hourly_rate_minor'] || ''">
+    <app-form-field label="Core hourly rate (£/hr)" [required]="true" [error]="fieldErrors['core_hourly_rate_minor'] || ''">
       <input
         type="number"
         min="0"
-        name="core_hourly_rate_minor"
-        [(ngModel)]="form.core_hourly_rate_minor"
+        step="0.01"
+        name="core_hourly_rate_gbp"
+        [(ngModel)]="form.core_hourly_rate_gbp"
         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+        placeholder="7.50"
         required
       />
     </app-form-field>

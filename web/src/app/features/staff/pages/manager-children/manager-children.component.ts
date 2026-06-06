@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
+import { formatHourlyRateGbp, missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -18,6 +20,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
   selector: 'app-manager-children',
   imports: [
     CommonModule,
+    RouterLink,
     ChildFormComponent,
     PageHeaderComponent,
     ButtonComponent,
@@ -35,6 +38,10 @@ export class ManagerChildrenComponent {
   private readonly errorMapper = inject(ApiErrorMapper);
 
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
+
+  readonly statusLabel = statusFilterLabel;
+  readonly formatRate = formatHourlyRateGbp;
+  readonly requirementLabel = missingRequirementLabel;
 
   children: ChildRecord[] = [];
   status: StatusFilter = 'active';

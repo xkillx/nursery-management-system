@@ -1,7 +1,7 @@
 <div class="space-y-5">
   <app-page-header
-    title="Manager guardians"
-    description="Create and edit guardian contacts with lifecycle state visibility."
+    title="Guardians"
+    description="Manage guardian contacts with lifecycle state visibility."
     [hasActions]="true"
   >
     <div class="flex items-center gap-3" actions>
@@ -12,9 +12,15 @@
         class="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
       >
         @for (option of statusOptions; track option) {
-          <option [value]="option">{{ option }}</option>
+          <option [value]="option">{{ statusLabel(option) }}</option>
         }
       </select>
+      <a
+        routerLink="/staff/manager/children"
+        class="inline-flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+      >
+        Children
+      </a>
       <app-button variant="primary" size="sm" (btnClick)="openCreate()">Add guardian</app-button>
     </div>
   </app-page-header>
@@ -45,15 +51,16 @@
           <th class="py-2 pr-3">Active</th>
           <th class="py-2 pr-3">Deactivated</th>
           <th class="py-2 pr-3">Reason</th>
+          <th class="py-2 pr-3">Linked children</th>
           <th class="py-2">Actions</th>
         </tr>
       </thead>
       <tbody>
         @if (isLoading) {
-          <app-loading-state variant="table-row" [colspan]="7" label="Loading guardians..."></app-loading-state>
+          <app-loading-state variant="table-row" [colspan]="8" label="Loading guardians..."></app-loading-state>
         } @else if (guardians.length === 0) {
           <tr>
-            <td colspan="7">
+            <td colspan="8">
               <app-empty-state title="No guardians found" message="Adjust filters or add a new guardian."></app-empty-state>
             </td>
           </tr>
@@ -68,6 +75,7 @@
               </td>
               <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ guardian.deactivatedAt || '-' }}</td>
               <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ guardian.deactivationReasonCode || '-' }}</td>
+              <td class="py-3 pr-3 text-gray-400 dark:text-gray-500 text-xs">Manage on child detail</td>
               <td class="py-3">
                 <app-button variant="outline" size="xs" (btnClick)="openEdit(guardian)">Edit</app-button>
               </td>

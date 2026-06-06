@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord } from '../models/attendance-child.models';
+import { ChildRecord } from '../models/children.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
 
@@ -237,5 +238,161 @@ describe('StaffApiService — Invites', () => {
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/invites');
     req.flush({ items: [acceptedModel] });
+  });
+});
+
+describe('StaffApiService — Children', () => {
+  let service: StaffApiService;
+  let httpMock: HttpTestingController;
+
+  const childApiModel = {
+    id: 'child-1',
+    full_name: 'Ada Lovelace',
+    date_of_birth: '2022-01-15',
+    start_date: '2024-09-01',
+    end_date: null,
+    core_hourly_rate_minor: 750,
+    notes: null,
+    is_active: true,
+    left_at: null,
+    left_reason_code: null,
+    left_reason_note: null,
+    enrollment_complete: false,
+    missing_requirements: ['guardian_link', 'billing_rate'],
+    created_at: '2024-08-01T00:00:00Z',
+    updated_at: '2024-08-01T00:00:00Z',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(StaffApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('listChildren sends status, limit, offset query params', () => {
+    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('status')).toBe('active');
+    expect(req.request.params.get('limit')).toBe('10');
+    expect(req.request.params.get('offset')).toBe('0');
+    req.flush({ items: [] });
+  });
+
+  it('listChildren maps snake_case to camelCase with enrollment fields', () => {
+    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe((children: ChildRecord[]) => {
+      expect(children.length).toBe(1);
+      expect(children[0]).toEqual({
+        id: 'child-1',
+        fullName: 'Ada Lovelace',
+        dateOfBirth: '2022-01-15',
+        startDate: '2024-09-01',
+        endDate: null,
+        coreHourlyRateMinor: 750,
+        notes: null,
+        isActive: true,
+        leftAt: null,
+        leftReasonCode: null,
+        leftReasonNote: null,
+        enrollmentComplete: false,
+        missingRequirements: ['guardian_link', 'billing_rate'],
+        createdAt: '2024-08-01T00:00:00Z',
+        updatedAt: '2024-08-01T00:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
+    req.flush({ items: [childApiModel] });
+  });
+
+  it('listChildren defaults missing_requirements to empty array', () => {
+    const noRequirements = { ...childApiModel, missing_requirements: undefined };
+
+    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe((children: ChildRecord[]) => {
+      expect(children[0].missingRequirements).toEqual([]);
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
+    req.flush({ items: [noRequirements] });
+  });
+});
+
+describe('StaffApiService — Guardians', () => {
+  let service: StaffApiService;
+  let httpMock: HttpTestingController;
+
+  const guardianApiModel = {
+    id: 'guardian-1',
+    full_name: 'Sarah Thompson',
+    email: 'sarah@example.com',
+    phone: '+44 7700 900001',
+    notes: null,
+    is_active: true,
+    deactivated_at: null,
+    deactivation_reason_code: null,
+    deactivation_reason_note: null,
+    created_at: '2024-08-01T00:00:00Z',
+    updated_at: '2024-08-01T00:00:00Z',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(StaffApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('listGuardians sends status, limit, offset query params', () => {
+    service.listGuardians({ status: 'inactive', limit: 5, offset: 10 }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/guardians');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('status')).toBe('inactive');
+    expect(req.request.params.get('limit')).toBe('5');
+    expect(req.request.params.get('offset')).toBe('10');
+    req.flush({ items: [] });
+  });
+
+  it('listGuardians maps nullable contact and lifecycle fields', () => {
+    const minimalGuardian = {
+      ...guardianApiModel,
+      email: undefined,
+      phone: undefined,
+      notes: undefined,
+    };
+
+    service.listGuardians({ status: 'active', limit: 10, offset: 0 }).subscribe((guardians) => {
+      expect(guardians.length).toBe(1);
+      expect(guardians[0]).toEqual({
+        id: 'guardian-1',
+        fullName: 'Sarah Thompson',
+        email: null,
+        phone: null,
+        notes: null,
+        isActive: true,
+        deactivatedAt: null,
+        deactivationReasonCode: null,
+        deactivationReasonNote: null,
+        createdAt: '2024-08-01T00:00:00Z',
+        updatedAt: '2024-08-01T00:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/guardians');
+    req.flush({ items: [minimalGuardian] });
   });
 });
