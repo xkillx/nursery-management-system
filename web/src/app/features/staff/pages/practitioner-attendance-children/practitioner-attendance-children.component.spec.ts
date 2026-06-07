@@ -223,4 +223,122 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('No children match the current filters');
   });
+
+  it('refresh button triggers loadChildren', () => {
+    setChildrenAndDetectChanges(mockChildren);
+    const initialCallCount = staffApiSpy.listAttendanceChildren.calls.count();
+
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const refreshBtn = buttons.find((b) => b.textContent?.includes('Refresh'));
+    expect(refreshBtn).toBeTruthy();
+    staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+    refreshBtn!.click();
+    fixture.detectChanges();
+
+    expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(initialCallCount + 1);
+  });
+
+  it('disables action and shows pending text during check-in', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    staffApiSpy.checkInChild.and.returnValue(new Observable());
+
+    component.checkIn(mockChildren[0]);
+    fixture.detectChanges();
+
+    const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-action-child-1"]') as HTMLButtonElement;
+    expect(actionBtn.disabled).toBeTrue();
+    expect(actionBtn.textContent).toContain('Checking in');
+  });
+
+  it('shows checked-in time for checked-in children', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Checked in at');
+  });
+
+  it('shows Not in badge and enabled Check in action for eligible not-in child', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    const row = fixture.nativeElement.querySelector('[data-testid="attendance-row-child-1"]');
+    expect(row.textContent).toContain('Not in');
+
+    const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-action-child-1"]') as HTMLButtonElement;
+    expect(actionBtn).toBeTruthy();
+    expect(actionBtn.textContent).toContain('Check in');
+    expect(actionBtn.disabled).toBeFalse();
+  });
+
+  it('shows Check out action for checked-in incomplete-enrollment child in DOM', () => {
+    setChildrenAndDetectChanges([...mockChildren, mockCheckedInIncomplete]);
+
+    const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-action-child-4"]') as HTMLButtonElement;
+    expect(actionBtn).toBeTruthy();
+    expect(actionBtn.textContent).toContain('Check out');
+    expect(actionBtn.disabled).toBeFalse();
+  });
+
+  it('does not render guardian, billing, or child ID fields', () => {
+    const childrenWithExtraFields: AttendanceChildRecord[] = [
+      {
+        id: 'child-1',
+        fullName: 'Ada Lovelace',
+        enrollmentComplete: true,
+        attendanceState: 'not_checked_in',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+      } as any,
+    ];
+    (childrenWithExtraFields[0] as any).guardianEmail = 'secret@example.com';
+    (childrenWithExtraFields[0] as any).guardianPhone = '07123456789';
+    (childrenWithExtraFields[0] as any).guardianName = 'Secret Guardian';
+    (childrenWithExtraFields[0] as any).coreHourlyRateMinor = 1500;
+    (childrenWithExtraFields[0] as any).fundingValue = 10000;
+
+    setChildrenAndDetectChanges(childrenWithExtraFields);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain('secret@example.com');
+    expect(compiled.textContent).not.toContain('07123456789');
+    expect(compiled.textContent).not.toContain('Secret Guardian');
+    expect(compiled.textContent).not.toContain('child-1');
+  });
+
+  it('shows row error near the affected child row', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    const conflictError = new Error('conflict') as any;
+    conflictError.status = 409;
+
+    staffApiSpy.checkInChild.and.returnValue(throwError(() => conflictError));
+    staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+
+    component.checkIn(mockChildren[0]);
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector('[data-testid="attendance-row-child-1"]');
+    const rowError = fixture.nativeElement.querySelector('[data-testid="attendance-row-error-child-1"]');
+
+    expect(rowError).toBeTruthy();
+    expect(row.textContent).toContain('Ada Lovelace');
+    expect(row.parentElement).toBe(rowError.parentElement);
+  });
+
+  it('shows incomplete session warning for not-checked-in child with incomplete session', () => {
+    const childWithIncompleteSession: AttendanceChildRecord = {
+      id: 'child-5',
+      fullName: 'Session Issue',
+      enrollmentComplete: true,
+      attendanceState: 'not_checked_in',
+      openSessionId: null,
+      checkedInAt: null,
+      hasIncompleteSession: true,
+    };
+    setChildrenAndDetectChanges([childWithIncompleteSession]);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Incomplete session needs manager correction');
+  });
 });

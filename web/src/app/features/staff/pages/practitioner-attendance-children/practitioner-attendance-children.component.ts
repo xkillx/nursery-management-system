@@ -96,6 +96,10 @@ export class PractitionerAttendanceChildrenComponent {
     return this.pendingChildIds.has(childId);
   }
 
+  showIncompleteSessionWarning(child: AttendanceChildRecord): boolean {
+    return child.hasIncompleteSession && !this.isCheckedIn(child);
+  }
+
   canCheckIn(child: AttendanceChildRecord): boolean {
     return !this.isCheckedIn(child) && child.enrollmentComplete && !this.isLoading && !this.isPending(child.id);
   }

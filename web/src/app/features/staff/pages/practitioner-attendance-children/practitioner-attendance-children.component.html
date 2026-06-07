@@ -2,33 +2,30 @@
   <!-- Header -->
   <app-page-header
     title="Today's attendance"
-    description="Current attendance for the active branch."
     [hasActions]="true"
   >
     <app-button variant="outline" size="sm" [disabled]="isLoading" (btnClick)="loadChildren()" actions>Refresh</app-button>
   </app-page-header>
 
   <!-- Controls -->
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+  <div class="space-y-3 sm:flex sm:items-center sm:gap-3">
     <input
       type="text"
       data-testid="attendance-search"
       placeholder="Search by name..."
-      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:w-64"
+      class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:flex-1 sm:max-w-xs"
       [value]="searchTerm"
       (input)="onSearchChange($any($event.target).value)"
     />
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <button
         data-testid="attendance-filter-all"
         type="button"
         class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [class.bg-blue-600]="statusFilter === 'all'"
-        [class.text-white]="statusFilter === 'all'"
-        [class.bg-gray-100]="statusFilter !== 'all'"
-        [class.text-gray-700]="statusFilter !== 'all'"
-        [class.dark:bg-gray-800]="statusFilter !== 'all'"
-        [class.dark:text-gray-300]="statusFilter !== 'all'"
+        [ngClass]="{
+          'bg-blue-600 text-white': statusFilter === 'all',
+          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'all'
+        }"
         (click)="setStatusFilter('all')"
       >
         All ({{ children.length }})
@@ -37,12 +34,10 @@
         data-testid="attendance-filter-not-in"
         type="button"
         class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [class.bg-blue-600]="statusFilter === 'not_checked_in'"
-        [class.text-white]="statusFilter === 'not_checked_in'"
-        [class.bg-gray-100]="statusFilter !== 'not_checked_in'"
-        [class.text-gray-700]="statusFilter !== 'not_checked_in'"
-        [class.dark:bg-gray-800]="statusFilter !== 'not_checked_in'"
-        [class.dark:text-gray-300]="statusFilter !== 'not_checked_in'"
+        [ngClass]="{
+          'bg-blue-600 text-white': statusFilter === 'not_checked_in',
+          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'not_checked_in'
+        }"
         (click)="setStatusFilter('not_checked_in')"
       >
         Not in ({{ notInCount }})
@@ -51,12 +46,10 @@
         data-testid="attendance-filter-checked-in"
         type="button"
         class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [class.bg-blue-600]="statusFilter === 'checked_in'"
-        [class.text-white]="statusFilter === 'checked_in'"
-        [class.bg-gray-100]="statusFilter !== 'checked_in'"
-        [class.text-gray-700]="statusFilter !== 'checked_in'"
-        [class.dark.bg-gray-800]="statusFilter !== 'checked_in'"
-        [class.dark.text-gray-300]="statusFilter !== 'checked_in'"
+        [ngClass]="{
+          'bg-blue-600 text-white': statusFilter === 'checked_in',
+          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'checked_in'
+        }"
         (click)="setStatusFilter('checked_in')"
       >
         Checked in ({{ checkedInCount }})
@@ -69,85 +62,96 @@
     <app-alert variant="error" [message]="errorMessage"></app-alert>
   }
 
-  <!-- Content -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-    <!-- Loading -->
-    @if (isLoading && children.length === 0) {
-      <app-loading-state label="Loading attendance..."></app-loading-state>
-    }
+  <!-- Loading -->
+  @if (isLoading && children.length === 0) {
+    <app-loading-state label="Loading attendance..."></app-loading-state>
+  }
 
-    <!-- Empty - no children -->
-    @else if (children.length === 0) {
-      <app-empty-state title="No children available for today's attendance."></app-empty-state>
-    }
+  <!-- Empty - no children -->
+  @else if (children.length === 0) {
+    <app-empty-state title="No children available for today's attendance."></app-empty-state>
+  }
 
-    <!-- Empty - filtered -->
-    @else if (filteredChildren.length === 0) {
-      <app-empty-state title="No children match the current filters."></app-empty-state>
-    }
+  <!-- Empty - filtered -->
+  @else if (filteredChildren.length === 0) {
+    <app-empty-state title="No children match the current filters."></app-empty-state>
+  }
 
-    <!-- Child rows -->
-    @else {
-      <div class="divide-y divide-gray-100 dark:divide-gray-800/60">
-        @for (child of filteredChildren; track child.id) {
-          <div
-            [attr.data-testid]="'attendance-row-' + child.id"
-            class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-800 dark:text-white/90">{{ child.fullName }}</span>
-                @if (isCheckedIn(child)) {
-                  <app-status-badge status="checked_in"></app-status-badge>
-                } @else {
-                  <app-status-badge status="not_checked_in"></app-status-badge>
-                }
-              </div>
-              <div class="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400">
-                @if (isCheckedIn(child) && child.checkedInAt) {
-                  <span>Checked in at {{ formatLondonTime(child.checkedInAt) }}</span>
-                }
-                @if (!child.enrollmentComplete && !isCheckedIn(child)) {
-                  <span class="text-amber-600 dark:text-amber-400">Enrollment incomplete</span>
-                }
-              </div>
-            </div>
-
-            <div class="flex-shrink-0">
+  <!-- Child cards -->
+  @else {
+    <div class="space-y-2">
+      @for (child of filteredChildren; track child.id) {
+        <div
+          [attr.data-testid]="'attendance-row-' + child.id"
+          class="rounded-lg border border-gray-200 bg-white p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]"
+        >
+          <!-- Left: name + badge + supporting text -->
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ child.fullName }}</span>
               @if (isCheckedIn(child)) {
-                <button
-                  type="button"
-                  [attr.data-testid]="'attendance-action-' + child.id"
-                  class="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
-                  [disabled]="!canCheckOut(child)"
-                  (click)="checkOut(child)"
-                >
-                  Check out
-                </button>
+                <app-status-badge status="checked_in"></app-status-badge>
               } @else {
-                <button
-                  type="button"
-                  [attr.data-testid]="'attendance-action-' + child.id"
-                  class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-                  [disabled]="!canCheckIn(child)"
-                  (click)="checkIn(child)"
-                >
-                  Check in
-                </button>
+                <app-status-badge status="not_checked_in"></app-status-badge>
+              }
+            </div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              @if (isCheckedIn(child) && child.checkedInAt) {
+                <span>Checked in at {{ formatLondonTime(child.checkedInAt) }}</span>
+              }
+              @if (!child.enrollmentComplete && !isCheckedIn(child)) {
+                <span class="text-amber-600 dark:text-amber-400">Enrollment incomplete</span>
+              }
+              @if (showIncompleteSessionWarning(child)) {
+                <span class="block text-amber-600 dark:text-amber-400">Incomplete session needs manager correction</span>
               }
             </div>
           </div>
 
-          @if (rowErrors[child.id]) {
-            <div
-              [attr.data-testid]="'attendance-row-error-' + child.id"
-              class="px-1 pb-3 text-xs text-red-600 dark:text-red-400"
-            >
-              {{ rowErrors[child.id] }}
-            </div>
-          }
+          <!-- Right: action -->
+          <div class="mt-2.5 sm:mt-0 sm:flex-shrink-0">
+            @if (isCheckedIn(child)) {
+              <button
+                type="button"
+                [attr.data-testid]="'attendance-action-' + child.id"
+                class="w-full rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 active:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20 sm:w-auto sm:py-2.5"
+                [disabled]="!canCheckOut(child)"
+                (click)="checkOut(child)"
+              >
+                @if (isPending(child.id)) {
+                  Checking out...
+                } @else {
+                  Check out
+                }
+              </button>
+            } @else {
+              <button
+                type="button"
+                [attr.data-testid]="'attendance-action-' + child.id"
+                class="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600 sm:w-auto sm:py-2.5"
+                [disabled]="!canCheckIn(child)"
+                (click)="checkIn(child)"
+              >
+                @if (isPending(child.id)) {
+                  Checking in...
+                } @else {
+                  Check in
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Row error below affected card -->
+        @if (rowErrors[child.id]) {
+          <div
+            [attr.data-testid]="'attendance-row-error-' + child.id"
+            class="-mt-1 rounded-b-lg border border-t-0 border-gray-200 bg-red-50 px-3 pb-2 pt-1 text-xs text-red-600 dark:border-gray-800 dark:bg-red-500/5 dark:text-red-400"
+          >
+            {{ rowErrors[child.id] }}
+          </div>
         }
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </div>

@@ -80,7 +80,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| FE-12 | Redesign practitioner attendance list mobile-first. Use large check-in/check-out actions, quick search/filter, checked-in/not-in badges, refresh, row errors, and no guardian contact/billing fields. | Existing attendance screen, FE-03 | Mobile viewport is the primary usable experience; desktop remains clean. |
+| FE-12 ~~done 2026-06-07~~ | ~~Redesign practitioner attendance list mobile-first. Use large check-in/check-out actions, quick search/filter, checked-in/not-in badges, refresh, row errors, and no guardian contact/billing fields.~~ | ~~Existing attendance screen, FE-03~~ | ~~Mobile-first card layout with full-width touch actions, inline pending state, search/filter pills, row errors per child, privacy regression tests. 260 Angular tests pass.~~ |
 | FE-13 | Integrate attendance list with `/api/v1/children/attendance`, `/api/v1/attendance/check-ins`, and `/api/v1/attendance/check-outs`. | Attendance API | Enrollment-incomplete children cannot be checked in; duplicate/open-session errors map to row messages. |
 | FE-14 | Add optional light polling/manual refresh strategy for attendance when multiple devices are used. | FE-13 | Polling can be enabled without websockets/SSE and does not block manual refresh. |
 | FE-15 | Build manager attendance correction workflow. Use child/session selector, corrected check-in/check-out interval, required reason code, optional note, validation feedback, and correction history. | Correction API contract | Only managers can access correction UI; reason is required before submit. |
