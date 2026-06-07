@@ -92,6 +92,7 @@ func TestPeopleRoutesInventory(t *testing.T) {
 		"POST /api/v1/guardians/:guardian_id/actions/reactivate",
 		"POST /api/v1/guardian-child-links",
 		"POST /api/v1/guardian-child-links/:link_id/actions/end",
+		"GET /api/v1/children/:child_id/guardian-child-links",
 		"POST /api/v1/parent-membership-guardian-mappings",
 		"POST /api/v1/parent-membership-guardian-mappings/:mapping_id/actions/end",
 	}

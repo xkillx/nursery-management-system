@@ -168,6 +168,22 @@ Guardian creation requires only full name in month 1; email and phone are option
 
 A relationship showing that a guardian record is connected to a child within the same nursery scope. A child may have multiple guardian-child links, and active links contribute to parent access and enrollment completeness; ended links no longer grant access.
 
+## Enrollment Complete (MVP)
+
+A child record has the minimum information needed for pilot attendance and invoicing: child identity basics, a start date, at least one active guardian-child link, and a core hourly rate.
+
+## Core Hourly Rate (MVP)
+
+The GBP hourly fee used to price a child's core childcare attendance before funded-hours deduction. Managers discuss and enter this as pounds per hour, not minor units.
+
+## Child Detail/Enrollment Surface (MVP)
+
+A manager-facing child-focused view for inspecting whether a child has the minimum data needed for attendance and invoicing. It separates enrollment completeness from month-specific funding profile readiness.
+
+## No Hard-Delete Core Records (MVP)
+
+Child, guardian, attendance, and invoice records are retained during month 1; manager workflows may end, deactivate, correct, or supersede records, but do not permanently delete them.
+
 ## Manager Provisioning Authority (MVP)
 
 Manager role assignment is reserved to administrative bootstrap flows in month 1; manager-invited users are limited to non-manager roles.

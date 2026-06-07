@@ -144,3 +144,71 @@ func (q *Queries) GuardianLinksGetByIDForUpdate(ctx context.Context, arg Guardia
 	)
 	return i, err
 }
+
+const guardianLinksListActiveByChild = `-- name: GuardianLinksListActiveByChild :many
+SELECT
+    gcl.id,
+    gcl.guardian_id,
+    gcl.child_id,
+    gcl.created_at,
+    gcl.updated_at,
+    g.id AS guardian_table_id,
+    g.full_name AS guardian_full_name,
+    g.email AS guardian_email,
+    g.phone AS guardian_phone,
+    g.is_active AS guardian_is_active
+FROM guardian_child_links gcl
+JOIN guardians g ON g.tenant_id = gcl.tenant_id AND g.branch_id = gcl.branch_id AND g.id = gcl.guardian_id AND g.is_active = true
+WHERE gcl.tenant_id = $1 AND gcl.branch_id = $2 AND gcl.child_id = $3 AND gcl.ended_at IS NULL
+ORDER BY g.full_name ASC, gcl.created_at ASC
+`
+
+type GuardianLinksListActiveByChildParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+}
+
+type GuardianLinksListActiveByChildRow struct {
+	ID               pgtype.UUID
+	GuardianID       pgtype.UUID
+	ChildID          pgtype.UUID
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	GuardianTableID  pgtype.UUID
+	GuardianFullName string
+	GuardianEmail    pgtype.Text
+	GuardianPhone    pgtype.Text
+	GuardianIsActive bool
+}
+
+func (q *Queries) GuardianLinksListActiveByChild(ctx context.Context, arg GuardianLinksListActiveByChildParams) ([]GuardianLinksListActiveByChildRow, error) {
+	rows, err := q.db.Query(ctx, guardianLinksListActiveByChild, arg.TenantID, arg.BranchID, arg.ChildID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GuardianLinksListActiveByChildRow
+	for rows.Next() {
+		var i GuardianLinksListActiveByChildRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.GuardianID,
+			&i.ChildID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GuardianTableID,
+			&i.GuardianFullName,
+			&i.GuardianEmail,
+			&i.GuardianPhone,
+			&i.GuardianIsActive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

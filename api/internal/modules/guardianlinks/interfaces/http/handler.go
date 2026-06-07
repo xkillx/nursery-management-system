@@ -15,17 +15,19 @@ import (
 )
 
 type Handler struct {
-	createLink *app.CreateLinkUseCase
-	endLink    *app.EndLinkUseCase
+	createLink    *app.CreateLinkUseCase
+	endLink       *app.EndLinkUseCase
+	listChildLinks *app.ListChildLinksUseCase
 }
 
-func NewHandler(createLink *app.CreateLinkUseCase, endLink *app.EndLinkUseCase) *Handler {
-	return &Handler{createLink: createLink, endLink: endLink}
+func NewHandler(createLink *app.CreateLinkUseCase, endLink *app.EndLinkUseCase, listChildLinks *app.ListChildLinksUseCase) *Handler {
+	return &Handler{createLink: createLink, endLink: endLink, listChildLinks: listChildLinks}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/guardian-child-links", h.createLinkHandler)
 	group.POST("/guardian-child-links/:link_id/actions/end", h.endLinkHandler)
+	group.GET("/children/:child_id/guardian-child-links", h.listChildLinksHandler)
 }
 
 func (h *Handler) createLinkHandler(c *gin.Context) {
@@ -93,6 +95,31 @@ func (h *Handler) endLinkHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toLinkResponse(result))
+}
+
+func (h *Handler) listChildLinksHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID, ok := parseUUID(c, "child_id")
+	if !ok {
+		return
+	}
+
+	links, err := h.listChildLinks.Execute(c.Request.Context(), toActor(actor), app.ListChildLinksParams{
+		TenantID: actor.TenantID,
+		BranchID: actor.BranchID,
+		ChildID:  childID,
+	})
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toLinkedGuardiansResponse(links))
 }
 
 func toActor(a tenant.ActorContext) app.ActorContext {

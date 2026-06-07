@@ -179,6 +179,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	linksHandler := linkhandler.NewHandler(
 		linkapp.NewCreateLinkUseCase(linkRepo, auditWriter, txManager, guardianChecker, childChecker),
 		linkapp.NewEndLinkUseCase(linkRepo, auditWriter, txManager),
+		linkapp.NewListChildLinksUseCase(linkRepo, txManager, childChecker),
 	)
 
 	// Parent Mappings module

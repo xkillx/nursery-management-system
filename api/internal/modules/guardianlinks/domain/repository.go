@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	FindActiveByPair(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID, childID uuid.UUID) (GuardianChildLink, bool, error)
+	ListActiveByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) ([]LinkedGuardianChildLink, error)
 	Create(ctx context.Context, tx pgx.Tx, link GuardianChildLink) error
 	GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (GuardianChildLink, bool, error)
 	End(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error

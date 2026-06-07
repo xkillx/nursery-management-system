@@ -305,6 +305,41 @@ components:
           type: string
           format: date-time
 
+    ChildGuardianLinkItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        child_id:
+          type: string
+          format: uuid
+        guardian:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            full_name:
+              type: string
+            email:
+              type: string
+              nullable: true
+            phone:
+              type: string
+              nullable: true
+            is_active:
+              type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     ParentMembershipGuardianMapping:
       type: object
       properties:
@@ -2195,6 +2230,37 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/children/{child_id}/guardian-child-links:
+    get:
+      operationId: listChildGuardianLinks
+      summary: List active guardian-child links for a child
+      tags: [Guardian-Child Links]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/child_id"
+      description: |
+        Returns active guardian-child links for a child with embedded guardian info.
+      responses:
+        "200":
+          description: List of active links with guardian details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChildGuardianLinkItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/v1/guardians:
     get:
       operationId: listGuardians
@@ -3303,75 +3369,6 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   # ── Deferred proposed contracts ──
-
-  /api/v1/children/{child_id}/guardian-child-links:
-    get:
-      operationId: listChildGuardianLinks
-      summary: List guardian-child links for a child (DEFERRED)
-      tags: [Deferred]
-      x-implementation-status: deferred
-      x-roles: [manager]
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/child_id"
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [active, ended, all]
-      description: |
-        Not registered by the backend. Proposed future contract.
-        Returns guardian-child links for a child with embedded guardian info.
-      responses:
-        "200":
-          description: List of links (proposed shape)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        guardian_id:
-                          type: string
-                        child_id:
-                          type: string
-                        guardian:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            full_name:
-                              type: string
-                            email:
-                              type: string
-                            phone:
-                              type: string
-                            is_active:
-                              type: boolean
-                        ended_at:
-                          type: string
-                          nullable: true
-                        ended_reason_code:
-                          type: string
-                          nullable: true
-                        ended_reason_note:
-                          type: string
-                          nullable: true
-                        created_at:
-                          type: string
-                        updated_at:
-                          type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
 
   /api/v1/guardians/{guardian_id}/parent-membership-guardian-mappings:
     get:

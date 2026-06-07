@@ -87,7 +87,13 @@
               </td>
               <td class="py-3 pr-3 text-gray-400 dark:text-gray-500 text-xs">Manage on child detail</td>
               <td class="py-3">
-                <app-button variant="outline" size="xs" (btnClick)="openEdit(child)">Edit</app-button>
+                <div class="flex items-center gap-2">
+                  <a
+                    [routerLink]="['/staff/manager/children', child.id]"
+                    class="inline-flex h-7 items-center rounded-md border border-gray-300 px-2.5 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                  >View</a>
+                  <app-button variant="outline" size="xs" (btnClick)="openEdit(child)">Edit</app-button>
+                </div>
               </td>
             </tr>
           }

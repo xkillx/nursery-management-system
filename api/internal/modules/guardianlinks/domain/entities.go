@@ -18,3 +18,20 @@ type GuardianChildLink struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
+
+type LinkedGuardianChildLink struct {
+	ID         uuid.UUID
+	GuardianID uuid.UUID
+	ChildID    uuid.UUID
+	Guardian   LinkedGuardianSummary
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type LinkedGuardianSummary struct {
+	ID       uuid.UUID
+	FullName string
+	Email    *string
+	Phone    *string
+	IsActive bool
+}

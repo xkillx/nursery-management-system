@@ -1,0 +1,149 @@
+<div class="space-y-5">
+  @if (isLoadingChild) {
+    <app-loading-state variant="block" label="Loading child details..."></app-loading-state>
+  } @else if (errorMessage && !child) {
+    <app-alert variant="error" [message]="errorMessage"></app-alert>
+  } @else if (child) {
+    <app-page-header
+      [title]="child.fullName"
+      description="Child enrollment readiness"
+      [hasActions]="true"
+    >
+      <div class="flex items-center gap-3" actions>
+        <a
+          routerLink="/staff/manager/children"
+          class="inline-flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          Back to children
+        </a>
+        <app-button variant="outline" size="sm" (btnClick)="onEditChild()">Edit child basics</app-button>
+      </div>
+    </app-page-header>
+
+    @if (errorMessage) {
+      <app-alert variant="error" [message]="errorMessage" class="mb-4"></app-alert>
+    }
+
+    @if (showEditForm) {
+      <app-child-form
+        mode="edit"
+        [selectedChild]="child"
+        [submitting]="isSaving"
+        [fieldErrors]="fieldErrors"
+        [serverError]="errorMessage"
+        (saved)="saveChild($event)"
+        (cancelled)="closeEditForm()"
+      />
+    }
+
+    <!-- Child Basics -->
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Child details</h3>
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <div><dt class="text-gray-500 dark:text-gray-400">Date of birth</dt><dd class="text-gray-800 dark:text-white/90">{{ child.dateOfBirth }}</dd></div>
+        <div><dt class="text-gray-500 dark:text-gray-400">Start date</dt><dd class="text-gray-800 dark:text-white/90">{{ child.startDate }}</dd></div>
+        <div><dt class="text-gray-500 dark:text-gray-400">End date</dt><dd class="text-gray-800 dark:text-white/90">{{ child.endDate ?? '-' }}</dd></div>
+        <div><dt class="text-gray-500 dark:text-gray-400">Active</dt><dd><app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge></dd></div>
+        <div><dt class="text-gray-500 dark:text-gray-400">Core hourly rate</dt><dd class="text-gray-800 dark:text-white/90">{{ formatRate(child.coreHourlyRateMinor) }}</dd></div>
+        @if (child.notes) {
+          <div class="col-span-2"><dt class="text-gray-500 dark:text-gray-400">Notes</dt><dd class="text-gray-800 dark:text-white/90">{{ child.notes }}</dd></div>
+        }
+      </dl>
+    </div>
+
+    <!-- Enrollment Status -->
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Enrollment status</h3>
+      <div class="flex items-center gap-3">
+        <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+        <span class="text-sm text-gray-700 dark:text-gray-300">
+          {{ child.enrollmentComplete ? 'Enrollment complete' : 'Enrollment incomplete' }}
+        </span>
+      </div>
+      @if (child.missingRequirements.length > 0) {
+        <ul class="mt-2 space-y-1 text-sm text-red-600 dark:text-red-400">
+          @for (req of child.missingRequirements; track req) {
+            <li>{{ requirementLabel(req) }}</li>
+          }
+        </ul>
+      }
+    </div>
+
+    <!-- Linked Guardians -->
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Linked guardians</h3>
+
+      @if (isLoadingLinks) {
+        <app-loading-state variant="inline" label="Loading guardians..."></app-loading-state>
+      } @else if (linkedGuardians.length === 0) {
+        <app-empty-state
+          title="No linked guardians"
+          message="This child has no active linked guardians. Link an existing guardian to complete enrollment."
+        ></app-empty-state>
+      } @else {
+        <ul class="space-y-2">
+          @for (link of linkedGuardians; track link.id) {
+            <li class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
+              <div>
+                <span class="text-sm font-medium text-gray-800 dark:text-white/90">{{ link.guardian.fullName }}</span>
+                @if (link.guardian.email) {
+                  <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ link.guardian.email }}</span>
+                }
+                @if (link.guardian.phone) {
+                  <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ link.guardian.phone }}</span>
+                }
+              </div>
+              <app-status-badge status="active"></app-status-badge>
+            </li>
+          }
+        </ul>
+      }
+
+      <!-- Link existing guardian -->
+      <div class="mt-4 flex items-end gap-3">
+        <div class="flex-1">
+          <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Link an active guardian</label>
+          <select
+            [(ngModel)]="selectedGuardianId"
+            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+          >
+            <option value="">Select guardian...</option>
+            @for (g of availableGuardians; track g.id) {
+              <option [value]="g.id">{{ g.fullName }}</option>
+            }
+          </select>
+        </div>
+        <app-button
+          variant="primary"
+          size="sm"
+          [disabled]="!selectedGuardianId || isLinking"
+          (btnClick)="linkGuardian()"
+        >Link guardian</app-button>
+      </div>
+
+      @if (availableGuardians.length === 0 && allGuardians.length === 0) {
+        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          No active guardians found.
+          <a routerLink="/staff/manager/guardians" class="text-blue-600 underline dark:text-blue-400">Go to guardians</a> to create one.
+        </p>
+      }
+    </div>
+
+    <!-- Monthly Funded-Hours Placeholder -->
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Monthly funded-hours allowance</h3>
+      <div class="flex items-center gap-3">
+        <label class="text-sm text-gray-600 dark:text-gray-300">{{ currentMonthLabel }}</label>
+        <input
+          type="text"
+          value="Coming in FE-18"
+          disabled
+          class="h-10 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500"
+        />
+      </div>
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        Funding allowance affects invoice preflight for a billing month. It does not affect enrollment completeness.
+      </p>
+    </div>
+  }
+</div>

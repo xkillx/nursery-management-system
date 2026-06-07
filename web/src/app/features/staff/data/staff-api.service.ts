@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { apiUrl } from '../../../core/config/api.config';
 import { AttendanceChildRecord, AttendanceSessionRecord, AttendanceState } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
-import { GuardianRecord, GuardianWritePayload } from '../models/guardians.models';
+import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 
 interface StaffListResponse<T> {
@@ -79,6 +79,23 @@ interface InviteApiModel {
   updated_at: string;
 }
 
+interface LinkedGuardianSummaryApiModel {
+  id: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+  is_active: boolean;
+}
+
+interface ChildGuardianLinkApiModel {
+  id: string;
+  guardian_id: string;
+  child_id: string;
+  guardian: LinkedGuardianSummaryApiModel;
+  created_at: string;
+  updated_at: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class StaffApiService {
   private readonly http = inject(HttpClient);
@@ -101,6 +118,24 @@ export class StaffApiService {
     return this.http
       .patch<ChildApiModel>(apiUrl(`/children/${childId}`), payload)
       .pipe(map((child) => this.toChildRecord(child)));
+  }
+
+  getChild(childId: string): Observable<ChildRecord> {
+    return this.http
+      .get<ChildApiModel>(apiUrl(`/children/${childId}`))
+      .pipe(map((child) => this.toChildRecord(child)));
+  }
+
+  listChildGuardianLinks(childId: string): Observable<ChildGuardianLinkRecord[]> {
+    return this.http
+      .get<StaffListResponse<ChildGuardianLinkApiModel>>(apiUrl(`/children/${childId}/guardian-child-links`))
+      .pipe(map((response) => response.items.map((link) => this.toChildGuardianLinkRecord(link))));
+  }
+
+  createGuardianChildLink(payload: GuardianChildLinkWritePayload): Observable<ChildGuardianLinkRecord> {
+    return this.http
+      .post<ChildGuardianLinkApiModel>(apiUrl('/guardian-child-links'), payload)
+      .pipe(map((link) => this.toChildGuardianLinkRecord(link)));
   }
 
   listGuardians(query: StaffListQuery): Observable<GuardianRecord[]> {
@@ -251,6 +286,23 @@ export class StaffApiService {
       revokedAt: invite.revoked_at ?? null,
       createdAt: invite.created_at,
       updatedAt: invite.updated_at,
+    };
+  }
+
+  private toChildGuardianLinkRecord(link: ChildGuardianLinkApiModel): ChildGuardianLinkRecord {
+    return {
+      id: link.id,
+      guardianId: link.guardian_id,
+      childId: link.child_id,
+      guardian: {
+        id: link.guardian.id,
+        fullName: link.guardian.full_name,
+        email: link.guardian.email ?? null,
+        phone: link.guardian.phone ?? null,
+        isActive: link.guardian.is_active,
+      },
+      createdAt: link.created_at,
+      updatedAt: link.updated_at,
     };
   }
 }

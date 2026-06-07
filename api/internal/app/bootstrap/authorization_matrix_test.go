@@ -428,6 +428,7 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		{"POST", "/api/v1/guardians/:guardian_id/actions/reactivate", classProtectedBusiness, []string{"manager"}},
 
 		// Links (manager)
+		{"GET", "/api/v1/children/:child_id/guardian-child-links", classProtectedBusiness, []string{"manager"}},
 		{"POST", "/api/v1/guardian-child-links", classProtectedBusiness, []string{"manager"}},
 		{"POST", "/api/v1/guardian-child-links/:link_id/actions/end", classProtectedBusiness, []string{"manager"}},
 

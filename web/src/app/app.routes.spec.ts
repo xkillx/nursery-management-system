@@ -45,11 +45,32 @@ describe('app.routes', () => {
     'invite-accept',
   ];
 
+  const dynamicPaths = [
+    'staff/manager/children/:childId',
+  ];
+
   for (const mvp of mvpPaths) {
     it(`registers MVP route /${mvp}`, () => {
       expect(paths).toContain(mvp);
     });
   }
+
+  for (const dynamic of dynamicPaths) {
+    it(`registers dynamic MVP route /${dynamic}`, () => {
+      const allPaths = routes.flatMap(r => r.children ?? []);
+      const found = allPaths.some(r => r.path === dynamic);
+      expect(found).toBeTrue();
+    });
+  }
+
+  it('child detail route requires manager role only', () => {
+    const detailRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/manager/children/:childId');
+
+    expect(detailRoute).toBeDefined();
+    expect(detailRoute!.data?.['roles']).toEqual(['manager']);
+  });
 
   it('legacy attendance-children route is a redirect, not a component route', () => {
     const legacyRoute = routes

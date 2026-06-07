@@ -26,3 +26,25 @@ export interface GuardianListQuery {
   limit: number;
   offset: number;
 }
+
+export interface LinkedGuardianSummary {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  isActive: boolean;
+}
+
+export interface ChildGuardianLinkRecord {
+  id: string;
+  guardianId: string;
+  childId: string;
+  guardian: LinkedGuardianSummary;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GuardianChildLinkWritePayload {
+  guardian_id: string;
+  child_id: string;
+}

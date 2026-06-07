@@ -5,6 +5,7 @@ import { roleDefaultRedirectGuard } from './core/guards/role-default-redirect.gu
 import { roleGuard } from './core/guards/role.guard';
 import { ManagerDashboardComponent } from './features/staff/pages/manager-dashboard/manager-dashboard.component';
 import { ManagerChildrenComponent } from './features/staff/pages/manager-children/manager-children.component';
+import { ManagerChildDetailComponent } from './features/staff/pages/manager-child-detail/manager-child-detail.component';
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
@@ -41,6 +42,13 @@ export const routes: Routes = [
         canActivate: [authGuard, roleGuard],
         data: { roles: ['manager'] },
         title: 'Manager Children | Nursery Management',
+      },
+      {
+        path: 'staff/manager/children/:childId',
+        component: ManagerChildDetailComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Child Enrollment | Nursery Management',
       },
       {
         path: 'staff/manager/guardians',
