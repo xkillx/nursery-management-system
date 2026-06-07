@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -21,6 +21,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       openSessionId: null,
       checkedInAt: null,
       hasIncompleteSession: false,
+      absenceMarkerId: null,
+      absenceMarkedAt: null,
     },
     {
       id: 'child-2',
@@ -30,6 +32,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       openSessionId: null,
       checkedInAt: null,
       hasIncompleteSession: false,
+      absenceMarkerId: null,
+      absenceMarkedAt: null,
     },
     {
       id: 'child-3',
@@ -39,6 +43,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       openSessionId: 'session-1',
       checkedInAt: '2026-05-24T07:42:00Z',
       hasIncompleteSession: true,
+      absenceMarkerId: null,
+      absenceMarkedAt: null,
     },
   ];
 
@@ -50,6 +56,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     openSessionId: 'session-2',
     checkedInAt: '2026-05-24T08:00:00Z',
     hasIncompleteSession: true,
+    absenceMarkerId: null,
+    absenceMarkedAt: null,
   };
 
   beforeEach(async () => {
@@ -181,11 +189,17 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
   });
 
-  it('shows row error on conflict and reloads list', () => {
+  it('shows row error on check-in 409 attendance_session_already_open and reloads list', () => {
     setChildrenAndDetectChanges(mockChildren);
 
-    const conflictError = new Error('conflict') as any;
-    conflictError.status = 409;
+    const conflictError = new HttpErrorResponse({
+      status: 409,
+      error: {
+        code: 'attendance_session_already_open',
+        message: 'An open attendance session already exists for this child.',
+        request_id: 'req-1',
+      },
+    });
 
     staffApiSpy.checkInChild.and.returnValue(throwError(() => conflictError));
     staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
@@ -193,13 +207,62 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     component.checkIn(mockChildren[0]);
     fixture.detectChanges();
 
-    expect(component.rowErrors['child-1']).toBeTruthy();
+    expect(component.rowErrors['child-1']).toContain('An open attendance session already exists for this child.');
+    expect(component.rowErrors['child-1']).toContain('Request: req-1');
+    expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows row error on check-out 409 attendance_session_not_open and reloads list', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    const conflictError = new HttpErrorResponse({
+      status: 409,
+      error: {
+        code: 'attendance_session_not_open',
+        message: 'No open attendance session found for this child.',
+        request_id: 'req-2',
+      },
+    });
+
+    staffApiSpy.checkOutChild.and.returnValue(throwError(() => conflictError));
+    staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+
+    component.checkOut(mockChildren[2]);
+    fixture.detectChanges();
+
+    expect(component.rowErrors['child-3']).toContain('No open attendance session found for this child.');
+    expect(component.rowErrors['child-3']).toContain('Request: req-2');
+    expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows row error on check-in 409 child_enrollment_incomplete and reloads list', () => {
+    setChildrenAndDetectChanges(mockChildren);
+
+    const conflictError = new HttpErrorResponse({
+      status: 409,
+      error: {
+        code: 'child_enrollment_incomplete',
+        message: 'Child enrollment is not complete.',
+        request_id: 'req-3',
+      },
+    });
+
+    staffApiSpy.checkInChild.and.returnValue(throwError(() => conflictError));
+    staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+
+    component.checkIn(mockChildren[0]);
+    fixture.detectChanges();
+
+    expect(component.rowErrors['child-1']).toContain('Child enrollment is not complete.');
+    expect(component.rowErrors['child-1']).toContain('Request: req-3');
     expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
   });
 
   it('displays global error when list load fails', () => {
-    const loadError = new Error('server error') as any;
-    loadError.status = 500;
+    const loadError = new HttpErrorResponse({
+      status: 500,
+      statusText: 'Internal Server Error',
+    });
 
     staffApiSpy.listAttendanceChildren.and.returnValue(throwError(() => loadError));
     fixture.detectChanges();
@@ -289,6 +352,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
+        absenceMarkerId: null,
+        absenceMarkedAt: null,
       } as any,
     ];
     (childrenWithExtraFields[0] as any).guardianEmail = 'secret@example.com';
@@ -309,8 +374,14 @@ describe('PractitionerAttendanceChildrenComponent', () => {
   it('shows row error near the affected child row', () => {
     setChildrenAndDetectChanges(mockChildren);
 
-    const conflictError = new Error('conflict') as any;
-    conflictError.status = 409;
+    const conflictError = new HttpErrorResponse({
+      status: 409,
+      error: {
+        code: 'attendance_session_already_open',
+        message: 'An open attendance session already exists for this child.',
+        request_id: 'req-row',
+      },
+    });
 
     staffApiSpy.checkInChild.and.returnValue(throwError(() => conflictError));
     staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
@@ -335,10 +406,71 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       openSessionId: null,
       checkedInAt: null,
       hasIncompleteSession: true,
+      absenceMarkerId: null,
+      absenceMarkedAt: null,
     };
     setChildrenAndDetectChanges([childWithIncompleteSession]);
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Incomplete session needs manager correction');
+  });
+
+  describe('absent child handling', () => {
+    const absentChild: AttendanceChildRecord = {
+      id: 'child-absent',
+      fullName: 'Margaret Hamilton',
+      enrollmentComplete: true,
+      attendanceState: 'absent',
+      openSessionId: null,
+      checkedInAt: null,
+      hasIncompleteSession: false,
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+    };
+
+    it('shows Absent badge and Marked absent today for absent child', () => {
+      setChildrenAndDetectChanges([absentChild]);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('Margaret Hamilton');
+      expect(compiled.textContent).toContain('Absent');
+      expect(compiled.textContent).toContain('Marked absent today');
+    });
+
+    it('does not render check-in action for absent child', () => {
+      setChildrenAndDetectChanges([absentChild]);
+
+      const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-action-child-absent"]');
+      expect(actionBtn).toBeNull();
+    });
+
+    it('checkIn does not call API for absent child', () => {
+      setChildrenAndDetectChanges([absentChild]);
+
+      component.checkIn(absentChild);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.checkInChild).not.toHaveBeenCalled();
+    });
+
+    it('canCheckIn returns false for absent child', () => {
+      expect(component.canCheckIn(absentChild)).toBeFalse();
+    });
+
+    it('does not show enrollment incomplete for absent child', () => {
+      const absentIncomplete = { ...absentChild, enrollmentComplete: false };
+      setChildrenAndDetectChanges([absentIncomplete]);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).not.toContain('Enrollment incomplete');
+    });
+
+    it('does not render absence marker ID or timestamp in DOM', () => {
+      setChildrenAndDetectChanges([absentChild]);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).not.toContain('marker-1');
+      expect(compiled.textContent).not.toContain('2026-06-08T08:00:00Z');
+    });
   });
 });

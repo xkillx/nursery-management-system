@@ -92,6 +92,10 @@ export class PractitionerAttendanceChildrenComponent {
     return child.attendanceState === 'checked_in' || !!child.openSessionId;
   }
 
+  isAbsent(child: AttendanceChildRecord): boolean {
+    return child.attendanceState === 'absent';
+  }
+
   isPending(childId: string): boolean {
     return this.pendingChildIds.has(childId);
   }
@@ -101,7 +105,14 @@ export class PractitionerAttendanceChildrenComponent {
   }
 
   canCheckIn(child: AttendanceChildRecord): boolean {
-    return !this.isCheckedIn(child) && child.enrollmentComplete && !this.isLoading && !this.isPending(child.id);
+    return (
+      !this.isCheckedIn(child) &&
+      !this.isAbsent(child) &&
+      child.attendanceState === 'not_checked_in' &&
+      child.enrollmentComplete &&
+      !this.isLoading &&
+      !this.isPending(child.id)
+    );
   }
 
   canCheckOut(child: AttendanceChildRecord): boolean {
@@ -109,10 +120,12 @@ export class PractitionerAttendanceChildrenComponent {
   }
 
   checkIn(child: AttendanceChildRecord): void {
+    if (!this.canCheckIn(child)) return;
     this.executeMutation(child.id, () => this.staffApi.checkInChild(child.id));
   }
 
   checkOut(child: AttendanceChildRecord): void {
+    if (!this.canCheckOut(child)) return;
     this.executeMutation(child.id, () => this.staffApi.checkOutChild(child.id));
   }
 

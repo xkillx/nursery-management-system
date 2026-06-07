@@ -35,6 +35,7 @@ export class StatusBadgeComponent {
     incomplete: { color: 'warning', label: 'Incomplete' },
     checked_in: { color: 'success', label: 'Checked in' },
     not_checked_in: { color: 'light', label: 'Not in' },
+    absent: { color: 'warning', label: 'Absent' },
     draft: { color: 'info', label: 'Draft' },
     issued: { color: 'primary', label: 'Issued' },
     paid: { color: 'success', label: 'Paid' },

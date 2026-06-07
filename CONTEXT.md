@@ -500,6 +500,10 @@ A child requires name, date of birth, start date, one linked guardian, and a bil
 
 Enrollment minimum checks gate all new routine attendance capture and invoicing actions, while manager-only historical attendance corrections remain allowed under the post-enrollment correction policy.
 
+## Enrollment-Incomplete Attendance Visibility (MVP)
+
+Enrollment-incomplete children remain visible in the attendance-facing child list, but routine check-in remains blocked until enrollment is complete.
+
 ## Child Creation Flow (MVP)
 
 Managers may create a child record before linking a guardian, but attendance and invoicing remain blocked until all child enrollment minimum requirements are satisfied.

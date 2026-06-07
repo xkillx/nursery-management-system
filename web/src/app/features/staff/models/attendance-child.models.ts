@@ -1,4 +1,4 @@
-export type AttendanceState = 'not_checked_in' | 'checked_in';
+export type AttendanceState = 'not_checked_in' | 'checked_in' | 'absent';
 
 export interface AttendanceChildRecord {
   id: string;
@@ -8,6 +8,8 @@ export interface AttendanceChildRecord {
   openSessionId: string | null;
   checkedInAt: string | null;
   hasIncompleteSession: boolean;
+  absenceMarkerId: string | null;
+  absenceMarkedAt: string | null;
 }
 
 export interface AttendanceSessionRecord {

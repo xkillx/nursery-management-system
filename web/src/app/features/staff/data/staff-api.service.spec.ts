@@ -21,6 +21,8 @@ describe('StaffApiService — Attendance', () => {
         open_session_id: null,
         checked_in_at: null,
         has_incomplete_session: false,
+        absence_marker_id: null,
+        absence_marked_at: null,
       },
       {
         id: 'child-2',
@@ -30,6 +32,8 @@ describe('StaffApiService — Attendance', () => {
         open_session_id: 'session-1',
         checked_in_at: '2026-05-24T07:42:00Z',
         has_incomplete_session: true,
+        absence_marker_id: null,
+        absence_marked_at: null,
       },
     ],
   };
@@ -72,6 +76,8 @@ describe('StaffApiService — Attendance', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
+        absenceMarkerId: null,
+        absenceMarkedAt: null,
       });
 
       expect(children[1]).toEqual({
@@ -82,12 +88,73 @@ describe('StaffApiService — Attendance', () => {
         openSessionId: 'session-1',
         checkedInAt: '2026-05-24T07:42:00Z',
         hasIncompleteSession: true,
+        absenceMarkerId: null,
+        absenceMarkedAt: null,
       });
     });
 
     const req = httpMock.expectOne('/api/v1/children/attendance');
     expect(req.request.method).toBe('GET');
     req.flush(attendanceApiResponse);
+  });
+
+  it('maps absent attendance_state and absence marker fields', () => {
+    const absentResponse = {
+      items: [
+        {
+          id: 'child-3',
+          full_name: 'Margaret Hamilton',
+          enrollment_complete: true,
+          attendance_state: 'absent',
+          open_session_id: null,
+          checked_in_at: null,
+          has_incomplete_session: false,
+          absence_marker_id: 'marker-1',
+          absence_marked_at: '2026-06-08T08:00:00Z',
+        },
+      ],
+    };
+
+    service.listAttendanceChildren().subscribe((children) => {
+      expect(children[0]).toEqual({
+        id: 'child-3',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne('/api/v1/children/attendance');
+    req.flush(absentResponse);
+  });
+
+  it('maps missing absence_marker_id and absence_marked_at to null', () => {
+    const noAbsenceResponse = {
+      items: [
+        {
+          id: 'child-4',
+          full_name: 'No Absence',
+          enrollment_complete: true,
+          attendance_state: 'not_checked_in',
+          open_session_id: null,
+          checked_in_at: null,
+          has_incomplete_session: false,
+        },
+      ],
+    };
+
+    service.listAttendanceChildren().subscribe((children) => {
+      expect(children[0].absenceMarkerId).toBeNull();
+      expect(children[0].absenceMarkedAt).toBeNull();
+    });
+
+    const req = httpMock.expectOne('/api/v1/children/attendance');
+    req.flush(noAbsenceResponse);
   });
 
   it('checkInChild POSTs to /attendance/check-ins with child_id', () => {

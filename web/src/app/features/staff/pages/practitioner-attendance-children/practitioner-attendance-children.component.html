@@ -89,17 +89,16 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ child.fullName }}</span>
-              @if (isCheckedIn(child)) {
-                <app-status-badge status="checked_in"></app-status-badge>
-              } @else {
-                <app-status-badge status="not_checked_in"></app-status-badge>
-              }
+              <app-status-badge [status]="child.attendanceState"></app-status-badge>
             </div>
             <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               @if (isCheckedIn(child) && child.checkedInAt) {
                 <span>Checked in at {{ formatLondonTime(child.checkedInAt) }}</span>
               }
-              @if (!child.enrollmentComplete && !isCheckedIn(child)) {
+              @if (isAbsent(child)) {
+                <span>Marked absent today</span>
+              }
+              @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
                 <span class="text-amber-600 dark:text-amber-400">Enrollment incomplete</span>
               }
               @if (showIncompleteSessionWarning(child)) {
@@ -124,7 +123,7 @@
                   Check out
                 }
               </button>
-            } @else {
+            } @else if (!isAbsent(child)) {
               <button
                 type="button"
                 [attr.data-testid]="'attendance-action-' + child.id"
