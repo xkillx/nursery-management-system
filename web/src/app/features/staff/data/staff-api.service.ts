@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
-import { AttendanceChildRecord, AttendanceSessionRecord, AttendanceState } from '../models/attendance-child.models';
+import { AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
@@ -67,6 +67,42 @@ interface AttendanceSessionApiModel {
   duration_minutes?: number;
   created_at: string;
   updated_at: string;
+}
+
+interface CorrectionSessionContextApiModel {
+  child_id: string;
+  selected_local_date: string;
+  invoice_warning?: InvoiceWarningApiModel;
+  items: AttendanceSessionApiModel[];
+}
+
+interface InvoiceWarningApiModel {
+  billing_month: string;
+  invoice_id: string;
+  invoice_number: string;
+  status: string;
+}
+
+interface CorrectionHistoryApiModel {
+  session: AttendanceSessionApiModel;
+  items: CorrectionHistoryEventApiModel[];
+}
+
+interface CorrectionHistoryEventApiModel {
+  id: string;
+  event_type: string;
+  occurred_at: string;
+  local_date: string;
+  recorded_by_user_id: string;
+  recorded_by_membership_id: string;
+  recorded_by_label?: string;
+  reason_code?: string;
+  reason_note?: string;
+  previous_check_in_at?: string;
+  previous_check_out_at?: string;
+  corrected_check_in_at?: string;
+  corrected_check_out_at?: string;
+  created_by_correction: boolean;
 }
 
 interface InviteApiModel {
@@ -192,6 +228,38 @@ export class StaffApiService {
       .pipe(map((session) => this.toAttendanceSessionRecord(session)));
   }
 
+  listCorrectionSessions(childId: string, localDate: string): Observable<CorrectionSessionContext> {
+    return this.http
+      .get<CorrectionSessionContextApiModel>(apiUrl('/attendance/sessions'), {
+        params: new HttpParams({ fromObject: { child_id: childId, local_date: localDate } }),
+      })
+      .pipe(map((ctx) => this.toCorrectionSessionContext(ctx)));
+  }
+
+  getCorrectionHistory(sessionId: string): Observable<CorrectionHistory> {
+    return this.http
+      .get<CorrectionHistoryApiModel>(apiUrl(`/attendance/sessions/${sessionId}/history`))
+      .pipe(map((history) => this.toCorrectionHistory(history)));
+  }
+
+  correctAttendance(payload: AttendanceCorrectionPayload): Observable<AttendanceSessionRecord> {
+    const apiPayload: Record<string, string | undefined> = {
+      check_in_at: payload.checkInAt,
+      check_out_at: payload.checkOutAt,
+      reason_code: payload.reasonCode,
+      reason_note: payload.reasonNote,
+    };
+    if (payload.sessionId) {
+      apiPayload['session_id'] = payload.sessionId;
+    }
+    if (payload.childId) {
+      apiPayload['child_id'] = payload.childId;
+    }
+    return this.http
+      .post<AttendanceSessionApiModel>(apiUrl('/attendance/corrections'), apiPayload)
+      .pipe(map((session) => this.toAttendanceSessionRecord(session)));
+  }
+
   listInvites(status: InviteStatusFilter = 'pending'): Observable<InviteRecord[]> {
     return this.http
       .get<StaffListResponse<InviteApiModel>>(apiUrl('/invites'), {
@@ -307,6 +375,50 @@ export class StaffApiService {
       },
       createdAt: link.created_at,
       updatedAt: link.updated_at,
+    };
+  }
+
+  private toCorrectionSessionContext(ctx: CorrectionSessionContextApiModel): CorrectionSessionContext {
+    return {
+      childId: ctx.child_id,
+      selectedLocalDate: ctx.selected_local_date,
+      invoiceWarning: ctx.invoice_warning ? this.toInvoiceWarning(ctx.invoice_warning) : null,
+      items: ctx.items.map((s) => this.toAttendanceSessionRecord(s)),
+    };
+  }
+
+  private toInvoiceWarning(w: InvoiceWarningApiModel): IssuedInvoiceWarning {
+    return {
+      billingMonth: w.billing_month,
+      invoiceId: w.invoice_id,
+      invoiceNumber: w.invoice_number,
+      status: w.status,
+    };
+  }
+
+  private toCorrectionHistory(history: CorrectionHistoryApiModel): CorrectionHistory {
+    return {
+      session: this.toAttendanceSessionRecord(history.session),
+      items: history.items.map((e) => this.toCorrectionHistoryEvent(e)),
+    };
+  }
+
+  private toCorrectionHistoryEvent(e: CorrectionHistoryEventApiModel): CorrectionHistoryEvent {
+    return {
+      id: e.id,
+      eventType: e.event_type as CorrectionHistoryEvent['eventType'],
+      occurredAt: e.occurred_at,
+      localDate: e.local_date,
+      recordedByUserId: e.recorded_by_user_id,
+      recordedByMembershipId: e.recorded_by_membership_id,
+      recordedByLabel: e.recorded_by_label ?? null,
+      reasonCode: e.reason_code ?? null,
+      reasonNote: e.reason_note ?? null,
+      previousCheckInAt: e.previous_check_in_at ?? null,
+      previousCheckOutAt: e.previous_check_out_at ?? null,
+      correctedCheckInAt: e.corrected_check_in_at ?? null,
+      correctedCheckOutAt: e.corrected_check_out_at ?? null,
+      createdByCorrection: e.created_by_correction,
     };
   }
 }

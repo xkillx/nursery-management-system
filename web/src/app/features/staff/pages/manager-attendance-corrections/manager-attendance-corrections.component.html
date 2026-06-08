@@ -1,0 +1,213 @@
+<div class="p-6 space-y-6">
+  <app-page-header
+    title="Attendance corrections"
+    description="Select a child and date to review sessions and submit corrections."
+  />
+
+  <!-- Success Alert -->
+  <app-alert *ngIf="successMessage" variant="success" [message]="successMessage" />
+
+  <!-- Error Alert -->
+  <app-alert *ngIf="formError" variant="error" [message]="formError.message" />
+
+  <!-- Invoice Warning -->
+  <app-alert
+    *ngIf="invoiceWarning"
+    variant="warning"
+    title="Invoice issued"
+    [message]="'Invoice ' + invoiceWarning.invoiceNumber + ' (' + invoiceWarning.status + ') exists for this period. Correction will not change the invoice.'"
+  />
+
+  <!-- Selector Row -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Child</label>
+      <select
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+        [ngModel]="selectedChildId"
+        (ngModelChange)="selectedChildId = $event; onChildChange()"
+        name="childSelect"
+      >
+        <option [ngValue]="null">Select a child...</option>
+        <option
+          *ngFor="let child of isActiveChildrenFirst"
+          [ngValue]="child.id"
+        >
+          {{ child.fullName }}{{ !child.isActive ? ' (inactive)' : '' }}
+        </option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Local date</label>
+      <input
+        type="date"
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+        [ngModel]="selectedLocalDate"
+        (ngModelChange)="selectedLocalDate = $event; onDateChange()"
+        name="localDate"
+      />
+    </div>
+  </div>
+
+  <!-- Loading Sessions -->
+  <app-loading-state *ngIf="loadingSessions" label="Loading sessions..." variant="block" />
+
+  <!-- Session List -->
+  <div *ngIf="!loadingSessions && selectedChildId && selectedLocalDate" class="space-y-4">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      Sessions for {{ selectedLocalDate }}
+    </h3>
+
+    <app-empty-state
+      *ngIf="sessions.length === 0"
+      title="No sessions found"
+      message="No sessions recorded for this child on this date. Use missed-session mode below to create one."
+      [compact]="true"
+    />
+
+    <div *ngIf="sessions.length > 0" class="space-y-2">
+      <div
+        *ngFor="let session of sessions"
+        class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors"
+        [class.border-blue-500]="selectedSessionId === session.id"
+        [class.bg-blue-50]="selectedSessionId === session.id"
+        [class.dark:bg-blue-900/20]="selectedSessionId === session.id"
+        [class.border-gray-200]="selectedSessionId !== session.id"
+        [class.dark:border-gray-700]="selectedSessionId !== session.id"
+        (click)="onSessionSelect(session.id)"
+      >
+        <div class="flex items-center gap-3">
+          <app-status-badge
+            [status]="session.status"
+            [label]="session.status"
+            size="sm"
+          />
+          <span class="text-sm">
+            {{ formatTime(session.checkInAt) }}
+            <span *ngIf="session.checkOutAt"> &mdash; {{ formatTime(session.checkOutAt) }}</span>
+            <span *ngIf="!session.checkOutAt" class="text-gray-400"> &mdash; open</span>
+          </span>
+        </div>
+        <span *ngIf="session.durationMinutes" class="text-xs text-gray-500">
+          {{ session.durationMinutes }} min
+        </span>
+      </div>
+    </div>
+
+    <!-- Missed Session Mode Toggle -->
+    <button
+      *ngIf="selectedSessionId !== null"
+      class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
+      (click)="onSessionSelect(null)"
+    >
+      Switch to missed-session mode
+    </button>
+  </div>
+
+  <!-- Correction Form -->
+  <div
+    *ngIf="selectedChildId && selectedLocalDate && (selectedSessionId || sessions.length === 0)"
+    class="border rounded-lg p-4 space-y-4 dark:border-gray-700"
+  >
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      {{ selectedSessionId ? 'Correct selected session' : 'Create missed session' }}
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Check-in time
+        </label>
+        <input
+          type="time"
+          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+          [(ngModel)]="checkInTime"
+          name="checkInTime"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Check-out time
+        </label>
+        <input
+          type="time"
+          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+          [(ngModel)]="checkOutTime"
+          name="checkOutTime"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+      <select
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+        [(ngModel)]="reasonCode"
+        name="reasonCode"
+      >
+        <option [ngValue]="''">Select a reason...</option>
+        <option *ngFor="let r of reasonOptions" [ngValue]="r.code">{{ r.label }}</option>
+      </select>
+    </div>
+
+    <div *ngIf="reasonCode === 'other'">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note (required)</label>
+      <textarea
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+        rows="2"
+        [(ngModel)]="reasonNote"
+        name="reasonNote"
+        placeholder="Explain the reason for this correction"
+      ></textarea>
+    </div>
+
+    <app-button
+      variant="primary"
+      size="sm"
+      [disabled]="!canSubmit"
+      [loading]="submitting"
+      (btnClick)="onSubmit()"
+    >
+      Submit correction
+    </app-button>
+  </div>
+
+  <!-- History Panel -->
+  <div *ngIf="history" class="border rounded-lg p-4 space-y-3 dark:border-gray-700">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Correction history</h3>
+
+    <app-loading-state *ngIf="loadingHistory" label="Loading history..." variant="block" />
+
+    <div *ngIf="!loadingHistory" class="space-y-2">
+      <div
+        *ngFor="let evt of history.items"
+        class="flex items-start gap-3 p-2 text-sm border-b last:border-b-0 dark:border-gray-700"
+      >
+        <app-status-badge
+          [status]="evt.eventType === 'correction' ? 'corrected' : 'complete'"
+          [label]="evt.eventType === 'check_in' ? 'Check-in' : evt.eventType === 'check_out' ? 'Check-out' : 'Correction'"
+          size="sm"
+        />
+        <div class="flex-1 space-y-1">
+          <div class="text-gray-600 dark:text-gray-400">
+            {{ formatDateTime(evt.occurredAt) }}
+            <span *ngIf="evt.recordedByLabel"> by {{ evt.recordedByLabel }}</span>
+          </div>
+          <div *ngIf="evt.reasonCode" class="text-xs">
+            Reason: {{ getReasonLabel(evt.reasonCode) }}
+          </div>
+          <div *ngIf="evt.reasonNote" class="text-xs text-gray-500 italic">
+            "{{ evt.reasonNote }}"
+          </div>
+          <div *ngIf="evt.correctedCheckInAt" class="text-xs">
+            Corrected: {{ formatTime(evt.correctedCheckInAt) }} &mdash; {{ formatTime(evt.correctedCheckOutAt) }}
+            <span *ngIf="evt.previousCheckInAt">
+              (was {{ formatTime(evt.previousCheckInAt) }}
+              <span *ngIf="evt.previousCheckOutAt"> &mdash; {{ formatTime(evt.previousCheckOutAt) }}</span>)
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

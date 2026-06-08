@@ -8,6 +8,7 @@ import { ManagerChildrenComponent } from './features/staff/pages/manager-childre
 import { ManagerChildDetailComponent } from './features/staff/pages/manager-child-detail/manager-child-detail.component';
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
+import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ParentInvoicesPlaceholderComponent } from './features/parent-portal/pages/parent-invoices-placeholder/parent-invoices-placeholder.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
@@ -63,6 +64,13 @@ export const routes: Routes = [
         canActivate: [authGuard, roleGuard],
         data: { roles: ['manager'] },
         title: 'User Invites | Nursery Management',
+      },
+      {
+        path: 'staff/manager/attendance-corrections',
+        component: ManagerAttendanceCorrectionsComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Attendance Corrections | Nursery Management',
       },
       {
         path: 'staff/practitioner/attendance',

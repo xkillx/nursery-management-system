@@ -63,6 +63,14 @@ func (f *fakeRepository) ListIncompleteSessionsForPeriod(ctx context.Context, te
 	return nil, nil
 }
 
+func (f *fakeRepository) ListSessionsForCorrection(ctx context.Context, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.CorrectionSessionContext, error) {
+	return domain.CorrectionSessionContext{}, nil
+}
+
+func (f *fakeRepository) ListCorrectionHistory(ctx context.Context, tenantID, branchID, sessionID uuid.UUID) (domain.Session, []domain.CorrectionHistoryEvent, error) {
+	return domain.Session{}, nil, nil
+}
+
 type captureRepo struct {
 	createOpenSession struct {
 		called             bool
@@ -150,6 +158,14 @@ func (c *captureRepo) HasOverlappingSession(ctx context.Context, tx pgx.Tx, tena
 
 func (c *captureRepo) ListIncompleteSessionsForPeriod(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]domain.IncompleteSessionBlocker, error) {
 	return nil, nil
+}
+
+func (c *captureRepo) ListSessionsForCorrection(ctx context.Context, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.CorrectionSessionContext, error) {
+	return domain.CorrectionSessionContext{}, nil
+}
+
+func (c *captureRepo) ListCorrectionHistory(ctx context.Context, tenantID, branchID, sessionID uuid.UUID) (domain.Session, []domain.CorrectionHistoryEvent, error) {
+	return domain.Session{}, nil, nil
 }
 
 type fakeChildChecker struct {

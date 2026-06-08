@@ -2,8 +2,10 @@ package httpattendance
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/attendance/application"
 	"nursery-management-system/api/internal/platform/tenant"
@@ -12,13 +14,21 @@ import (
 )
 
 type Handler struct {
-	checkIn  *application.CheckInChild
-	checkOut *application.CheckOutChild
-	correct  *application.CorrectAttendance
+	checkIn          *application.CheckInChild
+	checkOut         *application.CheckOutChild
+	correct          *application.CorrectAttendance
+	listSessions     *application.ListCorrectionSessions
+	listHistory      *application.ListCorrectionHistory
 }
 
-func NewHandler(checkIn *application.CheckInChild, checkOut *application.CheckOutChild, correct *application.CorrectAttendance) *Handler {
-	return &Handler{checkIn: checkIn, checkOut: checkOut, correct: correct}
+func NewHandler(
+	checkIn *application.CheckInChild,
+	checkOut *application.CheckOutChild,
+	correct *application.CorrectAttendance,
+	listSessions *application.ListCorrectionSessions,
+	listHistory *application.ListCorrectionHistory,
+) *Handler {
+	return &Handler{checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -30,6 +40,8 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	managerOnly := protected.Group("")
 	managerOnly.Use(requireRoles("manager"))
 	managerOnly.POST("/attendance/corrections", h.correctionHandler)
+	managerOnly.GET("/attendance/sessions", h.listSessionsHandler)
+	managerOnly.GET("/attendance/sessions/:session_id/history", h.listHistoryHandler)
 }
 
 func (h *Handler) checkInHandler(c *gin.Context) {
@@ -118,6 +130,66 @@ func (h *Handler) correctionHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, toSessionResponse(result.Session))
 	}
+}
+
+func (h *Handler) listSessionsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	childIDStr := c.Query("child_id")
+	if childIDStr == "" {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+	childID, err := uuid.Parse(childIDStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	localDateStr := c.Query("local_date")
+	if localDateStr == "" {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+	localDate, err := time.Parse("2006-01-02", localDateStr)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	ctx, err := h.listSessions.Execute(c.Request.Context(), actor, childID, localDate)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toCorrectionSessionContextResponse(ctx))
+}
+
+func (h *Handler) listHistoryHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	sessionID, err := uuid.Parse(c.Param("session_id"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	result, err := h.listHistory.Execute(c.Request.Context(), actor, sessionID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toCorrectionHistoryResponse(result))
 }
 
 func handleError(c *gin.Context, err error) {

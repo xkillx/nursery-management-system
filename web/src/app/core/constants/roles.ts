@@ -11,6 +11,7 @@ export const ROLE_ROUTES = {
   managerChildren: '/staff/manager/children',
   managerGuardians: '/staff/manager/guardians',
   managerInvites: '/staff/manager/invites',
+  managerAttendanceCorrections: '/staff/manager/attendance-corrections',
   practitionerAttendance: '/staff/practitioner/attendance',
   practitionerAttendanceLegacy: '/staff/practitioner/attendance-children',
   parentInvoices: '/parent/invoices',

@@ -88,3 +88,38 @@ WHERE s.tenant_id = $1
   AND s.check_in_local_date >= $3
   AND s.check_in_local_date < $4
 ORDER BY s.check_in_local_date ASC, c.full_name ASC, s.check_in_at ASC;
+
+-- name: AttendanceListSessionsForCorrection :many
+SELECT s.id, s.child_id, s.status, s.check_in_at, s.check_out_at,
+       s.check_in_local_date, s.check_out_local_date,
+       EXTRACT(EPOCH FROM (s.check_out_at - s.check_in_at))::bigint / 60 AS duration_minutes,
+       s.created_at, s.updated_at
+FROM attendance_sessions s
+WHERE s.tenant_id = $1
+  AND s.branch_id = $2
+  AND s.child_id = $3
+  AND s.check_in_local_date = $4
+ORDER BY s.check_in_at ASC;
+
+-- name: AttendanceListSessionEventsForHistory :many
+SELECT e.id, e.session_id, e.event_type, e.occurred_at, e.local_date,
+       e.recorded_by_user_id, e.recorded_by_membership_id,
+       u.email AS recorded_by_label,
+       e.reason_code, e.reason_note, e.details,
+       e.created_at
+FROM attendance_events e
+LEFT JOIN users u ON u.id = e.recorded_by_user_id
+WHERE e.tenant_id = $1
+  AND e.branch_id = $2
+  AND e.session_id = $3
+ORDER BY e.occurred_at ASC, e.created_at ASC;
+
+-- name: AttendanceGetIssuedInvoiceWarningForMonth :one
+SELECT i.id, i.invoice_number, i.billing_month, i.status
+FROM invoices i
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.child_id = $3
+  AND i.billing_month = $4
+  AND i.invoice_kind = 'monthly'
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue');

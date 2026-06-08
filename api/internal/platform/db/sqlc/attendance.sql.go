@@ -127,6 +127,48 @@ func (q *Queries) AttendanceCorrectSession(ctx context.Context, arg AttendanceCo
 	return err
 }
 
+const attendanceGetIssuedInvoiceWarningForMonth = `-- name: AttendanceGetIssuedInvoiceWarningForMonth :one
+SELECT i.id, i.invoice_number, i.billing_month, i.status
+FROM invoices i
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.child_id = $3
+  AND i.billing_month = $4
+  AND i.invoice_kind = 'monthly'
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+`
+
+type AttendanceGetIssuedInvoiceWarningForMonthParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	ChildID      pgtype.UUID
+	BillingMonth pgtype.Date
+}
+
+type AttendanceGetIssuedInvoiceWarningForMonthRow struct {
+	ID            pgtype.UUID
+	InvoiceNumber pgtype.Text
+	BillingMonth  pgtype.Date
+	Status        string
+}
+
+func (q *Queries) AttendanceGetIssuedInvoiceWarningForMonth(ctx context.Context, arg AttendanceGetIssuedInvoiceWarningForMonthParams) (AttendanceGetIssuedInvoiceWarningForMonthRow, error) {
+	row := q.db.QueryRow(ctx, attendanceGetIssuedInvoiceWarningForMonth,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.BillingMonth,
+	)
+	var i AttendanceGetIssuedInvoiceWarningForMonthRow
+	err := row.Scan(
+		&i.ID,
+		&i.InvoiceNumber,
+		&i.BillingMonth,
+		&i.Status,
+	)
+	return i, err
+}
+
 const attendanceGetOpenSessionForUpdate = `-- name: AttendanceGetOpenSessionForUpdate :one
 SELECT id, child_id, status, check_in_at, check_in_local_date, created_at, updated_at
 FROM attendance_sessions
@@ -462,6 +504,143 @@ func (q *Queries) AttendanceListIncompleteSessionsForPeriod(ctx context.Context,
 			&i.SessionID,
 			&i.CheckInAt,
 			&i.CheckInLocalDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const attendanceListSessionEventsForHistory = `-- name: AttendanceListSessionEventsForHistory :many
+SELECT e.id, e.session_id, e.event_type, e.occurred_at, e.local_date,
+       e.recorded_by_user_id, e.recorded_by_membership_id,
+       u.email AS recorded_by_label,
+       e.reason_code, e.reason_note, e.details,
+       e.created_at
+FROM attendance_events e
+LEFT JOIN users u ON u.id = e.recorded_by_user_id
+WHERE e.tenant_id = $1
+  AND e.branch_id = $2
+  AND e.session_id = $3
+ORDER BY e.occurred_at ASC, e.created_at ASC
+`
+
+type AttendanceListSessionEventsForHistoryParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	SessionID pgtype.UUID
+}
+
+type AttendanceListSessionEventsForHistoryRow struct {
+	ID                     pgtype.UUID
+	SessionID              pgtype.UUID
+	EventType              string
+	OccurredAt             pgtype.Timestamptz
+	LocalDate              pgtype.Date
+	RecordedByUserID       pgtype.UUID
+	RecordedByMembershipID pgtype.UUID
+	RecordedByLabel        pgtype.Text
+	ReasonCode             pgtype.Text
+	ReasonNote             pgtype.Text
+	Details                []byte
+	CreatedAt              pgtype.Timestamptz
+}
+
+func (q *Queries) AttendanceListSessionEventsForHistory(ctx context.Context, arg AttendanceListSessionEventsForHistoryParams) ([]AttendanceListSessionEventsForHistoryRow, error) {
+	rows, err := q.db.Query(ctx, attendanceListSessionEventsForHistory, arg.TenantID, arg.BranchID, arg.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AttendanceListSessionEventsForHistoryRow
+	for rows.Next() {
+		var i AttendanceListSessionEventsForHistoryRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SessionID,
+			&i.EventType,
+			&i.OccurredAt,
+			&i.LocalDate,
+			&i.RecordedByUserID,
+			&i.RecordedByMembershipID,
+			&i.RecordedByLabel,
+			&i.ReasonCode,
+			&i.ReasonNote,
+			&i.Details,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const attendanceListSessionsForCorrection = `-- name: AttendanceListSessionsForCorrection :many
+SELECT s.id, s.child_id, s.status, s.check_in_at, s.check_out_at,
+       s.check_in_local_date, s.check_out_local_date,
+       EXTRACT(EPOCH FROM (s.check_out_at - s.check_in_at))::bigint / 60 AS duration_minutes,
+       s.created_at, s.updated_at
+FROM attendance_sessions s
+WHERE s.tenant_id = $1
+  AND s.branch_id = $2
+  AND s.child_id = $3
+  AND s.check_in_local_date = $4
+ORDER BY s.check_in_at ASC
+`
+
+type AttendanceListSessionsForCorrectionParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	ChildID          pgtype.UUID
+	CheckInLocalDate pgtype.Date
+}
+
+type AttendanceListSessionsForCorrectionRow struct {
+	ID                pgtype.UUID
+	ChildID           pgtype.UUID
+	Status            string
+	CheckInAt         pgtype.Timestamptz
+	CheckOutAt        pgtype.Timestamptz
+	CheckInLocalDate  pgtype.Date
+	CheckOutLocalDate pgtype.Date
+	DurationMinutes   int32
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) AttendanceListSessionsForCorrection(ctx context.Context, arg AttendanceListSessionsForCorrectionParams) ([]AttendanceListSessionsForCorrectionRow, error) {
+	rows, err := q.db.Query(ctx, attendanceListSessionsForCorrection,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.CheckInLocalDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AttendanceListSessionsForCorrectionRow
+	for rows.Next() {
+		var i AttendanceListSessionsForCorrectionRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChildID,
+			&i.Status,
+			&i.CheckInAt,
+			&i.CheckOutAt,
+			&i.CheckInLocalDate,
+			&i.CheckOutLocalDate,
+			&i.DurationMinutes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

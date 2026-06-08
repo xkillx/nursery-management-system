@@ -472,3 +472,170 @@ func (r *AttendanceRepository) ListIncompleteSessionsForPeriod(
 	}
 	return result, nil
 }
+
+func (r *AttendanceRepository) ListSessionsForCorrection(
+	ctx context.Context,
+	tenantID, branchID, childID uuid.UUID,
+	localDate time.Time,
+) (domain.CorrectionSessionContext, error) {
+	q := sqlc.New(r.pool)
+
+	sessions, err := q.AttendanceListSessionsForCorrection(ctx, sqlc.AttendanceListSessionsForCorrectionParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		ChildID:          uuidToPgtype(childID),
+		CheckInLocalDate: timeToPgtypeDate(localDate),
+	})
+	if err != nil {
+		return domain.CorrectionSessionContext{}, fmt.Errorf("list sessions for correction: %w", err)
+	}
+
+	billingMonth := time.Date(localDate.Year(), localDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+	var warning *domain.IssuedInvoiceWarning
+	invoiceRow, err := q.AttendanceGetIssuedInvoiceWarningForMonth(ctx, sqlc.AttendanceGetIssuedInvoiceWarningForMonthParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		ChildID:      uuidToPgtype(childID),
+		BillingMonth: timeToPgtypeDate(billingMonth),
+	})
+	if err == nil {
+		warning = &domain.IssuedInvoiceWarning{
+			InvoiceID:     pgtypeUUIDToUUID(invoiceRow.ID),
+			InvoiceNumber: invoiceRow.InvoiceNumber.String,
+			BillingMonth:  invoiceRow.BillingMonth.Time.Format("2006-01"),
+			Status:        invoiceRow.Status,
+		}
+	}
+
+	result := domain.CorrectionSessionContext{
+		ChildID:           childID,
+		SelectedLocalDate: localDate,
+		InvoiceWarning:    warning,
+		Sessions:          make([]domain.Session, 0, len(sessions)),
+	}
+
+	for _, row := range sessions {
+		session := domain.Session{
+			ID:                pgtypeUUIDToUUID(row.ID),
+			ChildID:           pgtypeUUIDToUUID(row.ChildID),
+			Status:            domain.SessionStatus(row.Status),
+			CheckInAt:         pgtypeTimestamptzToTime(row.CheckInAt),
+			CheckOutAt:        pgtypeTimestamptzToTimePtr(row.CheckOutAt),
+			CheckInLocalDate:  pgtypeDateToTime(row.CheckInLocalDate),
+			CheckOutLocalDate: pgtypeDateToTimePtr(row.CheckOutLocalDate),
+			CreatedAt:         pgtypeTimestamptzToTime(row.CreatedAt),
+			UpdatedAt:         pgtypeTimestamptzToTime(row.UpdatedAt),
+		}
+		if row.CheckOutAt.Valid {
+			dur := int(row.DurationMinutes)
+			session.DurationMinutes = &dur
+		}
+		result.Sessions = append(result.Sessions, session)
+	}
+
+	return result, nil
+}
+
+func (r *AttendanceRepository) ListCorrectionHistory(
+	ctx context.Context,
+	tenantID, branchID, sessionID uuid.UUID,
+) (domain.Session, []domain.CorrectionHistoryEvent, error) {
+	q := sqlc.New(r.pool)
+
+	sessionRow, err := q.AttendanceGetSessionForCorrection(ctx, sqlc.AttendanceGetSessionForCorrectionParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(sessionID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Session{}, nil, domain.ErrSessionNotFound
+	}
+	if err != nil {
+		return domain.Session{}, nil, fmt.Errorf("get session for history: %w", err)
+	}
+
+	session := domain.Session{
+		ID:                pgtypeUUIDToUUID(sessionRow.ID),
+		ChildID:           pgtypeUUIDToUUID(sessionRow.ChildID),
+		Status:            domain.SessionStatus(sessionRow.Status),
+		CheckInAt:         pgtypeTimestamptzToTime(sessionRow.CheckInAt),
+		CheckOutAt:        pgtypeTimestamptzToTimePtr(sessionRow.CheckOutAt),
+		CheckInLocalDate:  pgtypeDateToTime(sessionRow.CheckInLocalDate),
+		CheckOutLocalDate: pgtypeDateToTimePtr(sessionRow.CheckOutLocalDate),
+		CreatedAt:         pgtypeTimestamptzToTime(sessionRow.CreatedAt),
+		UpdatedAt:         pgtypeTimestamptzToTime(sessionRow.UpdatedAt),
+	}
+	if session.CheckOutAt != nil {
+		dur := int(session.CheckOutAt.Sub(session.CheckInAt).Minutes())
+		session.DurationMinutes = &dur
+	}
+
+	events, err := q.AttendanceListSessionEventsForHistory(ctx, sqlc.AttendanceListSessionEventsForHistoryParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		SessionID: uuidToPgtype(sessionID),
+	})
+	if err != nil {
+		return domain.Session{}, nil, fmt.Errorf("list session events for history: %w", err)
+	}
+
+	history := make([]domain.CorrectionHistoryEvent, 0, len(events))
+	for _, row := range events {
+		evt := domain.CorrectionHistoryEvent{
+			ID:                     pgtypeUUIDToUUID(row.ID),
+			EventType:              domain.EventType(row.EventType),
+			OccurredAt:             pgtypeTimestamptzToTime(row.OccurredAt),
+			LocalDate:              pgtypeDateToTime(row.LocalDate),
+			RecordedByUserID:       pgtypeUUIDToUUID(row.RecordedByUserID),
+			RecordedByMembershipID: pgtypeUUIDToUUID(row.RecordedByMembershipID),
+		}
+		if row.RecordedByLabel.Valid {
+			evt.RecordedByLabel = &row.RecordedByLabel.String
+		}
+		if row.ReasonCode.Valid {
+			evt.ReasonCode = &row.ReasonCode.String
+		}
+		if row.ReasonNote.Valid {
+			evt.ReasonNote = &row.ReasonNote.String
+		}
+		parseCorrectionDetails(row.Details, &evt)
+		history = append(history, evt)
+	}
+
+	return session, history, nil
+}
+
+func parseCorrectionDetails(raw []byte, evt *domain.CorrectionHistoryEvent) {
+	if len(raw) == 0 {
+		return
+	}
+	var details map[string]any
+	if err := json.Unmarshal(raw, &details); err != nil {
+		return
+	}
+	if v, ok := details["created_by_correction"]; ok {
+		if b, ok := v.(bool); ok {
+			evt.CreatedByCorrection = b
+		}
+	}
+	evt.PreviousCheckInAt = parseOptionalTime(details, "previous_check_in_at")
+	evt.PreviousCheckOutAt = parseOptionalTime(details, "previous_check_out_at")
+	evt.CorrectedCheckInAt = parseOptionalTime(details, "corrected_check_in")
+	evt.CorrectedCheckOutAt = parseOptionalTime(details, "corrected_check_out")
+}
+
+func parseOptionalTime(details map[string]any, key string) *time.Time {
+	v, ok := details[key]
+	if !ok {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return nil
+	}
+	return &t
+}

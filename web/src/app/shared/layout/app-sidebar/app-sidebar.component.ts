@@ -82,6 +82,7 @@ export class AppSidebarComponent {
         { label: 'Guardians', path: ROLE_ROUTES.managerGuardians, testId: 'staff-link-manager-guardians' },
         { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites' },
         { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
+        { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections' },
       ];
     }
 

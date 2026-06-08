@@ -207,6 +207,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		attendanceapp.NewCheckInChild(attendanceRepo, childEnrollmentChecker, absenceMarkerChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewCheckOutChild(attendanceRepo, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
+		attendanceapp.NewListCorrectionSessions(attendanceRepo),
+		attendanceapp.NewListCorrectionHistory(attendanceRepo),
 	)
 
 	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC)

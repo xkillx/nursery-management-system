@@ -12,6 +12,9 @@ export interface IncompleteAttendanceItem {
   issue: string;
   actionHint: string;
   isToday: boolean;
+  childId?: string;
+  localDate?: string;
+  sessionId?: string;
 }
 
 export interface InvoiceRunStatus {
@@ -174,6 +177,11 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       label: 'Open attendance',
       description: 'Check-in and check-out for today',
       route: '/staff/practitioner/attendance',
+    },
+    {
+      label: 'Attendance corrections',
+      description: 'Review and correct attendance records',
+      route: '/staff/manager/attendance-corrections',
     },
     {
       label: 'Manage children',

@@ -17,6 +17,8 @@ func TestAttendanceRouteInventory(t *testing.T) {
 		"POST /api/v1/attendance/check-ins",
 		"POST /api/v1/attendance/check-outs",
 		"POST /api/v1/attendance/corrections",
+		"GET /api/v1/attendance/sessions",
+		"GET /api/v1/attendance/sessions/:session_id/history",
 	}
 
 	for _, want := range expected {
@@ -94,4 +96,83 @@ func TestAttendanceCorrectionRoleGuards(t *testing.T) {
 		requireStatus(t, w, http.StatusForbidden)
 		requireErrorCode(t, w, "forbidden_role")
 	})
+}
+
+func TestAttendanceReadRoleGuards(t *testing.T) {
+	h := setupPeopleHarness(t)
+
+	t.Run("sessions GET rejects practitioner", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String()+"&local_date=2026-06-08", h.practitionerToken, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	})
+
+	t.Run("sessions GET rejects parent", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String()+"&local_date=2026-06-08", h.parentToken, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	})
+
+	t.Run("sessions GET requires auth", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String()+"&local_date=2026-06-08", "", "")
+		requireStatus(t, w, http.StatusUnauthorized)
+		requireErrorCode(t, w, "unauthorized")
+	})
+
+	t.Run("history GET rejects practitioner", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions/"+h.scopeA.activeChildID.String()+"/history", h.practitionerToken, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	})
+
+	t.Run("history GET rejects parent", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions/"+h.scopeA.activeChildID.String()+"/history", h.parentToken, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	})
+
+	t.Run("history GET requires auth", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions/"+h.scopeA.activeChildID.String()+"/history", "", "")
+		requireStatus(t, w, http.StatusUnauthorized)
+		requireErrorCode(t, w, "unauthorized")
+	})
+
+	t.Run("sessions GET accepts manager", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String()+"&local_date=2026-06-08", h.managerToken, "")
+		requireStatus(t, w, http.StatusOK)
+	})
+
+	t.Run("sessions GET rejects missing child_id", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?local_date=2026-06-08", h.managerToken, "")
+		requireStatus(t, w, http.StatusBadRequest)
+		requireErrorCode(t, w, "validation_error")
+	})
+
+	t.Run("sessions GET rejects missing local_date", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String(), h.managerToken, "")
+		requireStatus(t, w, http.StatusBadRequest)
+		requireErrorCode(t, w, "validation_error")
+	})
+
+	t.Run("sessions GET rejects invalid local_date", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions?child_id="+h.scopeA.activeChildID.String()+"&local_date=not-a-date", h.managerToken, "")
+		requireStatus(t, w, http.StatusBadRequest)
+		requireErrorCode(t, w, "validation_error")
+	})
+
+	t.Run("history GET with invalid session_id returns 400", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions/not-a-uuid/history", h.managerToken, "")
+		requireStatus(t, w, http.StatusBadRequest)
+		requireErrorCode(t, w, "validation_error")
+	})
+
+	t.Run("history GET with unknown session returns 404", func(t *testing.T) {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/attendance/sessions/"+fakeUUID()+"/history", h.managerToken, "")
+		requireStatus(t, w, http.StatusNotFound)
+		requireErrorCode(t, w, "attendance_session_not_found")
+	})
+}
+
+func fakeUUID() string {
+	return "00000000-0000-0000-0000-000000000099"
 }

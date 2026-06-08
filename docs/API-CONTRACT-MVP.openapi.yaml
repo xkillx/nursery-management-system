@@ -405,6 +405,95 @@ components:
           type: string
           format: date-time
 
+    AttendanceCorrectionSessionContext:
+      type: object
+      properties:
+        child_id:
+          type: string
+          format: uuid
+        selected_local_date:
+          type: string
+          format: date
+        invoice_warning:
+          $ref: "#/components/schemas/IssuedInvoiceWarning"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceSession"
+
+    AttendanceCorrectionHistory:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/AttendanceSession"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceCorrectionHistoryEvent"
+
+    AttendanceCorrectionHistoryEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          enum: [check_in, check_out, correction]
+        occurred_at:
+          type: string
+          format: date-time
+        local_date:
+          type: string
+          format: date
+        recorded_by_user_id:
+          type: string
+          format: uuid
+        recorded_by_membership_id:
+          type: string
+          format: uuid
+        recorded_by_label:
+          type: string
+          nullable: true
+        reason_code:
+          type: string
+          nullable: true
+        reason_note:
+          type: string
+          nullable: true
+        previous_check_in_at:
+          type: string
+          format: date-time
+          nullable: true
+        previous_check_out_at:
+          type: string
+          format: date-time
+          nullable: true
+        corrected_check_in_at:
+          type: string
+          format: date-time
+          nullable: true
+        corrected_check_out_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by_correction:
+          type: boolean
+
+    IssuedInvoiceWarning:
+      type: object
+      nullable: true
+      properties:
+        billing_month:
+          type: string
+        invoice_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+        status:
+          type: string
+
     AttendanceChild:
       type: object
       properties:
@@ -2768,6 +2857,72 @@ paths:
           $ref: "#/components/responses/ForbiddenRole"
         "409":
           $ref: "#/components/responses/Conflict"
+
+  /api/v1/attendance/sessions:
+    get:
+      operationId: listCorrectionSessions
+      summary: List sessions for a child and date
+      tags: [Attendance]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: local_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Session context for selected child and date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceCorrectionSessionContext"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+
+  /api/v1/attendance/sessions/{session_id}/history:
+    get:
+      operationId: listCorrectionHistory
+      summary: Get session correction history
+      tags: [Attendance]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session with correction history events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceCorrectionHistory"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/attendance/absence-markers:
     post:

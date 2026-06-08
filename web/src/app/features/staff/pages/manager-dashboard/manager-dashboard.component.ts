@@ -72,7 +72,19 @@ import {
                     <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ item.childName }}</td>
                     <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ item.localDateLabel }}</td>
                     <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ item.issue }}</td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ item.actionHint }}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                      @if (item.childId && item.localDate) {
+                        <a
+                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                          [routerLink]="['/staff/manager/attendance-corrections']"
+                          [queryParams]="{ child_id: item.childId, local_date: item.localDate, session_id: item.sessionId || undefined }"
+                        >
+                          Correct
+                        </a>
+                      } @else {
+                        {{ item.actionHint }}
+                      }
+                    </td>
                   </tr>
                 }
               </tbody>

@@ -22,6 +22,37 @@ const (
 	EventCorrection EventType = "correction"
 )
 
+type IssuedInvoiceWarning struct {
+	BillingMonth  string
+	InvoiceID     uuid.UUID
+	InvoiceNumber string
+	Status        string
+}
+
+type CorrectionSessionContext struct {
+	ChildID            uuid.UUID
+	SelectedLocalDate  time.Time
+	InvoiceWarning     *IssuedInvoiceWarning
+	Sessions           []Session
+}
+
+type CorrectionHistoryEvent struct {
+	ID                    uuid.UUID
+	EventType             EventType
+	OccurredAt            time.Time
+	LocalDate             time.Time
+	RecordedByUserID      uuid.UUID
+	RecordedByMembershipID uuid.UUID
+	RecordedByLabel       *string
+	ReasonCode            *string
+	ReasonNote            *string
+	PreviousCheckInAt     *time.Time
+	PreviousCheckOutAt    *time.Time
+	CorrectedCheckInAt    *time.Time
+	CorrectedCheckOutAt   *time.Time
+	CreatedByCorrection   bool
+}
+
 type IncompleteSessionBlocker struct {
 	ChildID          uuid.UUID
 	ChildName        string

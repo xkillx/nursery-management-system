@@ -218,7 +218,7 @@ A duplicate-entry attendance correction still establishes a valid effective atte
 
 ## Attendance Correction History (MVP)
 
-A session may receive more than one attendance correction; each correction remains part of the historical trail while the latest correction determines the current effective interval.
+A session may receive more than one attendance correction; each correction remains part of the historical trail while the latest correction determines the current effective interval. Manager correction history presents original attendance events and each correction in chronological order; prior events are read-only.
 
 ## Attendance Correction Recorded Time (MVP)
 
@@ -228,9 +228,13 @@ The time and local day a correction is recorded are the manager action time and 
 
 Only managers can create attendance correction events.
 
+## Attendance Correction Child Selector Scope (MVP)
+
+Manager correction workflows may target any child in the manager's branch, including inactive children, because historical corrections may be needed after a child has left. Correction validity is still constrained by the child's enrollment window.
+
 ## Attendance Correction Reason Vocabulary (MVP)
 
-Only attendance corrections carry attendance reason codes; routine check-in and check-out events do not. Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`.
+Only attendance corrections carry attendance reason codes; routine check-in and check-out events do not. Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`. When `other` is selected, managers must provide a note; notes are optional for the standard codes.
 
 ## Attendance Correction Audit Reason Semantics (MVP)
 
