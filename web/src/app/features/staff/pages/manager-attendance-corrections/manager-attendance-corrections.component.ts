@@ -11,7 +11,6 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
-import { MappedApiError } from '../../../../core/models/api-error.models';
 import { ChildRecord, StatusFilter } from '../../../staff/models/children.models';
 import { StaffApiService } from '../../../staff/data/staff-api.service';
 import {
@@ -30,6 +29,24 @@ const REASON_OPTIONS: { code: AttendanceCorrectionReasonCode; label: string }[] 
   { code: 'duplicate_entry', label: 'Duplicate entry' },
   { code: 'other', label: 'Other' },
 ];
+
+type CorrectionErrorKind =
+  | 'overlap'
+  | 'enrollment_window'
+  | 'reason'
+  | 'note'
+  | 'time_order'
+  | 'future_time'
+  | 'authorization'
+  | 'not_found'
+  | 'generic';
+
+interface CorrectionError {
+  kind: CorrectionErrorKind;
+  title: string;
+  message: string;
+  field?: 'checkInTime' | 'checkOutTime' | 'reasonCode' | 'reasonNote';
+}
 
 @Component({
   selector: 'app-manager-attendance-corrections',
@@ -73,7 +90,7 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
   submitting = false;
 
   successMessage: string | null = null;
-  formError: MappedApiError | null = null;
+  correctionError: CorrectionError | null = null;
 
   readonly reasonOptions = REASON_OPTIONS;
 
@@ -91,6 +108,42 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
     return true;
   }
 
+  get selectedChild(): ChildRecord | undefined {
+    return this.children.find((c) => c.id === this.selectedChildId);
+  }
+
+  get selectedSession(): AttendanceSessionRecord | undefined {
+    if (!this.selectedSessionId) return undefined;
+    return this.sessions.find((s) => s.id === this.selectedSessionId);
+  }
+
+  get isSessionIncomplete(): boolean {
+    return !!this.selectedSession && !this.selectedSession.checkOutAt;
+  }
+
+  get showCorrectionForm(): boolean {
+    return !!this.selectedChildId && !!this.selectedLocalDate && (!!this.selectedSessionId || this.sessions.length === 0);
+  }
+
+  get localFieldErrors(): Record<string, string> {
+    if (!this.showCorrectionForm) return {};
+    const errors: Record<string, string> = {};
+    if (!this.reasonCode) {
+      errors['reasonCode'] = 'Select a correction reason.';
+    } else if (this.reasonCode === 'other' && !this.reasonNote.trim()) {
+      errors['reasonNote'] = 'Add a note when the reason is Other.';
+    }
+    if (this.checkInTime && this.checkOutTime && this.checkOutTime <= this.checkInTime) {
+      errors['timeOrder'] = 'Set check-out after check-in.';
+    }
+    return errors;
+  }
+
+  getFieldError(fieldName: string): string | null {
+    if (this.correctionError?.field === fieldName) return this.correctionError.message;
+    return this.localFieldErrors[fieldName] ?? null;
+  }
+
   ngOnInit(): void {
     this.loadChildren();
     this.applyQueryParams();
@@ -104,12 +157,14 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
   onChildChange(): void {
     this.selectedSessionId = null;
     this.history = null;
+    this.clearCorrectionError();
     this.loadSessions();
   }
 
   onDateChange(): void {
     this.selectedSessionId = null;
     this.history = null;
+    this.clearCorrectionError();
     this.loadSessions();
   }
 
@@ -153,7 +208,7 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
         },
         error: (err) => {
           this.submitting = false;
-          this.formError = this.errorMapper.mapAndHandle(err);
+          this.handleCorrectionError(err);
         },
       });
   }
@@ -203,7 +258,7 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
         },
         error: (err) => {
           this.loadingSessions = false;
-          this.formError = this.errorMapper.mapAndHandle(err);
+          this.handleCorrectionError(err);
         },
       });
   }
@@ -233,7 +288,128 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
 
   private clearMessages(): void {
     this.successMessage = null;
-    this.formError = null;
+    this.clearCorrectionError();
+  }
+
+  private clearCorrectionError(): void {
+    this.correctionError = null;
+  }
+
+  onTimeChange(): void {
+    if (this.correctionError?.field === 'checkInTime' || this.correctionError?.field === 'checkOutTime') {
+      this.clearCorrectionError();
+    }
+  }
+
+  onReasonChange(): void {
+    if (this.correctionError?.field === 'reasonCode') {
+      this.clearCorrectionError();
+    }
+  }
+
+  onNoteChange(): void {
+    if (this.correctionError?.field === 'reasonNote') {
+      this.clearCorrectionError();
+    }
+  }
+
+  private handleCorrectionError(err: unknown): void {
+    const mapped = this.errorMapper.mapAndHandle(err);
+
+    const forbiddenCodes = ['forbidden_role', 'forbidden_role_unknown', 'forbidden_scope_selection', 'forbidden_scope'];
+
+    switch (mapped.code) {
+      case 'attendance_session_overlap':
+        this.correctionError = {
+          kind: 'overlap',
+          title: 'Session overlap',
+          message: 'Change the check-in or check-out time so this correction does not overlap another session for this child.',
+          field: 'checkInTime',
+        };
+        break;
+      case 'attendance_outside_enrollment_window':
+        this.correctionError = {
+          kind: 'enrollment_window',
+          title: 'Outside enrollment window',
+          message: this.enrollmentWindowMessage(),
+        };
+        break;
+      case 'attendance_correction_reason_required':
+      case 'attendance_correction_reason_invalid':
+        this.correctionError = {
+          kind: 'reason',
+          title: 'Missing reason',
+          message: 'Select a correction reason.',
+          field: 'reasonCode',
+        };
+        break;
+      case 'reason_note_required_for_other':
+        this.correctionError = {
+          kind: 'note',
+          title: 'Note required',
+          message: 'Add a note when the reason is Other.',
+          field: 'reasonNote',
+        };
+        break;
+      case 'attendance_invalid_time_order':
+        this.correctionError = {
+          kind: 'time_order',
+          title: 'Invalid times',
+          message: 'Set check-out after check-in.',
+          field: 'checkInTime',
+        };
+        break;
+      case 'attendance_correction_future_time':
+        this.correctionError = {
+          kind: 'future_time',
+          title: 'Future time',
+          message: 'Use a check-in and check-out time that has already happened.',
+          field: 'checkInTime',
+        };
+        break;
+      case 'attendance_session_not_found':
+        this.correctionError = {
+          kind: 'not_found',
+          title: 'Session not found',
+          message: 'Select the session again. It may have changed since this page loaded.',
+        };
+        break;
+      case 'child_not_found':
+        this.correctionError = {
+          kind: 'not_found',
+          title: 'Child not found',
+          message: 'Select the child again. This child is not available in the current branch.',
+        };
+        break;
+      default:
+        if (forbiddenCodes.includes(mapped.code)) {
+          this.correctionError = {
+            kind: 'authorization',
+            title: 'No access',
+            message: 'Sign in as a manager for this branch, or switch to a manager membership before correcting attendance.',
+          };
+        } else {
+          this.correctionError = {
+            kind: 'generic',
+            title: '',
+            message: mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : ''),
+          };
+        }
+    }
+  }
+
+  private enrollmentWindowMessage(): string {
+    const child = this.selectedChild;
+    if (!child) return "Choose a date within the child's enrollment window.";
+    const start = this.formatDateShort(child.startDate);
+    if (child.endDate) {
+      return `Choose a date from ${start} to ${this.formatDateShort(child.endDate)}.`;
+    }
+    return `Choose a date on or after ${start}.`;
+  }
+
+  private formatDateShort(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   private localDateTimeToRfc3339(date: string, time: string): string {

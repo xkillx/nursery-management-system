@@ -7,8 +7,13 @@
   <!-- Success Alert -->
   <app-alert *ngIf="successMessage" variant="success" [message]="successMessage" />
 
-  <!-- Error Alert -->
-  <app-alert *ngIf="formError" variant="error" [message]="formError.message" />
+  <!-- Correction Error (form-level, no specific field) -->
+  <app-alert
+    *ngIf="correctionError && !correctionError.field"
+    [variant]="correctionError.kind === 'authorization' ? 'warning' : 'error'"
+    [title]="correctionError.title"
+    [message]="correctionError.message"
+  />
 
   <!-- Invoice Warning -->
   <app-alert
@@ -104,9 +109,17 @@
     </button>
   </div>
 
+  <!-- Incomplete Session Warning -->
+  <app-alert
+    *ngIf="isSessionIncomplete"
+    variant="info"
+    title="Incomplete session"
+    message="This session has no check-out time. Enter the complete corrected check-in and check-out times and a reason below."
+  />
+
   <!-- Correction Form -->
   <div
-    *ngIf="selectedChildId && selectedLocalDate && (selectedSessionId || sessions.length === 0)"
+    *ngIf="showCorrectionForm"
     class="border rounded-lg p-4 space-y-4 dark:border-gray-700"
   >
     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -121,9 +134,13 @@
         <input
           type="time"
           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-          [(ngModel)]="checkInTime"
+          [ngModel]="checkInTime"
+          (ngModelChange)="checkInTime = $event; onTimeChange()"
           name="checkInTime"
         />
+        <p *ngIf="getFieldError('checkInTime')" class="mt-1 text-xs text-error-500">
+          {{ getFieldError('checkInTime') }}
+        </p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -132,22 +149,35 @@
         <input
           type="time"
           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-          [(ngModel)]="checkOutTime"
+          [ngModel]="checkOutTime"
+          (ngModelChange)="checkOutTime = $event; onTimeChange()"
           name="checkOutTime"
         />
+        <p *ngIf="getFieldError('checkOutTime')" class="mt-1 text-xs text-error-500">
+          {{ getFieldError('checkOutTime') }}
+        </p>
       </div>
     </div>
+
+    <!-- Time order hint (local validation) -->
+    <p *ngIf="localFieldErrors['timeOrder']" class="text-xs text-warning-600 dark:text-warning-400">
+      {{ localFieldErrors['timeOrder'] }}
+    </p>
 
     <div>
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
       <select
         class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        [(ngModel)]="reasonCode"
+        [ngModel]="reasonCode"
+        (ngModelChange)="reasonCode = $event; onReasonChange()"
         name="reasonCode"
       >
         <option [ngValue]="''">Select a reason...</option>
         <option *ngFor="let r of reasonOptions" [ngValue]="r.code">{{ r.label }}</option>
       </select>
+      <p *ngIf="getFieldError('reasonCode')" class="mt-1 text-xs text-error-500">
+        {{ getFieldError('reasonCode') }}
+      </p>
     </div>
 
     <div *ngIf="reasonCode === 'other'">
@@ -155,10 +185,14 @@
       <textarea
         class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
         rows="2"
-        [(ngModel)]="reasonNote"
+        [ngModel]="reasonNote"
+        (ngModelChange)="reasonNote = $event; onNoteChange()"
         name="reasonNote"
         placeholder="Explain the reason for this correction"
       ></textarea>
+      <p *ngIf="getFieldError('reasonNote')" class="mt-1 text-xs text-error-500">
+        {{ getFieldError('reasonNote') }}
+      </p>
     </div>
 
     <app-button
