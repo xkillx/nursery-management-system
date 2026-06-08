@@ -126,7 +126,7 @@
           </div>
 
           <!-- Right: action -->
-          <div class="mt-2.5 sm:mt-0 sm:flex-shrink-0">
+          <div class="mt-2.5 flex flex-col gap-2 sm:mt-0 sm:flex-shrink-0 sm:flex-row sm:items-center">
             @if (isCheckedIn(child)) {
               <button
                 type="button"
@@ -141,7 +141,21 @@
                   Check out
                 }
               </button>
-            } @else if (!isAbsent(child)) {
+            } @else if (isAbsent(child) && child.absenceMarkerId) {
+              <button
+                type="button"
+                [attr.data-testid]="'attendance-clear-absence-' + child.id"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:py-2.5"
+                [disabled]="!canClearAbsence(child)"
+                (click)="clearAbsence(child)"
+              >
+                @if (isPending(child.id)) {
+                  Clearing...
+                } @else {
+                  Clear absence
+                }
+              </button>
+            } @else {
               <button
                 type="button"
                 [attr.data-testid]="'attendance-action-' + child.id"
@@ -153,6 +167,19 @@
                   Checking in...
                 } @else {
                   Check in
+                }
+              </button>
+              <button
+                type="button"
+                [attr.data-testid]="'attendance-mark-absent-' + child.id"
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:py-2.5"
+                [disabled]="!canMarkAbsent(child)"
+                (click)="markAbsent(child)"
+              >
+                @if (isPending(child.id)) {
+                  Marking...
+                } @else {
+                  Mark absent
                 }
               </button>
             }

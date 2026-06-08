@@ -171,6 +171,25 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
     return this.isCheckedIn(child) && !this.isForegroundLoading() && !this.isPending(child.id);
   }
 
+  canMarkAbsent(child: AttendanceChildRecord): boolean {
+    return (
+      !this.isCheckedIn(child) &&
+      !this.isAbsent(child) &&
+      child.enrollmentComplete &&
+      !this.isForegroundLoading() &&
+      !this.isPending(child.id)
+    );
+  }
+
+  canClearAbsence(child: AttendanceChildRecord): boolean {
+    return (
+      this.isAbsent(child) &&
+      !!child.absenceMarkerId &&
+      !this.isForegroundLoading() &&
+      !this.isPending(child.id)
+    );
+  }
+
   checkIn(child: AttendanceChildRecord): void {
     if (!this.canCheckIn(child)) return;
     this.executeMutation(child.id, () => this.staffApi.checkInChild(child.id));
@@ -179,6 +198,16 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
   checkOut(child: AttendanceChildRecord): void {
     if (!this.canCheckOut(child)) return;
     this.executeMutation(child.id, () => this.staffApi.checkOutChild(child.id));
+  }
+
+  markAbsent(child: AttendanceChildRecord): void {
+    if (!this.canMarkAbsent(child)) return;
+    this.executeMutation(child.id, () => this.staffApi.markChildAbsent(child.id));
+  }
+
+  clearAbsence(child: AttendanceChildRecord): void {
+    if (!this.canClearAbsence(child)) return;
+    this.executeMutation(child.id, () => this.staffApi.clearAbsenceMarker(child.absenceMarkerId!));
   }
 
   formatLondonTime(iso: string | null): string {

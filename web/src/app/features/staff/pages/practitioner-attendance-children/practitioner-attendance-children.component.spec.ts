@@ -65,6 +65,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       'listAttendanceChildren',
       'checkInChild',
       'checkOutChild',
+      'markChildAbsent',
+      'clearAbsenceMarker',
     ]);
 
     await TestBed.configureTestingModule({
@@ -471,6 +473,279 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).not.toContain('marker-1');
       expect(compiled.textContent).not.toContain('2026-06-08T08:00:00Z');
+    });
+
+    it('shows Clear absence action for absent child with marker ID', () => {
+      setChildrenAndDetectChanges([absentChild]);
+
+      const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-clear-absence-child-absent"]') as HTMLButtonElement;
+      expect(actionBtn).toBeTruthy();
+      expect(actionBtn.textContent).toContain('Clear absence');
+      expect(actionBtn.disabled).toBeFalse();
+    });
+
+    it('does not render Clear absence when absenceMarkerId is missing', () => {
+      const absentNoMarker = { ...absentChild, absenceMarkerId: null };
+      setChildrenAndDetectChanges([absentNoMarker]);
+
+      const actionBtn = fixture.nativeElement.querySelector('[data-testid="attendance-clear-absence-child-absent"]');
+      expect(actionBtn).toBeNull();
+    });
+
+    it('clearAbsence does not call API when absenceMarkerId is null', () => {
+      const absentNoMarker = { ...absentChild, absenceMarkerId: null };
+      setChildrenAndDetectChanges([absentNoMarker]);
+
+      component.clearAbsence(absentNoMarker);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.clearAbsenceMarker).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('FE-17 mark absent', () => {
+    it('canMarkAbsent returns true for eligible not-in enrollment-complete child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+      expect(component.canMarkAbsent(mockChildren[0])).toBeTrue();
+    });
+
+    it('canMarkAbsent returns false for enrollment-incomplete child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+      expect(component.canMarkAbsent(mockChildren[1])).toBeFalse();
+    });
+
+    it('canMarkAbsent returns false for checked-in child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+      expect(component.canMarkAbsent(mockChildren[2])).toBeFalse();
+    });
+
+    it('canMarkAbsent returns false for absent child', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Absent Child',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild]);
+      expect(component.canMarkAbsent(absentChild)).toBeFalse();
+    });
+
+    it('calls markChildAbsent then reloads list on successful mark', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      staffApiSpy.markChildAbsent.and.returnValue(of({ id: 'marker-new' } as any));
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+
+      component.markAbsent(mockChildren[0]);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.markChildAbsent).toHaveBeenCalledWith('child-1');
+      expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+    });
+
+    it('markAbsent does not call API for ineligible child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      component.markAbsent(mockChildren[1]);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.markChildAbsent).not.toHaveBeenCalled();
+    });
+
+    it('shows row error on markChildAbsent failure and reloads list', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      const markError = new HttpErrorResponse({
+        status: 409,
+        error: {
+          code: 'child_already_absent',
+          message: 'Child is already marked absent.',
+          request_id: 'req-mark',
+        },
+      });
+
+      staffApiSpy.markChildAbsent.and.returnValue(throwError(() => markError));
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+
+      component.markAbsent(mockChildren[0]);
+      fixture.detectChanges();
+
+      expect(component.rowErrors['child-1']).toContain('Child is already marked absent.');
+      expect(component.rowErrors['child-1']).toContain('Request: req-mark');
+      expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows Mark absent button for eligible not-in child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      const markBtn = fixture.nativeElement.querySelector('[data-testid="attendance-mark-absent-child-1"]') as HTMLButtonElement;
+      expect(markBtn).toBeTruthy();
+      expect(markBtn.textContent).toContain('Mark absent');
+      expect(markBtn.disabled).toBeFalse();
+    });
+
+    it('disables Mark absent for enrollment-incomplete child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      const markBtn = fixture.nativeElement.querySelector('[data-testid="attendance-mark-absent-child-2"]') as HTMLButtonElement;
+      expect(markBtn).toBeTruthy();
+      expect(markBtn.disabled).toBeTrue();
+    });
+
+    it('does not show Mark absent for checked-in child', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      const markBtn = fixture.nativeElement.querySelector('[data-testid="attendance-mark-absent-child-3"]');
+      expect(markBtn).toBeNull();
+    });
+
+    it('disables Mark absent and shows Marking... while pending', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      staffApiSpy.markChildAbsent.and.returnValue(new Observable());
+
+      component.markAbsent(mockChildren[0]);
+      fixture.detectChanges();
+
+      const markBtn = fixture.nativeElement.querySelector('[data-testid="attendance-mark-absent-child-1"]') as HTMLButtonElement;
+      expect(markBtn.disabled).toBeTrue();
+      expect(markBtn.textContent).toContain('Marking...');
+    });
+
+    it('calls clearAbsenceMarker then reloads list on successful clear', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild]);
+
+      staffApiSpy.clearAbsenceMarker.and.returnValue(of({ id: 'marker-1' } as any));
+      staffApiSpy.listAttendanceChildren.and.returnValue(of([mockChildren[0]]));
+
+      component.clearAbsence(absentChild);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.clearAbsenceMarker).toHaveBeenCalledWith('marker-1');
+      expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows row error on clearAbsenceMarker failure and reloads list', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild]);
+
+      const clearError = new HttpErrorResponse({
+        status: 409,
+        error: {
+          code: 'absence_already_cleared',
+          message: 'Absence marker already cleared.',
+          request_id: 'req-clear',
+        },
+      });
+
+      staffApiSpy.clearAbsenceMarker.and.returnValue(throwError(() => clearError));
+      staffApiSpy.listAttendanceChildren.and.returnValue(of([absentChild]));
+
+      component.clearAbsence(absentChild);
+      fixture.detectChanges();
+
+      expect(component.rowErrors['child-absent']).toContain('Absence marker already cleared.');
+      expect(component.rowErrors['child-absent']).toContain('Request: req-clear');
+      expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
+    });
+
+    it('disables Clear absence and shows Clearing... while pending', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild]);
+
+      staffApiSpy.clearAbsenceMarker.and.returnValue(new Observable());
+
+      component.clearAbsence(absentChild);
+      fixture.detectChanges();
+
+      const clearBtn = fixture.nativeElement.querySelector('[data-testid="attendance-clear-absence-child-absent"]') as HTMLButtonElement;
+      expect(clearBtn.disabled).toBeTrue();
+      expect(clearBtn.textContent).toContain('Clearing...');
+    });
+  });
+
+  describe('FE-17 filtering — absent children in not_checked_in', () => {
+    it('absent child appears in not_checked_in filter and count', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
+
+      expect(component.notInCount).toBe(1);
+      expect(component.checkedInCount).toBe(1);
+
+      component.setStatusFilter('not_checked_in');
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('Margaret Hamilton');
+      expect(compiled.textContent).not.toContain('Katherine Johnson');
+    });
+
+    it('absent child excluded from checked_in filter', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent',
+        fullName: 'Margaret Hamilton',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-1',
+        absenceMarkedAt: '2026-06-08T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
+
+      component.setStatusFilter('checked_in');
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).not.toContain('Margaret Hamilton');
+      expect(compiled.textContent).toContain('Katherine Johnson');
     });
   });
 

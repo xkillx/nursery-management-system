@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
-import { AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
+import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
@@ -40,6 +40,16 @@ interface GuardianApiModel {
   deactivated_at?: string;
   deactivation_reason_code?: string;
   deactivation_reason_note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AbsenceMarkerApiModel {
+  id: string;
+  child_id: string;
+  local_date: string;
+  marked_at: string;
+  cleared_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -226,6 +236,18 @@ export class StaffApiService {
     return this.http
       .post<AttendanceSessionApiModel>(apiUrl('/attendance/check-outs'), { child_id: childId })
       .pipe(map((session) => this.toAttendanceSessionRecord(session)));
+  }
+
+  markChildAbsent(childId: string): Observable<AbsenceMarkerRecord> {
+    return this.http
+      .post<AbsenceMarkerApiModel>(apiUrl('/attendance/absence-markers'), { child_id: childId })
+      .pipe(map((marker) => this.toAbsenceMarkerRecord(marker)));
+  }
+
+  clearAbsenceMarker(absenceMarkerId: string): Observable<AbsenceMarkerRecord> {
+    return this.http
+      .post<AbsenceMarkerApiModel>(apiUrl(`/attendance/absence-markers/${absenceMarkerId}/clear`), null)
+      .pipe(map((marker) => this.toAbsenceMarkerRecord(marker)));
   }
 
   listCorrectionSessions(childId: string, localDate: string): Observable<CorrectionSessionContext> {
@@ -419,6 +441,18 @@ export class StaffApiService {
       correctedCheckInAt: e.corrected_check_in_at ?? null,
       correctedCheckOutAt: e.corrected_check_out_at ?? null,
       createdByCorrection: e.created_by_correction,
+    };
+  }
+
+  private toAbsenceMarkerRecord(marker: AbsenceMarkerApiModel): AbsenceMarkerRecord {
+    return {
+      id: marker.id,
+      childId: marker.child_id,
+      localDate: marker.local_date,
+      markedAt: marker.marked_at,
+      clearedAt: marker.cleared_at ?? null,
+      createdAt: marker.created_at,
+      updatedAt: marker.updated_at,
     };
   }
 }

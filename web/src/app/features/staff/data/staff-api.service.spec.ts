@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { AttendanceChildRecord } from '../models/attendance-child.models';
+import { AttendanceChildRecord, AbsenceMarkerRecord } from '../models/attendance-child.models';
 import { ChildRecord } from '../models/children.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
@@ -195,6 +195,61 @@ describe('StaffApiService — Attendance', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ child_id: 'child-1' });
     req.flush(checkoutResponse);
+  });
+
+  const absenceMarkerApiResponse = {
+    id: 'marker-1',
+    child_id: 'child-1',
+    local_date: '2026-06-08',
+    marked_at: '2026-06-08T08:00:00Z',
+    cleared_at: null,
+    created_at: '2026-06-08T08:00:00Z',
+    updated_at: '2026-06-08T08:00:00Z',
+  };
+
+  it('markChildAbsent POSTs to /attendance/absence-markers with child_id', () => {
+    service.markChildAbsent('child-1').subscribe((marker: AbsenceMarkerRecord) => {
+      expect(marker).toEqual({
+        id: 'marker-1',
+        childId: 'child-1',
+        localDate: '2026-06-08',
+        markedAt: '2026-06-08T08:00:00Z',
+        clearedAt: null,
+        createdAt: '2026-06-08T08:00:00Z',
+        updatedAt: '2026-06-08T08:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne('/api/v1/attendance/absence-markers');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ child_id: 'child-1' });
+    req.flush(absenceMarkerApiResponse);
+  });
+
+  it('clearAbsenceMarker POSTs to /attendance/absence-markers/{id}/clear with null body', () => {
+    const clearedResponse = {
+      ...absenceMarkerApiResponse,
+      cleared_at: '2026-06-08T09:00:00Z',
+      updated_at: '2026-06-08T09:00:00Z',
+    };
+
+    service.clearAbsenceMarker('marker-1').subscribe((marker: AbsenceMarkerRecord) => {
+      expect(marker.clearedAt).toBe('2026-06-08T09:00:00Z');
+    });
+
+    const req = httpMock.expectOne('/api/v1/attendance/absence-markers/marker-1/clear');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(clearedResponse);
+  });
+
+  it('maps nullable cleared_at to null in absence marker response', () => {
+    service.markChildAbsent('child-1').subscribe((marker: AbsenceMarkerRecord) => {
+      expect(marker.clearedAt).toBeNull();
+    });
+
+    const req = httpMock.expectOne('/api/v1/attendance/absence-markers');
+    req.flush(absenceMarkerApiResponse);
   });
 });
 

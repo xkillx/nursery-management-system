@@ -1,5 +1,15 @@
 export type AttendanceState = 'not_checked_in' | 'checked_in' | 'absent';
 
+export interface AbsenceMarkerRecord {
+  id: string;
+  childId: string;
+  localDate: string;
+  markedAt: string;
+  clearedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AttendanceChildRecord {
   id: string;
   fullName: string;
