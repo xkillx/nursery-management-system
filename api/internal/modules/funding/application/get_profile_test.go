@@ -39,6 +39,10 @@ func (m *mockRepo) GetChildEnrollmentForUpdate(ctx context.Context, tx domain.Tx
 	return m.enrollment, m.enrFound, m.err
 }
 
+func (m *mockRepo) ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.OverviewRow, error) {
+	return nil, nil
+}
+
 func TestParseBillingMonth(t *testing.T) {
 	tests := []struct {
 		input   string

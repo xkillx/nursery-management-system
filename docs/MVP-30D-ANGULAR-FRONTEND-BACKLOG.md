@@ -17,13 +17,22 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 
 - Use `check-in` and `check-out` wording, not sign-in/sign-out, for child attendance.
 - `Parent Portal (MVP)` means the parent-side surface for viewing issued invoices for linked children and initiating full invoice payment.
-- `Manager`, `Practitioner`, and `Parent` are the only month-1 roles.
+- Current implemented month-1 role surface is `Manager`, `Practitioner`, and `Parent`; the product-owner update below adds `Owner` as a required user type that needs an explicit access model before implementation.
 - Practitioners must not see guardian contact details or billing information.
 - Child and guardian management is manager-only.
 - Issued invoices are immutable; direct edit UI must not exist.
 - Public signup is not part of month 1; users are manager-invited except the first seeded manager.
 - Funding v1 is simple per-child monthly funded-hours allowance.
 - Invoices are per child, not combined at family level.
+
+## Product-Owner Update: Users and Access
+
+- Intended system users now include the owner, nursery managers for the current four sites, staff in each site, and parents.
+- Nursery managers need site/branch-scoped staff administration and operational workflows.
+- Staff need site/branch-scoped workflows for the children they support, with no billing or guardian-contact leakage unless later role decisions explicitly allow it.
+- The owner likely needs cross-site visibility and administration across all four sites; this must be planned as a distinct owner experience, not hidden inside the branch manager UI.
+- Parents only access the `app/` parent portal, and their navigation and data must be limited to records that concern them and their linked child or children.
+- Future tickets must confirm whether owner and four-site UX is required for the live pilot or scheduled as post-MVP before changing route guards, navigation, or completed MVP screens.
 
 ## Decisions to Honor
 
@@ -87,7 +96,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 | FE-16 ~~done 2026-06-08~~ | ~~Map attendance correction errors to specific UI states: overlap, outside enrollment window, missing reason, incomplete session, authorization.~~ | ~~FE-15~~ | ~~Correction submit errors map to actionable UI: overlap shows time guidance, enrollment-window shows child range, missing reason/note shows field guidance, incomplete sessions show info alert, forbidden shows no-access warning, unknown errors show fallback with request ID. Local validation hints for missing reason, note, and time order. Field errors clear on relevant input changes. 309 Angular tests pass.~~ |
 | FE-17 ~~done 2026-06-08~~ | ~~Add low-priority absence marker UI only after core attendance works and the API exists.~~ | ~~Absence API~~ | ~~Absence is a simple marker and does not expose billing-rule configuration. Staff can mark absent and clear absence from today's attendance list. Eligible not-in children show Check in + Mark absent. Absent children show Clear absence. Row-level pending/error/reload behavior matches check-in/check-out. 331 Angular tests pass.~~ |
 | FE-18 ~~done 2026-06-08~~ | ~~Add funded-hours editing on child detail/enrollment. Show monthly allowance, save state, validation, and last-updated status.~~ | ~~FE-11, funding API~~ | ~~Manager can edit per-child monthly funded-hours allowance with billing month selector, hours/minutes inputs, client validation, API error mapping, and last-updated timestamp. Explicit zero distinct from missing profile. 358 Angular tests pass.~~ |
-| FE-19 | Add optional funding overview if time remains. Show children missing allowance or with unusual values. | FE-18 | Overview supports triage but is not required for the invoice flow. |
+| FE-19 ~~done 2026-06-09~~ | ~~Add optional funding overview if time remains. Show children missing allowance or with unusual values.~~ | ~~FE-18~~ | ~~Manager-only funding overview at /staff/manager/funding with billing month selector. Flags: missing profile, explicit zero, under one hour, above 160 hours. Summary counts. Review link deep-links to child detail with billing_month query param. Backend GET /api/v1/funding/overview endpoint. 370 Angular tests, 20 Go application tests pass.~~ |
 
 ## Week 3 - Invoicing, Parent Portal, Stripe Redirect
 
@@ -130,6 +139,7 @@ These items are product features intentionally outside the month-1 pilot critica
 | FE-PM-06 | Build ratio safety dashboard and live room checks. Show room-level ratio state, staff assignment, child age-band counts, at-risk sessions, and manager override flow where the API allows it. | FE-PM-05; API-PM-06 | Manager can see unsafe or near-limit sessions before and during the day; practitioner attendance surfaces clear ratio warnings without exposing unnecessary staff or child-sensitive data; override actions require reason and confirmation. |
 | FE-PM-07 | Build safeguarding and incident record screens. Support practitioner incident submission, manager restricted review, status/follow-up actions, confidential notes, and clear separation from normal child profile data. | API-PM-07 | Practitioners can submit permitted incidents; managers can triage and close records with history; restricted safeguarding data is not visible in parent, invoice, or routine attendance surfaces. |
 | FE-PM-08 | Build learning journey and EYFS observation screens. Support practitioner observation drafts, EYFS tagging, next steps, manager review, and parent-visible approved entries. | API-PM-08 | Practitioners can capture observations; managers can approve entries; parents see only approved learning journey content for linked children; draft/rejected content stays staff-only. |
+| FE-PM-09 | Build owner and four-site navigation/access experience. Add owner landing view, site switcher or cross-site filters, branch-scoped manager/staff views, and parent `app/` route isolation. | API-PM-09; product decision on owner MVP scope | Owner can move between or summarize the current four sites without using a branch manager-only shell; nursery managers and staff see only their site scope; parents land only in the `app/` parent portal and cannot see staff or owner navigation. |
 
 ## Files to Create or Change
 
@@ -218,7 +228,8 @@ When an API is unavailable, build the UI with a typed local mock adapter and kee
 - Angular 21 and Tailwind CSS remain in use.
 - The backend API will use `/api/v1` and plain JSON resources with the documented error shape.
 - The first manager is seeded outside the web UI.
-- The pilot uses one tenant and one default branch, but the frontend must respect selected membership scope.
+- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites.
+- The frontend must respect selected membership scope for managers and staff, relationship scope for parents, and an explicit owner cross-site access model once prioritized.
 - Production deployment details are handled outside this frontend backlog.
 - Playwright is acceptable to add during week 4 for smoke and screenshot QA.
 - Mock data is allowed only to unblock UI development; final acceptance requires real API integration for critical flows.

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord, AbsenceMarkerRecord } from '../models/attendance-child.models';
 import { ChildRecord } from '../models/children.models';
-import { FundingProfileRecord } from '../models/funding.models';
+import { FundingProfileRecord, FundingOverviewRecord } from '../models/funding.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
 
@@ -597,5 +597,82 @@ describe('StaffApiService — Funding', () => {
     const req = httpMock.expectOne('/api/v1/funding/children/child-1');
     expect(req.request.method).toBe('PUT');
     req.flush(createdModel, { status: 201, statusText: 'Created' });
+  });
+
+  it('getFundingOverview sends billing_month query param and maps response', () => {
+    const overviewApiModel = {
+      billing_month: '2026-06',
+      summary: {
+        included_child_count: 3,
+        flagged_child_count: 2,
+        missing_profile_count: 1,
+        explicit_zero_count: 1,
+        under_one_hour_count: 0,
+        above_160_hours_count: 0,
+      },
+      items: [
+        {
+          child_id: 'child-1',
+          child_name: 'Alice',
+          is_active: true,
+          start_date: '2026-01-01',
+          end_date: null,
+          flags: ['missing_profile'],
+        },
+        {
+          child_id: 'child-2',
+          child_name: 'Bob',
+          is_active: true,
+          start_date: '2026-01-01',
+          end_date: null,
+          funding_profile_id: 'fp-2',
+          funded_allowance_minutes: 0,
+          funding_updated_at: '2026-06-01T10:00:00Z',
+          flags: ['explicit_zero_allowance'],
+        },
+      ],
+    };
+
+    service.getFundingOverview('2026-06').subscribe((overview: FundingOverviewRecord) => {
+      expect(overview.billingMonth).toBe('2026-06');
+      expect(overview.summary.includedChildCount).toBe(3);
+      expect(overview.summary.flaggedChildCount).toBe(2);
+      expect(overview.summary.missingProfileCount).toBe(1);
+      expect(overview.summary.explicitZeroCount).toBe(1);
+      expect(overview.items.length).toBe(2);
+      expect(overview.items[0].childId).toBe('child-1');
+      expect(overview.items[0].flags).toEqual(['missing_profile']);
+      expect(overview.items[0].fundedAllowanceMinutes).toBeNull();
+      expect(overview.items[1].fundedAllowanceMinutes).toBe(0);
+      expect(overview.items[1].fundingProfileId).toBe('fp-2');
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/funding/overview');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('billing_month')).toBe('2026-06');
+    req.flush(overviewApiModel);
+  });
+
+  it('getFundingOverview maps nullable profile fields to null', () => {
+    const emptyOverview = {
+      billing_month: '2026-07',
+      summary: {
+        included_child_count: 0,
+        flagged_child_count: 0,
+        missing_profile_count: 0,
+        explicit_zero_count: 0,
+        under_one_hour_count: 0,
+        above_160_hours_count: 0,
+      },
+      items: [],
+    };
+
+    service.getFundingOverview('2026-07').subscribe((overview: FundingOverviewRecord) => {
+      expect(overview.items).toEqual([]);
+      expect(overview.summary.includedChildCount).toBe(0);
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/funding/overview');
+    req.flush(emptyOverview);
   });
 });

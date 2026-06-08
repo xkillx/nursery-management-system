@@ -53,6 +53,14 @@ Known backend gaps:
 - Practitioners have attendance access only and must not receive guardian contact, billing, invoice, funding, or payment data.
 - Tenant and branch scope are enforced on every protected endpoint from the active session membership.
 
+## Product-Owner Update: Users and Access
+
+- Intended system users now include the owner, nursery managers for the current four sites, staff in each site, and parents.
+- Treat nursery managers and staff as site/branch-scoped staff users unless a later role decision adds finer-grained staff roles.
+- The owner needs an explicit access model for cross-site visibility and administration; this is separate from the existing branch-scoped manager path.
+- Parent access remains limited to the `app/` parent portal and must be limited to records that concern the parent through the active parent membership -> guardian -> child relationship.
+- Backlog planning must confirm whether owner and four-site support is required for the live pilot or scheduled as post-MVP before changing completed MVP tickets.
+
 ## Decisions to Honor
 
 - Create this as a separate API/backend backlog; do not replace `docs/MVP-30D-BACKLOG.md`.
@@ -158,7 +166,7 @@ Implementation notes:
 | API-29 | Add API Dockerfile and production Docker Compose files for single-VM deployment with API, web, PostgreSQL, reverse proxy/HTTPS expectations, and environment file contract. | Core API stable | Compose files exist and document required secrets; no local absolute paths. |
 | API-30 | Add backup and restore runbook/checklist for production PostgreSQL. Include daily backup command, restore rehearsal steps, and where backup artifacts live. | API-29 | A developer can perform and verify one local restore rehearsal from the documented steps. |
 | API-31 | Add Stripe operational runbook: webhook endpoint setup, webhook secret handling, retry inspection, event replay procedure, and failure triage. | API-23 | Pilot operator can diagnose a failed or duplicated Stripe event. |
-| API-32 | Add UAT seed/scenario data for one tenant, one default branch, manager, practitioner, parent, children, guardians, attendance sessions, funding profiles, draft/issued invoices, and payment states. | API-24 | Seed data supports manager/practitioner/parent UAT journeys without manual DB editing. |
+| API-32 | Add UAT seed/scenario data for one tenant with four nursery sites/branches, owner access, nursery managers, staff in each site, parents, children, guardians, attendance sessions, funding profiles, draft/issued invoices, and payment states. | API-24; owner/four-site scope decision | Seed data supports owner, site manager, staff, and parent UAT journeys without manual DB editing and proves branch scoping prevents cross-site leakage. |
 | API-33 | Run backend UAT script and fix critical/high defects only. Freeze new backend feature work after this point except pilot blockers. | API-32 | UAT signoff covers attendance, correction, invoice generation, payment, and payment retry. |
 | API-34 | Optional reporting and CSV export only after payment loop is stable. Keep these limited to invoice/payment exports required by pilot operations. | API-24 | Stretch only; does not delay Stripe or invoice correctness work. |
 
@@ -186,6 +194,7 @@ These items are product features intentionally outside the month-1 pilot critica
 | API-PM-06 | Implement staff-to-child ratio safety engine. Model staff/practitioner availability, qualification level where needed, room assignments, child age bands, planned attendance, actual attendance, and ratio rule evaluation for booking approval and live daily operation. | API-PM-05; staff profile/qualification model | System can calculate whether a room/session is safe under configured ratio rules; unsafe booking approval is blocked or requires explicit manager override; live attendance exposes ratio risk states without leaking child-sensitive details; tests cover age-band boundaries, mixed-age sessions, staff absence, check-in/check-out changes, and audit of overrides. |
 | API-PM-07 | Implement safeguarding and incident record module. Track incident/safeguarding concern type, child, reporter, occurred/recorded timestamps, confidential notes, follow-up actions, status, responsible manager, and role-restricted access. Keep file upload/storage as a separate follow-up unless prioritized. | API-PM-02; audit/log redaction rules | Managers can create, review, update, and close incident/safeguarding records with immutable history; practitioners can submit permitted incident records without broad access to safeguarding history; parent-facing and practitioner attendance APIs never expose confidential safeguarding details; tests cover role/scope, audit trail, status transitions, and sensitive-data redaction. |
 | API-PM-08 | Implement learning journey and EYFS observation module. Track observations, media metadata placeholders, practitioner notes, EYFS area/aspect links, next steps, review state, and optional parent visibility after manager approval. | API-PM-02; parent access model | Practitioners can draft observations for children they are authorized to work with; managers can review and approve parent-visible learning entries; parents see only approved observations for linked children; tests cover role/scope, draft/approved state transitions, EYFS tagging, and no leakage across children or tenants. |
+| API-PM-09 | Implement owner and four-site access model. Define owner role or membership scope, branch/site switching or filtering, owner-visible cross-site summaries, branch manager boundaries, staff membership provisioning per site, and parent `app/` relationship limits. | Session/membership model; product decision on owner MVP scope | Owner can inspect and administer the current four sites without impersonating a branch manager; nursery managers and staff remain branch-scoped; parents cannot access staff routes or unrelated child/site data; authorization tests cover owner, manager, staff, parent, wrong-branch, and relationship-denied cases. |
 
 ## Expected API Routes
 
@@ -328,7 +337,8 @@ Existing hand-written repositories may remain in place unless a task explicitly 
 - The frontend will integrate with `/api/v1` plain JSON endpoints and standard error shape.
 - Local development uses local PostgreSQL; Docker is not required for local API development.
 - Production deployment uses a single VM with Docker Compose.
-- Month 1 uses one pilot tenant and one default branch, but API scope enforcement must remain tenant/branch-aware.
+- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites; confirm whether this changes the live-pilot scope before implementation.
+- API scope enforcement must remain tenant/branch-aware for managers and staff, relationship-aware for parents, and explicitly defined for owner cross-site access.
 - The first manager is still created by seed/admin command, not by invite.
 - Manager-created invites can provision `practitioner` and `parent` roles only.
 - Email delivery can be implemented through one provider abstraction with SMTP sandbox locally.

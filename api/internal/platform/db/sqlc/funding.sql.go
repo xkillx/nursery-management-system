@@ -37,6 +37,75 @@ func (q *Queries) FundingChildEnrollmentGetForUpdate(ctx context.Context, arg Fu
 	return i, err
 }
 
+const fundingOverviewList = `-- name: FundingOverviewList :many
+SELECT
+  c.id AS child_id,
+  c.full_name AS child_name,
+  c.is_active,
+  c.start_date,
+  c.end_date,
+  fp.id AS funding_profile_id,
+  fp.funded_allowance_minutes,
+  fp.updated_at AS funding_updated_at
+FROM children c
+LEFT JOIN funding_profiles fp
+  ON fp.tenant_id = c.tenant_id
+  AND fp.branch_id = c.branch_id
+  AND fp.child_id = c.id
+  AND fp.billing_month = $3
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < ($3 + INTERVAL '1 month')::date
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+ORDER BY child_name
+`
+
+type FundingOverviewListParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+}
+
+type FundingOverviewListRow struct {
+	ChildID                pgtype.UUID
+	ChildName              string
+	IsActive               bool
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+	FundingUpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) FundingOverviewList(ctx context.Context, arg FundingOverviewListParams) ([]FundingOverviewListRow, error) {
+	rows, err := q.db.Query(ctx, fundingOverviewList, arg.TenantID, arg.BranchID, arg.BillingMonth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FundingOverviewListRow
+	for rows.Next() {
+		var i FundingOverviewListRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.ChildName,
+			&i.IsActive,
+			&i.StartDate,
+			&i.EndDate,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+			&i.FundingUpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fundingProfileCreate = `-- name: FundingProfileCreate :one
 INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes)
 VALUES ($1, $2, $3, $4, $5, $6)

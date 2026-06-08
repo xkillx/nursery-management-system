@@ -233,6 +233,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	fundingHandler := fundinghandler.NewHandler(
 		fundingapp.NewGetProfile(fundingRepo),
 		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter),
+		fundingapp.NewListOverview(fundingRepo),
 	)
 	fundingHandler.RegisterRoutes(manager)
 

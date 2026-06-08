@@ -147,3 +147,52 @@ func pgtypeDateToTimePtr(d pgtype.Date) *time.Time {
 func pgtypeTimestamptzToTime(t pgtype.Timestamptz) time.Time {
 	return t.Time
 }
+
+func (r *Repository) ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.OverviewRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.FundingOverviewList(ctx, sqlc.FundingOverviewListParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		BillingMonth: timeToPgtypeDate(billingMonth),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list funding overview: %w", err)
+	}
+
+	result := make([]domain.OverviewRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapOverviewRow(row))
+	}
+	return result, nil
+}
+
+func mapOverviewRow(row sqlc.FundingOverviewListRow) domain.OverviewRow {
+	var profileID *uuid.UUID
+	if row.FundingProfileID.Valid {
+		id := pgtypeUUIDToUUID(row.FundingProfileID)
+		profileID = &id
+	}
+
+	var allowance *int
+	if row.FundedAllowanceMinutes.Valid {
+		v := int(row.FundedAllowanceMinutes.Int32)
+		allowance = &v
+	}
+
+	var updatedAt *time.Time
+	if row.FundingUpdatedAt.Valid {
+		t := row.FundingUpdatedAt.Time
+		updatedAt = &t
+	}
+
+	return domain.OverviewRow{
+		ChildID:                pgtypeUUIDToUUID(row.ChildID),
+		ChildName:              row.ChildName,
+		IsActive:               row.IsActive,
+		StartDate:              row.StartDate.Time,
+		EndDate:                pgtypeDateToTimePtr(row.EndDate),
+		FundingProfileID:       profileID,
+		FundedAllowanceMinutes: allowance,
+		FundingUpdatedAt:       updatedAt,
+	}
+}

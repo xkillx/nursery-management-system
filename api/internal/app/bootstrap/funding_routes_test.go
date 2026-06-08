@@ -92,6 +92,7 @@ func TestFundingRouteInventory(t *testing.T) {
 	}
 
 	expected := []string{
+		"GET /api/v1/funding/overview",
 		"GET /api/v1/funding/children/:child_id",
 		"PUT /api/v1/funding/children/:child_id",
 	}
@@ -319,5 +320,173 @@ func TestFundingRoleDenialNoAudit(t *testing.T) {
 	}
 	if after != before {
 		t.Fatalf("forbidden requests should not create audit events, before=%d after=%d", before, after)
+	}
+}
+
+func TestFundingOverview_Unauthenticated(t *testing.T) {
+	h := setupFundingHarness(t)
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-06", "", "")
+	requireStatus(t, w, http.StatusUnauthorized)
+}
+
+func TestFundingOverview_RoleGuards(t *testing.T) {
+	h := setupFundingHarness(t)
+	for _, token := range []string{h.practitionerToken, h.parentToken} {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-06", token, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	}
+}
+
+func TestFundingOverview_MissingBillingMonth(t *testing.T) {
+	h := setupFundingHarness(t)
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview", h.managerToken, "")
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+}
+
+func TestFundingOverview_InvalidBillingMonth(t *testing.T) {
+	h := setupFundingHarness(t)
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=bad", h.managerToken, "")
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+}
+
+func TestFundingOverview_ManagerSuccess(t *testing.T) {
+	h := setupFundingHarness(t)
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-06", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp struct {
+		BillingMonth string `json:"billing_month"`
+		Summary      struct {
+			IncludedChildCount int `json:"included_child_count"`
+			FlaggedChildCount  int `json:"flagged_child_count"`
+		} `json:"summary"`
+		Items []struct {
+			ChildID string   `json:"child_id"`
+			Flags   []string `json:"flags"`
+		} `json:"items"`
+	}
+	decodeJSON(t, w, &resp)
+	if resp.BillingMonth != "2026-06" {
+		t.Fatalf("billing_month = %s, want 2026-06", resp.BillingMonth)
+	}
+}
+
+func TestFundingOverview_FlagsMissingProfile(t *testing.T) {
+	h := setupFundingHarness(t)
+
+	// childID has no funding profile for 2026-06
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-06", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp struct {
+		Summary struct {
+			MissingProfileCount int `json:"missing_profile_count"`
+		} `json:"summary"`
+		Items []struct {
+			ChildID string   `json:"child_id"`
+			Flags   []string `json:"flags"`
+		} `json:"items"`
+	}
+	decodeJSON(t, w, &resp)
+	if resp.Summary.MissingProfileCount < 1 {
+		t.Fatalf("expected at least 1 missing profile, got %d", resp.Summary.MissingProfileCount)
+	}
+
+	found := false
+	for _, item := range resp.Items {
+		if item.ChildID == h.childID.String() {
+			for _, f := range item.Flags {
+				if f == "missing_profile" {
+					found = true
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected childID to be flagged as missing_profile")
+	}
+}
+
+func TestFundingOverview_FlagsZeroAllowance(t *testing.T) {
+	h := setupFundingHarness(t)
+
+	// Create zero-allowance profile
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/funding/children/"+h.childID.String(), h.managerToken, `{"billing_month":"2026-06","funded_allowance_minutes":0}`)
+	requireStatus(t, w, http.StatusCreated)
+
+	// Overview should flag zero allowance
+	w = doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-06", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp struct {
+		Summary struct {
+			ExplicitZeroCount int `json:"explicit_zero_count"`
+		} `json:"summary"`
+		Items []struct {
+			ChildID string   `json:"child_id"`
+			Flags   []string `json:"flags"`
+		} `json:"items"`
+	}
+	decodeJSON(t, w, &resp)
+	if resp.Summary.ExplicitZeroCount < 1 {
+		t.Fatalf("expected at least 1 explicit zero, got %d", resp.Summary.ExplicitZeroCount)
+	}
+}
+
+func TestFundingOverview_LeaverIncluded(t *testing.T) {
+	h := setupFundingHarness(t)
+
+	// childWithEndID has end_date 2026-03-31, so 2026-03 overlaps
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-03", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp struct {
+		Summary struct {
+			IncludedChildCount int `json:"included_child_count"`
+		} `json:"summary"`
+	}
+	decodeJSON(t, w, &resp)
+
+	found := false
+	for _, id := range []uuid.UUID{h.childID, h.childWithEndID} {
+		w2 := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-03", h.managerToken, "")
+		requireStatus(t, w2, http.StatusOK)
+		var r2 struct {
+			Items []struct {
+				ChildID string `json:"child_id"`
+			} `json:"items"`
+		}
+		decodeJSON(t, w2, &r2)
+		for _, item := range r2.Items {
+			if item.ChildID == id.String() {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected leaver child to be included for 2026-03")
+	}
+}
+
+func TestFundingOverview_LeaverExcludedOutsideWindow(t *testing.T) {
+	h := setupFundingHarness(t)
+
+	// childWithEndID has end_date 2026-03-31, so 2026-05 is outside
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=2026-05", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp struct {
+		Items []struct {
+			ChildID string `json:"child_id"`
+		} `json:"items"`
+	}
+	decodeJSON(t, w, &resp)
+	for _, item := range resp.Items {
+		if item.ChildID == h.childWithEndID.String() {
+			t.Fatal("leaver child should not be included for 2026-05")
+		}
 	}
 }

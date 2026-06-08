@@ -69,7 +69,12 @@ export class ManagerChildDetailComponent implements OnInit {
   fundingFieldErrors: Record<string, string> = {};
 
   ngOnInit(): void {
-    this.selectedBillingMonth = this.formatCurrentMonth();
+    const queryMonth = this.route.snapshot.queryParamMap.get('billing_month');
+    if (queryMonth && /^\d{4}-\d{2}$/.test(queryMonth)) {
+      this.selectedBillingMonth = queryMonth;
+    } else {
+      this.selectedBillingMonth = this.formatCurrentMonth();
+    }
     this.loadAll();
   }
 

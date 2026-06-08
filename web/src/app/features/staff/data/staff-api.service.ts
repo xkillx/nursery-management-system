@@ -6,7 +6,7 @@ import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
-import { FundingProfileRecord, FundingProfileWritePayload } from '../models/funding.models';
+import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 
 interface StaffListResponse<T> {
@@ -123,6 +123,31 @@ interface FundingProfileApiModel {
   funded_allowance_minutes: number;
   created_at: string;
   updated_at: string;
+}
+
+interface FundingOverviewApiModel {
+  billing_month: string;
+  summary: {
+    included_child_count: number;
+    flagged_child_count: number;
+    missing_profile_count: number;
+    explicit_zero_count: number;
+    under_one_hour_count: number;
+    above_160_hours_count: number;
+  };
+  items: FundingOverviewItemApiModel[];
+}
+
+interface FundingOverviewItemApiModel {
+  child_id: string;
+  child_name: string;
+  is_active: boolean;
+  start_date: string;
+  end_date?: string | null;
+  funding_profile_id?: string | null;
+  funded_allowance_minutes?: number | null;
+  funding_updated_at?: string | null;
+  flags: string[];
 }
 
 interface InviteApiModel {
@@ -332,6 +357,14 @@ export class StaffApiService {
       .pipe(map((profile) => this.toFundingProfileRecord(profile)));
   }
 
+  getFundingOverview(billingMonth: string): Observable<FundingOverviewRecord> {
+    return this.http
+      .get<FundingOverviewApiModel>(apiUrl('/funding/overview'), {
+        params: new HttpParams({ fromObject: { billing_month: billingMonth } }),
+      })
+      .pipe(map((overview) => this.toFundingOverviewRecord(overview)));
+  }
+
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
     return new HttpParams({
       fromObject: {
@@ -477,6 +510,35 @@ export class StaffApiService {
       clearedAt: marker.cleared_at ?? null,
       createdAt: marker.created_at,
       updatedAt: marker.updated_at,
+    };
+  }
+
+  private toFundingOverviewRecord(overview: FundingOverviewApiModel): FundingOverviewRecord {
+    return {
+      billingMonth: overview.billing_month,
+      summary: {
+        includedChildCount: overview.summary.included_child_count,
+        flaggedChildCount: overview.summary.flagged_child_count,
+        missingProfileCount: overview.summary.missing_profile_count,
+        explicitZeroCount: overview.summary.explicit_zero_count,
+        underOneHourCount: overview.summary.under_one_hour_count,
+        above160HoursCount: overview.summary.above_160_hours_count,
+      },
+      items: overview.items.map((item) => this.toFundingOverviewItem(item)),
+    };
+  }
+
+  private toFundingOverviewItem(item: FundingOverviewItemApiModel): FundingOverviewItem {
+    return {
+      childId: item.child_id,
+      childName: item.child_name,
+      isActive: item.is_active,
+      startDate: item.start_date,
+      endDate: item.end_date ?? null,
+      fundingProfileId: item.funding_profile_id ?? null,
+      fundedAllowanceMinutes: item.funded_allowance_minutes ?? null,
+      fundingUpdatedAt: item.funding_updated_at ?? null,
+      flags: item.flags as FundingOverviewFlag[],
     };
   }
 

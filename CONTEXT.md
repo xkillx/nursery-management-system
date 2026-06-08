@@ -56,6 +56,14 @@ A child-month without a recorded funding profile. This is distinct from a fundin
 
 A missing funding profile blocks invoice draft preflight for that child-month; an explicit zero-minute allowance does not.
 
+## Funding Overview (MVP)
+
+A manager-facing triage surface for a selected billing month that highlights child-month funding profiles needing review. It supports funding readiness checks but does not replace invoice preflight or change invoice blocking rules.
+
+## Funding Overview Triage Flag (MVP)
+
+A warning shown in the funding overview for a missing funding profile, an explicit zero-minute allowance, an allowance under one hour, or an allowance above 160 hours. These flags are advisory and do not block saving funding profiles or generating invoices.
+
 ## Funding Profile Enrollment Scope (MVP)
 
 Funding profiles are valid for billing months that overlap the child's enrollment window, including historical months after the child has left.

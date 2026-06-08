@@ -1,0 +1,121 @@
+<div class="space-y-5">
+  <app-page-header
+    title="Funding Overview"
+    description="Review funded-hours allowance setup for the selected billing month."
+    [hasActions]="true"
+  >
+    <div class="flex items-center gap-3" actions>
+      <label for="billing-month" class="text-sm text-gray-600 dark:text-gray-300">Billing month</label>
+      <input
+        id="billing-month"
+        type="month"
+        [value]="selectedBillingMonth"
+        (change)="onMonthChange($any($event.target).value)"
+        class="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+      />
+    </div>
+  </app-page-header>
+
+  @if (errorMessage) {
+    <app-alert variant="error" [message]="errorMessage"></app-alert>
+  }
+
+  @if (isLoading) {
+    <app-loading-state variant="block" label="Loading funding overview..."></app-loading-state>
+  } @else if (overview) {
+    @if (overview.summary.flaggedChildCount === 0) {
+      <app-empty-state
+        title="All clear"
+        [message]="'All ' + overview.summary.includedChildCount + ' children have normal funded-hours allowances for ' + selectedBillingMonth + '.'"
+      ></app-empty-state>
+    } @else {
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Included</p>
+          <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">{{ overview.summary.includedChildCount }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Flagged</p>
+          <p class="mt-1 text-xl font-semibold text-amber-600">{{ overview.summary.flaggedChildCount }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Missing</p>
+          <p class="mt-1 text-xl font-semibold text-red-600">{{ overview.summary.missingProfileCount }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Zero</p>
+          <p class="mt-1 text-xl font-semibold text-amber-600">{{ overview.summary.explicitZeroCount }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Under 1h</p>
+          <p class="mt-1 text-xl font-semibold text-amber-600">{{ overview.summary.underOneHourCount }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Above 160h</p>
+          <p class="mt-1 text-xl font-semibold text-blue-600">{{ overview.summary.above160HoursCount }}</p>
+        </div>
+      </div>
+
+      <app-table-shell>
+        <table class="min-w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+              <th class="py-2 pr-3">Child</th>
+              <th class="py-2 pr-3">Status</th>
+              <th class="py-2 pr-3">Enrollment</th>
+              <th class="py-2 pr-3">Flag</th>
+              <th class="py-2 pr-3">Allowance</th>
+              <th class="py-2 pr-3">Last updated</th>
+              <th class="py-2">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of overview.items; track item.childId) {
+              <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                <td class="py-3 pr-3 font-medium text-gray-800 dark:text-white/90">{{ item.childName }}</td>
+                <td class="py-3 pr-3">
+                  @if (item.isActive) {
+                    <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</span>
+                  } @else {
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">Inactive</span>
+                  }
+                </td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">
+                  {{ item.startDate | date:'mediumDate' }}
+                  @if (item.endDate) { &ndash; {{ item.endDate | date:'mediumDate' }} }
+                </td>
+                <td class="py-3 pr-3">
+                  @for (flag of item.flags; track flag) {
+                    <span
+                      class="mr-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                      [class]="flagColor(flag) === 'danger'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        : flagColor(flag) === 'warning'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'"
+                    >{{ flagLabel(flag) }}</span>
+                  }
+                </td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ formatAllowance(item.fundedAllowanceMinutes) }}</td>
+                <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">
+                  @if (item.fundingUpdatedAt) {
+                    {{ item.fundingUpdatedAt | date:'mediumDate' }}
+                  } @else {
+                    &mdash;
+                  }
+                </td>
+                <td class="py-3">
+                  <a
+                    [routerLink]="reviewLink(item.childId)"
+                    [queryParams]="reviewQueryParams()"
+                    class="inline-flex h-7 items-center rounded-md border border-gray-300 px-2.5 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                  >Review allowance</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-table-shell>
+    }
+  }
+</div>

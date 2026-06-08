@@ -16,4 +16,5 @@ type Repository interface {
 	Create(ctx context.Context, tx Tx, profile FundingProfile) (FundingProfile, error)
 	UpdateAllowance(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time, minutes int) (FundingProfile, error)
 	GetChildEnrollmentForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (ChildEnrollment, bool, error)
+	ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]OverviewRow, error)
 }

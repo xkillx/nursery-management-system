@@ -4,7 +4,7 @@ import "time"
 
 type fundingProfileRequest struct {
 	BillingMonth           string `json:"billing_month" binding:"required"`
-	FundedAllowanceMinutes int    `json:"funded_allowance_minutes" binding:"required"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes" binding:"min=0"`
 }
 
 type fundingProfileResponse struct {
@@ -14,4 +14,31 @@ type fundingProfileResponse struct {
 	FundedAllowanceMinutes int       `json:"funded_allowance_minutes"`
 	CreatedAt              time.Time `json:"created_at"`
 	UpdatedAt              time.Time `json:"updated_at"`
+}
+
+type overviewResponse struct {
+	BillingMonth string                  `json:"billing_month"`
+	Summary      overviewSummaryResponse `json:"summary"`
+	Items        []overviewItemResponse  `json:"items"`
+}
+
+type overviewSummaryResponse struct {
+	IncludedChildCount int `json:"included_child_count"`
+	FlaggedChildCount  int `json:"flagged_child_count"`
+	MissingProfileCount    int `json:"missing_profile_count"`
+	ExplicitZeroCount      int `json:"explicit_zero_count"`
+	UnderOneHourCount      int `json:"under_one_hour_count"`
+	Above160HoursCount     int `json:"above_160_hours_count"`
+}
+
+type overviewItemResponse struct {
+	ChildID                string     `json:"child_id"`
+	ChildName              string     `json:"child_name"`
+	IsActive               bool       `json:"is_active"`
+	StartDate              time.Time  `json:"start_date"`
+	EndDate                *time.Time `json:"end_date,omitempty"`
+	FundingProfileID       string     `json:"funding_profile_id,omitempty"`
+	FundedAllowanceMinutes *int       `json:"funded_allowance_minutes"`
+	FundingUpdatedAt       *time.Time `json:"funding_updated_at"`
+	Flags                  []string   `json:"flags"`
 }
