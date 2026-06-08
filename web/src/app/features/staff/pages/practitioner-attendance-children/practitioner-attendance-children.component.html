@@ -4,7 +4,25 @@
     title="Today's attendance"
     [hasActions]="true"
   >
-    <app-button variant="outline" size="sm" [disabled]="isLoading" (btnClick)="loadChildren()" actions>Refresh</app-button>
+    <div class="flex flex-wrap items-center gap-2" actions>
+      <label class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+        <input
+          type="checkbox"
+          data-testid="auto-refresh-toggle"
+          [checked]="autoRefreshEnabled"
+          (change)="toggleAutoRefresh()"
+          class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
+        />
+        Auto refresh
+      </label>
+      @if (isBackgroundRefreshing) {
+        <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="refreshing-indicator">Refreshing...</span>
+      }
+      @if (lastUpdatedLabel) {
+        <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="last-updated">Updated {{ lastUpdatedLabel }}</span>
+      }
+      <app-button variant="outline" size="sm" [disabled]="isLoading" (btnClick)="loadChildren()">Refresh</app-button>
+    </div>
   </app-page-header>
 
   <!-- Controls -->

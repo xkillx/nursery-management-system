@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject, OnDestroy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval, Subject, switchMap, takeUntil, tap } from 'rxjs';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { StaffApiService } from '../../data/staff-api.service';
@@ -12,6 +14,7 @@ import { EmptyStateComponent } from '../../../../shared/components/common/empty-
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
 type StatusFilter = 'all' | 'not_checked_in' | 'checked_in';
+type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
 
 @Component({
   selector: 'app-practitioner-attendance-children',
@@ -26,13 +29,21 @@ type StatusFilter = 'all' | 'not_checked_in' | 'checked_in';
   ],
   templateUrl: './practitioner-attendance-children.component.html',
 })
-export class PractitionerAttendanceChildrenComponent {
+export class PractitionerAttendanceChildrenComponent implements OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly pollIntervalMs = 30000;
+  private pollSubscription: import('rxjs').Subscription | null = null;
+  private listRequestInFlight = false;
 
   children: AttendanceChildRecord[] = [];
   isLoading = false;
+  isBackgroundRefreshing = false;
   errorMessage: string | null = null;
+  autoRefreshEnabled = true;
+  lastUpdatedAt: Date | null = null;
 
   searchTerm = '';
   statusFilter: StatusFilter = 'all';
@@ -59,21 +70,62 @@ export class PractitionerAttendanceChildrenComponent {
     });
   }
 
-  ngOnInit(): void {
-    this.loadChildren();
+  get lastUpdatedLabel(): string {
+    if (!this.lastUpdatedAt) return '';
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Europe/London',
+    }).format(this.lastUpdatedAt);
   }
 
-  loadChildren(): void {
-    this.isLoading = true;
+  ngOnInit(): void {
+    this.loadChildren('initial');
+    this.startPolling();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
+  toggleAutoRefresh(): void {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) {
+      this.loadChildren('manual');
+      this.startPolling();
+    } else {
+      this.stopPolling();
+    }
+  }
+
+  loadChildren(source: LoadSource = 'manual'): void {
+    if (this.listRequestInFlight && source === 'poll') return;
+
+    const isBackground = source === 'poll';
+    const showForegroundLoading = !isBackground && this.children.length === 0;
+
+    if (isBackground) {
+      this.isBackgroundRefreshing = true;
+    } else {
+      this.isLoading = true;
+    }
     this.errorMessage = null;
+    this.listRequestInFlight = true;
 
     this.staffApi.listAttendanceChildren().subscribe({
       next: (children) => {
         this.children = children;
+        this.pruneStaleRowErrors(children);
+        this.lastUpdatedAt = new Date();
         this.isLoading = false;
+        this.isBackgroundRefreshing = false;
+        this.listRequestInFlight = false;
       },
       error: (error) => {
         this.isLoading = false;
+        this.isBackgroundRefreshing = false;
+        this.listRequestInFlight = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
       },
@@ -110,13 +162,13 @@ export class PractitionerAttendanceChildrenComponent {
       !this.isAbsent(child) &&
       child.attendanceState === 'not_checked_in' &&
       child.enrollmentComplete &&
-      !this.isLoading &&
+      !this.isForegroundLoading() &&
       !this.isPending(child.id)
     );
   }
 
   canCheckOut(child: AttendanceChildRecord): boolean {
-    return this.isCheckedIn(child) && !this.isLoading && !this.isPending(child.id);
+    return this.isCheckedIn(child) && !this.isForegroundLoading() && !this.isPending(child.id);
   }
 
   checkIn(child: AttendanceChildRecord): void {
@@ -139,6 +191,37 @@ export class PractitionerAttendanceChildrenComponent {
     }).format(new Date(iso));
   }
 
+  private isForegroundLoading(): boolean {
+    return this.isLoading && !this.isBackgroundRefreshing;
+  }
+
+  private startPolling(): void {
+    this.stopPolling();
+    this.pollSubscription = interval(this.pollIntervalMs)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.autoRefreshEnabled) {
+          this.loadChildren('poll');
+        }
+      });
+  }
+
+  private stopPolling(): void {
+    if (this.pollSubscription) {
+      this.pollSubscription.unsubscribe();
+      this.pollSubscription = null;
+    }
+  }
+
+  private pruneStaleRowErrors(children: AttendanceChildRecord[]): void {
+    const currentIds = new Set(children.map((c) => c.id));
+    for (const id of Object.keys(this.rowErrors)) {
+      if (!currentIds.has(id)) {
+        delete this.rowErrors[id];
+      }
+    }
+  }
+
   private executeMutation(childId: string, mutation: () => unknown): void {
     delete this.rowErrors[childId];
     this.pendingChildIds.add(childId);
@@ -146,13 +229,13 @@ export class PractitionerAttendanceChildrenComponent {
     const { next, error, complete } = {
       next: () => {
         this.pendingChildIds.delete(childId);
-        this.loadChildren();
+        this.loadChildren('mutation');
       },
       error: (err: unknown) => {
         const mapped = this.errorMapper.mapAndHandle(err);
         this.rowErrors[childId] = this.messageWithRequestId(mapped.message, mapped.requestId);
         this.pendingChildIds.delete(childId);
-        this.loadChildren();
+        this.loadChildren('mutation');
       },
       complete: () => {},
     };

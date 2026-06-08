@@ -1,5 +1,5 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
 
 import { MappedApiError } from '../../../../core/models/api-error.models';
@@ -472,5 +472,206 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       expect(compiled.textContent).not.toContain('marker-1');
       expect(compiled.textContent).not.toContain('2026-06-08T08:00:00Z');
     });
+  });
+
+  describe('FE-14 auto-refresh polling', () => {
+    it('defaults auto-refresh to enabled and renders toggle', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      expect(component.autoRefreshEnabled).toBeTrue();
+
+      const toggle = fixture.nativeElement.querySelector('[data-testid="auto-refresh-toggle"]') as HTMLInputElement;
+      expect(toggle).toBeTruthy();
+      expect(toggle.checked).toBeTrue();
+      fixture.destroy();
+    }));
+
+    it('polls every 30 seconds when auto-refresh is on', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      const initialCalls = staffApiSpy.listAttendanceChildren.calls.count();
+
+      tick(30000);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(initialCalls + 1);
+
+      tick(30000);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(initialCalls + 2);
+      fixture.destroy();
+    }));
+
+    it('stops polling when auto-refresh is toggled off', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      component.toggleAutoRefresh();
+      fixture.detectChanges();
+
+      const callsAfterToggle = staffApiSpy.listAttendanceChildren.calls.count();
+
+      tick(60000);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(callsAfterToggle);
+      fixture.destroy();
+    }));
+
+    it('resumes polling when auto-refresh is toggled back on', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      component.toggleAutoRefresh();
+      fixture.detectChanges();
+
+      component.toggleAutoRefresh();
+      fixture.detectChanges();
+
+      const callsAfterResume = staffApiSpy.listAttendanceChildren.calls.count();
+
+      tick(30000);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(callsAfterResume + 1);
+      fixture.destroy();
+    }));
+
+    it('manual refresh works when auto-refresh is on', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      const initialCalls = staffApiSpy.listAttendanceChildren.calls.count();
+
+      component.loadChildren('manual');
+      fixture.detectChanges();
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(initialCalls + 1);
+      fixture.destroy();
+    }));
+
+    it('shows last-updated timestamp after successful load', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="last-updated"]')?.textContent).toContain('Updated');
+      expect(component.lastUpdatedAt).not.toBeNull();
+      fixture.destroy();
+    }));
+
+    it('background refresh does not show full-page loading over existing children', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      let resolvePoll!: () => void;
+      staffApiSpy.listAttendanceChildren.and.returnValue(
+        new Observable((subscriber) => {
+          resolvePoll = () => {
+            subscriber.next(mockChildren);
+            subscriber.complete();
+          };
+        }),
+      );
+
+      tick(30000);
+
+      expect(component.isBackgroundRefreshing).toBeTrue();
+      expect(component.isLoading).toBeFalse();
+
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('Ada Lovelace');
+
+      resolvePoll();
+      fixture.destroy();
+    }));
+
+    it('cleans up polling on component destroy', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      fixture.destroy();
+
+      const callsAfterDestroy = staffApiSpy.listAttendanceChildren.calls.count();
+
+      tick(60000);
+
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(callsAfterDestroy);
+    }));
+
+    it('shows Refreshing indicator during background refresh', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      let resolvePoll!: () => void;
+      staffApiSpy.listAttendanceChildren.and.returnValue(
+        new Observable((subscriber) => {
+          resolvePoll = () => {
+            subscriber.next(mockChildren);
+            subscriber.complete();
+          };
+        }),
+      );
+
+      tick(30000);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[data-testid="refreshing-indicator"]')?.textContent).toContain('Refreshing');
+
+      resolvePoll();
+      fixture.destroy();
+    }));
+
+    it('check-in action remains enabled during background refresh', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      let resolvePoll!: () => void;
+      staffApiSpy.listAttendanceChildren.and.returnValue(
+        new Observable((subscriber) => {
+          resolvePoll = () => {
+            subscriber.next(mockChildren);
+            subscriber.complete();
+          };
+        }),
+      );
+
+      tick(30000);
+
+      const eligibleChild = mockChildren[0];
+      expect(component.canCheckIn(eligibleChild)).toBeTrue();
+
+      resolvePoll();
+      fixture.destroy();
+    }));
+
+    it('skips poll when a list request is already in flight', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      let resolvePoll!: () => void;
+      staffApiSpy.listAttendanceChildren.and.returnValue(
+        new Observable((subscriber) => {
+          resolvePoll = () => {
+            subscriber.next(mockChildren);
+            subscriber.complete();
+          };
+        }),
+      );
+
+      tick(30000);
+      const callsDuringInFlight = staffApiSpy.listAttendanceChildren.calls.count();
+
+      tick(30000);
+      expect(staffApiSpy.listAttendanceChildren.calls.count()).toBe(callsDuringInFlight);
+
+      resolvePoll();
+      fixture.destroy();
+    }));
   });
 });
