@@ -3,10 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
+import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
 import { formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
@@ -55,10 +57,19 @@ export class ManagerChildDetailComponent implements OnInit {
   fieldErrors: Record<string, string> = {};
 
   selectedGuardianId = '';
-  currentMonthLabel = '';
+
+  selectedBillingMonth = '';
+  fundingProfile: FundingProfileRecord | null = null;
+  isLoadingFunding = false;
+  isSavingFunding = false;
+  fundedHoursInput = '';
+  fundedMinutesInput = '';
+  fundingStatusMessage: string | null = null;
+  fundingErrorMessage: string | null = null;
+  fundingFieldErrors: Record<string, string> = {};
 
   ngOnInit(): void {
-    this.currentMonthLabel = this.formatCurrentMonth();
+    this.selectedBillingMonth = this.formatCurrentMonth();
     this.loadAll();
   }
 
@@ -120,9 +131,110 @@ export class ManagerChildDetailComponent implements OnInit {
     });
   }
 
+  onBillingMonthChange(): void {
+    this.clearFundingStatus();
+    this.loadFundingProfile();
+  }
+
+  saveFundingAllowance(): void {
+    this.clearFundingStatus();
+    const validation = this.validateFundingInputs();
+    if (validation) {
+      this.fundingErrorMessage = validation;
+      return;
+    }
+
+    const totalMinutes = this.totalFundingMinutesFromInputs();
+    this.isSavingFunding = true;
+
+    this.staffApi.upsertFundingProfile(this.childId, {
+      billing_month: this.selectedBillingMonth,
+      funded_allowance_minutes: totalMinutes,
+    }).subscribe({
+      next: (profile) => {
+        this.fundingProfile = profile;
+        this.isSavingFunding = false;
+        this.populateInputsFromMinutes(profile.fundedAllowanceMinutes);
+        this.fundingStatusMessage = 'Saved';
+      },
+      error: (error) => {
+        this.isSavingFunding = false;
+        this.handleFundingError(error);
+      },
+    });
+  }
+
   get availableGuardians(): GuardianRecord[] {
     const linkedIds = new Set(this.linkedGuardians.map(l => l.guardianId));
     return this.allGuardians.filter(g => !linkedIds.has(g.id));
+  }
+
+  get fundingNotSet(): boolean {
+    return !this.isLoadingFunding && this.fundingProfile === null && !this.fundingErrorMessage;
+  }
+
+  private clearFundingStatus(): void {
+    this.fundingStatusMessage = null;
+    this.fundingErrorMessage = null;
+    this.fundingFieldErrors = {};
+  }
+
+  private validateFundingInputs(): string | null {
+    const hours = this.fundedHoursInput.trim();
+    const minutes = this.fundedMinutesInput.trim();
+
+    if (hours === '' && minutes === '') {
+      return 'Enter an allowance or enter 0 to save no funded hours.';
+    }
+
+    if (hours !== '' && (!Number.isInteger(Number(hours)) || Number(hours) < 0)) {
+      return 'Hours must be a non-negative whole number.';
+    }
+
+    if (minutes !== '' && (!Number.isInteger(Number(minutes)) || Number(minutes) < 0 || Number(minutes) > 59)) {
+      return 'Minutes must be a whole number between 0 and 59.';
+    }
+
+    if (!/^\d{4}-\d{2}$/.test(this.selectedBillingMonth)) {
+      return 'Select a valid billing month.';
+    }
+
+    const totalMinutes = this.totalFundingMinutesFromInputs();
+    if (totalMinutes > 44640) {
+      return 'Total allowance cannot exceed 744 hours (44640 minutes).';
+    }
+
+    return null;
+  }
+
+  private totalFundingMinutesFromInputs(): number {
+    const hours = Number(this.fundedHoursInput.trim() || '0');
+    const minutes = Number(this.fundedMinutesInput.trim() || '0');
+    return hours * 60 + minutes;
+  }
+
+  private handleFundingError(error: unknown): void {
+    const mapped = this.errorMapper.mapAndHandle(error);
+    if (mapped.code === 'funding_month_outside_enrollment_window') {
+      this.fundingErrorMessage = 'This billing month does not overlap the child\'s enrollment window. Choose a month within the child\'s start and end dates.';
+      return;
+    }
+    if (mapped.fieldErrors['funded_allowance_minutes']) {
+      this.fundingFieldErrors = { funded_allowance_minutes: mapped.fieldErrors['funded_allowance_minutes'] };
+      this.fundingErrorMessage = mapped.fieldErrors['funded_allowance_minutes'];
+      return;
+    }
+    if (mapped.fieldErrors['billing_month']) {
+      this.fundingFieldErrors = { billing_month: mapped.fieldErrors['billing_month'] };
+      this.fundingErrorMessage = mapped.fieldErrors['billing_month'];
+      return;
+    }
+    this.fundingErrorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+  }
+
+  private populateInputsFromMinutes(totalMinutes: number): void {
+    this.fundedHoursInput = String(Math.floor(totalMinutes / 60));
+    this.fundedMinutesInput = String(totalMinutes % 60);
   }
 
   private loadAll(): void {
@@ -132,7 +244,6 @@ export class ManagerChildDetailComponent implements OnInit {
   }
 
   private loadChild(): void {
-
     this.isLoadingChild = true;
     this.errorMessage = null;
 
@@ -142,11 +253,36 @@ export class ManagerChildDetailComponent implements OnInit {
         this.isLoadingChild = false;
         this.loadLinkedGuardians();
         this.loadAllGuardians();
+        this.loadFundingProfile();
       },
       error: (error) => {
         this.isLoadingChild = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+      },
+    });
+  }
+
+  private loadFundingProfile(): void {
+    this.isLoadingFunding = true;
+    this.fundingProfile = null;
+    this.clearFundingStatus();
+
+    this.staffApi.getFundingProfile(this.childId, this.selectedBillingMonth).subscribe({
+      next: (profile) => {
+        this.fundingProfile = profile;
+        this.isLoadingFunding = false;
+        this.populateInputsFromMinutes(profile.fundedAllowanceMinutes);
+      },
+      error: (error) => {
+        this.isLoadingFunding = false;
+        if (error instanceof HttpErrorResponse && error.status === 404) {
+          this.fundingProfile = null;
+          this.fundedHoursInput = '';
+          this.fundedMinutesInput = '';
+          return;
+        }
+        this.handleFundingError(error);
       },
     });
   }

@@ -129,19 +129,80 @@
       }
     </div>
 
-    <!-- Monthly Funded-Hours Placeholder -->
+    <!-- Monthly Funded-Hours Editor -->
     <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
       <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Monthly funded-hours allowance</h3>
-      <div class="flex items-center gap-3">
-        <label class="text-sm text-gray-600 dark:text-gray-300">{{ currentMonthLabel }}</label>
-        <input
-          type="text"
-          value="Coming in FE-18"
-          disabled
-          class="h-10 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500"
-        />
+
+      <div class="space-y-3">
+        <div>
+          <label for="billingMonth" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Billing month</label>
+          <input
+            id="billingMonth"
+            type="month"
+            [(ngModel)]="selectedBillingMonth"
+            (ngModelChange)="onBillingMonthChange()"
+            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+          />
+        </div>
+
+        @if (isLoadingFunding) {
+          <app-loading-state variant="inline" label="Loading funding profile..."></app-loading-state>
+        } @else {
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="flex-1">
+              <label for="fundedHours" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Hours</label>
+              <input
+                id="fundedHours"
+                type="number"
+                min="0"
+                [(ngModel)]="fundedHoursInput"
+                class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+                placeholder="0"
+              />
+            </div>
+            <div class="flex-1">
+              <label for="fundedMinutes" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Minutes (0–59)</label>
+              <input
+                id="fundedMinutes"
+                type="number"
+                min="0"
+                max="59"
+                [(ngModel)]="fundedMinutesInput"
+                class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+                placeholder="0"
+              />
+            </div>
+            <app-button
+              variant="primary"
+              size="sm"
+              [disabled]="isLoadingFunding || isSavingFunding"
+              (btnClick)="saveFundingAllowance()"
+            >{{ isSavingFunding ? 'Saving...' : 'Save allowance' }}</app-button>
+          </div>
+
+          @if (fundingNotSet) {
+            <p class="text-sm text-gray-500 dark:text-gray-400">Not set for this month</p>
+          }
+
+          @if (fundingProfile) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">Last updated {{ fundingProfile.updatedAt | date:'medium' }}</p>
+          }
+
+          @if (fundingStatusMessage && !isSavingFunding) {
+            <p class="text-sm text-green-600 dark:text-green-400">{{ fundingStatusMessage }}</p>
+          }
+
+          @if (fundingErrorMessage) {
+            <p class="text-sm text-red-600 dark:text-red-400">{{ fundingErrorMessage }}</p>
+          }
+
+          @if (fundingFieldErrors['funded_allowance_minutes']) {
+            <p class="text-sm text-red-600 dark:text-red-400">{{ fundingFieldErrors['funded_allowance_minutes'] }}</p>
+          }
+        }
       </div>
-      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+
+      <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
         Funding allowance affects invoice preflight for a billing month. It does not affect enrollment completeness.
       </p>
     </div>

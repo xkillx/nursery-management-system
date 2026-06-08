@@ -44,6 +44,10 @@ A simple funded-hours deduction model used to reduce monthly billed amount per c
 
 A child's funded-hours allowance for a single billing month.
 
+## Funded-Hours Allowance (MVP)
+
+The amount of core childcare time covered by funding for one child in one billing month. Managers discuss and enter this as hours and minutes, while a missing allowance remains different from an explicit zero allowance.
+
 ## Missing Funding Profile (MVP)
 
 A child-month without a recorded funding profile. This is distinct from a funding profile with a zero-minute allowance.

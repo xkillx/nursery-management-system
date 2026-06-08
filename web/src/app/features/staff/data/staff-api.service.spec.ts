@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord, AbsenceMarkerRecord } from '../models/attendance-child.models';
 import { ChildRecord } from '../models/children.models';
+import { FundingProfileRecord } from '../models/funding.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
 
@@ -516,5 +517,85 @@ describe('StaffApiService — Guardians', () => {
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/guardians');
     req.flush({ items: [minimalGuardian] });
+  });
+});
+
+describe('StaffApiService — Funding', () => {
+  let service: StaffApiService;
+  let httpMock: HttpTestingController;
+
+  const fundingProfileApiModel = {
+    id: 'fp-1',
+    child_id: 'child-1',
+    billing_month: '2026-06',
+    funded_allowance_minutes: 570,
+    created_at: '2026-06-01T10:00:00Z',
+    updated_at: '2026-06-08T12:00:00Z',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(StaffApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('getFundingProfile sends billing_month query param and maps response', () => {
+    service.getFundingProfile('child-1', '2026-06').subscribe((profile: FundingProfileRecord) => {
+      expect(profile).toEqual({
+        id: 'fp-1',
+        childId: 'child-1',
+        billingMonth: '2026-06',
+        fundedAllowanceMinutes: 570,
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-08T12:00:00Z',
+      });
+    });
+
+    const req = httpMock.expectOne((r) => r.url === '/api/v1/funding/children/child-1');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('billing_month')).toBe('2026-06');
+    req.flush(fundingProfileApiModel);
+  });
+
+  it('upsertFundingProfile PUTs billing_month and funded_allowance_minutes', () => {
+    service
+      .upsertFundingProfile('child-1', { billing_month: '2026-06', funded_allowance_minutes: 570 })
+      .subscribe((profile: FundingProfileRecord) => {
+        expect(profile.fundedAllowanceMinutes).toBe(570);
+        expect(profile.billingMonth).toBe('2026-06');
+      });
+
+    const req = httpMock.expectOne('/api/v1/funding/children/child-1');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ billing_month: '2026-06', funded_allowance_minutes: 570 });
+    req.flush(fundingProfileApiModel);
+  });
+
+  it('upsertFundingProfile accepts 201 created response', () => {
+    const createdModel = {
+      ...fundingProfileApiModel,
+      id: 'fp-new',
+      funded_allowance_minutes: 0,
+      created_at: '2026-06-08T14:00:00Z',
+      updated_at: '2026-06-08T14:00:00Z',
+    };
+
+    service
+      .upsertFundingProfile('child-1', { billing_month: '2026-06', funded_allowance_minutes: 0 })
+      .subscribe((profile: FundingProfileRecord) => {
+        expect(profile.id).toBe('fp-new');
+        expect(profile.fundedAllowanceMinutes).toBe(0);
+      });
+
+    const req = httpMock.expectOne('/api/v1/funding/children/child-1');
+    expect(req.request.method).toBe('PUT');
+    req.flush(createdModel, { status: 201, statusText: 'Created' });
   });
 });

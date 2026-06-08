@@ -6,6 +6,7 @@ import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
+import { FundingProfileRecord, FundingProfileWritePayload } from '../models/funding.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 
 interface StaffListResponse<T> {
@@ -113,6 +114,15 @@ interface CorrectionHistoryEventApiModel {
   corrected_check_in_at?: string;
   corrected_check_out_at?: string;
   created_by_correction: boolean;
+}
+
+interface FundingProfileApiModel {
+  id: string;
+  child_id: string;
+  billing_month: string;
+  funded_allowance_minutes: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface InviteApiModel {
@@ -308,6 +318,20 @@ export class StaffApiService {
       .pipe(map((invite) => this.toInviteRecord(invite)));
   }
 
+  getFundingProfile(childId: string, billingMonth: string): Observable<FundingProfileRecord> {
+    return this.http
+      .get<FundingProfileApiModel>(apiUrl(`/funding/children/${childId}`), {
+        params: new HttpParams({ fromObject: { billing_month: billingMonth } }),
+      })
+      .pipe(map((profile) => this.toFundingProfileRecord(profile)));
+  }
+
+  upsertFundingProfile(childId: string, payload: FundingProfileWritePayload): Observable<FundingProfileRecord> {
+    return this.http
+      .put<FundingProfileApiModel>(apiUrl(`/funding/children/${childId}`), payload)
+      .pipe(map((profile) => this.toFundingProfileRecord(profile)));
+  }
+
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
     return new HttpParams({
       fromObject: {
@@ -453,6 +477,17 @@ export class StaffApiService {
       clearedAt: marker.cleared_at ?? null,
       createdAt: marker.created_at,
       updatedAt: marker.updated_at,
+    };
+  }
+
+  private toFundingProfileRecord(profile: FundingProfileApiModel): FundingProfileRecord {
+    return {
+      id: profile.id,
+      childId: profile.child_id,
+      billingMonth: profile.billing_month,
+      fundedAllowanceMinutes: profile.funded_allowance_minutes,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
     };
   }
 }

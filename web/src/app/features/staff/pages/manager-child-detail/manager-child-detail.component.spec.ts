@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
@@ -75,9 +76,26 @@ describe('ManagerChildDetailComponent', () => {
     },
   ];
 
+  const mockFundingProfile = {
+    id: 'fp-1',
+    childId: 'child-1',
+    billingMonth: '2026-06',
+    fundedAllowanceMinutes: 570,
+    createdAt: '2026-06-01T10:00:00Z',
+    updatedAt: '2026-06-08T12:00:00Z',
+  };
+
+  function fundingNotFound404(): HttpErrorResponse {
+    return new HttpErrorResponse({
+      status: 404,
+      error: { code: 'funding_profile_not_found', message: 'not found' },
+    });
+  }
+
   beforeEach(async () => {
     staffApiMock = jasmine.createSpyObj('StaffApiService', [
-      'getChild', 'listChildGuardianLinks', 'listGuardians', 'updateChild', 'createGuardianChildLink',
+      'getChild', 'listChildGuardianLinks', 'listGuardians', 'updateChild',
+      'createGuardianChildLink', 'getFundingProfile', 'upsertFundingProfile',
     ]);
 
     staffApiMock.getChild.and.returnValue(of(mockChild));
@@ -85,6 +103,8 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.listGuardians.and.returnValue(of(mockGuardians));
     staffApiMock.updateChild.and.returnValue(of(mockChild));
     staffApiMock.createGuardianChildLink.and.returnValue(of({} as any));
+    staffApiMock.getFundingProfile.and.returnValue(of(mockFundingProfile));
+    staffApiMock.upsertFundingProfile.and.returnValue(of(mockFundingProfile));
 
     await TestBed.configureTestingModule({
       imports: [ManagerChildDetailComponent],
@@ -178,7 +198,260 @@ describe('ManagerChildDetailComponent', () => {
     expect(component.errorMessage).toBeTruthy();
   });
 
-  it('funded-hours section is read-only placeholder', () => {
-    expect(component.currentMonthLabel).toMatch(/^\d{4}-\d{2}$/);
+  // --- Funding editor tests ---
+
+  it('loads funding profile for current month on init', () => {
+    expect(staffApiMock.getFundingProfile).toHaveBeenCalledWith('child-1', component.selectedBillingMonth);
+  });
+
+  it('populates hours and minutes from funding profile', () => {
+    expect(component.fundedHoursInput).toBe('9');
+    expect(component.fundedMinutesInput).toBe('30');
+  });
+
+  it('shows funding profile data after load', () => {
+    expect(component.fundingProfile).toBeTruthy();
+    expect(component.fundingProfile?.fundedAllowanceMinutes).toBe(570);
+  });
+
+  it('selectedBillingMonth matches YYYY-MM format', () => {
+    expect(component.selectedBillingMonth).toMatch(/^\d{4}-\d{2}$/);
+  });
+
+  it('handles missing funding profile (404) as not-set state', () => {
+    staffApiMock.getFundingProfile.and.returnValue(throwError(() => fundingNotFound404()));
+    component.childId = 'child-1';
+    (component as any).loadFundingProfile();
+
+    expect(component.fundingProfile).toBeNull();
+    expect(component.fundedHoursInput).toBe('');
+    expect(component.fundedMinutesInput).toBe('');
+    expect(component.fundingNotSet).toBeTrue();
+  });
+
+  it('fundingNotSet is true when profile is null and not loading', () => {
+    component.isLoadingFunding = false;
+    component.fundingProfile = null;
+    component.fundingErrorMessage = null;
+    expect(component.fundingNotSet).toBeTrue();
+  });
+
+  it('fundingNotSet is false when profile exists', () => {
+    component.fundingProfile = mockFundingProfile;
+    expect(component.fundingNotSet).toBeFalse();
+  });
+
+  it('reloads funding profile on billing month change', () => {
+    const previousCalls = staffApiMock.getFundingProfile.calls.count();
+    component.selectedBillingMonth = '2026-05';
+    component.onBillingMonthChange();
+
+    expect(staffApiMock.getFundingProfile.calls.count()).toBe(previousCalls + 1);
+    expect(staffApiMock.getFundingProfile).toHaveBeenCalledWith('child-1', '2026-05');
+  });
+
+  it('clears funding status on billing month change', () => {
+    component.fundingStatusMessage = 'Saved';
+    component.fundingErrorMessage = 'Error';
+    component.onBillingMonthChange();
+
+    expect(component.fundingStatusMessage).toBeNull();
+    expect(component.fundingErrorMessage).toBeNull();
+  });
+
+  // --- Save and validation tests ---
+
+  it('converts 9 hours 30 minutes to 570 total minutes on save', () => {
+    component.fundedHoursInput = '9';
+    component.fundedMinutesInput = '30';
+    component.selectedBillingMonth = '2026-06';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).toHaveBeenCalledWith('child-1', {
+      billing_month: '2026-06',
+      funded_allowance_minutes: 570,
+    });
+  });
+
+  it('saves explicit zero allowance', () => {
+    component.fundedHoursInput = '0';
+    component.fundedMinutesInput = '0';
+    component.selectedBillingMonth = '2026-06';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).toHaveBeenCalledWith('child-1', {
+      billing_month: '2026-06',
+      funded_allowance_minutes: 0,
+    });
+  });
+
+  it('treats blank hours as zero when minutes provided', () => {
+    component.fundedHoursInput = '';
+    component.fundedMinutesInput = '30';
+    component.selectedBillingMonth = '2026-06';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).toHaveBeenCalledWith('child-1', {
+      billing_month: '2026-06',
+      funded_allowance_minutes: 30,
+    });
+  });
+
+  it('treats blank minutes as zero when hours provided', () => {
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '';
+    component.selectedBillingMonth = '2026-06';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).toHaveBeenCalledWith('child-1', {
+      billing_month: '2026-06',
+      funded_allowance_minutes: 300,
+    });
+  });
+
+  it('rejects blank hours and minutes without calling API', () => {
+    component.fundedHoursInput = '';
+    component.fundedMinutesInput = '';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).not.toHaveBeenCalled();
+    expect(component.fundingErrorMessage).toContain('Enter an allowance');
+  });
+
+  it('rejects non-integer hours', () => {
+    component.fundedHoursInput = '1.5';
+    component.fundedMinutesInput = '0';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).not.toHaveBeenCalled();
+    expect(component.fundingErrorMessage).toBeTruthy();
+  });
+
+  it('rejects negative hours', () => {
+    component.fundedHoursInput = '-1';
+    component.fundedMinutesInput = '0';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).not.toHaveBeenCalled();
+    expect(component.fundingErrorMessage).toContain('non-negative');
+  });
+
+  it('rejects minutes above 59', () => {
+    component.fundedHoursInput = '0';
+    component.fundedMinutesInput = '60';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).not.toHaveBeenCalled();
+    expect(component.fundingErrorMessage).toContain('0 and 59');
+  });
+
+  it('rejects total exceeding 44640 minutes', () => {
+    component.fundedHoursInput = '800';
+    component.fundedMinutesInput = '0';
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).not.toHaveBeenCalled();
+    expect(component.fundingErrorMessage).toContain('44640');
+  });
+
+  it('sets isSavingFunding during save and clears on success', () => {
+    const savedProfile = { ...mockFundingProfile, fundedAllowanceMinutes: 300 };
+    staffApiMock.upsertFundingProfile.and.returnValue(of(savedProfile));
+
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '0';
+    component.isSavingFunding = false;
+
+    component.saveFundingAllowance();
+
+    expect(staffApiMock.upsertFundingProfile).toHaveBeenCalled();
+    expect(component.isSavingFunding).toBeFalse();
+    expect(component.fundingProfile?.fundedAllowanceMinutes).toBe(300);
+  });
+
+  it('updates profile and status after successful save', () => {
+    const savedProfile = { ...mockFundingProfile, fundedAllowanceMinutes: 300, updatedAt: '2026-06-08T15:00:00Z' };
+    staffApiMock.upsertFundingProfile.and.returnValue(of(savedProfile));
+
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '0';
+    component.saveFundingAllowance();
+
+    expect(component.fundingProfile?.fundedAllowanceMinutes).toBe(300);
+    expect(component.fundingStatusMessage).toBe('Saved');
+    expect(component.isSavingFunding).toBeFalse();
+  });
+
+  it('preserves entered values on validation error', () => {
+    component.fundedHoursInput = 'abc';
+    component.fundedMinutesInput = '0';
+
+    component.saveFundingAllowance();
+
+    expect(component.fundedHoursInput).toBe('abc');
+    expect(component.fundedMinutesInput).toBe('0');
+  });
+
+  it('maps enrollment window conflict to actionable message', () => {
+    staffApiMock.upsertFundingProfile.and.returnValue(throwError(() =>
+      new HttpErrorResponse({
+        status: 409,
+        error: { code: 'funding_month_outside_enrollment_window', message: 'outside window' },
+      })
+    ));
+
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '0';
+    component.saveFundingAllowance();
+
+    expect(component.fundingErrorMessage).toContain('does not overlap');
+  });
+
+  it('maps validation error with field errors', () => {
+    staffApiMock.upsertFundingProfile.and.returnValue(throwError(() =>
+      new HttpErrorResponse({
+        status: 422,
+        error: { code: 'validation_error', message: 'too high', details: { field: 'funded_allowance_minutes' } },
+      })
+    ));
+
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '0';
+    component.saveFundingAllowance();
+
+    expect(component.fundingErrorMessage).toBeTruthy();
+  });
+
+  it('maps unknown errors with request id', () => {
+    staffApiMock.upsertFundingProfile.and.returnValue(throwError(() =>
+      new HttpErrorResponse({
+        status: 500,
+        error: { code: 'internal_error', message: 'Something went wrong.', request_id: 'req-123' },
+      })
+    ));
+
+    component.fundedHoursInput = '5';
+    component.fundedMinutesInput = '0';
+    component.saveFundingAllowance();
+
+    expect(component.fundingErrorMessage).toContain('req-123');
+  });
+
+  it('disables save while loading or saving funding', () => {
+    component.isLoadingFunding = true;
+    expect(component.isLoadingFunding || component.isSavingFunding).toBeTrue();
+
+    component.isLoadingFunding = false;
+    component.isSavingFunding = true;
+    expect(component.isLoadingFunding || component.isSavingFunding).toBeTrue();
   });
 });
