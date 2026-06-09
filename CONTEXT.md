@@ -428,6 +428,10 @@ A manager-visible indication that a parent can currently start a fresh payment a
 
 Invoice payment state changes only after a payment provider-confirmed outcome. Browser return or cancel navigation after payment initiation is not itself a payment outcome.
 
+## Payment Canceled Return (MVP)
+
+A parent-facing message shown when a parent returns from hosted checkout without completing payment. It is a temporary return outcome, not a durable invoice payment state; the invoice remains payable unless a payment provider-confirmed outcome says otherwise.
+
 ## Payment Reconciliation Record (MVP)
 
 A manager-facing record of a handled payment outcome for one invoice payment attempt. It explains whether the attempt paid, failed, expired, or was ignored without relying on raw provider webhook payloads as the operational timeline.

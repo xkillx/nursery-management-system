@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, Subscription, timer } from 'rxjs';
+import { switchMap, takeUntil, takeWhile } from 'rxjs/operators';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
@@ -9,7 +11,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ParentInvoicesApiService } from '../../data/parent-invoices-api.service';
-import { ParentInvoiceDetail } from '../../models/parent-invoices.models';
+import { ParentInvoiceDetail, ParentInvoiceStatus } from '../../models/parent-invoices.models';
 import {
   formatGbp,
   formatBillingMonthLabel,
@@ -19,6 +21,12 @@ import {
   balanceDueMinor,
   isPayableInvoice,
 } from '../../utils/parent-invoice-formatters';
+
+export type PaymentReturnKind = 'none' | 'success' | 'cancelled';
+export type PaymentReturnDisplayState = 'paid' | 'failed' | 'cancelled' | 'processing' | null;
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_DURATION_MS = 20000;
 
 @Component({
   selector: 'app-parent-invoice-detail',
@@ -33,15 +41,23 @@ import {
   ],
   templateUrl: './parent-invoice-detail.component.html',
 })
-export class ParentInvoiceDetailComponent implements OnInit {
+export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   private readonly apiService = inject(ParentInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  private readonly destroy$ = new Subject<void>();
+  private pollSub: Subscription | null = null;
 
   detail: ParentInvoiceDetail | null = null;
   isLoading = false;
   errorMessage: string | null = null;
   isPaying = false;
+
+  returnKind: PaymentReturnKind = 'none';
+  returnDisplayState: PaymentReturnDisplayState = null;
+  isPolling = false;
 
   readonly formatGbp = formatGbp;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
@@ -56,7 +72,20 @@ export class ParentInvoiceDetailComponent implements OnInit {
       this.errorMessage = 'Invoice ID is missing.';
       return;
     }
+
+    this.parseReturnKind();
+
+    if (this.returnKind !== 'none') {
+      this.clearReturnParams();
+    }
+
     this.loadDetail(invoiceId);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.pollSub?.unsubscribe();
   }
 
   get displayTitle(): string {
@@ -74,6 +103,36 @@ export class ParentInvoiceDetailComponent implements OnInit {
   get balanceDue(): number {
     if (!this.detail) return 0;
     return balanceDueMinor(this.detail);
+  }
+
+  get returnAlertMessage(): string {
+    switch (this.returnDisplayState) {
+      case 'paid':
+        return 'Payment received. This invoice is now marked as paid.';
+      case 'failed':
+        return 'Payment was not completed. You can try again when you are ready.';
+      case 'cancelled':
+        return 'Payment canceled. No payment was taken, and you can try again.';
+      case 'processing':
+        return 'Payment is still processing. We are checking for an update; you can refresh this invoice if it does not update shortly.';
+      default:
+        return '';
+    }
+  }
+
+  get returnAlertVariant(): 'success' | 'error' | 'warning' | 'info' {
+    switch (this.returnDisplayState) {
+      case 'paid':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'cancelled':
+        return 'warning';
+      case 'processing':
+        return 'info';
+      default:
+        return 'info';
+    }
   }
 
   startPayment(): void {
@@ -96,6 +155,27 @@ export class ParentInvoiceDetailComponent implements OnInit {
     window.location.href = url;
   }
 
+  private parseReturnKind(): void {
+    const checkout = this.route.snapshot.queryParamMap.get('checkout');
+    if (checkout === 'success') {
+      this.returnKind = 'success';
+    } else if (checkout === 'cancelled' || checkout === 'canceled') {
+      this.returnKind = 'cancelled';
+    }
+  }
+
+  private clearReturnParams(): void {
+    const queryParams = { ...this.route.snapshot.queryParams };
+    delete queryParams['checkout'];
+    delete queryParams['session_id'];
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: Object.keys(queryParams).length > 0 ? queryParams : {},
+      replaceUrl: true,
+    });
+  }
+
   private loadDetail(invoiceId: string): void {
     this.isLoading = true;
     this.errorMessage = null;
@@ -104,6 +184,11 @@ export class ParentInvoiceDetailComponent implements OnInit {
       next: (detail) => {
         this.detail = detail;
         this.isLoading = false;
+        this.deriveReturnDisplayState();
+
+        if (this.returnKind === 'success' && !isTerminalStatus(detail.status)) {
+          this.startPolling(invoiceId);
+        }
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
@@ -112,4 +197,68 @@ export class ParentInvoiceDetailComponent implements OnInit {
       },
     });
   }
+
+  private deriveReturnDisplayState(): void {
+    if (this.returnKind === 'none') {
+      this.returnDisplayState = null;
+      return;
+    }
+
+    const status = this.detail?.status;
+    if (status === 'paid') {
+      this.returnDisplayState = 'paid';
+    } else if (status === 'payment_failed') {
+      this.returnDisplayState = 'failed';
+    } else if (this.returnKind === 'cancelled') {
+      this.returnDisplayState = 'cancelled';
+    } else {
+      this.returnDisplayState = 'processing';
+    }
+  }
+
+  private startPolling(invoiceId: string): void {
+    this.pollSub?.unsubscribe();
+    this.isPolling = true;
+
+    const maxTicks = POLL_MAX_DURATION_MS / POLL_INTERVAL_MS;
+    let tick = 0;
+
+    this.pollSub = timer(POLL_INTERVAL_MS, POLL_INTERVAL_MS)
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap(() => this.apiService.getInvoice(invoiceId)),
+        takeWhile(() => {
+          tick++;
+          if (tick >= maxTicks) return false;
+          return !isTerminalStatus(this.detail?.status);
+        }),
+      )
+      .subscribe({
+        next: (detail) => {
+          this.detail = detail;
+          this.deriveReturnDisplayState();
+          if (isTerminalStatus(detail.status)) {
+            this.stopPolling();
+          }
+        },
+        error: (err) => {
+          const mapped = this.errorMapper.mapAndHandle(err);
+          this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+          this.stopPolling();
+        },
+        complete: () => {
+          this.isPolling = false;
+        },
+      });
+  }
+
+  private stopPolling(): void {
+    this.pollSub?.unsubscribe();
+    this.pollSub = null;
+    this.isPolling = false;
+  }
+}
+
+function isTerminalStatus(status: ParentInvoiceStatus | undefined): boolean {
+  return status === 'paid' || status === 'payment_failed';
 }
