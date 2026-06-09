@@ -10,9 +10,9 @@ These forms are implementation inputs for post-MVP registration/enrolment work. 
 ## Backlog Links
 
 - API: `docs/MVP-30D-API-BACKEND-BACKLOG.md`
-  - `API-PM-02` registration/enrolment profile data
-  - `API-PM-03` consent and acknowledgement ledger
-  - `API-PM-04` office-use enrolment checklist metadata
+  - `API-PM-01` registration/enrolment profile data
+  - `API-PM-02` consent and acknowledgement ledger
+  - `API-PM-03` office-use enrolment checklist metadata
 - Frontend: `docs/MVP-30D-ANGULAR-FRONTEND-BACKLOG.md`
   - `FE-PM-01` manager registration/enrolment editor
   - `FE-PM-02` parent/guardian digital registration and consent journey
@@ -39,4 +39,4 @@ Normalize the forms into these product sections before implementation:
 - Keep registration and consent fields tenant/branch scoped and linked to a child.
 - Treat medical, social-care, collection-password, and consent data as sensitive. Do not expose these through practitioner attendance, parent invoice, or billing APIs.
 - Keep consent history rather than overwriting prior signed decisions.
-- Actual document upload/storage is a separate follow-up unless explicitly prioritized; `API-PM-04` tracks metadata/checklist status only.
+- Actual document upload/storage is a separate follow-up unless explicitly prioritized; `API-PM-03` tracks metadata/checklist status only.

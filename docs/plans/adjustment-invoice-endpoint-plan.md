@@ -48,7 +48,7 @@ Out of scope for the first implementation:
 1. Confirm promotion trigger before coding.
    - Check UAT/pilot issue log for a real post-issue correction that cannot be handled by the fallback.
    - Record the triggering case in the implementation ticket.
-   - If no trigger exists, stop and leave API-PM-01 deferred.
+   - If no trigger exists, stop and leave API-BILL-01 deferred.
 
 2. Re-read current docs and schema.
    - `CONTEXT.md`
@@ -114,7 +114,7 @@ Out of scope for the first implementation:
 10. Update docs after implementation.
    - Change the OpenAPI operation `x-implementation-status` from `deferred` to `implemented` in `docs/API-CONTRACT-MVP.openapi.yaml`.
    - Update `docs/API-SCHEMA-STATE.md` if migrations or constraints change.
-   - Mark API-PM-01 complete in `docs/MVP-30D-API-BACKEND-BACKLOG.md`.
+   - Mark API-BILL-01 complete in `docs/MVP-30D-API-BACKEND-BACKLOG.md`.
    - Update frontend backlog only if an adjustment UI is now in scope.
 
 ## Files to Create or Change
@@ -146,7 +146,7 @@ Future implementation files:
 For the current documentation-only API-25 outcome:
 
 - `git diff --check`
-- Manual doc review that API-25 is deferred and API-PM-01 exists.
+- Manual doc review that API-25 is deferred and API-BILL-01 exists.
 
 For future implementation:
 

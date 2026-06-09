@@ -372,6 +372,10 @@ Manager-facing bulk issue starts with all ready draft invoices selected for the 
 
 A manager-triggered monthly billing operation that prepares or issues per-child invoices as a batch. An invoice run may include successful invoices and child-specific exceptions.
 
+## Invoice Run Exception (MVP)
+
+A child-specific blocker reported during invoice preflight, draft generation, or issue. Exceptions do not stop unaffected children from being drafted or issued in the same billing month.
+
 ## Invoice Run Status (MVP)
 
 Manager-facing current billing-month readiness and progress for invoice generation and issue. It summarizes eligible, blocked, draft, and issued child-months, with the latest run time where one exists.
