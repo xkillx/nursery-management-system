@@ -37,6 +37,7 @@ describe('app.routes', () => {
     'staff/manager/invites',
     'staff/manager/funding',
     'staff/manager/invoice-run',
+    'staff/manager/invoices',
     'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
     'parent/invoices',
@@ -49,6 +50,7 @@ describe('app.routes', () => {
 
   const dynamicPaths = [
     'staff/manager/children/:childId',
+    'staff/manager/invoices/:invoiceId',
   ];
 
   for (const mvp of mvpPaths) {
@@ -109,5 +111,23 @@ describe('app.routes', () => {
 
     expect(invoiceRunRoute).toBeDefined();
     expect(invoiceRunRoute!.data?.['roles']).toEqual(['manager']);
+  });
+
+  it('invoices list route requires manager role only', () => {
+    const invoicesRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/manager/invoices');
+
+    expect(invoicesRoute).toBeDefined();
+    expect(invoicesRoute!.data?.['roles']).toEqual(['manager']);
+  });
+
+  it('invoice detail route requires manager role only', () => {
+    const detailRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/manager/invoices/:invoiceId');
+
+    expect(detailRoute).toBeDefined();
+    expect(detailRoute!.data?.['roles']).toEqual(['manager']);
   });
 });

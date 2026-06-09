@@ -41,6 +41,8 @@ export class StatusBadgeComponent {
     paid: { color: 'success', label: 'Paid' },
     overdue: { color: 'warning', label: 'Overdue' },
     payment_failed: { color: 'error', label: 'Payment failed' },
+    not_due: { color: 'light', label: 'Not due' },
+    due: { color: 'warning', label: 'Due' },
     payable: { color: 'success', label: 'Payable' },
     not_payable: { color: 'light', label: 'Not payable' },
     pending: { color: 'warning', label: 'Pending' },

@@ -115,4 +115,18 @@ describe('StatusBadgeComponent', () => {
     expect(mapping.color).toBe('light');
     expect(mapping.label).toBe('Expired');
   });
+
+  it('maps not_due status to light color with Not due label', () => {
+    component.status = 'not_due';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('light');
+    expect(mapping.label).toBe('Not due');
+  });
+
+  it('maps due status to warning color with Due label', () => {
+    component.status = 'due';
+    const mapping = component.resolvedMapping;
+    expect(mapping.color).toBe('warning');
+    expect(mapping.label).toBe('Due');
+  });
 });

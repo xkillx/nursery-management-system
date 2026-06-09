@@ -1,0 +1,139 @@
+<div class="p-6 space-y-6">
+  <app-page-header
+    title="Invoices"
+    description="Review invoices across billing months and statuses."
+  />
+
+  <!-- Filters -->
+  <section aria-labelledby="filters-heading" class="flex flex-wrap items-end gap-4">
+    <div>
+      <label for="billing-month-input" class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+        Billing month
+      </label>
+      <input
+        id="billing-month-input"
+        type="month"
+        [ngModel]="selectedBillingMonth"
+        (ngModelChange)="onMonthChange($event)"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+      />
+      <span class="ml-2 text-sm font-medium text-gray-800 dark:text-white/90">{{ billingMonthLabel }}</span>
+    </div>
+    <div>
+      <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Status</span>
+      <div class="flex flex-wrap gap-1">
+        @for (filter of statusFilters; track filter.value) {
+          <button
+            type="button"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+            [ngClass]="{
+              'bg-brand-600 text-white': selectedStatus === filter.value,
+              'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700': selectedStatus !== filter.value
+            }"
+            (click)="onStatusChange(filter.value)"
+          >
+            {{ filter.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  @if (errorMessage) {
+    <app-alert variant="error" [message]="errorMessage" />
+  }
+
+  @if (isLoading) {
+    <app-loading-state />
+  }
+
+  @if (!isLoading && items.length > 0) {
+    <app-table-shell>
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Invoice</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Billing month</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Due status</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Subtotal</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Funded deduction</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Net due</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Dates</th>
+            <th class="pb-3 font-medium text-gray-500 dark:text-gray-400">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track item.invoiceId) {
+            <tr class="border-b border-gray-100 dark:border-gray-800">
+              <td class="py-3 pr-4">
+                <div class="font-medium text-gray-800 dark:text-white/90">{{ invoiceIdentity(item) }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.childName }}</div>
+              </td>
+              <td class="py-3 pr-4 text-gray-800 dark:text-white/90">{{ formatBillingMonthLabel(item.billingMonth) }}</td>
+              <td class="py-3 pr-4"><app-status-badge [status]="item.status" /></td>
+              <td class="py-3 pr-4"><app-status-badge [status]="item.dueStatus" /></td>
+              <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">{{ formatGbp(item.subtotalMinor) }}</td>
+              <td class="py-3 pr-4 text-right text-gray-500 dark:text-gray-400">
+                @if (item.fundedDeductionMinor > 0) {
+                  <span>&minus;{{ formatGbp(item.fundedDeductionMinor) }}</span>
+                } @else {
+                  {{ formatGbp(0) }}
+                }
+              </td>
+              <td class="py-3 pr-4 text-right font-medium text-gray-800 dark:text-white/90">{{ formatGbp(item.totalDueMinor) }}</td>
+              <td class="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400">
+                @if (item.issuedAt) {
+                  <div>Issued: {{ formatInstant(item.issuedAt) }}</div>
+                }
+                @if (item.dueAt) {
+                  <div>Due: {{ formatInstant(item.dueAt) }}</div>
+                }
+              </td>
+              <td class="py-3">
+                <a
+                  [routerLink]="['/staff/manager/invoices', item.invoiceId]"
+                  class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  View
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div shell-footer class="mt-4 flex items-center justify-between">
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+          Showing offset {{ offset }}
+        </span>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            [disabled]="!hasPrevious"
+            (click)="previousPage()"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            [disabled]="!hasNext"
+            (click)="nextPage()"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </app-table-shell>
+  }
+
+  @if (!isLoading && items.length === 0 && !errorMessage) {
+    <app-empty-state
+      title="No invoices found"
+      [message]="'No invoices for ' + billingMonthLabel + ' with status ' + (selectedStatus === 'all' ? 'All' : selectedStatus) + '.'"
+    />
+  }
+</div>
