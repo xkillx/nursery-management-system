@@ -348,6 +348,10 @@ Managers can issue invoices one-by-one or in bulk; the default flow is bulk issu
 
 A manager's explicit approval that selected draft invoices should become immutable issued invoices. Confirmation applies to both one-by-one and bulk issue actions.
 
+## Invoice Issue Result Summary (MVP)
+
+A manager-facing summary shown after invoice issue that identifies which invoices became issued, the invoice numbers assigned, and which drafts were skipped or failed and still need follow-up.
+
 ## Invoice Issue Time (MVP)
 
 The business instant when a draft invoice becomes an issued invoice. In month 1, the invoice is also locked and due at that same instant.
@@ -359,6 +363,10 @@ Issuing validates that the invoice is an existing draft invoice in the manager's
 ## Bulk Invoice Issue (MVP)
 
 A manager-triggered issue action for all draft monthly invoices in one billing month or a manager-selected subset of those drafts. Bulk issue requires explicit manager confirmation before invoices become issued.
+
+## Bulk Invoice Issue Default Selection (MVP)
+
+Manager-facing bulk issue starts with all ready draft invoices selected for the billing month. Managers may remove individual drafts before confirmation, while one-by-one issue remains a fallback action from draft review.
 
 ## Invoice Run (MVP)
 
@@ -495,6 +503,10 @@ Billing runs monthly on calendar-month boundaries.
 ## Billing Month (MVP)
 
 A calendar month identified as `YYYY-MM` for funding and invoice workflows.
+
+## Invoice Run Default Billing Month (MVP)
+
+Manager-facing invoice run workflows default to the most recent completed billing month. Managers may still select the current billing month or older billing months intentionally.
 
 ## Billing Quantity Unit (MVP)
 
@@ -992,6 +1004,10 @@ A `payment_failed` invoice remains payable but does not transition to `overdue`.
 
 Invoice issue runs can proceed for eligible draft invoices while invoices that cannot be issued are blocked and returned in an exception list for manager resolution.
 
+## Guided Invoice Run Default Path (MVP)
+
+Manager-facing invoice runs keep eligible child-months actionable when other child-months have exceptions. The default manager path is to continue with ready invoices and resolve blocked child-months separately.
+
 ## Draft Invoice Generation Exception Handling (MVP)
 
 Draft invoice generation can proceed for eligible child-months while blocked child-months are skipped and returned as exceptions for manager resolution.
@@ -1036,6 +1052,10 @@ A manager-visible reference from invoice review to child-month blockers recorded
 
 A child-month readiness exception returned by invoice draft preflight. A blocked child may have multiple preflight blockers, and each blocker should be exposed with a stable code.
 
+## Invoice Run Exception Resolution (MVP)
+
+Manager-facing invoice run exceptions identify the blocked child-month, the blocking reason, and the next workflow that can resolve it. The invoice run workflow does not edit attendance, enrollment, billing-rate, or funding records inline.
+
 ## Invoice Preflight Enrollment Blocker Codes (MVP)
 
 Invoice draft preflight explains enrollment incompleteness with granular stable blocker codes rather than only a generic enrollment-incomplete label.
@@ -1054,7 +1074,7 @@ Draft invoice generation reports the invoice run outcome and affected invoice re
 
 ## Manager Invoice Review (MVP)
 
-A manager-facing billing view for inspecting generated invoice headers, line items, calculation quantities, status, and due/payment metadata across invoice statuses. Draft invoices are included so managers can review calculations before issue.
+A manager-facing billing view for inspecting generated invoice headers, line items, calculation quantities, status, and due/payment metadata across invoice statuses. Draft invoices are included so managers can review calculations before issue without reconstructing totals elsewhere; invoice line editing is a separate manager workflow, not part of review itself.
 
 ## Parent Invoice View (MVP)
 

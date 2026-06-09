@@ -36,6 +36,7 @@ describe('app.routes', () => {
     'staff/manager/guardians',
     'staff/manager/invites',
     'staff/manager/funding',
+    'staff/manager/invoice-run',
     'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
     'parent/invoices',
@@ -99,5 +100,14 @@ describe('app.routes', () => {
 
     expect(fundingRoute).toBeDefined();
     expect(fundingRoute!.data?.['roles']).toEqual(['manager']);
+  });
+
+  it('invoice run route requires manager role only', () => {
+    const invoiceRunRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/manager/invoice-run');
+
+    expect(invoiceRunRoute).toBeDefined();
+    expect(invoiceRunRoute!.data?.['roles']).toEqual(['manager']);
   });
 });

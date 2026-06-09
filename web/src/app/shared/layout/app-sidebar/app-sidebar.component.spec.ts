@@ -42,6 +42,7 @@ describe('AppSidebarComponent', () => {
     const managerGuardians = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-guardians"]');
     const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
     const managerFunding = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-funding"]');
+    const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
     const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
     const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
@@ -50,6 +51,7 @@ describe('AppSidebarComponent', () => {
     expect(managerGuardians).toBeTruthy();
     expect(managerInvites).toBeTruthy();
     expect(managerFunding).toBeTruthy();
+    expect(managerInvoiceRun).toBeTruthy();
     expect(practitionerAttendance).toBeTruthy();
     expect(parentInvoices).toBeFalsy();
   });
@@ -78,12 +80,14 @@ describe('AppSidebarComponent', () => {
     const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
     const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
     const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
+    const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
     const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
     const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
     expect(dashboard).toBeFalsy();
     expect(managerChildren).toBeFalsy();
     expect(managerInvites).toBeFalsy();
+    expect(managerInvoiceRun).toBeFalsy();
     expect(practitionerAttendance).toBeTruthy();
     expect(parentInvoices).toBeFalsy();
   });
@@ -106,6 +110,7 @@ describe('AppSidebarComponent', () => {
     const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
     const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
     const managerFunding = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-funding"]');
+    const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
     const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
     expect(dashboard).toBeFalsy();
@@ -114,6 +119,7 @@ describe('AppSidebarComponent', () => {
     expect(managerInvites).toBeFalsy();
     expect(practitionerAttendance).toBeFalsy();
     expect(managerFunding).toBeFalsy();
+    expect(managerInvoiceRun).toBeFalsy();
     expect(parentInvoices).toBeTruthy();
   });
 

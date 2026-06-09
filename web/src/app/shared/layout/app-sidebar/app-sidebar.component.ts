@@ -84,6 +84,7 @@ export class AppSidebarComponent {
         { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
         { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections' },
         { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding' },
+        { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run' },
       ];
     }
 

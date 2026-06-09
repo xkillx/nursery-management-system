@@ -102,7 +102,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| FE-20 | Build guided manager invoice run workflow with mock data: month selector, preflight summary, exception list, draft generation, draft review, bulk issue confirmation, one-by-one issue fallback. | FE-03 | Workflow is understandable without spreadsheets and makes bulk issue the default. |
+| FE-20 | Build guided manager invoice run workflow with mock data: month selector, preflight summary, exception list, draft generation, draft review, bulk issue confirmation, one-by-one issue fallback. | FE-03 | Workflow is understandable without spreadsheets and makes bulk issue the default. ✅ Done 2026-06-09 — 97 tests pass, build clean. |
 | FE-21 | Integrate invoice run with `/api/v1` invoice draft generation and issue endpoints. | Invoice API | Incomplete attendance blocks only affected children and appears in exceptions. |
 | FE-22 | Build manager invoice list/detail. Include status filters, per-child invoice identity, line items, funded deduction summary, net due, due/overdue status, and immutable issued state. | FE-21 | Issued invoices have no direct edit controls. |
 | FE-23 | Add lean manager payment/reconciliation UX. Show payment status, payment event detail, retry checkout action where applicable, and basic webhook/payment history if API exists. | Payments API | Manager can understand paid/unpaid/failed status and retry payment flow. |

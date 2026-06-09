@@ -1,0 +1,383 @@
+<div class="p-6 space-y-6">
+  <app-page-header
+    title="Invoice run"
+    description="Generate and issue draft invoices for a billing month."
+  />
+
+  <!-- Billing month selector -->
+  <section aria-labelledby="month-heading">
+    <h2 id="month-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Billing month</h2>
+    <div class="flex items-center gap-3">
+      <label for="billing-month-input" class="sr-only">Billing month</label>
+      <input
+        id="billing-month-input"
+        type="month"
+        [ngModel]="selectedBillingMonth"
+        (ngModelChange)="onMonthChange($event)"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+      />
+      <span class="text-sm font-medium text-gray-800 dark:text-white/90">{{ billingMonthLabel }}</span>
+    </div>
+  </section>
+
+  <!-- Progress indicator -->
+  <nav aria-label="Invoice run steps" class="flex items-center gap-1">
+    @for (step of ['preflight', 'drafts', 'review', 'issue', 'result']; track step; let i = $index) {
+      <div
+        class="flex items-center gap-1"
+        [ngClass]="{
+          'text-brand-600 dark:text-brand-400 font-medium': currentStep === step,
+          'text-gray-400 dark:text-gray-500': currentStep !== step
+        }"
+      >
+        @if (i > 0) {
+          <span class="mx-1 text-gray-300 dark:text-gray-600">&rsaquo;</span>
+        }
+        <span class="text-xs capitalize">{{ step }}</span>
+      </div>
+    }
+  </nav>
+
+  @if (errorMessage) {
+    <app-alert variant="error" [message]="errorMessage" />
+  }
+
+  <!-- Loading state -->
+  @if (isLoadingPreflight) {
+    <app-loading-state />
+  }
+
+  <!-- Preflight summary -->
+  @if (preflight && !isLoadingPreflight) {
+    <section aria-labelledby="preflight-heading">
+      <h2 id="preflight-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Preflight summary</h2>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ preflight.summary.totalChildren }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Children in month</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ preflight.summary.eligibleChildren }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Ready for draft</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ preflight.summary.blockedChildren }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Exceptions</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ preflight.summary.sessionsIncluded }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Sessions included</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ formatMinutes(preflight.summary.attendedMinutes) }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Attended time</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(preflight.summary.fundedDeductionMinor) }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Funded deduction</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-2xl font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(preflight.summary.totalDueMinor) }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Estimated total</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Exceptions -->
+    @if (preflight.blockedChildren.length > 0) {
+      <section aria-labelledby="exceptions-heading">
+        <h2 id="exceptions-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+          Exceptions ({{ preflight.blockedChildren.length }})
+        </h2>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-gray-50 dark:bg-gray-800/50">
+              <tr>
+                <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Child</th>
+                <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Issue</th>
+                <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Detail</th>
+                <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Next action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              @for (exception of preflight.blockedChildren; track exception.childId) {
+                @for (blocker of exception.blockers; track blocker.code) {
+                  <tr>
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ exception.childName }}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ blockerLabel(blocker.code) }}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ blocker.detail }}</td>
+                    <td class="px-4 py-3">
+                      @let action = blockerAction(blocker.code, exception);
+                      @if (action.route) {
+                        <a
+                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                          [routerLink]="action.route"
+                          [queryParams]="action.queryParams"
+                        >
+                          {{ action.label }}
+                        </a>
+                      } @else {
+                        <span class="text-gray-400 dark:text-gray-500">{{ action.label }}</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Generate drafts action -->
+    @if (!generationResult && preflight.summary.eligibleChildren > 0) {
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          [disabled]="isGenerating"
+          (click)="generateDrafts()"
+        >
+          @if (isGenerating) {
+            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          }
+          Generate draft invoices
+        </button>
+      </div>
+    }
+
+    @if (!generationResult && preflight.summary.eligibleChildren === 0) {
+      <app-empty-state
+        title="No eligible children"
+        message="All children have blockers for this billing month. Resolve exceptions before generating drafts."
+      />
+    }
+  }
+
+  <!-- Generation result -->
+  @if (generationResult) {
+    <app-alert
+      variant="success"
+      [message]="'Generated ' + generationResult.generatedCount + ', updated ' + generationResult.updatedCount + '. ' + generationResult.blockedCount + ' blocked.'"
+    />
+  }
+
+  <!-- Draft review -->
+  @if (drafts.length > 0) {
+    <section aria-labelledby="drafts-heading">
+      <h2 id="drafts-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Draft invoices</h2>
+      <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-gray-50 dark:bg-gray-800/50">
+            <tr>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-10">
+                <input
+                  type="checkbox"
+                  [checked]="allReadySelected"
+                  (change)="toggleAllReady()"
+                  [disabled]="readyDrafts.length === 0"
+                  [attr.aria-label]="'Select all ready drafts'"
+                  class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+              </th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Child</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Attended</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Funded deduction</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Extras</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Net due</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-24">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            @for (draft of drafts; track draft.invoiceId) {
+              <tr>
+                <td class="px-4 py-3">
+                  @if (draft.status === 'draft') {
+                    <input
+                      type="checkbox"
+                      [checked]="selectedInvoiceIds.has(draft.invoiceId)"
+                      (change)="toggleDraftSelection(draft.invoiceId)"
+                      [attr.aria-label]="'Select draft for ' + draft.childName"
+                      class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                    />
+                  }
+                </td>
+                <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ draft.childName }}</td>
+                <td class="px-4 py-3"><app-status-badge [status]="draft.status" size="sm" /></td>
+                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatMinutes(draft.attendedMinutes) }}</td>
+                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatGbp(draft.fundedDeductionMinor) }}</td>
+                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatGbp(draft.extrasMinor) }}</td>
+                <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatGbp(draft.netDueMinor) }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs"
+                      [attr.aria-expanded]="isExpanded(draft.invoiceId)"
+                      [attr.aria-label]="'Toggle detail for ' + draft.childName"
+                      (click)="toggleExpand(draft.invoiceId)"
+                    >
+                      {{ isExpanded(draft.invoiceId) ? 'Hide' : 'Detail' }}
+                    </button>
+                    @if (draft.status === 'draft') {
+                      <button
+                        type="button"
+                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs"
+                        (click)="openSingleConfirm(draft)"
+                      >
+                        Issue
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (isExpanded(draft.invoiceId)) {
+                <tr>
+                  <td colspan="8" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/30">
+                    <table class="w-full text-sm text-left">
+                      <thead>
+                        <tr>
+                          <th class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
+                          <th class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">Quantity</th>
+                          <th class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">Unit</th>
+                          <th class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (line of draft.lines; track line.kind) {
+                          <tr>
+                            <td class="px-2 py-1 text-gray-800 dark:text-white/90">{{ line.description }}</td>
+                            <td class="px-2 py-1 text-gray-500 dark:text-gray-400">{{ formatMinutes(line.quantityMinutes) }}</td>
+                            <td class="px-2 py-1 text-gray-500 dark:text-gray-400">{{ line.unitAmountMinor !== null ? formatGbp(line.unitAmountMinor) + '/min' : '-' }}</td>
+                            <td class="px-2 py-1 text-gray-800 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                    @if (draft.generationAction === 'updated') {
+                      <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Draft updated from previous generation.</p>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bulk issue action -->
+      @if (readyDrafts.length > 0) {
+        <div class="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="selectedDrafts.length === 0 || isIssuing"
+            (click)="openBulkConfirm()"
+          >
+            Issue selected ({{ selectedDrafts.length }})
+          </button>
+          <span class="text-sm text-gray-500 dark:text-gray-400">
+            Total: {{ formatGbp(selectedTotalMinor) }}
+          </span>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Issue result summary -->
+  @if (issueResult) {
+    <section aria-labelledby="result-heading">
+      <h2 id="result-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Issue result</h2>
+      <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] space-y-4">
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+          <div>
+            <dt class="text-sm text-gray-500 dark:text-gray-400">Issued</dt>
+            <dd class="text-sm font-medium text-gray-800 dark:text-white/90">{{ issueResult.issuedCount }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-gray-500 dark:text-gray-400">Total issued</dt>
+            <dd class="text-sm font-medium text-gray-800 dark:text-white/90">{{ formatGbp(issueResult.totalIssuedMinor) }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-gray-500 dark:text-gray-400">Billing month</dt>
+            <dd class="text-sm font-medium text-gray-800 dark:text-white/90">{{ billingMonthLabel }}</dd>
+          </div>
+        </dl>
+
+        @if (issueResult.issued.length > 0) {
+          <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th class="px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Child</th>
+                  <th class="px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Invoice number</th>
+                  <th class="px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Issued at</th>
+                  <th class="px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                @for (inv of issueResult.issued; track inv.invoiceId) {
+                  <tr>
+                    <td class="px-4 py-2 text-gray-800 dark:text-white/90">{{ inv.childName }}</td>
+                    <td class="px-4 py-2 text-gray-800 dark:text-white/90">{{ inv.invoiceNumber }}</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">{{ inv.issuedAt | date:'medium' }}</td>
+                    <td class="px-4 py-2 text-gray-800 dark:text-white/90">{{ formatGbp(inv.totalMinor) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (issueResult.skipped.length > 0) {
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Skipped</h3>
+            <ul class="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+              @for (skip of issueResult.skipped; track skip.invoiceId) {
+                <li>{{ skip.childName }}: {{ skip.reason }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Bulk issue confirmation -->
+  <app-confirmation-dialog
+    [isOpen]="showBulkConfirm"
+    title="Issue selected invoices"
+    confirmText="Issue invoices"
+    [loading]="isIssuing"
+    (confirmed)="confirmBulkIssue()"
+    (cancelled)="closeBulkConfirm()"
+  >
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+      {{ selectedDrafts.length }} invoice{{ selectedDrafts.length !== 1 ? 's' : '' }} totalling
+      {{ formatGbp(selectedTotalMinor) }} for {{ billingMonthLabel }} will be issued.
+      Issued invoices are immutable and cannot be edited.
+    </p>
+  </app-confirmation-dialog>
+
+  <!-- Single issue confirmation -->
+  <app-confirmation-dialog
+    [isOpen]="singleIssueDraft !== null"
+    title="Issue invoice"
+    confirmText="Issue invoice"
+    [loading]="isIssuing"
+    (confirmed)="confirmSingleIssue()"
+    (cancelled)="closeSingleConfirm()"
+  >
+    @if (singleIssueDraft) {
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        Invoice for {{ singleIssueDraft.childName }} totalling
+        {{ formatGbp(singleIssueDraft.netDueMinor) }} will be issued.
+        Issued invoices are immutable and cannot be edited.
+      </p>
+    }
+  </app-confirmation-dialog>
+</div>

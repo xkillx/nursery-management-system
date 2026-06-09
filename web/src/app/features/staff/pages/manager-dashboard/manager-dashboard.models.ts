@@ -196,7 +196,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
     {
       label: 'Start invoice run',
       description: 'Generate invoices for the current billing month',
-      disabled: true,
+      route: '/staff/manager/invoice-run',
     },
     {
       label: 'Review payment follow-up',

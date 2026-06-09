@@ -10,6 +10,7 @@ import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardi
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
+import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ParentInvoicesPlaceholderComponent } from './features/parent-portal/pages/parent-invoices-placeholder/parent-invoices-placeholder.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
@@ -79,6 +80,13 @@ export const routes: Routes = [
         canActivate: [authGuard, roleGuard],
         data: { roles: ['manager'] },
         title: 'Funding Overview | Nursery Management',
+      },
+      {
+        path: 'staff/manager/invoice-run',
+        component: ManagerInvoiceRunComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Invoice Run | Nursery Management',
       },
       {
         path: 'staff/practitioner/attendance',
