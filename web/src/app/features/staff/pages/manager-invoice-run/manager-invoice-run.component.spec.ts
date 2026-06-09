@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
-import { InvoiceRunMockService } from '../../data/invoice-run-mock.service';
+import { InvoiceRunApiService } from '../../data/invoice-run-api.service';
 import { InvoiceDraftReviewItem, IssueResultSummary } from '../../models/invoice-run.models';
 import { ManagerInvoiceRunComponent } from './manager-invoice-run.component';
 
 describe('ManagerInvoiceRunComponent', () => {
   let fixture: ComponentFixture<ManagerInvoiceRunComponent>;
-  let mockService: jasmine.SpyObj<InvoiceRunMockService>;
+  let apiService: jasmine.SpyObj<InvoiceRunApiService>;
   let native: HTMLElement;
 
   const preflight2026_05 = {
@@ -44,31 +44,31 @@ describe('ManagerInvoiceRunComponent', () => {
   };
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj<InvoiceRunMockService>('InvoiceRunMockService', [
-      'loadPreflight', 'generateDrafts', 'listDrafts', 'bulkIssue', 'issueOne', 'resetMonth',
+    const spy = jasmine.createSpyObj<InvoiceRunApiService>('InvoiceRunApiService', [
+      'loadPreflight', 'generateDrafts', 'listDrafts', 'bulkIssue', 'issueOne',
     ]);
 
     await TestBed.configureTestingModule({
       imports: [ManagerInvoiceRunComponent],
       providers: [
         provideRouter([]),
-        { provide: InvoiceRunMockService, useValue: spy },
+        { provide: InvoiceRunApiService, useValue: spy },
       ],
     }).compileComponents();
 
-    mockService = TestBed.inject(InvoiceRunMockService) as jasmine.SpyObj<InvoiceRunMockService>;
+    apiService = TestBed.inject(InvoiceRunApiService) as jasmine.SpyObj<InvoiceRunApiService>;
     fixture = TestBed.createComponent(ManagerInvoiceRunComponent);
     native = fixture.nativeElement;
   });
 
   it('renders page header', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
     expect(native.textContent).toContain('Invoice run');
   });
 
   it('does not contain ecommerce terminology', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
     const banned = ['Ecommerce', 'Sales', 'Orders', 'Customers', 'Products', 'Revenue'];
     for (const term of banned) {
@@ -77,7 +77,7 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('shows preflight summary metrics', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
 
     expect(native.textContent).toContain('Children in month');
@@ -90,7 +90,7 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('shows exception table with next actions', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
 
     expect(native.textContent).toContain('Yusuf Ali');
@@ -100,7 +100,7 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('shows generate button when eligible children exist', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
 
     const btn = native.querySelector('button');
@@ -113,7 +113,7 @@ describe('ManagerInvoiceRunComponent', () => {
       summary: { ...preflight2026_05.summary, eligibleChildren: 0 },
       eligibleChildren: [],
     };
-    mockService.loadPreflight.and.returnValue(of(noEligible));
+    apiService.loadPreflight.and.returnValue(of(noEligible));
     fixture.detectChanges();
 
     expect(native.textContent).toContain('No eligible children');
@@ -122,11 +122,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('generates drafts and shows review', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 4, updatedCount: 0, blockedCount: 1, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     fixture.detectChanges();
 
@@ -134,17 +134,17 @@ describe('ManagerInvoiceRunComponent', () => {
     genBtn?.click();
     fixture.detectChanges();
 
-    expect(mockService.generateDrafts).toHaveBeenCalledWith('2026-05');
+    expect(apiService.generateDrafts).toHaveBeenCalledWith('2026-05');
     expect(native.textContent).toContain('Amira Hassan');
     expect(native.textContent).toContain('Arjun Patel');
   });
 
   it('shows draft review without edit controls', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -156,11 +156,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('selects all ready drafts by default after generation', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -174,11 +174,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('deselecting a draft changes selected count', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -193,11 +193,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('opens bulk confirmation with count and total', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -213,11 +213,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('confirming bulk issue shows assigned invoice numbers', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     const issueResult: IssueResultSummary = {
       billingMonth: '2026-05', issuedCount: 2, totalIssuedMinor: 69600,
@@ -227,7 +227,7 @@ describe('ManagerInvoiceRunComponent', () => {
       ],
       skipped: [],
     };
-    mockService.bulkIssue.and.returnValue(of(issueResult));
+    apiService.bulkIssue.and.returnValue(of(issueResult));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -247,11 +247,11 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('one-by-one issue opens confirmation and issues single draft', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
-    mockService.generateDrafts.and.returnValue(of({
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
       billingMonth: '2026-05', generatedCount: 2, updatedCount: 0, blockedCount: 0, blockedChildren: [],
     }));
-    mockService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
 
     const singleResult: IssueResultSummary = {
       billingMonth: '2026-05', issuedCount: 1, totalIssuedMinor: 33600,
@@ -260,7 +260,7 @@ describe('ManagerInvoiceRunComponent', () => {
       ],
       skipped: [],
     };
-    mockService.issueOne.and.returnValue(of(singleResult));
+    apiService.issueOne.and.returnValue(of(singleResult));
 
     fixture.detectChanges();
     const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
@@ -277,7 +277,7 @@ describe('ManagerInvoiceRunComponent', () => {
   });
 
   it('month change reloads preflight and resets draft state', () => {
-    mockService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
     fixture.detectChanges();
 
     const input = native.querySelector('input[type="month"]') as HTMLInputElement;
@@ -286,7 +286,36 @@ describe('ManagerInvoiceRunComponent', () => {
     input.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    expect(mockService.resetMonth).toHaveBeenCalledWith('2026-03');
-    expect(mockService.loadPreflight).toHaveBeenCalledWith('2026-03');
+    expect(apiService.loadPreflight).toHaveBeenCalledWith('2026-03');
+  });
+
+  it('handles preflight load failure', () => {
+    apiService.loadPreflight.and.returnValue(throwError(() => new Error('Network error')));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.errorMessage).toBe('Failed to load invoice readiness. Try again.');
+    expect(fixture.componentInstance.isLoadingPreflight).toBe(false);
+  });
+
+  it('generation with blocked children still enables draft review', () => {
+    apiService.loadPreflight.and.returnValue(of(preflight2026_05));
+    apiService.generateDrafts.and.returnValue(of({
+      billingMonth: '2026-05',
+      generatedCount: 2,
+      updatedCount: 0,
+      blockedCount: 1,
+      blockedChildren: [
+        { childId: 'cb1', childName: 'Yusuf Ali', blockers: [{ code: 'incomplete_attendance', detail: 'Missing' }] },
+      ],
+    }));
+    apiService.listDrafts.and.returnValue(of([draftAmira, draftArjun]));
+
+    fixture.detectChanges();
+    const genBtn = Array.from(native.querySelectorAll('button')).find(b => b.textContent?.includes('Generate'));
+    genBtn?.click();
+    fixture.detectChanges();
+
+    expect(native.textContent).toContain('Amira Hassan');
+    expect(native.textContent).toContain('Generated 2, updated 0. 1 blocked.');
   });
 });

@@ -10,7 +10,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { InvoiceRunMockService } from '../../data/invoice-run-mock.service';
+import { InvoiceRunApiService } from '../../data/invoice-run-api.service';
 import {
   InvoiceRunStep,
   InvoiceRunPreflight,
@@ -46,7 +46,7 @@ import {
   templateUrl: './manager-invoice-run.component.html',
 })
 export class ManagerInvoiceRunComponent implements OnInit {
-  private readonly mockService = inject(InvoiceRunMockService);
+  private readonly apiService = inject(InvoiceRunApiService);
   private readonly toast = inject(ToastService);
 
   selectedBillingMonth = defaultCompletedBillingMonth();
@@ -80,7 +80,6 @@ export class ManagerInvoiceRunComponent implements OnInit {
 
   onMonthChange(month: string): void {
     this.selectedBillingMonth = month;
-    this.mockService.resetMonth(month);
     this.generationResult = null;
     this.drafts = [];
     this.issueResult = null;
@@ -120,17 +119,22 @@ export class ManagerInvoiceRunComponent implements OnInit {
     this.isGenerating = true;
     this.errorMessage = null;
 
-    this.mockService.generateDrafts(this.selectedBillingMonth).subscribe({
+    this.apiService.generateDrafts(this.selectedBillingMonth).subscribe({
       next: (result) => {
         this.generationResult = result;
         this.isGenerating = false;
         this.currentStep = 'review';
 
-        this.mockService.listDrafts(this.selectedBillingMonth).subscribe((drafts) => {
-          this.drafts = drafts;
-          for (const d of this.readyDrafts) {
-            this.selectedInvoiceIds.add(d.invoiceId);
-          }
+        this.apiService.listDrafts(this.selectedBillingMonth).subscribe({
+          next: (drafts) => {
+            this.drafts = drafts;
+            for (const d of this.readyDrafts) {
+              this.selectedInvoiceIds.add(d.invoiceId);
+            }
+          },
+          error: () => {
+            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          },
         });
 
         this.toast.success(`Generated ${result.generatedCount} draft invoices.`);
@@ -184,19 +188,24 @@ export class ManagerInvoiceRunComponent implements OnInit {
     this.isIssuing = true;
     const ids = Array.from(this.selectedInvoiceIds);
 
-    this.mockService.bulkIssue(this.selectedBillingMonth, ids).subscribe({
+    this.apiService.bulkIssue(this.selectedBillingMonth, ids).subscribe({
       next: (result) => {
         this.issueResult = result;
         this.isIssuing = false;
         this.showBulkConfirm = false;
         this.currentStep = 'result';
 
-        this.mockService.listDrafts(this.selectedBillingMonth).subscribe((drafts) => {
-          this.drafts = drafts;
-          this.selectedInvoiceIds.clear();
-          for (const d of this.readyDrafts) {
-            this.selectedInvoiceIds.add(d.invoiceId);
-          }
+        this.apiService.listDrafts(this.selectedBillingMonth).subscribe({
+          next: (drafts) => {
+            this.drafts = drafts;
+            this.selectedInvoiceIds.clear();
+            for (const d of this.readyDrafts) {
+              this.selectedInvoiceIds.add(d.invoiceId);
+            }
+          },
+          error: () => {
+            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          },
         });
 
         this.toast.success(`Issued ${result.issuedCount} invoices.`);
@@ -221,7 +230,7 @@ export class ManagerInvoiceRunComponent implements OnInit {
     if (!this.singleIssueDraft) return;
     this.isIssuing = true;
 
-    this.mockService.issueOne(this.singleIssueDraft.invoiceId).subscribe({
+    this.apiService.issueOne(this.singleIssueDraft.invoiceId).subscribe({
       next: (result) => {
         this.isIssuing = false;
         this.singleIssueDraft = null;
@@ -240,12 +249,17 @@ export class ManagerInvoiceRunComponent implements OnInit {
 
         this.currentStep = 'result';
 
-        this.mockService.listDrafts(this.selectedBillingMonth).subscribe((drafts) => {
-          this.drafts = drafts;
-          this.selectedInvoiceIds.clear();
-          for (const d of this.readyDrafts) {
-            this.selectedInvoiceIds.add(d.invoiceId);
-          }
+        this.apiService.listDrafts(this.selectedBillingMonth).subscribe({
+          next: (drafts) => {
+            this.drafts = drafts;
+            this.selectedInvoiceIds.clear();
+            for (const d of this.readyDrafts) {
+              this.selectedInvoiceIds.add(d.invoiceId);
+            }
+          },
+          error: () => {
+            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          },
         });
 
         this.toast.success(`Issued ${result.issuedCount} invoice.`);
@@ -262,14 +276,14 @@ export class ManagerInvoiceRunComponent implements OnInit {
     this.isLoadingPreflight = true;
     this.errorMessage = null;
 
-    this.mockService.loadPreflight(this.selectedBillingMonth).subscribe({
+    this.apiService.loadPreflight(this.selectedBillingMonth).subscribe({
       next: (preflight) => {
         this.preflight = preflight;
         this.isLoadingPreflight = false;
       },
       error: () => {
         this.isLoadingPreflight = false;
-        this.errorMessage = 'Failed to load preflight data. Try again.';
+        this.errorMessage = 'Failed to load invoice readiness. Try again.';
       },
     });
   }

@@ -51,10 +51,24 @@ describe('invoice-run-formatters', () => {
   });
 
   describe('blockerLabel', () => {
-    it('returns human-readable label for known codes', () => {
+    it('returns human-readable label for preflight codes', () => {
       expect(blockerLabel('incomplete_attendance')).toBe('Incomplete attendance');
       expect(blockerLabel('missing_funding_profile')).toBe('Missing funding profile');
-      expect(blockerLabel('existing_issued_invoice')).toBe('Already issued');
+      expect(blockerLabel('missing_billing_rate')).toBe('Missing billing rate');
+      expect(blockerLabel('missing_child_name')).toBe('Missing child name');
+      expect(blockerLabel('missing_child_date_of_birth')).toBe('Missing date of birth');
+      expect(blockerLabel('missing_child_start_date')).toBe('Missing start date');
+      expect(blockerLabel('missing_guardian_link')).toBe('Missing guardian link');
+      expect(blockerLabel('invoice_already_issued')).toBe('Already issued');
+    });
+
+    it('returns human-readable label for issue blockers', () => {
+      expect(blockerLabel('invoice_not_found')).toBe('Invoice not found');
+      expect(blockerLabel('invoice_not_draft')).toBe('Invoice not draft');
+    });
+
+    it('returns humanized label for unknown codes', () => {
+      expect(blockerLabel('future_blocker_code')).toBe('Future Blocker Code');
     });
   });
 
@@ -78,8 +92,8 @@ describe('invoice-run-formatters', () => {
       expect(action.route).toEqual(['/staff/manager/funding']);
     });
 
-    it('routes missing core hourly rate to child detail', () => {
-      const action = blockerNextAction('missing_core_hourly_rate', 'child-2');
+    it('routes missing billing rate to child detail', () => {
+      const action = blockerNextAction('missing_billing_rate', 'child-2');
       expect(action.label).toBe('Review child');
       expect(action.route).toEqual(['/staff/manager/children', 'child-2']);
     });
@@ -89,9 +103,26 @@ describe('invoice-run-formatters', () => {
       expect(action.route).toEqual(['/staff/manager/children', 'child-3']);
     });
 
-    it('existing issued invoice has no route', () => {
-      const action = blockerNextAction('existing_issued_invoice');
+    it('routes missing child name to child detail', () => {
+      const action = blockerNextAction('missing_child_name', 'child-4');
+      expect(action.route).toEqual(['/staff/manager/children', 'child-4']);
+    });
+
+    it('invoice already issued has no route', () => {
+      const action = blockerNextAction('invoice_already_issued');
       expect(action.label).toBe('Already issued');
+      expect(action.route).toBeUndefined();
+    });
+
+    it('invoice not draft has no route', () => {
+      const action = blockerNextAction('invoice_not_draft');
+      expect(action.label).toBe('Invoice not draft');
+      expect(action.route).toBeUndefined();
+    });
+
+    it('unknown code returns humanized label with no route', () => {
+      const action = blockerNextAction('some_new_blocker');
+      expect(action.label).toBe('Some New Blocker');
       expect(action.route).toBeUndefined();
     });
   });

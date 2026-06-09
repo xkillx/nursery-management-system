@@ -1,5 +1,4 @@
 import { formatGbp } from '../pages/manager-dashboard/manager-dashboard.models';
-import { InvoiceRunBlockerCode } from '../models/invoice-run.models';
 
 export { formatGbp };
 
@@ -43,20 +42,36 @@ export interface BlockerNextAction {
   queryParams?: Record<string, string>;
 }
 
-const BLOCKER_LABELS: Record<InvoiceRunBlockerCode, string> = {
+const BLOCKER_LABELS: Record<string, string> = {
   incomplete_attendance: 'Incomplete attendance',
   missing_funding_profile: 'Missing funding profile',
-  missing_core_hourly_rate: 'Missing core hourly rate',
+  missing_billing_rate: 'Missing billing rate',
+  missing_child_name: 'Missing child name',
+  missing_child_date_of_birth: 'Missing date of birth',
+  missing_child_start_date: 'Missing start date',
   missing_guardian_link: 'Missing guardian link',
-  existing_issued_invoice: 'Already issued',
+  invoice_already_issued: 'Already issued',
+  child_not_found: 'Child not found',
+  child_not_in_billing_month: 'Child not in billing month',
+  invoice_not_found: 'Invoice not found',
+  invoice_not_in_billing_month: 'Invoice not in billing month',
+  invoice_not_draft: 'Invoice not draft',
+  invoice_not_monthly: 'Invoice not monthly',
 };
 
-export function blockerLabel(code: InvoiceRunBlockerCode): string {
-  return BLOCKER_LABELS[code];
+function humanizeCode(code: string): string {
+  return code
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export function blockerLabel(code: string): string {
+  return BLOCKER_LABELS[code] ?? humanizeCode(code);
 }
 
 export function blockerNextAction(
-  blockerCode: InvoiceRunBlockerCode,
+  blockerCode: string,
   childId?: string,
   billingMonth?: string,
 ): BlockerNextAction {
@@ -78,13 +93,24 @@ export function blockerNextAction(
         label: 'Funding overview',
         route: ['/staff/manager/funding'],
       };
-    case 'missing_core_hourly_rate':
+    case 'missing_billing_rate':
+    case 'missing_child_name':
+    case 'missing_child_date_of_birth':
+    case 'missing_child_start_date':
     case 'missing_guardian_link':
       return {
         label: 'Review child',
         route: childId ? ['/staff/manager/children', childId] : ['/staff/manager/children'],
       };
-    case 'existing_issued_invoice':
-      return { label: 'Already issued' };
+    case 'invoice_already_issued':
+    case 'invoice_not_draft':
+    case 'invoice_not_monthly':
+    case 'invoice_not_found':
+    case 'invoice_not_in_billing_month':
+    case 'child_not_found':
+    case 'child_not_in_billing_month':
+      return { label: blockerLabel(blockerCode) };
+    default:
+      return { label: humanizeCode(blockerCode) };
   }
 }

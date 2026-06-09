@@ -1,13 +1,28 @@
 export type InvoiceRunStep = 'preflight' | 'drafts' | 'review' | 'issue' | 'result';
 
-export type InvoiceRunBlockerCode =
-  | 'incomplete_attendance'
-  | 'missing_funding_profile'
-  | 'missing_core_hourly_rate'
-  | 'missing_guardian_link'
-  | 'existing_issued_invoice';
+export type InvoiceRunBlockerCode = string;
 
-export type InvoiceDraftLineKind = 'core_childcare' | 'funded_deduction' | 'extra';
+export const InvoiceRunBlockerCodes = {
+  // Preflight blockers
+  MISSING_CHILD_NAME: 'missing_child_name',
+  MISSING_CHILD_DATE_OF_BIRTH: 'missing_child_date_of_birth',
+  MISSING_CHILD_START_DATE: 'missing_child_start_date',
+  MISSING_GUARDIAN_LINK: 'missing_guardian_link',
+  MISSING_BILLING_RATE: 'missing_billing_rate',
+  MISSING_FUNDING_PROFILE: 'missing_funding_profile',
+  INCOMPLETE_ATTENDANCE: 'incomplete_attendance',
+  INVOICE_ALREADY_ISSUED: 'invoice_already_issued',
+  // Generation blockers
+  CHILD_NOT_FOUND: 'child_not_found',
+  CHILD_NOT_IN_BILLING_MONTH: 'child_not_in_billing_month',
+  // Issue blockers
+  INVOICE_NOT_FOUND: 'invoice_not_found',
+  INVOICE_NOT_IN_BILLING_MONTH: 'invoice_not_in_billing_month',
+  INVOICE_NOT_DRAFT: 'invoice_not_draft',
+  INVOICE_NOT_MONTHLY: 'invoice_not_monthly',
+} as const;
+
+export type InvoiceDraftLineKind = string;
 
 export type InvoiceRunStatus = 'draft' | 'issued';
 
@@ -69,7 +84,7 @@ export interface InvoiceDraftReviewItem {
   lines: InvoiceDraftLine[];
   invoiceNumber: string | null;
   issuedAt: string | null;
-  generationAction: 'created' | 'updated';
+  generationAction: 'created' | 'updated' | null;
 }
 
 export interface DraftGenerationResult {

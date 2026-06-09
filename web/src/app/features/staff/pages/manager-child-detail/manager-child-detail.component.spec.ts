@@ -110,7 +110,7 @@ describe('ManagerChildDetailComponent', () => {
       imports: [ManagerChildDetailComponent],
       providers: [
         { provide: StaffApiService, useValue: staffApiMock },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: (key: string) => key === 'childId' ? 'child-1' : null } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: (key: string) => key === 'childId' ? 'child-1' : null }, queryParamMap: { get: () => null } } } },
         ApiErrorMapper,
       ],
     }).compileComponents();
