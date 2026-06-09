@@ -95,20 +95,10 @@ export class AppSidebarComponent {
       ];
     }
 
-    if (role === ROLES.parent) {
-      return [
-        { label: 'Invoices', path: ROLE_ROUTES.parentInvoices, testId: 'parent-link-invoices' },
-      ];
-    }
-
     return [];
   }
 
   get sectionHeading(): string {
-    const role = this.authService.currentRole();
-    if (role === ROLES.parent) {
-      return 'Parent Portal';
-    }
     return 'Staff';
   }
 }

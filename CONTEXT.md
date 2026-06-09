@@ -602,7 +602,7 @@ One parent account can be linked to multiple children and can view invoices for 
 
 ## Parent Portal (MVP)
 
-The parent-side product surface where a parent-role user views issued invoices for linked children and initiates full invoice payment.
+The parent-side product surface where a parent-role user views issued invoices for linked children and initiates full invoice payment. It exposes only parent-relevant billing navigation and account/session controls, not staff operational or admin surfaces.
 
 ## Parent Invoice Payment Initiation (MVP)
 

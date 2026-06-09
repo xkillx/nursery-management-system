@@ -113,29 +113,12 @@ describe('AppSidebarComponent', () => {
     expect(attendance.getAttribute('href')).toContain('/staff/practitioner/attendance');
   });
 
-  it('shows only invoices for parent role', () => {
+  it('shows no links for parent role', () => {
     authStub.role = ROLES.parent;
     fixture.detectChanges();
 
-    const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
-    const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
-    const managerGuardians = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-guardians"]');
-    const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
-    const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
-    const managerFunding = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-funding"]');
-    const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
-    const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
-    const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
-
-    expect(dashboard).toBeFalsy();
-    expect(managerChildren).toBeFalsy();
-    expect(managerGuardians).toBeFalsy();
-    expect(managerInvites).toBeFalsy();
-    expect(practitionerAttendance).toBeFalsy();
-    expect(managerFunding).toBeFalsy();
-    expect(managerInvoiceRun).toBeFalsy();
-    expect(managerInvoices).toBeFalsy();
-    expect(parentInvoices).toBeTruthy();
+    const links = fixture.nativeElement.querySelectorAll('a[data-testid]');
+    expect(links.length).toBe(0);
   });
 
   it('does not contain TailAdmin demo labels', () => {

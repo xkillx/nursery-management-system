@@ -22,6 +22,7 @@ import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-
 import { InviteAcceptComponent } from './pages/auth-pages/invite-accept/invite-accept.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
+import { ParentPortalLayoutComponent } from './shared/layout/parent-portal-layout/parent-portal-layout.component';
 
 export const routes: Routes = [
   {
@@ -116,6 +117,12 @@ export const routes: Routes = [
         pathMatch: 'full',
         redirectTo: 'staff/practitioner/attendance',
       },
+    ],
+  },
+  {
+    path: '',
+    component: ParentPortalLayoutComponent,
+    children: [
       {
         path: 'parent/invoices',
         component: ParentInvoicesPlaceholderComponent,
