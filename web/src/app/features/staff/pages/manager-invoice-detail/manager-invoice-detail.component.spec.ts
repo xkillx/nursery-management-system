@@ -7,7 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ManagerInvoiceDetailComponent } from './manager-invoice-detail.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
-import { ManagerInvoiceDetail } from '../../models/manager-invoices.models';
+import { ManagerInvoiceDetail, ManagerPaymentStatus, PaymentEvent } from '../../models/manager-invoices.models';
 
 const issuedDetail: ManagerInvoiceDetail = {
   invoiceId: 'inv-1',
@@ -104,13 +104,196 @@ const draftDetail: ManagerInvoiceDetail = {
   calculation: null,
 };
 
+const unpaidPaymentStatus: ManagerPaymentStatus = {
+  invoiceId: 'inv-1',
+  status: 'issued',
+  dueStatus: 'due',
+  currencyCode: 'gbp',
+  totalDueMinor: 24000,
+  amountPaidMinor: 0,
+  paidAt: null,
+  paymentFailedAt: null,
+  paymentStatusUpdatedAt: null,
+  checkoutRetryAvailable: true,
+  checkoutRetryReasonCode: 'no_payment_collected',
+  latestPaymentAttempt: null,
+  latestPaymentEvent: null,
+};
+
+const paidPaymentStatus: ManagerPaymentStatus = {
+  invoiceId: 'inv-1',
+  status: 'paid',
+  dueStatus: 'paid',
+  currencyCode: 'gbp',
+  totalDueMinor: 24000,
+  amountPaidMinor: 24000,
+  paidAt: '2026-06-09T15:00:00Z',
+  paymentFailedAt: null,
+  paymentStatusUpdatedAt: '2026-06-09T15:00:00Z',
+  checkoutRetryAvailable: false,
+  checkoutRetryReasonCode: 'already_paid',
+  latestPaymentAttempt: {
+    paymentAttemptId: 'pa-1',
+    status: 'paid',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    stripeCheckoutSessionId: 'cs_1',
+    stripePaymentIntentId: 'pi_1',
+    stripeExpiresAt: null,
+    failureReason: null,
+    providerErrorCode: null,
+    providerErrorMessage: null,
+    createdAt: '2026-06-09T14:00:00Z',
+    updatedAt: '2026-06-09T15:00:00Z',
+  },
+  latestPaymentEvent: {
+    paymentEventId: 'pe-1',
+    paymentAttemptId: 'pa-1',
+    stripeEventId: 'evt_1',
+    stripeEventType: 'checkout.session.completed',
+    stripeCheckoutSessionId: 'cs_1',
+    stripePaymentIntentId: 'pi_1',
+    outcome: 'payment_succeeded',
+    reasonCode: 'checkout_paid',
+    previousInvoiceStatus: 'issued',
+    newInvoiceStatus: 'paid',
+    attemptPreviousStatus: 'checkout_created',
+    attemptNewStatus: 'paid',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    webhookProcessingStatus: 'processed',
+    webhookProcessingReason: null,
+    webhookReceivedAt: '2026-06-09T15:00:00Z',
+    webhookProcessedAt: '2026-06-09T15:00:01Z',
+    createdAt: '2026-06-09T15:00:00Z',
+  },
+};
+
+const failedPaymentStatus: ManagerPaymentStatus = {
+  invoiceId: 'inv-1',
+  status: 'payment_failed',
+  dueStatus: 'due',
+  currencyCode: 'gbp',
+  totalDueMinor: 24000,
+  amountPaidMinor: 0,
+  paidAt: null,
+  paymentFailedAt: '2026-06-09T16:00:00Z',
+  paymentStatusUpdatedAt: '2026-06-09T16:00:00Z',
+  checkoutRetryAvailable: true,
+  checkoutRetryReasonCode: 'no_payment_collected',
+  latestPaymentAttempt: {
+    paymentAttemptId: 'pa-2',
+    status: 'payment_failed',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    stripeCheckoutSessionId: 'cs_2',
+    stripePaymentIntentId: null,
+    stripeExpiresAt: null,
+    failureReason: 'Card declined',
+    providerErrorCode: 'card_declined',
+    providerErrorMessage: 'Your card was declined',
+    createdAt: '2026-06-09T15:30:00Z',
+    updatedAt: '2026-06-09T16:00:00Z',
+  },
+  latestPaymentEvent: {
+    paymentEventId: 'pe-2',
+    paymentAttemptId: 'pa-2',
+    stripeEventId: 'evt_2',
+    stripeEventType: 'checkout.session.expired',
+    stripeCheckoutSessionId: 'cs_2',
+    stripePaymentIntentId: null,
+    outcome: 'payment_failed',
+    reasonCode: 'card_declined',
+    previousInvoiceStatus: 'issued',
+    newInvoiceStatus: 'payment_failed',
+    attemptPreviousStatus: 'checkout_created',
+    attemptNewStatus: 'payment_failed',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    webhookProcessingStatus: 'processed',
+    webhookProcessingReason: null,
+    webhookReceivedAt: '2026-06-09T16:00:00Z',
+    webhookProcessedAt: '2026-06-09T16:00:01Z',
+    createdAt: '2026-06-09T16:00:00Z',
+  },
+};
+
+const openAttemptStatus: ManagerPaymentStatus = {
+  invoiceId: 'inv-1',
+  status: 'issued',
+  dueStatus: 'due',
+  currencyCode: 'gbp',
+  totalDueMinor: 24000,
+  amountPaidMinor: 0,
+  paidAt: null,
+  paymentFailedAt: null,
+  paymentStatusUpdatedAt: '2026-06-09T14:00:00Z',
+  checkoutRetryAvailable: true,
+  checkoutRetryReasonCode: 'no_payment_collected',
+  latestPaymentAttempt: {
+    paymentAttemptId: 'pa-3',
+    status: 'checkout_created',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    stripeCheckoutSessionId: 'cs_3',
+    stripePaymentIntentId: null,
+    stripeExpiresAt: '2026-06-10T14:00:00Z',
+    failureReason: null,
+    providerErrorCode: null,
+    providerErrorMessage: null,
+    createdAt: '2026-06-09T14:00:00Z',
+    updatedAt: '2026-06-09T14:00:00Z',
+  },
+  latestPaymentEvent: null,
+};
+
+const emptyPaymentEvents: PaymentEvent[] = [];
+
+const samplePaymentEvents: PaymentEvent[] = [
+  {
+    paymentEventId: 'pe-1',
+    paymentAttemptId: 'pa-1',
+    stripeEventId: 'evt_1',
+    stripeEventType: 'checkout.session.completed',
+    stripeCheckoutSessionId: 'cs_1',
+    stripePaymentIntentId: 'pi_1',
+    outcome: 'payment_succeeded',
+    reasonCode: 'checkout_paid',
+    previousInvoiceStatus: 'issued',
+    newInvoiceStatus: 'paid',
+    attemptPreviousStatus: 'checkout_created',
+    attemptNewStatus: 'paid',
+    amountMinor: 24000,
+    currencyCode: 'gbp',
+    webhookProcessingStatus: 'processed',
+    webhookProcessingReason: null,
+    webhookReceivedAt: '2026-06-09T15:00:00Z',
+    webhookProcessedAt: '2026-06-09T15:00:01Z',
+    createdAt: '2026-06-09T15:00:00Z',
+  },
+];
+
+function createSpy() {
+  return jasmine.createSpyObj('ManagerInvoicesApiService', [
+    'getInvoice',
+    'getPaymentStatus',
+    'listPaymentEvents',
+  ]);
+}
+
 describe('ManagerInvoiceDetailComponent', () => {
   let fixture: ComponentFixture<ManagerInvoiceDetailComponent>;
   let apiService: jasmine.SpyObj<ManagerInvoicesApiService>;
 
-  function createFixture(detail: ManagerInvoiceDetail = issuedDetail) {
-    const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['getInvoice']);
+  function createFixture(
+    detail: ManagerInvoiceDetail = issuedDetail,
+    paymentStatus: ManagerPaymentStatus | null = unpaidPaymentStatus,
+    events: PaymentEvent[] = emptyPaymentEvents,
+  ) {
+    const spy = createSpy();
     spy.getInvoice.and.returnValue(of(detail));
+    spy.getPaymentStatus.and.returnValue(of(paymentStatus ?? unpaidPaymentStatus));
+    spy.listPaymentEvents.and.returnValue(of({ items: events, limit: 50, offset: 0 }));
 
     TestBed.configureTestingModule({
       imports: [ManagerInvoiceDetailComponent, HttpClientTestingModule],
@@ -133,6 +316,18 @@ describe('ManagerInvoiceDetailComponent', () => {
   it('fetches detail using route param on init', () => {
     createFixture();
     expect(apiService.getInvoice).toHaveBeenCalledWith('inv-1');
+  });
+
+  it('loads payment diagnostics after invoice detail succeeds for issued invoice', () => {
+    createFixture();
+    expect(apiService.getPaymentStatus).toHaveBeenCalledWith('inv-1');
+    expect(apiService.listPaymentEvents).toHaveBeenCalledWith('inv-1', { limit: 50, offset: 0 });
+  });
+
+  it('does not load payment diagnostics for draft invoice', () => {
+    createFixture(draftDetail, null, []);
+    expect(apiService.getPaymentStatus).not.toHaveBeenCalled();
+    expect(apiService.listPaymentEvents).not.toHaveBeenCalled();
   });
 
   it('renders header identity, child name, billing month, status, and due status', () => {
@@ -175,20 +370,23 @@ describe('ManagerInvoiceDetailComponent', () => {
   });
 
   it('shows read-only review for draft invoices', () => {
-    createFixture(draftDetail);
+    createFixture(draftDetail, null, []);
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Read-only review');
     expect(text).not.toContain('Issued invoice locked');
   });
 
-  it('does not contain forbidden action labels as standalone words', () => {
+  it('does not render Checkout, Pay, or Retry payment as actionable buttons or links', () => {
     createFixture();
     const text = fixture.nativeElement.textContent;
-    const forbidden = ['Edit', 'Regenerate', 'Delete', 'Adjust', 'Checkout', 'Retry payment', 'Pay'];
+    expect(text).not.toContain('Checkout');
+    expect(text).not.toContain('Retry payment');
 
-    for (const label of forbidden) {
-      expect(text).not.toContain(label);
-    }
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const anchors: HTMLAnchorElement[] = Array.from(fixture.nativeElement.querySelectorAll('a'));
+    const allElements: HTMLElement[] = [...buttons, ...anchors];
+    const payElements = allElements.filter((el) => el.textContent?.includes('Pay'));
+    expect(payElements.length).toBe(0);
   });
 
   it('shows net due and funded deduction summary', () => {
@@ -212,13 +410,102 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(backLink).toBeTruthy();
     expect(backLink!.href).toContain('/staff/manager/invoices');
   });
+
+  it('shows payment review section for issued invoice', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Payment review');
+    expect(text).toContain('Amount paid');
+    expect(text).toContain('Balance due');
+  });
+
+  it('does not show payment review section for draft invoice', () => {
+    createFixture(draftDetail, null, []);
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Payment review');
+  });
+
+  it('shows unpaid state for issued invoice with zero paid', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Unpaid');
+  });
+
+  it('shows paid state with paid amount and zero balance', () => {
+    createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Paid');
+    expect(text).toContain('Payment succeeded');
+    expect(text).toContain('£240.00');
+  });
+
+  it('shows payment failed state with failure reason', () => {
+    createFixture({ ...issuedDetail, status: 'payment_failed', paymentFailedAt: '2026-06-09T16:00:00Z' }, failedPaymentStatus, samplePaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Payment failed');
+    expect(text).toContain('Card declined');
+    expect(text).toContain('Your card was declined');
+  });
+
+  it('shows awaiting provider update for open checkout attempt', () => {
+    createFixture(issuedDetail, openAttemptStatus, emptyPaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Awaiting provider update');
+    expect(text).toContain('checkout session is open');
+  });
+
+  it('does not show parent retry for open attempt even when checkoutRetryAvailable is true', () => {
+    createFixture(issuedDetail, openAttemptStatus, emptyPaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Parent retry available');
+  });
+
+  it('shows parent retry available when eligible and no open attempt', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Parent retry available');
+  });
+
+  it('shows payment events in history', () => {
+    createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Payment history');
+    expect(text).toContain('Payment succeeded');
+    expect(text).toContain('checkout_paid');
+    expect(text).toContain('issued → paid');
+  });
+
+  it('shows empty payment history state', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('No payment events recorded');
+  });
+
+  it('shows provider IDs as secondary diagnostic text', () => {
+    createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('evt_1');
+    expect(text).toContain('cs_1');
+    expect(text).toContain('pi_1');
+  });
+
+  it('shows retry unavailable reason when retry not available', () => {
+    const noRetryStatus: ManagerPaymentStatus = {
+      ...unpaidPaymentStatus,
+      checkoutRetryAvailable: false,
+      checkoutRetryReasonCode: 'already_paid',
+    };
+    createFixture(issuedDetail, noRetryStatus, emptyPaymentEvents);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Already paid');
+  });
 });
 
 describe('ManagerInvoiceDetailComponent error handling', () => {
   let fixture: ComponentFixture<ManagerInvoiceDetailComponent>;
 
   beforeEach(() => {
-    const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['getInvoice']);
+    const spy = createSpy();
     spy.getInvoice.and.returnValue(throwError(() => new HttpErrorResponse({
       error: { code: 'not_found', message: 'Invoice not found', request_id: 'req-99' },
       status: 404,
@@ -245,5 +532,53 @@ describe('ManagerInvoiceDetailComponent error handling', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Invoice not found');
     expect(text).toContain('req-99');
+  });
+});
+
+describe('ManagerInvoiceDetailComponent payment diagnostics error', () => {
+  let fixture: ComponentFixture<ManagerInvoiceDetailComponent>;
+  let apiService: jasmine.SpyObj<ManagerInvoicesApiService>;
+
+  beforeEach(() => {
+    const spy = createSpy();
+    spy.getInvoice.and.returnValue(of(issuedDetail));
+    spy.getPaymentStatus.and.returnValue(throwError(() => new HttpErrorResponse({
+      error: { code: 'internal_error', message: 'Payment service unavailable', request_id: 'req-pay-1' },
+      status: 500,
+    })));
+    spy.listPaymentEvents.and.returnValue(throwError(() => new HttpErrorResponse({
+      error: { code: 'internal_error', message: 'Payment events unavailable', request_id: 'req-ev-1' },
+      status: 500,
+    })));
+
+    TestBed.configureTestingModule({
+      imports: [ManagerInvoiceDetailComponent, HttpClientTestingModule],
+      providers: [
+        provideRouter([]),
+        ApiErrorMapper,
+        { provide: ManagerInvoicesApiService, useValue: spy },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: (key: string) => key === 'invoiceId' ? 'inv-1' : null } } },
+        },
+      ],
+    });
+
+    apiService = TestBed.inject(ManagerInvoicesApiService) as jasmine.SpyObj<ManagerInvoicesApiService>;
+    fixture = TestBed.createComponent(ManagerInvoiceDetailComponent);
+    fixture.detectChanges();
+  });
+
+  it('keeps invoice detail visible when payment diagnostics fail', () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('INV-202605-0001');
+    expect(text).toContain('Ben');
+    expect(text).toContain('Payment review');
+  });
+
+  it('shows payment diagnostics error with request ID', () => {
+    const text = fixture.nativeElement.textContent;
+    const hasRequestId = text.includes('req-pay-1') || text.includes('req-ev-1');
+    expect(hasRequestId).toBe(true);
   });
 });

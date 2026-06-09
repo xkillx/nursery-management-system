@@ -115,3 +115,62 @@ export interface ManagerInvoiceDetail {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PaymentAttempt {
+  paymentAttemptId: string;
+  status: string;
+  amountMinor: number;
+  currencyCode: string;
+  stripeCheckoutSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  stripeExpiresAt: string | null;
+  failureReason: string | null;
+  providerErrorCode: string | null;
+  providerErrorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentEvent {
+  paymentEventId: string;
+  paymentAttemptId: string;
+  stripeEventId: string | null;
+  stripeEventType: string | null;
+  stripeCheckoutSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  outcome: string;
+  reasonCode: string;
+  previousInvoiceStatus: string | null;
+  newInvoiceStatus: string | null;
+  attemptPreviousStatus: string | null;
+  attemptNewStatus: string | null;
+  amountMinor: number | null;
+  currencyCode: string | null;
+  webhookProcessingStatus: string;
+  webhookProcessingReason: string | null;
+  webhookReceivedAt: string | null;
+  webhookProcessedAt: string | null;
+  createdAt: string;
+}
+
+export interface ManagerPaymentStatus {
+  invoiceId: string;
+  status: string;
+  dueStatus: string;
+  currencyCode: string;
+  totalDueMinor: number;
+  amountPaidMinor: number;
+  paidAt: string | null;
+  paymentFailedAt: string | null;
+  paymentStatusUpdatedAt: string | null;
+  checkoutRetryAvailable: boolean;
+  checkoutRetryReasonCode: string;
+  latestPaymentAttempt: PaymentAttempt | null;
+  latestPaymentEvent: PaymentEvent | null;
+}
+
+export interface PaginatedPaymentEvents {
+  items: PaymentEvent[];
+  limit: number;
+  offset: number;
+}

@@ -62,6 +62,249 @@
       </div>
     }
 
+    <!-- Payment review section (issued-or-later only) -->
+    @if (isPayable) {
+      <section aria-labelledby="payment-heading">
+        <h2 id="payment-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Payment review</h2>
+
+        @if (isPaymentLoading) {
+          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Loading payment information...</p>
+          </div>
+        }
+
+        @if (paymentErrorMessage) {
+          <app-alert variant="error" [message]="paymentErrorMessage" />
+        }
+
+        @if (paymentStatus && !isPaymentLoading) {
+          <!-- Payment summary -->
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 mb-4">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+              <app-status-badge [status]="paymentDisplayStateValue" size="sm" />
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Payment state</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.amountPaidMinor) }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Amount paid</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(paymentBalanceDueMinor) }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Balance due</p>
+            </div>
+            @if (paymentStatus.paidAt) {
+              <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.paidAt) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Paid at</p>
+              </div>
+            }
+            @if (paymentStatus.paymentStatusUpdatedAt) {
+              <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.paymentStatusUpdatedAt) }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Last updated</p>
+              </div>
+            }
+          </div>
+
+          <!-- Latest attempt -->
+          @if (paymentStatus.latestPaymentAttempt) {
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] mb-4">
+              <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Latest payment attempt</h3>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Amount</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Created</p>
+                </div>
+                @if (paymentStatus.latestPaymentAttempt.stripeExpiresAt) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.stripeExpiresAt) }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Expires</p>
+                  </div>
+                }
+                @if (paymentStatus.latestPaymentAttempt.failureReason) {
+                  <div>
+                    <p class="text-sm text-red-700 dark:text-red-400">{{ paymentStatus.latestPaymentAttempt.failureReason }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Failure reason</p>
+                  </div>
+                }
+                @if (paymentStatus.latestPaymentAttempt.providerErrorMessage) {
+                  <div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ paymentStatus.latestPaymentAttempt.providerErrorMessage }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Provider message</p>
+                  </div>
+                }
+              </div>
+              <!-- Secondary provider IDs -->
+              @if (paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId || paymentStatus.latestPaymentAttempt.stripePaymentIntentId) {
+                <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  @if (paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId) {
+                    <span>Session: {{ paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId }}</span>
+                  }
+                  @if (paymentStatus.latestPaymentAttempt.stripePaymentIntentId) {
+                    <span class="ml-3">Intent: {{ paymentStatus.latestPaymentAttempt.stripePaymentIntentId }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Latest event -->
+          @if (paymentStatus.latestPaymentEvent) {
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] mb-4">
+              <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Latest payment event</h3>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ eventOutcomeLabel(paymentStatus.latestPaymentEvent.outcome) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Outcome</p>
+                </div>
+                @if (paymentStatus.latestPaymentEvent.reasonCode) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.reasonCode }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Reason</p>
+                  </div>
+                }
+                @if (paymentStatus.latestPaymentEvent.amountMinor !== null) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentEvent.amountMinor!) }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Amount</p>
+                  </div>
+                }
+                <div>
+                  <p class="text-sm text-gray-800 dark:text-white/90">{{ webhookStatusLabel(paymentStatus.latestPaymentEvent.webhookProcessingStatus) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Webhook status</p>
+                </div>
+                @if (paymentStatus.latestPaymentEvent.webhookReceivedAt) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentEvent.webhookReceivedAt) }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Webhook received</p>
+                  </div>
+                }
+                @if (paymentStatus.latestPaymentEvent.previousInvoiceStatus && paymentStatus.latestPaymentEvent.newInvoiceStatus) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.previousInvoiceStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.newInvoiceStatus }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Invoice transition</p>
+                  </div>
+                }
+                @if (paymentStatus.latestPaymentEvent.attemptPreviousStatus && paymentStatus.latestPaymentEvent.attemptNewStatus) {
+                  <div>
+                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.attemptPreviousStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.attemptNewStatus }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Attempt transition</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Parent retry visibility -->
+          @if (canShowParentRetry(paymentStatus)) {
+            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20 mb-4">
+              <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Parent retry available</p>
+              <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">The parent can retry payment for this invoice.</p>
+            </div>
+          }
+
+          <!-- Retry unavailable reason -->
+          @if (!canShowParentRetry(paymentStatus) && paymentStatus.checkoutRetryReasonCode && !isOpenPaymentAttempt(paymentStatus.latestPaymentAttempt?.status)) {
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50 mb-4">
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ retryReasonLabel(paymentStatus.checkoutRetryReasonCode) }}</p>
+            </div>
+          }
+
+          <!-- Pending state notice -->
+          @if (paymentStatus.latestPaymentAttempt && isOpenPaymentAttempt(paymentStatus.latestPaymentAttempt.status)) {
+            <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20 mb-4">
+              <p class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Awaiting provider update</p>
+              <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                A checkout session is open ({{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}). Created {{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }} for {{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}.
+              </p>
+            </div>
+          }
+
+          <!-- Payment event history -->
+          <div class="mt-4">
+            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Payment history (most recent first)</h3>
+            @if (paymentEvents.length === 0) {
+              <p class="text-sm text-gray-400 dark:text-gray-500">No payment events recorded.</p>
+            }
+            @if (paymentEvents.length > 0) {
+              <div class="space-y-2">
+                @for (event of paymentEvents; track event.paymentEventId) {
+                  <div class="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                      <span class="font-medium text-gray-800 dark:text-white/90">{{ eventOutcomeLabel(event.outcome) }}</span>
+                      @if (event.amountMinor !== null) {
+                        <span class="text-gray-600 dark:text-gray-400">{{ formatGbp(event.amountMinor!) }}</span>
+                      }
+                      <span class="text-xs text-gray-400">{{ formatInstant(event.createdAt) }}</span>
+                    </div>
+                    <div class="mt-1 flex flex-wrap gap-x-4 text-xs text-gray-500 dark:text-gray-400">
+                      @if (event.reasonCode) {
+                        <span>{{ event.reasonCode }}</span>
+                      }
+                      @if (event.previousInvoiceStatus && event.newInvoiceStatus) {
+                        <span>{{ event.previousInvoiceStatus }} &rarr; {{ event.newInvoiceStatus }}</span>
+                      }
+                      @if (event.attemptPreviousStatus && event.attemptNewStatus) {
+                        <span>Attempt: {{ event.attemptPreviousStatus }} &rarr; {{ event.attemptNewStatus }}</span>
+                      }
+                      <span>Webhook: {{ webhookStatusLabel(event.webhookProcessingStatus) }}</span>
+                      @if (event.webhookReceivedAt) {
+                        <span>{{ formatInstant(event.webhookReceivedAt) }}</span>
+                      }
+                    </div>
+                    <!-- Secondary provider IDs -->
+                    @if (event.stripeEventId || event.stripeCheckoutSessionId || event.stripePaymentIntentId) {
+                      <div class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                        @if (event.stripeEventId) {
+                          <span>Event: {{ event.stripeEventId }}</span>
+                        }
+                        @if (event.stripeCheckoutSessionId) {
+                          <span class="ml-2">Session: {{ event.stripeCheckoutSessionId }}</span>
+                        }
+                        @if (event.stripePaymentIntentId) {
+                          <span class="ml-2">Intent: {{ event.stripePaymentIntentId }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Event pagination -->
+              @if (hasPaymentEventsPrevious || hasPaymentEventsNext) {
+                <div class="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    [disabled]="!hasPaymentEventsPrevious"
+                    (click)="previousPaymentEventsPage()"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    [disabled]="!hasPaymentEventsNext"
+                    (click)="nextPaymentEventsPage()"
+                  >
+                    Next
+                  </button>
+                </div>
+              }
+            }
+          </div>
+        }
+      </section>
+    }
+
     <!-- Summary -->
     <section aria-labelledby="summary-heading">
       <h2 id="summary-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Summary</h2>

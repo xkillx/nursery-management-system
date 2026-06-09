@@ -336,6 +336,10 @@ A zero-total draft invoice can be issued like any other eligible draft invoice a
 
 A parent-visible issued-or-later invoice with a positive outstanding balance. Zero-total issued invoices and paid invoices are not payable.
 
+## Unpaid Invoice Label (MVP)
+
+A manager-facing label for issued or overdue invoices with no payment collected. It is not a separate invoice lifecycle state, and payment-failed invoices remain separate because they need failure-specific follow-up.
+
 ## Payment Follow-up Queue (MVP)
 
 Manager-facing work queue for invoices that need payment attention, sorted by urgency: overdue invoices, payment-failed invoices, then issued unpaid invoices. Avoid splitting these into unrelated dashboard concerns.
@@ -603,6 +607,22 @@ The parent-side product surface where a parent-role user views issued invoices f
 ## Parent Invoice Payment Initiation (MVP)
 
 Only parent-role users initiate payment for parent-visible payable invoices in month 1. Managers can review invoice and payment state but do not initiate parent payment.
+
+## Manager Payment Retry Visibility (MVP)
+
+A manager-facing indication that a parent can retry payment for a payable invoice, without letting the manager launch Stripe Checkout or complete payment on the parent's behalf.
+
+## Manager Payment Timeline (MVP)
+
+A lean chronological manager-facing view of payment attempts and webhook/payment outcomes for a single invoice. It explains the outcome, amount, timestamp, and reason in nursery operations language, while provider identifiers remain secondary diagnostics and raw webhook payloads are not shown.
+
+## Manager Invoice Payment Review (MVP)
+
+The invoice-detail anchored manager workflow for understanding payment status, retry availability, and reconciliation history for one invoice. The invoice list may show lightweight payment cues, but FE-23 does not introduce a separate manager Payments area.
+
+## Manager Payment Pending State (MVP)
+
+A manager-facing payment review state for a checkout attempt that has been created or is still awaiting provider confirmation. Managers see the attempt time and amount, and retry is not presented while the API reports that retry is unavailable.
 
 ## Login Identifier (MVP)
 

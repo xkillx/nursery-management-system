@@ -21,6 +21,11 @@ import {
   formatBillingMonthLabel,
   defaultCompletedBillingMonth,
 } from '../../utils/invoice-run-formatters';
+import {
+  PaymentDisplayState,
+  getPaymentDisplayState,
+  paymentDisplayLabel,
+} from '../../utils/manager-payment-formatters';
 
 const STATUS_FILTERS: { value: ManagerInvoiceStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -83,6 +88,14 @@ export class ManagerInvoicesComponent implements OnInit {
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
   readonly invoiceIdentity = invoiceIdentity;
+
+  paymentCueState(item: ManagerInvoiceListItem): PaymentDisplayState {
+    return getPaymentDisplayState(item.status, item.dueStatus, item.amountPaidMinor, null);
+  }
+
+  paymentCueLabel(state: PaymentDisplayState): string {
+    return paymentDisplayLabel(state);
+  }
 
   ngOnInit(): void {
     this.loadList();

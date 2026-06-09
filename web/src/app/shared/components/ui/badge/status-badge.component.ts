@@ -49,6 +49,10 @@ export class StatusBadgeComponent {
     accepted: { color: 'success', label: 'Accepted' },
     revoked: { color: 'error', label: 'Revoked' },
     expired: { color: 'light', label: 'Expired' },
+    unpaid: { color: 'warning', label: 'Unpaid' },
+    awaiting_provider_update: { color: 'info', label: 'Awaiting provider update' },
+    not_issued: { color: 'light', label: 'Not issued' },
+    no_payment_due: { color: 'light', label: 'No payment due' },
   };
 
   get resolvedMapping(): StatusMapping {

@@ -13,6 +13,10 @@ import {
   ManagerInvoiceCalculation,
   ManagerInvoiceGeneratedRunException,
   ManagerInvoicePeriod,
+  PaymentAttempt,
+  PaymentEvent,
+  ManagerPaymentStatus,
+  PaginatedPaymentEvents,
 } from '../models/manager-invoices.models';
 
 interface InvoiceListItemApi {
@@ -122,6 +126,65 @@ interface InvoiceDetailApi {
   updated_at?: string;
 }
 
+interface PaymentAttemptApi {
+  payment_attempt_id: string;
+  status: string;
+  amount_minor: number;
+  currency_code: string;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_expires_at: string | null;
+  failure_reason: string | null;
+  provider_error_code: string | null;
+  provider_error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PaymentEventApi {
+  payment_event_id: string;
+  payment_attempt_id: string;
+  stripe_event_id: string | null;
+  stripe_event_type: string | null;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  outcome: string;
+  reason_code: string;
+  previous_invoice_status: string | null;
+  new_invoice_status: string | null;
+  attempt_previous_status: string | null;
+  attempt_new_status: string | null;
+  amount_minor: number | null;
+  currency_code: string | null;
+  webhook_processing_status: string;
+  webhook_processing_reason: string | null;
+  webhook_received_at: string | null;
+  webhook_processed_at: string | null;
+  created_at: string;
+}
+
+interface ManagerPaymentStatusApi {
+  invoice_id: string;
+  status: string;
+  due_status: string;
+  currency_code: string;
+  total_due_minor: number;
+  amount_paid_minor: number;
+  paid_at: string | null;
+  payment_failed_at: string | null;
+  payment_status_updated_at: string | null;
+  checkout_retry_available: boolean;
+  checkout_retry_reason_code: string;
+  latest_payment_attempt: PaymentAttemptApi | null;
+  latest_payment_event: PaymentEventApi | null;
+}
+
+interface PaginatedPaymentEventsApi {
+  items: PaymentEventApi[];
+  limit: number;
+  offset: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ManagerInvoicesApiService {
   private readonly http = inject(HttpClient);
@@ -153,6 +216,20 @@ export class ManagerInvoicesApiService {
     return this.http
       .get<InvoiceDetailApi>(apiUrl(`/invoices/${invoiceId}`))
       .pipe(map((res) => this.toDetail(res)));
+  }
+
+  getPaymentStatus(invoiceId: string): Observable<ManagerPaymentStatus> {
+    return this.http
+      .get<ManagerPaymentStatusApi>(apiUrl(`/invoices/${invoiceId}/payment-status`))
+      .pipe(map((res) => this.toPaymentStatus(res)));
+  }
+
+  listPaymentEvents(invoiceId: string, params: { limit: number; offset: number }): Observable<PaginatedPaymentEvents> {
+    return this.http
+      .get<PaginatedPaymentEventsApi>(apiUrl(`/invoices/${invoiceId}/payment-events`), {
+        params: new HttpParams({ fromObject: { limit: String(params.limit), offset: String(params.offset) } }),
+      })
+      .pipe(map((res) => this.toPaginatedEvents(res)));
   }
 
   private toListResult(res: InvoiceListResponseApi): ManagerInvoiceListResult {
@@ -277,6 +354,73 @@ export class ManagerInvoicesApiService {
       fundedDeductionMinutes: l.funded_deduction_minutes ?? null,
       coreBillableMinutes: l.core_billable_minutes ?? null,
       sessionCount: l.session_count ?? null,
+    };
+  }
+
+  private toPaymentAttempt(a: PaymentAttemptApi): PaymentAttempt {
+    return {
+      paymentAttemptId: a.payment_attempt_id,
+      status: a.status,
+      amountMinor: a.amount_minor,
+      currencyCode: a.currency_code,
+      stripeCheckoutSessionId: a.stripe_checkout_session_id,
+      stripePaymentIntentId: a.stripe_payment_intent_id,
+      stripeExpiresAt: a.stripe_expires_at,
+      failureReason: a.failure_reason,
+      providerErrorCode: a.provider_error_code,
+      providerErrorMessage: a.provider_error_message,
+      createdAt: a.created_at,
+      updatedAt: a.updated_at,
+    };
+  }
+
+  private toPaymentEvent(e: PaymentEventApi): PaymentEvent {
+    return {
+      paymentEventId: e.payment_event_id,
+      paymentAttemptId: e.payment_attempt_id,
+      stripeEventId: e.stripe_event_id,
+      stripeEventType: e.stripe_event_type,
+      stripeCheckoutSessionId: e.stripe_checkout_session_id,
+      stripePaymentIntentId: e.stripe_payment_intent_id,
+      outcome: e.outcome,
+      reasonCode: e.reason_code,
+      previousInvoiceStatus: e.previous_invoice_status,
+      newInvoiceStatus: e.new_invoice_status,
+      attemptPreviousStatus: e.attempt_previous_status,
+      attemptNewStatus: e.attempt_new_status,
+      amountMinor: e.amount_minor,
+      currencyCode: e.currency_code,
+      webhookProcessingStatus: e.webhook_processing_status,
+      webhookProcessingReason: e.webhook_processing_reason,
+      webhookReceivedAt: e.webhook_received_at,
+      webhookProcessedAt: e.webhook_processed_at,
+      createdAt: e.created_at,
+    };
+  }
+
+  private toPaymentStatus(s: ManagerPaymentStatusApi): ManagerPaymentStatus {
+    return {
+      invoiceId: s.invoice_id,
+      status: s.status,
+      dueStatus: s.due_status,
+      currencyCode: s.currency_code,
+      totalDueMinor: s.total_due_minor,
+      amountPaidMinor: s.amount_paid_minor,
+      paidAt: s.paid_at,
+      paymentFailedAt: s.payment_failed_at,
+      paymentStatusUpdatedAt: s.payment_status_updated_at,
+      checkoutRetryAvailable: s.checkout_retry_available,
+      checkoutRetryReasonCode: s.checkout_retry_reason_code,
+      latestPaymentAttempt: s.latest_payment_attempt ? this.toPaymentAttempt(s.latest_payment_attempt) : null,
+      latestPaymentEvent: s.latest_payment_event ? this.toPaymentEvent(s.latest_payment_event) : null,
+    };
+  }
+
+  private toPaginatedEvents(res: PaginatedPaymentEventsApi): PaginatedPaymentEvents {
+    return {
+      items: res.items.map((e) => this.toPaymentEvent(e)),
+      limit: res.limit,
+      offset: res.offset,
     };
   }
 }

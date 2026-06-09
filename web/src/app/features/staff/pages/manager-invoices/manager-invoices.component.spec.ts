@@ -189,4 +189,89 @@ describe('ManagerInvoicesComponent', () => {
     const call = apiService.listInvoices.calls.argsFor(0)[0];
     expect(call.status).toBe('all');
   });
+
+  it('shows Unpaid cue for issued invoice with zero paid', () => {
+    const unpaidItem: ManagerInvoiceListItem = {
+      ...mockItems[0],
+      invoiceId: 'inv-u1',
+      status: 'issued',
+      dueStatus: 'due',
+      amountPaidMinor: 0,
+      paidAt: null,
+    };
+    apiService.listInvoices.and.returnValue(of({ items: [unpaidItem], limit: 50, offset: 0 }));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Unpaid');
+  });
+
+  it('shows Unpaid cue with Overdue for overdue invoice with zero paid', () => {
+    const overdueItem: ManagerInvoiceListItem = {
+      ...mockItems[0],
+      invoiceId: 'inv-o1',
+      status: 'overdue',
+      dueStatus: 'overdue',
+      amountPaidMinor: 0,
+      paidAt: null,
+    };
+    apiService.listInvoices.and.returnValue(of({ items: [overdueItem], limit: 50, offset: 0 }));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Unpaid');
+    expect(text).toContain('Overdue');
+  });
+
+  it('shows Paid cue for paid invoice with paid timestamp', () => {
+    const paidItem: ManagerInvoiceListItem = {
+      ...mockItems[0],
+      invoiceId: 'inv-p1',
+      status: 'paid',
+      dueStatus: 'paid',
+      amountPaidMinor: 24000,
+      paidAt: '2026-06-09T15:00:00Z',
+    };
+    apiService.listInvoices.and.returnValue(of({ items: [paidItem], limit: 50, offset: 0 }));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Paid');
+  });
+
+  it('shows Payment failed cue for payment_failed invoice', () => {
+    const failedItem: ManagerInvoiceListItem = {
+      ...mockItems[0],
+      invoiceId: 'inv-f1',
+      status: 'payment_failed',
+      dueStatus: 'due',
+      amountPaidMinor: 0,
+      paymentFailedAt: '2026-06-09T16:00:00Z',
+    };
+    apiService.listInvoices.and.returnValue(of({ items: [failedItem], limit: 50, offset: 0 }));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Payment failed');
+  });
+
+  it('shows Not issued for draft invoices', () => {
+    fixture.detectChanges();
+    const rows = fixture.nativeElement.querySelectorAll('tbody tr');
+    const draftRow = rows[1];
+    expect(draftRow.textContent).toContain('Not issued');
+  });
+
+  it('does not contain Checkout or Retry payment labels, and no Pay action button', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Checkout');
+    expect(text).not.toContain('Retry payment');
+
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const anchors: HTMLAnchorElement[] = Array.from(fixture.nativeElement.querySelectorAll('a'));
+    const allElements: HTMLElement[] = [...buttons, ...anchors];
+    const payActions = allElements.filter((el) => el.textContent?.trim() === 'Pay' || el.textContent?.trim() === 'Retry payment');
+    expect(payActions.length).toBe(0);
+  });
 });

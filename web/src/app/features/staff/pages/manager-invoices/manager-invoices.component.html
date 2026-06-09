@@ -56,6 +56,7 @@
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Billing month</th>
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Due status</th>
+            <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Payment</th>
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Subtotal</th>
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Funded deduction</th>
             <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Net due</th>
@@ -73,6 +74,22 @@
               <td class="py-3 pr-4 text-gray-800 dark:text-white/90">{{ formatBillingMonthLabel(item.billingMonth) }}</td>
               <td class="py-3 pr-4"><app-status-badge [status]="item.status" /></td>
               <td class="py-3 pr-4"><app-status-badge [status]="item.dueStatus" /></td>
+              <td class="py-3 pr-4">
+                @if (item.status !== 'draft') {
+                  <span class="text-sm text-gray-700 dark:text-gray-300">{{ paymentCueLabel(paymentCueState(item)) }}</span>
+                  @if (item.status === 'paid' && item.paidAt) {
+                    <div class="text-xs text-gray-400">{{ formatInstant(item.paidAt) }}</div>
+                  }
+                  @if (item.status === 'payment_failed' && item.paymentFailedAt) {
+                    <div class="text-xs text-gray-400">{{ formatInstant(item.paymentFailedAt) }}</div>
+                  }
+                  @if ((item.status === 'issued' || item.status === 'overdue') && item.amountPaidMinor === 0 && item.dueStatus === 'overdue') {
+                    <div class="text-xs text-gray-400">Overdue</div>
+                  }
+                } @else {
+                  <span class="text-sm text-gray-400 dark:text-gray-500">Not issued</span>
+                }
+              </td>
               <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">{{ formatGbp(item.subtotalMinor) }}</td>
               <td class="py-3 pr-4 text-right text-gray-500 dark:text-gray-400">
                 @if (item.fundedDeductionMinor > 0) {

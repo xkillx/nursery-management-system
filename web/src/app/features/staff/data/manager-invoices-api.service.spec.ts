@@ -272,4 +272,209 @@ describe('ManagerInvoicesApiService', () => {
       req.flush(detailResponse);
     });
   });
+
+  describe('getPaymentStatus', () => {
+    it('calls GET /invoices/:id/payment-status and maps camelCase fields', () => {
+      const response = {
+        invoice_id: 'inv-1',
+        status: 'issued',
+        due_status: 'due',
+        currency_code: 'gbp',
+        total_due_minor: 24000,
+        amount_paid_minor: 0,
+        paid_at: null,
+        payment_failed_at: null,
+        payment_status_updated_at: null,
+        checkout_retry_available: true,
+        checkout_retry_reason_code: 'no_payment_collected',
+        latest_payment_attempt: {
+          payment_attempt_id: 'pa-1',
+          status: 'checkout_created',
+          amount_minor: 24000,
+          currency_code: 'gbp',
+          stripe_checkout_session_id: 'cs_123',
+          stripe_payment_intent_id: null,
+          stripe_expires_at: '2026-06-10T12:00:00Z',
+          failure_reason: null,
+          provider_error_code: null,
+          provider_error_message: null,
+          created_at: '2026-06-09T14:00:00Z',
+          updated_at: '2026-06-09T14:00:00Z',
+        },
+        latest_payment_event: {
+          payment_event_id: 'pe-1',
+          payment_attempt_id: 'pa-1',
+          stripe_event_id: 'evt_123',
+          stripe_event_type: 'checkout.session.completed',
+          stripe_checkout_session_id: 'cs_123',
+          stripe_payment_intent_id: null,
+          outcome: 'checkout_session_created',
+          reason_code: 'checkout_initiated',
+          previous_invoice_status: 'issued',
+          new_invoice_status: 'issued',
+          attempt_previous_status: 'checkout_creation_started',
+          attempt_new_status: 'checkout_created',
+          amount_minor: 24000,
+          currency_code: 'gbp',
+          webhook_processing_status: 'processed',
+          webhook_processing_reason: null,
+          webhook_received_at: '2026-06-09T14:00:00Z',
+          webhook_processed_at: '2026-06-09T14:00:01Z',
+          created_at: '2026-06-09T14:00:00Z',
+        },
+      };
+
+      service.getPaymentStatus('inv-1').subscribe((status) => {
+        expect(status.invoiceId).toBe('inv-1');
+        expect(status.checkoutRetryAvailable).toBe(true);
+        expect(status.checkoutRetryReasonCode).toBe('no_payment_collected');
+        expect(status.latestPaymentAttempt).not.toBeNull();
+        expect(status.latestPaymentAttempt!.paymentAttemptId).toBe('pa-1');
+        expect(status.latestPaymentAttempt!.status).toBe('checkout_created');
+        expect(status.latestPaymentAttempt!.amountMinor).toBe(24000);
+        expect(status.latestPaymentAttempt!.stripeCheckoutSessionId).toBe('cs_123');
+        expect(status.latestPaymentEvent).not.toBeNull();
+        expect(status.latestPaymentEvent!.outcome).toBe('checkout_session_created');
+        expect(status.latestPaymentEvent!.webhookProcessingStatus).toBe('processed');
+        expect(status.latestPaymentEvent!.previousInvoiceStatus).toBe('issued');
+        expect(status.latestPaymentEvent!.newInvoiceStatus).toBe('issued');
+      });
+
+      const req = httpMock.expectOne('/api/v1/invoices/inv-1/payment-status');
+      expect(req.request.method).toBe('GET');
+      req.flush(response);
+    });
+
+    it('handles null latest attempt and null latest event', () => {
+      const response = {
+        invoice_id: 'inv-2',
+        status: 'draft',
+        due_status: 'not_due',
+        currency_code: 'gbp',
+        total_due_minor: 10000,
+        amount_paid_minor: 0,
+        paid_at: null,
+        payment_failed_at: null,
+        payment_status_updated_at: null,
+        checkout_retry_available: false,
+        checkout_retry_reason_code: 'not_issued',
+        latest_payment_attempt: null,
+        latest_payment_event: null,
+      };
+
+      service.getPaymentStatus('inv-2').subscribe((status) => {
+        expect(status.latestPaymentAttempt).toBeNull();
+        expect(status.latestPaymentEvent).toBeNull();
+        expect(status.checkoutRetryAvailable).toBe(false);
+      });
+
+      const req = httpMock.expectOne('/api/v1/invoices/inv-2/payment-status');
+      req.flush(response);
+    });
+  });
+
+  describe('listPaymentEvents', () => {
+    it('calls GET /invoices/:id/payment-events with limit and offset params', () => {
+      const response = {
+        items: [
+          {
+            payment_event_id: 'pe-1',
+            payment_attempt_id: 'pa-1',
+            stripe_event_id: 'evt_1',
+            stripe_event_type: 'checkout.session.completed',
+            stripe_checkout_session_id: 'cs_1',
+            stripe_payment_intent_id: null,
+            outcome: 'payment_succeeded',
+            reason_code: 'checkout_paid',
+            previous_invoice_status: 'issued',
+            new_invoice_status: 'paid',
+            attempt_previous_status: 'checkout_created',
+            attempt_new_status: 'paid',
+            amount_minor: 24000,
+            currency_code: 'gbp',
+            webhook_processing_status: 'processed',
+            webhook_processing_reason: null,
+            webhook_received_at: '2026-06-09T15:00:00Z',
+            webhook_processed_at: '2026-06-09T15:00:01Z',
+            created_at: '2026-06-09T15:00:00Z',
+          },
+        ],
+        limit: 50,
+        offset: 0,
+      };
+
+      service.listPaymentEvents('inv-1', { limit: 50, offset: 0 }).subscribe((result) => {
+        expect(result.items.length).toBe(1);
+        expect(result.items[0].paymentEventId).toBe('pe-1');
+        expect(result.items[0].outcome).toBe('payment_succeeded');
+        expect(result.items[0].reasonCode).toBe('checkout_paid');
+        expect(result.items[0].amountMinor).toBe(24000);
+        expect(result.items[0].webhookProcessingStatus).toBe('processed');
+        expect(result.items[0].stripeEventId).toBe('evt_1');
+        expect(result.items[0].previousInvoiceStatus).toBe('issued');
+        expect(result.items[0].newInvoiceStatus).toBe('paid');
+        expect(result.items[0].attemptPreviousStatus).toBe('checkout_created');
+        expect(result.items[0].attemptNewStatus).toBe('paid');
+        expect(result.limit).toBe(50);
+        expect(result.offset).toBe(0);
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/inv-1/payment-events');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('limit')).toBe('50');
+      expect(req.request.params.get('offset')).toBe('0');
+      req.flush(response);
+    });
+
+    it('handles empty event history', () => {
+      service.listPaymentEvents('inv-1', { limit: 50, offset: 0 }).subscribe((result) => {
+        expect(result.items).toEqual([]);
+        expect(result.limit).toBe(50);
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/inv-1/payment-events');
+      req.flush({ items: [], limit: 50, offset: 0 });
+    });
+
+    it('maps nullable amount and currency fields', () => {
+      const response = {
+        items: [
+          {
+            payment_event_id: 'pe-2',
+            payment_attempt_id: 'pa-2',
+            stripe_event_id: null,
+            stripe_event_type: null,
+            stripe_checkout_session_id: null,
+            stripe_payment_intent_id: null,
+            outcome: 'checkout_expired',
+            reason_code: 'session_expired',
+            previous_invoice_status: null,
+            new_invoice_status: null,
+            attempt_previous_status: 'checkout_created',
+            attempt_new_status: 'expired',
+            amount_minor: null,
+            currency_code: null,
+            webhook_processing_status: 'processed',
+            webhook_processing_reason: null,
+            webhook_received_at: null,
+            webhook_processed_at: null,
+            created_at: '2026-06-09T16:00:00Z',
+          },
+        ],
+        limit: 50,
+        offset: 0,
+      };
+
+      service.listPaymentEvents('inv-1', { limit: 50, offset: 0 }).subscribe((result) => {
+        const event = result.items[0];
+        expect(event.amountMinor).toBeNull();
+        expect(event.currencyCode).toBeNull();
+        expect(event.stripeEventId).toBeNull();
+        expect(event.previousInvoiceStatus).toBeNull();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/inv-1/payment-events');
+      req.flush(response);
+    });
+  });
 });
