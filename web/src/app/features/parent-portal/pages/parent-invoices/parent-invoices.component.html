@@ -1,0 +1,138 @@
+<div class="p-6 space-y-6">
+  <app-page-header
+    title="Invoices"
+    description="View invoices for your linked children and make payments."
+  />
+
+  @if (errorMessage) {
+    <app-alert variant="error" [message]="errorMessage" />
+  }
+
+  @if (isLoading) {
+    <app-loading-state />
+  }
+
+  @if (!isLoading && items.length === 0 && !errorMessage) {
+    <app-empty-state
+      title="No invoices yet"
+      message="Issued invoices for your linked children will appear here."
+    />
+  }
+
+  @if (!isLoading && items.length > 0) {
+    <!-- Needs attention -->
+    @if (attentionInvoices.length > 0) {
+      <section aria-labelledby="attention-heading">
+        <h2 id="attention-heading" class="text-sm font-medium text-error-600 dark:text-error-400 mb-3">
+          Needs attention ({{ attentionInvoices.length }})
+        </h2>
+        <div class="space-y-3">
+          @for (invoice of attentionInvoices; track invoice.invoiceId) {
+            <div class="rounded-xl border border-error-200 bg-white p-4 dark:border-error-800 dark:bg-white/[0.03]">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-medium text-gray-800 dark:text-white/90">{{ invoice.invoiceNumberDisplay }}</span>
+                    <app-status-badge [status]="invoice.status" size="sm" />
+                    <app-status-badge [status]="invoice.dueStatus" size="sm" />
+                  </div>
+                  <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ invoice.childName }} &middot; {{ formatBillingMonthLabel(invoice.billingMonth) }}
+                  </div>
+                  @if (invoice.dueAt) {
+                    <div class="text-xs text-gray-400 dark:text-gray-500">Due: {{ formatInstant(invoice.dueAt) }}</div>
+                  }
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="text-right">
+                    <div class="text-sm font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(balanceDueMinor(invoice)) }}</div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500">Balance due</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a
+                      [routerLink]="['/parent/invoices', invoice.invoiceId]"
+                      class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                    >
+                      View
+                    </a>
+                    @if (isPayable(invoice)) {
+                      <button
+                        type="button"
+                        class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
+                        [disabled]="isPaying(invoice.invoiceId)"
+                        (click)="startPayment(invoice.invoiceId)"
+                      >
+                        @if (isPaying(invoice.invoiceId)) {
+                          Paying...
+                        } @else {
+                          Pay now
+                        }
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Child-grouped history -->
+    @for (group of historyGroups; track group.childId) {
+      <section aria-labelledby="child-group-{{ group.childId }}">
+        <h2 class="text-sm font-medium text-gray-800 dark:text-white/90 mb-3">
+          {{ group.childName }}
+        </h2>
+        <div class="space-y-2">
+          @for (invoice of group.invoices; track invoice.invoiceId) {
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-medium text-gray-800 dark:text-white/90">{{ invoice.invoiceNumberDisplay }}</span>
+                    <app-status-badge [status]="invoice.status" size="sm" />
+                  </div>
+                  <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ formatBillingMonthLabel(invoice.billingMonth) }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="text-right">
+                    <div class="text-sm text-gray-800 dark:text-white/90">{{ formatGbp(invoice.totalDueMinor) }}</div>
+                    @if (invoice.amountPaidMinor > 0) {
+                      <div class="text-xs text-gray-400 dark:text-gray-500">{{ formatGbp(invoice.amountPaidMinor) }} paid</div>
+                    }
+                  </div>
+                  <a
+                    [routerLink]="['/parent/invoices', invoice.invoiceId]"
+                    class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                  >
+                    View
+                  </a>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (hasMore) {
+      <div class="flex justify-center">
+        <button
+          type="button"
+          class="rounded-lg px-4 py-2 text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          [disabled]="isLoadingMore"
+          (click)="loadMore()"
+        >
+          @if (isLoadingMore) {
+            Loading more...
+          } @else {
+            Load more
+          }
+        </button>
+      </div>
+    }
+  }
+</div>

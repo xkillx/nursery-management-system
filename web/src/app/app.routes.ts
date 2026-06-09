@@ -14,7 +14,8 @@ import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoi
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
 import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-invoice-detail/manager-invoice-detail.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
-import { ParentInvoicesPlaceholderComponent } from './features/parent-portal/pages/parent-invoices-placeholder/parent-invoices-placeholder.component';
+import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
+import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
@@ -125,10 +126,17 @@ export const routes: Routes = [
     children: [
       {
         path: 'parent/invoices',
-        component: ParentInvoicesPlaceholderComponent,
+        component: ParentInvoicesComponent,
         canActivate: [authGuard, roleGuard],
         data: { roles: ['parent'] },
         title: 'Invoices | Nursery Management',
+      },
+      {
+        path: 'parent/invoices/:invoiceId',
+        component: ParentInvoiceDetailComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['parent'] },
+        title: 'Invoice Detail | Nursery Management',
       },
     ],
   },

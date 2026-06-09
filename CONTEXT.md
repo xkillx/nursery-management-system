@@ -336,6 +336,22 @@ A zero-total draft invoice can be issued like any other eligible draft invoice a
 
 A parent-visible issued-or-later invoice with a positive outstanding balance. Zero-total issued invoices and paid invoices are not payable.
 
+## Parent Billing View (MVP)
+
+A parent-facing surface where a parent can view current and past issued-or-later invoices for linked children, see payment status, and start payment for payable invoices. Avoid: family account statement, billing dashboard.
+
+## Parent Invoice Attention Order (MVP)
+
+Parent-facing invoice lists surface invoices needing payment attention before paid or zero-balance history. Overdue invoices have the highest payment attention, followed by payment-failed invoices and then payable issued invoices.
+
+## Parent Invoice Child Group (MVP)
+
+A parent-facing grouping of invoice history for one linked child. Child groups organize non-urgent current and past invoices without hiding cross-child payment attention.
+
+## Parent Invoice Detail View (MVP)
+
+A parent-facing view of one parent-visible invoice showing the billing period, totals, funded deduction, calculation summary, and invoice lines. It must remain parent-safe and must not expose manager-only invoice generation or audit details.
+
 ## Unpaid Invoice Label (MVP)
 
 A manager-facing label for issued or overdue invoices with no payment collected. It is not a separate invoice lifecycle state, and payment-failed invoices remain separate because they need failure-specific follow-up.
