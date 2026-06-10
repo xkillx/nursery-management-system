@@ -36,7 +36,7 @@ Environment: copy `api/.env.example` to `api/.env`. Set `JWT_ACCESS_SECRET`, `JW
 
 ## Project Overview
 
-Multi-tenant nursery management MVP (UK). Go API + Angular frontend + PostgreSQL.
+Multi-tenant nursery management system (UK). Month-1 MVP baseline complete; new work follows the Post-MVP roadmap in `docs/POST-MVP-ROADMAP.md`. Go API + Angular frontend + PostgreSQL.
 
 - `api/` — Go backend (Gin, pgx, JWT auth, scoped memberships)
 - `web/` — Angular 21 + Tailwind 4 frontend (TailAdmin template)

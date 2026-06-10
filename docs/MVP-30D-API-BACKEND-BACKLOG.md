@@ -1,7 +1,8 @@
 # MVP 30-Day API Backend Backlog
 
-Source: `docs/PRD-MVP-1M.md`  
-Related baseline: `docs/DECISION-BASELINE.md`, `CONTEXT.md`, `CLAUDE.md`
+> **Historical MVP execution record.** Use `docs/POST-MVP-ROADMAP.md` for current and next work.
+
+Source: `docs/PRD.md`, `docs/DECISION-BASELINE.md`, `CONTEXT.md`
 
 ## Goal and Scope
 
@@ -58,8 +59,8 @@ Known backend gaps:
 - Intended system users now include the owner, nursery managers for the current four sites, staff in each site, and parents.
 - Treat nursery managers and staff as site/branch-scoped staff users unless a later role decision adds finer-grained staff roles.
 - The owner needs an explicit access model for cross-site visibility and administration; this is separate from the existing branch-scoped manager path.
+- Owner and four-site support is **Post-MVP** and oversight-first for the first owner release. See `docs/POST-MVP-ROADMAP.md` for the accepted expansion lane.
 - Parent access remains limited to the `app/` parent portal and must be limited to records that concern the parent through the active parent membership -> guardian -> child relationship.
-- Backlog planning must confirm whether owner and four-site support is required for the live pilot or scheduled as post-MVP before changing completed MVP tickets.
 
 ## Decisions to Honor
 
@@ -163,12 +164,12 @@ Implementation notes:
 | ~~API-26~~ | ~~Add route-by-route authorization test matrix for all MVP endpoints. Cover unauthenticated, wrong role, wrong tenant/branch, parent relationship failure, and allowed access.~~ **Done 2026-06-02.** | ~~Core routes~~ | ~~372 tests pass (161 matrix + 211 existing). Route classification completeness guard, public route assertions, protected route unauthenticated/wrong-role/wrong-scope matrix, parent relationship enforcement, and stable denial codes verified against real PostgreSQL.~~ |
 | ~~API-27~~ | ~~Add billing/payment critical tests: funding formula, invoice generation, invoice state transitions, invoice numbering, draft idempotency, issued immutability, overdue job, Stripe webhook idempotency.~~ **Done 2026-06-03.** | ~~API-13 to API-23~~ | ~~355 tests pass. Added: funding/generation calculation snapshot with per-session rounding, funded deduction, and line-level detail assertions; draft regeneration idempotency with attendance change recalculation; DB-level illegal invoice status transition trigger tests (draft→paid, issued→draft, paid→payment_failed, payment_failed→overdue); DB-level issued invoice header and line immutability tests; invoice numbering sequence across single+bulk issue with month reset and same-name tie-break by invoice ID; scheduler cron entry London midnight boundary verification; Stripe duplicate webhook full assertion matrix (event, reconciliation, audit, invoice, attempt counts). `go test ./...` passes without `TEST_DATABASE_URL`; PostgreSQL-backed tests gated by existing `dbtest.RequirePostgres`.~~ |
 | ~~API-28~~ | ~~Add structured logs, request trace context, and minimal metrics hooks for webhook outcomes, invoice-generation health, auth failures, authorization denials, scheduler runs, and payment-state transitions.~~ **Done 2026-06-03.** | ~~API-20, API-23~~ | ~~402 tests pass. LOG_LEVEL env gate (debug/info/warn/error). X-Request-ID + X-Correlation-ID + W3C traceparent trace ID in logs and response headers. Custom Prometheus registry at GET /metrics (METRICS_ENABLED env gate). nursery_api_* metrics: http_requests, auth_failures, authorization_denials, webhook_outcomes, invoice_generation_runs, scheduler_runs, payment_state_transitions. Auth failure reason codes, authz denial codes, webhook outcome set, invoice generation outcomes, scheduler outcomes. Debug breadcrumbs for auth/webhook/invoice/checkout/overdue flows. Payment-state transitions for checkout creation, webhook-driven transitions, and scheduler overdue. PII sanitized (no emails, tokens, URLs, secrets in logs). Scheduler synthetic request/correlation/job IDs.~~ |
-| API-29 | Add API Dockerfile and production Docker Compose files for single-VM deployment with API, web, PostgreSQL, reverse proxy/HTTPS expectations, and environment file contract. | Core API stable | Compose files exist and document required secrets; no local absolute paths. |
-| API-30 | Add backup and restore runbook/checklist for production PostgreSQL. Include daily backup command, restore rehearsal steps, and where backup artifacts live. | API-29 | A developer can perform and verify one local restore rehearsal from the documented steps. |
-| API-31 | Add Stripe operational runbook: webhook endpoint setup, webhook secret handling, retry inspection, event replay procedure, and failure triage. | API-23 | Pilot operator can diagnose a failed or duplicated Stripe event. |
-| API-32 | Add UAT seed/scenario data for one tenant with four nursery sites/branches, owner access, nursery managers, staff in each site, parents, children, guardians, attendance sessions, funding profiles, draft/issued invoices, and payment states. | API-24; owner/four-site scope decision | Seed data supports owner, site manager, staff, and parent UAT journeys without manual DB editing and proves branch scoping prevents cross-site leakage. |
-| API-33 | Run backend UAT script and fix critical/high defects only. Freeze new backend feature work after this point except pilot blockers. | API-32 | UAT signoff covers attendance, correction, invoice generation, payment, and payment retry. |
-| API-34 | Optional reporting and CSV export only after payment loop is stable. Keep these limited to invoice/payment exports required by pilot operations. | API-24 | Stretch only; does not delay Stripe or invoice correctness work. |
+| API-29 | Add API Dockerfile and production Docker Compose files for single-VM deployment with API, web, PostgreSQL, reverse proxy/HTTPS expectations, and environment file contract. | Core API stable | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| API-30 | Add backup and restore runbook/checklist for production PostgreSQL. Include daily backup command, restore rehearsal steps, and where backup artifacts live. | API-29 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| API-31 | Add Stripe operational runbook: webhook endpoint setup, webhook secret handling, retry inspection, event replay procedure, and failure triage. | API-23 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| API-32 | Add UAT seed/scenario data for one tenant with four nursery sites/branches, owner access, nursery managers, staff in each site, parents, children, guardians, attendance sessions, funding profiles, draft/issued invoices, and payment states. | API-24; owner/four-site scope decision | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| API-33 | Run backend UAT script and fix critical/high defects only. Freeze new backend feature work after this point except pilot blockers. | API-32 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| API-34 | Optional reporting and CSV export only after payment loop is stable. Keep these limited to invoice/payment exports required by pilot operations. | API-24 | **Post-MVP Pilot Readiness Gate (stretch).** See `docs/POST-MVP-ROADMAP.md`. |
 
 ## Post-MVP API Technical Debt Backlog
 
@@ -344,7 +345,7 @@ Existing hand-written repositories may remain in place unless a task explicitly 
 - The frontend will integrate with `/api/v1` plain JSON endpoints and standard error shape.
 - Local development uses local PostgreSQL; Docker is not required for local API development.
 - Production deployment uses a single VM with Docker Compose.
-- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites; confirm whether this changes the live-pilot scope before implementation.
+- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites. Owner/four-site support is Post-MVP and oversight-first. See `docs/POST-MVP-ROADMAP.md`.
 - API scope enforcement must remain tenant/branch-aware for managers and staff, relationship-aware for parents, and explicitly defined for owner cross-site access.
 - The first manager is still created by seed/admin command, not by invite.
 - Manager-created invites can provision `practitioner` and `parent` roles only.

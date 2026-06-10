@@ -8,9 +8,41 @@ The first live customer setting used to validate the MVP in production.
 
 A single nursery business boundary that owns its own data and users.
 
+## Nursery Site
+
+A physical nursery location within a tenant. Product-facing docs and user-facing language should prefer site, while existing engineering and API contracts may continue to use branch for the same location boundary unless a later decision separates the concepts.
+
+## Branch Scope
+
+The existing technical and API scope for a nursery site. Branch scope appears in session membership, authorization, API contracts, and database records, and should be treated as the same location boundary as nursery site in Post-MVP planning.
+
 ## MVP Scope (Month 1)
 
-The first 30-day release focused only on attendance, funding deduction, invoicing, and Stripe payment collection.
+The completed first release baseline focused on attendance, absence markers, funding deduction, invoicing, parent invoice access, Stripe payment collection, and manager/practitioner/parent access.
+
+## Post-MVP Scope
+
+The product expansion track after the completed month-1 MVP. It extends the operational baseline into owner and multi-site operations, registration and consent, room/session planning, ratio safety, safeguarding and incidents, learning journeys, and production hardening.
+
+## Post-MVP Priority Lane
+
+The default next workstream after MVP completion. Pilot readiness and owner-visible four-site operations take priority before deeper modules such as ratio safety, safeguarding, learning journeys, or SEND.
+
+## Post-MVP Pilot Readiness Gate
+
+The first Post-MVP gate that makes the completed MVP safe and understandable for pilot operation. It covers production deployment documentation, backup and restore, Stripe operations, UAT seed data, smoke testing, visual QA, accessibility review, and terminology cleanup rather than adding new product modules.
+
+## Post-MVP Feature Sequence
+
+After pilot readiness and owner/four-site oversight, Post-MVP feature work should proceed through registration and consent, room/session planning, ratio safety, safeguarding and incidents, then learning journeys. Registration and consent come first because child profile and compliance data feed later planning and safety workflows.
+
+## User Role: Owner
+
+The business owner responsible for oversight across the nursery business and its sites. The owner needs cross-site visibility and administration without becoming a branch-scoped manager.
+
+## Owner Oversight Scope (Post-MVP)
+
+The first owner release is cross-site read and oversight first. The owner may inspect site summaries, compare finance and attendance health, review pilot readiness, and administer branch-manager access, while routine attendance, child-record edits, invoice issue, and branch workflow corrections remain branch-manager responsibilities unless a later owner-administration decision expands them.
 
 ## User Role: Manager
 

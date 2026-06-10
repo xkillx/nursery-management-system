@@ -299,14 +299,15 @@ Platform
 
 # MVP Recommendation
 
-For the MVP, the following four roles are sufficient:
+The completed month-1 MVP implements three roles:
 
-1. Owner
-2. Nursery Manager
-3. Nursery Staff
-4. Parent
+1. Nursery Manager
+2. Nursery Staff / Practitioner
+3. Parent
 
-These roles cover the majority of operational workflows in a UK nursery.
+These roles cover the operational workflows delivered in the MVP baseline: manager administration and invoicing, practitioner attendance, and parent invoice access and payment.
+
+**Owner is the first Post-MVP expansion role.** The first owner release will be oversight-first: cross-site visibility and administration, while branch managers retain routine operational write authority. See `docs/POST-MVP-ROADMAP.md` for the accepted expansion lane.
 
 Additional roles can be introduced later if needed:
 
@@ -317,13 +318,6 @@ Additional roles can be introduced later if needed:
 - Super Admin
 - Compliance Officer
 
-Keeping only four roles initially will significantly simplify:
+## Terminology Note
 
-- Authentication
-- Authorization (RBAC)
-- UI design
-- Testing
-- Multi-tenant implementation
-- User management
-
-while still supporting the complete nursery workflow.
+Product-facing documentation prefers **site** for a nursery location. Current engineering, API, and database terms may use **branch** for the same location boundary. This distinction is cosmetic until a later decision separates the concepts.

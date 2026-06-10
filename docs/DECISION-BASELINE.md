@@ -3,6 +3,17 @@
 This document consolidates locked implementation decisions for the 30-day pilot MVP.
 If a future task conflicts with this baseline, treat this file as the source of truth unless a new explicit decision supersedes it.
 
+## Post-MVP Supersession
+
+The one-site MVP lock below remains valid as a **historical baseline**. Post-MVP planning now proceeds with the following accepted expansions that supersede the one-site constraint for future work:
+
+- Owner and four-site oversight is the first Post-MVP expansion lane after pilot readiness.
+- The first owner release is oversight-first: cross-site read and administration, not branch-scoped operational writes.
+- The Post-MVP feature sequence is registration/consent, room/session planning, ratio safety, safeguarding/incidents, then learning journeys.
+- See `docs/POST-MVP-ROADMAP.md` for the canonical next-work roadmap.
+
+Do not treat the one-site lock below as blocking accepted Post-MVP scope.
+
 ## 1. Outcome and Scope Lock
 
 - Pilot target: 1 live UK nursery, single site.

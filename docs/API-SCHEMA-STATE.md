@@ -1,11 +1,14 @@
 # API Schema State
 
-- **Verification date**: 2026-05-28
+> **Stale as of 2026-06-11.** Last verified at migration version 13 on 2026-05-28. Migration 000014 adds `stripe_webhook_events` and `payment_reconciliation_records` tables (documented below). To refresh: `VERIFY_DATABASE_URL="postgres://user:pass@localhost:5432/disposable_db?sslmode=disable" make migrate-verify`
+
+- **Last verification date**: 2026-05-28
+- **Verified migration version**: 13 (clean)
+- **Latest migration**: 000014 (`add_stripe_webhook_reconciliation`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
-- **Final migration version**: 13 (clean)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (19)
+## Application Tables (21)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -175,3 +178,8 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `idx_payment_attempts_invoice_created` | `payment_attempts` | btree | Attempts by invoice + created desc |
 | `uq_payment_attempts_stripe_session_id` | `payment_attempts` | UNIQUE btree (partial) | Stripe session ID uniqueness where non-null |
 | `idx_payment_attempts_open_attempts` | `payment_attempts` | btree (partial) | Open/created attempts per invoice |
+| `uq_reconciliation_stripe_event_id` | `payment_reconciliation_records` | UNIQUE btree | Stripe event ID uniqueness on reconciliation |
+| `idx_reconciliation_invoice_created` | `payment_reconciliation_records` | btree | Reconciliation records by invoice + created desc |
+| `idx_reconciliation_attempt_created` | `payment_reconciliation_records` | btree | Reconciliation records by attempt + created desc |
+| `idx_stripe_webhook_events_event_type` | `stripe_webhook_events` | btree | Webhook events by type + received desc |
+| `idx_stripe_webhook_events_processing_status` | `stripe_webhook_events` | btree | Webhook events by processing status + received desc |

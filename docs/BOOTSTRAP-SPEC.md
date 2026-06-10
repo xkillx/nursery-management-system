@@ -1,6 +1,6 @@
 # Bootstrap Spec - Day 1 Setup
 
-Source decisions: `docs/PRD-MVP-1M.md`, `docs/MVP-30D-BACKLOG.md`, `CONTEXT.md`
+Source decisions: `docs/PRD.md`, `docs/DECISION-BASELINE.md`, `CONTEXT.md`, `docs/MVP-30D-API-BACKEND-BACKLOG.md`
 
 ## 1. Objective
 

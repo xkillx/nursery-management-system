@@ -1,7 +1,8 @@
 # MVP 30-Day Angular Frontend Backlog
 
-Source: `docs/PRD-MVP-1M.md`  
-Related baseline: `docs/DECISION-BASELINE.md`, `CONTEXT.md`
+> **Historical MVP execution record.** Use `docs/POST-MVP-ROADMAP.md` for current and next work.
+
+Source: `docs/PRD.md`, `docs/DECISION-BASELINE.md`, `CONTEXT.md`
 
 ## Goal and Scope
 
@@ -32,7 +33,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 - Staff need site/branch-scoped workflows for the children they support, with no billing or guardian-contact leakage unless later role decisions explicitly allow it.
 - The owner likely needs cross-site visibility and administration across all four sites; this must be planned as a distinct owner experience, not hidden inside the branch manager UI.
 - Parents only access the `app/` parent portal, and their navigation and data must be limited to records that concern them and their linked child or children.
-- Future tickets must confirm whether owner and four-site UX is required for the live pilot or scheduled as post-MVP before changing route guards, navigation, or completed MVP screens.
+- Owner and four-site support is **Post-MVP** and oversight-first for the first owner release. See `docs/POST-MVP-ROADMAP.md` for the accepted expansion lane.
 
 ## Decisions to Honor
 
@@ -118,12 +119,12 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 |---|---|---|---|
 | FE-29 | ~~Add domain-specific API error mapping across auth, attendance, child/guardian, invoice, and payment flows.~~ | Core flows | Done — 637 tests pass, build clean. Shared presenter maps 80+ codes to action-oriented UI with request-ID policy. Backend invite codes map to 400/409. |
 | FE-30 ~~done 2026-06-10~~ | ~~Add Angular unit/component tests for auth service, guards, role default routes, API mappers, attendance state, invoice run state, and parent payment redirect behavior.~~ | ~~Core flows~~ | ~~High-risk state and routing behavior is covered. 694 Angular tests pass, build clean. 57 new tests across auth session state, CSRF headers, guard redirects, role default routes, route metadata, API mappers (corrections, invoice run, parent invoices), attendance state races, invoice run reset/accumulation, parent payment redirect/return.~~ |
-| FE-31 | Add Playwright setup for frontend smoke tests and screenshots. | Core screens exist | Playwright can run against local Angular dev server. |
-| FE-32 | Add Playwright smoke tests: login role routing, practitioner attendance mobile, manager invoice run desktop, parent invoices mobile, and Stripe redirect handoff mock. | FE-31 | Smoke suite verifies the MVP paths without relying on real Stripe. |
-| FE-33 | Perform visual QA at mobile, tablet, and desktop widths for login/scope selection, practitioner attendance, manager invoice run, manager dashboard, parent invoices, and role navigation. | FE-31 | Screenshots show no overlap, clipped text, missing actions, or template content. |
-| FE-34 | Accessibility pass for all MVP screens. Check keyboard flow, focus visibility, form labels/errors, dialog focus handling, aria names, and color contrast. | Core screens | Critical flows are usable without a mouse. |
-| FE-35 | Pilot copy and terminology pass. Replace internal/template wording with nursery domain terms from `CONTEXT.md`. | Core screens | UI consistently uses Manager, Practitioner, Parent, Guardian, Child, check-in, check-out, invoice, funded-hours allowance. |
-| FE-36 | Final frontend production readiness pass. Remove dead demo imports/routes where safe, confirm environment API base URL, run build/tests, and document remaining API blockers. | FE-30 to FE-35 | `npm run build` passes and remaining blockers are explicit. |
+| FE-31 | Add Playwright setup for frontend smoke tests and screenshots. | Core screens exist | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| FE-32 | Add Playwright smoke tests: login role routing, practitioner attendance mobile, manager invoice run desktop, parent invoices mobile, and Stripe redirect handoff mock. | FE-31 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| FE-33 | Perform visual QA at mobile, tablet, and desktop widths for login/scope selection, practitioner attendance, manager invoice run, manager dashboard, parent invoices, and role navigation. | FE-31 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| FE-34 | Accessibility pass for all MVP screens. Check keyboard flow, focus visibility, form labels/errors, dialog focus handling, aria names, and color contrast. | Core screens | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| FE-35 | Pilot copy and terminology pass. Replace internal/template wording with nursery domain terms from `CONTEXT.md`. | Core screens | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
+| FE-36 | Final frontend production readiness pass. Remove dead demo imports/routes where safe, confirm environment API base URL, run build/tests, and document remaining API blockers. | FE-30 to FE-35 | **Post-MVP Pilot Readiness Gate.** See `docs/POST-MVP-ROADMAP.md`. |
 
 ## Post-MVP Frontend Feature Backlog
 
@@ -228,7 +229,7 @@ When an API is unavailable, build the UI with a typed local mock adapter and kee
 - Angular 21 and Tailwind CSS remain in use.
 - The backend API will use `/api/v1` and plain JSON resources with the documented error shape.
 - The first manager is seeded outside the web UI.
-- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites.
+- The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites. Owner/four-site support is Post-MVP and oversight-first. See `docs/POST-MVP-ROADMAP.md`.
 - The frontend must respect selected membership scope for managers and staff, relationship scope for parents, and an explicit owner cross-site access model once prioritized.
 - Production deployment details are handled outside this frontend backlog.
 - Playwright is acceptable to add during week 4 for smoke and screenshot QA.

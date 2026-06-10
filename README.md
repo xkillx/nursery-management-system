@@ -1,6 +1,6 @@
 # Nursery Management System
 
-A multi-tenant nursery management MVP for UK childcare providers. The system focuses on the core month-1 workflows a nursery needs to operate: attendance, absence tracking, funding deductions, invoice preparation, parent billing, and scoped access for managers, practitioners, and parents.
+A multi-tenant nursery management system for UK childcare providers. The month-1 MVP baseline is complete, covering attendance, absence tracking, funding deductions, invoice preparation, parent billing, and scoped access for managers, practitioners, and parents. New work follows the Post-MVP roadmap.
 
 This repository contains a Go API, an Angular web application, PostgreSQL migrations, and product/architecture documentation.
 
@@ -20,9 +20,7 @@ This repository contains a Go API, an Angular web application, PostgreSQL migrat
 
 ## Project Status
 
-This project is in active MVP development. The backend contains the main domain flows and the frontend is an Angular workspace built from a dashboard foundation, with nursery-specific screens being added iteratively.
-
-Expect API routes, database schema, and UI screens to evolve as the MVP is completed.
+The month-1 MVP baseline is complete. The backend covers the main domain flows and the frontend is a role-scoped Angular workspace for managers, practitioners, and parents. The system is moving into Post-MVP work: see `docs/POST-MVP-ROADMAP.md` for the current roadmap and priority lanes.
 
 ## Features
 
@@ -404,8 +402,9 @@ npm start -- --port 4300
 
 Start with these files:
 
-- `CONTEXT.md`: domain glossary and MVP constraints
-- `docs/PRD-MVP-1M.md`: month-1 MVP product scope
+- `CONTEXT.md`: domain glossary and decision baseline
+- `docs/POST-MVP-ROADMAP.md`: current roadmap and priority lanes
+- `docs/DECISION-BASELINE.md`: historical MVP decision lock
 - `docs/BOOTSTRAP-SPEC.md`: backend bootstrap decisions
 - `docs/API-CONTRACT-MVP.openapi.yaml`: API contract
 - `docs/API-SCHEMA-STATE.md`: current API/schema state
