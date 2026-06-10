@@ -406,7 +406,7 @@ Start with these files:
 - `docs/POST-MVP-ROADMAP.md`: current roadmap and priority lanes
 - `docs/DECISION-BASELINE.md`: historical MVP decision lock
 - `docs/BOOTSTRAP-SPEC.md`: backend bootstrap decisions
-- `docs/API-CONTRACT-MVP.openapi.yaml`: API contract
+- `docs/API-CONTRACT.openapi.yaml`: API contract
 - `docs/API-SCHEMA-STATE.md`: current API/schema state
 - `docs/adr/`: architecture decision records
 - `docs/forms/`: nursery form templates

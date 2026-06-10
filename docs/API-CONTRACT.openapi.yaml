@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
-  title: Nursery Management System API — MVP
-  version: 0.1.0
+  title: Nursery Management System API
+  version: 0.2.0
   description: |
-    Canonical OpenAPI contract for the Nursery Management System MVP API.
+    Canonical OpenAPI contract for the Nursery Management System API.
     Aligned with current Gin route registration in `api/internal/app/bootstrap/bootstrap.go` and module handlers.
     Includes operational/debug routes and deferred proposed contracts.
   contact:
-    name: Nursery MVP
+    name: Nursery API
 servers:
   - url: /
     description: Same-origin (dev/proxy)
