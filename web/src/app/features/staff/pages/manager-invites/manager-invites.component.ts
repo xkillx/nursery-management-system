@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { StaffApiService } from '../../data/staff-api.service';
 import {
   InviteRecord,
@@ -96,10 +97,11 @@ export class ManagerInvitesComponent {
       error: (err) => {
         this.isSubmitting = false;
         const mapped = this.errorMapper.mapAndHandle(err);
-        if (mapped.fieldErrors['email'] || mapped.fieldErrors['role']) {
-          this.fieldErrors = { ...mapped.fieldErrors };
+        const presented = presentApiError(mapped, 'auth.managerInvites');
+        if (presented.fieldErrors['email'] || presented.fieldErrors['role']) {
+          this.fieldErrors = { ...presented.fieldErrors };
         } else {
-          this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+          this.errorMessage = formatPresentedApiError(presented);
         }
       },
     });
@@ -120,7 +122,7 @@ export class ManagerInvitesComponent {
       error: (err) => {
         this.pendingInviteIds.delete(invite.id);
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.rowErrors[invite.id] = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.rowErrors[invite.id] = formatPresentedApiError(presentApiError(mapped, 'auth.managerInvites'));
       },
     });
   }
@@ -150,7 +152,7 @@ export class ManagerInvitesComponent {
       error: (err) => {
         this.isRevoking = false;
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.rowErrors[inviteId] = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.rowErrors[inviteId] = formatPresentedApiError(presentApiError(mapped, 'auth.managerInvites'));
         this.inviteToRevoke = null;
       },
     });
@@ -177,7 +179,7 @@ export class ManagerInvitesComponent {
       error: (err) => {
         this.isLoading = false;
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'auth.managerInvites'));
       },
     });
   }
@@ -185,9 +187,5 @@ export class ManagerInvitesComponent {
   private clearFormErrors(): void {
     this.errorMessage = null;
     this.fieldErrors = {};
-  }
-
-  private messageWithRequestId(message: string, requestId: string | null): string {
-    return requestId ? `${message} (Request: ${requestId})` : message;
   }
 }

@@ -209,8 +209,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     component.checkIn(mockChildren[0]);
     fixture.detectChanges();
 
-    expect(component.rowErrors['child-1']).toContain('An open attendance session already exists for this child.');
-    expect(component.rowErrors['child-1']).toContain('Request: req-1');
+    expect(component.rowErrors['child-1']).toContain('already checked in');
+    expect(component.rowErrors['child-1']).not.toContain('Request: req-1');
     expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
   });
 
@@ -232,8 +232,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     component.checkOut(mockChildren[2]);
     fixture.detectChanges();
 
-    expect(component.rowErrors['child-3']).toContain('No open attendance session found for this child.');
-    expect(component.rowErrors['child-3']).toContain('Request: req-2');
+    expect(component.rowErrors['child-3']).toContain('no open check-in');
+    expect(component.rowErrors['child-3']).not.toContain('Request: req-2');
     expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
   });
 
@@ -255,8 +255,8 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     component.checkIn(mockChildren[0]);
     fixture.detectChanges();
 
-    expect(component.rowErrors['child-1']).toContain('Child enrollment is not complete.');
-    expect(component.rowErrors['child-1']).toContain('Request: req-3');
+    expect(component.rowErrors['child-1']).toContain('not ready for attendance');
+    expect(component.rowErrors['child-1']).not.toContain('Request: req-3');
     expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
   });
 
@@ -575,7 +575,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       component.markAbsent(mockChildren[0]);
       fixture.detectChanges();
 
-      expect(component.rowErrors['child-1']).toContain('Child is already marked absent.');
+      expect(component.rowErrors['child-1']).toContain('Something went wrong');
       expect(component.rowErrors['child-1']).toContain('Request: req-mark');
       expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
     });
@@ -670,7 +670,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       component.clearAbsence(absentChild);
       fixture.detectChanges();
 
-      expect(component.rowErrors['child-absent']).toContain('Absence marker already cleared.');
+      expect(component.rowErrors['child-absent']).toContain('Something went wrong');
       expect(component.rowErrors['child-absent']).toContain('Request: req-clear');
       expect(staffApiSpy.listAttendanceChildren).toHaveBeenCalledTimes(2);
     });

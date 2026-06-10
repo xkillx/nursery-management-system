@@ -116,7 +116,7 @@ This backlog is frontend-only. It includes Angular UI, client-side state, routin
 
 | ID | Task | Dependencies | Done check |
 |---|---|---|---|
-| FE-29 | Add domain-specific API error mapping across auth, attendance, child/guardian, invoice, and payment flows. | Core flows | Known errors produce action-oriented UI; unknown errors remain generic with request id. |
+| FE-29 | ~~Add domain-specific API error mapping across auth, attendance, child/guardian, invoice, and payment flows.~~ | Core flows | Done — 637 tests pass, build clean. Shared presenter maps 80+ codes to action-oriented UI with request-ID policy. Backend invite codes map to 400/409. |
 | FE-30 | Add Angular unit/component tests for auth service, guards, role default routes, API mappers, attendance state, invoice run state, and parent payment redirect behavior. | Core flows | High-risk state and routing behavior is covered. |
 | FE-31 | Add Playwright setup for frontend smoke tests and screenshots. | Core screens exist | Playwright can run against local Angular dev server. |
 | FE-32 | Add Playwright smoke tests: login role routing, practitioner attendance mobile, manager invoice run desktop, parent invoices mobile, and Stripe redirect handoff mock. | FE-31 | Smoke suite verifies the MVP paths without relying on real Stripe. |

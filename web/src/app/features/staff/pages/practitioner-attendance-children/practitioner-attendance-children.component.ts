@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval, Subject, switchMap, takeUntil, tap } from 'rxjs';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
@@ -127,7 +128,7 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
         this.isBackgroundRefreshing = false;
         this.listRequestInFlight = false;
         const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'attendance.list'));
       },
     });
   }
@@ -262,7 +263,7 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
       },
       error: (err: unknown) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.rowErrors[childId] = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.rowErrors[childId] = formatPresentedApiError(presentApiError(mapped, 'attendance.rowAction'));
         this.pendingChildIds.delete(childId);
         this.loadChildren('mutation');
       },
@@ -272,7 +273,4 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
     (mutation() as import('rxjs').Observable<unknown>).subscribe({ next, error, complete });
   }
 
-  private messageWithRequestId(message: string, requestId: string | null): string {
-    return requestId ? `${message} (Request: ${requestId})` : message;
-  }
 }

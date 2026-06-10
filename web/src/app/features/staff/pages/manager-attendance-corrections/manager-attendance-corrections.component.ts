@@ -11,6 +11,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ChildRecord, StatusFilter } from '../../../staff/models/children.models';
 import { StaffApiService } from '../../../staff/data/staff-api.service';
 import {
@@ -389,10 +390,11 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
             message: 'Sign in as a manager for this branch, or switch to a manager membership before correcting attendance.',
           };
         } else {
+          const presented = presentApiError(mapped, 'attendance.correction');
           this.correctionError = {
             kind: 'generic',
             title: '',
-            message: mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : ''),
+            message: formatPresentedApiError(presented),
           };
         }
     }

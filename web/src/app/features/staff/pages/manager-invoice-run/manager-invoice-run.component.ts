@@ -10,6 +10,8 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { InvoiceRunApiService } from '../../data/invoice-run-api.service';
 import {
   InvoiceRunStep,
@@ -47,6 +49,7 @@ import {
 })
 export class ManagerInvoiceRunComponent implements OnInit {
   private readonly apiService = inject(InvoiceRunApiService);
+  private readonly errorMapper = inject(ApiErrorMapper);
   private readonly toast = inject(ToastService);
 
   selectedBillingMonth = defaultCompletedBillingMonth();
@@ -132,16 +135,16 @@ export class ManagerInvoiceRunComponent implements OnInit {
               this.selectedInvoiceIds.add(d.invoiceId);
             }
           },
-          error: () => {
-            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          error: (err) => {
+            this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
           },
         });
 
         this.toast.success(`Generated ${result.generatedCount} draft invoices.`);
       },
-      error: () => {
+      error: (err) => {
         this.isGenerating = false;
-        this.errorMessage = 'Failed to generate draft invoices. Try again.';
+        this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
       },
     });
   }
@@ -203,17 +206,17 @@ export class ManagerInvoiceRunComponent implements OnInit {
               this.selectedInvoiceIds.add(d.invoiceId);
             }
           },
-          error: () => {
-            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          error: (err) => {
+            this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
           },
         });
 
         this.toast.success(`Issued ${result.issuedCount} invoices.`);
       },
-      error: () => {
+      error: (err) => {
         this.isIssuing = false;
         this.showBulkConfirm = false;
-        this.errorMessage = 'Failed to issue invoices. Try again.';
+        this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
       },
     });
   }
@@ -257,17 +260,17 @@ export class ManagerInvoiceRunComponent implements OnInit {
               this.selectedInvoiceIds.add(d.invoiceId);
             }
           },
-          error: () => {
-            this.errorMessage = 'Failed to load draft invoices. Try again.';
+          error: (err) => {
+            this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
           },
         });
 
         this.toast.success(`Issued ${result.issuedCount} invoice.`);
       },
-      error: () => {
+      error: (err) => {
         this.isIssuing = false;
         this.singleIssueDraft = null;
-        this.errorMessage = 'Failed to issue invoice. Try again.';
+        this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
       },
     });
   }
@@ -281,9 +284,9 @@ export class ManagerInvoiceRunComponent implements OnInit {
         this.preflight = preflight;
         this.isLoadingPreflight = false;
       },
-      error: () => {
+      error: (err) => {
         this.isLoadingPreflight = false;
-        this.errorMessage = 'Failed to load invoice readiness. Try again.';
+        this.errorMessage = formatPresentedApiError(presentApiError(this.errorMapper.map(err), 'invoice.run'));
       },
     });
   }

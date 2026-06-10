@@ -170,7 +170,7 @@ describe('ManagerInvoicesComponent', () => {
 
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Server error');
+    expect(text).toContain('Something went wrong. Try again.');
     expect(text).toContain('req-1');
   });
 

@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { GuardianFormComponent } from '../../components/guardian-form/guardian-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StatusFilter } from '../../models/children.models';
@@ -78,7 +79,7 @@ export class ManagerGuardiansComponent {
         error: (error) => {
           this.isLoading = false;
           const mapped = this.errorMapper.mapAndHandle(error);
-          this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+          this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.guardian'));
         },
       });
   }
@@ -132,7 +133,7 @@ export class ManagerGuardiansComponent {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.guardian'));
       },
     });
   }
@@ -155,11 +156,4 @@ export class ManagerGuardiansComponent {
     this.loadGuardians();
   }
 
-  private messageWithRequestId(message: string, requestId: string | null): string {
-    if (!requestId) {
-      return message;
-    }
-
-    return `${message} (Request: ${requestId})`;
-  }
 }

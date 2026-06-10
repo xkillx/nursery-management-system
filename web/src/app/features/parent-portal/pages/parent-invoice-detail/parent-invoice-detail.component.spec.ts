@@ -102,7 +102,7 @@ describe('ParentInvoiceDetailComponent', () => {
     errorMapperMock.mapAndHandle.and.returnValue({ code: 'not_found', message: 'Invoice not found', requestId: null, fieldErrors: {} });
     fixture.detectChanges();
 
-    expect(component.errorMessage).toContain('Invoice not found');
+    expect(component.errorMessage).toContain('no longer available');
   });
 
   it('renders parent-safe fields', () => {
@@ -202,13 +202,13 @@ describe('ParentInvoiceDetailComponent', () => {
     createTestBed();
     const detail = makeDetail({ status: 'issued' });
     apiMock.getInvoice.and.returnValue(of(detail));
-    apiMock.createCheckoutSession.and.returnValue(throwError(() => ({ error: { code: 'conflict', message: 'Already paid' } })));
-    errorMapperMock.mapAndHandle.and.returnValue({ code: 'conflict', message: 'Already paid', requestId: null, fieldErrors: {} });
+    apiMock.createCheckoutSession.and.returnValue(throwError(() => ({ error: { code: 'invoice_not_payable', message: 'Already paid' } })));
+    errorMapperMock.mapAndHandle.and.returnValue({ code: 'invoice_not_payable', message: 'Already paid', requestId: null, fieldErrors: {} });
 
     fixture.detectChanges();
     component.startPayment();
     expect(component.isPaying).toBeFalse();
-    expect(component.errorMessage).toContain('Already paid');
+    expect(component.errorMessage).toContain('no longer payable');
   });
 
   describe('return state — success', () => {
@@ -424,7 +424,7 @@ describe('ParentInvoiceDetailComponent', () => {
       fixture.detectChanges();
 
       expect(component.isPolling).toBeFalse();
-      expect(component.errorMessage).toContain('Server error');
+      expect(component.errorMessage).toContain('Something went wrong');
 
       discardPeriodicTasks();
     }));

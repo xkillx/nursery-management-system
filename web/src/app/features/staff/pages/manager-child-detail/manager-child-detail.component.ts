@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
@@ -105,7 +106,7 @@ export class ManagerChildDetailComponent implements OnInit {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
       },
     });
   }
@@ -131,7 +132,7 @@ export class ManagerChildDetailComponent implements OnInit {
       error: (error) => {
         this.isLinking = false;
         const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
       },
     });
   }
@@ -234,7 +235,7 @@ export class ManagerChildDetailComponent implements OnInit {
       this.fundingErrorMessage = mapped.fieldErrors['billing_month'];
       return;
     }
-    this.fundingErrorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+    this.fundingErrorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
   }
 
   private populateInputsFromMinutes(totalMinutes: number): void {
@@ -263,7 +264,7 @@ export class ManagerChildDetailComponent implements OnInit {
       error: (error) => {
         this.isLoadingChild = false;
         const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
       },
     });
   }
@@ -302,7 +303,7 @@ export class ManagerChildDetailComponent implements OnInit {
       error: (error) => {
         this.isLoadingLinks = false;
         const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = this.messageWithRequestId(mapped.message, mapped.requestId);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
       },
     });
   }
@@ -322,8 +323,4 @@ export class ManagerChildDetailComponent implements OnInit {
     return `${year}-${month}`;
   }
 
-  private messageWithRequestId(message: string, requestId: string | null): string {
-    if (!requestId) return message;
-    return `${message} (Request: ${requestId})`;
-  }
 }

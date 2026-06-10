@@ -160,3 +160,58 @@ func TestMapDomainError_PaymentProviderError_502(t *testing.T) {
 		t.Fatalf("expected payment_provider_error, got %s", resp.Code)
 	}
 }
+
+func TestMapDomainError_InviteRoleNotAllowed_BadRequest(t *testing.T) {
+	err := domainerrors.New("invite_role_not_allowed", "role not allowed")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", status)
+	}
+	if resp.Code != "invite_role_not_allowed" {
+		t.Fatalf("expected invite_role_not_allowed, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_InviteEmailAlreadyRegistered_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("invite_email_already_registered", "email registered")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "invite_email_already_registered" {
+		t.Fatalf("expected invite_email_already_registered, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_InviteScopeConflict_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("invite_scope_conflict", "scope conflict")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "invite_scope_conflict" {
+		t.Fatalf("expected invite_scope_conflict, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_InviteNotPending_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("invite_not_pending", "not pending")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "invite_not_pending" {
+		t.Fatalf("expected invite_not_pending, got %s", resp.Code)
+	}
+}
+
+func TestMapDomainError_InviteAlreadyAccepted_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("invite_already_accepted", "already accepted")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "invite_already_accepted" {
+		t.Fatalf("expected invite_already_accepted, got %s", resp.Code)
+	}
+}

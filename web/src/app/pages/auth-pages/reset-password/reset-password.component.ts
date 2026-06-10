@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../core/errors/api-error-presenter';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthPageLayoutComponent } from '../../../shared/layout/auth-page-layout/auth-page-layout.component';
 import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
@@ -116,9 +117,7 @@ export class ResetPasswordComponent {
       return;
     }
 
-    this.formError = mapped.requestId
-      ? `${mapped.message} (Request: ${mapped.requestId})`
-      : mapped.message;
+    this.formError = formatPresentedApiError(presentApiError(mapped, 'auth.resetPassword'));
   }
 
   private clearErrors() {

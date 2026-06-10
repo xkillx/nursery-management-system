@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 
 import { defaultRouteForRole } from '../../../../core/constants/roles';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MembershipModel } from '../../../../core/models/auth.models';
 import { isMembershipSelectionRequired } from '../../../../core/models/api-error.models';
@@ -117,17 +118,16 @@ export class SigninFormComponent {
     this.selectedMembershipId = null;
 
     const mapped = this.errorMapper.mapAndHandle(error);
+    const presented = presentApiError(mapped, 'auth.signin');
 
-    if (mapped.fieldErrors['email']) {
-      this.emailError = mapped.fieldErrors['email'];
+    if (presented.fieldErrors['email']) {
+      this.emailError = presented.fieldErrors['email'];
     }
-    if (mapped.fieldErrors['password']) {
-      this.passwordError = mapped.fieldErrors['password'];
+    if (presented.fieldErrors['password']) {
+      this.passwordError = presented.fieldErrors['password'];
     }
 
-    this.formError = mapped.requestId
-      ? `${mapped.message} (Request: ${mapped.requestId})`
-      : mapped.message;
+    this.formError = formatPresentedApiError(presented);
   }
 
   private clearErrors() {

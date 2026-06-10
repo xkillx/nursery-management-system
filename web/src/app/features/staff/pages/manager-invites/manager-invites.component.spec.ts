@@ -219,7 +219,7 @@ describe('ManagerInvitesComponent', () => {
       { status: 500, statusText: 'Internal Server Error' },
     );
 
-    expect(component.rowErrors['invite-1']).toContain('Server error');
+    expect(component.rowErrors['invite-1']).toContain('Something went wrong');
     expect(component.rowErrors['invite-1']).toContain('Request: req-abc');
   });
 

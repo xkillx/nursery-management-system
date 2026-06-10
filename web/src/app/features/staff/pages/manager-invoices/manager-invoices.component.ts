@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -153,7 +154,7 @@ export class ManagerInvoicesComponent implements OnInit {
         },
         error: (err) => {
           const mapped = this.errorMapper.mapAndHandle(err);
-          this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+          this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'invoice.managerList'));
           this.isLoading = false;
         },
       });

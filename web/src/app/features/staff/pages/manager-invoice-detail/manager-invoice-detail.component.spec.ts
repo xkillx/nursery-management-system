@@ -530,8 +530,8 @@ describe('ManagerInvoiceDetailComponent error handling', () => {
 
   it('shows error message on API error with request ID', () => {
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Invoice not found');
-    expect(text).toContain('req-99');
+    expect(text).toContain('no longer available');
+    expect(text).not.toContain('req-99');
   });
 });
 

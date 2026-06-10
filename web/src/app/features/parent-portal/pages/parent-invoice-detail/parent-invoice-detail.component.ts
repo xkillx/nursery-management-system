@@ -5,6 +5,7 @@ import { Subject, Subscription, timer } from 'rxjs';
 import { switchMap, takeUntil, takeWhile } from 'rxjs/operators';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -145,7 +146,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.parentCheckout'));
         this.isPaying = false;
       },
     });
@@ -192,7 +193,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.parentDetail'));
         this.isLoading = false;
       },
     });
@@ -243,7 +244,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           const mapped = this.errorMapper.mapAndHandle(err);
-          this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+          this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.parentDetail'));
           this.stopPolling();
         },
         complete: () => {

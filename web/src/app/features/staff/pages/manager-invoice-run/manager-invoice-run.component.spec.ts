@@ -293,7 +293,7 @@ describe('ManagerInvoiceRunComponent', () => {
     apiService.loadPreflight.and.returnValue(throwError(() => new Error('Network error')));
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.errorMessage).toBe('Failed to load invoice readiness. Try again.');
+    expect(fixture.componentInstance.errorMessage).toBe('Something went wrong. Try again.');
     expect(fixture.componentInstance.isLoadingPreflight).toBe(false);
   });
 

@@ -42,6 +42,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 			"attendance_correction_reason_required", "attendance_correction_reason_invalid",
 			"password_reset_token_invalid", "password_reset_token_expired", "password_reset_token_used",
 			"invite_token_invalid", "invite_token_expired", "invite_token_revoked", "invite_token_accepted",
+			"invite_role_not_allowed",
 			"payment_webhook_invalid_signature":
 		status = http.StatusBadRequest
 	case "attendance_session_already_open", "attendance_session_not_open",
@@ -51,7 +52,9 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"funding_month_outside_enrollment_window",
 		"absence_attendance_exists", "absence_marker_exists",
 			"invoice_not_draft", "invoice_not_monthly",
-			"invoice_not_payable":
+			"invoice_not_payable",
+			"invite_email_already_registered", "invite_scope_conflict",
+			"invite_not_pending", "invite_already_accepted":
 		status = http.StatusConflict
 	case "payment_provider_unconfigured":
 		status = http.StatusServiceUnavailable

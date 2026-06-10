@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -90,7 +91,7 @@ export class ParentInvoicesComponent implements OnInit {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.parentCheckout'));
         this.payingInvoiceIds.delete(invoiceId);
       },
     });
@@ -128,7 +129,7 @@ export class ParentInvoicesComponent implements OnInit {
         },
         error: (err) => {
           const mapped = this.errorMapper.mapAndHandle(err);
-          this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+          this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.parentList'));
           this.isLoading = false;
           this.isLoadingMore = false;
         },

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../core/errors/api-error-presenter';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthPageLayoutComponent } from '../../../shared/layout/auth-page-layout/auth-page-layout.component';
 import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
@@ -66,6 +67,7 @@ export class ForgotPasswordComponent {
 
   private handleError(error: any) {
     const mapped = this.errorMapper.map(error);
+    const presented = presentApiError(mapped, 'auth.forgotPassword');
 
     if (mapped.code === 'validation_error' && mapped.fieldErrors['email']) {
       this.emailError = mapped.fieldErrors['email'];
@@ -77,14 +79,11 @@ export class ForgotPasswordComponent {
       return;
     }
 
-    if (mapped.code === 'rate_limited') {
-      this.formError = 'Too many reset requests. Wait a moment and try again.';
-      return;
+    if (presented.fieldErrors['email']) {
+      this.emailError = presented.fieldErrors['email'];
     }
 
-    this.formError = mapped.requestId
-      ? `${mapped.message} (Request: ${mapped.requestId})`
-      : mapped.message;
+    this.formError = formatPresentedApiError(presented);
   }
 
   private clearErrors() {

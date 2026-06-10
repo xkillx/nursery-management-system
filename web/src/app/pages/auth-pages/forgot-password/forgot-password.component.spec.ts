@@ -81,7 +81,7 @@ describe('ForgotPasswordComponent', () => {
     component.onSubmit();
     tick();
 
-    expect(component.formError).toBe('Too many reset requests. Wait a moment and try again.');
+    expect(component.formError).toBe('Too many attempts. Wait a moment and try again.');
   }));
 
   it('shows request id for unknown errors', fakeAsync(() => {

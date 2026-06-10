@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -171,7 +172,7 @@ export class ManagerInvoiceDetailComponent implements OnInit {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.errorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'invoice.managerDetail'));
         this.isLoading = false;
       },
     });
@@ -189,7 +190,7 @@ export class ManagerInvoiceDetailComponent implements OnInit {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.paymentErrorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.paymentErrorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.managerDiagnostics'));
       },
     });
 
@@ -204,7 +205,7 @@ export class ManagerInvoiceDetailComponent implements OnInit {
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
-        this.paymentErrorMessage = mapped.message + (mapped.requestId ? ` (Request: ${mapped.requestId})` : '');
+        this.paymentErrorMessage = formatPresentedApiError(presentApiError(mapped, 'payment.managerDiagnostics'));
         this.isPaymentLoading = false;
       },
     });

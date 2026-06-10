@@ -271,7 +271,7 @@ describe('ManagerAttendanceCorrectionsComponent', () => {
       fixture.detectChanges();
 
       expect(component.correctionError?.kind).toBe('generic');
-      expect(component.correctionError?.message).toContain('Something broke');
+      expect(component.correctionError?.message).toContain('Something went wrong');
       expect(component.correctionError?.message).toContain('Request: req-123');
     });
 
