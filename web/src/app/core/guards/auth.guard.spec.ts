@@ -37,4 +37,14 @@ describe('authGuard', () => {
     expect(result instanceof UrlTree).toBeTrue();
     expect(router.serializeUrl(result as UrlTree)).toContain('/signin');
   });
+
+  it('preserves attempted URL exactly in redirect query param', () => {
+    spyOn(authService, 'isAuthenticated').and.returnValue(false);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as never, { url: '/staff/manager/children' } as never),
+    );
+
+    expect(router.serializeUrl(result as UrlTree)).toBe('/signin?redirect=%2Fstaff%2Fmanager%2Fchildren');
+  });
 });

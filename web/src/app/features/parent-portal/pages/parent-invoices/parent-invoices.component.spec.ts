@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ParentInvoicesComponent } from './parent-invoices.component';
 import { ParentInvoicesApiService } from '../../data/parent-invoices-api.service';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
-import { ParentInvoiceListItem } from '../../models/parent-invoices.models';
+import { ParentInvoiceListItem, CheckoutSessionResult } from '../../models/parent-invoices.models';
 
 function makeItem(overrides: Partial<Omit<ParentInvoiceListItem, 'invoiceId' | 'status'>> & { invoiceId: string; status?: ParentInvoiceListItem['status'] }): ParentInvoiceListItem {
   return {
@@ -157,5 +157,36 @@ describe('ParentInvoicesComponent', () => {
     fixture.detectChanges();
 
     expect(component.hasMore).toBeTrue();
+  });
+
+  it('duplicate startPayment does not create second checkout session', () => {
+    const items = [makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' })];
+    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.createCheckoutSession.and.returnValue(new Subject<CheckoutSessionResult>().asObservable());
+
+    fixture.detectChanges();
+    component.startPayment('1');
+    component.startPayment('1'); // second call while first is pending
+
+    expect(apiMock.createCheckoutSession).toHaveBeenCalledTimes(1);
+    expect(component.payingInvoiceIds.has('1')).toBeTrue();
+  });
+
+  it('payment error removes only that invoice ID from payingInvoiceIds', () => {
+    const items = [
+      makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' }),
+      makeItem({ invoiceId: '2', status: 'overdue', dueStatus: 'overdue' }),
+    ];
+    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.createCheckoutSession.withArgs('1').and.returnValue(new Subject<CheckoutSessionResult>().asObservable());
+    apiMock.createCheckoutSession.withArgs('2').and.returnValue(throwError(() => ({ error: { code: 'conflict', message: 'fail' } })));
+    errorMapperMock.mapAndHandle.and.returnValue({ code: 'conflict', message: 'fail', requestId: null, fieldErrors: {} });
+
+    fixture.detectChanges();
+    component.startPayment('1');
+    component.startPayment('2');
+
+    expect(component.payingInvoiceIds.has('1')).toBeTrue(); // still pending
+    expect(component.payingInvoiceIds.has('2')).toBeFalse(); // removed on error
   });
 });

@@ -171,6 +171,41 @@ describe('ManagerInvoicesApiService', () => {
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
       req.flush({ items: [minimalItem], limit: 50, offset: 0 });
     });
+
+    it('maps null generated run fields to null', () => {
+      const itemWithNullRun = {
+        invoice_id: 'inv-4',
+        invoice_kind: 'monthly',
+        invoice_number: 'INV-001',
+        child_id: 'c4',
+        child_name: 'Dan',
+        billing_month: '2026-05',
+        status: 'draft',
+        subtotal_minor: 20000,
+        funded_deduction_minor: 5000,
+        total_due_minor: 15000,
+        generated_run_id: null,
+        generated_run_status: null,
+        generated_run_started_at: null,
+        generated_run_completed_at: null,
+        generated_run_exception_count: null,
+        issued_at: null,
+        created_at: '2026-06-09T10:00:00Z',
+        updated_at: '2026-06-09T10:00:00Z',
+      };
+
+      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
+        const item = result.items[0];
+        expect(item.generatedRunId).toBeNull();
+        expect(item.generatedRunStatus).toBeNull();
+        expect(item.generatedRunStartedAt).toBeNull();
+        expect(item.generatedRunCompletedAt).toBeNull();
+        expect(item.generatedRunExceptionCount).toBeNull();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
+      req.flush({ items: [itemWithNullRun], limit: 50, offset: 0 });
+    });
   });
 
   describe('getInvoice', () => {

@@ -224,6 +224,105 @@ describe('InvoiceRunApiService', () => {
     });
   });
 
+  describe('loadPreflight — multiple blockers', () => {
+    it('maps blocked child with multiple blocker codes and messages', () => {
+      const response = {
+        billing_month: '2026-05',
+        summary: {
+          total_children_count: 2,
+          eligible_children_count: 1,
+          blocked_children_count: 1,
+          included_session_count: 10,
+          rounded_attended_minutes: 1320,
+          funded_deduction_minor: 4500,
+          total_due_minor: 21000,
+        },
+        eligible_children: [],
+        blocked_children: [
+          {
+            child_id: 'c2',
+            child_name: 'Alice',
+            blockers: [
+              { code: 'incomplete_attendance', message: '3 sessions missing check-out' },
+              { code: 'missing_funding_profile', message: 'No funding profile configured' },
+            ],
+          },
+        ],
+      };
+
+      service.loadPreflight('2026-05').subscribe((preflight) => {
+        expect(preflight.blockedChildren.length).toBe(1);
+        const blocked = preflight.blockedChildren[0];
+        expect(blocked.childId).toBe('c2');
+        expect(blocked.childName).toBe('Alice');
+        expect(blocked.blockers.length).toBe(2);
+        expect(blocked.blockers[0].code).toBe('incomplete_attendance');
+        expect(blocked.blockers[0].detail).toBe('3 sessions missing check-out');
+        expect(blocked.blockers[1].code).toBe('missing_funding_profile');
+        expect(blocked.blockers[1].detail).toBe('No funding profile configured');
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/drafts/preflight');
+      req.flush(response);
+    });
+  });
+
+  describe('generateDrafts — mixed actions', () => {
+    it('maps generated array with both created and updated actions', () => {
+      const response = {
+        run_id: 'run-5',
+        billing_month: '2026-05',
+        status: 'completed',
+        summary: { eligible_count: 4, success_count: 4, blocked_count: 0, total_due_minor: 96000 },
+        generated: [
+          { child_id: 'c1', child_name: 'Ben', action: 'created', invoice_id: 'inv-1' },
+          { child_id: 'c3', child_name: 'Chloe', action: 'updated', invoice_id: 'inv-3' },
+          { child_id: 'c4', child_name: 'Dan', action: 'created', invoice_id: 'inv-4' },
+          { child_id: 'c5', child_name: 'Eve', action: 'updated', invoice_id: 'inv-5' },
+        ],
+        blocked: [],
+      };
+
+      service.generateDrafts('2026-05').subscribe((result) => {
+        expect(result.generatedCount).toBe(2);
+        expect(result.updatedCount).toBe(2);
+        expect(result.blockedCount).toBe(0);
+        expect(result.blockedChildren).toEqual([]);
+      });
+
+      const req = httpMock.expectOne('/api/v1/invoice-runs/drafts');
+      req.flush(response);
+    });
+  });
+
+  describe('bulkIssue — edge cases', () => {
+    it('maps blocked invoice with empty blockers to fallback skipped reason', () => {
+      const response = {
+        run_id: 'run-6',
+        billing_month: '2026-05',
+        status: 'completed_with_exceptions',
+        summary: { issued_count: 1, blocked_count: 1, total_due_minor: 24000 },
+        issued: [
+          { invoice_id: 'inv-1', invoice_number: 'INV-001', child_id: 'c1', child_name: 'Ben', issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
+        ],
+        blocked: [
+          { invoice_id: 'inv-2', child_id: 'c2', child_name: 'Alice', blockers: [] },
+        ],
+      };
+
+      service.bulkIssue('2026-05', ['inv-1', 'inv-2']).subscribe((result) => {
+        expect(result.issuedCount).toBe(1);
+        expect(result.skipped.length).toBe(1);
+        expect(result.skipped[0].invoiceId).toBe('inv-2');
+        expect(result.skipped[0].childName).toBe('Alice');
+        expect(result.skipped[0].reason).toBe('Blocked');
+      });
+
+      const req = httpMock.expectOne('/api/v1/invoices/bulk-issue');
+      req.flush(response);
+    });
+  });
+
   describe('issueOne', () => {
     it('sends confirm true and returns result with invoice number and child context', () => {
       const issueResponse = {

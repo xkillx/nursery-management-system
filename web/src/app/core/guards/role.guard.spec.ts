@@ -60,6 +60,16 @@ describe('roleGuard', () => {
     expect(result).toBeTrue();
   });
 
+  it('allows practitioner on manager+practitioner route', () => {
+    spyOn(authService, 'currentRole').and.returnValue('practitioner');
+
+    const result = TestBed.runInInjectionContext(() =>
+      roleGuard({ data: { roles: ['manager', 'practitioner'] } } as never, {} as never),
+    );
+
+    expect(result).toBeTrue();
+  });
+
   it('allows navigation for matching role', () => {
     spyOn(authService, 'currentRole').and.returnValue('manager');
 

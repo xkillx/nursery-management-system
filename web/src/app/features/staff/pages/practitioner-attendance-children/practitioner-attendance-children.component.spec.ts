@@ -749,6 +749,164 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     });
   });
 
+  describe('checked-in state derived from openSessionId', () => {
+    it('treats child as checked in when openSessionId is set even if state is not_checked_in', () => {
+      const childWithOpenSession: AttendanceChildRecord = {
+        id: 'child-session',
+        fullName: 'Session Override',
+        enrollmentComplete: true,
+        attendanceState: 'not_checked_in',
+        openSessionId: 'session-open',
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: null,
+        absenceMarkedAt: null,
+      };
+      setChildrenAndDetectChanges([childWithOpenSession]);
+
+      expect(component.isCheckedIn(childWithOpenSession)).toBeTrue();
+      expect(component.canCheckOut(childWithOpenSession)).toBeTrue();
+    });
+  });
+
+  describe('absent child cannot be checked in', () => {
+    it('checkIn does not call API for absent child', () => {
+      const absentChild: AttendanceChildRecord = {
+        id: 'child-absent-nocheckin',
+        fullName: 'No Check Absent',
+        enrollmentComplete: true,
+        attendanceState: 'absent',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: 'marker-x',
+        absenceMarkedAt: '2026-06-09T08:00:00Z',
+      };
+      setChildrenAndDetectChanges([absentChild]);
+
+      component.checkIn(absentChild);
+      fixture.detectChanges();
+
+      expect(staffApiSpy.checkInChild).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pending row blocks duplicate mutations', () => {
+    it('does not call checkInChild twice while first call is pending', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      staffApiSpy.checkInChild.and.returnValue(new Observable());
+
+      component.checkIn(mockChildren[0]);
+      component.checkIn(mockChildren[0]);
+
+      expect(staffApiSpy.checkInChild).toHaveBeenCalledTimes(1);
+      expect(staffApiSpy.checkInChild).toHaveBeenCalledWith('child-1');
+    });
+
+    it('isPending returns true for in-flight mutation and other eligible children remain actionable', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      staffApiSpy.checkInChild.and.returnValue(new Observable());
+
+      component.checkIn(mockChildren[0]);
+
+      expect(component.isPending('child-1')).toBeTrue();
+
+      const otherEligibleChild: AttendanceChildRecord = {
+        id: 'child-other',
+        fullName: 'Other Eligible',
+        enrollmentComplete: true,
+        attendanceState: 'not_checked_in',
+        openSessionId: null,
+        checkedInAt: null,
+        hasIncompleteSession: false,
+        absenceMarkerId: null,
+        absenceMarkedAt: null,
+      };
+
+      expect(component.canCheckIn(otherEligibleChild)).toBeTrue();
+    });
+  });
+
+  describe('row errors pruned after reload when child disappears', () => {
+    it('removes row error for child no longer in loaded list', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      component.rowErrors['child-gone'] = 'Some error';
+      expect(component.rowErrors['child-gone']).toBe('Some error');
+
+      staffApiSpy.listAttendanceChildren.and.returnValue(of([mockChildren[0]]));
+      component.loadChildren('mutation');
+      fixture.detectChanges();
+
+      expect(component.rowErrors['child-gone']).toBeUndefined();
+    });
+  });
+
+  describe('background refresh updates child state', () => {
+    it('reflects state change from not_checked_in to checked_in after poll resolves', fakeAsync(() => {
+      staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
+      fixture.detectChanges();
+
+      const updatedChildren: AttendanceChildRecord[] = mockChildren.map((c) =>
+        c.id === 'child-1'
+          ? { ...c, attendanceState: 'checked_in' as const, openSessionId: 'session-new', checkedInAt: '2026-06-10T09:00:00Z' }
+          : c,
+      );
+
+      let resolvePoll!: () => void;
+      staffApiSpy.listAttendanceChildren.and.returnValue(
+        new Observable((subscriber) => {
+          resolvePoll = () => {
+            subscriber.next(updatedChildren);
+            subscriber.complete();
+          };
+        }),
+      );
+
+      tick(30000);
+
+      expect(component.isBackgroundRefreshing).toBeTrue();
+      expect(component.isLoading).toBeFalse();
+
+      resolvePoll();
+      fixture.detectChanges();
+
+      expect(component.isBackgroundRefreshing).toBeFalse();
+      expect(component.isLoading).toBeFalse();
+
+      const updatedChild = component.children.find((c) => c.id === 'child-1')!;
+      expect(updatedChild.attendanceState).toBe('checked_in');
+      expect(updatedChild.openSessionId).toBe('session-new');
+      expect(component.isCheckedIn(updatedChild)).toBeTrue();
+
+      fixture.destroy();
+    }));
+  });
+
+  describe('list-load failure preserves current children and shows global error', () => {
+    it('keeps previous children and sets errorMessage on subsequent load failure', () => {
+      setChildrenAndDetectChanges(mockChildren);
+
+      expect(component.children.length).toBe(3);
+      expect(component.errorMessage).toBeNull();
+
+      const loadError = new HttpErrorResponse({
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+      staffApiSpy.listAttendanceChildren.and.returnValue(throwError(() => loadError));
+
+      component.loadChildren('manual');
+      fixture.detectChanges();
+
+      expect(component.children.length).toBe(3);
+      expect(component.children[0].fullName).toBe('Ada Lovelace');
+      expect(component.errorMessage).toBeTruthy();
+    });
+  });
+
   describe('FE-14 auto-refresh polling', () => {
     it('defaults auto-refresh to enabled and renders toggle', fakeAsync(() => {
       staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));

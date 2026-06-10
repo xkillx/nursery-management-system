@@ -676,3 +676,342 @@ describe('StaffApiService — Funding', () => {
     req.flush(emptyOverview);
   });
 });
+
+describe('StaffApiService — Attendance Corrections', () => {
+  let service: StaffApiService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(StaffApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  describe('listCorrectionSessions', () => {
+    it('sends child_id and local_date query params', () => {
+      service.listCorrectionSessions('child-1', '2026-06-09').subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/attendance/sessions');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('child_id')).toBe('child-1');
+      expect(req.request.params.get('local_date')).toBe('2026-06-09');
+      req.flush({
+        child_id: 'child-1',
+        selected_local_date: '2026-06-09',
+        items: [],
+      });
+    });
+
+    it('maps selectedLocalDate and invoice_warning object', (done) => {
+      const response = {
+        child_id: 'child-1',
+        selected_local_date: '2026-06-09',
+        invoice_warning: {
+          billing_month: '2026-06',
+          invoice_id: 'inv-1',
+          invoice_number: 'INV-001',
+          status: 'issued',
+        },
+        items: [
+          {
+            id: 'session-1',
+            child_id: 'child-1',
+            status: 'closed',
+            check_in_at: '2026-06-09T08:00:00Z',
+            check_out_at: '2026-06-09T15:00:00Z',
+            check_in_local_date: '2026-06-09',
+            check_out_local_date: '2026-06-09',
+            duration_minutes: 420,
+            created_at: '2026-06-09T08:00:00Z',
+            updated_at: '2026-06-09T15:00:00Z',
+          },
+        ],
+      };
+
+      service.listCorrectionSessions('child-1', '2026-06-09').subscribe((ctx) => {
+        expect(ctx.childId).toBe('child-1');
+        expect(ctx.selectedLocalDate).toBe('2026-06-09');
+        expect(ctx.invoiceWarning).not.toBeNull();
+        expect(ctx.invoiceWarning!.billingMonth).toBe('2026-06');
+        expect(ctx.invoiceWarning!.invoiceId).toBe('inv-1');
+        expect(ctx.invoiceWarning!.invoiceNumber).toBe('INV-001');
+        expect(ctx.invoiceWarning!.status).toBe('issued');
+        expect(ctx.items.length).toBe(1);
+        expect(ctx.items[0].id).toBe('session-1');
+        expect(ctx.items[0].checkInAt).toBe('2026-06-09T08:00:00Z');
+        expect(ctx.items[0].durationMinutes).toBe(420);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/attendance/sessions');
+      req.flush(response);
+    });
+
+    it('maps null invoice_warning to null', (done) => {
+      const response = {
+        child_id: 'child-2',
+        selected_local_date: '2026-06-10',
+        invoice_warning: null as unknown as undefined,
+        items: [],
+      };
+
+      service.listCorrectionSessions('child-2', '2026-06-10').subscribe((ctx) => {
+        expect(ctx.invoiceWarning).toBeNull();
+        expect(ctx.items).toEqual([]);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/attendance/sessions');
+      req.flush(response);
+    });
+
+    it('maps multiple session items', (done) => {
+      const response = {
+        child_id: 'child-1',
+        selected_local_date: '2026-06-09',
+        items: [
+          {
+            id: 'session-1',
+            child_id: 'child-1',
+            status: 'closed',
+            check_in_at: '2026-06-09T08:00:00Z',
+            check_out_at: '2026-06-09T12:00:00Z',
+            check_in_local_date: '2026-06-09',
+            check_out_local_date: '2026-06-09',
+            duration_minutes: 240,
+            created_at: '2026-06-09T08:00:00Z',
+            updated_at: '2026-06-09T12:00:00Z',
+          },
+          {
+            id: 'session-2',
+            child_id: 'child-1',
+            status: 'closed',
+            check_in_at: '2026-06-09T13:00:00Z',
+            check_out_at: '2026-06-09T16:00:00Z',
+            check_in_local_date: '2026-06-09',
+            check_out_local_date: '2026-06-09',
+            duration_minutes: 180,
+            created_at: '2026-06-09T13:00:00Z',
+            updated_at: '2026-06-09T16:00:00Z',
+          },
+        ],
+      };
+
+      service.listCorrectionSessions('child-1', '2026-06-09').subscribe((ctx) => {
+        expect(ctx.items.length).toBe(2);
+        expect(ctx.items[0].id).toBe('session-1');
+        expect(ctx.items[0].durationMinutes).toBe(240);
+        expect(ctx.items[1].id).toBe('session-2');
+        expect(ctx.items[1].durationMinutes).toBe(180);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/attendance/sessions');
+      req.flush(response);
+    });
+  });
+
+  describe('getCorrectionHistory', () => {
+    it('maps session and event fields including nullable fields to null', (done) => {
+      const response = {
+        session: {
+          id: 'session-1',
+          child_id: 'child-1',
+          status: 'closed',
+          check_in_at: '2026-06-09T08:00:00Z',
+          check_out_at: '2026-06-09T15:00:00Z',
+          check_in_local_date: '2026-06-09',
+          check_out_local_date: '2026-06-09',
+          duration_minutes: 420,
+          created_at: '2026-06-09T08:00:00Z',
+          updated_at: '2026-06-09T15:00:00Z',
+        },
+        items: [
+          {
+            id: 'evt-1',
+            event_type: 'correction',
+            occurred_at: '2026-06-09T16:00:00Z',
+            local_date: '2026-06-09',
+            recorded_by_user_id: 'user-1',
+            recorded_by_membership_id: 'member-1',
+            recorded_by_label: null,
+            reason_code: null,
+            reason_note: null,
+            previous_check_in_at: null,
+            previous_check_out_at: null,
+            corrected_check_in_at: null,
+            corrected_check_out_at: null,
+            created_by_correction: true,
+          },
+        ],
+      };
+
+      service.getCorrectionHistory('session-1').subscribe((history) => {
+        expect(history.session.id).toBe('session-1');
+        expect(history.session.childId).toBe('child-1');
+        expect(history.items.length).toBe(1);
+        const evt = history.items[0];
+        expect(evt.id).toBe('evt-1');
+        expect(evt.eventType).toBe('correction');
+        expect(evt.occurredAt).toBe('2026-06-09T16:00:00Z');
+        expect(evt.localDate).toBe('2026-06-09');
+        expect(evt.recordedByUserId).toBe('user-1');
+        expect(evt.recordedByMembershipId).toBe('member-1');
+        expect(evt.recordedByLabel).toBeNull();
+        expect(evt.reasonCode).toBeNull();
+        expect(evt.reasonNote).toBeNull();
+        expect(evt.previousCheckInAt).toBeNull();
+        expect(evt.previousCheckOutAt).toBeNull();
+        expect(evt.correctedCheckInAt).toBeNull();
+        expect(evt.correctedCheckOutAt).toBeNull();
+        expect(evt.createdByCorrection).toBe(true);
+        done();
+      });
+
+      const req = httpMock.expectOne('/api/v1/attendance/sessions/session-1/history');
+      expect(req.request.method).toBe('GET');
+      req.flush(response);
+    });
+
+    it('maps populated nullable fields for a correction event', (done) => {
+      const response = {
+        session: {
+          id: 'session-1',
+          child_id: 'child-1',
+          status: 'closed',
+          check_in_at: '2026-06-09T09:00:00Z',
+          check_out_at: '2026-06-09T15:30:00Z',
+          check_in_local_date: '2026-06-09',
+          check_out_local_date: '2026-06-09',
+          duration_minutes: 390,
+          created_at: '2026-06-09T08:00:00Z',
+          updated_at: '2026-06-09T16:00:00Z',
+        },
+        items: [
+          {
+            id: 'evt-2',
+            event_type: 'check_in',
+            occurred_at: '2026-06-09T16:10:00Z',
+            local_date: '2026-06-09',
+            recorded_by_user_id: 'user-2',
+            recorded_by_membership_id: 'member-2',
+            recorded_by_label: 'Manager',
+            reason_code: 'incorrect_time',
+            reason_note: 'Wrong time entered',
+            previous_check_in_at: '2026-06-09T08:00:00Z',
+            previous_check_out_at: '2026-06-09T15:00:00Z',
+            corrected_check_in_at: '2026-06-09T09:00:00Z',
+            corrected_check_out_at: '2026-06-09T15:30:00Z',
+            created_by_correction: false,
+          },
+        ],
+      };
+
+      service.getCorrectionHistory('session-1').subscribe((history) => {
+        const evt = history.items[0];
+        expect(evt.recordedByLabel).toBe('Manager');
+        expect(evt.reasonCode).toBe('incorrect_time');
+        expect(evt.reasonNote).toBe('Wrong time entered');
+        expect(evt.previousCheckInAt).toBe('2026-06-09T08:00:00Z');
+        expect(evt.previousCheckOutAt).toBe('2026-06-09T15:00:00Z');
+        expect(evt.correctedCheckInAt).toBe('2026-06-09T09:00:00Z');
+        expect(evt.correctedCheckOutAt).toBe('2026-06-09T15:30:00Z');
+        expect(evt.createdByCorrection).toBe(false);
+        done();
+      });
+
+      const req = httpMock.expectOne('/api/v1/attendance/sessions/session-1/history');
+      req.flush(response);
+    });
+  });
+
+  describe('correctAttendance', () => {
+    it('sends session_id for existing-session correction', (done) => {
+      const response = {
+        id: 'session-1',
+        child_id: 'child-1',
+        status: 'closed',
+        check_in_at: '2026-06-09T09:00:00Z',
+        check_out_at: '2026-06-09T15:30:00Z',
+        check_in_local_date: '2026-06-09',
+        check_out_local_date: '2026-06-09',
+        duration_minutes: 390,
+        created_at: '2026-06-09T08:00:00Z',
+        updated_at: '2026-06-09T16:00:00Z',
+      };
+
+      service
+        .correctAttendance({
+          sessionId: 'session-1',
+          checkInAt: '2026-06-09T09:00:00Z',
+          checkOutAt: '2026-06-09T15:30:00Z',
+          reasonCode: 'incorrect_time',
+          reasonNote: 'Corrected times',
+        })
+        .subscribe((session) => {
+          expect(session.id).toBe('session-1');
+          expect(session.checkInAt).toBe('2026-06-09T09:00:00Z');
+          expect(session.checkOutAt).toBe('2026-06-09T15:30:00Z');
+          done();
+        });
+
+      const req = httpMock.expectOne('/api/v1/attendance/corrections');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        session_id: 'session-1',
+        check_in_at: '2026-06-09T09:00:00Z',
+        check_out_at: '2026-06-09T15:30:00Z',
+        reason_code: 'incorrect_time',
+        reason_note: 'Corrected times',
+      });
+      req.flush(response);
+    });
+
+    it('sends child_id instead of session_id for missed-session correction', (done) => {
+      const response = {
+        id: 'session-new',
+        child_id: 'child-1',
+        status: 'closed',
+        check_in_at: '2026-06-09T08:00:00Z',
+        check_out_at: '2026-06-09T16:00:00Z',
+        check_in_local_date: '2026-06-09',
+        check_out_local_date: '2026-06-09',
+        duration_minutes: 480,
+        created_at: '2026-06-09T16:30:00Z',
+        updated_at: '2026-06-09T16:30:00Z',
+      };
+
+      service
+        .correctAttendance({
+          childId: 'child-1',
+          checkInAt: '2026-06-09T08:00:00Z',
+          checkOutAt: '2026-06-09T16:00:00Z',
+          reasonCode: 'missed_check_in',
+          reasonNote: 'Forgot to check in',
+        })
+        .subscribe((session) => {
+          expect(session.id).toBe('session-new');
+          expect(session.durationMinutes).toBe(480);
+          done();
+        });
+
+      const req = httpMock.expectOne('/api/v1/attendance/corrections');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        child_id: 'child-1',
+        check_in_at: '2026-06-09T08:00:00Z',
+        check_out_at: '2026-06-09T16:00:00Z',
+        reason_code: 'missed_check_in',
+        reason_note: 'Forgot to check in',
+      });
+      req.flush(response);
+    });
+  });
+});

@@ -429,4 +429,77 @@ describe('ParentInvoiceDetailComponent', () => {
       discardPeriodicTasks();
     }));
   });
+
+  it('startPayment does nothing when detail is null', () => {
+    createTestBed({ routeId: null });
+    fixture.detectChanges();
+    component.startPayment();
+
+    expect(apiMock.createCheckoutSession).not.toHaveBeenCalled();
+    expect(component.isPaying).toBeFalse();
+  });
+
+  it('startPayment does nothing when isPaying is already true', () => {
+    createTestBed();
+    const detail = makeDetail({ status: 'issued' });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    component.isPaying = true;
+    component.startPayment();
+
+    expect(apiMock.createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('successful checkout creation redirects and does not render session ID or attempt ID', () => {
+    createTestBed();
+    const detail = makeDetail({ status: 'issued' });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    apiMock.createCheckoutSession.and.returnValue(of({
+      checkoutSessionId: 'cs-1',
+      checkoutUrl: 'https://checkout.stripe.com/session',
+      paymentAttemptId: 'pa-1',
+    }));
+
+    fixture.detectChanges();
+    spyOn(component, 'redirectTo');
+    component.startPayment();
+
+    expect(component.redirectTo).toHaveBeenCalledWith('https://checkout.stripe.com/session');
+    const text = fixture.debugElement.nativeElement.textContent;
+    expect(text).not.toContain('cs-1');
+    expect(text).not.toContain('pa-1');
+  });
+
+  it('clearReturnParams preserves unrelated query params', () => {
+    createTestBed({ queryParams: { checkout: 'success', session_id: 'cs_test', ref: 'email' } });
+    const detail = makeDetail({ status: 'paid', dueStatus: 'paid', amountPaidMinor: 40000 });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    const navigateCall = routerMock.navigate.calls.argsFor(0)!;
+    expect(navigateCall[1]!.queryParams).toEqual({ ref: 'email' });
+    expect(navigateCall[1]!.replaceUrl).toBeTrue();
+  });
+
+  it('cancelled return but invoice is already paid shows paid state with no polling', () => {
+    createTestBed({ queryParams: { checkout: 'cancelled' } });
+    const detail = makeDetail({ status: 'paid', dueStatus: 'paid', amountPaidMinor: 40000 });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    expect(component.returnDisplayState).toBe('paid');
+    expect(component.isPolling).toBeFalse();
+  });
+
+  it('success return with payment_failed on first load shows failed immediately with no polling', () => {
+    createTestBed({ queryParams: { checkout: 'success' } });
+    const detail = makeDetail({ status: 'payment_failed' });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    expect(component.returnDisplayState).toBe('failed');
+    expect(component.isPolling).toBeFalse();
+    expect(apiMock.getInvoice).toHaveBeenCalledTimes(1); // no polling fetch
+  });
 });

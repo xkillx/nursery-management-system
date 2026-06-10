@@ -133,4 +133,110 @@ describe('AuthService', () => {
     expect(request.request.body).toEqual({ token: 'invite-token', new_password: 'newpassword1' });
     request.flush(null, { status: 204, statusText: 'No Content' });
   });
+
+  it('login applies full session state', () => {
+    service.login('manager@example.com', 'password123').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush(mockAuthResponse);
+
+    expect(service.user()?.id).toBe('user-1');
+    expect(service.user()?.email).toBe('manager@example.com');
+    expect(service.activeMembership()?.membership_id).toBe('membership-1');
+    expect(service.activeMembership()?.role).toBe('manager');
+    expect(service.activeMembership()?.tenant_name).toBe('Little Sprouts Nursery');
+    const memberships = (service as any).state().availableMemberships;
+    expect(memberships.length).toBe(1);
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.currentRole()).toBe('manager');
+    expect(service.accessToken()).toBe('access-token');
+  });
+
+  it('login without membership sends only email and password', () => {
+    service.login('manager@example.com', 'password123').subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/login');
+    expect(request.request.body).toEqual({
+      email: 'manager@example.com',
+      password: 'password123',
+    });
+    expect(request.request.body).not.toContain(jasmine.objectContaining({ membership_id: jasmine.anything() }));
+    request.flush(mockAuthResponse);
+  });
+
+  it('refresh applies replacement session and sends withCredentials', () => {
+    service.refresh().subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/refresh');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    expect(request.request.withCredentials).toBeTrue();
+    request.flush(mockAuthResponse);
+
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.accessToken()).toBe('access-token');
+  });
+
+  it('refresh sends X-CSRF-Token when csrf_token cookie exists', () => {
+    document.cookie = 'csrf_token=test-csrf-token;path=/';
+
+    service.refresh().subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/refresh');
+    expect(request.request.headers.get('X-CSRF-Token')).toBe('test-csrf-token');
+    request.flush(mockAuthResponse);
+  });
+
+  it('refresh omits X-CSRF-Token when cookie is absent', () => {
+    service.refresh().subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/refresh');
+    expect(request.request.headers.get('X-CSRF-Token')).toBeNull();
+    request.flush(mockAuthResponse);
+  });
+
+  it('bootstrap failure clears stale session state', async () => {
+    service.login('manager@example.com', 'password123').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush(mockAuthResponse);
+    expect(service.isAuthenticated()).toBeTrue();
+
+    const bootstrapPromise = service.bootstrapSession();
+
+    const request = httpMock.expectOne('/api/v1/auth/refresh');
+    request.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    await bootstrapPromise;
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.accessToken()).toBeNull();
+    expect(service.user()).toBeNull();
+  });
+
+  it('logout clears session even when server call fails', () => {
+    service.login('manager@example.com', 'password123').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush(mockAuthResponse);
+    expect(service.isAuthenticated()).toBeTrue();
+
+    const errorSpy = jasmine.createSpy('error');
+    service.logout().subscribe({ error: errorSpy });
+
+    const request = httpMock.expectOne('/api/v1/auth/logout');
+    request.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.accessToken()).toBeNull();
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('logout observable completes without error when server call fails', () => {
+    service.login('manager@example.com', 'password123').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush(mockAuthResponse);
+
+    const errorSpy = jasmine.createSpy('error');
+    const completeSpy = jasmine.createSpy('complete');
+    service.logout().subscribe({ error: errorSpy, complete: completeSpy });
+
+    const request = httpMock.expectOne('/api/v1/auth/logout');
+    request.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(completeSpy).toHaveBeenCalled();
+  });
 });

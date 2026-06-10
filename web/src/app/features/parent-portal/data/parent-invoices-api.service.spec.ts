@@ -35,6 +35,18 @@ describe('ParentInvoicesApiService', () => {
       req.flush({ items: [], limit: 200, offset: 0 });
     });
 
+    it('sends optional billing_month, status, and child_id params', () => {
+      service.listInvoices({ limit: 200, offset: 0, billingMonth: '2026-05', status: 'issued', childId: 'c-1' }).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices'));
+      expect(req.request.params.get('limit')).toBe('200');
+      expect(req.request.params.get('offset')).toBe('0');
+      expect(req.request.params.get('billing_month')).toBe('2026-05');
+      expect(req.request.params.get('status')).toBe('issued');
+      expect(req.request.params.get('child_id')).toBe('c-1');
+      req.flush({ items: [], limit: 200, offset: 0 });
+    });
+
     it('maps list fields from snake_case to camelCase', (done) => {
       const apiResponse = {
         items: [{
@@ -80,6 +92,38 @@ describe('ParentInvoicesApiService', () => {
         expect(item.amountPaidMinor).toBe(0);
         expect(result.limit).toBe(200);
         expect(result.offset).toBe(0);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices'));
+      req.flush(apiResponse);
+    });
+
+    it('applies null-safe defaults for missing optional fields', (done) => {
+      const apiResponse = {
+        items: [{
+          invoice_id: 'inv-3',
+          invoice_kind: 'monthly',
+          invoice_number: null,
+          child_id: 'c-3',
+          child_name: 'Clara',
+          billing_month: '2026-05',
+          status: 'issued',
+          subtotal_minor: 10000,
+          funded_deduction_minor: 0,
+          total_due_minor: 10000,
+        }],
+        limit: 200,
+        offset: 0,
+      };
+
+      service.listInvoices({ limit: 200, offset: 0 }).subscribe((result) => {
+        const item = result.items[0];
+        expect(item.invoiceNumberDisplay).toBe('');
+        expect(item.dueStatus).toBe('due');
+        expect(item.currencyCode).toBe('gbp');
+        expect(item.amountPaidMinor).toBe(0);
+        expect(item.period).toBeNull();
         done();
       });
 
@@ -143,10 +187,51 @@ describe('ParentInvoicesApiService', () => {
       const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-1'));
       req.flush(apiResponse);
     });
+
+    it('sorts lines by sort_order', (done) => {
+      const apiResponse = {
+        invoice_id: 'inv-2',
+        invoice_kind: 'monthly',
+        invoice_number: null,
+        invoice_number_display: 'Draft',
+        child_id: 'c-2',
+        child_name: 'Bob',
+        billing_month: '2026-05',
+        status: 'issued',
+        subtotal_minor: 30000,
+        funded_deduction_minor: 5000,
+        total_due_minor: 25000,
+        amount_paid_minor: 0,
+        issued_at: '2026-05-28T00:00:00Z',
+        due_at: '2026-06-01T00:00:00Z',
+        paid_at: null,
+        payment_failed_at: null,
+        payment_status_updated_at: null,
+        lines: [
+          { line_kind: 'extras', description: 'Extra sessions', sort_order: 3, quantity_minutes: 30, unit_amount_minor: 100, line_amount_minor: 3000 },
+          { line_kind: 'core', description: 'Core sessions', sort_order: 1, quantity_minutes: 300, unit_amount_minor: 100, line_amount_minor: 30000 },
+          { line_kind: 'funded_deduction', description: 'Funded deduction', sort_order: 2, quantity_minutes: 50, unit_amount_minor: 100, line_amount_minor: -5000 },
+        ],
+      };
+
+      service.getInvoice('inv-2').subscribe((detail) => {
+        expect(detail.lines.length).toBe(3);
+        expect(detail.lines[0].sortOrder).toBe(1);
+        expect(detail.lines[0].lineKind).toBe('core');
+        expect(detail.lines[1].sortOrder).toBe(2);
+        expect(detail.lines[1].lineKind).toBe('funded_deduction');
+        expect(detail.lines[2].sortOrder).toBe(3);
+        expect(detail.lines[2].lineKind).toBe('extras');
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-2'));
+      req.flush(apiResponse);
+    });
   });
 
   describe('createCheckoutSession', () => {
-    it('posts and maps checkout_url', (done) => {
+    it('posts null body and maps all checkout fields', (done) => {
       const apiResponse = {
         checkout_session_id: 'cs-123',
         checkout_url: 'https://checkout.stripe.com/session',
@@ -162,6 +247,7 @@ describe('ParentInvoicesApiService', () => {
 
       const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-1/checkout-sessions'));
       expect(req.request.method).toBe('POST');
+      expect(req.request.body).toBeNull();
       req.flush(apiResponse);
     });
   });

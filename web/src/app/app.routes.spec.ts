@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 import { routes } from './app.routes';
+import { authGuard } from './core/guards/auth.guard';
+import { roleDefaultRedirectGuard } from './core/guards/role-default-redirect.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 function flattenPaths(routes: Routes, parentPath = ''): string[] {
   const paths: string[] = [];
@@ -148,5 +151,55 @@ describe('app.routes', () => {
 
     expect(detailRoute).toBeDefined();
     expect(detailRoute!.data?.['roles']).toEqual(['parent']);
+  });
+
+  it('root path includes authGuard and roleDefaultRedirectGuard', () => {
+    const rootRoute = routes.find(r => r.path === '' && r.pathMatch === 'full');
+
+    expect(rootRoute).toBeDefined();
+    expect(rootRoute!.canActivate).toContain(authGuard);
+    expect(rootRoute!.canActivate).toContain(roleDefaultRedirectGuard);
+  });
+
+  it('protected manager routes include both authGuard and roleGuard', () => {
+    const managerRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('staff/manager'));
+
+    for (const route of managerRoutes) {
+      if (route.redirectTo) continue;
+      expect(route.canActivate).toContain(authGuard);
+      expect(route.canActivate).toContain(roleGuard);
+    }
+  });
+
+  it('protected parent routes include both authGuard and roleGuard', () => {
+    const parentRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('parent'));
+
+    for (const route of parentRoutes) {
+      expect(route.canActivate).toContain(authGuard);
+      expect(route.canActivate).toContain(roleGuard);
+    }
+  });
+
+  it('practitioner attendance route allows both manager and practitioner', () => {
+    const attendanceRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'staff/practitioner/attendance');
+
+    expect(attendanceRoute).toBeDefined();
+    expect(attendanceRoute!.data?.['roles']).toEqual(['manager', 'practitioner']);
+  });
+
+  it('staff routes do not include parent role', () => {
+    const staffRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('staff') && r.data?.['roles']);
+
+    for (const route of staffRoutes) {
+      expect((route.data?.['roles'] as string[])).not.toContain('parent');
+    }
   });
 });
