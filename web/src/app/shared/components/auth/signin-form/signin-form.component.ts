@@ -64,6 +64,19 @@ export class SigninFormComponent {
       return;
     }
 
+    let hasError = false;
+    if (!this.email.trim()) {
+      this.emailError = 'Email is required.';
+      hasError = true;
+    }
+    if (!this.password) {
+      this.passwordError = 'Password is required.';
+      hasError = true;
+    }
+    if (hasError) {
+      return;
+    }
+
     this.isSubmitting = true;
     this.authService.login(this.email.trim(), this.password).subscribe({
       next: () => this.handleSuccess(),
