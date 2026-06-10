@@ -135,19 +135,31 @@ Preconditions:
 
 Steps:
 
-1. Confirm the sidebar heading is `Staff`.
+1. Confirm the sidebar shows four group headings: Overview, People, Attendance, Billing.
 2. Confirm these manager links are visible: Dashboard, Children, Guardians, Invites, Attendance, Attendance corrections, Funding, Invoice run, Invoices.
-3. Click each visible link once.
-4. Confirm the active link styling moves to the selected route.
-5. Collapse the sidebar with the header toggle.
-6. Hover over the collapsed sidebar.
-7. Confirm labels reappear on hover.
+3. Confirm each link has a distinct icon (no repeated generic user icon).
+4. Click each visible link once.
+5. Confirm the active link shows a left-rail indicator plus brand color, and has `aria-current="page"`.
+6. Navigate to a child detail page (e.g. `/staff/manager/children/:childId`). Confirm `Children` remains highlighted.
+7. Navigate to an invoice detail page (e.g. `/staff/manager/invoices/:invoiceId`). Confirm `Invoices` remains highlighted.
+8. Navigate to attendance corrections with query params (e.g. `?childId=...`). Confirm `Attendance corrections` remains highlighted.
+9. Collapse the sidebar with the header toggle.
+10. Confirm collapsed sidebar is 90px wide and shows only icons.
+11. Hover over a collapsed link. Confirm a native title tooltip appears with the link label.
+12. Confirm collapsed links have accessible names (inspect element for `title` attribute).
+13. Hover over the collapsed sidebar area. Confirm labels reappear in grouped layout.
 
 Expected result:
 
 - Only manager-appropriate staff links are visible.
+- Links are grouped under headings: Overview, People, Attendance, Billing.
+- Each link has a distinct, recognizable icon at 24px.
 - Each link routes to the expected page.
-- Active state and collapsed/hover states remain visually clear.
+- Active state uses color plus left-rail indicator and sets `aria-current="page"`.
+- Child detail and invoice detail routes keep their parent links highlighted.
+- Query params do not break active state.
+- Collapsed mode shows icons with title tooltips and stable 90px width.
+- Expanded hover mode shows grouped layout matching the expanded sidebar.
 
 ### GL-005 - Practitioner sidebar privacy
 

@@ -192,11 +192,18 @@ layer(base);
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full min-h-[44px] gap-3 px-3 py-2.5 font-medium rounded-lg text-theme-sm transition-colors duration-200;
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
 }
 
 @utility menu-item-active {
   @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  &::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-brand-500 dark:bg-brand-400;
+  }
 }
 
 @utility menu-item-inactive {
@@ -213,7 +220,7 @@ layer(base);
 
 @utility menu-item-icon-size {
   & svg {
-    @apply !size-6;
+    @apply !size-6 shrink-0;
   }
 }
 

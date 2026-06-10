@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { ROLES } from '../../../core/constants/roles';
 import { AuthService } from '../../../core/services/auth.service';
@@ -58,6 +58,19 @@ describe('AppSidebarComponent', () => {
     expect(parentInvoices).toBeFalsy();
   });
 
+  it('manager sees four grouped headings', () => {
+    authStub.role = ROLES.manager;
+    fixture.detectChanges();
+
+    const headings = fixture.nativeElement.querySelectorAll('h2');
+    const labels = Array.from(headings).map(h => (h as HTMLElement).textContent?.trim());
+
+    expect(labels).toContain('Overview');
+    expect(labels).toContain('People');
+    expect(labels).toContain('Attendance');
+    expect(labels).toContain('Billing');
+  });
+
   it('manager dashboard link points to /staff/manager/dashboard', () => {
     authStub.role = ROLES.manager;
     fixture.detectChanges();
@@ -105,6 +118,17 @@ describe('AppSidebarComponent', () => {
     expect(parentInvoices).toBeFalsy();
   });
 
+  it('practitioner sees Workday group heading', () => {
+    authStub.role = ROLES.practitioner;
+    fixture.detectChanges();
+
+    const headings = fixture.nativeElement.querySelectorAll('h2');
+    const labels = Array.from(headings).map(h => (h as HTMLElement).textContent?.trim());
+
+    expect(labels).toContain('Workday');
+    expect(labels.length).toBe(1);
+  });
+
   it('practitioner attendance link points to /staff/practitioner/attendance', () => {
     authStub.role = ROLES.practitioner;
     fixture.detectChanges();
@@ -115,6 +139,14 @@ describe('AppSidebarComponent', () => {
 
   it('shows no links for parent role', () => {
     authStub.role = ROLES.parent;
+    fixture.detectChanges();
+
+    const links = fixture.nativeElement.querySelectorAll('a[data-testid]');
+    expect(links.length).toBe(0);
+  });
+
+  it('shows no links for null role', () => {
+    authStub.role = null;
     fixture.detectChanges();
 
     const links = fixture.nativeElement.querySelectorAll('a[data-testid]');
@@ -133,11 +165,49 @@ describe('AppSidebarComponent', () => {
     }
   });
 
-  it('shows no links for null role', () => {
-    authStub.role = null;
+  it('sets aria-current="page" on the active link', () => {
+    authStub.role = ROLES.manager;
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/dashboard');
     fixture.detectChanges();
 
-    const links = fixture.nativeElement.querySelectorAll('a[data-testid]');
-    expect(links.length).toBe(0);
+    const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
+    expect(dashboard.getAttribute('aria-current')).toBe('page');
+
+    const children = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
+    expect(children.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('highlights Children when on a child detail route', () => {
+    authStub.role = ROLES.manager;
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/children/abc-123');
+    fixture.detectChanges();
+
+    const children = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
+    expect(children.getAttribute('aria-current')).toBe('page');
+
+    const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
+    expect(dashboard.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('highlights Invoices when on an invoice detail route', () => {
+    authStub.role = ROLES.manager;
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/invoices/inv-456');
+    fixture.detectChanges();
+
+    const invoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
+    expect(invoices.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('highlights Attendance corrections with query params', () => {
+    authStub.role = ROLES.manager;
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/attendance-corrections?childId=abc');
+    fixture.detectChanges();
+
+    const corrections = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance-corrections"]');
+    expect(corrections.getAttribute('aria-current')).toBe('page');
   });
 });

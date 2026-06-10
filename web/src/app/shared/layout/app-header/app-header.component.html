@@ -8,7 +8,7 @@
         [ngClass]="{
           'bg-gray-100 dark:bg-white/[0.03]': isMobileOpen$ | async
         }"
-        (click)="handleToggle()" aria-label="Toggle Sidebar">
+        (click)="handleToggle()" aria-label="Toggle Sidebar" [attr.aria-expanded]="(isMobileOpen$ | async) ?? false">
         @if (isMobileOpen$ | async) {
           <!-- Cross Icon -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

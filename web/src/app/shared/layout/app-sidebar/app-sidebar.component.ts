@@ -7,6 +7,30 @@ import { Subscription } from 'rxjs';
 import { ROLES, ROLE_ROUTES } from '../../../core/constants/roles';
 import { AuthService } from '../../../core/services/auth.service';
 
+export type SidebarIcon =
+  | 'dashboard'
+  | 'children'
+  | 'guardians'
+  | 'invites'
+  | 'attendance'
+  | 'attendance-corrections'
+  | 'funding'
+  | 'invoice-run'
+  | 'invoices';
+
+export type SidebarNavItem = {
+  label: string;
+  path: string;
+  testId: string;
+  icon: SidebarIcon;
+  matchPaths?: string[];
+};
+
+export type SidebarNavGroup = {
+  label: string;
+  items: SidebarNavItem[];
+};
+
 @Component({
   selector: 'app-sidebar',
   imports: [
@@ -56,8 +80,13 @@ export class AppSidebarComponent {
     this.subscription.unsubscribe();
   }
 
-  isActive(path: string): boolean {
-    return this.router.url === path;
+  isActive(item: SidebarNavItem): boolean {
+    const url = this.router.url.split('?')[0];
+    if (url === item.path) return true;
+    if (item.matchPaths) {
+      return item.matchPaths.some(mp => url.startsWith(mp));
+    }
+    return false;
   }
 
   onSidebarMouseEnter() {
@@ -72,33 +101,54 @@ export class AppSidebarComponent {
     this.sidebarService.setMobileOpen(false);
   }
 
-  get navLinks(): { label: string; path: string; testId: string }[] {
+  get navGroups(): SidebarNavGroup[] {
     const role = this.authService.currentRole();
 
     if (role === ROLES.manager) {
       return [
-        { label: 'Dashboard', path: ROLE_ROUTES.managerDashboard, testId: 'staff-link-manager-dashboard' },
-        { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children' },
-        { label: 'Guardians', path: ROLE_ROUTES.managerGuardians, testId: 'staff-link-manager-guardians' },
-        { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites' },
-        { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
-        { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections' },
-        { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding' },
-        { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run' },
-        { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices' },
+        {
+          label: 'Overview',
+          items: [
+            { label: 'Dashboard', path: ROLE_ROUTES.managerDashboard, testId: 'staff-link-manager-dashboard', icon: 'dashboard' },
+          ],
+        },
+        {
+          label: 'People',
+          items: [
+            { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/staff/manager/children/'] },
+            { label: 'Guardians', path: ROLE_ROUTES.managerGuardians, testId: 'staff-link-manager-guardians', icon: 'guardians' },
+            { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites', icon: 'invites' },
+          ],
+        },
+        {
+          label: 'Attendance',
+          items: [
+            { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance', icon: 'attendance' },
+            { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections', icon: 'attendance-corrections' },
+          ],
+        },
+        {
+          label: 'Billing',
+          items: [
+            { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding', icon: 'funding' },
+            { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run', icon: 'invoice-run' },
+            { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/staff/manager/invoices/'] },
+          ],
+        },
       ];
     }
 
     if (role === ROLES.practitioner) {
       return [
-        { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance' },
+        {
+          label: 'Workday',
+          items: [
+            { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance', icon: 'attendance' },
+          ],
+        },
       ];
     }
 
     return [];
-  }
-
-  get sectionHeading(): string {
-    return 'Staff';
   }
 }
