@@ -25,6 +25,8 @@
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
+    "@ng-icons/core": "^33.2.3",
+    "@ng-icons/heroicons": "^33.2.3",
     "@popperjs/core": "^2.11.8",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/prismjs": "^1.26.5",

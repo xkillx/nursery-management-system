@@ -6,6 +6,18 @@ import { Subscription } from 'rxjs';
 
 import { ROLES, ROLE_ROUTES } from '../../../core/constants/roles';
 import { AuthService } from '../../../core/services/auth.service';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroSquares2x2,
+  heroUserGroup,
+  heroUsers,
+  heroEnvelope,
+  heroClipboardDocumentCheck,
+  heroClipboardDocumentList,
+  heroBanknotes,
+  heroDocumentPlus,
+  heroDocumentText,
+} from '@ng-icons/heroicons/outline';
 
 export type SidebarIcon =
   | 'dashboard'
@@ -36,6 +48,20 @@ export type SidebarNavGroup = {
   imports: [
     CommonModule,
     RouterModule,
+    NgIcon,
+  ],
+  providers: [
+    provideIcons({
+      heroSquares2x2,
+      heroUserGroup,
+      heroUsers,
+      heroEnvelope,
+      heroClipboardDocumentCheck,
+      heroClipboardDocumentList,
+      heroBanknotes,
+      heroDocumentPlus,
+      heroDocumentText,
+    }),
   ],
   templateUrl: './app-sidebar.component.html',
 })
@@ -44,6 +70,18 @@ export class AppSidebarComponent {
   readonly isExpanded$;
   readonly isMobileOpen$;
   readonly isHovered$;
+
+  iconMap: Record<SidebarIcon, string> = {
+    dashboard: 'heroSquares2x2',
+    children: 'heroUserGroup',
+    guardians: 'heroUsers',
+    invites: 'heroEnvelope',
+    attendance: 'heroClipboardDocumentCheck',
+    'attendance-corrections': 'heroClipboardDocumentList',
+    funding: 'heroBanknotes',
+    'invoice-run': 'heroDocumentPlus',
+    invoices: 'heroDocumentText',
+  };
 
   private subscription: Subscription = new Subscription();
 
