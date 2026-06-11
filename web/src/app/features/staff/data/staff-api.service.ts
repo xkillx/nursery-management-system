@@ -23,7 +23,7 @@ interface ChildApiModel {
   date_of_birth: string;
   start_date: string;
   end_date?: string;
-  core_hourly_rate_minor: number;
+  core_hourly_rate_minor: number | null;
   notes?: string;
   is_active: boolean;
   left_at?: string;

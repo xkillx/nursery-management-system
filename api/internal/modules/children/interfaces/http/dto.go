@@ -12,7 +12,7 @@ type childResponse struct {
 	DateOfBirth         string   `json:"date_of_birth"`
 	StartDate           string   `json:"start_date"`
 	EndDate             *string  `json:"end_date,omitempty"`
-	CoreHourlyRateMinor int      `json:"core_hourly_rate_minor"`
+	CoreHourlyRateMinor *int     `json:"core_hourly_rate_minor"`
 	Notes               *string  `json:"notes,omitempty"`
 	IsActive            bool     `json:"is_active"`
 	LeftAt              *string  `json:"left_at,omitempty"`

@@ -24,7 +24,7 @@ type AuthCreateRefreshTokenParams struct {
 	ExpiresAt    pgtype.Timestamptz
 	UserAgent    pgtype.Text
 	IpAddress    pgtype.Text
-	RememberMe   pgtype.Bool
+	RememberMe   bool
 }
 
 func (q *Queries) AuthCreateRefreshToken(ctx context.Context, arg AuthCreateRefreshTokenParams) error {
@@ -97,7 +97,7 @@ type AuthFindActiveRefreshTokenRow struct {
 	TokenHash            string
 	ExpiresAt            pgtype.Timestamptz
 	RevokedAt            pgtype.Timestamptz
-	RememberMe           pgtype.Bool
+	RememberMe           bool
 	UserTableID          pgtype.UUID
 	UserEmail            string
 	UserPasswordHash     string

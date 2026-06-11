@@ -13,7 +13,7 @@ import (
 type ChildReadinessResult struct {
 	ChildID                uuid.UUID
 	ChildName              string
-	CoreHourlyRateMinor    int
+	CoreHourlyRateMinor    *int
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes int
 	HasGuardianLink        bool
@@ -77,7 +77,7 @@ func EvaluateChildReadiness(
 			Message: "No active guardian linked to this child.",
 		})
 	}
-	if child.CoreHourlyRateMinor < 0 {
+	if child.CoreHourlyRateMinor == nil || *child.CoreHourlyRateMinor < 0 {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code:    domain.BlockerMissingBillingRate,
 			Message: "Billing rate is missing or invalid.",
@@ -131,11 +131,11 @@ func EvaluateChildReadiness(
 		return result, fmt.Errorf("funding deduction for child %s: %w", child.ChildID, fundErr)
 	}
 
-	subtotalMinor, subErr := domain.CalculateHourlyAmountMinor(fundingCalc.CoreAttendedMinutes, child.CoreHourlyRateMinor)
+	subtotalMinor, subErr := domain.CalculateHourlyAmountMinor(fundingCalc.CoreAttendedMinutes, *child.CoreHourlyRateMinor)
 	if subErr != nil {
 		return result, fmt.Errorf("subtotal calc: %w", subErr)
 	}
-	fundedDeductionMinor, dedErr := domain.CalculateHourlyAmountMinor(fundingCalc.FundedDeductionMinutes, child.CoreHourlyRateMinor)
+	fundedDeductionMinor, dedErr := domain.CalculateHourlyAmountMinor(fundingCalc.FundedDeductionMinutes, *child.CoreHourlyRateMinor)
 	if dedErr != nil {
 		return result, fmt.Errorf("deduction calc: %w", dedErr)
 	}

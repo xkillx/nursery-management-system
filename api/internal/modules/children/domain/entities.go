@@ -13,7 +13,7 @@ type Child struct {
 	DateOfBirth         time.Time
 	StartDate           time.Time
 	EndDate             *time.Time
-	CoreHourlyRateMinor int
+	CoreHourlyRateMinor *int
 	Notes               *string
 	IsActive            bool
 	LeftAt              *time.Time
@@ -57,7 +57,7 @@ func (c Child) MissingRequirements() []string {
 	if c.StartDate.IsZero() {
 		missing = append(missing, "start_date")
 	}
-	if c.CoreHourlyRateMinor < 0 {
+	if c.CoreHourlyRateMinor == nil || *c.CoreHourlyRateMinor < 0 {
 		missing = append(missing, "billing_rate")
 	}
 	if !c.HasGuardianLink {

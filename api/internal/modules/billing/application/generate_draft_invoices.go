@@ -314,7 +314,7 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				Description:            "Core childcare",
 				SortOrder:              1,
 				QuantityMinutes:        readiness.RoundedAttendedMinutes,
-				UnitAmountMinor:        child.CoreHourlyRateMinor,
+				UnitAmountMinor:        *child.CoreHourlyRateMinor,
 				LineAmountMinor:        coreSubtotal,
 				RawAttendedMinutes:     readiness.RawAttendedMinutes,
 				RoundedAttendedMinutes: readiness.RoundedAttendedMinutes,
@@ -479,7 +479,7 @@ func (uc *GenerateDraftInvoices) buildCalculationDetails(child domain.PreflightC
 	return domain.InvoiceCalculationDetails{
 		BillingMonth:           billingMonth,
 		ChildID:                child.ChildID,
-		CoreHourlyRateMinor:    child.CoreHourlyRateMinor,
+		CoreHourlyRateMinor:    *child.CoreHourlyRateMinor,
 		CoreSubtotalMinor:      readiness.SubtotalMinor,
 		ManualExtrasSupported:  true,
 		FundingProfileID:       child.FundingProfileID,

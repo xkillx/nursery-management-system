@@ -52,7 +52,7 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "start_date")
 	}
 
-	if params.CoreHourlyRateMinor == nil || *params.CoreHourlyRateMinor < 0 {
+	if params.CoreHourlyRateMinor != nil && *params.CoreHourlyRateMinor < 0 {
 		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "core_hourly_rate_minor")
 	}
 
@@ -76,7 +76,7 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 		DateOfBirth:         dob,
 		StartDate:           startDate,
 		EndDate:             endDate,
-		CoreHourlyRateMinor: *params.CoreHourlyRateMinor,
+		CoreHourlyRateMinor: params.CoreHourlyRateMinor,
 		IsActive:            true,
 	}
 

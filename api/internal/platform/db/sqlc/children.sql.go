@@ -27,7 +27,7 @@ type ChildrenCreateParams struct {
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
-	CoreHourlyRateMinor int32
+	CoreHourlyRateMinor pgtype.Int4
 	Column9             interface{}
 }
 
@@ -105,7 +105,7 @@ type ChildrenGetByIDRow struct {
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
-	CoreHourlyRateMinor int32
+	CoreHourlyRateMinor pgtype.Int4
 	Notes               pgtype.Text
 	IsActive            bool
 	LeftAt              pgtype.Timestamptz
@@ -179,7 +179,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
-	CoreHourlyRateMinor int32
+	CoreHourlyRateMinor pgtype.Int4
 	Notes               pgtype.Text
 	IsActive            bool
 	LeftAt              pgtype.Timestamptz
@@ -287,7 +287,7 @@ type ChildrenListRow struct {
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
-	CoreHourlyRateMinor int32
+	CoreHourlyRateMinor pgtype.Int4
 	Notes               pgtype.Text
 	IsActive            bool
 	LeftAt              pgtype.Timestamptz
@@ -345,7 +345,7 @@ SELECT c.id,
        (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
         AND c.date_of_birth IS NOT NULL
         AND c.start_date IS NOT NULL
-        AND c.core_hourly_rate_minor >= 0
+        AND c.core_hourly_rate_minor IS NOT NULL AND c.core_hourly_rate_minor >= 0
         AND EXISTS (
             SELECT 1
             FROM guardian_child_links gcl
@@ -485,7 +485,7 @@ type ChildrenUpdateParams struct {
 	SetEndDate             interface{}
 	EndDate                pgtype.Date
 	SetCoreHourlyRateMinor interface{}
-	CoreHourlyRateMinor    int32
+	CoreHourlyRateMinor    pgtype.Int4
 	SetNotes               interface{}
 	Notes                  interface{}
 	TenantID               pgtype.UUID

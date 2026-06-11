@@ -125,7 +125,7 @@ SELECT c.id,
        (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
         AND c.date_of_birth IS NOT NULL
         AND c.start_date IS NOT NULL
-        AND c.core_hourly_rate_minor >= 0
+        AND c.core_hourly_rate_minor IS NOT NULL AND c.core_hourly_rate_minor >= 0
         AND EXISTS (
             SELECT 1
             FROM guardian_child_links gcl

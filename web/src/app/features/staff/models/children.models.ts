@@ -6,7 +6,7 @@ export interface ChildRecord {
   dateOfBirth: string;
   startDate: string;
   endDate: string | null;
-  coreHourlyRateMinor: number;
+  coreHourlyRateMinor: number | null;
   notes: string | null;
   isActive: boolean;
   leftAt: string | null;
@@ -22,7 +22,7 @@ export interface ChildWritePayload {
   full_name: string;
   date_of_birth: string;
   start_date: string;
-  core_hourly_rate_minor: number;
+  core_hourly_rate_minor?: number | null;
   end_date?: string;
   notes?: string;
 }

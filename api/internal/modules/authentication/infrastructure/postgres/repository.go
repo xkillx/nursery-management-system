@@ -70,7 +70,7 @@ func (r *Repository) CreateRefreshToken(ctx context.Context, token domain.Refres
 		ExpiresAt:    timeToPgtypeTimestamptz(token.ExpiresAt),
 		UserAgent:    stringToPgtypeText(userAgent),
 		IpAddress:    stringToPgtypeText(ipAddress),
-		RememberMe:   pgtype.Bool{Bool: token.RememberMe, Valid: true},
+		RememberMe:   token.RememberMe,
 	})
 }
 
@@ -91,7 +91,7 @@ func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash strin
 		TokenHash:    row.TokenHash,
 		ExpiresAt:    pgtypeTimestamptzToTime(row.ExpiresAt),
 		RevokedAt:    pgtypeTimestamptzToTimePtr(row.RevokedAt),
-		RememberMe:   row.RememberMe.Bool,
+		RememberMe:   row.RememberMe,
 	}
 	user := domain.User{
 		ID:           pgtypeUUIDToUUID(row.UserTableID),
@@ -137,7 +137,7 @@ func (r *Repository) RotateRefreshToken(ctx context.Context, oldTokenID uuid.UUI
 		ExpiresAt:    timeToPgtypeTimestamptz(replacement.ExpiresAt),
 		UserAgent:    stringToPgtypeText(userAgent),
 		IpAddress:    stringToPgtypeText(ipAddress),
-		RememberMe:   pgtype.Bool{Bool: replacement.RememberMe, Valid: true},
+		RememberMe:   replacement.RememberMe,
 	}); err != nil {
 		return err
 	}

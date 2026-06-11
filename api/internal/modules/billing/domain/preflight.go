@@ -12,7 +12,7 @@ type PreflightChildRow struct {
 	DateOfBirth            time.Time
 	StartDate              time.Time
 	EndDate                *time.Time
-	CoreHourlyRateMinor    int
+	CoreHourlyRateMinor    *int
 	HasGuardianLink        bool
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes *int

@@ -72,7 +72,7 @@ func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes 
 		DateOfBirth:         timeToPgtypeDate(child.DateOfBirth),
 		StartDate:           timeToPgtypeDate(child.StartDate),
 		EndDate:             timeToPgtypeDatePtr(child.EndDate),
-		CoreHourlyRateMinor: int32(child.CoreHourlyRateMinor),
+		CoreHourlyRateMinor: intToPgtypeInt4(child.CoreHourlyRateMinor),
 		Column9:             notes,
 	})
 }
@@ -108,7 +108,11 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 	}
 	if v, ok := fields["core_hourly_rate_minor"]; ok {
 		params.SetCoreHourlyRateMinor = int32(1)
-		params.CoreHourlyRateMinor = int32(v.(int))
+		if val, ok := v.(*int); ok && val != nil {
+			params.CoreHourlyRateMinor = pgtype.Int4{Int32: int32(*val), Valid: true}
+		} else if val, ok := v.(int); ok {
+			params.CoreHourlyRateMinor = pgtype.Int4{Int32: int32(val), Valid: true}
+		}
 	}
 	if v, ok := fields["notes"]; ok {
 		params.SetNotes = int32(1)
@@ -236,7 +240,7 @@ func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, 
 
 func mapChildRow(
 	id pgtype.UUID, fullName string, dateOfBirth, startDate, endDate pgtype.Date,
-	coreHourlyRateMinor int32, notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
+	coreHourlyRateMinor pgtype.Int4, notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
 	leftReasonCode interface{}, leftReasonNote pgtype.Text, hasGuardianLink bool,
 	createdAt, updatedAt pgtype.Timestamptz,
 ) domain.Child {
@@ -246,7 +250,7 @@ func mapChildRow(
 		DateOfBirth:         pgtypeDateToTime(dateOfBirth),
 		StartDate:           pgtypeDateToTime(startDate),
 		EndDate:             pgtypeDateToTimePtr(endDate),
-		CoreHourlyRateMinor: int(coreHourlyRateMinor),
+		CoreHourlyRateMinor: pgtypeInt4ToIntPtr(coreHourlyRateMinor),
 		Notes:               pgtypeTextToStringPtr(notes),
 		IsActive:            isActive,
 		LeftAt:              pgtypeTimestamptzToTimePtr(leftAt),
@@ -327,4 +331,19 @@ func pgtypeTextToStringPtr(t pgtype.Text) *string {
 		return nil
 	}
 	return &t.String
+}
+
+func intToPgtypeInt4(v *int) pgtype.Int4 {
+	if v == nil {
+		return pgtype.Int4{Valid: false}
+	}
+	return pgtype.Int4{Int32: int32(*v), Valid: true}
+}
+
+func pgtypeInt4ToIntPtr(v pgtype.Int4) *int {
+	if !v.Valid {
+		return nil
+	}
+	val := int(v.Int32)
+	return &val
 }

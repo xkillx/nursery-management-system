@@ -12,7 +12,7 @@ type ChildFormValue = {
   full_name: string;
   date_of_birth: string;
   start_date: string;
-  core_hourly_rate_gbp: number;
+  core_hourly_rate_gbp: number | null;
   end_date: string;
   notes: string;
 };
@@ -51,10 +51,13 @@ export class ChildFormComponent {
       full_name: this.form.full_name.trim(),
       date_of_birth: this.form.date_of_birth,
       start_date: this.form.start_date,
-      core_hourly_rate_minor: poundsToMinor(this.form.core_hourly_rate_gbp),
       end_date: this.form.end_date.trim(),
       notes: this.form.notes.trim(),
     };
+
+    if (this.form.core_hourly_rate_gbp !== null && this.form.core_hourly_rate_gbp !== undefined) {
+      payload.core_hourly_rate_minor = poundsToMinor(this.form.core_hourly_rate_gbp);
+    }
 
     this.saved.emit(payload);
   }
@@ -75,7 +78,7 @@ export class ChildFormComponent {
       full_name: '',
       date_of_birth: '',
       start_date: '',
-      core_hourly_rate_gbp: 0,
+      core_hourly_rate_gbp: null,
       end_date: '',
       notes: '',
     };

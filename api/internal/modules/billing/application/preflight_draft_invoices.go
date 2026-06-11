@@ -117,7 +117,7 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 		eligible := domain.EligibleChild{
 			ChildID:                child.ChildID,
 			ChildName:              child.FullName,
-			CoreHourlyRateMinor:    child.CoreHourlyRateMinor,
+			CoreHourlyRateMinor:    *child.CoreHourlyRateMinor,
 			FundingProfileID:       child.FundingProfileID,
 			FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,
 			RawAttendedMinutes:     readiness.RawAttendedMinutes,

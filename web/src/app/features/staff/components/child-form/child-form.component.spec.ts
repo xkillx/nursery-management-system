@@ -34,8 +34,8 @@ describe('ChildFormComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('creates with empty form defaulting rate to 0', () => {
-    expect(component.form.core_hourly_rate_gbp).toBe(0);
+  it('creates with empty form defaulting rate to null', () => {
+    expect(component.form.core_hourly_rate_gbp).toBeNull();
   });
 
   it('populates form with GBP rate from minor units in edit mode', () => {
@@ -108,7 +108,7 @@ describe('ChildFormComponent', () => {
 
     component.selectedChild = null;
     component.ngOnChanges({ selectedChild: { currentValue: null, previousValue: childRecord, firstChange: false, isFirstChange: () => false } });
-    expect(component.form.core_hourly_rate_gbp).toBe(0);
+    expect(component.form.core_hourly_rate_gbp).toBeNull();
     expect(component.form.full_name).toBe('');
   });
 });
