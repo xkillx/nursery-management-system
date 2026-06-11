@@ -1,0 +1,135 @@
+<app-page-header title="Site overview" description="Cross-site summary of all active nursery sites." />
+
+@if (loading) {
+  <app-loading-state label="Loading site summaries..." />
+} @else if (error) {
+  <app-alert variant="error" title="Error" [message]="error" />
+} @else {
+
+  <!-- Filters -->
+  <div class="mt-4 flex flex-wrap items-end gap-4">
+    <div>
+      <label for="billing-month" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Billing month</label>
+      <input
+        id="billing-month"
+        type="text"
+        [(ngModel)]="billingMonthControl"
+        (ngModelChange)="onBillingMonthChange()"
+        placeholder="YYYY-MM"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        [class.border-red-500]="billingMonthError"
+      />
+      @if (billingMonthError) {
+        <p class="mt-1 text-xs text-red-600">{{ billingMonthError }}</p>
+      }
+    </div>
+    <div>
+      <label for="site-filter" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
+      <select
+        id="site-filter"
+        [ngModel]="selectedSiteId"
+        (ngModelChange)="onSiteFocus($event)"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+      >
+        <option [ngValue]="null">All sites</option>
+        @for (site of sites; track site.siteId) {
+          <option [ngValue]="site.siteId">{{ site.siteName }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (totals) {
+    <!-- Totals -->
+    <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Active managers</p>
+        <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white">{{ totals.activeManagerCount }}</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Active children</p>
+        <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white">{{ totals.activeChildrenCount }}</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Checked in today</p>
+        <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white">{{ totals.checkedInTodayCount }}</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Outstanding</p>
+        <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white">{{ formatGbp(totals.outstandingMinor) }}</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Overdue outstanding</p>
+        <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white">{{ formatGbp(totals.overdueOutstandingMinor) }}</p>
+      </div>
+    </div>
+  }
+
+  @if (sortedSites.length === 0) {
+    <app-empty-state title="No active sites" message="No active nursery sites found for this tenant." class="mt-6" />
+  } @else {
+    <!-- Site cards -->
+    <div class="mt-6 space-y-4">
+      @for (site of sortedSites; track site.siteId) {
+        <div
+          class="rounded-xl border p-5"
+          [ngClass]="{
+            'border-red-300 bg-red-50/50 dark:border-red-700/40 dark:bg-red-500/5': isExceptionSite(site),
+            'border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]': !isExceptionSite(site)
+          }"
+          [attr.data-testid]="'owner-site-card-' + site.siteId"
+        >
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-semibold text-gray-800 dark:text-white">{{ site.siteName }}</h3>
+                @if (site.activeManagerCount === 0) {
+                  <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">No active manager</span>
+                }
+              </div>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Setup: {{ formatSetupStatus(site.setupStatus) }}</p>
+
+              <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3 lg:grid-cols-4">
+                <span class="text-gray-500 dark:text-gray-400">Managers: <span class="font-medium text-gray-800 dark:text-white">{{ site.activeManagerCount }}</span></span>
+                @if (site.pendingManagerInviteCount > 0) {
+                  <span class="text-gray-500 dark:text-gray-400">Pending invites: <span class="font-medium text-amber-600">{{ site.pendingManagerInviteCount }}</span></span>
+                }
+                <span class="text-gray-500 dark:text-gray-400">Children: <span class="font-medium text-gray-800 dark:text-white">{{ site.activeChildrenCount }}</span></span>
+                <span class="text-gray-500 dark:text-gray-400">Checked in: <span class="font-medium text-gray-800 dark:text-white">{{ site.attendance.checkedInTodayCount }}</span></span>
+                @if (site.attendance.incompleteAttendanceCount > 0) {
+                  <span class="text-gray-500 dark:text-gray-400">Incomplete attendance: <span class="font-medium text-red-600">{{ site.attendance.incompleteAttendanceCount }}</span></span>
+                }
+                @if (site.fundingReadiness.flaggedChildCount > 0) {
+                  <span class="text-gray-500 dark:text-gray-400">Funding flags: <span class="font-medium text-amber-600">{{ site.fundingReadiness.flaggedChildCount }}</span></span>
+                }
+                <span class="text-gray-500 dark:text-gray-400">Outstanding: <span class="font-medium text-gray-800 dark:text-white">{{ formatGbp(site.invoicePaymentHealth.outstandingMinor) }}</span></span>
+                @if (site.invoicePaymentHealth.overdueOutstandingMinor > 0) {
+                  <span class="text-gray-500 dark:text-gray-400">Overdue: <span class="font-medium text-red-600">{{ formatGbp(site.invoicePaymentHealth.overdueOutstandingMinor) }}</span></span>
+                }
+                @if (site.invoicePaymentHealth.paymentFailedCount > 0) {
+                  <span class="text-gray-500 dark:text-gray-400">Failed payments: <span class="font-medium text-red-600">{{ site.invoicePaymentHealth.paymentFailedCount }}</span></span>
+                }
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                (click)="onSiteFocus(selectedSiteId === site.siteId ? null : site.siteId)"
+                class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                {{ selectedSiteId === site.siteId ? 'Show all' : 'Focus' }}
+              </button>
+              <a
+                [routerLink]="['/owner/manager-access']"
+                [queryParams]="{ site_id: site.siteId }"
+                class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Manager access
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+}

@@ -1,0 +1,129 @@
+<app-page-header title="Manager access" description="Administer site-manager access across all sites." />
+
+@if (loadingSites) {
+  <app-loading-state label="Loading sites..." />
+} @else {
+
+  @if (pageError) {
+    <app-alert variant="error" title="Error" [message]="pageError" class="mt-4" />
+  }
+
+  @if (successMessage) {
+    <app-alert variant="success" title="Success" [message]="successMessage" class="mt-4" />
+  }
+
+  <!-- Site picker -->
+  <div class="mt-4 flex flex-wrap items-end gap-4">
+    <div>
+      <label for="site-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
+      <select
+        id="site-select"
+        [(ngModel)]="selectedSiteId"
+        (ngModelChange)="onSiteSelect()"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+      >
+        <option [ngValue]="null" disabled>Select a site</option>
+        @for (site of sites; track site.siteId) {
+          <option [ngValue]="site.siteId">{{ site.siteName }}</option>
+        }
+      </select>
+    </div>
+
+    @if (selectedSiteId) {
+      <div>
+        <label for="status-filter" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+        <select
+          id="status-filter"
+          [(ngModel)]="statusFilter"
+          (ngModelChange)="onStatusFilterChange()"
+          class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+    }
+  </div>
+
+  @if (selectedSiteId) {
+    <!-- Grant form -->
+    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white">Grant manager access</h3>
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[200px]">
+          <app-label>Email</app-label>
+          <app-input-field
+            type="email"
+            [(value)]="grantEmail"
+            placeholder="manager@example.com"
+            [error]="!!grantEmailError"
+            [hint]="grantEmailError || undefined"
+            name="grant-email"
+          />
+        </div>
+        <app-button
+          size="sm"
+          [disabled]="!canSubmitGrant"
+          (btnClick)="onGrantSubmit()"
+        >
+          @if (submitting) {
+            Granting...
+          } @else {
+            Grant access
+          }
+        </app-button>
+      </div>
+    </div>
+
+    <!-- Access list -->
+    @if (loadingAccess) {
+      <app-loading-state label="Loading manager access..." class="mt-4" />
+    } @else if (accessRecords.length === 0) {
+      <app-empty-state title="No manager access records" message="No managers found for the selected filter." class="mt-6" [compact]="true" />
+    } @else {
+      <div class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/50">
+              <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Email</th>
+              <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Status</th>
+              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of accessRecords; track record.membershipId) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                <td class="px-4 py-3 text-gray-800 dark:text-white">{{ record.email }}</td>
+                <td class="px-4 py-3">
+                  @if (record.isActive) {
+                    <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/20 dark:text-green-300">Active</span>
+                  } @else {
+                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">Inactive</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-right">
+                  @if (record.isActive) {
+                    <button
+                      (click)="onDeactivate(record)"
+                      class="text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400"
+                    >
+                      Deactivate
+                    </button>
+                  } @else {
+                    <button
+                      (click)="onReactivate(record)"
+                      class="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                    >
+                      Reactivate
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

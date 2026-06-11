@@ -16,6 +16,8 @@ import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-in
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
+import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
+import { OwnerManagerAccessComponent } from './features/owner/pages/owner-manager-access/owner-manager-access.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
@@ -24,6 +26,7 @@ import { InviteAcceptComponent } from './pages/auth-pages/invite-accept/invite-a
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import { ParentPortalLayoutComponent } from './shared/layout/parent-portal-layout/parent-portal-layout.component';
+import { OwnerLayoutComponent } from './shared/layout/owner-layout/owner-layout.component';
 
 export const routes: Routes = [
   {
@@ -122,23 +125,53 @@ export const routes: Routes = [
   },
   {
     path: '',
+    component: OwnerLayoutComponent,
+    children: [
+      {
+        path: 'owner',
+        component: OwnerOverviewComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['owner'] },
+        title: 'Owner Overview | Nursery Management',
+      },
+      {
+        path: 'owner/manager-access',
+        component: OwnerManagerAccessComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['owner'] },
+        title: 'Manager Access | Nursery Management',
+      },
+    ],
+  },
+  {
+    path: '',
     component: ParentPortalLayoutComponent,
     children: [
       {
-        path: 'parent/invoices',
+        path: 'app/invoices',
         component: ParentInvoicesComponent,
         canActivate: [authGuard, roleGuard],
         data: { roles: ['parent'] },
         title: 'Invoices | Nursery Management',
       },
       {
-        path: 'parent/invoices/:invoiceId',
+        path: 'app/invoices/:invoiceId',
         component: ParentInvoiceDetailComponent,
         canActivate: [authGuard, roleGuard],
         data: { roles: ['parent'] },
         title: 'Invoice Detail | Nursery Management',
       },
     ],
+  },
+  {
+    path: 'parent/invoices/:invoiceId',
+    pathMatch: 'full',
+    redirectTo: 'app/invoices/:invoiceId',
+  },
+  {
+    path: 'parent/invoices',
+    pathMatch: 'full',
+    redirectTo: 'app/invoices',
   },
   {
     path: 'signin',

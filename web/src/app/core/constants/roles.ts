@@ -1,4 +1,5 @@
 export const ROLES = {
+  owner: 'owner',
   manager: 'manager',
   practitioner: 'practitioner',
   parent: 'parent',
@@ -7,6 +8,7 @@ export const ROLES = {
 export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const ROLE_ROUTES = {
+  ownerHome: '/owner',
   managerDashboard: '/staff/manager/dashboard',
   managerChildren: '/staff/manager/children',
   managerGuardians: '/staff/manager/guardians',
@@ -17,12 +19,14 @@ export const ROLE_ROUTES = {
   managerInvoices: '/staff/manager/invoices',
   practitionerAttendance: '/staff/practitioner/attendance',
   practitionerAttendanceLegacy: '/staff/practitioner/attendance-children',
-  parentInvoices: '/parent/invoices',
+  parentInvoices: '/app/invoices',
   signIn: '/signin',
 } as const;
 
 export function defaultRouteForRole(role: AppRole | null): string {
   switch (role) {
+    case ROLES.owner:
+      return ROLE_ROUTES.ownerHome;
     case ROLES.manager:
       return ROLE_ROUTES.managerDashboard;
     case ROLES.practitioner:

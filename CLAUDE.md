@@ -28,8 +28,8 @@ cd web && npm install && npm start     # dev server on :4200
 cd web && npm run build                # production build
 cd web && npm test                     # karma tests
 
-# Seed
-cd api && set -a && source .env && set +a && SEED_EMAIL=x@y.local SEED_PASSWORD='Pass123' go run ./cmd/seed
+# Seed (production: owner only; add -local + role emails for local testing)
+cd api && set -a && source .env && set +a && go run ./cmd/seed -email owner@example.com -password 'Pass123'
 ```
 
 Environment: copy `api/.env.example` to `api/.env`. Set `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PASSWORD_RESET_TOKEN_SECRET`. PostgreSQL 14+ required.

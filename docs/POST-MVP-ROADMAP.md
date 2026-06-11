@@ -57,9 +57,20 @@ After pilot readiness, the first product expansion is owner-visible cross-site o
 | ID | Task | Status |
 |---|---|---|
 | API-PM-08 | Owner and four-site access model: owner role, branch switching/filtering, cross-site summaries, authorization boundaries | Done |
-| FE-PM-09 | Owner and four-site navigation/access experience: owner landing view, site switcher, branch-scoped manager/staff views, parent route isolation | Pending |
+| FE-PM-09 | Owner and four-site navigation/access experience: owner landing view, site switcher, branch-scoped manager/staff views, parent route isolation | Done |
 
 Reference: `CONTEXT.md` defines `User Role: Owner` and `Owner Oversight Scope (Post-MVP)`.
+
+## Later Lane: Super Admin Platform Management
+
+Super admin is a platform-level NMS operator role, separate from tenant owners. The super admin dashboard should manage the NMS SaaS control plane without becoming a hidden bypass for nursery operations. Initial scope should focus on tenant lifecycle, platform configuration, operational health, support tooling, feature flags, plan/billing metadata, and audit visibility. Any cross-tenant data access must be explicit, audited, least-privilege, and designed to preserve tenant isolation.
+
+| ID | Task | Status |
+|---|---|---|
+| API-PM-09 | Super admin platform management API: tenant/site lifecycle, platform user lookup, support-safe account actions, feature flags, plan/billing metadata, platform health summaries, and cross-tenant audit controls | Backlog |
+| FE-PM-10 | Super admin dashboard for NMS platform management: tenant directory, tenant health/status, owner/manager access overview, feature flag and plan controls, support workflows, and audit viewer | Backlog |
+
+Reference: `docs/user-roles-and-permissions.md` lists Super Admin as a future role; this lane defines the first backlog scope for that role.
 
 ## Feature Sequence
 

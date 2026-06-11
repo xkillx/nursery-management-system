@@ -40,7 +40,7 @@ describe('roleDefaultRedirectGuard', () => {
     expect(router.serializeUrl(result as UrlTree)).toBe('/staff/practitioner/attendance');
   });
 
-  it('redirects parent to /parent/invoices', () => {
+  it('redirects parent to /app/invoices', () => {
     spyOn(authService, 'currentRole').and.returnValue(ROLES.parent);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -48,7 +48,18 @@ describe('roleDefaultRedirectGuard', () => {
     );
 
     expect(result instanceof UrlTree).toBeTrue();
-    expect(router.serializeUrl(result as UrlTree)).toBe('/parent/invoices');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/app/invoices');
+  });
+
+  it('redirects owner to /owner', () => {
+    spyOn(authService, 'currentRole').and.returnValue(ROLES.owner);
+
+    const result = TestBed.runInInjectionContext(() =>
+      roleDefaultRedirectGuard({} as never, {} as never),
+    );
+
+    expect(result instanceof UrlTree).toBeTrue();
+    expect(router.serializeUrl(result as UrlTree)).toBe('/owner');
   });
 
   it('redirects null role to /signin', () => {

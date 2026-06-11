@@ -35,7 +35,7 @@ export function isMembershipSelectionRequired(body: any): body is MembershipSele
     (m: any) =>
       typeof m?.membership_id === 'string' &&
       typeof m?.tenant_name === 'string' &&
-      typeof m?.branch_name === 'string' &&
+      (m?.branch_name === null || typeof m?.branch_name === 'string') &&
       typeof m?.role === 'string',
   );
 }

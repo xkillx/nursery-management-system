@@ -141,6 +141,7 @@ These items are product features intentionally outside the month-1 pilot critica
 | FE-PM-07 | Build safeguarding and incident record screens. Support practitioner incident submission, manager restricted review, status/follow-up actions, confidential notes, and clear separation from normal child profile data. | API-PM-06 | Practitioners can submit permitted incidents; managers can triage and close records with history; restricted safeguarding data is not visible in parent, invoice, or routine attendance surfaces. |
 | FE-PM-08 | Build learning journey and EYFS observation screens. Support practitioner observation drafts, EYFS tagging, next steps, manager review, and parent-visible approved entries. | API-PM-07 | Practitioners can capture observations; managers can approve entries; parents see only approved learning journey content for linked children; draft/rejected content stays staff-only. |
 | FE-PM-09 | Build owner and four-site navigation/access experience. Add owner landing view, site switcher or cross-site filters, branch-scoped manager/staff views, and parent `app/` route isolation. | API-PM-08; product decision on owner MVP scope | Owner can move between or summarize the current four sites without using a branch manager-only shell; nursery managers and staff see only their site scope; parents land only in the `app/` parent portal and cannot see staff or owner navigation. |
+| FE-PM-10 | Build super admin dashboard for NMS platform management. Include tenant directory and status, site directory, owner/manager access overview, support-safe account workflows, feature flag controls, plan/billing metadata, platform health cards, and cross-tenant audit viewer. This is a platform console, not a nursery owner dashboard. | API-PM-09; platform role decision; tenant-isolation model | Super admin can manage NMS tenants and platform controls without entering normal nursery workflows; cross-tenant views are clearly labeled, redacted where needed, and audited; owners, managers, practitioners, and parents cannot route to or see super admin navigation. |
 
 ## Files to Create or Change
 
@@ -172,6 +173,7 @@ Expected Angular files and folders:
 - `web/src/app/features/ratios/**` for post-MVP staff-to-child ratio safety workflows.
 - `web/src/app/features/safeguarding/**` for post-MVP incident and safeguarding workflows.
 - `web/src/app/features/learning/**` for post-MVP learning journey and EYFS workflows.
+- `web/src/app/features/platform-admin/**` for post-MVP super admin platform management workflows.
 - `web/src/environments/environment.ts`
 - `web/src/environments/environment.development.ts`
 - `web/package.json` for Playwright scripts when FE-31 starts.
@@ -198,7 +200,7 @@ Existing TailAdmin demo pages can remain temporarily if needed, but production n
 - parent invoice list/detail endpoints
 - checkout session creation endpoint
 - payment/reconciliation event endpoints
-- post-MVP registration profile, consent ledger, office-use checklist, planning, ratio, safeguarding, and learning endpoints from API-PM-01 to API-PM-07
+- post-MVP registration profile, consent ledger, office-use checklist, planning, ratio, safeguarding, learning, and super admin platform endpoints from API-PM-01 to API-PM-09
 
 When an API is unavailable, build the UI with a typed local mock adapter and keep the real service method shape aligned to the expected `/api/v1` contract.
 
@@ -231,6 +233,7 @@ When an API is unavailable, build the UI with a typed local mock adapter and kee
 - The first manager is seeded outside the web UI.
 - The older one-default-branch pilot assumption is superseded for planning by the product-owner update identifying one owner and four nursery sites. Owner/four-site support is Post-MVP and oversight-first. See `docs/POST-MVP-ROADMAP.md`.
 - The frontend must respect selected membership scope for managers and staff, relationship scope for parents, and an explicit owner cross-site access model once prioritized.
+- Super admin is a later platform role outside tenant owner scope and requires an explicit platform route shell and authorization model before UI implementation.
 - Production deployment details are handled outside this frontend backlog.
 - Playwright is acceptable to add during week 4 for smoke and screenshot QA.
 - Mock data is allowed only to unblock UI development; final acceptance requires real API integration for critical flows.

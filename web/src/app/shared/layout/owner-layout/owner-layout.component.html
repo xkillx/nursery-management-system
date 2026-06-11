@@ -1,0 +1,55 @@
+<div class="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+  <header
+    class="sticky top-0 z-50 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900 md:px-6"
+  >
+    <div class="flex items-center gap-6">
+      <a routerLink="/" class="flex items-center gap-2">
+        <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" height="32" />
+        <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" height="32" />
+      </a>
+
+      <nav class="hidden sm:flex items-center gap-1">
+        @for (link of navLinks; track link.path) {
+          <a
+            [routerLink]="link.path"
+            [attr.data-testid]="link.testId"
+            class="rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            [ngClass]="{
+              'bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-white': isActive(link.path),
+              'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white': !isActive(link.path)
+            }"
+          >
+            {{ link.label }}
+          </a>
+        }
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <app-theme-toggle-button />
+      <app-user-dropdown />
+    </div>
+  </header>
+
+  <!-- Mobile nav -->
+  <nav class="flex items-center gap-1 border-b border-gray-200 px-4 py-2 sm:hidden dark:border-gray-800">
+    @for (link of navLinks; track link.path) {
+      <a
+        [routerLink]="link.path"
+        [attr.data-testid]="link.testId"
+        class="rounded-md px-3 py-2 text-sm font-medium transition-colors"
+        [ngClass]="{
+          'bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-white': isActive(link.path),
+          'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white': !isActive(link.path)
+        }"
+      >
+        {{ link.label }}
+      </a>
+    }
+  </nav>
+
+  <main class="flex-1 p-4 md:p-6 mx-auto w-full max-w-(--breakpoint-2xl)">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+<app-toast-container />

@@ -145,6 +145,14 @@ describe('AppSidebarComponent', () => {
     expect(links.length).toBe(0);
   });
 
+  it('shows no links for owner role', () => {
+    authStub.role = ROLES.owner;
+    fixture.detectChanges();
+
+    const links = fixture.nativeElement.querySelectorAll('a[data-testid]');
+    expect(links.length).toBe(0);
+  });
+
   it('shows no links for null role', () => {
     authStub.role = null;
     fixture.detectChanges();

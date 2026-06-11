@@ -84,7 +84,9 @@
                 [class.dark:bg-blue-900/30]="selectedMembershipId === choice.membership_id"
               >
                 <span class="font-medium text-gray-900 dark:text-white">{{ choice.tenant_name }}</span>
-                <span class="text-gray-500 dark:text-gray-400"> &mdash; {{ choice.branch_name }}</span>
+                @if (choice.branch_name) {
+                  <span class="text-gray-500 dark:text-gray-400"> &mdash; {{ choice.branch_name }}</span>
+                }
                 <span class="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ choice.role }}</span>
               </button>
             }

@@ -18,7 +18,9 @@ export type ApiErrorContext =
   | 'payment.managerDiagnostics'
   | 'payment.parentList'
   | 'payment.parentDetail'
-  | 'payment.parentCheckout';
+  | 'payment.parentCheckout'
+  | 'owner.siteSummaries'
+  | 'owner.managerAccess';
 
 export interface ApiErrorAction {
   label: string;
@@ -115,6 +117,11 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'missing_child_date_of_birth',
   'missing_child_start_date',
   'funding_month_outside_enrollment_window',
+
+  'site_not_found',
+  'manager_membership_not_found',
+  'user_not_found',
+  'user_inactive',
 ]);
 
 function shouldShowRequestId(code: string): boolean {
@@ -357,6 +364,24 @@ function presentKnownError(
     // Funding
     case 'funding_profile_not_found':
       base.message = 'Funding profile not found. Refresh the page.';
+      break;
+
+    // Owner
+    case 'site_not_found':
+      base.message = 'Site not found or no longer active. Return to the overview.';
+      if (context.startsWith('owner.')) {
+        base.action = { label: 'View overview', route: ['/owner'] };
+      }
+      break;
+    case 'manager_membership_not_found':
+      base.message = 'Manager membership not found. The list has been refreshed.';
+      base.action = { label: 'Refresh', command: 'refresh' };
+      break;
+    case 'user_not_found':
+      base.message = 'User not found.';
+      break;
+    case 'user_inactive':
+      base.message = 'This user account is inactive.';
       break;
 
     default:

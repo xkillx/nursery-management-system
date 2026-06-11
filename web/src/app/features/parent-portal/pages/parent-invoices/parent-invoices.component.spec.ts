@@ -120,7 +120,7 @@ describe('ParentInvoicesComponent', () => {
     fixture.detectChanges();
 
     const links = fixture.debugElement.queryAll(By.css('a'));
-    const viewLinks = links.filter((el) => el.properties['href']?.includes('/parent/invoices/'));
+    const viewLinks = links.filter((el) => el.properties['href']?.includes('/app/invoices/'));
     expect(viewLinks.length).toBeGreaterThan(0);
   });
 

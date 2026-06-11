@@ -9,8 +9,8 @@ export interface MembershipModel {
   membership_id: string;
   tenant_id: string;
   tenant_name: string;
-  branch_id: string;
-  branch_name: string;
+  branch_id: string | null;
+  branch_name: string | null;
   role: AppRole;
 }
 

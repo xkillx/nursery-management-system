@@ -16,10 +16,10 @@ describe('ParentPortalLayoutComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders parent invoice link pointing to /parent/invoices', () => {
+  it('renders parent invoice link pointing to /app/invoices', () => {
     const link = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
     expect(link).toBeTruthy();
-    expect(link.getAttribute('href')).toContain('/parent/invoices');
+    expect(link.getAttribute('href')).toContain('/app/invoices');
     expect(link.textContent.trim()).toBe('Invoices');
   });
 

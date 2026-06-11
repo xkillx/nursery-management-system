@@ -318,6 +318,17 @@ Additional roles can be introduced later if needed:
 - Super Admin
 - Compliance Officer
 
+## Future Role: Super Admin
+
+Super Admin is a platform-level NMS operator, not a nursery owner or branch manager. This role manages the SaaS control plane: tenant lifecycle, tenant status, feature flags, plan/billing metadata, platform health, support-safe account workflows, and cross-tenant audit visibility.
+
+Super Admin access must preserve tenant isolation. Cross-tenant reads and support actions should be explicit, redacted where appropriate, and fully audited. Routine nursery workflows such as attendance, child edits, invoice issue, and safeguarding case work remain tenant roles unless a specific support workflow is later approved.
+
+Backlog references:
+
+- `API-PM-09` — super admin platform management API
+- `FE-PM-10` — super admin dashboard for NMS platform management
+
 ## Terminology Note
 
 Product-facing documentation prefers **site** for a nursery location. Current engineering, API, and database terms may use **branch** for the same location boundary. This distinction is cosmetic until a later decision separates the concepts.

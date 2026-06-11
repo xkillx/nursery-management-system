@@ -58,7 +58,7 @@ Owner-role users are provisioned through administrative or bootstrap paths in th
 
 ## Owner Cross-Site Summary (Post-MVP)
 
-The owner-facing summary compares nursery sites using aggregate health metrics and exception counts. It does not grant routine drill-down into named child, parent, invoice, or attendance workflows in the first owner release.
+The owner-facing summary compares nursery sites using aggregate health metrics and exception counts. The first owner landing view is exception-led: sites without active managers, overdue or failed payments, outstanding balances, incomplete attendance, and funding readiness flags are more prominent than routine detail. It does not grant routine drill-down into named child, parent, invoice, or attendance workflows in the first owner release.
 
 ## Owner Summary Export Boundary (Post-MVP)
 
@@ -82,7 +82,7 @@ Owner access applies to all active nursery sites within the owner's tenant. The 
 
 ## Owner Site Filter Boundary (Post-MVP)
 
-Filtering an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Owners remain blocked from branch-scoped manager write actions such as child or guardian edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
+Filtering or focusing an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Avoid using site switcher to imply that the owner enters or impersonates a branch-scoped manager or practitioner session. Owners remain blocked from branch-scoped manager write actions such as child or guardian edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
 
 ## User Role: Manager
 
@@ -415,6 +415,10 @@ A parent-visible issued-or-later invoice with a positive outstanding balance. Ze
 ## Parent Billing View (MVP)
 
 A parent-facing surface where a parent can view current and past issued-or-later invoices for linked children, see payment status, and start payment for payable invoices. Avoid: family account statement, billing dashboard.
+
+## Parent Portal Surface (Post-MVP)
+
+The parent-facing area of the product remains separate from staff and owner operational surfaces. Parent navigation exposes only parent-safe workflows for linked children and must not show staff or owner navigation.
 
 ## Parent Invoice Attention Order (MVP)
 

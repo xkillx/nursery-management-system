@@ -43,7 +43,9 @@ describe('app.routes', () => {
     'staff/manager/invoices',
     'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
-    'parent/invoices',
+    'owner',
+    'owner/manager-access',
+    'app/invoices',
     'signin',
     'signup',
     'forgot-password',
@@ -54,7 +56,7 @@ describe('app.routes', () => {
   const dynamicPaths = [
     'staff/manager/children/:childId',
     'staff/manager/invoices/:invoiceId',
-    'parent/invoices/:invoiceId',
+    'app/invoices/:invoiceId',
   ];
 
   for (const mvp of mvpPaths) {
@@ -135,22 +137,54 @@ describe('app.routes', () => {
     expect(detailRoute!.data?.['roles']).toEqual(['manager']);
   });
 
-  it('parent invoices list route requires parent role only', () => {
+  it('owner overview route requires owner role only', () => {
+    const ownerRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'owner');
+
+    expect(ownerRoute).toBeDefined();
+    expect(ownerRoute!.data?.['roles']).toEqual(['owner']);
+  });
+
+  it('owner manager-access route requires owner role only', () => {
+    const accessRoute = routes
+      .flatMap(r => r.children ?? [])
+      .find(r => r.path === 'owner/manager-access');
+
+    expect(accessRoute).toBeDefined();
+    expect(accessRoute!.data?.['roles']).toEqual(['owner']);
+  });
+
+  it('canonical parent invoices list route requires parent role only', () => {
     const parentRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'parent/invoices');
+      .find(r => r.path === 'app/invoices');
 
     expect(parentRoute).toBeDefined();
     expect(parentRoute!.data?.['roles']).toEqual(['parent']);
   });
 
-  it('parent invoice detail route requires parent role only', () => {
+  it('canonical parent invoice detail route requires parent role only', () => {
     const detailRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'parent/invoices/:invoiceId');
+      .find(r => r.path === 'app/invoices/:invoiceId');
 
     expect(detailRoute).toBeDefined();
     expect(detailRoute!.data?.['roles']).toEqual(['parent']);
+  });
+
+  it('legacy /parent/invoices redirects to /app/invoices', () => {
+    const redirect = routes.find(r => r.path === 'parent/invoices');
+    expect(redirect).toBeDefined();
+    expect(redirect!.redirectTo).toBe('app/invoices');
+    expect(redirect!.component).toBeUndefined();
+  });
+
+  it('legacy /parent/invoices/:invoiceId redirects to /app/invoices/:invoiceId', () => {
+    const redirect = routes.find(r => r.path === 'parent/invoices/:invoiceId');
+    expect(redirect).toBeDefined();
+    expect(redirect!.redirectTo).toBe('app/invoices/:invoiceId');
+    expect(redirect!.component).toBeUndefined();
   });
 
   it('root path includes authGuard and roleDefaultRedirectGuard', () => {
@@ -173,10 +207,21 @@ describe('app.routes', () => {
     }
   });
 
+  it('protected owner routes include both authGuard and roleGuard', () => {
+    const ownerRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('owner'));
+
+    for (const route of ownerRoutes) {
+      expect(route.canActivate).toContain(authGuard);
+      expect(route.canActivate).toContain(roleGuard);
+    }
+  });
+
   it('protected parent routes include both authGuard and roleGuard', () => {
     const parentRoutes = routes
       .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('parent'));
+      .filter(r => r.path?.startsWith('app/invoices'));
 
     for (const route of parentRoutes) {
       expect(route.canActivate).toContain(authGuard);
@@ -193,12 +238,25 @@ describe('app.routes', () => {
     expect(attendanceRoute!.data?.['roles']).toEqual(['manager', 'practitioner']);
   });
 
-  it('staff routes do not include parent role', () => {
+  it('staff routes do not include parent or owner roles', () => {
     const staffRoutes = routes
       .flatMap(r => r.children ?? [])
       .filter(r => r.path?.startsWith('staff') && r.data?.['roles']);
 
     for (const route of staffRoutes) {
+      expect((route.data?.['roles'] as string[])).not.toContain('parent');
+      expect((route.data?.['roles'] as string[])).not.toContain('owner');
+    }
+  });
+
+  it('owner routes do not include manager, practitioner, or parent roles', () => {
+    const ownerRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('owner') && r.data?.['roles']);
+
+    for (const route of ownerRoutes) {
+      expect((route.data?.['roles'] as string[])).not.toContain('manager');
+      expect((route.data?.['roles'] as string[])).not.toContain('practitioner');
       expect((route.data?.['roles'] as string[])).not.toContain('parent');
     }
   });

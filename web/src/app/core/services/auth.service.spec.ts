@@ -33,6 +33,34 @@ const mockAuthResponse: AuthResponse = {
   ],
 };
 
+const mockOwnerAuthResponse: AuthResponse = {
+  access_token: 'owner-access-token',
+  token_type: 'Bearer',
+  expires_in_seconds: 900,
+  user: {
+    id: 'owner-user-1',
+    email: 'owner@example.com',
+  },
+  active_membership: {
+    membership_id: 'owner-membership-1',
+    tenant_id: 'tenant-1',
+    tenant_name: 'Little Sprouts Nursery',
+    branch_id: null,
+    branch_name: null,
+    role: 'owner',
+  },
+  available_memberships: [
+    {
+      membership_id: 'owner-membership-1',
+      tenant_id: 'tenant-1',
+      tenant_name: 'Little Sprouts Nursery',
+      branch_id: null,
+      branch_name: null,
+      role: 'owner',
+    },
+  ],
+};
+
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
@@ -238,5 +266,17 @@ describe('AuthService', () => {
 
     expect(errorSpy).not.toHaveBeenCalled();
     expect(completeSpy).toHaveBeenCalled();
+  });
+
+  it('stores owner active membership with nullable branch fields', () => {
+    service.login('owner@example.com', 'password123').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush(mockOwnerAuthResponse);
+
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.currentRole()).toBe('owner');
+    expect(service.activeMembership()?.branch_id).toBeNull();
+    expect(service.activeMembership()?.branch_name).toBeNull();
+    expect(service.activeMembership()?.tenant_name).toBe('Little Sprouts Nursery');
+    expect(service.activeMembership()?.role).toBe('owner');
   });
 });

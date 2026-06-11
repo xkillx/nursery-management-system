@@ -1,6 +1,6 @@
 # Nursery Management System
 
-A multi-tenant nursery management system for UK childcare providers. The month-1 MVP baseline is complete, covering attendance, absence tracking, funding deductions, invoice preparation, parent billing, and scoped access for managers, practitioners, and parents. New work follows the Post-MVP roadmap.
+A multi-tenant nursery management system for UK childcare providers. The month-1 MVP baseline is complete, covering attendance, absence tracking, funding deductions, invoice preparation, parent billing, and scoped access for managers, practitioners, and parents. Post-MVP work has begun with owner cross-site oversight and manager-access administration. See `docs/POST-MVP-ROADMAP.md` for the current roadmap.
 
 This repository contains a Go API, an Angular web application, PostgreSQL migrations, and product/architecture documentation.
 
@@ -20,7 +20,7 @@ This repository contains a Go API, an Angular web application, PostgreSQL migrat
 
 ## Project Status
 
-The month-1 MVP baseline is complete. The backend covers the main domain flows and the frontend is a role-scoped Angular workspace for managers, practitioners, and parents. The system is moving into Post-MVP work: see `docs/POST-MVP-ROADMAP.md` for the current roadmap and priority lanes.
+The month-1 MVP baseline is complete. The backend covers the main domain flows and the frontend is a role-scoped Angular workspace for managers, practitioners, and parents. Post-MVP work is underway: API-PM-08 (owner and four-site access model) is done, adding owner role, cross-site aggregate summaries, and manager-access administration per site. See `docs/POST-MVP-ROADMAP.md` for the current roadmap and priority lanes.
 
 ## Features
 
@@ -28,6 +28,7 @@ The month-1 MVP baseline is complete. The backend covers the main domain flows a
 - JWT authentication with refresh-token sessions
 - Membership-scoped access control
 - Manager, practitioner, and parent role boundaries
+- Owner role with tenant-wide cross-site summaries and manager-access administration
 - Child and guardian lifecycle management
 - Guardian-child links and parent access mappings
 - Attendance check-in/check-out flows
@@ -46,7 +47,7 @@ The month-1 MVP baseline is complete. The backend covers the main domain flows a
 | Database | PostgreSQL |
 | Migrations | golang-migrate |
 | Frontend | Angular, TypeScript, Tailwind CSS |
-| Authentication | JWT access tokens and refresh-token cookies |
+| Authentication | JWT access tokens, refresh-token cookies, four-role RBAC (owner, manager, practitioner, parent) |
 | Payments | Stripe integration groundwork |
 | Code generation | sqlc |
 
@@ -168,31 +169,50 @@ make migrate-up
 
 This command loads `api/.env` and applies all migrations in `api/db/migrations`.
 
-### 6. Seed the first manager account
+### 6. Seed accounts
 
-Run this once after migrations. The command is safe to re-run; it updates the same user and ensures the manager membership exists.
+Run this once after migrations. The command is safe to re-run; it updates existing users and ensures memberships exist.
+
+**Production — owner only:**
 
 ```bash
 cd api
-set -a
-source .env
-set +a
+set -a && source .env && set +a
 go run ./cmd/seed \
-  -email manager@pilot.local \
+  -email owner@yourcompany.com \
+  -password "<strong-password>" \
+  -tenant "Your Nursery" \
+  -branch "Main"
+```
+
+**Local testing — all roles:**
+
+Add `-local` and provide separate emails for each role:
+
+```bash
+cd api
+set -a && source .env && set +a
+go run ./cmd/seed \
+  -email owner@pilot.local \
   -password "ChangeThisPassword123" \
   -tenant "Pilot Nursery" \
-  -branch "Main"
-cd ..
+  -branch "Main" \
+  -local \
+  -manager-email manager@pilot.local \
+  -staff-email staff@pilot.local \
+  -parent-email parent@pilot.local
 ```
 
-Use this account to sign in locally:
+This creates four accounts:
 
-```text
-Email: manager@pilot.local
-Password: ChangeThisPassword123
-```
+| Account | Email | Role |
+| --- | --- | --- |
+| Owner | `owner@pilot.local` | Cross-site oversight |
+| Manager | `manager@pilot.local` | Branch-scoped management |
+| Staff | `staff@pilot.local` | Practitioner attendance |
+| Parent | `parent@pilot.local` | Parent billing access |
 
-Use a stronger password for shared or deployed environments.
+All accounts use the password you passed to the seed command. Use a strong password for non-local environments.
 
 ## Run the Project
 
@@ -235,13 +255,18 @@ Important local frontend note: the Angular app currently uses a same-origin API 
 
 ### Test login through the API
 
-You can verify the seeded manager account directly:
+You can verify the seeded accounts directly:
 
 ```bash
-curl -i \
-  -X POST http://localhost:8080/api/v1/auth/login \
+# Owner
+curl -s http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager@pilot.local","password":"ChangeThisPassword123"}'
+  -d '{"email":"owner@pilot.local","password":"ChangeThisPassword123"}' | python3 -m json.tool
+
+# Manager
+curl -s http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"manager@pilot.local","password":"ChangeThisPassword123"}' | python3 -m json.tool
 ```
 
 ## Useful Commands
@@ -402,8 +427,8 @@ npm start -- --port 4300
 
 Start with these files:
 
-- `CONTEXT.md`: domain glossary and decision baseline
-- `docs/POST-MVP-ROADMAP.md`: current roadmap and priority lanes
+- `CONTEXT.md`: domain glossary, decision baseline, and owner access definitions
+- `docs/POST-MVP-ROADMAP.md`: current roadmap, priority lanes, and owner lane status
 - `docs/DECISION-BASELINE.md`: historical MVP decision lock
 - `docs/BOOTSTRAP-SPEC.md`: backend bootstrap decisions
 - `docs/API-CONTRACT.openapi.yaml`: API contract

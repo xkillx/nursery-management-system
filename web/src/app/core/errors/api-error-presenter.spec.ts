@@ -344,3 +344,31 @@ describe('formatPresentedApiError', () => {
     expect(formatPresentedApiError(p)).toBe('Something went wrong. Try again.');
   });
 });
+
+describe('presentApiError — owner contexts', () => {
+  it('site_not_found shows owner-safe message with overview action', () => {
+    const result = presentApiError(mapped({ code: 'site_not_found' }), 'owner.managerAccess');
+    expect(result.kind).toBe('known');
+    expect(result.message).toContain('Site not found');
+    expect(result.action?.route).toEqual(['/owner']);
+  });
+
+  it('manager_membership_not_found shows refresh action', () => {
+    const result = presentApiError(mapped({ code: 'manager_membership_not_found' }), 'owner.managerAccess');
+    expect(result.kind).toBe('known');
+    expect(result.message).toContain('not found');
+    expect(result.action?.command).toBe('refresh');
+  });
+
+  it('user_not_found shows user not found message', () => {
+    const result = presentApiError(mapped({ code: 'user_not_found' }), 'owner.managerAccess');
+    expect(result.kind).toBe('known');
+    expect(result.message).toContain('User not found');
+  });
+
+  it('user_inactive shows inactive message', () => {
+    const result = presentApiError(mapped({ code: 'user_inactive' }), 'owner.managerAccess');
+    expect(result.kind).toBe('known');
+    expect(result.message).toContain('inactive');
+  });
+});

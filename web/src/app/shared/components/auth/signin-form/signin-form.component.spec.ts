@@ -9,6 +9,15 @@ import { SigninFormComponent } from './signin-form.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MembershipModel } from '../../../../core/models/auth.models';
 
+const mockOwnerMembership: MembershipModel = {
+  membership_id: '00000000-0000-0000-0000-000000000040',
+  tenant_id: '00000000-0000-0000-0000-000000000020',
+  tenant_name: 'Little Sprouts Nursery',
+  branch_id: null,
+  branch_name: null,
+  role: 'owner',
+};
+
 describe('SigninFormComponent', () => {
   let component: SigninFormComponent;
   let fixture: ComponentFixture<SigninFormComponent>;
@@ -202,5 +211,43 @@ describe('SigninFormComponent', () => {
     expect(component.isMembershipChallenge).toBeTrue();
     expect(component.membershipChoices.length).toBe(1);
     expect(component.membershipChallengeMessage).toContain('no longer available');
+  }));
+
+  it('owner login routes to /owner', fakeAsync(() => {
+    authServiceMock.login.and.returnValue(of({} as any));
+    authServiceMock.currentRole.and.returnValue('owner');
+
+    component.email = 'owner@example.com';
+    component.password = 'password1';
+    component.onSignIn();
+    tick();
+
+    expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/owner');
+  }));
+
+  it('owner membership challenge displays tenant name without branch', fakeAsync(() => {
+    const errorBody = {
+      code: 'membership_selection_required',
+      message: 'Choose a nursery to continue.',
+      available_memberships: [mockOwnerMembership],
+    };
+    authServiceMock.login.and.returnValue(throwError(() =>
+      new HttpErrorResponse({ error: errorBody, status: 400 })
+    ));
+
+    component.email = 'owner@example.com';
+    component.password = 'password1';
+    component.onSignIn();
+    tick();
+
+    expect(component.isMembershipChallenge).toBeTrue();
+    expect(component.membershipChoices.length).toBe(1);
+    expect(component.membershipChoices[0].branch_name).toBeNull();
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const text = compiled.textContent!;
+    expect(text).toContain('Little Sprouts Nursery');
+    expect(text).toContain('owner');
   }));
 });
