@@ -33,3 +33,8 @@ type ConsentRepository interface {
 	GetCurrentVersion(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error)
 	CreateConsentRecord(ctx context.Context, tx Tx, record *ConsentRecord) error
 }
+
+type AttestationRepository interface {
+	GetLatestAttestationByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*CompletionAttestation, error)
+	CreateAttestation(ctx context.Context, tx Tx, attestation *CompletionAttestation) error
+}

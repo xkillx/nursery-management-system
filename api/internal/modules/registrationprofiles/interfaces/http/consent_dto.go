@@ -89,6 +89,13 @@ func toConsentRecordResponse(r domain.ConsentRecord) consentRecordResponse {
 	return resp
 }
 
+func toConsentCompletenessResponse(cc domain.ConsentCompleteness) consentCompletenessResponse {
+	return consentCompletenessResponse{
+		IsComplete:      cc.IsComplete,
+		MissingDecisions: cc.MissingDecisions,
+	}
+}
+
 func toConsentsResponse(child domain.ChildSummary, cwc domain.ConsentWithCompleteness) consentsResponse {
 	resp := consentsResponse{
 		Child: childSummaryResponse{

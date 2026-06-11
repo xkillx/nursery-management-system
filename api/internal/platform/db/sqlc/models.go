@@ -325,6 +325,21 @@ type Child struct {
 	LeftReasonNote      pgtype.Text
 }
 
+type ChildRegistrationCompletionAttestation struct {
+	ID                       pgtype.UUID
+	TenantID                 pgtype.UUID
+	BranchID                 pgtype.UUID
+	ChildID                  pgtype.UUID
+	ConsentRecordID          pgtype.UUID
+	ProfileUpdatedAt         pgtype.Timestamptz
+	OfficeChecklistUpdatedAt pgtype.Timestamptz
+	AttestedByUserID         pgtype.UUID
+	AttestedByMembershipID   pgtype.UUID
+	AttestedAt               pgtype.Timestamptz
+	RequestID                pgtype.Text
+	CreatedAt                pgtype.Timestamptz
+}
+
 type ChildRegistrationConsentRecord struct {
 	ID                                   pgtype.UUID
 	TenantID                             pgtype.UUID

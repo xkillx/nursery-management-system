@@ -990,4 +990,71 @@ func mapConsentRow(row sqlc.ChildRegistrationConsentRecord) *domain.ConsentRecor
 	}
 }
 
+// --- Attestation Repository ---
+
+func (r *Repository) GetLatestAttestationByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.CompletionAttestation, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.AttestationGetLatestByChild(ctx, sqlc.AttestationGetLatestByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get latest attestation: %w", err)
+	}
+	return mapAttestationRow(row), nil
+}
+
+func (r *Repository) CreateAttestation(ctx context.Context, tx domain.Tx, a *domain.CompletionAttestation) error {
+	q := sqlc.New(tx)
+	return q.AttestationCreate(ctx, sqlc.AttestationCreateParams{
+		ID:                       uuidToPgtype(a.ID),
+		TenantID:                 uuidToPgtype(a.TenantID),
+		BranchID:                 uuidToPgtype(a.BranchID),
+		ChildID:                  uuidToPgtype(a.ChildID),
+		ConsentRecordID:          uuidToPgtypePtr(a.ConsentRecordID),
+		ProfileUpdatedAt:         pgtype.Timestamptz{Time: a.ProfileUpdatedAt, Valid: true},
+		OfficeChecklistUpdatedAt: pgtype.Timestamptz{Time: a.OfficeChecklistUpdatedAt, Valid: true},
+		AttestedByUserID:         uuidToPgtype(a.AttestedByUserID),
+		AttestedByMembershipID:   uuidToPgtype(a.AttestedByMembershipID),
+		AttestedAt:               pgtype.Timestamptz{Time: a.AttestedAt, Valid: true},
+		RequestID:                textToPgtype(a.RequestID),
+	})
+}
+
+func mapAttestationRow(row sqlc.ChildRegistrationCompletionAttestation) *domain.CompletionAttestation {
+	return &domain.CompletionAttestation{
+		ID:                     pgtypeUUIDToUUID(row.ID),
+		TenantID:               pgtypeUUIDToUUID(row.TenantID),
+		BranchID:               pgtypeUUIDToUUID(row.BranchID),
+		ChildID:                pgtypeUUIDToUUID(row.ChildID),
+		ConsentRecordID:        pgtypeUUIDToUUIDPtr(row.ConsentRecordID),
+		ProfileUpdatedAt:       pgtypeTimestamptzToTime(row.ProfileUpdatedAt),
+		OfficeChecklistUpdatedAt: pgtypeTimestamptzToTime(row.OfficeChecklistUpdatedAt),
+		AttestedByUserID:       pgtypeUUIDToUUID(row.AttestedByUserID),
+		AttestedByMembershipID: pgtypeUUIDToUUID(row.AttestedByMembershipID),
+		AttestedAt:             pgtypeTimestamptzToTime(row.AttestedAt),
+		RequestID:              pgtypeTextToPtr(row.RequestID),
+		CreatedAt:              pgtypeTimestamptzToTime(row.CreatedAt),
+	}
+}
+
+func uuidToPgtypePtr(u *uuid.UUID) pgtype.UUID {
+	if u == nil {
+		return pgtype.UUID{Valid: false}
+	}
+	return pgtype.UUID{Bytes: [16]byte(*u), Valid: true}
+}
+
+func pgtypeUUIDToUUIDPtr(u pgtype.UUID) *uuid.UUID {
+	if !u.Valid {
+		return nil
+	}
+	id := uuid.UUID(u.Bytes)
+	return &id
+}
+
 

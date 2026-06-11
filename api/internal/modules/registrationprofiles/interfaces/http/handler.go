@@ -20,6 +20,8 @@ type Handler struct {
 	updateOfficeChecklist  *application.UpdateOfficeChecklist
 	getConsents            *application.GetConsents
 	createConsent          *application.CreateConsent
+	getWorkflowStatus      *application.GetWorkflowStatus
+	createAttestation      *application.CreateAttestation
 }
 
 func NewHandler(
@@ -30,6 +32,8 @@ func NewHandler(
 	updateOfficeChecklist *application.UpdateOfficeChecklist,
 	getConsents *application.GetConsents,
 	createConsent *application.CreateConsent,
+	getWorkflowStatus *application.GetWorkflowStatus,
+	createAttestation *application.CreateAttestation,
 ) *Handler {
 	return &Handler{
 		getProfile:            getProfile,
@@ -39,6 +43,8 @@ func NewHandler(
 		updateOfficeChecklist: updateOfficeChecklist,
 		getConsents:           getConsents,
 		createConsent:         createConsent,
+		getWorkflowStatus:     getWorkflowStatus,
+		createAttestation:     createAttestation,
 	}
 }
 
@@ -50,6 +56,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.PATCH("/children/:child_id/registration-office-use-checklist", h.updateOfficeUseChecklistHandler)
 	manager.GET("/children/:child_id/registration-consents", h.getConsentsHandler)
 	manager.POST("/children/:child_id/registration-consents", h.createConsentHandler)
+	manager.GET("/children/:child_id/registration-workflow-status", h.getWorkflowStatusHandler)
+	manager.POST("/children/:child_id/registration-completion-attestations", h.createCompletionAttestationHandler)
 }
 
 func (h *Handler) getProfileHandler(c *gin.Context) {
@@ -201,6 +209,42 @@ func (h *Handler) getConsentsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toConsentsResponse(childSummary, cwc))
+}
+
+func (h *Handler) getWorkflowStatusHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID := c.Param("child_id")
+
+	status, err := h.getWorkflowStatus.Execute(c.Request.Context(), actor, childID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toWorkflowStatusResponse(status))
+}
+
+func (h *Handler) createCompletionAttestationHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID := c.Param("child_id")
+
+	attestation, err := h.createAttestation.Execute(c.Request.Context(), actor, childID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toAttestationResponse(*attestation))
 }
 
 func (h *Handler) createConsentHandler(c *gin.Context) {
