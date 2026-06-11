@@ -11,7 +11,9 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
+import { RegistrationProfileCompleteness, OfficeUseCompleteness } from '../../models/registration-profile.models';
 import { formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
+import { formatCompletionStatus, getCompletionBadgeClass } from '../../utils/registration-profile-formatters';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -42,6 +44,8 @@ export class ManagerChildDetailComponent implements OnInit {
 
   readonly formatRate = formatHourlyRateGbp;
   readonly requirementLabel = missingRequirementLabel;
+  readonly formatCompletionStatus = formatCompletionStatus;
+  readonly getCompletionBadgeClass = getCompletionBadgeClass;
 
   childId = '';
   child: ChildRecord | null = null;
@@ -52,6 +56,10 @@ export class ManagerChildDetailComponent implements OnInit {
   isLoadingLinks = false;
   isSaving = false;
   isLinking = false;
+  profileCompleteness: RegistrationProfileCompleteness | null = null;
+  officeCompleteness: OfficeUseCompleteness | null = null;
+  isLoadingRegistration = false;
+  registrationLoadError: string | null = null;
 
   showEditForm = false;
   errorMessage: string | null = null;
@@ -260,6 +268,7 @@ export class ManagerChildDetailComponent implements OnInit {
         this.loadLinkedGuardians();
         this.loadAllGuardians();
         this.loadFundingProfile();
+        this.loadRegistrationSummary();
       },
       error: (error) => {
         this.isLoadingChild = false;
@@ -289,6 +298,38 @@ export class ManagerChildDetailComponent implements OnInit {
           return;
         }
         this.handleFundingError(error);
+      },
+    });
+  }
+
+  private loadRegistrationSummary(): void {
+    if (!this.childId) return;
+    this.isLoadingRegistration = true;
+    this.registrationLoadError = null;
+
+    this.staffApi.getRegistrationProfile(this.childId).subscribe({
+      next: (profile) => {
+        this.profileCompleteness = profile.completeness;
+        this.isLoadingRegistration = false;
+        this.loadOfficeChecklistSummary();
+      },
+      error: (err) => {
+        this.isLoadingRegistration = false;
+        this.registrationLoadError = 'Could not load registration summary.';
+        this.profileCompleteness = null;
+      },
+    });
+  }
+
+  private loadOfficeChecklistSummary(): void {
+    if (!this.childId) return;
+
+    this.staffApi.getRegistrationOfficeUseChecklist(this.childId).subscribe({
+      next: (checklist) => {
+        this.officeCompleteness = checklist.completeness;
+      },
+      error: () => {
+        this.officeCompleteness = null;
       },
     });
   }
