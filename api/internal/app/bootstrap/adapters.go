@@ -14,8 +14,11 @@ import (
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	postgresguardian "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
+	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
+	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	"nursery-management-system/api/internal/platform/email"
 )
 
 type guardianCheckerAdapter struct {
@@ -104,3 +107,39 @@ func (a *absenceMarkerCheckerAdapter) HasActiveAbsenceMarker(ctx context.Context
 }
 
 var _ absencedomain.Repository = (*postgresabsence.AbsenceRepository)(nil)
+
+// ── Owner adapters ──────────────────────────────────────────────────────────
+
+type ownerInviteTokenAdapter struct {
+	gen *invitetokens.Manager
+}
+
+func (a *ownerInviteTokenAdapter) Generate() (string, string, time.Time, error) {
+	tok, err := a.gen.Generate()
+	if err != nil {
+		return "", "", time.Time{}, err
+	}
+	return tok.Raw, tok.Hash, tok.ExpiresAt, nil
+}
+
+type ownerEmailSenderAdapter struct {
+	sender  email.Sender
+	baseURL string
+}
+
+func (a *ownerEmailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail, acceptURL string) error {
+	msg := email.Message{
+		To:      toEmail,
+		Subject: "You're invited to join as manager",
+		Text: fmt.Sprintf(
+			"You have been invited to join as a manager.\n\nClick the link below to accept:\n%s\n\nThis invitation expires in 7 days.",
+			acceptURL,
+		),
+	}
+	return a.sender.Send(ctx, msg)
+}
+
+var (
+	_ ownerdomain.InviteTokenGenerator = (*ownerInviteTokenAdapter)(nil)
+	_ ownerdomain.ManagerInviteSender  = (*ownerEmailSenderAdapter)(nil)
+)

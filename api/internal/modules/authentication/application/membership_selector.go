@@ -91,3 +91,10 @@ func containsMembership(memberships []domain.Membership, membershipID uuid.UUID)
 	}
 	return false
 }
+
+func scopeBranchID(m domain.Membership) string {
+	if m.Role == "owner" {
+		return ""
+	}
+	return m.BranchID.String()
+}

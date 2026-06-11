@@ -51,6 +51,10 @@ type authzHarness struct {
 	parentAMID   uuid.UUID
 	parentAToken string
 
+	ownerAUID   uuid.UUID
+	ownerAMID   uuid.UUID
+	ownerAToken string
+
 	// Scope B
 	tenantB uuid.UUID
 	branchB uuid.UUID
@@ -109,6 +113,9 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 		parentAUID:   uuid.MustParse("a1000000-0000-0000-0000-000000000030"),
 		parentAMID:   uuid.MustParse("a1000000-0000-0000-0000-000000000031"),
 
+		ownerAUID: uuid.MustParse("a1000000-0000-0000-0000-000000000040"),
+		ownerAMID: uuid.MustParse("a1000000-0000-0000-0000-000000000041"),
+
 		// Scope B — deterministic UUIDs in "b1" block
 		tenantB: uuid.MustParse("b1000000-0000-0000-0000-000000000001"),
 		branchB: uuid.MustParse("b1000000-0000-0000-0000-000000000002"),
@@ -151,6 +158,7 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 	h.managerAToken = h.accessToken(h.managerAUID, h.managerAMID, h.tenantA, h.branchA, "manager")
 	h.practitionerAToken = h.accessToken(h.practitionerAUID, h.practitionerAMID, h.tenantA, h.branchA, "practitioner")
 	h.parentAToken = h.accessToken(h.parentAUID, h.parentAMID, h.tenantA, h.branchA, "parent")
+	h.ownerAToken = h.accessToken(h.ownerAUID, h.ownerAMID, h.tenantA, uuid.Nil, "owner")
 	h.managerBToken = h.accessToken(h.managerBUID, h.managerBMID, h.tenantB, h.branchB, "manager")
 	h.parentBToken = h.accessToken(h.parentBUID, h.parentBMID, h.tenantB, h.branchB, "parent")
 
@@ -159,10 +167,14 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 }
 
 func (h *authzHarness) accessToken(userID, membershipID, tenantID, branchID uuid.UUID, role string) string {
+	branchIDStr := branchID.String()
+	if role == "owner" {
+		branchIDStr = ""
+	}
 	raw, _, err := h.tokens.GenerateAccessToken(userID, "test@example.com", authdomain.ScopeClaims{
 		MembershipID: membershipID.String(),
 		TenantID:     tenantID.String(),
-		BranchID:     branchID.String(),
+		BranchID:     branchIDStr,
 		Role:         role,
 	})
 	if err != nil {
@@ -181,15 +193,22 @@ func (h *authzHarness) seed(t *testing.T) {
 	dbtest.InsertUser(t, h.pool, h.managerAUID, "authz-mgr-a@test.com", "hash", true)
 	dbtest.InsertUser(t, h.pool, h.practitionerAUID, "authz-prac-a@test.com", "hash", true)
 	dbtest.InsertUser(t, h.pool, h.parentAUID, "authz-parent-a@test.com", "hash", true)
+	dbtest.InsertUser(t, h.pool, h.ownerAUID, "authz-owner-a@test.com", "hash", true)
 	dbtest.InsertMembership(t, h.pool, h.managerAMID, h.tenantA, h.branchA, h.managerAUID, "manager", true)
 	dbtest.InsertMembership(t, h.pool, h.practitionerAMID, h.tenantA, h.branchA, h.practitionerAUID, "practitioner", true)
 	dbtest.InsertMembership(t, h.pool, h.parentAMID, h.tenantA, h.branchA, h.parentAUID, "parent", true)
+	// Owner membership (NULL branch_id)
+	_, err := h.pool.Exec(ctx, "INSERT INTO memberships (id, tenant_id, branch_id, user_id, role, is_active) VALUES ($1, $2, NULL, $3, 'owner', true)",
+		h.ownerAMID, h.tenantA, h.ownerAUID)
+	if err != nil {
+		t.Fatalf("insert owner membership: %v", err)
+	}
 
 	dbtest.InsertChild(t, h.pool, h.childA, h.tenantA, h.branchA, "Child A",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
 	dbtest.InsertChild(t, h.pool, h.inactiveChildA, h.tenantA, h.branchA, "Inactive Child A",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
-	_, err := h.pool.Exec(ctx, "UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1", h.inactiveChildA)
+	_, err = h.pool.Exec(ctx, "UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1", h.inactiveChildA)
 	if err != nil {
 		t.Fatalf("deactivate child: %v", err)
 	}
@@ -473,6 +492,13 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		// Manager payment diagnostics
 		{"GET", "/api/v1/invoices/:invoice_id/payment-status", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices/:invoice_id/payment-events", classProtectedBusiness, []string{"manager"}},
+
+		// Owner
+		{"GET", "/api/v1/owner/site-summaries", classProtectedBusiness, []string{"owner"}},
+		{"GET", "/api/v1/owner/manager-access", classProtectedBusiness, []string{"owner"}},
+		{"POST", "/api/v1/owner/sites/:site_id/manager-access", classProtectedBusiness, []string{"owner"}},
+		{"POST", "/api/v1/owner/sites/:site_id/manager-access/:membership_id/actions/deactivate", classProtectedBusiness, []string{"owner"}},
+		{"POST", "/api/v1/owner/sites/:site_id/manager-access/:membership_id/actions/activate", classProtectedBusiness, []string{"owner"}},
 	}
 }
 
@@ -718,6 +744,10 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 			w := h.doReq(t, tc.method, tc.path, h.parentAToken, tc.body)
 			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
 		})
+		t.Run(tc.name+"_owner_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.ownerAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
 	}
 
 	// Attendance check-in/check-out, absence: manager + practitioner allowed → parent forbidden
@@ -737,6 +767,10 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 	for _, tc := range managerPractitionerRoutes {
 		t.Run(tc.name+"_parent_forbidden", func(t *testing.T) {
 			w := h.doReq(t, tc.method, tc.path, h.parentAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
+		t.Run(tc.name+"_owner_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.ownerAToken, tc.body)
 			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
 		})
 	}
@@ -761,6 +795,10 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		t.Run(tc.name+"_practitioner_forbidden", func(t *testing.T) {
 			w := h.doReq(t, tc.method, tc.path, h.practitionerAToken, tc.body)
 			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		t.Run(tc.name+"_owner_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.ownerAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
 		})
 	}
 
@@ -1077,5 +1115,104 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 	})
 
 }
+}
 
+// ---------------------------------------------------------------------------
+// Owner role boundaries
+// ---------------------------------------------------------------------------
+
+func TestAuthorizationMatrixOwnerRoleBoundaries(t *testing.T) {
+	h := setupAuthzHarness(t)
+
+	// Owner CAN access owner endpoints
+	t.Run("owner can get site summaries", func(t *testing.T) {
+		w := h.get(t, "/api/v1/owner/site-summaries", h.ownerAToken)
+		assertStatus(t, w, http.StatusOK)
+	})
+
+	t.Run("owner can list manager access", func(t *testing.T) {
+		w := h.get(t, "/api/v1/owner/manager-access?site_id="+h.branchA.String(), h.ownerAToken)
+		assertStatus(t, w, http.StatusOK)
+	})
+
+	t.Run("owner can grant manager access", func(t *testing.T) {
+		body := fmt.Sprintf(`{"email":"new-grant@test.com"}`)
+		w := h.post(t, "/api/v1/owner/sites/"+h.branchA.String()+"/manager-access", h.ownerAToken, body)
+		// 200 (invite created) or other success — just not 403
+		if w.Code == http.StatusForbidden {
+			t.Fatalf("owner should access grant endpoint, got 403")
+		}
+	})
+
+	// Non-owner roles CANNOT access owner endpoints
+	ownerRoutes := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{"site summaries", "GET", "/api/v1/owner/site-summaries", ""},
+		{"manager access list", "GET", "/api/v1/owner/manager-access?site_id=" + h.branchA.String(), ""},
+		{"grant access", "POST", "/api/v1/owner/sites/" + h.branchA.String() + "/manager-access", `{"email":"x@test.com"}`},
+		{"deactivate access", "POST", "/api/v1/owner/sites/" + h.branchA.String() + "/manager-access/" + h.managerAMID.String() + "/actions/deactivate", ""},
+		{"reactivate access", "POST", "/api/v1/owner/sites/" + h.branchA.String() + "/manager-access/" + h.managerAMID.String() + "/actions/activate", ""},
+	}
+
+	for _, tc := range ownerRoutes {
+		t.Run(tc.name+"_manager_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.managerAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
+		t.Run(tc.name+"_practitioner_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.practitionerAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
+		t.Run(tc.name+"_parent_forbidden", func(t *testing.T) {
+			w := h.doReq(t, tc.method, tc.path, h.parentAToken, tc.body)
+			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+		})
+	}
+
+	// Owner unauthenticated → 401
+	t.Run("owner site summaries requires auth", func(t *testing.T) {
+		w := h.get(t, "/api/v1/owner/site-summaries", "")
+		assertStatusAndCode(t, w, http.StatusUnauthorized, "unauthorized")
+	})
+}
+
+func TestAuthorizationMatrixOwnerTenantIsolation(t *testing.T) {
+	h := setupAuthzHarness(t)
+
+	// Owner A cannot see tenant B sites in summaries
+	t.Run("owner A site summaries excludes tenant B", func(t *testing.T) {
+		w := h.get(t, "/api/v1/owner/site-summaries", h.ownerAToken)
+		assertStatus(t, w, http.StatusOK)
+		var resp struct {
+			Sites []struct {
+				SiteID string `json:"site_id"`
+			} `json:"sites"`
+		}
+		decodeBody(t, w, &resp)
+		for _, s := range resp.Sites {
+			if s.SiteID == h.branchB.String() {
+				t.Fatal("owner A should not see tenant B sites")
+			}
+		}
+	})
+
+	// Owner A querying tenant B site → site_not_found
+	t.Run("owner A manager access for tenant B site not found", func(t *testing.T) {
+		w := h.get(t, "/api/v1/owner/manager-access?site_id="+h.branchB.String(), h.ownerAToken)
+		assertStatusAndCode(t, w, http.StatusNotFound, "site_not_found")
+	})
+
+	t.Run("owner A grant access for tenant B site not found", func(t *testing.T) {
+		w := h.post(t, "/api/v1/owner/sites/"+h.branchB.String()+"/manager-access", h.ownerAToken, `{"email":"x@test.com"}`)
+		assertStatusAndCode(t, w, http.StatusNotFound, "site_not_found")
+	})
+
+	t.Run("owner A deactivate for tenant B site not found", func(t *testing.T) {
+		w := h.post(t, "/api/v1/owner/sites/"+h.branchB.String()+"/manager-access/"+h.managerBMID.String()+"/actions/deactivate", h.ownerAToken, "")
+		assertStatusAndCode(t, w, http.StatusNotFound, "site_not_found")
+	})
 }

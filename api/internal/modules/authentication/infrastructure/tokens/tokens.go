@@ -83,10 +83,13 @@ func (m *TokenManager) ParseAccessToken(raw string) (AccessClaims, error) {
 	if claims.Subject == "" ||
 		claims.MembershipID == "" ||
 		claims.TenantID == "" ||
-		claims.BranchID == "" ||
 		claims.Role == "" ||
 		claims.ExpiresAt == nil ||
 		claims.IssuedAt == nil {
+		return AccessClaims{}, domain.ErrInvalidToken
+	}
+
+	if claims.BranchID == "" && claims.Role != "owner" {
 		return AccessClaims{}, domain.ErrInvalidToken
 	}
 

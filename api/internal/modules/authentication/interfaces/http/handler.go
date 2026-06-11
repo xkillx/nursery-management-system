@@ -79,12 +79,12 @@ type switchMembershipRequest struct {
 }
 
 type membershipResponse struct {
-	MembershipID string `json:"membership_id"`
-	TenantID     string `json:"tenant_id"`
-	TenantName   string `json:"tenant_name"`
-	BranchID     string `json:"branch_id"`
-	BranchName   string `json:"branch_name"`
-	Role         string `json:"role"`
+	MembershipID string  `json:"membership_id"`
+	TenantID     string  `json:"tenant_id"`
+	TenantName   string  `json:"tenant_name"`
+	BranchID     *string `json:"branch_id"`
+	BranchName   *string `json:"branch_name"`
+	Role         string  `json:"role"`
 }
 
 type authResponse struct {
@@ -350,14 +350,19 @@ func (h *Handler) buildAuthResponse(accessToken string, user domain.User, member
 }
 
 func toMembershipResponse(m domain.Membership) membershipResponse {
-	return membershipResponse{
+	resp := membershipResponse{
 		MembershipID: m.ID.String(),
 		TenantID:     m.TenantID.String(),
 		TenantName:   m.TenantName,
-		BranchID:     m.BranchID.String(),
-		BranchName:   m.BranchName,
 		Role:         m.Role,
 	}
+	if m.Role != "owner" {
+		bid := m.BranchID.String()
+		bn := m.BranchName
+		resp.BranchID = &bid
+		resp.BranchName = &bn
+	}
+	return resp
 }
 
 func (h *Handler) unauthorized(c *gin.Context) {

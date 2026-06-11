@@ -164,6 +164,16 @@ auditWriter.Write(ctx, pool, actor, audit.WriteParams{...})
 | POST | /parent-membership-guardian-mappings | manager | parentmappings |
 | POST | /parent-membership-guardian-mappings/:id/actions/end | manager | parentmappings |
 
+### Owner routes
+
+| Method | Path | Roles | Module |
+|--------|------|-------|--------|
+| GET | /owner/site-summaries | owner | owner |
+| GET | /owner/manager-access | owner | owner |
+| POST | /owner/sites/:site_id/manager-access | owner | owner |
+| POST | /owner/sites/:site_id/manager-access/:membership_id/actions/deactivate | owner | owner |
+| POST | /owner/sites/:site_id/manager-access/:membership_id/actions/activate | owner | owner |
+
 ## Database
 
 - Migrations: `api/db/migrations/` (golang-migrate, sequential numbering)

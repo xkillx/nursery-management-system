@@ -68,7 +68,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, rawRefreshToken string) (
 	accessToken, _, err := uc.tokens.GenerateAccessToken(user.ID, user.Email, domain.ScopeClaims{
 		MembershipID: activeMembership.ID.String(),
 		TenantID:     activeMembership.TenantID.String(),
-		BranchID:     activeMembership.BranchID.String(),
+		BranchID:     scopeBranchID(activeMembership),
 		Role:         activeMembership.Role,
 	})
 	if err != nil {

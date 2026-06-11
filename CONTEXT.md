@@ -38,15 +38,59 @@ After pilot readiness and owner/four-site oversight, Post-MVP feature work shoul
 
 ## User Role: Owner
 
-The business owner responsible for oversight across the nursery business and its sites. The owner needs cross-site visibility and administration without becoming a branch-scoped manager.
+The business owner or delegated owner-level operator responsible for oversight across the nursery business and its sites. A tenant may have multiple owner-role users; the pilot may start with one owner account.
 
 ## Owner Oversight Scope (Post-MVP)
 
 The first owner release is cross-site read and oversight first. The owner may inspect site summaries, compare finance and attendance health, review pilot readiness, and administer branch-manager access, while routine attendance, child-record edits, invoice issue, and branch workflow corrections remain branch-manager responsibilities unless a later owner-administration decision expands them.
 
+## Owner Access Mode (Post-MVP)
+
+The owner works from a business-wide owner view across all nursery sites, with site filters and drill-downs where needed. Owner access is distinct from switching into or impersonating a branch-scoped manager session.
+
+## Owner Manager Access Administration (Post-MVP)
+
+In the first owner release, the owner may invite, activate or deactivate, and assign manager access for each nursery site. The owner may grant site-manager access to a new email address or to an existing active user account without changing that user's other memberships. Practitioner and parent access administration remains a site-manager responsibility.
+
+## Owner Role Provisioning (Post-MVP)
+
+Owner-role users are provisioned through administrative or bootstrap paths in the first owner release. Owners may manage site-manager access, but they do not invite, assign, or deactivate other owner-role users.
+
+## Owner Cross-Site Summary (Post-MVP)
+
+The owner-facing summary compares nursery sites using aggregate health metrics and exception counts. It does not grant routine drill-down into named child, parent, invoice, or attendance workflows in the first owner release.
+
+## Owner Summary Export Boundary (Post-MVP)
+
+The first owner release provides on-screen cross-site summaries only. Exportable owner reporting is deferred until reporting requirements are clearer.
+
+## Owner Site Health Metrics (Post-MVP)
+
+The first owner summary covers attendance today, active enrolled children, invoice and payment health, funding readiness exceptions, and manager access status per site. Invoice and payment health includes invoice counts by status plus financial totals such as issued, paid, outstanding, overdue outstanding, and failed-payment count. Staff costs, Ofsted readiness, room capacity, safeguarding, and learning journey metrics are deferred until those product areas exist.
+
+## Owner Site Setup Visibility (Post-MVP)
+
+Owner summaries include active sites even when setup or current-period data is missing. A site without an active manager is an owner action item; missing finance, funding, or attendance data is shown as zero or not ready according to the metric rather than hiding the site.
+
+## Owner Summary Time Windows (Post-MVP)
+
+Owner attendance summaries use today's site attendance. Owner invoice, payment, and funding readiness summaries default to the current calendar billing month, while active enrolled children and manager access status are current snapshots.
+
+## Owner Site Coverage (Post-MVP)
+
+Owner access applies to all active nursery sites within the owner's tenant. The current pilot has four sites, but four-site access is a pilot shape rather than a permanent product limit.
+
+## Owner Site Filter Boundary (Post-MVP)
+
+Filtering an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Owners remain blocked from branch-scoped manager write actions such as child or guardian edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
+
 ## User Role: Manager
 
 A nursery staff role responsible for administration, invoicing, and operational oversight.
+
+## Multi-Site Manager Access (Post-MVP)
+
+A manager assigned to more than one nursery site works through separate manager memberships and an active site scope. Multiple manager memberships do not grant owner-style cross-site summaries or tenant-wide site filters.
 
 ## User Role: Practitioner
 

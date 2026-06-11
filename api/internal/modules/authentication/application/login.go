@@ -67,7 +67,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, email, password, membership
 	accessToken, _, err := uc.tokens.GenerateAccessToken(user.ID, user.Email, domain.ScopeClaims{
 		MembershipID: activeMembership.ID.String(),
 		TenantID:     activeMembership.TenantID.String(),
-		BranchID:     activeMembership.BranchID.String(),
+		BranchID:     scopeBranchID(activeMembership),
 		Role:         activeMembership.Role,
 	})
 	if err != nil {

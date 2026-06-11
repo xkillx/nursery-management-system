@@ -83,7 +83,7 @@ FROM refresh_tokens rt
 JOIN users u ON u.id = rt.user_id
 JOIN memberships m ON m.id = rt.membership_id AND m.user_id = u.id AND m.is_active = true AND m.ended_at IS NULL
 JOIN tenants t ON t.id = m.tenant_id
-JOIN branches b ON b.id = m.branch_id
+LEFT JOIN branches b ON b.id = m.branch_id
 WHERE rt.token_hash = $1
 LIMIT 1
 `
@@ -103,7 +103,7 @@ type AuthFindActiveRefreshTokenRow struct {
 	MembershipTenantID   pgtype.UUID
 	MembershipTenantName string
 	MembershipBranchID   pgtype.UUID
-	MembershipBranchName string
+	MembershipBranchName pgtype.Text
 	MembershipRole       string
 	MembershipIsActive   bool
 }
@@ -163,7 +163,7 @@ const authListMembershipsByUserID = `-- name: AuthListMembershipsByUserID :many
 SELECT m.id, m.tenant_id, t.name AS tenant_name, m.branch_id, b.name AS branch_name, m.role, m.is_active
 FROM memberships m
 JOIN tenants t ON t.id = m.tenant_id
-JOIN branches b ON b.id = m.branch_id
+LEFT JOIN branches b ON b.id = m.branch_id
 WHERE m.user_id = $1 AND m.is_active = true AND m.ended_at IS NULL
 ORDER BY m.created_at ASC
 `
@@ -173,7 +173,7 @@ type AuthListMembershipsByUserIDRow struct {
 	TenantID   pgtype.UUID
 	TenantName string
 	BranchID   pgtype.UUID
-	BranchName string
+	BranchName pgtype.Text
 	Role       string
 	IsActive   bool
 }

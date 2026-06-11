@@ -56,7 +56,7 @@ After pilot readiness, the first product expansion is owner-visible cross-site o
 
 | ID | Task | Status |
 |---|---|---|
-| API-PM-08 | Owner and four-site access model: owner role, branch switching/filtering, cross-site summaries, authorization boundaries | Pending |
+| API-PM-08 | Owner and four-site access model: owner role, branch switching/filtering, cross-site summaries, authorization boundaries | Done |
 | FE-PM-09 | Owner and four-site navigation/access experience: owner landing view, site switcher, branch-scoped manager/staff views, parent route isolation | Pending |
 
 Reference: `CONTEXT.md` defines `User Role: Owner` and `Owner Oversight Scope (Post-MVP)`.

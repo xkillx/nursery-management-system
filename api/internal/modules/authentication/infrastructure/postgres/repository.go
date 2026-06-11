@@ -52,7 +52,7 @@ func (r *Repository) ListMembershipsByUserID(ctx context.Context, userID uuid.UU
 			TenantID:   pgtypeUUIDToUUID(row.TenantID),
 			TenantName: row.TenantName,
 			BranchID:   pgtypeUUIDToUUID(row.BranchID),
-			BranchName: row.BranchName,
+			BranchName: pgtypeTextToString(row.BranchName),
 			Role:       row.Role,
 			IsActive:   row.IsActive,
 		})
@@ -102,7 +102,7 @@ func (r *Repository) FindActiveRefreshToken(ctx context.Context, tokenHash strin
 		TenantID:   pgtypeUUIDToUUID(row.MembershipTenantID),
 		TenantName: row.MembershipTenantName,
 		BranchID:   pgtypeUUIDToUUID(row.MembershipBranchID),
-		BranchName: row.MembershipBranchName,
+		BranchName: pgtypeTextToString(row.MembershipBranchName),
 		Role:       row.MembershipRole,
 		IsActive:   row.MembershipIsActive,
 	}
@@ -148,11 +148,16 @@ func (r *Repository) RevokeByTokenHash(ctx context.Context, tokenHash string) er
 }
 
 func (r *Repository) CreateScopeSwitchAuditLog(ctx context.Context, actorUserID uuid.UUID, fromMembership, toMembership domain.Membership, requestID string) error {
+	auditBranchID := toMembership.BranchID
+	if auditBranchID == uuid.Nil {
+		auditBranchID = fromMembership.BranchID
+	}
+
 	q := sqlc.New(r.pool)
 	return q.AuthCreateScopeSwitchAuditLog(ctx, sqlc.AuthCreateScopeSwitchAuditLogParams{
 		ID:                uuidToPgtype(uuid.New()),
 		TenantID:          uuidToPgtype(toMembership.TenantID),
-		BranchID:          uuidToPgtype(toMembership.BranchID),
+		BranchID:          uuidToPgtype(auditBranchID),
 		ActorUserID:       uuidToPgtype(actorUserID),
 		ActorMembershipID: uuidToPgtype(fromMembership.ID),
 		ActionType:        "session_scope_switched",
@@ -189,4 +194,11 @@ func pgtypeTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
 
 func stringToPgtypeText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: true}
+}
+
+func pgtypeTextToString(t pgtype.Text) string {
+	if !t.Valid {
+		return ""
+	}
+	return t.String
 }

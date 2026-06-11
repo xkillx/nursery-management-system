@@ -81,7 +81,7 @@ func requireRolesWithObservability(logger *slog.Logger, recorder *metrics.Record
 		}
 
 		switch authCtx.Role {
-		case "manager", "practitioner", "parent":
+		case "owner", "manager", "practitioner", "parent":
 		default:
 			RecordAuthorizationDenial(c, logger, recorder, "require_roles", "forbidden_role_unknown")
 			writeError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)

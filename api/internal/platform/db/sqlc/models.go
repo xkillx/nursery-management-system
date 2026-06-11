@@ -82,6 +82,7 @@ type Branch struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
+	IsActive  bool
 }
 
 type Child struct {

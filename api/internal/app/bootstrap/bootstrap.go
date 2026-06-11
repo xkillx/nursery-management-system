@@ -73,6 +73,10 @@ import (
 	resetpostgres "nursery-management-system/api/internal/modules/passwordreset/infrastructure/postgres"
 	resettokens "nursery-management-system/api/internal/modules/passwordreset/infrastructure/tokens"
 	resethandler "nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
+
+	ownerapp "nursery-management-system/api/internal/modules/owner/application"
+	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
+	ownerhandler "nursery-management-system/api/internal/modules/owner/interfaces/http"
 )
 
 type BootstrapOptions struct {
@@ -310,6 +314,20 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter)
 	inviteHandler.RegisterPublicRoutes(api)
 	inviteHandler.RegisterManagerRoutes(manager)
+
+	// Owner module (after invites for token infrastructure)
+	ownerRepo := ownerpostgres.NewRepository(pool)
+	ownerSummariesUC := ownerapp.NewGetSiteSummariesUseCase(ownerRepo)
+	ownerListAccessUC := ownerapp.NewListManagerAccessUseCase(ownerRepo)
+	ownerTokenAdapter := &ownerInviteTokenAdapter{gen: inviteTokenMgr}
+	ownerEmailAdapter := &ownerEmailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
+	ownerGrantUC := ownerapp.NewGrantManagerAccessUseCase(ownerRepo, ownerTokenAdapter, ownerEmailAdapter, cfg.WebBaseURL)
+	ownerDeactivateUC := ownerapp.NewDeactivateManagerAccessUseCase(ownerRepo)
+	ownerReactivateUC := ownerapp.NewReactivateManagerAccessUseCase(ownerRepo)
+	ownerHandler := ownerhandler.NewHandler(ownerSummariesUC, ownerListAccessUC, ownerGrantUC, ownerDeactivateUC, ownerReactivateUC).WithObservability(logger, recorder)
+	owner := protected.Group("/owner")
+	owner.Use(httpserver.RequireRolesWithObservability(logger, recorder, "owner"))
+	ownerHandler.RegisterRoutes(owner)
 
 	return router
 }

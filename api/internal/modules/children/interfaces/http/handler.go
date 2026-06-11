@@ -287,7 +287,7 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 		}
 
 		switch authCtx.Role {
-		case "manager", "practitioner", "parent":
+		case "owner", "manager", "practitioner", "parent":
 		default:
 			writeError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.")
 			return

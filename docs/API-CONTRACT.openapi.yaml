@@ -166,12 +166,15 @@ components:
         branch_id:
           type: string
           format: uuid
+          nullable: true
+          description: Null for owner memberships (tenant-wide scope)
         branch_name:
           type: string
-          description: Display-safe branch name for picker labels
+          nullable: true
+          description: Display-safe branch name for picker labels. Null for owner memberships.
         role:
           type: string
-          enum: [manager, practitioner, parent]
+          enum: [owner, manager, practitioner, parent]
 
     MembershipSelectionRequiredResponse:
       type: object
@@ -1665,6 +1668,170 @@ components:
         type: string
         format: uuid
 
+
+    OwnerSiteSummariesResponse:
+      type: object
+      required: [billing_month, attendance_local_date, currency_code, totals, sites]
+      properties:
+        billing_month:
+          type: string
+          description: "Billing month in YYYY-MM format"
+        attendance_local_date:
+          type: string
+          description: "Local date used for attendance counts (Europe/London)"
+        currency_code:
+          type: string
+        totals:
+          $ref: "#/components/schemas/OwnerSiteSummaryTotals"
+        sites:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnerSiteSummary"
+
+    OwnerSiteSummaryTotals:
+      type: object
+      properties:
+        active_manager_count:
+          type: integer
+        pending_manager_invite_count:
+          type: integer
+        active_children_count:
+          type: integer
+        checked_in_today_count:
+          type: integer
+        incomplete_attendance_count:
+          type: integer
+        draft_count:
+          type: integer
+        issued_count:
+          type: integer
+        overdue_count:
+          type: integer
+        payment_failed_count:
+          type: integer
+        paid_count:
+          type: integer
+        total_issued_minor:
+          type: integer
+          format: int64
+        total_paid_minor:
+          type: integer
+          format: int64
+        outstanding_minor:
+          type: integer
+          format: int64
+        overdue_outstanding_minor:
+          type: integer
+          format: int64
+
+    OwnerSiteSummary:
+      type: object
+      properties:
+        site_id:
+          type: string
+          format: uuid
+        site_name:
+          type: string
+        setup_status:
+          type: string
+        active_manager_count:
+          type: integer
+        pending_manager_invite_count:
+          type: integer
+        active_children_count:
+          type: integer
+        attendance:
+          $ref: "#/components/schemas/OwnerAttendanceSummary"
+        funding_readiness:
+          $ref: "#/components/schemas/OwnerFundingReadiness"
+        invoice_payment_health:
+          $ref: "#/components/schemas/OwnerInvoicePaymentHealth"
+
+    OwnerAttendanceSummary:
+      type: object
+      properties:
+        checked_in_today_count:
+          type: integer
+        incomplete_attendance_count:
+          type: integer
+
+    OwnerFundingReadiness:
+      type: object
+      properties:
+        included_child_count:
+          type: integer
+        flagged_child_count:
+          type: integer
+        missing_profile_count:
+          type: integer
+        explicit_zero_count:
+          type: integer
+        under_one_hour_count:
+          type: integer
+        above_160_hours_count:
+          type: integer
+
+    OwnerInvoicePaymentHealth:
+      type: object
+      properties:
+        draft_count:
+          type: integer
+        issued_count:
+          type: integer
+        overdue_count:
+          type: integer
+        payment_failed_count:
+          type: integer
+        paid_count:
+          type: integer
+        total_issued_minor:
+          type: integer
+          format: int64
+        total_paid_minor:
+          type: integer
+          format: int64
+        outstanding_minor:
+          type: integer
+          format: int64
+        overdue_outstanding_minor:
+          type: integer
+          format: int64
+        failed_payment_count:
+          type: integer
+
+    OwnerManagerAccessResponse:
+      type: object
+      properties:
+        membership_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        is_active:
+          type: boolean
+
+    GrantManagerAccessResponse:
+      type: object
+      properties:
+        outcome:
+          type: string
+          enum: [granted, reactivated, already_active, invite_pending]
+        membership_id:
+          type: string
+          format: uuid
+          nullable: true
+        invite:
+          type: object
+          nullable: true
+          properties:
+            email:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
 paths:
   /health:
     get:
@@ -3762,3 +3929,189 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
+  /api/v1/owner/site-summaries:
+    get:
+      operationId: getOwnerSiteSummaries
+      summary: Get cross-site summary aggregates for all sites in the owner's tenant
+      tags: [Owner]
+      x-implementation-status: implemented
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: billing_month
+          in: query
+          description: "Billing month in YYYY-MM format. Defaults to current month."
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}$"
+        - name: site_id
+          in: query
+          description: "Optional site UUID to filter to a single site."
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Site summaries with aggregate metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerSiteSummariesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/owner/manager-access:
+    get:
+      operationId: listOwnerManagerAccess
+      summary: List manager access entries for a specific site
+      tags: [Owner]
+      x-implementation-status: implemented
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: site_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: "Filter by status: active, inactive, or all"
+          schema:
+            type: string
+            enum: [active, inactive, all]
+            default: active
+      responses:
+        "200":
+          description: List of manager access entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerManagerAccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/owner/sites/{site_id}/manager-access:
+    post:
+      operationId: grantOwnerManagerAccess
+      summary: Grant manager access to a user for a specific site
+      tags: [Owner]
+      x-implementation-status: implemented
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Access granted or invite sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrantManagerAccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/owner/sites/{site_id}/manager-access/{membership_id}/actions/deactivate:
+    post:
+      operationId: deactivateOwnerManagerAccess
+      summary: Deactivate a manager's access to a site
+      tags: [Owner]
+      x-implementation-status: implemented
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: membership_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Manager access deactivated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/owner/sites/{site_id}/manager-access/{membership_id}/actions/activate:
+    post:
+      operationId: reactivateOwnerManagerAccess
+      summary: Reactivate a previously deactivated manager's access
+      tags: [Owner]
+      x-implementation-status: implemented
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: membership_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Manager access reactivated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"

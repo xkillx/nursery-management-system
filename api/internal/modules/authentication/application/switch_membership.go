@@ -75,7 +75,7 @@ func (uc *SwitchMembershipUseCase) Execute(ctx context.Context, rawRefreshToken,
 	accessToken, _, err := uc.tokens.GenerateAccessToken(user.ID, user.Email, domain.ScopeClaims{
 		MembershipID: selectedMembership.ID.String(),
 		TenantID:     selectedMembership.TenantID.String(),
-		BranchID:     selectedMembership.BranchID.String(),
+		BranchID:     scopeBranchID(selectedMembership),
 		Role:         selectedMembership.Role,
 	})
 	if err != nil {

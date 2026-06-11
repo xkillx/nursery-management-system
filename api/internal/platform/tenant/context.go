@@ -52,7 +52,7 @@ func ActorFromGinContext(c *gin.Context) (ActorContext, bool) {
 		return ActorContext{}, false
 	}
 	branchID, err := uuid.Parse(authCtx.BranchID)
-	if err != nil {
+	if err != nil || branchID == uuid.Nil {
 		return ActorContext{}, false
 	}
 
@@ -61,6 +61,53 @@ func ActorFromGinContext(c *gin.Context) (ActorContext, bool) {
 		MembershipID:  membershipID,
 		TenantID:      tenantID,
 		BranchID:      branchID,
+		RequestID:     authCtx.RequestID,
+		CorrelationID: authCtx.CorrelationID,
+		TraceID:       authCtx.TraceID,
+	}, true
+}
+
+type OwnerActorContext struct {
+	UserID        uuid.UUID
+	MembershipID  uuid.UUID
+	TenantID      uuid.UUID
+	RequestID     string
+	CorrelationID string
+	TraceID       string
+}
+
+func OwnerActorFromGinContext(c *gin.Context) (OwnerActorContext, bool) {
+	v, ok := c.Get(AuthContextKey)
+	if !ok {
+		return OwnerActorContext{}, false
+	}
+
+	authCtx, ok := v.(AuthorizationContext)
+	if !ok {
+		return OwnerActorContext{}, false
+	}
+
+	if authCtx.Role != "owner" {
+		return OwnerActorContext{}, false
+	}
+
+	userID, err := uuid.Parse(authCtx.UserID)
+	if err != nil {
+		return OwnerActorContext{}, false
+	}
+	membershipID, err := uuid.Parse(authCtx.MembershipID)
+	if err != nil {
+		return OwnerActorContext{}, false
+	}
+	tenantID, err := uuid.Parse(authCtx.TenantID)
+	if err != nil {
+		return OwnerActorContext{}, false
+	}
+
+	return OwnerActorContext{
+		UserID:        userID,
+		MembershipID:  membershipID,
+		TenantID:      tenantID,
 		RequestID:     authCtx.RequestID,
 		CorrelationID: authCtx.CorrelationID,
 		TraceID:       authCtx.TraceID,
