@@ -18,6 +18,8 @@ type Handler struct {
 	setCollectionPassword  *application.SetCollectionPassword
 	getOfficeChecklist     *application.GetOfficeChecklist
 	updateOfficeChecklist  *application.UpdateOfficeChecklist
+	getConsents            *application.GetConsents
+	createConsent          *application.CreateConsent
 }
 
 func NewHandler(
@@ -26,6 +28,8 @@ func NewHandler(
 	setCollectionPassword *application.SetCollectionPassword,
 	getOfficeChecklist *application.GetOfficeChecklist,
 	updateOfficeChecklist *application.UpdateOfficeChecklist,
+	getConsents *application.GetConsents,
+	createConsent *application.CreateConsent,
 ) *Handler {
 	return &Handler{
 		getProfile:            getProfile,
@@ -33,6 +37,8 @@ func NewHandler(
 		setCollectionPassword: setCollectionPassword,
 		getOfficeChecklist:    getOfficeChecklist,
 		updateOfficeChecklist: updateOfficeChecklist,
+		getConsents:           getConsents,
+		createConsent:         createConsent,
 	}
 }
 
@@ -42,6 +48,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.PUT("/children/:child_id/registration-profile/collection-password", h.setCollectionPasswordHandler)
 	manager.GET("/children/:child_id/registration-office-use-checklist", h.getOfficeUseChecklistHandler)
 	manager.PATCH("/children/:child_id/registration-office-use-checklist", h.updateOfficeUseChecklistHandler)
+	manager.GET("/children/:child_id/registration-consents", h.getConsentsHandler)
+	manager.POST("/children/:child_id/registration-consents", h.createConsentHandler)
 }
 
 func (h *Handler) getProfileHandler(c *gin.Context) {
@@ -169,6 +177,54 @@ func (h *Handler) updateOfficeUseChecklistHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toOfficeChecklistResponse(result.ChecklistWithChild, result.Completeness))
+}
+
+func (h *Handler) getConsentsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID := c.Param("child_id")
+
+	cwc, err := h.getConsents.Execute(c.Request.Context(), actor, childID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	childSummary, err := h.getProfile.ExecuteGetChildSummary(c.Request.Context(), actor, childID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toConsentsResponse(childSummary, cwc))
+}
+
+func (h *Handler) createConsentHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID := c.Param("child_id")
+
+	var req application.CreateConsentParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	record, err := h.createConsent.Execute(c.Request.Context(), actor, childID, req)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toConsentRecordResponse(record))
 }
 
 func handleError(c *gin.Context, err error) {

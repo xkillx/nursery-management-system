@@ -865,3 +865,129 @@ func pgtypeBoolToPtr(b pgtype.Bool) *bool {
 	}
 	return &b.Bool
 }
+
+// --- Consent Repository ---
+
+func (r *Repository) GetLatestByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ConsentRecord, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.ConsentGetLatestByChild(ctx, sqlc.ConsentGetLatestByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get latest consent: %w", err)
+	}
+	return mapConsentRow(row), nil
+}
+
+func (r *Repository) ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.ConsentRecord, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ConsentListByChild(ctx, sqlc.ConsentListByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list consents: %w", err)
+	}
+	out := make([]domain.ConsentRecord, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *mapConsentRow(row))
+	}
+	return out, nil
+}
+
+func (r *Repository) GetCurrentVersion(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	q := sqlc.New(r.pool)
+	v, err := q.ConsentGetCurrentVersion(ctx, sqlc.ConsentGetCurrentVersionParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("get current consent version: %w", err)
+	}
+	vi, ok := v.(int64)
+	if !ok {
+		return 0, fmt.Errorf("unexpected type for current_version: %T", v)
+	}
+	return int(vi), nil
+}
+
+func (r *Repository) CreateConsentRecord(ctx context.Context, tx domain.Tx, record *domain.ConsentRecord) error {
+	q := sqlc.New(tx)
+	return q.ConsentCreate(ctx, sqlc.ConsentCreateParams{
+		ID:                               uuidToPgtype(record.ID),
+		TenantID:                         uuidToPgtype(record.TenantID),
+		BranchID:                         uuidToPgtype(record.BranchID),
+		ChildID:                          uuidToPgtype(record.ChildID),
+		Version:                          int32(record.Version),
+		Source:                           string(record.Source),
+		SignerName:                       record.SignerName,
+		SignedDate:                       pgtype.Date{Time: record.SignedDate, Valid: true},
+		PaperFormOnFile:                  record.PaperFormOnFile,
+		UrgentMedicalTreatment:           record.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions: textToPgtype(record.UrgentMedicalTreatmentExceptions),
+		Plasters:                         record.Plasters,
+		SafeguardingReportingAcknowledgement: record.SafeguardingReportingAcknowledgement,
+		AreaSencoLiaison:                 record.AreaSENCOLiaison,
+		HealthVisitorLiaison:             record.HealthVisitorLiaison,
+		TransitionDocuments:              record.TransitionDocuments,
+		LocalOutings:                     record.LocalOutings,
+		FacePainting:                     record.FacePainting,
+		ParentSuppliedSunCream:           record.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:         record.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:         record.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:             record.NurseryDisplayBoards,
+		PromotionalLiterature:            record.PromotionalLiterature,
+		NurseryWebsite:                   record.NurseryWebsite,
+		StaffStudentCoursework:           record.StaffStudentCoursework,
+		SocialMedia:                      record.SocialMedia,
+		SocialMediaChannelNotes:          textToPgtype(record.SocialMediaChannelNotes),
+		NotesExceptions:                  textToPgtype(record.NotesExceptions),
+		EnteredByUserID:                  uuidToPgtype(record.EnteredByUserID),
+		EnteredByMembershipID:            uuidToPgtype(record.EnteredByMembershipID),
+	})
+}
+
+func mapConsentRow(row sqlc.ChildRegistrationConsentRecord) *domain.ConsentRecord {
+	return &domain.ConsentRecord{
+		ID:      pgtypeUUIDToUUID(row.ID),
+		TenantID: pgtypeUUIDToUUID(row.TenantID),
+		BranchID: pgtypeUUIDToUUID(row.BranchID),
+		ChildID:  pgtypeUUIDToUUID(row.ChildID),
+		Version:  int(row.Version),
+		Source:   domain.ConsentSource(row.Source),
+		SignerName:       row.SignerName,
+		SignedDate:       pgtypeDateToTime(row.SignedDate),
+		PaperFormOnFile:  row.PaperFormOnFile,
+		UrgentMedicalTreatment:         row.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions: pgtypeTextToPtr(row.UrgentMedicalTreatmentExceptions),
+		Plasters:                       row.Plasters,
+		SafeguardingReportingAcknowledgement: row.SafeguardingReportingAcknowledgement,
+		AreaSENCOLiaison:               row.AreaSencoLiaison,
+		HealthVisitorLiaison:           row.HealthVisitorLiaison,
+		TransitionDocuments:            row.TransitionDocuments,
+		LocalOutings:                   row.LocalOutings,
+		FacePainting:                   row.FacePainting,
+		ParentSuppliedSunCream:         row.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:       row.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:       row.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:           row.NurseryDisplayBoards,
+		PromotionalLiterature:          row.PromotionalLiterature,
+		NurseryWebsite:                 row.NurseryWebsite,
+		StaffStudentCoursework:         row.StaffStudentCoursework,
+		SocialMedia:                    row.SocialMedia,
+		SocialMediaChannelNotes:        pgtypeTextToPtr(row.SocialMediaChannelNotes),
+		NotesExceptions:                pgtypeTextToPtr(row.NotesExceptions),
+		EnteredByUserID:       pgtypeUUIDToUUID(row.EnteredByUserID),
+		EnteredByMembershipID: pgtypeUUIDToUUID(row.EnteredByMembershipID),
+		CreatedAt:             pgtypeTimestamptzToTime(row.CreatedAt),
+	}
+}
+
+

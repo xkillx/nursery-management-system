@@ -315,7 +315,7 @@ type Child struct {
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
-	CoreHourlyRateMinor int32
+	CoreHourlyRateMinor pgtype.Int4
 	IsActive            bool
 	LeftAt              pgtype.Timestamptz
 	Notes               pgtype.Text
@@ -323,6 +323,40 @@ type Child struct {
 	UpdatedAt           pgtype.Timestamptz
 	LeftReasonCode      interface{}
 	LeftReasonNote      pgtype.Text
+}
+
+type ChildRegistrationConsentRecord struct {
+	ID                                   pgtype.UUID
+	TenantID                             pgtype.UUID
+	BranchID                             pgtype.UUID
+	ChildID                              pgtype.UUID
+	Version                              int32
+	Source                               string
+	SignerName                           string
+	SignedDate                           pgtype.Date
+	PaperFormOnFile                      bool
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     pgtype.Text
+	Plasters                             bool
+	SafeguardingReportingAcknowledgement bool
+	AreaSencoLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              pgtype.Text
+	NotesExceptions                      pgtype.Text
+	EnteredByUserID                      pgtype.UUID
+	EnteredByMembershipID                pgtype.UUID
+	CreatedAt                            pgtype.Timestamptz
 }
 
 type ChildRegistrationContact struct {
@@ -689,6 +723,7 @@ type RefreshToken struct {
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 	MembershipID pgtype.UUID
+	RememberMe   bool
 }
 
 type StripeWebhookEvent struct {

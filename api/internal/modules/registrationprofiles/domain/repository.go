@@ -26,3 +26,10 @@ type Repository interface {
 	CreateOfficeChecklist(ctx context.Context, tx Tx, checklist *OfficeUseChecklist) (*OfficeUseChecklist, error)
 	UpdateOfficeChecklist(ctx context.Context, tx Tx, checklist *OfficeUseChecklist) (*OfficeUseChecklist, error)
 }
+
+type ConsentRepository interface {
+	GetLatestByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ConsentRecord, error)
+	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]ConsentRecord, error)
+	GetCurrentVersion(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error)
+	CreateConsentRecord(ctx context.Context, tx Tx, record *ConsentRecord) error
+}

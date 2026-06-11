@@ -60,6 +60,22 @@ func (uc *GetProfile) Execute(ctx context.Context, actor tenant.ActorContext, ch
 	return result, nil
 }
 
+func (uc *GetProfile) ExecuteGetChildSummary(ctx context.Context, actor tenant.ActorContext, childIDRaw string) (domain.ChildSummary, error) {
+	childID, err := uuid.Parse(strings.TrimSpace(childIDRaw))
+	if err != nil {
+		return domain.ChildSummary{}, domainerrors.Validation("Invalid request payload.", "child_id")
+	}
+
+	child, found, err := uc.repo.GetChildSummary(ctx, actor.TenantID, actor.BranchID, childID)
+	if err != nil {
+		return domain.ChildSummary{}, domainerrors.Internal(fmt.Errorf("get child summary: %w", err))
+	}
+	if !found {
+		return domain.ChildSummary{}, domainerrors.NotFound("child", "Child not found.")
+	}
+	return child, nil
+}
+
 func defaultProfile(childID, tenantID, branchID uuid.UUID) *domain.Profile {
 	return &domain.Profile{
 		ID:                           uuid.Nil,
