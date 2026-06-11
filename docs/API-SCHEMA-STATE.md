@@ -1,14 +1,14 @@
 # API Schema State
 
-> **Verified as of 2026-06-11.** Latest migration: 000016.
+> **Verified as of 2026-06-11.** Latest migration: 000017.
 
 - **Last verification date**: 2026-06-11
-- **Verified migration version**: 16
-- **Latest migration**: 000016 (`add_child_registration_profiles`)
+- **Verified migration version**: 17
+- **Latest migration**: 000017 (`add_child_registration_office_checklists`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (23)
+## Application Tables (24)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -38,6 +38,7 @@
 | `parent_membership_guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `membership_id FK`, `guardian_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique: one active mapping per membership, one active `(membership_id, guardian_id)` pair. End-reason consistency check. Triggers enforce parent role and active entities. |
 | `child_registration_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, 60+ profile columns (see migration), collection password hash/metadata, 8 section review flags, `created_at`, `updated_at` | One profile per child `(tenant_id, branch_id, child_id)` UNIQUE. JSONB checks for `home_address` (object), `professional_referrals` (array). Password consistency check. |
 | `child_registration_contacts` | `id UUID PK`, `tenant_id`, `branch_id`, `profile_id FK CASCADE`, `child_id FK`, `contact_type`, `sort_order`, `full_name`, relationship/contact fields, JSONB `address`/`work_address`, `has_parental_responsibility`, `created_at`, `updated_at` | Unique per `(profile_id, contact_type, sort_order)`. JSONB object checks. Sort order >= 0. FK cascades on profile delete. |
+| `child_registration_office_checklists` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `deposit_status`, `deposit_paid_date`, `application_date_status`, `application_date`, `start_date_status`, `date_left`, `sessions_days_requested_status`, `sessions_days_requested`, `term_time_only_space_status`, `contract_status`, `contract_date`, `handbook_status`, `handbook_date`, `red_book_status`, `red_book_checked_date`, `birth_certificate_passport_status`, `birth_certificate_passport_checked_date`, `proof_of_address_status`, `proof_of_address_checked_date`, `notes`, `created_at`, `updated_at` | One per child `(tenant_id, branch_id, child_id)` UNIQUE. CHECK: `application_date` required when status=complete; `sessions_days_requested` required when status=complete. New enums: `registration_office_check_status`, `registration_term_time_only_status`. |
 
 ### Attendance
 
