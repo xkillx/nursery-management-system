@@ -2357,6 +2357,111 @@ Expected result:
 - Buttons and controls are not clipped or overlapping.
 - On mobile, fields stack in a single column.
 
+## Registration Intake & Workflow Status
+
+### FT-REG-01: Start New Registration from Children Page
+
+Precondition: Manager is logged in.
+
+Steps:
+- Navigate to `/staff/manager/children`.
+- Click **New Registration** (primary button).
+- Enter child full name, date of birth, and start/proposed start date.
+- Leave rate field empty (not required).
+- Click **Create child & continue**.
+
+Expected result:
+- Child is created without billing rate.
+- Stepper advances to Medical & Health step.
+- Child appears in Children list with billing rate showing "Not set".
+- Enrollment shows "Incomplete" with "billing_rate" in missing requirements.
+
+### FT-REG-02: Save and Resume Registration Intake Midway
+
+Precondition: Child has been created via New Registration.
+
+Steps:
+- Complete Child Basics step, then navigate away (e.g., go to dashboard).
+- Return via child detail page by clicking Continue intake.
+- Verify the child's data is still loaded.
+- Step through remaining steps.
+
+Expected result:
+- Child data is preserved.
+- Stepper shows same child on resume.
+
+### FT-REG-03: Record Paper-Form Consent Decisions
+
+Steps:
+- Navigate to Consents & Evidence step.
+- Enter signer name, signed date, and check paper-form-on-file.
+- Consent decisions default to yes; leave all as-is.
+- Save consents.
+
+Expected result:
+- Consent record is created and visible via GET `/children/{child_id}/registration-consents`.
+- Review step shows consent completeness as complete.
+
+### FT-REG-04: Consent Missing Decisions Blocks Save
+
+Steps:
+- On Consents & Evidence step, leave signer name blank.
+- Click Save consents & continue.
+
+Expected result:
+- Error message "Signer name and signed date are required."
+- Stepper does not advance.
+
+### FT-REG-05: Mark Registration Reviewed/Complete
+
+Precondition: Profile, office checklist, and consent completeness all report complete.
+
+Steps:
+- Navigate to Review & Complete step.
+- Verify that **Mark Registration Reviewed/Complete** button is enabled.
+- Click to attest.
+
+Expected result:
+- Attestation created.
+- Status changes to "Reviewed Complete".
+- Button becomes disabled.
+
+### FT-REG-06: Source Change After Attestation Triggers Needs Review
+
+Precondition: Registration is reviewed/complete.
+
+Steps:
+- Make a profile change (e.g., add a note via registration editor).
+- Return to child detail.
+
+Expected result:
+- Status changes to "Needs Review".
+- Manager can re-attest completion.
+
+### FT-REG-07: No Automatic Guardian Creation From Contacts
+
+Steps:
+- Complete registration intake up to Contacts & Collection step.
+- Note that no guardian APIs are called.
+- In Review & Complete step, verify there is no automatic guardian creation.
+
+Expected result:
+- Registration contact entries do not appear as guardians.
+- Manager must explicitly create/link guardians via child detail or guardian management page.
+
+### FT-REG-08: Child Detail Shows Overall Registration Status
+
+Precondition: Child has been created via New Registration.
+
+Steps:
+- Navigate to child detail page.
+- Observe the Registration section.
+
+Expected result:
+- Shows overall status: Reviewed Complete, Needs Review, or Incomplete.
+- Links to Continue intake and Registration editor are present.
+- Billing rate section shows "Not set" when null.
+
 ## Final Regression Checklist
 
 Before sign-off, confirm:
