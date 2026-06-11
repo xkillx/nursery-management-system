@@ -187,6 +187,34 @@ export class AppSidebarComponent {
       ];
     }
 
+    if (role === ROLES.owner) {
+      return [
+        {
+          label: 'Overview',
+          items: [
+            { label: 'Overview', path: ROLE_ROUTES.ownerHome, testId: 'owner-link-overview', icon: 'dashboard' },
+          ],
+        },
+        {
+          label: 'Access',
+          items: [
+            { label: 'Manager access', path: ROLE_ROUTES.ownerManagerAccess, testId: 'owner-link-manager-access', icon: 'guardians' },
+          ],
+        },
+      ];
+    }
+
+    if (role === ROLES.parent) {
+      return [
+        {
+          label: 'Billing',
+          items: [
+            { label: 'Invoices', path: ROLE_ROUTES.parentInvoices, testId: 'parent-link-invoices', icon: 'invoices', matchPaths: ['/app/invoices/'] },
+          ],
+        },
+      ];
+    }
+
     return [];
   }
 }

@@ -26,8 +26,6 @@ import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-
 import { InviteAcceptComponent } from './pages/auth-pages/invite-accept/invite-accept.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
-import { ParentPortalLayoutComponent } from './shared/layout/parent-portal-layout/parent-portal-layout.component';
-import { OwnerLayoutComponent } from './shared/layout/owner-layout/owner-layout.component';
 
 export const routes: Routes = [
   {
@@ -129,12 +127,6 @@ export const routes: Routes = [
         pathMatch: 'full',
         redirectTo: 'staff/practitioner/attendance',
       },
-    ],
-  },
-  {
-    path: '',
-    component: OwnerLayoutComponent,
-    children: [
       {
         path: 'owner',
         component: OwnerOverviewComponent,
@@ -149,12 +141,6 @@ export const routes: Routes = [
         data: { roles: ['owner'] },
         title: 'Manager Access | Nursery Management',
       },
-    ],
-  },
-  {
-    path: '',
-    component: ParentPortalLayoutComponent,
-    children: [
       {
         path: 'app/invoices',
         component: ParentInvoicesComponent,
