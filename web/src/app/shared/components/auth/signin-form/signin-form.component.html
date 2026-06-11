@@ -94,7 +94,7 @@
         </div>
       }
 
-      <app-button className="w-full" size="sm" [disabled]="isSubmitting || (isMembershipChallenge && !selectedMembershipId)" (btnClick)="onSignIn()">
+      <app-button type="submit" className="w-full" size="sm" [disabled]="isSubmitting || (isMembershipChallenge && !selectedMembershipId)" (btnClick)="onSignIn()">
         @if (isSubmitting) {
           Signing in...
         } @else if (isMembershipChallenge) {
