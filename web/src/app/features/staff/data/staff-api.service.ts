@@ -11,6 +11,7 @@ import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStat
 import {
   RegistrationProfileResponse, CollectionPasswordPayload,
   RegistrationOfficeUseChecklistResponse, OfficeUseChecklist,
+  ConsentRecord, ConsentWithCompletenessResponse, ConsentWritePayload, RegistrationWorkflowStatus,
 } from '../models/registration-profile.models';
 
 interface StaffListResponse<T> {
@@ -688,6 +689,22 @@ export class StaffApiService {
         })),
       },
     };
+  }
+
+  getRegistrationWorkflowStatus(childId: string): Observable<RegistrationWorkflowStatus> {
+    return this.http.get<RegistrationWorkflowStatus>(apiUrl(`/children/${childId}/registration-workflow-status`));
+  }
+
+  getRegistrationConsents(childId: string): Observable<ConsentWithCompletenessResponse> {
+    return this.http.get<ConsentWithCompletenessResponse>(apiUrl(`/children/${childId}/registration-consents`));
+  }
+
+  createRegistrationConsent(childId: string, payload: ConsentWritePayload): Observable<ConsentRecord> {
+    return this.http.post<ConsentRecord>(apiUrl(`/children/${childId}/registration-consents`), payload);
+  }
+
+  createRegistrationCompletionAttestation(childId: string): Observable<unknown> {
+    return this.http.post(apiUrl(`/children/${childId}/registration-completion-attestations`), null);
   }
 
   private toOfficeChecklistRecord(checklist: RegistrationOfficeUseChecklistApiModel): RegistrationOfficeUseChecklistResponse {

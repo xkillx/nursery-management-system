@@ -20,7 +20,11 @@ export type ApiErrorContext =
   | 'payment.parentDetail'
   | 'payment.parentCheckout'
   | 'owner.siteSummaries'
-  | 'owner.managerAccess';
+  | 'owner.managerAccess'
+  | 'registration.intake'
+  | 'registration.profile'
+  | 'registration.consent'
+  | 'registration.completion';
 
 export interface ApiErrorAction {
   label: string;

@@ -1,0 +1,164 @@
+<div class="space-y-5">
+  <app-page-header
+    title="New Registration"
+    description="Enter registration information from the completed physical form."
+  />
+
+  @if (errorMessage) {
+    <app-alert variant="error" [message]="errorMessage" class="mb-4" />
+  }
+  @if (successMessage) {
+    <app-alert variant="success" [message]="successMessage" class="mb-4" />
+  }
+
+  @if (isLoading) {
+    <div class="text-sm text-gray-500">Loading...</div>
+  } @else {
+    <!-- Stepper navigation -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2">
+      @for (step of steps; track step.key; let i = $index) {
+        <button
+          type="button"
+          (click)="goToStep(step.key)"
+          class="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+          [class.bg-brand-500]="step.key === currentStep"
+          [class.text-white]="step.key === currentStep"
+          [class.text-gray-500]="step.key !== currentStep"
+          [class.hover:bg-gray-100]="step.key !== currentStep"
+        >
+          <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
+                [class.bg-white]="step.key === currentStep"
+                [class.text-brand-500]="step.key === currentStep"
+                [class.bg-gray-200]="step.key !== currentStep"
+          >{{ i + 1 }}</span>
+          {{ step.label }}
+        </button>
+        @if (i < steps.length - 1) {
+          <span class="text-gray-300">→</span>
+        }
+      }
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <!-- Step 1: Child Basics -->
+      @if (currentStep === 'child-basics') {
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Child Basics</h3>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <app-form-field label="Full name" [required]="true" [error]="fieldErrors['full_name'] || ''">
+            <input type="text" name="full_name" [(ngModel)]="step1.full_name"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" required />
+          </app-form-field>
+          <app-form-field label="Date of birth" [required]="true" [error]="fieldErrors['date_of_birth'] || ''">
+            <input type="date" name="dob" [(ngModel)]="step1.date_of_birth"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" required />
+          </app-form-field>
+          <app-form-field label="Start / proposed start date" [required]="true" [error]="fieldErrors['start_date'] || ''">
+            <input type="date" name="start" [(ngModel)]="step1.start_date"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" required />
+          </app-form-field>
+          <app-form-field label="Child notes (optional)">
+            <input type="text" name="notes" [(ngModel)]="step1.notes"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" />
+          </app-form-field>
+        </div>
+        <div class="mt-6 flex items-center gap-3">
+          <app-button variant="primary" [loading]="isSaving" (btnClick)="saveChildBasics()">Create child & continue</app-button>
+        </div>
+      }
+
+      <!-- Step 2: Medical & Health -->
+      @if (currentStep === 'medical-health') {
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Medical & Health</h3>
+        <p class="mb-4 text-sm text-gray-500">Record medical, dietary, and health visitor information as captured on the physical form.</p>
+        <div class="mt-6 flex items-center gap-3">
+          <app-button variant="outline" (btnClick)="prevStep()">Back</app-button>
+          <app-button variant="primary" [loading]="isSaving" (btnClick)="saveMedicalHealth()">Save & continue</app-button>
+        </div>
+      }
+
+      <!-- Step 3: Contacts & Collection -->
+      @if (currentStep === 'contacts-collection') {
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Contacts & Collection</h3>
+        <p class="mb-4 text-sm text-gray-500">Registration contacts are separate from operational guardian records and do not create parent portal access automatically. Managers can create guardians from these entries later.</p>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <app-form-field label="Collection password (optional)">
+            <input type="text" name="password" [(ngModel)]="step3.collection_password"
+              placeholder="Enter a collection password"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" />
+          </app-form-field>
+        </div>
+        <div class="mt-6 flex items-center gap-3">
+          <app-button variant="outline" (btnClick)="prevStep()">Back</app-button>
+          <app-button variant="primary" [loading]="isSaving" (btnClick)="saveContactsCollection()">Save & continue</app-button>
+        </div>
+      }
+
+      <!-- Step 4: Consents & Evidence -->
+      @if (currentStep === 'consents-evidence') {
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Consents & Evidence</h3>
+        <p class="mb-4 text-sm text-gray-500">Record paper-form consent decisions and office-use evidence metadata.</p>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <app-form-field label="Signer name" [required]="true" [error]="fieldErrors['signer_name'] || ''">
+            <input type="text" name="signer" [(ngModel)]="step4.signer_name"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" required />
+          </app-form-field>
+          <app-form-field label="Signed date" [required]="true" [error]="fieldErrors['signed_date'] || ''">
+            <input type="date" name="signed_date" [(ngModel)]="step4.signed_date"
+              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90" required />
+          </app-form-field>
+        </div>
+        <div class="mt-6 flex items-center gap-3">
+          <app-button variant="outline" (btnClick)="prevStep()">Back</app-button>
+          <app-button variant="primary" [loading]="isSaving" (btnClick)="saveConsentsEvidence()">Save consents & continue</app-button>
+        </div>
+      }
+
+      <!-- Step 5: Review & Complete -->
+      @if (currentStep === 'review-complete') {
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Review & Complete</h3>
+        <p class="mb-4 text-sm text-gray-500">Review registration completeness and mark as reviewed/complete when all sections are filled.</p>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <span class="text-sm font-medium">Registration Profile</span>
+            <span class="text-sm" [class.text-green-600]="workflowStatus?.profile_completeness?.is_complete" [class.text-yellow-600]="!workflowStatus?.profile_completeness?.is_complete">
+              {{ workflowStatus?.profile_completeness?.is_complete ? 'Complete' : 'Incomplete' }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <span class="text-sm font-medium">Office-Use Checklist</span>
+            <span class="text-sm" [class.text-green-600]="workflowStatus?.office_completeness?.is_complete" [class.text-yellow-600]="!workflowStatus?.office_completeness?.is_complete">
+              {{ workflowStatus?.office_completeness?.is_complete ? 'Complete' : 'Incomplete' }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <span class="text-sm font-medium">Consent Records</span>
+            <span class="text-sm" [class.text-green-600]="workflowStatus?.consent_completeness?.is_complete" [class.text-yellow-600]="!workflowStatus?.consent_completeness?.is_complete">
+              {{ workflowStatus?.consent_completeness?.is_complete ? 'Complete' : 'Incomplete' }}
+            </span>
+          </div>
+          @if (isReviewedComplete) {
+            <div class="rounded-lg bg-green-50 p-3 text-sm text-green-700">
+              Registration is reviewed and complete. Sources attested at {{ workflowStatus?.latest_attestation?.attested_at | date:'short' }}.
+            </div>
+          }
+          @if (needsReview) {
+            <div class="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-700">
+              Registration needs review — source records changed after last attestation.
+            </div>
+          }
+        </div>
+
+        <div class="mt-6 flex items-center gap-3">
+          <app-button variant="outline" (btnClick)="prevStep()">Back</app-button>
+          @if (!isReviewedComplete) {
+            <app-button variant="primary" [loading]="isSaving" [disabled]="!canMarkComplete" (btnClick)="markComplete()">
+              {{ canMarkComplete ? 'Mark Registration Reviewed/Complete' : 'Complete all sections first' }}
+            </app-button>
+          }
+          <app-button variant="outline" (btnClick)="navigateToChildDetail()">View child detail</app-button>
+        </div>
+      }
+    </div>
+  }
+</div>

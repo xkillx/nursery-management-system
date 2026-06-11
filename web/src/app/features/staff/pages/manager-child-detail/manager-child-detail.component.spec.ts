@@ -129,6 +129,7 @@ describe('ManagerChildDetailComponent', () => {
       'getChild', 'listChildGuardianLinks', 'listGuardians', 'updateChild',
       'createGuardianChildLink', 'getFundingProfile', 'upsertFundingProfile',
       'getRegistrationProfile', 'getRegistrationOfficeUseChecklist',
+      'getRegistrationWorkflowStatus',
     ]);
 
     staffApiMock.getChild.and.returnValue(of(mockChild));
@@ -140,6 +141,16 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.upsertFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockRegistrationProfile));
     staffApiMock.getRegistrationOfficeUseChecklist.and.returnValue(of(mockOfficeChecklist));
+    staffApiMock.getRegistrationWorkflowStatus.and.returnValue(of({
+      child: { id: 'child-1', full_name: 'Ada', date_of_birth: '2022-01-15' },
+      profile_completeness: { is_complete: false, missing_sections: [] },
+      office_completeness: { is_complete: false, missing_fields: [] },
+      consent_completeness: { is_complete: false, missing_decisions: [] },
+      can_mark_complete: false,
+      is_reviewed_complete: false,
+      needs_review: false,
+      missing_groups: [],
+    }));
 
     await TestBed.configureTestingModule({
       imports: [ManagerChildDetailComponent],

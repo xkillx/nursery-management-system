@@ -84,6 +84,23 @@
       } @else if (isLoadingRegistration) {
         <app-loading-state variant="inline" label="Loading registration status..."></app-loading-state>
       } @else {
+        @if (workflowStatus) {
+          <div class="mb-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Overall registration status</p>
+            <span class="mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-medium"
+              [class.bg-green-100]="workflowStatus.is_reviewed_complete"
+              [class.text-green-700]="workflowStatus.is_reviewed_complete"
+              [class.bg-yellow-100]="workflowStatus.needs_review"
+              [class.text-yellow-700]="workflowStatus.needs_review"
+              [class.bg-gray-100]="!workflowStatus?.is_reviewed_complete && !workflowStatus?.needs_review"
+              [class.text-gray-600]="!workflowStatus?.is_reviewed_complete && !workflowStatus?.needs_review"
+            >
+              @if (workflowStatus?.is_reviewed_complete) { Reviewed Complete }
+              @else if (workflowStatus?.needs_review) { Needs Review }
+              @else { Incomplete }
+            </span>
+          </div>
+        }
         <div class="mt-3 flex gap-6">
           <div>
             <p class="text-xs text-gray-500 dark:text-gray-400">Registration profile</p>
@@ -104,6 +121,17 @@
               {{ formatCompletionStatus(officeCompleteness?.isComplete ?? false) }}
             </span>
           </div>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <a [routerLink]="['/staff/manager/registrations', child?.id, 'intake']"
+            class="inline-flex h-8 items-center rounded-md border border-gray-300 px-3 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+            @if (workflowStatus?.is_reviewed_complete) { View intake }
+            @else { Continue intake }
+          </a>
+          <a [routerLink]="['/staff/manager/children', childId, 'registration']"
+            class="inline-flex h-8 items-center rounded-md border border-gray-300 px-3 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+            Registration editor
+          </a>
         </div>
       }
     </div>

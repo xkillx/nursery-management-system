@@ -121,7 +121,103 @@ export interface RegistrationProfileCompletenessSection {
 export interface RegistrationProfileCompleteness {
   isComplete: boolean;
   missingSections: string[];
-  sections: RegistrationProfileCompletenessSection[];
+  sections?: { code: string; status: string; missingFields: string[] }[];
+}
+
+export interface OfficeUseCompleteness {
+  isComplete: boolean;
+  missingFields: string[];
+}
+
+export interface ConsentRecord {
+  id: string;
+  child_id: string;
+  version: number;
+  source: string;
+  signer_name: string;
+  signed_date: string;
+  paper_form_on_file: boolean;
+  urgent_medical_treatment: boolean;
+  urgent_medical_treatment_exceptions: string | null;
+  plasters: boolean;
+  safeguarding_reporting_acknowledgement: boolean;
+  area_senco_liaison: boolean;
+  health_visitor_liaison: boolean;
+  transition_documents: boolean;
+  local_outings: boolean;
+  face_painting: boolean;
+  parent_supplied_sun_cream: boolean;
+  parent_supplied_nappy_cream: boolean;
+  development_profile_photos: boolean;
+  nursery_display_boards: boolean;
+  promotional_literature: boolean;
+  nursery_website: boolean;
+  staff_student_coursework: boolean;
+  social_media: boolean;
+  social_media_channel_notes: string | null;
+  notes_exceptions: string | null;
+  entered_by_user_id: string;
+  entered_by_membership_id: string;
+  created_at: string;
+}
+
+export interface ConsentWritePayload {
+  signer_name: string;
+  signed_date: string;
+  paper_form_on_file: boolean;
+  urgent_medical_treatment: boolean;
+  urgent_medical_treatment_exceptions?: string | null;
+  plasters: boolean;
+  safeguarding_reporting_acknowledgement: boolean;
+  area_senco_liaison: boolean;
+  health_visitor_liaison: boolean;
+  transition_documents: boolean;
+  local_outings: boolean;
+  face_painting: boolean;
+  parent_supplied_sun_cream: boolean;
+  parent_supplied_nappy_cream: boolean;
+  development_profile_photos: boolean;
+  nursery_display_boards: boolean;
+  promotional_literature: boolean;
+  nursery_website: boolean;
+  staff_student_coursework: boolean;
+  social_media: boolean;
+  social_media_channel_notes?: string | null;
+  notes_exceptions?: string | null;
+}
+
+export interface ConsentWithCompletenessResponse {
+  child: { id: string; full_name: string; date_of_birth: string };
+  current: ConsentRecord | null;
+  history: ConsentRecord[];
+  completeness: { is_complete: boolean; missing_decisions: string[] };
+}
+
+export interface RegistrationWorkflowStatus {
+  child: { id: string; full_name: string; date_of_birth: string };
+  profile_completeness: {
+    is_complete: boolean;
+    missing_sections: string[];
+    sections?: { code: string; status: string; missing_fields: string[] }[];
+  };
+  office_completeness: {
+    is_complete: boolean;
+    missing_fields: string[];
+    items?: { code: string; status: string; label: string; missing_fields: string[] }[];
+  };
+  consent_completeness: { is_complete: boolean; missing_decisions: string[] };
+  current_consent_record?: ConsentRecord | null;
+  latest_attestation?: {
+    id: string;
+    consent_record_id?: string | null;
+    attested_by_user_id: string;
+    attested_by_membership_id: string;
+    attested_at: string;
+  } | null;
+  can_mark_complete: boolean;
+  is_reviewed_complete: boolean;
+  needs_review: boolean;
+  missing_groups: string[];
 }
 
 export interface RegistrationProfileResponse {
