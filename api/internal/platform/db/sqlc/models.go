@@ -99,6 +99,94 @@ func (ns NullRegistrationImmunisationStatus) Value() (driver.Value, error) {
 	return string(ns.RegistrationImmunisationStatus), nil
 }
 
+type RegistrationOfficeCheckStatus string
+
+const (
+	RegistrationOfficeCheckStatusUnknown       RegistrationOfficeCheckStatus = "unknown"
+	RegistrationOfficeCheckStatusComplete      RegistrationOfficeCheckStatus = "complete"
+	RegistrationOfficeCheckStatusMissing       RegistrationOfficeCheckStatus = "missing"
+	RegistrationOfficeCheckStatusNotApplicable RegistrationOfficeCheckStatus = "not_applicable"
+)
+
+func (e *RegistrationOfficeCheckStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RegistrationOfficeCheckStatus(s)
+	case string:
+		*e = RegistrationOfficeCheckStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RegistrationOfficeCheckStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRegistrationOfficeCheckStatus struct {
+	RegistrationOfficeCheckStatus RegistrationOfficeCheckStatus
+	Valid                         bool // Valid is true if RegistrationOfficeCheckStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRegistrationOfficeCheckStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RegistrationOfficeCheckStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RegistrationOfficeCheckStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRegistrationOfficeCheckStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RegistrationOfficeCheckStatus), nil
+}
+
+type RegistrationTermTimeOnlyStatus string
+
+const (
+	RegistrationTermTimeOnlyStatusUnknown       RegistrationTermTimeOnlyStatus = "unknown"
+	RegistrationTermTimeOnlyStatusYes           RegistrationTermTimeOnlyStatus = "yes"
+	RegistrationTermTimeOnlyStatusNo            RegistrationTermTimeOnlyStatus = "no"
+	RegistrationTermTimeOnlyStatusNotApplicable RegistrationTermTimeOnlyStatus = "not_applicable"
+)
+
+func (e *RegistrationTermTimeOnlyStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RegistrationTermTimeOnlyStatus(s)
+	case string:
+		*e = RegistrationTermTimeOnlyStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RegistrationTermTimeOnlyStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRegistrationTermTimeOnlyStatus struct {
+	RegistrationTermTimeOnlyStatus RegistrationTermTimeOnlyStatus
+	Valid                          bool // Valid is true if RegistrationTermTimeOnlyStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRegistrationTermTimeOnlyStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RegistrationTermTimeOnlyStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RegistrationTermTimeOnlyStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRegistrationTermTimeOnlyStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RegistrationTermTimeOnlyStatus), nil
+}
+
 type RegistrationYesNoUnknown string
 
 const (
@@ -254,6 +342,35 @@ type ChildRegistrationContact struct {
 	HasParentalResponsibility pgtype.Bool
 	CreatedAt                 pgtype.Timestamptz
 	UpdatedAt                 pgtype.Timestamptz
+}
+
+type ChildRegistrationOfficeChecklist struct {
+	ID                                  pgtype.UUID
+	TenantID                            pgtype.UUID
+	BranchID                            pgtype.UUID
+	ChildID                             pgtype.UUID
+	DepositStatus                       RegistrationOfficeCheckStatus
+	DepositPaidDate                     pgtype.Date
+	ApplicationDateStatus               RegistrationOfficeCheckStatus
+	ApplicationDate                     pgtype.Date
+	StartDateStatus                     RegistrationOfficeCheckStatus
+	DateLeft                            pgtype.Date
+	SessionsDaysRequestedStatus         RegistrationOfficeCheckStatus
+	SessionsDaysRequested               pgtype.Text
+	TermTimeOnlySpaceStatus             RegistrationTermTimeOnlyStatus
+	ContractStatus                      RegistrationOfficeCheckStatus
+	ContractDate                        pgtype.Date
+	HandbookStatus                      RegistrationOfficeCheckStatus
+	HandbookDate                        pgtype.Date
+	RedBookStatus                       RegistrationOfficeCheckStatus
+	RedBookCheckedDate                  pgtype.Date
+	BirthCertificatePassportStatus      RegistrationOfficeCheckStatus
+	BirthCertificatePassportCheckedDate pgtype.Date
+	ProofOfAddressStatus                RegistrationOfficeCheckStatus
+	ProofOfAddressCheckedDate           pgtype.Date
+	Notes                               pgtype.Text
+	CreatedAt                           pgtype.Timestamptz
+	UpdatedAt                           pgtype.Timestamptz
 }
 
 type ChildRegistrationProfile struct {

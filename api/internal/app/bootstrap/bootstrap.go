@@ -241,7 +241,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	regProfileGetUC := regprofileapp.NewGetProfile(regProfileRepo)
 	regProfileUpdateUC := regprofileapp.NewUpdateProfile(regProfileRepo, auditWriter, txManager)
 	regProfileSetPasswordUC := regprofileapp.NewSetCollectionPassword(regProfileRepo, auditWriter, txManager)
-	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC)
+	regProfileGetOfficeUC := regprofileapp.NewGetOfficeChecklist(regProfileRepo)
+	regProfileUpdateOfficeUC := regprofileapp.NewUpdateOfficeChecklist(regProfileRepo, auditWriter, txManager)
+	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC, regProfileGetOfficeUC, regProfileUpdateOfficeUC)
 	regProfileHandler.RegisterRoutes(manager)
 
 	// Funding module

@@ -1790,14 +1790,17 @@ components:
         gdpr_declared_by_name:
           type: string
           nullable: true
+          description: Name of the person who confirmed the GDPR declaration
         gdpr_declared_at:
           type: string
           format: date-time
           nullable: true
+          description: Backend-managed confirmation timestamp. Response-only; ignored in requests.
         gdpr_declaration_date:
           type: string
           format: date
           nullable: true
+          description: Date of the declaration from the form
 
     RegistrationProfileResponse:
       type: object
@@ -1890,6 +1893,215 @@ components:
           minLength: 4
           maxLength: 64
           description: Collection password plaintext (never stored or returned)
+
+    RegistrationOfficeCheckStatus:
+      type: string
+      enum: [unknown, complete, missing, not_applicable]
+      description: Status for required office-use checklist items
+
+    RegistrationTermTimeOnlyStatus:
+      type: string
+      enum: [unknown, yes, no, not_applicable]
+      description: Status for term-time-only space indicator
+
+    RegistrationOfficeUseChecklistChildSummary:
+      type: object
+      required: [id, full_name, date_of_birth, start_date, end_date]
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+
+    RegistrationOfficeUseChecklistItemCompleteness:
+      type: object
+      properties:
+        code:
+          type: string
+        status:
+          type: string
+          enum: [complete, incomplete]
+        label:
+          type: string
+        missing_fields:
+          type: array
+          items:
+            type: string
+
+    RegistrationOfficeUseChecklistCompleteness:
+      type: object
+      properties:
+        is_complete:
+          type: boolean
+        missing_fields:
+          type: array
+          items:
+            type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationOfficeUseChecklistItemCompleteness"
+
+    RegistrationOfficeUseChecklist:
+      type: object
+      properties:
+        deposit_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        deposit_paid_date:
+          type: string
+          format: date
+          nullable: true
+        application_date_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        application_date:
+          type: string
+          format: date
+          nullable: true
+        start_date_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        date_left:
+          type: string
+          format: date
+          nullable: true
+        sessions_days_requested_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        sessions_days_requested:
+          type: string
+          nullable: true
+        term_time_only_space_status:
+          $ref: "#/components/schemas/RegistrationTermTimeOnlyStatus"
+        contract_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        contract_date:
+          type: string
+          format: date
+          nullable: true
+        handbook_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        handbook_date:
+          type: string
+          format: date
+          nullable: true
+        red_book_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        red_book_checked_date:
+          type: string
+          format: date
+          nullable: true
+        birth_certificate_passport_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        birth_certificate_passport_checked_date:
+          type: string
+          format: date
+          nullable: true
+        proof_of_address_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        proof_of_address_checked_date:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    RegistrationOfficeUseChecklistResponse:
+      type: object
+      properties:
+        child:
+          $ref: "#/components/schemas/RegistrationOfficeUseChecklistChildSummary"
+        checklist_exists:
+          type: boolean
+        checklist:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+        office_use_checklist:
+          $ref: "#/components/schemas/RegistrationOfficeUseChecklist"
+        completeness:
+          $ref: "#/components/schemas/RegistrationOfficeUseChecklistCompleteness"
+
+    RegistrationOfficeUseChecklistPatchRequest:
+      type: object
+      properties:
+        deposit_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        deposit_paid_date:
+          type: string
+          format: date
+          nullable: true
+        application_date_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        application_date:
+          type: string
+          format: date
+          nullable: true
+        start_date_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        date_left:
+          type: string
+          format: date
+          nullable: true
+        sessions_days_requested_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        sessions_days_requested:
+          type: string
+          nullable: true
+        term_time_only_space_status:
+          $ref: "#/components/schemas/RegistrationTermTimeOnlyStatus"
+        contract_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        contract_date:
+          type: string
+          format: date
+          nullable: true
+        handbook_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        handbook_date:
+          type: string
+          format: date
+          nullable: true
+        red_book_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        red_book_checked_date:
+          type: string
+          format: date
+          nullable: true
+        birth_certificate_passport_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        birth_certificate_passport_checked_date:
+          type: string
+          format: date
+          nullable: true
+        proof_of_address_status:
+          $ref: "#/components/schemas/RegistrationOfficeCheckStatus"
+        proof_of_address_checked_date:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
 
   responses:
     BadRequest:
@@ -4557,6 +4769,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RegistrationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/children/{child_id}/registration-office-use-checklist:
+    get:
+      operationId: getChildRegistrationOfficeUseChecklist
+      summary: Get office-use checklist for a child
+      tags: [Registration Profiles]
+      x-implementation-status: new
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Office-use checklist response (defaults when no checklist exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationOfficeUseChecklistResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: patchChildRegistrationOfficeUseChecklist
+      summary: Update office-use checklist metadata
+      tags: [Registration Profiles]
+      x-implementation-status: new
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationOfficeUseChecklistPatchRequest"
+      responses:
+        "200":
+          description: Current checklist after merge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationOfficeUseChecklistResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":

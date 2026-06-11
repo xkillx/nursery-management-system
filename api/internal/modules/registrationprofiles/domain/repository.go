@@ -19,4 +19,10 @@ type Repository interface {
 	SetCollectionPassword(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, hash string, updatedAt time.Time, updatedByUserID, updatedByMembershipID uuid.UUID) error
 	ReplaceContactsForTypes(ctx context.Context, tx Tx, profileID uuid.UUID, contactTypes []ContactType, entries []ContactEntry) error
 	ListContactsByProfile(ctx context.Context, tenantID, branchID, profileID uuid.UUID) ([]ContactEntry, error)
+
+	GetOfficeChildSummary(ctx context.Context, tenantID, branchID, childID uuid.UUID) (OfficeChildSummary, bool, error)
+	GetOfficeChecklistByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*OfficeUseChecklist, error)
+	GetOfficeChecklistForUpdateByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*OfficeUseChecklist, error)
+	CreateOfficeChecklist(ctx context.Context, tx Tx, checklist *OfficeUseChecklist) (*OfficeUseChecklist, error)
+	UpdateOfficeChecklist(ctx context.Context, tx Tx, checklist *OfficeUseChecklist) (*OfficeUseChecklist, error)
 }
