@@ -1514,6 +1514,383 @@ components:
         offset:
           type: integer
 
+    RegistrationYesNoUnknown:
+      type: string
+      enum: [unknown, no, yes]
+      description: Tri-state answer for profile fields
+
+    RegistrationImmunisationStatus:
+      type: string
+      enum: [unknown, up_to_date, refused, partial, not_recorded]
+
+    RegistrationContactType:
+      type: string
+      enum: [parent_carer, emergency_contact, authorised_collector]
+
+    RegistrationProfileChildSummary:
+      type: object
+      required: [id, full_name, date_of_birth]
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+
+    RegistrationProfileCompletenessSection:
+      type: object
+      properties:
+        code:
+          type: string
+        status:
+          type: string
+          enum: [complete, incomplete]
+        missing_fields:
+          type: array
+          items:
+            type: string
+
+    RegistrationProfileCompleteness:
+      type: object
+      properties:
+        is_complete:
+          type: boolean
+        missing_sections:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationProfileCompletenessSection"
+
+    RegistrationContactEntry:
+      type: object
+      properties:
+        full_name:
+          type: string
+        relationship_to_child:
+          type: string
+          nullable: true
+        address:
+          type: object
+          nullable: true
+        telephone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        work_address:
+          type: object
+          nullable: true
+        has_parental_responsibility:
+          type: boolean
+          nullable: true
+
+    RegistrationProfileDemographicsHome:
+      type: object
+      properties:
+        sex:
+          type: string
+          nullable: true
+        religion:
+          type: string
+          nullable: true
+        ethnic_origin:
+          type: string
+          nullable: true
+        first_language:
+          type: string
+          nullable: true
+        other_languages:
+          type: array
+          items:
+            type: string
+        home_address:
+          type: object
+          nullable: true
+        home_postcode:
+          type: string
+          nullable: true
+        home_telephone:
+          type: string
+          nullable: true
+        disability_status:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        disability_notes:
+          type: string
+          nullable: true
+        access_requirements:
+          type: string
+          nullable: true
+        demographics_home_reviewed:
+          type: boolean
+
+    RegistrationProfileMedicalDietary:
+      type: object
+      properties:
+        medical_conditions_status:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        medical_conditions_notes:
+          type: string
+          nullable: true
+        prescribed_medication_status:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        medication_notes:
+          type: string
+          nullable: true
+        immunisation_status:
+          $ref: "#/components/schemas/RegistrationImmunisationStatus"
+        immunisation_country:
+          type: string
+          nullable: true
+        illness_diagnosis_history:
+          type: string
+          nullable: true
+        dietary_requirements_status:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        dietary_requirements_notes:
+          type: string
+          nullable: true
+        dietary_side_effects:
+          type: string
+          nullable: true
+        medical_dietary_reviewed:
+          type: boolean
+
+    RegistrationProfileHealthContacts:
+      type: object
+      properties:
+        doctor_name:
+          type: string
+          nullable: true
+        doctor_address:
+          type: string
+          nullable: true
+        doctor_phone:
+          type: string
+          nullable: true
+        health_visitor_name:
+          type: string
+          nullable: true
+        health_visitor_address:
+          type: string
+          nullable: true
+        health_visitor_phone:
+          type: string
+          nullable: true
+        health_contacts_reviewed:
+          type: boolean
+
+    RegistrationProfileSocialDevelopment:
+      type: object
+      properties:
+        social_services_status:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        social_services_notes:
+          type: string
+          nullable: true
+        social_worker_contact_details:
+          type: string
+          nullable: true
+        concern_walking:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        concern_speech_language:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        concern_hearing:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        concern_sight:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        concern_emotional_wellbeing:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        concern_behaviour:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        professional_referrals:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [community_paediatrician, speech_language_therapist, early_support_service, other]
+              referred_date:
+                type: string
+                format: date
+                nullable: true
+              referred_by:
+                type: string
+                nullable: true
+              waiting_list_status:
+                $ref: "#/components/schemas/RegistrationYesNoUnknown"
+              notes:
+                type: string
+                nullable: true
+        social_development_reviewed:
+          type: boolean
+
+    RegistrationProfileCollection:
+      type: object
+      properties:
+        is_set:
+          type: boolean
+        last_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_updated_by_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        last_updated_by_membership_id:
+          type: string
+          format: uuid
+          nullable: true
+        over18_collection_acknowledged:
+          type: boolean
+        emergency_collection_reviewed:
+          type: boolean
+
+    RegistrationProfileFundingSupport:
+      type: object
+      properties:
+        benefits_contribute_to_fees:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        working_tax_credit:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        college_uni_paid_to_parent:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        college_uni_paid_to_nursery:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        funding_3yo_term_time:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        funding_2yo_term_time:
+          $ref: "#/components/schemas/RegistrationYesNoUnknown"
+        funding_support_notes:
+          type: string
+          nullable: true
+        funding_support_reviewed:
+          type: boolean
+
+    RegistrationProfileRoutineCare:
+      type: object
+      properties:
+        routine_care_notes:
+          type: string
+          nullable: true
+        routine_care_reviewed:
+          type: boolean
+
+    RegistrationProfileGDPRDeclaration:
+      type: object
+      properties:
+        gdpr_declared_by_name:
+          type: string
+          nullable: true
+        gdpr_declared_at:
+          type: string
+          format: date-time
+          nullable: true
+        gdpr_declaration_date:
+          type: string
+          format: date
+          nullable: true
+
+    RegistrationProfileResponse:
+      type: object
+      properties:
+        child:
+          $ref: "#/components/schemas/RegistrationProfileChildSummary"
+        profile_exists:
+          type: boolean
+        profile:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+        demographics_home:
+          $ref: "#/components/schemas/RegistrationProfileDemographicsHome"
+        medical_dietary:
+          $ref: "#/components/schemas/RegistrationProfileMedicalDietary"
+        health_contacts:
+          $ref: "#/components/schemas/RegistrationProfileHealthContacts"
+        social_development:
+          $ref: "#/components/schemas/RegistrationProfileSocialDevelopment"
+        parent_carers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        authorised_collectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        collection:
+          $ref: "#/components/schemas/RegistrationProfileCollection"
+        funding_support:
+          $ref: "#/components/schemas/RegistrationProfileFundingSupport"
+        routine_care:
+          $ref: "#/components/schemas/RegistrationProfileRoutineCare"
+        gdpr_declaration:
+          $ref: "#/components/schemas/RegistrationProfileGDPRDeclaration"
+        completeness:
+          $ref: "#/components/schemas/RegistrationProfileCompleteness"
+
+    RegistrationProfilePatchRequest:
+      type: object
+      properties:
+        demographics_home:
+          $ref: "#/components/schemas/RegistrationProfileDemographicsHome"
+        medical_dietary:
+          $ref: "#/components/schemas/RegistrationProfileMedicalDietary"
+        health_contacts:
+          $ref: "#/components/schemas/RegistrationProfileHealthContacts"
+        social_development:
+          $ref: "#/components/schemas/RegistrationProfileSocialDevelopment"
+        parent_carers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        authorised_collectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationContactEntry"
+        collection:
+          $ref: "#/components/schemas/RegistrationProfileCollection"
+        funding_support:
+          $ref: "#/components/schemas/RegistrationProfileFundingSupport"
+        routine_care:
+          $ref: "#/components/schemas/RegistrationProfileRoutineCare"
+        gdpr_declaration:
+          $ref: "#/components/schemas/RegistrationProfileGDPRDeclaration"
+
+    RegistrationCollectionPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          minLength: 4
+          maxLength: 64
+          description: Collection password plaintext (never stored or returned)
+
   responses:
     BadRequest:
       description: Validation error
@@ -4077,6 +4454,111 @@ paths:
       responses:
         "204":
           description: Manager access deactivated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/children/{child_id}/registration-profile:
+    get:
+      operationId: getChildRegistrationProfile
+      summary: Get registration/enrolment profile for a child
+      tags: [Registration Profiles]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Registration profile response (defaults when no profile exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: patchChildRegistrationProfile
+      summary: Update partial registration profile sections
+      tags: [Registration Profiles]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationProfilePatchRequest"
+      responses:
+        "200":
+          description: Current profile after merge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/children/{child_id}/registration-profile/collection-password:
+    put:
+      operationId: setChildRegistrationCollectionPassword
+      summary: Set or replace collection password
+      tags: [Registration Profiles]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationCollectionPasswordRequest"
+      responses:
+        "200":
+          description: Profile response with password metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":

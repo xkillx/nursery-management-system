@@ -1,14 +1,14 @@
 # API Schema State
 
-> **Stale as of 2026-06-11.** Last verified at migration version 13 on 2026-05-28. Migration 000014 adds `stripe_webhook_events` and `payment_reconciliation_records` tables (documented below). To refresh: `VERIFY_DATABASE_URL="postgres://user:pass@localhost:5432/disposable_db?sslmode=disable" make migrate-verify`
+> **Verified as of 2026-06-11.** Latest migration: 000016.
 
-- **Last verification date**: 2026-05-28
-- **Verified migration version**: 13 (clean)
-- **Latest migration**: 000014 (`add_stripe_webhook_reconciliation`)
+- **Last verification date**: 2026-06-11
+- **Verified migration version**: 16
+- **Latest migration**: 000016 (`add_child_registration_profiles`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (21)
+## Application Tables (23)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -36,6 +36,8 @@
 | `guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `relationship`, `phone`, `email`, `is_active`, `deactivated_at`, `deactivation_reason_code`, `deactivation_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. |
 | `guardian_child_links` | `id UUID PK`, `tenant_id`, `branch_id`, `guardian_id FK`, `child_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique index on active `(guardian_id, child_id)`. End-reason consistency check. |
 | `parent_membership_guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `membership_id FK`, `guardian_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique: one active mapping per membership, one active `(membership_id, guardian_id)` pair. End-reason consistency check. Triggers enforce parent role and active entities. |
+| `child_registration_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, 60+ profile columns (see migration), collection password hash/metadata, 8 section review flags, `created_at`, `updated_at` | One profile per child `(tenant_id, branch_id, child_id)` UNIQUE. JSONB checks for `home_address` (object), `professional_referrals` (array). Password consistency check. |
+| `child_registration_contacts` | `id UUID PK`, `tenant_id`, `branch_id`, `profile_id FK CASCADE`, `child_id FK`, `contact_type`, `sort_order`, `full_name`, relationship/contact fields, JSONB `address`/`work_address`, `has_parental_responsibility`, `created_at`, `updated_at` | Unique per `(profile_id, contact_type, sort_order)`. JSONB object checks. Sort order >= 0. FK cascades on profile delete. |
 
 ### Attendance
 
@@ -125,8 +127,12 @@ Manager-facing payment timeline records.
 | Type | Values |
 |---|---|
 | `lifecycle_reason_code` | `duplicate_record`, `entered_in_error`, `left_nursery`, `safeguarding_direction`, `contact_update`, `access_revoked`, `other` |
+| `registration_yes_no_unknown` | `unknown`, `no`, `yes` |
+| `registration_immunisation_status` | `unknown`, `up_to_date`, `refused`, `partial`, `not_recorded` |
+| `registration_contact_type` | `parent_carer`, `emergency_contact`, `authorised_collector` |
 
 Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `guardian_child_links.ended_reason_code`, `parent_membership_guardians.ended_reason_code`, `audit_logs.reason_code`.
+Registration enums used by: `child_registration_profiles` and `child_registration_contacts` tables (migration 000016).
 
 ## Triggers & Functions
 
@@ -183,3 +189,6 @@ Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `gua
 | `idx_reconciliation_attempt_created` | `payment_reconciliation_records` | btree | Reconciliation records by attempt + created desc |
 | `idx_stripe_webhook_events_event_type` | `stripe_webhook_events` | btree | Webhook events by type + received desc |
 | `idx_stripe_webhook_events_processing_status` | `stripe_webhook_events` | btree | Webhook events by processing status + received desc |
+| `idx_child_registration_profiles_scope_child` | `child_registration_profiles` | UNIQUE btree | One profile per child per scope |
+| `child_registration_profiles_scope_id_unique` | `child_registration_profiles` | UNIQUE btree | Scope composite key for contact FK |
+| `idx_child_registration_contacts_profile_type` | `child_registration_contacts` | btree | Contacts by profile + type + sort order |

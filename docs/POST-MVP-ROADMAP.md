@@ -61,6 +61,15 @@ After pilot readiness, the first product expansion is owner-visible cross-site o
 
 Reference: `CONTEXT.md` defines `User Role: Owner` and `Owner Oversight Scope (Post-MVP)`.
 
+## Owner Site Administration
+
+Extends the owner role beyond read-only oversight into site lifecycle management. The current owner dashboard displays site summaries and manager access but has no way to create, edit, or deactivate sites (branches) — those actions require seed scripts or direct DB access.
+
+| ID | Task | Status |
+|---|---|---|
+| API-PM-10 | Owner site CRUD backend: create site, update site name/address, deactivate/reactivate site | Backlog |
+| FE-PM-11 | Owner site management UI: site list, create/edit form, deactivate/reactivate controls | Backlog |
+
 ## Later Lane: Super Admin Platform Management
 
 Super admin is a platform-level NMS operator role, separate from tenant owners. The super admin dashboard should manage the NMS SaaS control plane without becoming a hidden bypass for nursery operations. Initial scope should focus on tenant lifecycle, platform configuration, operational health, support tooling, feature flags, plan/billing metadata, and audit visibility. Any cross-tenant data access must be explicit, audited, least-privilege, and designed to preserve tenant isolation.
@@ -82,7 +91,7 @@ Child registration/enrolment profiles and consent/acknowledgement records. Regis
 
 | ID | Task | Status |
 |---|---|---|
-| API-PM-01 | Child registration/enrolment profile data from `docs/forms/child-application-form.md` | Pending |
+| API-PM-01 | Child registration/enrolment profile data from `docs/forms/child-application-form.md` | Done |
 | API-PM-02 | Consent and acknowledgement ledger from `docs/forms/parental-consent-form.md` | Pending |
 | API-PM-03 | Enrolment document/checklist metadata (office-use fields) | Pending |
 | FE-PM-01 | Manager child registration/enrolment editor | Pending |

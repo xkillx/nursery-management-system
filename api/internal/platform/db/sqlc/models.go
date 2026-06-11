@@ -5,8 +5,142 @@
 package sqlc
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type RegistrationContactType string
+
+const (
+	RegistrationContactTypeParentCarer         RegistrationContactType = "parent_carer"
+	RegistrationContactTypeEmergencyContact    RegistrationContactType = "emergency_contact"
+	RegistrationContactTypeAuthorisedCollector RegistrationContactType = "authorised_collector"
+)
+
+func (e *RegistrationContactType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RegistrationContactType(s)
+	case string:
+		*e = RegistrationContactType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RegistrationContactType: %T", src)
+	}
+	return nil
+}
+
+type NullRegistrationContactType struct {
+	RegistrationContactType RegistrationContactType
+	Valid                   bool // Valid is true if RegistrationContactType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRegistrationContactType) Scan(value interface{}) error {
+	if value == nil {
+		ns.RegistrationContactType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RegistrationContactType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRegistrationContactType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RegistrationContactType), nil
+}
+
+type RegistrationImmunisationStatus string
+
+const (
+	RegistrationImmunisationStatusUnknown     RegistrationImmunisationStatus = "unknown"
+	RegistrationImmunisationStatusUpToDate    RegistrationImmunisationStatus = "up_to_date"
+	RegistrationImmunisationStatusRefused     RegistrationImmunisationStatus = "refused"
+	RegistrationImmunisationStatusPartial     RegistrationImmunisationStatus = "partial"
+	RegistrationImmunisationStatusNotRecorded RegistrationImmunisationStatus = "not_recorded"
+)
+
+func (e *RegistrationImmunisationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RegistrationImmunisationStatus(s)
+	case string:
+		*e = RegistrationImmunisationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RegistrationImmunisationStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRegistrationImmunisationStatus struct {
+	RegistrationImmunisationStatus RegistrationImmunisationStatus
+	Valid                          bool // Valid is true if RegistrationImmunisationStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRegistrationImmunisationStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RegistrationImmunisationStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RegistrationImmunisationStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRegistrationImmunisationStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RegistrationImmunisationStatus), nil
+}
+
+type RegistrationYesNoUnknown string
+
+const (
+	RegistrationYesNoUnknownUnknown RegistrationYesNoUnknown = "unknown"
+	RegistrationYesNoUnknownNo      RegistrationYesNoUnknown = "no"
+	RegistrationYesNoUnknownYes     RegistrationYesNoUnknown = "yes"
+)
+
+func (e *RegistrationYesNoUnknown) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RegistrationYesNoUnknown(s)
+	case string:
+		*e = RegistrationYesNoUnknown(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RegistrationYesNoUnknown: %T", src)
+	}
+	return nil
+}
+
+type NullRegistrationYesNoUnknown struct {
+	RegistrationYesNoUnknown RegistrationYesNoUnknown
+	Valid                    bool // Valid is true if RegistrationYesNoUnknown is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRegistrationYesNoUnknown) Scan(value interface{}) error {
+	if value == nil {
+		ns.RegistrationYesNoUnknown, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RegistrationYesNoUnknown.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRegistrationYesNoUnknown) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RegistrationYesNoUnknown), nil
+}
 
 type AbsenceMarker struct {
 	ID                    pgtype.UUID
@@ -101,6 +235,96 @@ type Child struct {
 	UpdatedAt           pgtype.Timestamptz
 	LeftReasonCode      interface{}
 	LeftReasonNote      pgtype.Text
+}
+
+type ChildRegistrationContact struct {
+	ID                        pgtype.UUID
+	TenantID                  pgtype.UUID
+	BranchID                  pgtype.UUID
+	ProfileID                 pgtype.UUID
+	ChildID                   pgtype.UUID
+	ContactType               RegistrationContactType
+	SortOrder                 int32
+	FullName                  string
+	RelationshipToChild       pgtype.Text
+	Address                   []byte
+	Telephone                 pgtype.Text
+	Email                     pgtype.Text
+	WorkAddress               []byte
+	HasParentalResponsibility pgtype.Bool
+	CreatedAt                 pgtype.Timestamptz
+	UpdatedAt                 pgtype.Timestamptz
+}
+
+type ChildRegistrationProfile struct {
+	ID                                      pgtype.UUID
+	TenantID                                pgtype.UUID
+	BranchID                                pgtype.UUID
+	ChildID                                 pgtype.UUID
+	Sex                                     pgtype.Text
+	Religion                                pgtype.Text
+	EthnicOrigin                            pgtype.Text
+	FirstLanguage                           pgtype.Text
+	OtherLanguages                          []string
+	HomeAddress                             []byte
+	HomePostcode                            pgtype.Text
+	HomeTelephone                           pgtype.Text
+	DisabilityStatus                        RegistrationYesNoUnknown
+	DisabilityNotes                         pgtype.Text
+	AccessRequirements                      pgtype.Text
+	MedicalConditionsStatus                 RegistrationYesNoUnknown
+	MedicalConditionsNotes                  pgtype.Text
+	PrescribedMedicationStatus              RegistrationYesNoUnknown
+	MedicationNotes                         pgtype.Text
+	ImmunisationStatus                      RegistrationImmunisationStatus
+	ImmunisationCountry                     pgtype.Text
+	IllnessDiagnosisHistory                 pgtype.Text
+	DietaryRequirementsStatus               RegistrationYesNoUnknown
+	DietaryRequirementsNotes                pgtype.Text
+	DietarySideEffects                      pgtype.Text
+	DoctorName                              pgtype.Text
+	DoctorAddress                           pgtype.Text
+	DoctorPhone                             pgtype.Text
+	HealthVisitorName                       pgtype.Text
+	HealthVisitorAddress                    pgtype.Text
+	HealthVisitorPhone                      pgtype.Text
+	SocialServicesStatus                    RegistrationYesNoUnknown
+	SocialServicesNotes                     pgtype.Text
+	SocialWorkerContactDetails              pgtype.Text
+	ConcernWalking                          RegistrationYesNoUnknown
+	ConcernSpeechLanguage                   RegistrationYesNoUnknown
+	ConcernHearing                          RegistrationYesNoUnknown
+	ConcernSight                            RegistrationYesNoUnknown
+	ConcernEmotionalWellbeing               RegistrationYesNoUnknown
+	ConcernBehaviour                        RegistrationYesNoUnknown
+	ProfessionalReferrals                   []byte
+	ParentalResponsibilityNotes             pgtype.Text
+	Over18CollectionAcknowledged            bool
+	CollectionPasswordHash                  pgtype.Text
+	CollectionPasswordUpdatedAt             pgtype.Timestamptz
+	CollectionPasswordUpdatedByUserID       pgtype.UUID
+	CollectionPasswordUpdatedByMembershipID pgtype.UUID
+	BenefitsContributeToFees                RegistrationYesNoUnknown
+	WorkingTaxCredit                        RegistrationYesNoUnknown
+	CollegeUniPaidToParent                  RegistrationYesNoUnknown
+	CollegeUniPaidToNursery                 RegistrationYesNoUnknown
+	Funding3yoTermTime                      RegistrationYesNoUnknown
+	Funding2yoTermTime                      RegistrationYesNoUnknown
+	FundingSupportNotes                     pgtype.Text
+	RoutineCareNotes                        pgtype.Text
+	GdprDeclaredByName                      pgtype.Text
+	GdprDeclaredAt                          pgtype.Timestamptz
+	GdprDeclarationDate                     pgtype.Date
+	DemographicsHomeReviewed                bool
+	MedicalDietaryReviewed                  bool
+	HealthContactsReviewed                  bool
+	SocialDevelopmentReviewed               bool
+	ParentResponsibilityReviewed            bool
+	EmergencyCollectionReviewed             bool
+	FundingSupportReviewed                  bool
+	RoutineCareReviewed                     bool
+	CreatedAt                               pgtype.Timestamptz
+	UpdatedAt                               pgtype.Timestamptz
 }
 
 type FundingProfile struct {

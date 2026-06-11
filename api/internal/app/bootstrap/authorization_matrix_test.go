@@ -493,6 +493,11 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		{"GET", "/api/v1/invoices/:invoice_id/payment-status", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices/:invoice_id/payment-events", classProtectedBusiness, []string{"manager"}},
 
+		// Registration Profiles (manager)
+		{"GET", "/api/v1/children/:child_id/registration-profile", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/registration-profile", classProtectedBusiness, []string{"manager"}},
+		{"PUT", "/api/v1/children/:child_id/registration-profile/collection-password", classProtectedBusiness, []string{"manager"}},
+
 		// Owner
 		{"GET", "/api/v1/owner/site-summaries", classProtectedBusiness, []string{"owner"}},
 		{"GET", "/api/v1/owner/manager-access", classProtectedBusiness, []string{"owner"}},
@@ -672,6 +677,11 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		{"parent get invoice", "GET", "/api/v1/parent/invoices/" + h.invoiceA.String(), ""},
 		{"parent checkout", "POST", "/api/v1/parent/invoices/" + h.invoiceA.String() + "/checkout-sessions", ""},
 
+		// Registration Profiles
+		{"get registration profile", "GET", "/api/v1/children/" + h.childA.String() + "/registration-profile", ""},
+		{"patch registration profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/registration-profile", `{"demographics_home":{"sex":"female"}}`},
+		{"set collection password", "PUT", "/api/v1/children/" + h.childA.String() + "/registration-profile/collection-password", `{"password":"test1234"}`},
+
 		// Payment diagnostics
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
@@ -732,6 +742,10 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
+
+		{"get registration profile", "GET", "/api/v1/children/" + h.childA.String() + "/registration-profile", ""},
+		{"patch registration profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/registration-profile", `{"demographics_home":{"sex":"female"}}`},
+		{"set collection password", "PUT", "/api/v1/children/" + h.childA.String() + "/registration-profile/collection-password", `{"password":"test1234"}`},
 
 	}
 
@@ -855,6 +869,11 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 	t.Run("payment events B not found from scope A", func(t *testing.T) {
 		w := h.get(t, "/api/v1/invoices/"+h.invoiceB.String()+"/payment-events", h.managerAToken)
 		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
+	})
+
+	t.Run("registration profile child B not found from scope A", func(t *testing.T) {
+		w := h.get(t, "/api/v1/children/"+h.childB.String()+"/registration-profile", h.managerAToken)
+		assertStatusAndCode(t, w, http.StatusNotFound, "child_not_found")
 	})
 
 	t.Run("invite A not found from scope B manager", func(t *testing.T) {

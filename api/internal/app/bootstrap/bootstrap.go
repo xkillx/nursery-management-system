@@ -77,6 +77,10 @@ import (
 	ownerapp "nursery-management-system/api/internal/modules/owner/application"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	ownerhandler "nursery-management-system/api/internal/modules/owner/interfaces/http"
+
+	regprofileapp "nursery-management-system/api/internal/modules/registrationprofiles/application"
+	regprofilepostgres "nursery-management-system/api/internal/modules/registrationprofiles/infrastructure/postgres"
+	regprofilehandler "nursery-management-system/api/internal/modules/registrationprofiles/interfaces/http"
 )
 
 type BootstrapOptions struct {
@@ -231,6 +235,14 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Register absence routes (manager + practitioner)
 	absenceHandler.RegisterRoutes(protected)
+
+	// Registration Profiles module
+	regProfileRepo := regprofilepostgres.NewRepository(pool)
+	regProfileGetUC := regprofileapp.NewGetProfile(regProfileRepo)
+	regProfileUpdateUC := regprofileapp.NewUpdateProfile(regProfileRepo, auditWriter, txManager)
+	regProfileSetPasswordUC := regprofileapp.NewSetCollectionPassword(regProfileRepo, auditWriter, txManager)
+	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC)
+	regProfileHandler.RegisterRoutes(manager)
 
 	// Funding module
 	fundingRepo := fundingpostgres.NewRepository(pool)
