@@ -156,9 +156,13 @@ function presentKnownError(
   };
 
   switch (mapped.code) {
-    // Validation — pass through mapped message + field errors
+    // Validation — show field errors inline, generic top message for auth
     case 'validation_error':
-      base.message = mapped.message;
+      if (context === 'auth.signin') {
+        base.message = 'Check your email and password, then try again.';
+      } else {
+        base.message = mapped.message;
+      }
       break;
 
     // Membership selection — component handles picker UI

@@ -5,6 +5,31 @@ import { Router } from '@angular/router';
 import { ApiErrorBody, MappedApiError } from '../models/api-error.models';
 import { AuthService } from '../services/auth.service';
 
+const GO_VALIDATION_RE = /Key:\s+'[\w.]+\.(\w+)'\s+Error:Field validation for '\w+' failed on the '(\w+)'/;
+
+const VALIDATION_MESSAGES: Record<string, string> = {
+  min: 'Too short.',
+  max: 'Too long.',
+  required: 'This field is required.',
+  email: 'Enter a valid email address.',
+};
+
+const FIELD_NAME_MAP: Record<string, string> = {
+  Password: 'password',
+  Email: 'email',
+};
+
+function parseGoValidationDetail(details: string, mapped: MappedApiError): void {
+  const match = details.match(GO_VALIDATION_RE);
+  if (!match) return;
+
+  const goField = match[1];
+  const rule = match[2];
+  const field = FIELD_NAME_MAP[goField] || goField.toLowerCase();
+
+  mapped.fieldErrors[field] = VALIDATION_MESSAGES[rule] || mapped.message;
+}
+
 const defaultError: MappedApiError = {
   code: 'internal_error',
   message: 'Something went wrong. Please try again.',
@@ -37,7 +62,9 @@ export class ApiErrorMapper {
       fieldErrors: {},
     };
 
-    if (
+    if (mapped.code === 'validation_error' && typeof payload.details === 'string') {
+      parseGoValidationDetail(payload.details, mapped);
+    } else if (
       mapped.code === 'validation_error' &&
       payload.details &&
       typeof payload.details === 'object' &&
