@@ -131,6 +131,7 @@ describe('AuthService', () => {
       email: 'manager@example.com',
       password: 'password123',
       membership_id: 'membership-1',
+      remember_me: true,
     });
     request.flush(mockAuthResponse);
   });
@@ -178,13 +179,14 @@ describe('AuthService', () => {
     expect(service.accessToken()).toBe('access-token');
   });
 
-  it('login without membership sends only email and password', () => {
+  it('login without membership sends email, password, and remember_me', () => {
     service.login('manager@example.com', 'password123').subscribe();
 
     const request = httpMock.expectOne('/api/v1/auth/login');
     expect(request.request.body).toEqual({
       email: 'manager@example.com',
       password: 'password123',
+      remember_me: true,
     });
     expect(request.request.body).not.toContain(jasmine.objectContaining({ membership_id: jasmine.anything() }));
     request.flush(mockAuthResponse);

@@ -15,10 +15,11 @@ import (
 )
 
 type TokenManager struct {
-	accessSecret  []byte
-	refreshSecret []byte
-	accessTTL     time.Duration
-	refreshTTL    time.Duration
+	accessSecret    []byte
+	refreshSecret   []byte
+	accessTTL       time.Duration
+	refreshTTL      time.Duration
+	shortRefreshTTL time.Duration
 }
 
 type AccessClaims struct {
@@ -30,12 +31,13 @@ type AccessClaims struct {
 	Role         string `json:"role"`
 }
 
-func NewTokenManager(accessSecret, refreshSecret string, accessTTLMin, refreshTTLHours int) *TokenManager {
+func NewTokenManager(accessSecret, refreshSecret string, accessTTLMin, refreshTTLHours, shortRefreshTTLHours int) *TokenManager {
 	return &TokenManager{
-		accessSecret:  []byte(accessSecret),
-		refreshSecret: []byte(refreshSecret),
-		accessTTL:     time.Duration(accessTTLMin) * time.Minute,
-		refreshTTL:    time.Duration(refreshTTLHours) * time.Hour,
+		accessSecret:    []byte(accessSecret),
+		refreshSecret:   []byte(refreshSecret),
+		accessTTL:       time.Duration(accessTTLMin) * time.Minute,
+		refreshTTL:      time.Duration(refreshTTLHours) * time.Hour,
+		shortRefreshTTL: time.Duration(shortRefreshTTLHours) * time.Hour,
 	}
 }
 
@@ -96,15 +98,20 @@ func (m *TokenManager) ParseAccessToken(raw string) (AccessClaims, error) {
 	return claims, nil
 }
 
-func (m *TokenManager) GenerateRefreshToken() (raw string, hash string, expiresAt time.Time, err error) {
+func (m *TokenManager) GenerateRefreshToken(rememberMe bool) (raw string, hash string, expiresAt time.Time, err error) {
 	b := make([]byte, 32)
 	if _, err = rand.Read(b); err != nil {
 		return "", "", time.Time{}, fmt.Errorf("generate refresh token: %w", err)
 	}
 
+	ttl := m.refreshTTL
+	if !rememberMe {
+		ttl = m.shortRefreshTTL
+	}
+
 	raw = base64.RawURLEncoding.EncodeToString(b)
 	hash = hashRefreshToken(raw, m.refreshSecret)
-	expiresAt = time.Now().UTC().Add(m.refreshTTL)
+	expiresAt = time.Now().UTC().Add(ttl)
 	return raw, hash, expiresAt, nil
 }
 

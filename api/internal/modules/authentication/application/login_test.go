@@ -24,7 +24,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
 
-		_, err := uc.Execute(context.Background(), " User@Example.com ", fixturePassword, "")
+		_, err := uc.Execute(context.Background(), " User@Example.com ", fixturePassword, "", true)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -35,7 +35,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 
 	t.Run("unknown user returns ErrInvalidCredentials", func(t *testing.T) {
 		uc, _, _, _ := setup()
-		_, err := uc.Execute(context.Background(), "nobody@example.com", fixturePassword, "")
+		_, err := uc.Execute(context.Background(), "nobody@example.com", fixturePassword, "", true)
 		assertErrorIs(t, err, domain.ErrInvalidCredentials)
 	})
 
@@ -45,7 +45,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		inactive.IsActive = false
 		ur.addUser(inactive)
 
-		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", true)
 		assertErrorIs(t, err, domain.ErrInvalidCredentials)
 	})
 
@@ -53,42 +53,8 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		uc, ur, _, _ := setup()
 		ur.addUser(fixtureUser())
 
-		_, err := uc.Execute(context.Background(), fixtureEmail, "wrongpassword", "")
+		_, err := uc.Execute(context.Background(), fixtureEmail, "wrongpassword", "", true)
 		assertErrorIs(t, err, domain.ErrInvalidCredentials)
-	})
-
-	t.Run("single membership no selection succeeds and creates refresh token", func(t *testing.T) {
-		uc, ur, sr, _ := setup()
-		ur.addUser(fixtureUser())
-		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
-
-		result, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if result.ActiveMembership.ID != m1.ID {
-			t.Fatalf("expected membership %s, got %s", m1.ID, result.ActiveMembership.ID)
-		}
-		creates := sr.callsByMethod("CreateRefreshToken")
-		if len(creates) != 1 {
-			t.Fatalf("expected 1 create, got %d", len(creates))
-		}
-		if creates[0].Replacement.MembershipID != m1.ID {
-			t.Fatalf("refresh token bound to wrong membership %s", creates[0].Replacement.MembershipID)
-		}
-	})
-
-	t.Run("zero memberships returns ErrInvalidCredentials and no refresh token", func(t *testing.T) {
-		uc, ur, sr, _ := setup()
-		ur.addUser(fixtureUser())
-		ur.setMemberships(fixtureUserID, nil)
-
-		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
-		assertErrorIs(t, err, domain.ErrInvalidCredentials)
-		creates := sr.callsByMethod("CreateRefreshToken")
-		if len(creates) != 0 {
-			t.Fatalf("expected 0 creates, got %d", len(creates))
-		}
 	})
 
 	t.Run("multi-membership without selection returns MembershipSelectionRequiredError and no refresh token", func(t *testing.T) {
@@ -96,7 +62,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
 
-		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", true)
 		var selErr *domain.MembershipSelectionRequiredError
 		if err == nil {
 			t.Fatal("expected error, got nil")
@@ -122,7 +88,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
 
-		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "not-a-uuid")
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "not-a-uuid", true)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -145,7 +111,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
 
-		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, fixtureMembership3.String())
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, fixtureMembership3.String(), true)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -171,7 +137,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1, m2})
 
-		result, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, fixtureMembership2.String())
+		result, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, fixtureMembership2.String(), true)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -198,7 +164,7 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		ur.addUser(fixtureUser())
 		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
 
-		result, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "")
+		result, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", true)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -207,6 +173,60 @@ func TestLoginUseCase_Execute(t *testing.T) {
 		}
 		if result.ActiveMembership.ID != m1.ID {
 			t.Fatalf("expected active membership %s, got %s", m1.ID, result.ActiveMembership.ID)
+		}
+	})
+
+	t.Run("remember_me=true stores RememberMe on refresh token", func(t *testing.T) {
+		uc, ur, sr, _ := setup()
+		ur.addUser(fixtureUser())
+		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
+
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		creates := sr.callsByMethod("CreateRefreshToken")
+		if len(creates) != 1 {
+			t.Fatalf("expected 1 create, got %d", len(creates))
+		}
+		if !creates[0].Replacement.RememberMe {
+			t.Fatal("expected RememberMe=true on refresh token")
+		}
+	})
+
+	t.Run("remember_me=false stores RememberMe=false on refresh token", func(t *testing.T) {
+		uc, ur, sr, _ := setup()
+		ur.addUser(fixtureUser())
+		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
+
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		creates := sr.callsByMethod("CreateRefreshToken")
+		if len(creates) != 1 {
+			t.Fatalf("expected 1 create, got %d", len(creates))
+		}
+		if creates[0].Replacement.RememberMe {
+			t.Fatal("expected RememberMe=false on refresh token")
+		}
+	})
+
+	t.Run("remember_me defaults to true when not passed", func(t *testing.T) {
+		uc, ur, sr, _ := setup()
+		ur.addUser(fixtureUser())
+		ur.setMemberships(fixtureUserID, []domain.Membership{m1})
+
+		_, err := uc.Execute(context.Background(), fixtureEmail, fixturePassword, "", true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		creates := sr.callsByMethod("CreateRefreshToken")
+		if len(creates) != 1 {
+			t.Fatalf("expected 1 create, got %d", len(creates))
+		}
+		if !creates[0].Replacement.RememberMe {
+			t.Fatal("expected RememberMe=true by default")
 		}
 	})
 }

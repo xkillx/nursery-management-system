@@ -838,7 +838,7 @@ func setupPeopleHarness(t *testing.T) *peopleHarness {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	router := Bootstrap(cfg, logger, pool)
 
-	tokens := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours)
+	tokens := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours, cfg.JWTRefreshShortTTLHours)
 
 	h := &peopleHarness{
 		router: router,
@@ -949,6 +949,7 @@ func testConfig() config.Config {
 		JWTRefreshSecret:             "refresh-secret",
 		JWTAccessTTLMin:              15,
 		JWTRefreshTTLHours:           720,
+		JWTRefreshShortTTLHours:      24,
 		WebBaseURL:                   "http://example.local",
 		EmailProvider:                "smtp",
 		SMTPHost:                     "smtp.example.local",

@@ -29,7 +29,7 @@ type LoginUseCase struct {
 
 type TokenGenerator interface {
 	GenerateAccessToken(userID uuid.UUID, email string, scope domain.ScopeClaims) (string, time.Time, error)
-	GenerateRefreshToken() (raw string, hash string, expiresAt time.Time, err error)
+	GenerateRefreshToken(rememberMe bool) (raw string, hash string, expiresAt time.Time, err error)
 	HashRefreshToken(raw string) string
 	AccessTTLSeconds() int64
 }
@@ -42,7 +42,7 @@ func NewLoginUseCase(userRepo domain.UserRepository, sessionRepo domain.SessionR
 	}
 }
 
-func (uc *LoginUseCase) Execute(ctx context.Context, email, password, membershipID string) (LoginResult, error) {
+func (uc *LoginUseCase) Execute(ctx context.Context, email, password, membershipID string, rememberMe bool) (LoginResult, error) {
 	emailNormalized := strings.ToLower(strings.TrimSpace(email))
 
 	user, err := uc.userRepo.FindUserByEmail(ctx, emailNormalized)
@@ -74,7 +74,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, email, password, membership
 		return LoginResult{}, err
 	}
 
-	rawRefresh, refreshHash, refreshExpiresAt, err := uc.tokens.GenerateRefreshToken()
+	rawRefresh, refreshHash, refreshExpiresAt, err := uc.tokens.GenerateRefreshToken(rememberMe)
 	if err != nil {
 		return LoginResult{}, err
 	}
@@ -85,6 +85,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, email, password, membership
 		MembershipID: activeMembership.ID,
 		TokenHash:    refreshHash,
 		ExpiresAt:    refreshExpiresAt,
+		RememberMe:   rememberMe,
 	}, userAgentFromContext(ctx), ipAddressFromContext(ctx))
 	if err != nil {
 		return LoginResult{}, err

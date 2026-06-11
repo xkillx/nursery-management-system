@@ -41,7 +41,7 @@ func setupBillingIssueHarness(t *testing.T) *billingIssueHarness {
 	h := &billingIssueHarness{
 		router:     Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
 		pool:       pool,
-		tokens:     authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
+		tokens:     authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24),
 		tenantID:   uuid.MustParse("e1000000-0000-0000-0000-000000000001"),
 		branchID:   uuid.MustParse("e2000000-0000-0000-0000-000000000001"),
 		managerUID: uuid.MustParse("e3000000-0000-0000-0000-000000000001"),

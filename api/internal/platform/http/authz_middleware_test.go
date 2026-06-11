@@ -17,7 +17,7 @@ import (
 func TestAuthorizationGuardsMatrix(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	tokens := authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720)
+	tokens := authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24)
 	tokenParser := &testTokenParser{tm: tokens}
 	router := gin.New()
 	router.Use(RequestIDMiddleware())

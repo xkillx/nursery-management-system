@@ -23,8 +23,8 @@ export class AuthService {
   readonly activeMembership = computed<MembershipModel | null>(() => this.state().activeMembership);
   readonly role = computed<AppRole | null>(() => this.state().activeMembership?.role ?? null);
 
-  login(email: string, password: string, membershipId?: string): Observable<AuthResponse> {
-    const payload: LoginRequest = { email, password };
+  login(email: string, password: string, membershipId?: string, rememberMe: boolean = true): Observable<AuthResponse> {
+    const payload: LoginRequest = { email, password, remember_me: rememberMe };
     if (membershipId) {
       payload.membership_id = membershipId;
     }

@@ -97,7 +97,7 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 
 	h := &authzHarness{
 		pool:   pool,
-		tokens: authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
+		tokens: authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24),
 		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 
 		// Scope A — deterministic UUIDs in "a1" block

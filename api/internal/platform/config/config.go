@@ -15,10 +15,11 @@ type Config struct {
 	APIBasePath string
 	DatabaseURL string
 
-	JWTAccessSecret    string
-	JWTRefreshSecret   string
-	JWTAccessTTLMin    int
-	JWTRefreshTTLHours int
+	JWTAccessSecret         string
+	JWTRefreshSecret        string
+	JWTAccessTTLMin         int
+	JWTRefreshTTLHours      int
+	JWTRefreshShortTTLHours int
 
 	WebBaseURL                  string
 	EmailProvider               string
@@ -51,6 +52,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	refreshShortTTLHours, err := getEnvInt("JWT_REFRESH_SHORT_TTL_HOURS", 24)
+	if err != nil {
+		return Config{}, err
+	}
 	resetTTLMin, err := getEnvInt("PASSWORD_RESET_TOKEN_TTL_MINUTES", 60)
 	if err != nil {
 		return Config{}, err
@@ -70,10 +75,11 @@ func Load() (Config, error) {
 		APIBasePath: getEnv("API_BASE_PATH", "/api/v1"),
 		DatabaseURL: strings.TrimSpace(os.Getenv("DATABASE_URL")),
 
-		JWTAccessSecret:    strings.TrimSpace(os.Getenv("JWT_ACCESS_SECRET")),
-		JWTRefreshSecret:   strings.TrimSpace(os.Getenv("JWT_REFRESH_SECRET")),
-		JWTAccessTTLMin:    accessTTLMin,
-		JWTRefreshTTLHours: refreshTTLHours,
+		JWTAccessSecret:         strings.TrimSpace(os.Getenv("JWT_ACCESS_SECRET")),
+		JWTRefreshSecret:        strings.TrimSpace(os.Getenv("JWT_REFRESH_SECRET")),
+		JWTAccessTTLMin:         accessTTLMin,
+		JWTRefreshTTLHours:      refreshTTLHours,
+		JWTRefreshShortTTLHours: refreshShortTTLHours,
 
 		WebBaseURL:                  strings.TrimSpace(os.Getenv("WEB_BASE_URL")),
 		EmailProvider:               getEnv("EMAIL_PROVIDER", "smtp"),
@@ -127,6 +133,9 @@ func Load() (Config, error) {
 
 	if cfg.JWTRefreshTTLHours <= 0 {
 		return Config{}, errors.New("JWT_REFRESH_TTL_HOURS must be > 0")
+	}
+	if cfg.JWTRefreshShortTTLHours <= 0 {
+		return Config{}, errors.New("JWT_REFRESH_SHORT_TTL_HOURS must be > 0")
 	}
 
 	if cfg.WebBaseURL == "" {

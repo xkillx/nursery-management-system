@@ -34,7 +34,7 @@ export class SigninFormComponent {
   private readonly router = inject(Router);
 
   showPassword = false;
-  isChecked = false;
+  isChecked = true;
 
   email = '';
   password = '';
@@ -78,7 +78,7 @@ export class SigninFormComponent {
     }
 
     this.isSubmitting = true;
-    this.authService.login(this.email.trim(), this.password).subscribe({
+    this.authService.login(this.email.trim(), this.password, undefined, this.isChecked).subscribe({
       next: () => this.handleSuccess(),
       error: (error) => this.handleError(error),
     });
@@ -89,7 +89,7 @@ export class SigninFormComponent {
     this.clearErrors();
     this.isSubmitting = true;
 
-    this.authService.login(this.email.trim(), this.password, this.selectedMembershipId).subscribe({
+    this.authService.login(this.email.trim(), this.password, this.selectedMembershipId, this.isChecked).subscribe({
       next: () => this.handleSuccess(),
       error: (error) => this.handleError(error),
     });

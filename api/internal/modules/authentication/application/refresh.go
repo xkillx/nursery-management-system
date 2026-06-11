@@ -39,7 +39,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, rawRefreshToken string) (
 		return RefreshResult{}, domain.ErrInvalidToken
 	}
 
-	rawReplacement, replacementHash, replacementExpiresAt, err := uc.tokens.GenerateRefreshToken()
+	rawReplacement, replacementHash, replacementExpiresAt, err := uc.tokens.GenerateRefreshToken(oldToken.RememberMe)
 	if err != nil {
 		return RefreshResult{}, err
 	}
@@ -50,6 +50,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, rawRefreshToken string) (
 		MembershipID: oldToken.MembershipID,
 		TokenHash:    replacementHash,
 		ExpiresAt:    replacementExpiresAt,
+		RememberMe:   oldToken.RememberMe,
 	}
 
 	if err := uc.sessionRepo.RotateRefreshToken(ctx, oldToken.ID, replacement, userAgentFromContext(ctx), ipAddressFromContext(ctx)); err != nil {

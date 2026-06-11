@@ -293,7 +293,7 @@ func (f *fakeTokens) GenerateAccessToken(userID uuid.UUID, email string, scope d
 	return fakeAccessToken, time.Now().UTC().Add(15 * time.Minute), nil
 }
 
-func (f *fakeTokens) GenerateRefreshToken() (raw string, hash string, expiresAt time.Time, err error) {
+func (f *fakeTokens) GenerateRefreshToken(rememberMe bool) (raw string, hash string, expiresAt time.Time, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.genErr != nil {
@@ -301,7 +301,10 @@ func (f *fakeTokens) GenerateRefreshToken() (raw string, hash string, expiresAt 
 	}
 	raw = "raw-refresh-token"
 	hash = f.hashFunc(raw)
-	return raw, hash, time.Now().UTC().Add(30 * 24 * time.Hour), nil
+	if rememberMe {
+		return raw, hash, time.Now().UTC().Add(30 * 24 * time.Hour), nil
+	}
+	return raw, hash, time.Now().UTC().Add(24 * time.Hour), nil
 }
 
 func (f *fakeTokens) HashRefreshToken(raw string) string {

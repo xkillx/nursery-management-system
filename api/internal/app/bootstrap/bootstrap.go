@@ -124,7 +124,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	api := registerHealthRoutes(router, cfg.APIBasePath, pool)
 
 	// Auth module
-	tokenManager := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours)
+	tokenManager := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours, cfg.JWTRefreshShortTTLHours)
 	authRepo := authpostgres.NewRepository(pool)
 	loginUC := authapp.NewLoginUseCase(authRepo, authRepo, tokenManager)
 	refreshUC := authapp.NewRefreshUseCase(authRepo, authRepo, tokenManager)

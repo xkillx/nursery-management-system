@@ -30,6 +30,7 @@ type RefreshToken struct {
 	TokenHash    string
 	ExpiresAt    time.Time
 	RevokedAt    *time.Time
+	RememberMe   bool
 }
 
 type ScopeClaims struct {

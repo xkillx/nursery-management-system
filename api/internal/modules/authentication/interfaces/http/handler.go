@@ -72,6 +72,7 @@ type loginRequest struct {
 	Email        string `json:"email" binding:"required,email"`
 	Password     string `json:"password" binding:"required,min=8"`
 	MembershipID string `json:"membership_id"`
+	RememberMe   *bool  `json:"remember_me"`
 }
 
 type switchMembershipRequest struct {
@@ -115,7 +116,12 @@ func (h *Handler) loginHandler(c *gin.Context) {
 
 	ctx := application.ContextWithRequestMeta(c.Request.Context(), c.Request.UserAgent(), c.ClientIP())
 
-	result, err := h.login.Execute(ctx, req.Email, req.Password, req.MembershipID)
+	rememberMe := true
+	if req.RememberMe != nil {
+		rememberMe = *req.RememberMe
+	}
+
+	result, err := h.login.Execute(ctx, req.Email, req.Password, req.MembershipID, rememberMe)
 	if err != nil {
 		var selErr *domain.MembershipSelectionRequiredError
 		var valErr *domain.ValidationError

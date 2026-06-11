@@ -27,6 +27,7 @@ export interface LoginRequest {
   email: string;
   password: string;
   membership_id?: string;
+  remember_me?: boolean;
 }
 
 export interface PasswordResetRequestPayload {

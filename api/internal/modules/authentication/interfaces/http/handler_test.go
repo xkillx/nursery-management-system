@@ -107,14 +107,16 @@ func (r *htFakeSessionRepo) seed(tok domain.RefreshToken, u domain.User, m domai
 
 type htFakeTokens struct{}
 
-func (htFakeTokens) GenerateAccessToken(uuid.UUID, string, domain.ScopeClaims) (string, time.Time, error) {
-	return "at", time.Now().UTC().Add(15 * time.Minute), nil
+func (htFakeTokens) GenerateRefreshToken(rememberMe bool) (string, string, time.Time, error) {
+	if rememberMe {
+		return "raw-refresh-token", "hash:raw-refresh-token", time.Now().UTC().Add(30 * 24 * time.Hour), nil
+	}
+	return "raw-refresh-token", "hash:raw-refresh-token", time.Now().UTC().Add(24 * time.Hour), nil
 }
 
-func (htFakeTokens) GenerateRefreshToken() (string, string, time.Time, error) {
-	return "raw-refresh", "hash:raw-refresh", time.Now().UTC().Add(30 * 24 * time.Hour), nil
+func (htFakeTokens) GenerateAccessToken(_ uuid.UUID, _ string, _ domain.ScopeClaims) (string, time.Time, error) {
+	return "fake-access-token", time.Now().UTC().Add(15 * time.Minute), nil
 }
-
 func (htFakeTokens) HashRefreshToken(raw string) string { return "hash:" + raw }
 func (htFakeTokens) AccessTTLSeconds() int64             { return 900 }
 

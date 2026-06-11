@@ -13,11 +13,11 @@ WHERE m.user_id = $1 AND m.is_active = true AND m.ended_at IS NULL
 ORDER BY m.created_at ASC;
 
 -- name: AuthCreateRefreshToken :exec
-INSERT INTO refresh_tokens (id, user_id, membership_id, token_hash, expires_at, user_agent, ip_address)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO refresh_tokens (id, user_id, membership_id, token_hash, expires_at, user_agent, ip_address, remember_me)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: AuthFindActiveRefreshToken :one
-SELECT rt.id, rt.user_id, rt.membership_id, rt.token_hash, rt.expires_at, rt.revoked_at,
+SELECT rt.id, rt.user_id, rt.membership_id, rt.token_hash, rt.expires_at, rt.revoked_at, rt.remember_me,
        u.id AS user_table_id, u.email AS user_email, u.password_hash AS user_password_hash, u.is_active AS user_is_active,
        m.id AS membership_table_id, m.tenant_id AS membership_tenant_id, t.name AS membership_tenant_name, m.branch_id AS membership_branch_id, b.name AS membership_branch_name, m.role AS membership_role, m.is_active AS membership_is_active
 FROM refresh_tokens rt

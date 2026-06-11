@@ -49,7 +49,7 @@ func (uc *SwitchMembershipUseCase) Execute(ctx context.Context, rawRefreshToken,
 		return SwitchResult{}, err
 	}
 
-	rawReplacement, replacementHash, replacementExpiresAt, err := uc.tokens.GenerateRefreshToken()
+	rawReplacement, replacementHash, replacementExpiresAt, err := uc.tokens.GenerateRefreshToken(oldToken.RememberMe)
 	if err != nil {
 		return SwitchResult{}, err
 	}
@@ -60,6 +60,7 @@ func (uc *SwitchMembershipUseCase) Execute(ctx context.Context, rawRefreshToken,
 		MembershipID: selectedMembership.ID,
 		TokenHash:    replacementHash,
 		ExpiresAt:    replacementExpiresAt,
+		RememberMe:   oldToken.RememberMe,
 	}
 
 	if err := uc.sessionRepo.RotateRefreshToken(ctx, oldToken.ID, replacement, userAgentFromContext(ctx), ipAddressFromContext(ctx)); err != nil {

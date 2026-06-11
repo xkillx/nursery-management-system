@@ -73,7 +73,7 @@ describe('SigninFormComponent', () => {
     component.onSignIn();
     tick();
 
-    expect(authServiceMock.login).toHaveBeenCalledWith('user@test.com', 'password1');
+    expect(authServiceMock.login).toHaveBeenCalledWith('user@test.com', 'password1', undefined, true);
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/staff/manager/dashboard');
   }));
 
@@ -132,7 +132,7 @@ describe('SigninFormComponent', () => {
     tick();
 
     expect(authServiceMock.login).toHaveBeenCalledWith(
-      'user@test.com', 'password1', mockMembership.membership_id,
+      'user@test.com', 'password1', mockMembership.membership_id, true,
     );
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/staff/manager/dashboard');
   }));

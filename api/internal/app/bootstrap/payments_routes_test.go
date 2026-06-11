@@ -51,7 +51,7 @@ func setupPaymentsHarness(t *testing.T, provider *fakeCheckoutProvider) *payment
 
 	h := &paymentsHarness{
 		pool:       pool,
-		tokens:     tokens.NewTokenManager("access-secret", "refresh-secret", 15, 720),
+		tokens:     tokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24),
 		tenantID:   uuid.MustParse("c1000000-0000-0000-0000-000000000001"),
 		branchID:   uuid.MustParse("c2000000-0000-0000-0000-000000000001"),
 		parentUID:  uuid.MustParse("c3000000-0000-0000-0000-000000000001"),
