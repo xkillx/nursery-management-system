@@ -93,11 +93,9 @@ Child registration/enrolment profiles and consent/acknowledgement records. Regis
 |---|---|---|
 | API-PM-01 | Child registration/enrolment profile data from `docs/forms/child-application-form.md` | Done |
 | API-PM-02 | Consent and acknowledgement ledger from `docs/forms/parental-consent-form.md` | Pending |
-| API-PM-03 | Enrolment document/checklist metadata (office-use fields) | Pending |
-| FE-PM-01 | Manager child registration/enrolment editor | Pending |
-| FE-PM-02 | Parent/guardian digital registration and consent journey | Pending |
-| FE-PM-03 | Manager consent review/history UI | Pending |
-| FE-PM-04 | Registration office-use checklist UI | Pending |
+| API-PM-03 | Enrolment document/checklist metadata (office-use fields) | Done |
+| FE-PM-01 | Manager child registration/enrolment editor (includes FE-PM-04 office-use checklist UI) | Done |
+| FE-PM-04 | Registration office-use checklist UI | Folded into FE-PM-01 |
 
 ### 2. Room and Session Planning
 

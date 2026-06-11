@@ -26,15 +26,18 @@ type PatchSection struct {
 }
 
 type DemographicsHomePatch struct {
-	Sex             *string           `json:"sex,omitempty"`
-	Religion        *string           `json:"religion,omitempty"`
-	EthnicOrigin    *string           `json:"ethnic_origin,omitempty"`
-	FirstLanguage   *string           `json:"first_language,omitempty"`
-	OtherLanguages  *[]string         `json:"other_languages,omitempty"`
-	HomeAddress     *map[string]any   `json:"home_address,omitempty"`
-	HomePostcode    *string           `json:"home_postcode,omitempty"`
-	HomeTelephone   *string           `json:"home_telephone,omitempty"`
-	DemographicsHomeReviewed *bool    `json:"demographics_home_reviewed,omitempty"`
+	Sex                     *string           `json:"sex,omitempty"`
+	Religion                *string           `json:"religion,omitempty"`
+	EthnicOrigin            *string           `json:"ethnic_origin,omitempty"`
+	FirstLanguage           *string           `json:"first_language,omitempty"`
+	OtherLanguages          *[]string         `json:"other_languages,omitempty"`
+	HomeAddress             *map[string]any   `json:"home_address,omitempty"`
+	HomePostcode            *string           `json:"home_postcode,omitempty"`
+	HomeTelephone           *string           `json:"home_telephone,omitempty"`
+	DisabilityStatus        *string           `json:"disability_status,omitempty"`
+	DisabilityNotes         *string           `json:"disability_notes,omitempty"`
+	AccessRequirements      *string           `json:"access_requirements,omitempty"`
+	DemographicsHomeReviewed *bool            `json:"demographics_home_reviewed,omitempty"`
 }
 
 type MedicalDietaryPatch struct {
@@ -49,9 +52,6 @@ type MedicalDietaryPatch struct {
 	DietaryRequirementsNotes      *string `json:"dietary_requirements_notes,omitempty"`
 	DietarySideEffects            *string `json:"dietary_side_effects,omitempty"`
 	MedicalDietaryReviewed        *bool   `json:"medical_dietary_reviewed,omitempty"`
-	DisabilityStatus              *string `json:"disability_status,omitempty"`
-	DisabilityNotes               *string `json:"disability_notes,omitempty"`
-	AccessRequirements            *string `json:"access_requirements,omitempty"`
 }
 
 type HealthContactsPatch struct {
@@ -118,7 +118,9 @@ func MergePatch(p *domain.Profile, patch PatchSection) ([]domain.SectionCode, er
 	changed := make([]domain.SectionCode, 0)
 
 	if patch.DemographicsHome != nil {
-		applyDemographicsHome(p, *patch.DemographicsHome)
+		if err := applyDemographicsHome(p, *patch.DemographicsHome); err != nil {
+			return nil, err
+		}
 		changed = append(changed, domain.SectionDemographicsHome)
 	}
 	if patch.MedicalDietary != nil {
@@ -165,7 +167,7 @@ func MergePatch(p *domain.Profile, patch PatchSection) ([]domain.SectionCode, er
 	return changed, nil
 }
 
-func applyDemographicsHome(p *domain.Profile, patch DemographicsHomePatch) {
+func applyDemographicsHome(p *domain.Profile, patch DemographicsHomePatch) error {
 	if patch.Sex != nil {
 		v := strings.TrimSpace(*patch.Sex)
 		if v == "" { p.Sex = nil } else { p.Sex = &v }
@@ -196,9 +198,23 @@ func applyDemographicsHome(p *domain.Profile, patch DemographicsHomePatch) {
 		v := strings.TrimSpace(*patch.HomeTelephone)
 		if v == "" { p.HomeTelephone = nil } else { p.HomeTelephone = &v }
 	}
+	if patch.DisabilityStatus != nil {
+		v, err := parseYesNoUnknown(*patch.DisabilityStatus)
+		if err != nil { return err }
+		p.DisabilityStatus = v
+	}
+	if patch.DisabilityNotes != nil {
+		v := strings.TrimSpace(*patch.DisabilityNotes)
+		if v == "" { p.DisabilityNotes = nil } else { p.DisabilityNotes = &v }
+	}
+	if patch.AccessRequirements != nil {
+		v := strings.TrimSpace(*patch.AccessRequirements)
+		if v == "" { p.AccessRequirements = nil } else { p.AccessRequirements = &v }
+	}
 	if patch.DemographicsHomeReviewed != nil {
 		p.DemographicsHomeReviewed = *patch.DemographicsHomeReviewed
 	}
+	return nil
 }
 
 func applyMedicalDietary(p *domain.Profile, patch MedicalDietaryPatch) error {
@@ -245,19 +261,6 @@ func applyMedicalDietary(p *domain.Profile, patch MedicalDietaryPatch) error {
 	if patch.DietarySideEffects != nil {
 		v := strings.TrimSpace(*patch.DietarySideEffects)
 		if v == "" { p.DietarySideEffects = nil } else { p.DietarySideEffects = &v }
-	}
-	if patch.DisabilityStatus != nil {
-		v, err := parseYesNoUnknown(*patch.DisabilityStatus)
-		if err != nil { return err }
-		p.DisabilityStatus = v
-	}
-	if patch.DisabilityNotes != nil {
-		v := strings.TrimSpace(*patch.DisabilityNotes)
-		if v == "" { p.DisabilityNotes = nil } else { p.DisabilityNotes = &v }
-	}
-	if patch.AccessRequirements != nil {
-		v := strings.TrimSpace(*patch.AccessRequirements)
-		if v == "" { p.AccessRequirements = nil } else { p.AccessRequirements = &v }
 	}
 	if patch.MedicalDietaryReviewed != nil {
 		p.MedicalDietaryReviewed = *patch.MedicalDietaryReviewed

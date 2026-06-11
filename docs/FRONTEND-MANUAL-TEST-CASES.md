@@ -2132,6 +2132,231 @@ Expected result:
 - Empty states explain what happened and next action when available.
 - Error states are user-facing, non-technical, and include request ID when the frontend presents one.
 
+## Manager Registration/Enrolment Editor
+
+### Test RE-01: Open registration from child detail
+
+Steps:
+
+- Log in as a manager.
+- Navigate to a child detail page.
+- Click the Registration/Enrolment link.
+- If the profile or checklist shows as incomplete, a link to the registration editor is present.
+
+Expected result:
+
+- The registration editor opens at `/staff/manager/children/{childId}/registration`.
+- Child name and date of birth are displayed.
+- Registration profile and office-use checklist completion badges are visible.
+
+### Test RE-02: Save demographics/home section
+
+Steps:
+
+- Open the registration editor for a child.
+- Edit sex, religion, ethnic origin, first language, other languages, home address, postcode, telephone, disability status, disability notes, and access requirements in the Demographics and home section.
+- Check the "Section reviewed" checkbox.
+- Click "Save section".
+
+Expected result:
+
+- The section header shows a success message.
+- Reload the page: the saved values persist.
+
+### Test RE-03: Save medical/dietary section with explicit no answers
+
+Steps:
+
+- Set medical conditions, prescribed medication, and dietary requirements to "No".
+- Set immunisation status to "Up to date".
+- Add optional notes.
+- Click "Save section".
+
+Expected result:
+
+- Success message appears.
+- Save completes without validation errors.
+
+### Test RE-04: Save health contacts
+
+Steps:
+
+- Enter doctor and health visitor names, addresses, and phone numbers.
+- Click "Save section".
+
+Expected result:
+
+- Values persist after reload.
+
+### Test RE-05: Save social/development section
+
+Steps:
+
+- Set social services involvement and all six development concerns to "No".
+- Add optional notes or social worker contact.
+- Click "Save section".
+
+Expected result:
+
+- Values persist after reload.
+
+### Test RE-06: Add and save parent/carer, emergency contact, and authorised collector
+
+Steps:
+
+- In the Parent/carer section, click "+ Add parent/carer".
+- Fill in name, relationship, telephone, and optionally check "Has parental responsibility".
+- Click "Save parent/carers".
+- Repeat for Emergency contacts and Authorised collectors sections.
+
+Expected result:
+
+- Each contact type saves independently.
+- After reload, the saved contacts appear.
+
+### Test RE-07: Remove a contact entry
+
+Steps:
+
+- Add a contact row with data.
+- Click "Remove".
+- Save the section.
+
+Expected result:
+
+- The removed contact does not appear after reload.
+
+### Test RE-08: Set collection password
+
+Steps:
+
+- In the Collection password section, enter a new password in the password field.
+- Click "Set password".
+
+Expected result:
+
+- The password input clears.
+- The password value is not displayed anywhere on the page.
+- "Password is set" status shows with last updated timestamp.
+
+### Test RE-09: Save collection review flags
+
+Steps:
+
+- Check "Over-18 collection acknowledged" and "Emergency collection reviewed".
+- Click "Save collection flags".
+
+Expected result:
+
+- Flags persist after reload.
+
+### Test RE-10: Save funding support section
+
+Steps:
+
+- Set each funding question to "No".
+- Add optional notes.
+- Click "Save section".
+
+Expected result:
+
+- Values persist after reload.
+
+### Test RE-11: Save routine care section
+
+Steps:
+
+- Enter free-text notes.
+- Click "Save section".
+
+Expected result:
+
+- Values persist after reload.
+
+### Test RE-12: Save GDPR declaration
+
+Steps:
+
+- Enter declaring person name and a declaration date.
+- Click "Save GDPR declaration".
+
+Expected result:
+
+- Declaration timestamp appears under the form.
+- Values persist after reload.
+
+### Test RE-13: Save office-use checklist
+
+Steps:
+
+- Set deposit status, application date status, start date status, sessions/days requested status, and contract status to "Complete" with appropriate dates.
+- Set term-time-only space to "No".
+- Set Red Book, birth certificate/passport, and proof of address to "Complete" with checked dates.
+- Click "Save checklist".
+
+Expected result:
+
+- Office-use checklist completion badge updates to "Complete".
+- Values persist after reload.
+
+### Test RE-14: Verify registration profile completion on child detail
+
+Steps:
+
+- After completing all registration sections, navigate back to the child detail page.
+- Reload the page.
+
+Expected result:
+
+- The registration profile completion badge shows "Complete" status.
+
+### Test RE-15: Verify office-use checklist completion on child detail
+
+Steps:
+
+- After completing the office-use checklist, navigate back to the child detail page.
+- Reload the page.
+
+Expected result:
+
+- The office-use checklist completion badge shows "Complete" status.
+
+### Test RE-16: Confirm no document upload control
+
+Steps:
+
+- Inspect the office-use checklist section.
+
+Expected result:
+
+- No file upload, document attachment, or "Upload" controls are present.
+- Checklist items are status/date fields only.
+
+### Test RE-17: API validation preserves draft values
+
+Steps:
+
+- Enter an invalid value in a field that triggers API validation (e.g., an invalid date format in a date field).
+- Click "Save section".
+
+Expected result:
+
+- A section-level error message appears.
+- The draft values the manager entered are not lost or reset.
+
+### Test RE-18: Desktop and mobile layout
+
+Steps:
+
+- Open the registration editor on a desktop viewport (1440 x 900).
+- Open the same page on a mobile viewport (390 x 844).
+
+Expected result:
+
+- All sections are readable.
+- Buttons and controls are not clipped or overlapping.
+- On mobile, fields stack in a single column.
+
 ## Final Regression Checklist
 
 Before sign-off, confirm:

@@ -1,0 +1,317 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+import { of, throwError } from 'rxjs';
+
+import { StaffApiService } from '../../data/staff-api.service';
+import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { ManagerChildRegistrationComponent } from './manager-child-registration.component';
+import { RegistrationProfileResponse, RegistrationOfficeUseChecklistResponse } from '../../models/registration-profile.models';
+
+describe('ManagerChildRegistrationComponent', () => {
+  let fixture: ComponentFixture<ManagerChildRegistrationComponent>;
+  let component: ManagerChildRegistrationComponent;
+  let staffApiMock: jasmine.SpyObj<StaffApiService>;
+
+  const mockProfile: RegistrationProfileResponse = {
+    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15' },
+    profileExists: true,
+    profile: { id: 'rp-1', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+    demographicsHome: {
+      sex: 'female', religion: null, ethnicOrigin: null, firstLanguage: 'English',
+      otherLanguages: [], homeAddress: null, homePostcode: null, homeTelephone: null,
+      disabilityStatus: 'no', disabilityNotes: null, accessRequirements: null,
+      demographicsHomeReviewed: false,
+    },
+    medicalDietary: {
+      medicalConditionsStatus: 'unknown', medicalConditionsNotes: null,
+      prescribedMedicationStatus: 'unknown', medicationNotes: null,
+      immunisationStatus: 'unknown', immunisationCountry: null,
+      illnessDiagnosisHistory: null, dietaryRequirementsStatus: 'unknown',
+      dietaryRequirementsNotes: null, dietarySideEffects: null,
+      medicalDietaryReviewed: false,
+    },
+    healthContacts: {
+      doctorName: null, doctorAddress: null, doctorPhone: null,
+      healthVisitorName: null, healthVisitorAddress: null, healthVisitorPhone: null,
+      healthContactsReviewed: false,
+    },
+    socialDevelopment: {
+      socialServicesStatus: 'unknown', socialServicesNotes: null,
+      socialWorkerContactDetails: null, concernWalking: 'unknown',
+      concernSpeechLanguage: 'unknown', concernHearing: 'unknown',
+      concernSight: 'unknown', concernEmotionalWellbeing: 'unknown',
+      concernBehaviour: 'unknown', professionalReferrals: [],
+      socialDevelopmentReviewed: false,
+    },
+    parentCarers: [],
+    emergencyContacts: [],
+    authorisedCollectors: [],
+    collection: { isSet: false, lastUpdatedAt: null, lastUpdatedByUserId: null, lastUpdatedByMembershipId: null, over18CollectionAcknowledged: false, emergencyCollectionReviewed: false },
+    fundingSupport: {
+      benefitsContributeToFees: 'unknown', workingTaxCredit: 'unknown',
+      collegeUniPaidToParent: 'unknown', collegeUniPaidToNursery: 'unknown',
+      funding3yoTermTime: 'unknown', funding2yoTermTime: 'unknown',
+      fundingSupportNotes: null, fundingSupportReviewed: false,
+    },
+    routineCare: { routineCareNotes: null, routineCareReviewed: false },
+    gdprDeclaration: { gdprDeclaredByName: null, gdprDeclaredAt: null, gdprDeclarationDate: null },
+    completeness: { isComplete: false, missingSections: ['child_demographics_home'], sections: [{ code: 'child_demographics_home', status: 'incomplete', missingFields: ['review_required'] }] },
+  };
+
+  const mockChecklist: RegistrationOfficeUseChecklistResponse = {
+    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15', startDate: '2023-01-10', endDate: null },
+    checklistExists: false,
+    checklist: null,
+    officeUseChecklist: {
+      depositStatus: null, depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
+      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
+      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
+      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
+      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
+    },
+    completeness: { isComplete: false, missingFields: ['deposit'], items: [{ code: 'deposit', status: 'incomplete', label: 'Deposit', missingFields: ['deposit_unknown'] }] },
+  };
+
+  beforeEach(async () => {
+    staffApiMock = jasmine.createSpyObj('StaffApiService', [
+      'getRegistrationProfile', 'patchRegistrationProfile',
+      'setRegistrationCollectionPassword',
+      'getRegistrationOfficeUseChecklist', 'patchRegistrationOfficeUseChecklist',
+    ]);
+
+    staffApiMock.getRegistrationProfile.and.returnValue(of(mockProfile));
+    staffApiMock.getRegistrationOfficeUseChecklist.and.returnValue(of(mockChecklist));
+    staffApiMock.patchRegistrationProfile.and.returnValue(of(mockProfile));
+    staffApiMock.patchRegistrationOfficeUseChecklist.and.returnValue(of(mockChecklist));
+    staffApiMock.setRegistrationCollectionPassword.and.returnValue(of(mockProfile));
+
+    await TestBed.configureTestingModule({
+      imports: [ManagerChildRegistrationComponent],
+      providers: [
+        { provide: StaffApiService, useValue: staffApiMock },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: (key: string) => key === 'childId' ? 'child-1' : null } } } },
+        ApiErrorMapper,
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ManagerChildRegistrationComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('creates', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('loads registration profile on init', () => {
+    expect(staffApiMock.getRegistrationProfile).toHaveBeenCalledWith('child-1');
+    expect(component.childName).toBe('Emma Thompson');
+  });
+
+  it('loads office-use checklist on init', () => {
+    expect(staffApiMock.getRegistrationOfficeUseChecklist).toHaveBeenCalledWith('child-1');
+  });
+
+  it('initializes section drafts from profile', () => {
+    expect(component.demoHomeDraft).toBeTruthy();
+    expect(component.demoHomeDraft?.sex).toBe('female');
+    expect(component.demoHomeDraft?.disabilityStatus).toBe('no');
+    expect(component.medicalDietaryDraft).toBeTruthy();
+    expect(component.healthContactsDraft).toBeTruthy();
+    expect(component.socialDevDraft).toBeTruthy();
+    expect(component.fundingSupportDraft).toBeTruthy();
+    expect(component.routineCareDraft).toBeTruthy();
+  });
+
+  it('initializes contact drafts as empty arrays', () => {
+    expect(component.parentCarersDraft).toEqual([]);
+    expect(component.emergencyContactsDraft).toEqual([]);
+    expect(component.authorisedCollectorsDraft).toEqual([]);
+  });
+
+  it('initializes office checklist draft', () => {
+    expect(component.officeDraft).toBeTruthy();
+  });
+
+  it('renders profile completion badge', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).toContain('Registration profile');
+  });
+
+  it('renders office-use checklist completion badge', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).toContain('Office-use checklist');
+  });
+
+  it('shows missing registration sections when incomplete', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).toContain('Missing registration sections');
+  });
+
+  it('does not contain placeholder text about fields rendered later', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).not.toContain('would be rendered here');
+  });
+
+  it('does not contain placeholder text about checklist items rendered later', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).not.toContain('would be rendered here');
+  });
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const c = () => component as any;
+
+  it('saves demographics home section', () => {
+    c().saveDemographicsHome();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      demographics_home: jasmine.objectContaining({ sex: 'female' }),
+    }));
+  });
+
+  it('saves medical dietary section', () => {
+    c().saveMedicalDietary();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      medical_dietary: jasmine.objectContaining({ medical_conditions_status: 'unknown' }),
+    }));
+  });
+
+  it('saves health contacts section', () => {
+    c().saveHealthContacts();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      health_contacts: jasmine.any(Object),
+    }));
+  });
+
+  it('saves funding support section', () => {
+    c().saveFundingSupport();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      funding_support: jasmine.any(Object),
+    }));
+  });
+
+  it('saves routine care section', () => {
+    c().saveRoutineCare();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      routine_care: jasmine.any(Object),
+    }));
+  });
+
+  it('saves GDPR declaration', () => {
+    c().saveGdprDeclaration();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      gdpr_declaration: jasmine.any(Object),
+    }));
+  });
+
+  it('saves parent/carer contacts array', () => {
+    component.parentCarersDraft = [{ fullName: 'Sarah Thompson', relationshipToChild: 'Mother', address: null, telephone: '+44 7700 900001', email: null, workAddress: null, hasParentalResponsibility: true }];
+    c().saveContacts('parent_carers');
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', {
+      parent_carers: [{ fullName: 'Sarah Thompson', relationshipToChild: 'Mother', address: null, telephone: '+44 7700 900001', email: null, workAddress: null, hasParentalResponsibility: true }],
+    });
+  });
+
+  it('saves emergency contacts array', () => {
+    component.emergencyContactsDraft = [{ fullName: 'Jane Doe', relationshipToChild: 'Aunt', address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null }];
+    c().saveContacts('emergency_contacts');
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', {
+      emergency_contacts: [{ fullName: 'Jane Doe', relationshipToChild: 'Aunt', address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null }],
+    });
+  });
+
+  it('saves authorised collectors array', () => {
+    component.authorisedCollectorsDraft = [{ fullName: 'Bob Smith', relationshipToChild: 'Grandfather', address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null }];
+    c().saveContacts('authorised_collectors');
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', {
+      authorised_collectors: [{ fullName: 'Bob Smith', relationshipToChild: 'Grandfather', address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null }],
+    });
+  });
+
+  it('saves collection password via dedicated endpoint', () => {
+    component.collectionPassword = 'mysecret';
+    c().setCollectionPassword();
+    expect(staffApiMock.setRegistrationCollectionPassword).toHaveBeenCalledWith('child-1', 'mysecret');
+  });
+
+  it('clears collection password input after successful save', () => {
+    component.collectionPassword = 'mysecret';
+    c().setCollectionPassword();
+    expect(component.collectionPassword).toBe('');
+  });
+
+  it('does not display collection password value', () => {
+    component.collectionPassword = 'mysecret';
+    c().setCollectionPassword();
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).not.toContain('mysecret');
+  });
+
+  it('saves collection review flags', () => {
+    component.collectionOver18 = true;
+    component.collectionEmergencyReviewed = true;
+    c().saveCollectionFlags();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      collection: jasmine.objectContaining({ over18_collection_acknowledged: true, emergency_collection_reviewed: true }),
+    }));
+  });
+
+  it('saves office-use checklist', () => {
+    component.officeDraft = {
+      depositStatus: 'complete', depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
+      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
+      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
+      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
+      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
+    };
+    c().saveOfficeChecklist();
+    expect(staffApiMock.patchRegistrationOfficeUseChecklist).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+      depositStatus: 'complete',
+    }));
+  });
+
+  it('adds a contact row to parent carers', () => {
+    c().addContactRow(component.parentCarersDraft);
+    expect(component.parentCarersDraft.length).toBe(1);
+    expect(component.parentCarersDraft[0].fullName).toBe('');
+  });
+
+  it('removes a contact row', () => {
+    component.parentCarersDraft = [{ fullName: 'Test', relationshipToChild: null, address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null }];
+    c().removeContactRow(component.parentCarersDraft, 0);
+    expect(component.parentCarersDraft.length).toBe(0);
+  });
+
+  it('shows section error on API failure without losing draft values', () => {
+    staffApiMock.patchRegistrationProfile.and.returnValue(throwError(() =>
+      new HttpErrorResponse({ status: 422, error: { code: 'validation_error', message: 'Invalid value' } })
+    ));
+    component.demoHomeDraft!.sex = 'female';
+    c().saveDemographicsHome();
+    expect(staffApiMock.patchRegistrationProfile).toHaveBeenCalled();
+    expect(component.sectionErrors['demographics_home']).toBeTruthy();
+    expect(component.demoHomeDraft?.sex).toBe('female');
+  });
+
+  it('reloads profile drafts after successful save', () => {
+    staffApiMock.patchRegistrationProfile.and.returnValue(of(mockProfile));
+    c().saveDemographicsHome();
+    expect(component.sectionMessages['demographics_home']).toBe('Section saved.');
+    expect(component.demoHomeDraft?.sex).toBe('female');
+  });
+
+  it('shows missing office-use checklist items', () => {
+    const rendered = fixture.nativeElement as HTMLElement;
+    expect(rendered.textContent).toContain('Deposit');
+  });
+
+  it('adds emergency contact row', () => {
+    c().addContactRow(component.emergencyContactsDraft);
+    expect(component.emergencyContactsDraft.length).toBe(1);
+  });
+
+  it('adds authorised collector row', () => {
+    c().addContactRow(component.authorisedCollectorsDraft);
+    expect(component.authorisedCollectorsDraft.length).toBe(1);
+  });
+});

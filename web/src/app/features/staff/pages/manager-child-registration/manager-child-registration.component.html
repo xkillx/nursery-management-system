@@ -63,21 +63,265 @@
       @if (sectionErrors['demographics_home']) {
         <app-alert variant="error">{{ sectionErrors['demographics_home'] }}</app-alert>
       }
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="block text-sm text-gray-500 dark:text-gray-400">Sex</label></div>
-        <div><label class="block text-sm text-gray-500 dark:text-gray-400">Religion</label></div>
-      </div>
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Form fields for each section would be rendered here.</p>
+      @if (demoHomeDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Sex</label>
+            <select [(ngModel)]="demoHomeDraft.sex" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Religion</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.religion" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Ethnic origin</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.ethnicOrigin" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">First language</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.firstLanguage" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Other languages</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.otherLanguages" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" placeholder="Comma separated" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Home postcode</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.homePostcode" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Home telephone</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.homeTelephone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Disability status</label>
+            <select [(ngModel)]="demoHomeDraft.disabilityStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Disability notes</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.disabilityNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Access requirements</label>
+            <input type="text" [(ngModel)]="demoHomeDraft.accessRequirements" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Home address</label>
+          <textarea [(ngModel)]="demoHomeDraft.homeAddress" rows="3" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" placeholder="Address lines"></textarea>
+        </div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="demoHomeDraft.demographicsHomeReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
       <div class="mt-4">
         <app-button
           variant="primary"
-          [isLoading]="isSavingSection === 'demographics_home'"
-          (btnClick)="saveSection('demographics_home', { demographics_home: { demographics_home_reviewed: true } })"
+          [loading]="isSavingSection === 'demographics_home'"
+          (btnClick)="saveDemographicsHome()"
         >Save section</app-button>
       </div>
     </div>
 
-    <!-- Contact sections summary -->
+    <!-- Medical and dietary -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Medical and dietary</h3>
+      @if (sectionMessages['medical_dietary']) {
+        <app-alert variant="success">{{ sectionMessages['medical_dietary'] }}</app-alert>
+      }
+      @if (sectionErrors['medical_dietary']) {
+        <app-alert variant="error">{{ sectionErrors['medical_dietary'] }}</app-alert>
+      }
+      @if (medicalDietaryDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Medical conditions</label>
+            <select [(ngModel)]="medicalDietaryDraft.medicalConditionsStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Medical conditions notes</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.medicalConditionsNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Prescribed medication</label>
+            <select [(ngModel)]="medicalDietaryDraft.prescribedMedicationStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Medication notes</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.medicationNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Immunisation status</label>
+            <select [(ngModel)]="medicalDietaryDraft.immunisationStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="unknown">Unknown</option>
+              <option value="up_to_date">Up to date</option>
+              <option value="refused">Refused</option>
+              <option value="partial">Partial</option>
+              <option value="not_recorded">Not recorded</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Immunisation country</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.immunisationCountry" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Illness/diagnosis history</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.illnessDiagnosisHistory" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Dietary requirements</label>
+            <select [(ngModel)]="medicalDietaryDraft.dietaryRequirementsStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option>
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Dietary requirements notes</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.dietaryRequirementsNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Dietary side effects</label>
+            <input type="text" [(ngModel)]="medicalDietaryDraft.dietarySideEffects" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          </div>
+        </div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="medicalDietaryDraft.medicalDietaryReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
+      <div class="mt-4">
+        <app-button
+          variant="primary"
+          [loading]="isSavingSection === 'medical_dietary'"
+          (btnClick)="saveMedicalDietary()"
+        >Save section</app-button>
+      </div>
+    </div>
+
+    <!-- Health contacts -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Doctor and health visitor</h3>
+      @if (sectionMessages['health_contacts']) {
+        <app-alert variant="success">{{ sectionMessages['health_contacts'] }}</app-alert>
+      }
+      @if (sectionErrors['health_contacts']) {
+        <app-alert variant="error">{{ sectionErrors['health_contacts'] }}</app-alert>
+      }
+      @if (healthContactsDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Doctor name</label><input type="text" [(ngModel)]="healthContactsDraft.doctorName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Doctor phone</label><input type="text" [(ngModel)]="healthContactsDraft.doctorPhone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        </div>
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Doctor address</label><input type="text" [(ngModel)]="healthContactsDraft.doctorAddress" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Health visitor name</label><input type="text" [(ngModel)]="healthContactsDraft.healthVisitorName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Health visitor phone</label><input type="text" [(ngModel)]="healthContactsDraft.healthVisitorPhone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        </div>
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Health visitor address</label><input type="text" [(ngModel)]="healthContactsDraft.healthVisitorAddress" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="healthContactsDraft.healthContactsReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'health_contacts'" (btnClick)="saveHealthContacts()">Save section</app-button>
+      </div>
+    </div>
+
+    <!-- Social development -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Social services and development</h3>
+      @if (sectionMessages['social_development']) {
+        <app-alert variant="success">{{ sectionMessages['social_development'] }}</app-alert>
+      }
+      @if (sectionErrors['social_development']) {
+        <app-alert variant="error">{{ sectionErrors['social_development'] }}</app-alert>
+      }
+      @if (socialDevDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Social services involvement</label>
+            <select [(ngModel)]="socialDevDraft.socialServicesStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Social services notes</label><input type="text" [(ngModel)]="socialDevDraft.socialServicesNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        </div>
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Social worker contact details</label><input type="text" [(ngModel)]="socialDevDraft.socialWorkerContactDetails" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Walking concern</label>
+            <select [(ngModel)]="socialDevDraft.concernWalking" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Speech/language concern</label>
+            <select [(ngModel)]="socialDevDraft.concernSpeechLanguage" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Hearing concern</label>
+            <select [(ngModel)]="socialDevDraft.concernHearing" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Sight concern</label>
+            <select [(ngModel)]="socialDevDraft.concernSight" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Emotional wellbeing concern</label>
+            <select [(ngModel)]="socialDevDraft.concernEmotionalWellbeing" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Behaviour concern</label>
+            <select [(ngModel)]="socialDevDraft.concernBehaviour" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="socialDevDraft.socialDevelopmentReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'social_development'" (btnClick)="saveSocialDevelopment()">Save section</app-button>
+      </div>
+    </div>
+
+    <!-- Parent/carer details -->
     <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
       <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Parent/carer details</h3>
       @if (sectionMessages['parent_carers']) {
@@ -86,19 +330,93 @@
       @if (sectionErrors['parent_carers']) {
         <app-alert variant="error">{{ sectionErrors['parent_carers'] }}</app-alert>
       }
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Contact details for parent/carer registration entries. These are separate from guardians.
-      </p>
+      <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Registration contact entries. These are separate from guardian records and do not create portal access.</p>
+      @for (contact of parentCarersDraft; track trackByIndex($index); let i = $index) {
+        <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-gray-700">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label class="mb-1 block text-xs text-gray-500">Full name</label><input type="text" [(ngModel)]="contact.fullName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Relationship</label><input type="text" [(ngModel)]="contact.relationshipToChild" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Telephone</label><input type="text" [(ngModel)]="contact.telephone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Email</label><input type="text" [(ngModel)]="contact.email" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Address</label><input type="text" [(ngModel)]="contact.address" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Work address</label><input type="text" [(ngModel)]="contact.workAddress" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          </div>
+          <div class="mt-2 flex items-center gap-4">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input type="checkbox" [(ngModel)]="contact.hasParentalResponsibility" class="rounded border-gray-300 dark:border-gray-700" />
+              Has parental responsibility
+            </label>
+            <button type="button" (click)="removeContactRow(parentCarersDraft, i)" class="text-sm text-red-600 hover:text-red-800 dark:text-red-400">Remove</button>
+          </div>
+        </div>
+      }
+      <button type="button" (click)="addContactRow(parentCarersDraft)" class="mb-3 text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400">+ Add parent/carer</button>
       <div class="mt-4">
-        <app-button
-          variant="primary"
-          [isLoading]="isSavingSection === 'parent_carers'"
-          (btnClick)="saveContacts('parent_carers', [])"
-        >Save contacts</app-button>
+        <app-button variant="primary" [loading]="isSavingSection === 'parent_carers'" (btnClick)="saveContacts('parent_carers')">Save parent/carers</app-button>
       </div>
     </div>
 
-    <!-- Collection password -->
+    <!-- Emergency contacts -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Emergency contacts</h3>
+      @if (sectionMessages['emergency_contacts']) {
+        <app-alert variant="success">{{ sectionMessages['emergency_contacts'] }}</app-alert>
+      }
+      @if (sectionErrors['emergency_contacts']) {
+        <app-alert variant="error">{{ sectionErrors['emergency_contacts'] }}</app-alert>
+      }
+      @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
+        <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-gray-700">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label class="mb-1 block text-xs text-gray-500">Full name</label><input type="text" [(ngModel)]="contact.fullName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Relationship</label><input type="text" [(ngModel)]="contact.relationshipToChild" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Telephone</label><input type="text" [(ngModel)]="contact.telephone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Email</label><input type="text" [(ngModel)]="contact.email" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Address</label><input type="text" [(ngModel)]="contact.address" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Work address</label><input type="text" [(ngModel)]="contact.workAddress" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          </div>
+          <div class="mt-2">
+            <button type="button" (click)="removeContactRow(emergencyContactsDraft, i)" class="text-sm text-red-600 hover:text-red-800 dark:text-red-400">Remove</button>
+          </div>
+        </div>
+      }
+      <button type="button" (click)="addContactRow(emergencyContactsDraft)" class="mb-3 text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400">+ Add emergency contact</button>
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'emergency_contacts'" (btnClick)="saveContacts('emergency_contacts')">Save emergency contacts</app-button>
+      </div>
+    </div>
+
+    <!-- Authorised collectors -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Authorised collectors</h3>
+      @if (sectionMessages['authorised_collectors']) {
+        <app-alert variant="success">{{ sectionMessages['authorised_collectors'] }}</app-alert>
+      }
+      @if (sectionErrors['authorised_collectors']) {
+        <app-alert variant="error">{{ sectionErrors['authorised_collectors'] }}</app-alert>
+      }
+      @for (contact of authorisedCollectorsDraft; track trackByIndex($index); let i = $index) {
+        <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-gray-700">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label class="mb-1 block text-xs text-gray-500">Full name</label><input type="text" [(ngModel)]="contact.fullName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Relationship</label><input type="text" [(ngModel)]="contact.relationshipToChild" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Telephone</label><input type="text" [(ngModel)]="contact.telephone" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Email</label><input type="text" [(ngModel)]="contact.email" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Address</label><input type="text" [(ngModel)]="contact.address" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+            <div><label class="mb-1 block text-xs text-gray-500">Work address</label><input type="text" [(ngModel)]="contact.workAddress" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          </div>
+          <div class="mt-2">
+            <button type="button" (click)="removeContactRow(authorisedCollectorsDraft, i)" class="text-sm text-red-600 hover:text-red-800 dark:text-red-400">Remove</button>
+          </div>
+        </div>
+      }
+      <button type="button" (click)="addContactRow(authorisedCollectorsDraft)" class="mb-3 text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400">+ Add authorised collector</button>
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'authorised_collectors'" (btnClick)="saveContacts('authorised_collectors')">Save authorised collectors</app-button>
+      </div>
+    </div>
+
+    <!-- Collection password and review -->
     <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
       <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Collection password</h3>
       @if (collectionPasswordMessage) {
@@ -122,49 +440,128 @@
           class="block w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
         <app-button
           variant="primary"
-          [isLoading]="isSavingSection === 'collection'"
+          [loading]="isSavingSection === 'collection'"
           [disabled]="!collectionPassword"
           (btnClick)="setCollectionPassword()"
         >Set password</app-button>
+      </div>
+      <div class="mt-4 flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" [(ngModel)]="collectionOver18" class="rounded border-gray-300 dark:border-gray-700" />
+          Over-18 collection acknowledged
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" [(ngModel)]="collectionEmergencyReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+          Emergency collection reviewed
+        </label>
+      </div>
+      <div class="mt-3">
+        <app-button variant="secondary" [loading]="isSavingSection === 'collection'" (btnClick)="saveCollectionFlags()">Save collection flags</app-button>
+      </div>
+    </div>
+
+    <!-- Funding support -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Funding support</h3>
+      @if (sectionMessages['funding_support']) {
+        <app-alert variant="success">{{ sectionMessages['funding_support'] }}</app-alert>
+      }
+      @if (sectionErrors['funding_support']) {
+        <app-alert variant="error">{{ sectionErrors['funding_support'] }}</app-alert>
+      }
+      @if (fundingSupportDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Benefits contribute to fees</label>
+            <select [(ngModel)]="fundingSupportDraft.benefitsContributeToFees" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Working tax credit</label>
+            <select [(ngModel)]="fundingSupportDraft.workingTaxCredit" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">College/uni paid to parent</label>
+            <select [(ngModel)]="fundingSupportDraft.collegeUniPaidToParent" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">College/uni paid to nursery</label>
+            <select [(ngModel)]="fundingSupportDraft.collegeUniPaidToNursery" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">3yo term-time funding</label>
+            <select [(ngModel)]="fundingSupportDraft.funding3yoTermTime" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">2yo term-time funding</label>
+            <select [(ngModel)]="fundingSupportDraft.funding2yoTermTime" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Funding support notes</label><input type="text" [(ngModel)]="fundingSupportDraft.fundingSupportNotes" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="fundingSupportDraft.fundingSupportReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'funding_support'" (btnClick)="saveFundingSupport()">Save section</app-button>
+      </div>
+    </div>
+
+    <!-- Routine care -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Routine care</h3>
+      @if (sectionMessages['routine_care']) {
+        <app-alert variant="success">{{ sectionMessages['routine_care'] }}</app-alert>
+      }
+      @if (sectionErrors['routine_care']) {
+        <app-alert variant="error">{{ sectionErrors['routine_care'] }}</app-alert>
+      }
+      @if (routineCareDraft) {
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Routine/free-text notes</label><textarea [(ngModel)]="routineCareDraft.routineCareNotes" rows="3" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"></textarea></div>
+        <div class="mt-4 flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" [(ngModel)]="routineCareDraft.routineCareReviewed" class="rounded border-gray-300 dark:border-gray-700" />
+            Section reviewed
+          </label>
+        </div>
+      }
+      <div class="mt-4">
+        <app-button variant="primary" [loading]="isSavingSection === 'routine_care'" (btnClick)="saveRoutineCare()">Save section</app-button>
       </div>
     </div>
 
     <!-- GDPR declaration -->
     <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
       <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">GDPR declaration</h3>
-      @if (gdprMessage) {
-        <app-alert variant="success">{{ gdprMessage }}</app-alert>
+      @if (sectionMessages['gdpr_declaration']) {
+        <app-alert variant="success">{{ sectionMessages['gdpr_declaration'] }}</app-alert>
       }
-      @if (gdprError) {
-        <app-alert variant="error">{{ gdprError }}</app-alert>
+      @if (sectionErrors['gdpr_declaration']) {
+        <app-alert variant="error">{{ sectionErrors['gdpr_declaration'] }}</app-alert>
       }
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Declaring person name</label>
-          <input
-            type="text"
-            [(ngModel)]="gdprName"
-            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          <input type="text" [(ngModel)]="gdprName" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
         </div>
         <div>
           <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Declaration date</label>
-          <input
-            type="date"
-            [(ngModel)]="gdprDate"
-            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+          <input type="date" [(ngModel)]="gdprDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
         </div>
       </div>
       @if (profile?.gdprDeclaration?.gdprDeclaredAt) {
-        <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-          Confirmed at: {{ profile?.gdprDeclaration?.gdprDeclaredAt | date:'medium' }}
-        </p>
+        <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Confirmed at: {{ profile?.gdprDeclaration?.gdprDeclaredAt | date:'medium' }}</p>
       }
       <div class="mt-4">
-        <app-button
-          variant="primary"
-          [isLoading]="isSavingSection === 'gdpr'"
-          (btnClick)="saveGdprDeclaration()"
-        >Save GDPR declaration</app-button>
+        <app-button variant="primary" [loading]="isSavingSection === 'gdpr_declaration'" (btnClick)="saveGdprDeclaration()">Save GDPR declaration</app-button>
       </div>
     </div>
 
@@ -194,13 +591,72 @@
           </ul>
         </div>
       }
-      <p class="text-sm text-gray-500 dark:text-gray-400">Office-use checklist items would be rendered here.</p>
+      @if (officeDraft) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Deposit status</label>
+            <select [(ngModel)]="officeDraft.depositStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Deposit paid date</label><input type="date" [(ngModel)]="officeDraft.depositPaidDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Application date status</label>
+            <select [(ngModel)]="officeDraft.applicationDateStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Application date</label><input type="date" [(ngModel)]="officeDraft.applicationDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Start date status</label>
+            <select [(ngModel)]="officeDraft.startDateStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Date left</label><input type="date" [(ngModel)]="officeDraft.dateLeft" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Sessions/days requested status</label>
+            <select [(ngModel)]="officeDraft.sessionsDaysRequestedStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Sessions/days requested</label><input type="text" [(ngModel)]="officeDraft.sessionsDaysRequested" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Term-time-only space status</label>
+            <select [(ngModel)]="officeDraft.termTimeOnlySpaceStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Contract status</label>
+            <select [(ngModel)]="officeDraft.contractStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Contract/signature date</label><input type="date" [(ngModel)]="officeDraft.contractDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Handbook status</label>
+            <select [(ngModel)]="officeDraft.handbookStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Handbook date</label><input type="date" [(ngModel)]="officeDraft.handbookDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Red Book status</label>
+            <select [(ngModel)]="officeDraft.redBookStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Red Book checked date</label><input type="date" [(ngModel)]="officeDraft.redBookCheckedDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Birth certificate/passport status</label>
+            <select [(ngModel)]="officeDraft.birthCertificatePassportStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Birth certificate/passport checked date</label><input type="date" [(ngModel)]="officeDraft.birthCertificatePassportCheckedDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Proof of address status</label>
+            <select [(ngModel)]="officeDraft.proofOfAddressStatus" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+              <option value="">--</option><option value="unknown">Unknown</option><option value="complete">Complete</option><option value="missing">Still needed</option><option value="not_applicable">Not applicable</option>
+            </select>
+          </div>
+          <div><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Proof of address checked date</label><input type="date" [(ngModel)]="officeDraft.proofOfAddressCheckedDate" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" /></div>
+        </div>
+        <div class="mt-3"><label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Checklist notes</label><textarea [(ngModel)]="officeDraft.notes" rows="2" class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"></textarea></div>
+      }
       <div class="mt-4">
-        <app-button
-          variant="primary"
-          [isLoading]="isSavingSection === 'office_use_checklist'"
-          (btnClick)="saveOfficeChecklist({})"
-        >Save checklist</app-button>
+        <app-button variant="primary" [loading]="isSavingSection === 'office_use_checklist'" (btnClick)="saveOfficeChecklist()">Save checklist</app-button>
       </div>
     </div>
   </div>
