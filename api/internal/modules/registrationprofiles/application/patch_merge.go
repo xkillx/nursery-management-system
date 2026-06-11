@@ -111,7 +111,6 @@ type RoutineCarePatch struct {
 
 type GDPRDeclarationPatch struct {
 	GDPRDeclaredByName  *string `json:"gdpr_declared_by_name,omitempty"`
-	GDPRDeclaredAt      *string `json:"gdpr_declared_at,omitempty"`
 	GDPRDeclarationDate *string `json:"gdpr_declaration_date,omitempty"`
 }
 
@@ -412,13 +411,6 @@ func applyGDPRDeclaration(p *domain.Profile, patch GDPRDeclarationPatch) error {
 	if patch.GDPRDeclaredByName != nil {
 		v := strings.TrimSpace(*patch.GDPRDeclaredByName)
 		if v == "" { p.GDPRDeclaredByName = nil } else { p.GDPRDeclaredByName = &v }
-	}
-	if patch.GDPRDeclaredAt != nil {
-		t, err := time.Parse(time.RFC3339, strings.TrimSpace(*patch.GDPRDeclaredAt))
-		if err != nil {
-			return domainerrors.Validation("Invalid request payload.", "gdpr_declared_at")
-		}
-		p.GDPRDeclaredAt = &t
 	}
 	if patch.GDPRDeclarationDate != nil {
 		t, err := time.Parse("2006-01-02", strings.TrimSpace(*patch.GDPRDeclarationDate))

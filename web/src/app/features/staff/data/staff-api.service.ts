@@ -8,6 +8,10 @@ import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '..
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
+import {
+  RegistrationProfileResponse, CollectionPasswordPayload,
+  RegistrationOfficeUseChecklistResponse, OfficeUseChecklist,
+} from '../models/registration-profile.models';
 
 interface StaffListResponse<T> {
   items: T[];
@@ -123,6 +127,50 @@ interface FundingProfileApiModel {
   funded_allowance_minutes: number;
   created_at: string;
   updated_at: string;
+}
+
+interface RegistrationProfileApiModel {
+  child: {
+    id: string;
+    full_name: string;
+    date_of_birth: string;
+  };
+  profile_exists: boolean;
+  profile: { id: string; created_at: string; updated_at: string } | null;
+  demographics_home: Record<string, unknown> | null;
+  medical_dietary: Record<string, unknown> | null;
+  health_contacts: Record<string, unknown> | null;
+  social_development: Record<string, unknown> | null;
+  parent_carers: Record<string, unknown>[];
+  emergency_contacts: Record<string, unknown>[];
+  authorised_collectors: Record<string, unknown>[];
+  collection: Record<string, unknown> | null;
+  funding_support: Record<string, unknown> | null;
+  routine_care: Record<string, unknown> | null;
+  gdpr_declaration: Record<string, unknown> | null;
+  completeness: {
+    is_complete: boolean;
+    missing_sections: string[];
+    sections: { code: string; status: string; missing_fields: string[] }[];
+  };
+}
+
+interface RegistrationOfficeUseChecklistApiModel {
+  child: {
+    id: string;
+    full_name: string;
+    date_of_birth: string;
+    start_date: string | null;
+    end_date: string | null;
+  };
+  checklist_exists: boolean;
+  checklist: { id: string; created_at: string; updated_at: string } | null;
+  office_use_checklist: Record<string, unknown>;
+  completeness: {
+    is_complete: boolean;
+    missing_fields: string[];
+    items: { code: string; status: string; label: string; missing_fields: string[] }[];
+  };
 }
 
 interface FundingOverviewApiModel {
@@ -365,6 +413,35 @@ export class StaffApiService {
       .pipe(map((overview) => this.toFundingOverviewRecord(overview)));
   }
 
+  getRegistrationProfile(childId: string): Observable<RegistrationProfileResponse> {
+    return this.http.get<RegistrationProfileApiModel>(apiUrl(`/children/${childId}/registration-profile`))
+      .pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
+  }
+
+  patchRegistrationProfile(childId: string, patch: Record<string, unknown>): Observable<RegistrationProfileResponse> {
+    return this.http.patch<RegistrationProfileApiModel>(apiUrl(`/children/${childId}/registration-profile`), patch)
+      .pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
+  }
+
+  setRegistrationCollectionPassword(childId: string, password: string): Observable<RegistrationProfileResponse> {
+    return this.http.put<RegistrationProfileApiModel>(
+      apiUrl(`/children/${childId}/registration-profile/collection-password`),
+      { password } as CollectionPasswordPayload,
+    ).pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
+  }
+
+  getRegistrationOfficeUseChecklist(childId: string): Observable<RegistrationOfficeUseChecklistResponse> {
+    return this.http.get<RegistrationOfficeUseChecklistApiModel>(
+      apiUrl(`/children/${childId}/registration-office-use-checklist`),
+    ).pipe(map((checklist) => this.toOfficeChecklistRecord(checklist)));
+  }
+
+  patchRegistrationOfficeUseChecklist(childId: string, patch: Partial<OfficeUseChecklist>): Observable<RegistrationOfficeUseChecklistResponse> {
+    return this.http.patch<RegistrationOfficeUseChecklistApiModel>(
+      apiUrl(`/children/${childId}/registration-office-use-checklist`), patch,
+    ).pipe(map((checklist) => this.toOfficeChecklistRecord(checklist)));
+  }
+
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
     return new HttpParams({
       fromObject: {
@@ -550,6 +627,117 @@ export class StaffApiService {
       fundedAllowanceMinutes: profile.funded_allowance_minutes,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
+    };
+  }
+
+  private toRegistrationProfileRecord(profile: RegistrationProfileApiModel): RegistrationProfileResponse {
+    return {
+      child: {
+        id: profile.child.id,
+        fullName: profile.child.full_name,
+        dateOfBirth: profile.child.date_of_birth,
+      },
+      profileExists: profile.profile_exists,
+      profile: profile.profile ? {
+        id: profile.profile.id,
+        createdAt: profile.profile.created_at,
+        updatedAt: profile.profile.updated_at,
+      } : null,
+      demographicsHome: profile.demographics_home as RegistrationProfileResponse['demographicsHome'],
+      medicalDietary: profile.medical_dietary as RegistrationProfileResponse['medicalDietary'],
+      healthContacts: profile.health_contacts as RegistrationProfileResponse['healthContacts'],
+      socialDevelopment: profile.social_development as RegistrationProfileResponse['socialDevelopment'],
+      parentCarers: (profile.parent_carers ?? []).map((c) => ({
+        fullName: (c as Record<string, unknown>)['full_name'] as string,
+        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
+        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
+        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
+        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
+        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
+        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
+      })),
+      emergencyContacts: (profile.emergency_contacts ?? []).map((c) => ({
+        fullName: (c as Record<string, unknown>)['full_name'] as string,
+        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
+        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
+        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
+        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
+        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
+        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
+      })),
+      authorisedCollectors: (profile.authorised_collectors ?? []).map((c) => ({
+        fullName: (c as Record<string, unknown>)['full_name'] as string,
+        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
+        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
+        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
+        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
+        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
+        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
+      })),
+      collection: profile.collection as RegistrationProfileResponse['collection'],
+      fundingSupport: profile.funding_support as RegistrationProfileResponse['fundingSupport'],
+      routineCare: profile.routine_care as RegistrationProfileResponse['routineCare'],
+      gdprDeclaration: profile.gdpr_declaration as RegistrationProfileResponse['gdprDeclaration'],
+      completeness: {
+        isComplete: profile.completeness.is_complete,
+        missingSections: profile.completeness.missing_sections,
+        sections: profile.completeness.sections.map((s) => ({
+          code: s.code,
+          status: s.status as 'complete' | 'incomplete',
+          missingFields: s.missing_fields,
+        })),
+      },
+    };
+  }
+
+  private toOfficeChecklistRecord(checklist: RegistrationOfficeUseChecklistApiModel): RegistrationOfficeUseChecklistResponse {
+    const ocr = checklist.office_use_checklist as Record<string, unknown>;
+    return {
+      child: {
+        id: checklist.child.id,
+        fullName: checklist.child.full_name,
+        dateOfBirth: checklist.child.date_of_birth,
+        startDate: checklist.child.start_date ?? null,
+        endDate: checklist.child.end_date ?? null,
+      },
+      checklistExists: checklist.checklist_exists,
+      checklist: checklist.checklist ? {
+        id: checklist.checklist.id,
+        createdAt: checklist.checklist.created_at,
+        updatedAt: checklist.checklist.updated_at,
+      } : null,
+      officeUseChecklist: {
+        depositStatus: ocr['deposit_status'] as string | null ?? null,
+        depositPaidDate: ocr['deposit_paid_date'] as string | null ?? null,
+        applicationDateStatus: ocr['application_date_status'] as string | null ?? null,
+        applicationDate: ocr['application_date'] as string | null ?? null,
+        startDateStatus: ocr['start_date_status'] as string | null ?? null,
+        dateLeft: ocr['date_left'] as string | null ?? null,
+        sessionsDaysRequestedStatus: ocr['sessions_days_requested_status'] as string | null ?? null,
+        sessionsDaysRequested: ocr['sessions_days_requested'] as string | null ?? null,
+        termTimeOnlySpaceStatus: ocr['term_time_only_space_status'] as string | null ?? null,
+        contractStatus: ocr['contract_status'] as string | null ?? null,
+        contractDate: ocr['contract_date'] as string | null ?? null,
+        handbookStatus: ocr['handbook_status'] as string | null ?? null,
+        handbookDate: ocr['handbook_date'] as string | null ?? null,
+        redBookStatus: ocr['red_book_status'] as string | null ?? null,
+        redBookCheckedDate: ocr['red_book_checked_date'] as string | null ?? null,
+        birthCertificatePassportStatus: ocr['birth_certificate_passport_status'] as string | null ?? null,
+        birthCertificatePassportCheckedDate: ocr['birth_certificate_passport_checked_date'] as string | null ?? null,
+        proofOfAddressStatus: ocr['proof_of_address_status'] as string | null ?? null,
+        proofOfAddressCheckedDate: ocr['proof_of_address_checked_date'] as string | null ?? null,
+        notes: ocr['notes'] as string | null ?? null,
+      },
+      completeness: {
+        isComplete: checklist.completeness.is_complete,
+        missingFields: checklist.completeness.missing_fields,
+        items: checklist.completeness.items.map((item) => ({
+          code: item.code,
+          status: item.status as 'complete' | 'incomplete',
+          label: item.label,
+          missingFields: item.missing_fields,
+        })),
+      },
     };
   }
 }

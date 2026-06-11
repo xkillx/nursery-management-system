@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -73,6 +74,18 @@ func (uc *UpdateProfile) Execute(ctx context.Context, actor tenant.ActorContext,
 		changedSections, err := MergePatch(profile, patch)
 		if err != nil {
 			return err
+		}
+
+		for _, cs := range changedSections {
+			if cs == domain.SectionGDPRDeclaration {
+				if profile.GDPRDeclaredByName != nil && *profile.GDPRDeclaredByName != "" && profile.GDPRDeclarationDate != nil {
+					now := time.Now().UTC()
+					profile.GDPRDeclaredAt = &now
+				} else {
+					profile.GDPRDeclaredAt = nil
+				}
+				break
+			}
 		}
 
 		if len(changedSections) == 0 {
