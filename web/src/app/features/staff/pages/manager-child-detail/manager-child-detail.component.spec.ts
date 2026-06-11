@@ -85,6 +85,38 @@ describe('ManagerChildDetailComponent', () => {
     updatedAt: '2026-06-08T12:00:00Z',
   };
 
+  const mockRegistrationProfile = {
+    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15' },
+    profileExists: true,
+    profile: { id: 'rp-1', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+    demographicsHome: null,
+    medicalDietary: null,
+    healthContacts: null,
+    socialDevelopment: null,
+    parentCarers: [],
+    emergencyContacts: [],
+    authorisedCollectors: [],
+    collection: null,
+    fundingSupport: null,
+    routineCare: null,
+    gdprDeclaration: null,
+    completeness: { isComplete: false, missingSections: ['child_demographics_home'], sections: [] },
+  };
+
+  const mockOfficeChecklist = {
+    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15', startDate: '2023-01-10', endDate: null },
+    checklistExists: false,
+    checklist: null,
+    officeUseChecklist: {
+      depositStatus: null, depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
+      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
+      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
+      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
+      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
+    },
+    completeness: { isComplete: false, missingFields: ['deposit'], items: [] },
+  };
+
   function fundingNotFound404(): HttpErrorResponse {
     return new HttpErrorResponse({
       status: 404,
@@ -96,6 +128,7 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock = jasmine.createSpyObj('StaffApiService', [
       'getChild', 'listChildGuardianLinks', 'listGuardians', 'updateChild',
       'createGuardianChildLink', 'getFundingProfile', 'upsertFundingProfile',
+      'getRegistrationProfile', 'getRegistrationOfficeUseChecklist',
     ]);
 
     staffApiMock.getChild.and.returnValue(of(mockChild));
@@ -105,6 +138,8 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.createGuardianChildLink.and.returnValue(of({} as any));
     staffApiMock.getFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.upsertFundingProfile.and.returnValue(of(mockFundingProfile));
+    staffApiMock.getRegistrationProfile.and.returnValue(of(mockRegistrationProfile));
+    staffApiMock.getRegistrationOfficeUseChecklist.and.returnValue(of(mockOfficeChecklist));
 
     await TestBed.configureTestingModule({
       imports: [ManagerChildDetailComponent],

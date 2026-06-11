@@ -48,9 +48,13 @@ Managers may maintain the full registration/enrolment profile for children in th
 
 Registration profile completeness describes whether the child-linked registration/enrolment profile has the expected care, contact, health, emergency, and family information captured. It is separate from MVP enrollment completeness and does not block attendance, funding, invoicing, or parent invoice access in API-PM-01.
 
+## Registration/Enrolment Workflow Completion (Post-MVP)
+
+The manager registration/enrolment workflow may present registration profile completion and office-use checklist completion together, but they remain separate statuses because one describes child and family care information while the other describes nursery administrative verification. These statuses are manager follow-up indicators only and do not change the MVP enrollment gate for attendance, funding, invoicing, or parent invoice access.
+
 ## Registration Section Completeness (Post-MVP)
 
-Registration profile completeness is section-based rather than a requirement that every paper-form field is filled. A section may be complete when the manager has reviewed it and captured the relevant information, including explicit none or no answers where there is nothing to record.
+Registration profile completeness is section-based rather than a requirement that every paper-form field is filled. A section may be complete when the manager has reviewed it and captured the relevant information, including explicit none, no, or not-applicable answers where there is nothing to record.
 
 ## Registration Profile Partial Save (Post-MVP)
 
@@ -94,7 +98,15 @@ A history of parent or guardian decisions and acknowledgements for care, safegua
 
 ## Office-Use Enrolment Checklist (Post-MVP)
 
-A manager-facing record of nursery administrative checks around an application, start, leaving, contracts, handbooks, and proof documents. It is separate from the registration/enrolment profile because it describes nursery verification work rather than child or family care information.
+A manager-facing record of nursery administrative checks around an application, start, leaving, contracts, handbooks, and proof documents. It is conceptually separate from the registration/enrolment profile because it describes nursery verification work rather than child or family care information, but managers may complete it alongside the profile in the same registration/enrolment workflow.
+
+## Office-Use Checklist Completeness (Post-MVP)
+
+Office-use checklist completeness requires manager review of deposit, application date, start date, sessions/days requested, term-time-only space, contract/signature, handbook, Red Book, birth certificate/passport, and proof of address. A checklist item may be complete through an explicit not-applicable answer; date left is optional for current children and does not make the checklist incomplete.
+
+## Office-Use Dates vs Enrollment Dates (Post-MVP)
+
+Office-use start-date and date-left checks are administrative verification metadata and do not update the child's operational enrollment start or end dates. Operational enrollment dates remain managed through the child record and its enrollment window integrity rules.
 
 ## User Role: Owner
 
@@ -327,6 +339,10 @@ The GBP hourly fee used to price a child's core childcare attendance before fund
 ## Child Detail/Enrollment Surface (MVP)
 
 A manager-facing child-focused view for inspecting whether a child has the minimum data needed for attendance and invoicing. It separates enrollment completeness from month-specific funding profile readiness.
+
+## Manager Registration/Enrolment Editor (Post-MVP)
+
+A child-scoped manager workflow for maintaining the full registration/enrolment profile and the office-use checklist. It is reached from the child detail/enrollment surface, while the child detail page remains the compact summary for child basics, MVP enrollment readiness, linked guardians, funding, and registration follow-up status.
 
 ## No Hard-Delete Core Records (MVP)
 

@@ -28,6 +28,7 @@ api/.env
 api/tmp/
 api/server
 api/api
+api/seed
 
 # =====================
 # Angular / Frontend (web/)
