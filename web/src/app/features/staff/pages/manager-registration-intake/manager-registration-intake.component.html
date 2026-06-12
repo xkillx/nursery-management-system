@@ -222,16 +222,18 @@
                   <p class="mt-1 text-sm text-gray-500">Optional details can be completed now or updated later.</p>
                 </div>
 
-                <app-form-field label="Address line 1" labelFor="child-home-address">
-                  <app-input-field
-                    id="child-home-address"
-                    name="home_address"
-                    type="text"
-                    [(ngModel)]="step1.home_address"
-                    autocomplete="street-address"
-                    placeholder="e.g. 123 High Street"
-                  />
-                </app-form-field>
+                <div class="grid grid-cols-1 gap-5">
+                  <app-form-field label="Address line 1" labelFor="child-home-address">
+                    <app-input-field
+                      id="child-home-address"
+                      name="home_address"
+                      type="text"
+                      [(ngModel)]="step1.home_address"
+                      autocomplete="street-address"
+                      placeholder="e.g. 123 High Street"
+                    />
+                  </app-form-field>
+                </div>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                   <app-form-field label="Home telephone" labelFor="child-home-telephone">
