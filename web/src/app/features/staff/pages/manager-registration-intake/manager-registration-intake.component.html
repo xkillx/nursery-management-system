@@ -379,12 +379,12 @@
             </div>
 
             <div class="space-y-8 p-5 md:p-6">
-              <section class="space-y-4">
+              <section class="space-y-4" aria-labelledby="medical-allergies-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroExclamationTriangle" size="24" class="text-error-500" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Allergies & Dietary Needs</h4>
+                  <ng-icon name="heroExclamationTriangle" size="24" class="text-warning-500" aria-hidden="true" />
+                  <h4 id="medical-allergies-heading" class="text-xl font-semibold">Allergies & Dietary Needs</h4>
                 </div>
-                <div class="rounded-lg border border-error-200 bg-error-50 p-5">
+                <div class="rounded-lg border border-warning-200 bg-warning-50 p-5">
                   <app-checkbox
                     name="has_allergies"
                     [(ngModel)]="step2.has_allergies"
@@ -404,10 +404,10 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-medications-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentCheck" size="24" class="text-brand-600" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Routine Medications</h4>
+                  <h4 id="medical-medications-heading" class="text-xl font-semibold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5">
                   <app-checkbox
@@ -443,10 +443,10 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-immunisations-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="24" class="text-success-500" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Immunisations</h4>
+                  <h4 id="medical-immunisations-heading" class="text-xl font-semibold">Immunisations</h4>
                 </div>
                 <p class="text-sm italic text-gray-600">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -464,10 +464,10 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-history-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroClipboardDocumentList" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Medical History & Diet</h4>
+                  <ng-icon name="heroClipboardDocumentList" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-history-heading" class="text-xl font-semibold">Medical History & Diet</h4>
                 </div>
                 @if (step2.immunisation_status === 'up_to_date' || step2.immunisation_status === 'partial') {
                   <app-form-field label="Country where child was immunised">
@@ -494,10 +494,10 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-professionals-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroUserGroup" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Registered Professionals</h4>
+                  <ng-icon name="heroUserGroup" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-professionals-heading" class="text-xl font-semibold">Registered Professionals</h4>
                 </div>
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <div class="space-y-4">
@@ -527,10 +527,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-safeguarding-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroUser" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Social Services & Safeguarding</h4>
+                  <ng-icon name="heroScale" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-safeguarding-heading" class="text-xl font-semibold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4">
                   <app-checkbox
@@ -560,10 +560,10 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-developmental-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroHeart" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Developmental Concerns</h4>
+                  <ng-icon name="heroSparkles" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-developmental-heading" class="text-xl font-semibold">Developmental Concerns</h4>
                 </div>
                 <p class="text-sm italic text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -581,10 +581,10 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-referrals-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroAcademicCap" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Professional Referrals</h4>
+                  <ng-icon name="heroAcademicCap" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-referrals-heading" class="text-xl font-semibold">Professional Referrals</h4>
                 </div>
                 <p class="text-sm italic text-gray-600">Record any referrals made by healthcare or education professionals (e.g. Community Paediatrician, Speech and Language Therapist, EYIS).</p>
                 <app-form-field label="Referral details">
@@ -596,10 +596,10 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-routine-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroInformationCircle" size="24" class="text-gray-700" aria-hidden="true" />
-                  <h4 class="text-xl font-semibold">Routine Care & Further Information</h4>
+                  <ng-icon name="heroInformationCircle" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h4 id="medical-routine-heading" class="text-xl font-semibold">Routine Care & Further Information</h4>
                 </div>
                 <p class="text-sm italic text-gray-600">Any additional information we should know about the child, such as special words, comforters, routines, etc.</p>
                 <app-form-field label="Routine care notes">
