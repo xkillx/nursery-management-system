@@ -88,7 +88,7 @@ export class TextAreaComponent implements ControlValueAccessor {
   }
 
   get textareaClasses(): string {
-    let base = `w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs focus:outline-hidden ${this.className} `;
+    let base = `w-full rounded-xl border px-4 py-3 text-sm shadow-theme-xs focus:outline-hidden min-h-[120px] ${this.className} `;
     if (this.disabled) {
       base += 'bg-gray-100 opacity-50 text-gray-500 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
     } else if (this.error) {

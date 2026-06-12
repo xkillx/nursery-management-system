@@ -8,7 +8,7 @@ import { Component, Input } from '@angular/core';
     <div [class]="className">
       @if (label) {
         <label
-          class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400"
           [attr.for]="labelFor"
         >
           {{ label }}

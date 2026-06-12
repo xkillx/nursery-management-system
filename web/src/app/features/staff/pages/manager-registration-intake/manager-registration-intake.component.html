@@ -108,14 +108,14 @@
               </div>
             </div>
 
-            <form class="space-y-8 p-5 md:p-6" (ngSubmit)="saveChildBasics()" novalidate>
-              <section class="space-y-5" aria-labelledby="child-identity-heading">
+            <form class="space-y-12 p-5 md:p-6" (ngSubmit)="saveChildBasics()" novalidate>
+              <section class="space-y-6" aria-labelledby="child-identity-heading">
                 <div>
                   <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950">Identity</h3>
                   <p class="mt-1 text-sm text-gray-500">First name, surname, date of birth, and start date are required.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field
                     label="First name(s)"
                     labelFor="child-first-name"
@@ -157,7 +157,7 @@
                   </app-form-field>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field
                     label="Date of birth"
                     labelFor="child-date-of-birth"
@@ -186,7 +186,7 @@
                           [value]="gender.value"
                           [label]="gender.label"
                           [checked]="step1.sex === gender.value"
-                          className="min-h-12 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-theme-xs"
+                          className="min-h-12 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-theme-xs"
                           (valueChange)="step1.sex = $event"
                         />
                       }
@@ -194,7 +194,7 @@
                   </fieldset>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Primary language spoken at home" labelFor="child-first-language">
                     <app-select
                       id="child-first-language"
@@ -225,13 +225,13 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="home-address-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="home-address-heading">
                 <div>
                   <h3 id="home-address-heading" class="text-lg font-bold text-gray-950">Home address</h3>
                   <p class="mt-1 text-sm text-gray-500">Optional details can be completed now or updated later.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5">
+                <div class="grid grid-cols-1 gap-8">
                   <app-form-field label="Address line 1" labelFor="child-home-address">
                     <app-input-field
                       id="child-home-address"
@@ -244,7 +244,7 @@
                   </app-form-field>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Home telephone" labelFor="child-home-telephone">
                     <app-input-field
                       id="child-home-telephone"
@@ -269,13 +269,13 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="additional-details-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="additional-details-heading">
                 <div>
                   <h3 id="additional-details-heading" class="text-lg font-bold text-gray-950">Additional Details</h3>
                   <p class="mt-1 text-sm text-gray-500">Demographics and access information from the paper form.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <app-form-field label="Religion" labelFor="child-religion">
                     <app-select
                       id="child-religion"
@@ -309,7 +309,7 @@
                   </app-form-field>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <app-form-field label="Disability" labelFor="child-disability-status">
                     <app-select
                       id="child-disability-status"
@@ -351,7 +351,7 @@
                 }
               </section>
 
-              <section class="border-t border-gray-200 pt-6" aria-labelledby="child-notes-heading">
+              <section class="border-t border-gray-200 pt-8" aria-labelledby="child-notes-heading">
                 <app-form-field label="Child notes" labelFor="child-notes">
                   <app-text-area
                     id="child-notes"
@@ -363,7 +363,7 @@
                 </app-form-field>
               </section>
 
-              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
+              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-gray-200 pt-8 sm:flex-row sm:items-center">
                 <button type="button" (click)="saveChildBasics(false)" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center rounded-lg px-6 text-base font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:opacity-60">
                   {{ isSaving ? 'Saving...' : 'Save draft' }}
                 </button>
@@ -399,11 +399,11 @@
               </div>
             </div>
 
-            <div class="space-y-8 p-5 md:p-6">
-              <section class="space-y-5" aria-labelledby="medical-allergies-heading">
+            <div class="space-y-12 p-5 md:p-6">
+              <section class="space-y-6" aria-labelledby="medical-allergies-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroExclamationTriangle" size="20" class="shrink-0 text-warning-500" aria-hidden="true" />
-                  <h4 id="medical-allergies-heading" class="text-xl font-semibold">Allergies & Dietary Needs</h4>
+                  <h4 id="medical-allergies-heading" class="text-lg font-bold">Allergies & Dietary Needs</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-5">
                   <app-checkbox
@@ -425,10 +425,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-medications-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-medications-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-medications-heading" class="text-xl font-semibold">Routine Medications</h4>
+                  <h4 id="medical-medications-heading" class="text-lg font-bold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5">
                   <app-checkbox
@@ -437,7 +437,7 @@
                     label="Is the child currently taking any regular medication?"
                   />
                   @if (step2.on_medication) {
-                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div class="mt-5 grid grid-cols-1 gap-8 md:grid-cols-2">
                       <app-form-field label="Medication name">
                         <app-input-field
                           type="text"
@@ -464,10 +464,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-immunisations-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-immunisations-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
-                  <h4 id="medical-immunisations-heading" class="text-xl font-semibold">Immunisations</h4>
+                  <h4 id="medical-immunisations-heading" class="text-lg font-bold">Immunisations</h4>
                 </div>
                 <p class="text-sm text-gray-600">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -478,17 +478,17 @@
                       [value]="option.value"
                       [label]="option.label"
                       [checked]="step2.immunisation_status === option.value"
-                      className="min-h-12 rounded-lg border border-gray-300 bg-white px-4"
+                      className="min-h-12 rounded-xl border border-gray-300 bg-white px-4"
                       (valueChange)="step2.immunisation_status = $event"
                     />
                   }
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-history-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-history-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentList" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-history-heading" class="text-xl font-semibold">Medical History & Diet</h4>
+                  <h4 id="medical-history-heading" class="text-lg font-bold">Medical History & Diet</h4>
                 </div>
                 @if (step2.immunisation_status === 'up_to_date' || step2.immunisation_status === 'partial') {
                   <app-form-field label="Country where child was immunised">
@@ -515,13 +515,13 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-professionals-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-professionals-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-professionals-heading" class="text-xl font-semibold">Registered Professionals</h4>
+                  <h4 id="medical-professionals-heading" class="text-lg font-bold">Registered Professionals</h4>
                 </div>
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div class="space-y-6">
+                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    <div class="space-y-6">
                     <h5 class="text-sm font-semibold uppercase tracking-wide text-gray-600">GP / Doctor Details</h5>
                     <app-form-field label="Practice name">
                       <app-input-field type="text" [(ngModel)]="step2.doctor_practice" placeholder="Practice name" />
@@ -548,10 +548,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-safeguarding-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-safeguarding-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-safeguarding-heading" class="text-xl font-semibold">Social Services & Safeguarding</h4>
+                  <h4 id="medical-safeguarding-heading" class="text-lg font-bold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4">
                   <app-checkbox
@@ -561,7 +561,7 @@
                     className="checked:bg-warning-500"
                   />
                   @if (step2.social_services_involvement) {
-                    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div class="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2">
                       <app-form-field label="Details of social services involvement">
                         <app-text-area
                           [(ngModel)]="step2.social_services_details"
@@ -581,10 +581,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-developmental-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-developmental-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroChartBarSquare" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-developmental-heading" class="text-xl font-semibold">Developmental Concerns</h4>
+                  <h4 id="medical-developmental-heading" class="text-lg font-bold">Developmental Concerns</h4>
                 </div>
                 <p class="text-sm text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -602,10 +602,10 @@
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-referrals-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-referrals-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroAcademicCap" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-referrals-heading" class="text-xl font-semibold">Professional Referrals</h4>
+                  <h4 id="medical-referrals-heading" class="text-lg font-bold">Professional Referrals</h4>
                 </div>
                 <p class="text-sm text-gray-600">Record any referrals made by healthcare or education professionals (e.g. Community Paediatrician, Speech and Language Therapist, EYIS).</p>
                 <app-form-field label="Referral details">
@@ -617,10 +617,10 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-routine-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8" aria-labelledby="medical-routine-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroInformationCircle" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="medical-routine-heading" class="text-xl font-semibold">Routine Care & Further Information</h4>
+                  <h4 id="medical-routine-heading" class="text-lg font-bold">Routine Care & Further Information</h4>
                 </div>
                 <p class="text-sm text-gray-600">Any additional information we should know about the child, such as special words, comforters, routines, etc.</p>
                 <app-form-field label="Routine care notes">
@@ -632,7 +632,7 @@
                 </app-form-field>
               </section>
 
-              <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back to Child Details
@@ -664,13 +664,13 @@
             <div class="space-y-6 p-5 md:p-6">
 
               @if (parentCarersDraft[0]; as parent) {
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Primary parent/carer full name">
                     <app-input-field
                       type="text"
                       [(ngModel)]="parent.fullName"
                       autocomplete="name"
-                      className="h-12"
+                      
                       placeholder="e.g. Sarah Johnson"
                     />
                   </app-form-field>
@@ -687,7 +687,7 @@
                       type="tel"
                       [(ngModel)]="parent.telephone"
                       autocomplete="tel"
-                      className="h-12"
+                      
                       placeholder="+44 7000 000000"
                     />
                   </app-form-field>
@@ -696,7 +696,7 @@
                       type="email"
                       [(ngModel)]="parent.email"
                       autocomplete="email"
-                      className="h-12"
+                      
                       placeholder="sarah.j@example.com"
                     />
                   </app-form-field>
@@ -704,7 +704,7 @@
                     <app-input-field
                       type="text"
                       [(ngModel)]="step3.parent1_address"
-                      className="h-12"
+                      
                       placeholder="e.g. 123 High Street, London"
                     />
                   </app-form-field>
@@ -719,17 +719,17 @@
               }
 
               @if (step3.show_second_parent) {
-                <div class="border-t border-gray-200 pt-6">
+                <div class="border-t border-gray-200 pt-8">
                   <div class="mb-4 flex items-center justify-between gap-3">
                     <h4 class="text-lg font-bold text-gray-950">Second Parent/Carer</h4>
                     <button type="button" (click)="step3.show_second_parent = false" class="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
                   </div>
-                  <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <app-form-field label="Full name">
                       <app-input-field
                         type="text"
                         [(ngModel)]="step3.second_parent_name"
-                        className="h-12"
+                        
                         placeholder="e.g. Mark Johnson"
                       />
                     </app-form-field>
@@ -745,7 +745,7 @@
                       <app-input-field
                         type="tel"
                         [(ngModel)]="step3.second_parent_telephone"
-                        className="h-12"
+                        
                         placeholder="+44 7000 000000"
                       />
                     </app-form-field>
@@ -753,7 +753,7 @@
                       <app-input-field
                         type="email"
                         [(ngModel)]="step3.second_parent_email"
-                        className="h-12"
+                        
                         placeholder="mark.j@example.com"
                       />
                     </app-form-field>
@@ -761,7 +761,7 @@
                       <app-input-field
                         type="text"
                         [(ngModel)]="step3.second_parent_address"
-                        className="h-12"
+                        
                         placeholder="Different address if applicable"
                       />
                     </app-form-field>
@@ -785,7 +785,7 @@
 
               <div class="rounded-lg bg-brand-50 p-5">
                 <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
                   <div class="space-y-3">
                     <app-checkbox
                       name="applying_for_funding"
@@ -833,7 +833,7 @@
                     <app-input-field
                       type="text"
                       [(ngModel)]="step3.national_insurance_number"
-                      className="h-12 uppercase bg-white"
+                      className="uppercase bg-white"
                       placeholder="QQ 12 34 56 C"
                     />
                   </app-form-field>
@@ -856,10 +856,10 @@
               </div>
             </div>
             <div class="p-5 md:p-6">
-              <div class="space-y-5">
+              <div class="space-y-6">
                 @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
                   <div class="rounded-lg border border-gray-200 p-4">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                       <app-form-field label="Contact name">
                         <app-input-field
                           type="text"
@@ -906,17 +906,17 @@
                 <h2 class="relative text-2xl font-bold text-gray-950 dark:text-white/90">Authorised Collection Password</h2>
               </div>
             </div>
-            <div class="space-y-5 p-5 md:p-6">
+            <div class="space-y-6 p-5 md:p-6">
               <p class="relative max-w-2xl leading-6 text-gray-700">
                 As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
               </p>
-              <div class="relative grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div class="relative grid grid-cols-1 gap-8 md:grid-cols-2">
                 <app-form-field label="Set collection password">
                   <app-input-field
                     type="password"
                     [(ngModel)]="step3.collection_password"
                     autocomplete="new-password"
-                    className="h-12"
+                    
                     placeholder="Min. 6 characters"
                   />
                 </app-form-field>
@@ -924,7 +924,7 @@
                   <app-input-field
                     type="text"
                     [(ngModel)]="step3.collection_password_hint"
-                    className="h-12"
+                    
                     placeholder="e.g. Mother's maiden name"
                   />
                 </app-form-field>
@@ -967,7 +967,7 @@
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Professional Liaison</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
+            <div class="p-5 md:p-6 space-y-6">
             <p class="max-w-3xl text-sm leading-6 text-gray-600">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
             <div class="space-y-3">
               @for (item of professionalConsentItems; track item.key) {
@@ -996,7 +996,7 @@
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Child Protection & Medical Authority</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
+            <div class="p-5 md:p-6 space-y-6">
             <div class="rounded-lg border border-error-200 bg-error-50 p-4">
               <p class="text-sm font-medium leading-6 text-error-700">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
             </div>
@@ -1020,7 +1020,7 @@
                 <app-input-field
                   type="text"
                   [(ngModel)]="step4.urgent_medical_treatment_exceptions"
-                  className="h-12"
+                  
                   placeholder="Urgent treatment exceptions, if any"
                 />
               </app-form-field>
@@ -1058,7 +1058,7 @@
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Photographs & Social Media</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
+            <div class="p-5 md:p-6 space-y-6">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               @for (item of photoConsentItems; track item.key) {
                 <div class="rounded-lg border border-gray-200 bg-brand-50 p-4">
@@ -1101,25 +1101,25 @@
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Paper-Form Evidence & Confirmation</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div class="p-5 md:p-6 space-y-6">
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
               <app-form-field label="Parent/guardian name" [required]="true">
                 <app-input-field
                   type="text"
                   [(ngModel)]="step4.signer_name"
                   autocomplete="name"
-                  className="h-12"
+                  
                   placeholder="Enter full name from paper form"
                 />
               </app-form-field>
               <app-form-field label="Signed date" [required]="true">
                 <app-date-picker
                   [(ngModel)]="step4.signed_date"
-                  className="h-12"
+                  
                 />
               </app-form-field>
             </div>
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
               <div class="rounded-lg bg-brand-50 p-4">
                 <app-checkbox
                   name="paper_form_on_file"
@@ -1130,7 +1130,7 @@
               <app-form-field label="Application date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.applicationDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
               <app-form-field label="Birth certificate/passport">
@@ -1141,7 +1141,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
               <app-form-field label="Deposit status">
                 <app-select
                   [(ngModel)]="officeEvidence.depositStatus"
@@ -1153,7 +1153,7 @@
                 <app-form-field label="Deposit paid date">
                   <app-date-picker
                     [(ngModel)]="officeEvidence.depositPaidDate"
-                    className="h-12"
+                    
                   />
                 </app-form-field>
               }
@@ -1161,12 +1161,12 @@
                 <app-input-field
                   type="text"
                   [(ngModel)]="officeEvidence.sessionsDaysRequested"
-                  className="h-12"
+                  
                   placeholder="e.g. Mon-Wed 8am-6pm"
                 />
               </app-form-field>
             </div>
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
               <app-form-field label="Term time only space">
                 <app-select
                   [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
@@ -1177,33 +1177,33 @@
               <app-form-field label="Contract date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.contractDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
               <app-form-field label="Handbook date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.handbookDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
             </div>
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
               <app-form-field label="Red Book checked date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.redBookCheckedDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
               <app-form-field label="Birth cert/passport checked date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.birthCertificatePassportCheckedDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
               <app-form-field label="Proof of address checked date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.proofOfAddressCheckedDate"
-                  className="h-12"
+                  
                 />
               </app-form-field>
             </div>
@@ -1224,23 +1224,23 @@
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">GDPR Declaration</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
+            <div class="p-5 md:p-6 space-y-6">
               <p class="max-w-3xl text-sm leading-6 text-gray-600">
                 The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
               </p>
-              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                 <app-form-field label="GDPR declared by (name)">
                   <app-input-field
                     type="text"
                     [(ngModel)]="step4_gdpr.gdpr_declared_by_name"
-                    className="h-12"
+                    
                     placeholder="Enter parent/carer full name"
                   />
                 </app-form-field>
                 <app-form-field label="GDPR declaration date">
                   <app-date-picker
                     [(ngModel)]="step4_gdpr.gdpr_declaration_date"
-                    className="h-12"
+                    
                   />
                 </app-form-field>
               </div>
@@ -1318,7 +1318,7 @@
               </div>
               <div class="p-5 md:p-6">
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div class="space-y-5">
+                <div class="space-y-6">
                   <div>
                     <p class="mb-1 text-xs font-bold uppercase text-gray-500">Full Name</p>
                     <p class="text-lg">{{ childFullNameDraft || child?.fullName || '-' }}</p>
@@ -1332,7 +1332,7 @@
                     <p class="text-lg">{{ step1.start_date || child?.startDate || '-' }}</p>
                   </div>
                 </div>
-                <div class="space-y-5">
+                <div class="space-y-6">
                   <div>
                     <p class="mb-1 text-xs font-bold uppercase text-gray-500">Primary Contact</p>
                     <p class="text-lg">{{ parentCarersDraft[0]?.fullName || '-' }} <span class="text-gray-500">({{ parentCarersDraft[0]?.relationshipToChild || 'Parent/Carer' }})</span></p>
