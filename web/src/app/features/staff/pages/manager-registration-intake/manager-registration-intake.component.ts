@@ -665,14 +665,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   saveChildBasics(advance = true): void {
     this.step1Submitted = true;
 
-    if (this.step1MissingRequiredFields.length > 0) {
-      this.errorMessage = advance
-        ? 'Complete the required child details before continuing.'
-        : 'Complete the required child details before saving a draft.';
-      this.focusFirstStep1Error();
-      return;
-    }
-
     this.isSaving = true;
     this.errorMessage = null;
     this.fieldErrors = {};
