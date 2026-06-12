@@ -12,7 +12,7 @@ import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/child
 import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
 import { RegistrationProfileCompleteness, OfficeUseCompleteness, RegistrationWorkflowStatus } from '../../models/registration-profile.models';
-import { formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
+import { formatSiteRate, formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { formatCompletionStatus, getCompletionBadgeClass } from '../../utils/registration-profile-formatters';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
@@ -45,6 +45,7 @@ export class ManagerChildDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly formatRate = formatHourlyRateGbp;
+  readonly formatSiteRate = formatSiteRate;
   readonly requirementLabel = missingRequirementLabel;
   readonly formatCompletionStatus = formatCompletionStatus;
   readonly getCompletionBadgeClass = getCompletionBadgeClass;

@@ -3,7 +3,6 @@ import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/
 import { FormsModule } from '@angular/forms';
 
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
-import { minorToPounds, poundsToMinor } from '../../utils/manager-list-formatters';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -13,7 +12,6 @@ type ChildFormValue = {
   full_name: string;
   date_of_birth: string;
   start_date: string;
-  core_hourly_rate_gbp: number | null;
   end_date: string;
   notes: string;
 };
@@ -57,10 +55,6 @@ export class ChildFormComponent {
       notes: this.form.notes.trim(),
     };
 
-    if (this.form.core_hourly_rate_gbp !== null && this.form.core_hourly_rate_gbp !== undefined) {
-      payload.core_hourly_rate_minor = poundsToMinor(this.form.core_hourly_rate_gbp);
-    }
-
     this.saved.emit(payload);
   }
 
@@ -69,7 +63,6 @@ export class ChildFormComponent {
       full_name: child.fullName,
       date_of_birth: child.dateOfBirth,
       start_date: child.startDate,
-      core_hourly_rate_gbp: minorToPounds(child.coreHourlyRateMinor),
       end_date: child.endDate ?? '',
       notes: child.notes ?? '',
     };
@@ -80,7 +73,6 @@ export class ChildFormComponent {
       full_name: '',
       date_of_birth: '',
       start_date: '',
-      core_hourly_rate_gbp: null,
       end_date: '',
       notes: '',
     };

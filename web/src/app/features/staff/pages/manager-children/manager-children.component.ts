@@ -7,7 +7,7 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
-import { formatHourlyRateGbp, missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
+import { missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
@@ -43,7 +43,6 @@ export class ManagerChildrenComponent {
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
 
   readonly statusLabel = statusFilterLabel;
-  readonly formatRate = formatHourlyRateGbp;
   get statusSelectOptions(): Option[] {
     return this.statusOptions.map(s => ({ value: s, label: statusFilterLabel(s) }));
   }

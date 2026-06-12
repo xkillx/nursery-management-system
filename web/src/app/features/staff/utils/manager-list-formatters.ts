@@ -8,6 +8,14 @@ export function formatHourlyRateGbp(minorUnits: number | null): string {
   return `£${pounds.toFixed(2)}/hr`;
 }
 
+export function formatSiteRate(minorUnits: number | null | undefined): string {
+  if (minorUnits === null || minorUnits === undefined) {
+    return 'Not set';
+  }
+  const pounds = minorUnits / 100;
+  return `£${pounds.toFixed(2)}/hr`;
+}
+
 export function minorToPounds(minorUnits: number | null): number | null {
   if (minorUnits === null || minorUnits === undefined) {
     return null;
@@ -32,7 +40,6 @@ const REQUIREMENT_LABELS: Record<string, string> = {
   full_name: 'Full name',
   date_of_birth: 'Date of birth',
   start_date: 'Start date',
-  billing_rate: 'Billing rate',
   guardian_link: 'Linked guardian',
 };
 

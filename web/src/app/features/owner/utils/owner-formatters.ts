@@ -31,13 +31,23 @@ export function formatGrantOutcome(outcome: string): string {
   return labels[outcome] ?? outcome.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+export function formatSiteRate(minorUnits: number | null | undefined): string {
+  if (minorUnits === null || minorUnits === undefined) {
+    return 'Not set';
+  }
+  const pounds = minorUnits / 100;
+  return `£${pounds.toFixed(2)}/hr`;
+}
+
 export function isExceptionSite(site: {
   activeManagerCount: number;
+  setupIssues?: string[];
   invoicePaymentHealth: { overdueOutstandingMinor: number; paymentFailedCount: number; outstandingMinor: number };
   attendance: { incompleteAttendanceCount: number };
   fundingReadiness: { flaggedChildCount: number };
 }): boolean {
   if (site.activeManagerCount === 0) return true;
+  if (site.setupIssues && site.setupIssues.length > 0) return true;
   if (site.invoicePaymentHealth.overdueOutstandingMinor > 0) return true;
   if (site.invoicePaymentHealth.paymentFailedCount > 0) return true;
   if (site.invoicePaymentHealth.outstandingMinor > 0) return true;

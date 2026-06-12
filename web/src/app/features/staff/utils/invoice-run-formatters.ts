@@ -45,7 +45,7 @@ export interface BlockerNextAction {
 const BLOCKER_LABELS: Record<string, string> = {
   incomplete_attendance: 'Incomplete attendance',
   missing_funding_profile: 'Missing funding profile',
-  missing_billing_rate: 'Missing billing rate',
+  missing_billing_rate: 'Missing site billing rate',
   missing_child_name: 'Missing child name',
   missing_child_date_of_birth: 'Missing date of birth',
   missing_child_start_date: 'Missing start date',

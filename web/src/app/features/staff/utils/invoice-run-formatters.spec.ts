@@ -54,7 +54,7 @@ describe('invoice-run-formatters', () => {
     it('returns human-readable label for preflight codes', () => {
       expect(blockerLabel('incomplete_attendance')).toBe('Incomplete attendance');
       expect(blockerLabel('missing_funding_profile')).toBe('Missing funding profile');
-      expect(blockerLabel('missing_billing_rate')).toBe('Missing billing rate');
+      expect(blockerLabel('missing_billing_rate')).toBe('Missing site billing rate');
       expect(blockerLabel('missing_child_name')).toBe('Missing child name');
       expect(blockerLabel('missing_child_date_of_birth')).toBe('Missing date of birth');
       expect(blockerLabel('missing_child_start_date')).toBe('Missing start date');
@@ -92,7 +92,7 @@ describe('invoice-run-formatters', () => {
       expect(action.route).toEqual(['/staff/manager/funding']);
     });
 
-    it('routes missing billing rate to child detail', () => {
+    it('routes missing site billing rate to child detail', () => {
       const action = blockerNextAction('missing_billing_rate', 'child-2');
       expect(action.label).toBe('Review child');
       expect(action.route).toEqual(['/staff/manager/children', 'child-2']);

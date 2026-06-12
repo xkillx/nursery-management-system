@@ -68,6 +68,8 @@ interface ApiSiteSummary {
   active_manager_count: number;
   pending_manager_invite_count: number;
   active_children_count: number;
+  site_core_hourly_rate_minor: number | null;
+  setup_issues: string[];
   attendance: ApiAttendanceSummary;
   funding_readiness: ApiFundingReadiness;
   invoice_payment_health: ApiInvoicePaymentHealth;
@@ -134,6 +136,12 @@ export class OwnerApiService {
     );
   }
 
+  updateSiteBillingSetup(siteId: string, coreHourlyRateMinor: number): Observable<unknown> {
+    return this.http.put(apiUrl(`/owner/sites/${siteId}/billing-setup`), {
+      core_hourly_rate_minor: coreHourlyRateMinor,
+    });
+  }
+
   private mapSiteSummaries(response: ApiSiteSummariesResponse): OwnerSiteSummariesResponse {
     return {
       billingMonth: response.billing_month,
@@ -171,6 +179,8 @@ export class OwnerApiService {
       activeManagerCount: s.active_manager_count,
       pendingManagerInviteCount: s.pending_manager_invite_count,
       activeChildrenCount: s.active_children_count,
+      siteCoreHourlyRateMinor: s.site_core_hourly_rate_minor,
+      setupIssues: s.setup_issues ?? [],
       attendance: {
         checkedInTodayCount: s.attendance.checked_in_today_count,
         incompleteAttendanceCount: s.attendance.incomplete_attendance_count,

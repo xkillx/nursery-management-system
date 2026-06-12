@@ -14,7 +14,7 @@ import {
   OwnerSiteSummary,
   OwnerSiteSummaryTotals,
 } from '../../models/owner.models';
-import { formatGbp, formatSetupStatus, isExceptionSite } from '../../utils/owner-formatters';
+import { formatGbp, formatSetupStatus, isExceptionSite, formatSiteRate } from '../../utils/owner-formatters';
 
 @Component({
   selector: 'app-owner-overview',
@@ -42,6 +42,10 @@ export class OwnerOverviewComponent implements OnInit {
 
   response: OwnerSiteSummariesResponse | null = null;
 
+  editingRateSiteId: string | null = null;
+  rateEditValue = '';
+  rateEditError: string | null = null;
+
   ngOnInit(): void {
     this.loadSummaries();
   }
@@ -65,6 +69,7 @@ export class OwnerOverviewComponent implements OnInit {
   formatGbp = formatGbp;
   formatSetupStatus = formatSetupStatus;
   isExceptionSite = isExceptionSite;
+  formatSiteRate = formatSiteRate;
 
   get siteFilterOptions(): Option[] {
     return [
@@ -90,6 +95,47 @@ export class OwnerOverviewComponent implements OnInit {
   onSiteFocus(siteId: string | null): void {
     this.selectedSiteId = siteId;
     this.loadSummaries();
+  }
+
+  startRateEdit(site: OwnerSiteSummary): void {
+    this.editingRateSiteId = site.siteId;
+    this.rateEditValue = site.siteCoreHourlyRateMinor !== null && site.siteCoreHourlyRateMinor !== undefined
+      ? (site.siteCoreHourlyRateMinor / 100).toFixed(2)
+      : '';
+    this.rateEditError = null;
+  }
+
+  cancelRateEdit(): void {
+    this.editingRateSiteId = null;
+    this.rateEditValue = '';
+    this.rateEditError = null;
+  }
+
+  saveSiteRate(siteId: string): void {
+    const pounds = parseFloat(this.rateEditValue);
+    if (isNaN(pounds) || pounds <= 0) {
+      this.rateEditError = 'Enter a positive rate.';
+      return;
+    }
+    const minor = Math.round(pounds * 100);
+    this.rateEditError = null;
+
+    this.api.updateSiteBillingSetup(siteId, minor).subscribe({
+      next: () => {
+        this.editingRateSiteId = null;
+        this.rateEditValue = '';
+        this.loadSummaries();
+      },
+      error: () => {
+        this.rateEditError = 'Failed to save rate. Please try again.';
+      },
+    });
+  }
+
+  updateSiteRate(siteId: string, rateMinor: number): void {
+    this.api.updateSiteBillingSetup(siteId, rateMinor).subscribe({
+      next: () => this.loadSummaries(),
+    });
   }
 
   private loadSummaries(): void {

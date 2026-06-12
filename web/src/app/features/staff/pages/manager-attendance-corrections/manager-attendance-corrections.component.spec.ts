@@ -30,6 +30,7 @@ describe('ManagerAttendanceCorrectionsComponent', () => {
     startDate: '2022-09-01',
     endDate: '2025-07-31',
     coreHourlyRateMinor: 750,
+    siteCoreHourlyRateMinor: null,
     notes: null,
     isActive: true,
     leftAt: null,

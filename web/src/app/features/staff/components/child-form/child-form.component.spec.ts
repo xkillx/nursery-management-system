@@ -13,7 +13,8 @@ describe('ChildFormComponent', () => {
     dateOfBirth: '2022-01-15',
     startDate: '2024-09-01',
     endDate: null,
-    coreHourlyRateMinor: 750,
+    coreHourlyRateMinor: null,
+    siteCoreHourlyRateMinor: 750,
     notes: null,
     isActive: true,
     leftAt: null,
@@ -34,24 +35,25 @@ describe('ChildFormComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('creates with empty form defaulting rate to null', () => {
-    expect(component.form.core_hourly_rate_gbp).toBeNull();
+  it('creates with empty form', () => {
+    expect(component.form.full_name).toBe('');
   });
 
-  it('populates form with GBP rate from minor units in edit mode', () => {
+  it('populates form with child data in edit mode', () => {
     component.selectedChild = childRecord;
     component.ngOnChanges({ selectedChild: { currentValue: childRecord, previousValue: null, firstChange: true, isFirstChange: () => true } });
 
-    expect(component.form.core_hourly_rate_gbp).toBe(7.5);
+    expect(component.form.full_name).toBe('Ada Lovelace');
+    expect(component.form.date_of_birth).toBe('2022-01-15');
+    expect(component.form.start_date).toBe('2024-09-01');
   });
 
-  it('emits payload with minor units when submitting GBP rate', () => {
+  it('emits payload without core_hourly_rate_minor', () => {
     const savedSpy = spyOn(component.saved, 'emit');
 
     component.form.full_name = 'Ada Lovelace';
     component.form.date_of_birth = '2022-01-15';
     component.form.start_date = '2024-09-01';
-    component.form.core_hourly_rate_gbp = 7.5;
     component.form.end_date = '';
     component.form.notes = '';
 
@@ -61,54 +63,19 @@ describe('ChildFormComponent', () => {
       full_name: 'Ada Lovelace',
       date_of_birth: '2022-01-15',
       start_date: '2024-09-01',
-      core_hourly_rate_minor: 750,
       end_date: '',
       notes: '',
     });
-  });
-
-  it('rounds fractional pounds to nearest penny on submit', () => {
-    const savedSpy = spyOn(component.saved, 'emit');
-
-    component.form.full_name = 'Test';
-    component.form.date_of_birth = '2022-01-01';
-    component.form.start_date = '2024-01-01';
-    component.form.core_hourly_rate_gbp = 7.555;
-    component.form.end_date = '';
-    component.form.notes = '';
-
-    component.submit();
-
-    expect(savedSpy).toHaveBeenCalledWith(
-      jasmine.objectContaining({ core_hourly_rate_minor: 756 }),
-    );
-  });
-
-  it('handles string rate input from form control', () => {
-    const savedSpy = spyOn(component.saved, 'emit');
-
-    component.form.full_name = 'Test';
-    component.form.date_of_birth = '2022-01-01';
-    component.form.start_date = '2024-01-01';
-    (component.form as any).core_hourly_rate_gbp = '7.50';
-    component.form.end_date = '';
-    component.form.notes = '';
-
-    component.submit();
-
-    expect(savedSpy).toHaveBeenCalledWith(
-      jasmine.objectContaining({ core_hourly_rate_minor: 750 }),
-    );
+    expect(savedSpy.calls.mostRecent().args[0]).not.toEqual(jasmine.objectContaining({ core_hourly_rate_minor: jasmine.anything() as any }));
   });
 
   it('resets form when selectedChild changes to null', () => {
     component.selectedChild = childRecord;
     component.ngOnChanges({ selectedChild: { currentValue: childRecord, previousValue: null, firstChange: true, isFirstChange: () => true } });
-    expect(component.form.core_hourly_rate_gbp).toBe(7.5);
+    expect(component.form.full_name).toBe('Ada Lovelace');
 
     component.selectedChild = null;
     component.ngOnChanges({ selectedChild: { currentValue: null, previousValue: childRecord, firstChange: false, isFirstChange: () => false } });
-    expect(component.form.core_hourly_rate_gbp).toBeNull();
     expect(component.form.full_name).toBe('');
   });
 });

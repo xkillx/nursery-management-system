@@ -32,6 +32,8 @@ export interface OwnerSiteSummary {
   activeManagerCount: number;
   pendingManagerInviteCount: number;
   activeChildrenCount: number;
+  siteCoreHourlyRateMinor: number | null;
+  setupIssues: string[];
   attendance: OwnerAttendanceSummary;
   fundingReadiness: OwnerFundingReadiness;
   invoicePaymentHealth: OwnerInvoicePaymentHealth;

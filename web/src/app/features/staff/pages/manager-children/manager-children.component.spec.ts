@@ -16,14 +16,15 @@ describe('ManagerChildrenComponent', () => {
     date_of_birth: '2022-01-15',
     start_date: '2024-09-01',
     end_date: null,
-    core_hourly_rate_minor: 750,
+    core_hourly_rate_minor: null,
+    site_core_hourly_rate_minor: null,
     notes: null,
     is_active: true,
     left_at: null,
     left_reason_code: null,
     left_reason_note: null,
     enrollment_complete: false,
-    missing_requirements: ['guardian_link', 'billing_rate'],
+    missing_requirements: ['guardian_link'],
     created_at: '2024-08-01T00:00:00Z',
     updated_at: '2024-08-01T00:00:00Z',
   };
@@ -64,7 +65,7 @@ describe('ManagerChildrenComponent', () => {
     fixture.detectChanges();
 
     expect(component.children.length).toBe(1);
-    expect(component.children[0].coreHourlyRateMinor).toBe(750);
+    expect(component.children[0].coreHourlyRateMinor).toBeNull();
     expect(component.isLoading).toBe(false);
   });
 
@@ -90,14 +91,9 @@ describe('ManagerChildrenComponent', () => {
     expect(component.children.length).toBe(2);
   });
 
-  it('formats rate using formatHourlyRateGbp', () => {
-    expect(component.formatRate(750)).toBe('£7.50/hr');
-    expect(component.formatRate(0)).toBe('£0.00/hr');
-  });
-
   it('maps missing requirement codes to labels', () => {
     expect(component.requirementLabel('guardian_link')).toBe('Linked guardian');
-    expect(component.requirementLabel('billing_rate')).toBe('Billing rate');
+    expect(component.requirementLabel('billing_rate')).toBe('billing_rate');
   });
 
   it('maps status filter values to labels', () => {
@@ -127,6 +123,6 @@ describe('ManagerChildrenComponent', () => {
 
     const child = component.children[0];
     const labels = child.missingRequirements.map(component.requirementLabel);
-    expect(labels).toEqual(['Linked guardian', 'Billing rate']);
+    expect(labels).toEqual(['Linked guardian']);
   });
 });

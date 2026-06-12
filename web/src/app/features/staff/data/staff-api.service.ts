@@ -26,6 +26,7 @@ interface ChildApiModel {
   start_date: string;
   end_date?: string;
   core_hourly_rate_minor: number | null;
+  site_core_hourly_rate_minor: number | null;
   notes?: string;
   is_active: boolean;
   left_at?: string;
@@ -477,6 +478,7 @@ export class StaffApiService {
       startDate: child.start_date,
       endDate: child.end_date ?? null,
       coreHourlyRateMinor: child.core_hourly_rate_minor,
+      siteCoreHourlyRateMinor: child.site_core_hourly_rate_minor ?? null,
       notes: child.notes ?? null,
       isActive: child.is_active,
       leftAt: child.left_at ?? null,

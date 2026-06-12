@@ -81,6 +81,9 @@
                 @if (site.activeManagerCount === 0) {
                   <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">No active manager</span>
                 }
+                @if (site.setupIssues.includes('missing_site_core_hourly_rate')) {
+                  <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">No rate set</span>
+                }
               </div>
               <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Setup: {{ formatSetupStatus(site.setupStatus) }}</p>
 
@@ -91,6 +94,21 @@
                 }
                 <span class="text-gray-500 dark:text-gray-400">Children: <span class="font-medium text-gray-800 dark:text-white">{{ site.activeChildrenCount }}</span></span>
                 <span class="text-gray-500 dark:text-gray-400">Checked in: <span class="font-medium text-gray-800 dark:text-white">{{ site.attendance.checkedInTodayCount }}</span></span>
+                <span class="text-gray-500 dark:text-gray-400">Rate:
+                  @if (editingRateSiteId === site.siteId) {
+                    <span class="inline-flex items-center gap-1 ml-1">
+                      <input type="number" step="0.01" min="0.01" [(ngModel)]="rateEditValue" class="h-7 w-20 rounded border border-gray-300 px-1.5 text-xs text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+                      <button (click)="saveSiteRate(site.siteId)" class="rounded bg-brand-500 px-1.5 py-0.5 text-xs text-white">Save</button>
+                      <button (click)="cancelRateEdit()" class="rounded border border-gray-300 px-1.5 py-0.5 text-xs dark:border-gray-600">Cancel</button>
+                    </span>
+                    @if (rateEditError) {
+                      <span class="text-xs text-red-600 block mt-0.5">{{ rateEditError }}</span>
+                    }
+                  } @else {
+                    <span class="font-medium text-gray-800 dark:text-white ml-1">{{ formatSiteRate(site.siteCoreHourlyRateMinor) }}</span>
+                    <button (click)="startRateEdit(site)" class="ml-1 text-xs text-blue-600 hover:underline">Edit</button>
+                  }
+                </span>
                 @if (site.attendance.incompleteAttendanceCount > 0) {
                   <span class="text-gray-500 dark:text-gray-400">Incomplete attendance: <span class="font-medium text-red-600">{{ site.attendance.incompleteAttendanceCount }}</span></span>
                 }

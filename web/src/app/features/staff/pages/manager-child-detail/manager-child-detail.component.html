@@ -44,7 +44,7 @@
         <div><dt class="text-gray-500 dark:text-gray-400">Start date</dt><dd class="text-gray-800 dark:text-white/90">{{ child.startDate }}</dd></div>
         <div><dt class="text-gray-500 dark:text-gray-400">End date</dt><dd class="text-gray-800 dark:text-white/90">{{ child.endDate ?? '-' }}</dd></div>
         <div><dt class="text-gray-500 dark:text-gray-400">Active</dt><dd><app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge></dd></div>
-        <div><dt class="text-gray-500 dark:text-gray-400">Core hourly rate</dt><dd class="text-gray-800 dark:text-white/90">{{ formatRate(child.coreHourlyRateMinor) }}</dd></div>
+        <div><dt class="text-gray-500 dark:text-gray-400">Site core hourly rate</dt><dd class="text-gray-800 dark:text-white/90">{{ formatSiteRate(child.siteCoreHourlyRateMinor) }}</dd></div>
         @if (child.notes) {
           <div class="col-span-2"><dt class="text-gray-500 dark:text-gray-400">Notes</dt><dd class="text-gray-800 dark:text-white/90">{{ child.notes }}</dd></div>
         }

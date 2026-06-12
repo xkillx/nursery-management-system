@@ -18,7 +18,8 @@ describe('ManagerChildDetailComponent', () => {
     dateOfBirth: '2022-03-15',
     startDate: '2023-01-10',
     endDate: null,
-    coreHourlyRateMinor: 850,
+    coreHourlyRateMinor: null,
+    siteCoreHourlyRateMinor: 850,
     notes: null,
     isActive: true,
     leftAt: null,
@@ -194,8 +195,8 @@ describe('ManagerChildDetailComponent', () => {
     expect(component.child?.missingRequirements).toContain('guardian_link');
   });
 
-  it('shows core hourly rate formatted as GBP per hour', () => {
-    const rate = component.formatRate(component.child!.coreHourlyRateMinor);
+  it('shows site core hourly rate formatted as GBP per hour', () => {
+    const rate = component.formatSiteRate(component.child!.siteCoreHourlyRateMinor);
     expect(rate).toBe('£8.50/hr');
   });
 
@@ -217,11 +218,10 @@ describe('ManagerChildDetailComponent', () => {
       full_name: 'Emma Thompson',
       date_of_birth: '2022-03-15',
       start_date: '2023-01-10',
-      core_hourly_rate_minor: 900,
     });
 
     expect(staffApiMock.updateChild).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-      core_hourly_rate_minor: 900,
+      full_name: 'Emma Thompson',
     }));
   });
 
