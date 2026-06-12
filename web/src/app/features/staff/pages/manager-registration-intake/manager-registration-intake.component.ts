@@ -30,6 +30,8 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
@@ -83,6 +85,14 @@ type Step1Field =
 
 type Step1RequiredField = Extract<Step1Field, 'first_name' | 'surname' | 'date_of_birth' | 'start_date'>;
 
+type ReferralEntry = {
+  type: string;
+  referredDate: string;
+  referredBy: string;
+  waitingListStatus: string;
+  notes: string;
+};
+
 type ConsentItem = {
   key: keyof ConsentWritePayload;
   label: string;
@@ -119,8 +129,9 @@ type RegistrationDraft = {
     immunisation_status: string;
     immunisation_country: string;
     illness_diagnosis_history: string;
-    dietary_side_effects: string;
-    doctor_practice: string;
+    special_dietary_requirements: string;
+    medication_side_effects: string;
+    doctor_address: string;
     doctor_name: string;
     doctor_phone: string;
     health_visitor_name: string;
@@ -135,7 +146,6 @@ type RegistrationDraft = {
     concern_sight: boolean;
     concern_emotional_wellbeing: boolean;
     concern_behaviour: boolean;
-    professional_referrals: string;
     routine_care_notes: string;
   };
   step3: {
@@ -168,6 +178,7 @@ type RegistrationDraft = {
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
+  referralsDraft: ReferralEntry[];
 };
 
 @Component({
@@ -177,6 +188,8 @@ type RegistrationDraft = {
     FormsModule,
     NgIcon,
     AlertComponent,
+    BadgeComponent,
+    ButtonComponent,
     CheckboxComponent,
     FormFieldComponent,
     InputFieldComponent,
@@ -424,8 +437,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     immunisation_status: '',
     immunisation_country: '',
     illness_diagnosis_history: '',
-    dietary_side_effects: '',
-    doctor_practice: '',
+    special_dietary_requirements: '',
+    medication_side_effects: '',
+    doctor_address: '',
     doctor_name: '',
     doctor_phone: '',
     health_visitor_name: '',
@@ -440,7 +454,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     concern_sight: false,
     concern_emotional_wellbeing: false,
     concern_behaviour: false,
-    professional_referrals: '',
     routine_care_notes: '',
   };
 
@@ -520,6 +533,20 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   parentCarersDraft: RegistrationContactEntry[] = [this.emptyContact('Mother')];
   emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
   emergencyAuthorisedFlags = [true, false];
+  referralsDraft: ReferralEntry[] = [];
+
+  readonly referralTypeOptions: Option[] = [
+    { value: 'community_paediatrician', label: 'Community Paediatrician' },
+    { value: 'speech_language_therapist', label: 'Speech and Language Therapist' },
+    { value: 'eyis', label: 'EYIS — Early Support Service' },
+    { value: 'other', label: 'Other professional' },
+  ];
+  readonly waitingListOptions: Option[] = [
+    { value: 'on_waiting_list', label: 'On waiting list' },
+    { value: 'seen_completed', label: 'Seen / Completed' },
+    { value: 'not_applicable', label: 'Not applicable' },
+    { value: 'unknown', label: 'Unknown' },
+  ];
 
   ngOnInit(): void {
     const childIdParam = this.route.snapshot.paramMap.get('childId');
@@ -731,15 +758,30 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.medication_storage && `Storage: ${this.step2.medication_storage}`,
     ].filter(Boolean).join('\n');
 
+    const dietaryNotes = [
+      this.step2.allergy_details.trim(),
+      this.step2.special_dietary_requirements.trim(),
+    ].filter(Boolean).join('; ');
+
+    const referrals = this.referralsDraft
+      .filter(r => r.type && r.referredBy)
+      .map(r => ({
+        type: r.type,
+        referred_date: r.referredDate || null,
+        referred_by: r.referredBy.trim(),
+        waiting_list_status: r.waitingListStatus || 'unknown',
+        notes: r.notes.trim() || null,
+      }));
+
     this.staffApi.patchRegistrationProfile(this.childId!, {
       medical_dietary: {
         medical_conditions_status: this.step2.has_allergies ? 'yes' : 'no',
         medical_conditions_notes: this.step2.allergy_details.trim() || null,
         prescribed_medication_status: this.step2.on_medication ? 'yes' : 'no',
         medication_notes: medicationNotes || null,
-        dietary_requirements_status: this.step2.has_allergies ? 'yes' : 'no',
-        dietary_requirements_notes: this.step2.allergy_details.trim() || null,
-        dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
+        dietary_requirements_status: this.step2.has_allergies || this.step2.special_dietary_requirements.trim() ? 'yes' : 'no',
+        dietary_requirements_notes: dietaryNotes || null,
+        dietary_side_effects: this.step2.medication_side_effects.trim() || null,
         immunisation_status: this.step2.immunisation_status || null,
         immunisation_country: this.step2.immunisation_country.trim() || null,
         illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
@@ -747,7 +789,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       },
       health_contacts: {
         doctor_name: this.step2.doctor_name.trim() || null,
-        doctor_address: this.step2.doctor_practice.trim() || null,
+        doctor_address: this.step2.doctor_address.trim() || null,
         doctor_phone: this.step2.doctor_phone.trim() || null,
         health_visitor_name: this.step2.health_visitor_name.trim() || null,
         health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
@@ -764,6 +806,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         concern_sight: this.step2.concern_sight ? 'yes' : 'no',
         concern_emotional_wellbeing: this.step2.concern_emotional_wellbeing ? 'yes' : 'no',
         concern_behaviour: this.step2.concern_behaviour ? 'yes' : 'no',
+        professional_referrals: referrals.length > 0 ? referrals : null,
         social_development_reviewed: true,
       },
       routine_care: {
@@ -1021,6 +1064,22 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.notifyDraftChanged();
   }
 
+  addReferralEntry(): void {
+    this.referralsDraft.push({
+      type: 'other',
+      referredDate: '',
+      referredBy: '',
+      waitingListStatus: 'unknown',
+      notes: '',
+    });
+    this.notifyDraftChanged();
+  }
+
+  removeReferralEntry(index: number): void {
+    this.referralsDraft.splice(index, 1);
+    this.notifyDraftChanged();
+  }
+
   protected getConcernValue(key: string): boolean {
     return (this.step2 as Record<string, boolean | string>)[key] === true;
   }
@@ -1132,9 +1191,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           medical_conditions_notes: this.step2.allergy_details.trim() || null,
           prescribed_medication_status: this.step2.on_medication ? 'yes' : 'no',
           medication_notes: medicationNotes || null,
-          dietary_requirements_status: this.step2.has_allergies ? 'yes' : 'no',
-          dietary_requirements_notes: this.step2.allergy_details.trim() || null,
-          dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
+          dietary_requirements_status: this.step2.has_allergies || this.step2.special_dietary_requirements.trim() ? 'yes' : 'no',
+          dietary_requirements_notes: [this.step2.allergy_details.trim(), this.step2.special_dietary_requirements.trim()].filter(Boolean).join('; ') || null,
+          dietary_side_effects: this.step2.medication_side_effects.trim() || null,
           immunisation_status: this.step2.immunisation_status || null,
           immunisation_country: this.step2.immunisation_country.trim() || null,
           illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
@@ -1142,7 +1201,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         },
         health_contacts: {
           doctor_name: this.step2.doctor_name.trim() || null,
-          doctor_address: this.step2.doctor_practice.trim() || null,
+          doctor_address: this.step2.doctor_address.trim() || null,
           doctor_phone: this.step2.doctor_phone.trim() || null,
           health_visitor_name: this.step2.health_visitor_name.trim() || null,
           health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
@@ -1159,6 +1218,19 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           concern_sight: this.step2.concern_sight ? 'yes' : 'no',
           concern_emotional_wellbeing: this.step2.concern_emotional_wellbeing ? 'yes' : 'no',
           concern_behaviour: this.step2.concern_behaviour ? 'yes' : 'no',
+          professional_referrals: this.referralsDraft.filter(r => r.type && r.referredBy).map(r => ({
+            type: r.type,
+            referred_date: r.referredDate || null,
+            referred_by: r.referredBy.trim(),
+            waiting_list_status: r.waitingListStatus || 'unknown',
+            notes: r.notes.trim() || null,
+          })).length > 0 ? this.referralsDraft.filter(r => r.type && r.referredBy).map(r => ({
+            type: r.type,
+            referred_date: r.referredDate || null,
+            referred_by: r.referredBy.trim(),
+            waiting_list_status: r.waitingListStatus || 'unknown',
+            notes: r.notes.trim() || null,
+          })) : null,
           social_development_reviewed: true,
         },
         parent_carers: parentCarers,
@@ -1388,21 +1460,23 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.has_allergies =
         profile.medicalDietary.dietaryRequirementsStatus === 'yes'
         || profile.medicalDietary.medicalConditionsStatus === 'yes';
-      this.step2.allergy_details =
-        profile.medicalDietary.dietaryRequirementsNotes
+      const notes = profile.medicalDietary.dietaryRequirementsNotes
         ?? profile.medicalDietary.medicalConditionsNotes
         ?? '';
+      const parts = notes.split('; ').filter(Boolean);
+      this.step2.allergy_details = parts[0] ?? '';
+      this.step2.special_dietary_requirements = parts[1] ?? '';
       this.step2.on_medication = profile.medicalDietary.prescribedMedicationStatus === 'yes';
       this.step2.medication_name = profile.medicalDietary.medicationNotes ?? '';
       this.step2.immunisation_status = profile.medicalDietary.immunisationStatus ?? '';
       this.step2.immunisation_country = profile.medicalDietary.immunisationCountry ?? '';
       this.step2.illness_diagnosis_history = profile.medicalDietary.illnessDiagnosisHistory ?? '';
-      this.step2.dietary_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
+      this.step2.medication_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
     }
 
     if (profile.healthContacts) {
       this.step2.doctor_name = profile.healthContacts.doctorName ?? '';
-      this.step2.doctor_practice = profile.healthContacts.doctorAddress ?? '';
+      this.step2.doctor_address = profile.healthContacts.doctorAddress ?? '';
       this.step2.doctor_phone = profile.healthContacts.doctorPhone ?? '';
       this.step2.health_visitor_name = profile.healthContacts.healthVisitorName ?? '';
       this.step2.health_visitor_clinic = profile.healthContacts.healthVisitorAddress ?? '';
@@ -1419,11 +1493,15 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.concern_sight = profile.socialDevelopment.concernSight === 'yes';
       this.step2.concern_emotional_wellbeing = profile.socialDevelopment.concernEmotionalWellbeing === 'yes';
       this.step2.concern_behaviour = profile.socialDevelopment.concernBehaviour === 'yes';
-      this.step2.professional_referrals = profile.socialDevelopment.professionalReferrals
-        ? profile.socialDevelopment.professionalReferrals.map(r =>
-            `${r.type}${r.referredDate ? ` (${r.referredDate})` : ''}${r.notes ? `: ${r.notes}` : ''}`
-          ).join('; ')
-        : '';
+      this.referralsDraft = profile.socialDevelopment.professionalReferrals?.length
+        ? profile.socialDevelopment.professionalReferrals.map(r => ({
+            type: r.type,
+            referredDate: r.referredDate ?? '',
+            referredBy: r.referredBy ?? '',
+            waitingListStatus: r.waitingListStatus,
+            notes: r.notes ?? '',
+          }))
+        : [];
     }
 
     if (profile.routineCare) {
@@ -1604,6 +1682,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
       emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
+      referralsDraft: this.referralsDraft.map(r => ({ ...r })),
     };
     this.draftStorage.save(payload, this.currentStep);
     this.draftSavedAt = new Date().toISOString();
@@ -1643,6 +1722,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (draft.emergencyAuthorisedFlags?.length) {
       this.emergencyAuthorisedFlags = [...draft.emergencyAuthorisedFlags];
     }
+    if (draft.referralsDraft?.length) {
+      this.referralsDraft = draft.referralsDraft.map(r => ({ ...r }));
+    }
     if (draft.currentStep && this.steps.some(step => step.key === draft.currentStep)) {
       this.currentStep = draft.currentStep;
     }
@@ -1655,7 +1737,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const step2Empty = Object.entries(this.step2).every(([key, value]) => {
       if (typeof value === 'boolean') return value === false;
       return !String(value ?? '').trim();
-    });
+    }) && this.referralsDraft.length === 0;
     const step3Empty = Object.entries(this.step3).every(([key, value]) => {
       if (typeof value === 'boolean') return value === false;
       return !String(value ?? '').trim();
@@ -1692,8 +1774,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       immunisation_status: '',
       immunisation_country: '',
       illness_diagnosis_history: '',
-      dietary_side_effects: '',
-      doctor_practice: '',
+      special_dietary_requirements: '',
+      medication_side_effects: '',
+      doctor_address: '',
       doctor_name: '',
       doctor_phone: '',
       health_visitor_name: '',
@@ -1708,7 +1791,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       concern_sight: false,
       concern_emotional_wellbeing: false,
       concern_behaviour: false,
-      professional_referrals: '',
       routine_care_notes: '',
     };
     this.step3 = {
@@ -1783,6 +1865,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
     this.emergencyAuthorisedFlags = [true, false];
+    this.referralsDraft = [];
     this.step1Touched = {};
     this.step1Submitted = false;
     this.fieldErrors = {};
