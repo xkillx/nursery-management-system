@@ -66,7 +66,7 @@ New manager-assisted registration intake should use a guided stepper aligned to 
 
 ## Registration Intake Child Creation (Post-MVP)
 
-Starting a new guided registration creates the child record immediately in an incomplete registration/enrolment state. The product does not introduce a separate pending application object for this workflow; existing attendance and billing readiness gates continue to control operational use.
+Starting a new guided registration collects all steps (child basics, medical/health, contacts, consents, office-use checklist) as a frontend-local draft before any server-side record exists. The child record, registration profile, consent records, collection password, and office-use checklist are created atomically when the manager completes the review step. The product does not introduce a separate pending application or server-side draft object; in-progress drafts survive only in browser localStorage. Existing "Add Child" and section-by-section registration editor flows are unaffected.
 
 ## Registration-Sourced Child Basics (Post-MVP)
 
@@ -74,7 +74,7 @@ Child basics entered during guided registration create or update the operational
 
 ## Registration vs Billing Setup (Post-MVP)
 
-The child's core hourly rate remains an enrollment and billing setup field rather than a registration intake field. Registration may be reviewed or complete while operational enrollment remains incomplete until billing rate and guardian-link requirements are satisfied.
+The core hourly rate remains billing setup rather than a registration intake field. Registration may be reviewed or complete while operational billing readiness still depends on the nursery site's core hourly rate and child-month funding requirements.
 
 ## Registration Reviewed/Complete (Post-MVP)
 
@@ -82,7 +82,7 @@ Manager-assisted registration intake ends when a manager marks the registration 
 
 ## Registration Completion Attestation (Post-MVP)
 
-Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. It is not purely automatic; required profile, paper-form consent, and office-use evidence readiness determine whether the manager can make the attestation, and later changes return the registration to needs-review until a manager attests again.
+Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. For the guided intake stepper, the atomic submission at step 5 serves as the implicit attestation — the child record and registration are created as complete. For the section-by-section registration editor, attestation remains an explicit separate action. In both cases, later changes return the registration to needs-review until a manager attests again.
 
 ## Registration Reviewed/Complete Requirements (Post-MVP)
 
@@ -195,6 +195,10 @@ The first owner summary covers attendance today, active enrolled children, invoi
 ## Owner Site Setup Visibility (Post-MVP)
 
 Owner summaries include active sites even when setup or current-period data is missing. A site without an active manager is an owner action item; missing finance, funding, or attendance data is shown as zero or not ready according to the metric rather than hiding the site.
+
+## Owner Site Billing Setup (Post-MVP)
+
+Owner site overview is the first owner workflow for setting each nursery site's core hourly rate. A missing site core hourly rate is a site setup exception because future draft invoice generation for that site is not billing-ready.
 
 ## Owner Summary Time Windows (Post-MVP)
 
@@ -382,15 +386,43 @@ A relationship showing that a guardian record is connected to a child within the
 
 ## Enrollment Complete (MVP)
 
-A child record has the minimum information needed for pilot attendance and invoicing: child identity basics, a start date, at least one active guardian-child link, and a core hourly rate.
+A child record has the minimum information needed for pilot attendance and child-linked invoicing setup: child identity basics, a start date, and at least one active guardian-child link. Site-level billing setup is checked separately through the nursery site's core hourly rate.
 
-## Core Hourly Rate (MVP)
+## Site Core Hourly Rate (Post-MVP)
 
-The GBP hourly fee used to price a child's core childcare attendance before funded-hours deduction. Managers discuss and enter this as pounds per hour, not minor units.
+The GBP hourly fee for standard core childcare attendance at one nursery site before funded-hours deduction. It applies to every child in that site for this feature; child-specific discounts, exceptions, and special fees are outside the site core hourly rate.
+
+## Site Billing Setup Authority (Post-MVP)
+
+Owner-level users set the site core hourly rate for each nursery site. Site managers may view the rate used for billing in their site, but pricing policy belongs to owner-level setup for this feature.
+
+## Site Core Hourly Rate Introduction (Post-MVP)
+
+When site core hourly rates are introduced, a nursery site with one consistent existing child hourly rate may use that value as its initial site rate. A site with no existing rate or multiple existing child rates requires owner setup before future draft invoice generation; existing issued invoices keep their saved billing snapshots.
+
+## Current Site Core Hourly Rate (Post-MVP)
+
+For this feature, a nursery site has one current core hourly rate rather than an effective-dated rate schedule. Draft invoice generation and regeneration use the site's current positive rate at the time of generation, while issued invoices keep their saved calculation snapshot.
+
+## Site Core Hourly Rate Readiness (Post-MVP)
+
+A nursery site is billing-ready only when its site core hourly rate is set to a positive GBP amount. Missing, invalid, or zero site rates are setup exceptions and block future draft invoice generation.
+
+## Site Rate Change Draft Boundary (Post-MVP)
+
+Changing a nursery site's core hourly rate does not automatically recalculate existing draft invoices. Managers must run invoice generation or regeneration again for draft invoices to pick up the changed site rate; issued invoices remain locked to their saved snapshots.
+
+## Site Core Hourly Rate Audit (Post-MVP)
+
+Owner changes to a nursery site's core hourly rate are audit-significant because they affect future billing. The first release records rate changes for accountability but does not require an owner-facing rate history screen.
 
 ## Child Detail/Enrollment Surface (MVP)
 
-A manager-facing child-focused view for inspecting whether a child has the minimum data needed for attendance and invoicing. It separates enrollment completeness from month-specific funding profile readiness.
+A manager-facing child-focused view for inspecting whether a child has the minimum data needed for attendance and child-linked invoicing setup. It separates child enrollment completeness from site-level billing setup and month-specific funding profile readiness.
+
+## Child-Specific Core Rate Boundary (Post-MVP)
+
+Managers do not enter or maintain core hourly rates on individual child records for this feature. Child create, edit, registration-linked setup, and enrollment completeness should not treat a child-specific hourly rate as required, while manager-facing billing context may show the nursery site's applicable core hourly rate.
 
 ## Manager Registration/Enrolment Editor (Post-MVP)
 
