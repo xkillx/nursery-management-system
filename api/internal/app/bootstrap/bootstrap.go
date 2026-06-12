@@ -348,7 +348,10 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	ownerGrantUC := ownerapp.NewGrantManagerAccessUseCase(ownerRepo, ownerTokenAdapter, ownerEmailAdapter, cfg.WebBaseURL)
 	ownerDeactivateUC := ownerapp.NewDeactivateManagerAccessUseCase(ownerRepo)
 	ownerReactivateUC := ownerapp.NewReactivateManagerAccessUseCase(ownerRepo)
-	ownerHandler := ownerhandler.NewHandler(ownerSummariesUC, ownerListAccessUC, ownerGrantUC, ownerDeactivateUC, ownerReactivateUC).WithObservability(logger, recorder)
+	ownerUpdateBillingSetupUC := ownerapp.NewUpdateSiteBillingSetupUseCase(ownerRepo, auditWriter, txManager)
+	ownerHandler := ownerhandler.NewHandler(ownerSummariesUC, ownerListAccessUC, ownerGrantUC, ownerDeactivateUC, ownerReactivateUC).
+		WithObservability(logger, recorder).
+		WithUpdateBillingSetup(ownerUpdateBillingSetupUC)
 	owner := protected.Group("/owner")
 	owner.Use(httpserver.RequireRolesWithObservability(logger, recorder, "owner"))
 	ownerHandler.RegisterRoutes(owner)

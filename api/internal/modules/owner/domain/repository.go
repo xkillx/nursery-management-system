@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type SummaryRepository interface {
 	GetActiveSites(ctx context.Context, tenantID uuid.UUID) ([]Site, error)
 	GetActiveSite(ctx context.Context, tenantID, siteID uuid.UUID) (Site, error)
+	UpdateSiteCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, siteID uuid.UUID, coreHourlyRateMinor int) (previous *int, current int, err error)
 
 	CountActiveManagers(ctx context.Context, tenantID uuid.UUID, branchIDs []uuid.UUID) (map[uuid.UUID]int, error)
 	CountPendingManagerInvites(ctx context.Context, tenantID uuid.UUID, branchIDs []uuid.UUID) (map[uuid.UUID]int, error)

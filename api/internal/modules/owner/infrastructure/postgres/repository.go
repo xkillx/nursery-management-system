@@ -30,8 +30,9 @@ func (r *OwnerRepository) GetActiveSites(ctx context.Context, tenantID uuid.UUID
 	sites := make([]domain.Site, 0, len(rows))
 	for _, row := range rows {
 		sites = append(sites, domain.Site{
-			ID:   pgtypeUUIDToUUID(row.ID),
-			Name: row.Name,
+			ID:                  pgtypeUUIDToUUID(row.ID),
+			Name:                row.Name,
+			CoreHourlyRateMinor: pgtypeInt4ToPtr(row.CoreHourlyRateMinor),
 		})
 	}
 	return sites, nil
@@ -49,7 +50,7 @@ func (r *OwnerRepository) GetActiveSite(ctx context.Context, tenantID, siteID uu
 		}
 		return domain.Site{}, err
 	}
-	return domain.Site{ID: pgtypeUUIDToUUID(row.ID), Name: row.Name}, nil
+	return domain.Site{ID: pgtypeUUIDToUUID(row.ID), Name: row.Name, CoreHourlyRateMinor: pgtypeInt4ToPtr(row.CoreHourlyRateMinor)}, nil
 }
 
 func (r *OwnerRepository) CountActiveManagers(ctx context.Context, tenantID uuid.UUID, branchIDs []uuid.UUID) (map[uuid.UUID]int, error) {
@@ -236,6 +237,41 @@ func timeToPgtypeDate(t time.Time) pgtype.Date {
 
 func timeToPgtypeTimestamptz(t time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: t, Valid: true}
+}
+
+func pgtypeInt4ToPtr(v pgtype.Int4) *int {
+	if !v.Valid {
+		return nil
+	}
+	i := int(v.Int32)
+	return &i
+}
+
+// ── ManagerAccessRepository ──────────────────────────────────────────────────
+
+func (r *OwnerRepository) UpdateSiteCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, siteID uuid.UUID, coreHourlyRateMinor int) (previous *int, current int, err error) {
+	q := sqlc.New(tx)
+	row, err := q.OwnerGetActiveSite(ctx, sqlc.OwnerGetActiveSiteParams{
+		TenantID: uuidToPgtype(tenantID),
+		ID:       uuidToPgtype(siteID),
+	})
+	if err != nil {
+		if isNoRows(err) {
+			return nil, 0, domain.ErrSiteNotFound
+		}
+		return nil, 0, err
+	}
+	prev := pgtypeInt4ToPtr(row.CoreHourlyRateMinor)
+
+	const updateQ = `UPDATE branches SET core_hourly_rate_minor = $1 WHERE tenant_id = $2 AND id = $3 AND is_active = true`
+	tag, err := tx.Exec(ctx, updateQ, coreHourlyRateMinor, tenantID, siteID)
+	if err != nil {
+		return prev, 0, err
+	}
+	if tag.RowsAffected() == 0 {
+		return prev, 0, domain.ErrSiteNotFound
+	}
+	return prev, coreHourlyRateMinor, nil
 }
 
 // ── ManagerAccessRepository ──────────────────────────────────────────────────

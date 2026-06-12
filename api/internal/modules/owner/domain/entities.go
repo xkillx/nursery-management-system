@@ -13,8 +13,9 @@ type OwnerActor struct {
 }
 
 type Site struct {
-	ID   uuid.UUID
-	Name string
+	ID                    uuid.UUID
+	Name                  string
+	CoreHourlyRateMinor   *int
 }
 
 type AttendanceSummary struct {
@@ -51,6 +52,8 @@ type SiteSummary struct {
 	SiteID                     uuid.UUID
 	SiteName                   string
 	SetupStatus                string
+	SetupIssues                []string
+	SiteCoreHourlyRateMinor    *int
 	ActiveManagerCount         int
 	PendingManagerInviteCount  int
 	ActiveChildrenCount        int

@@ -74,15 +74,24 @@ func (uc *GetSiteSummariesUseCase) Execute(ctx context.Context, actor domain.Own
 		fr := funding[s.ID]
 		iph := invoices[s.ID]
 
-		setupStatus := "ready"
+		setupIssues := make([]string, 0, 2)
 		if mc == 0 {
-			setupStatus = "missing_manager"
+			setupIssues = append(setupIssues, "missing_manager")
+		}
+		if s.CoreHourlyRateMinor == nil || *s.CoreHourlyRateMinor <= 0 {
+			setupIssues = append(setupIssues, "missing_site_core_hourly_rate")
+		}
+		setupStatus := "incomplete_setup"
+		if len(setupIssues) == 0 {
+			setupStatus = "complete"
 		}
 
 		summaries = append(summaries, domain.SiteSummary{
 			SiteID:                    s.ID,
 			SiteName:                  s.Name,
 			SetupStatus:               setupStatus,
+			SetupIssues:               setupIssues,
+			SiteCoreHourlyRateMinor:   s.CoreHourlyRateMinor,
 			ActiveManagerCount:        mc,
 			PendingManagerInviteCount: ic,
 			ActiveChildrenCount:       cc,

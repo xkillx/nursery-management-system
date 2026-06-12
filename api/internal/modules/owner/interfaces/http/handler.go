@@ -16,13 +16,14 @@ import (
 )
 
 type Handler struct {
-	summaries  *application.GetSiteSummariesUseCase
-	listAccess *application.ListManagerAccessUseCase
-	grant      *application.GrantManagerAccessUseCase
-	deactivate *application.DeactivateManagerAccessUseCase
-	reactivate *application.ReactivateManagerAccessUseCase
-	logger     *slog.Logger
-	recorder   *metrics.Recorder
+	summaries       *application.GetSiteSummariesUseCase
+	listAccess      *application.ListManagerAccessUseCase
+	grant           *application.GrantManagerAccessUseCase
+	deactivate      *application.DeactivateManagerAccessUseCase
+	reactivate      *application.ReactivateManagerAccessUseCase
+	updateBillingSetup *application.UpdateSiteBillingSetupUseCase
+	logger          *slog.Logger
+	recorder        *metrics.Recorder
 }
 
 func NewHandler(
@@ -43,13 +44,27 @@ func NewHandler(
 
 func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
 	return &Handler{
-		summaries:  h.summaries,
-		listAccess: h.listAccess,
-		grant:      h.grant,
-		deactivate: h.deactivate,
-		reactivate: h.reactivate,
-		logger:     logger,
-		recorder:   recorder,
+		summaries:          h.summaries,
+		listAccess:         h.listAccess,
+		grant:              h.grant,
+		deactivate:         h.deactivate,
+		reactivate:         h.reactivate,
+		updateBillingSetup: h.updateBillingSetup,
+		logger:             logger,
+		recorder:           recorder,
+	}
+}
+
+func (h *Handler) WithUpdateBillingSetup(uc *application.UpdateSiteBillingSetupUseCase) *Handler {
+	return &Handler{
+		summaries:          h.summaries,
+		listAccess:         h.listAccess,
+		grant:              h.grant,
+		deactivate:         h.deactivate,
+		reactivate:         h.reactivate,
+		updateBillingSetup: uc,
+		logger:             h.logger,
+		recorder:           h.recorder,
 	}
 }
 
@@ -59,6 +74,7 @@ func (h *Handler) RegisterRoutes(ownerGroup *gin.RouterGroup) {
 	ownerGroup.POST("/sites/:site_id/manager-access", h.grantManagerAccess)
 	ownerGroup.POST("/sites/:site_id/manager-access/:membership_id/actions/deactivate", h.deactivateManagerAccess)
 	ownerGroup.POST("/sites/:site_id/manager-access/:membership_id/actions/activate", h.reactivateManagerAccess)
+	ownerGroup.PUT("/sites/:site_id/billing-setup", h.updateSiteBillingSetup)
 }
 
 func (h *Handler) getSiteSummaries(c *gin.Context) {
@@ -385,6 +401,80 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
+	actor, ok := tenant.OwnerActorFromGinContext(c)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"code":       "forbidden_role",
+			"message":    "Access denied.",
+			"request_id": httpserver.RequestIDFromContext(c),
+		})
+		return
+	}
+
+	siteID, err := uuid.Parse(c.Param("site_id"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code":       "validation_error",
+			"message":    "Invalid request parameters.",
+			"request_id": httpserver.RequestIDFromContext(c),
+			"details":    map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"},
+		})
+		return
+	}
+
+	var req struct {
+		CoreHourlyRateMinor int `json:"core_hourly_rate_minor"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code":       "validation_error",
+			"message":    "Invalid request payload.",
+			"request_id": httpserver.RequestIDFromContext(c),
+			"details":    err.Error(),
+		})
+		return
+	}
+
+	ownerActor := domain.OwnerActor{
+		UserID:       actor.UserID,
+		MembershipID: actor.MembershipID,
+		TenantID:     actor.TenantID,
+	}
+
+	result, err := h.updateBillingSetup.Execute(c.Request.Context(), ownerActor, siteID, req.CoreHourlyRateMinor)
+	if err != nil {
+		var valErr *domain.ValidationError
+		switch {
+		case errors.As(err, &valErr):
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code":       "validation_error",
+				"message":    "Invalid request parameters.",
+				"request_id": httpserver.RequestIDFromContext(c),
+				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
+			})
+		case errors.Is(err, domain.ErrSiteNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+				"code":       "site_not_found",
+				"message":    "Site not found.",
+				"request_id": httpserver.RequestIDFromContext(c),
+			})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"code":       "internal_error",
+				"message":    "Something went wrong.",
+				"request_id": httpserver.RequestIDFromContext(c),
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, updateSiteBillingSetupResponse{
+		SiteID:              result.SiteID,
+		CoreHourlyRateMinor: result.SiteCoreHourlyRateMinor,
+	})
+}
+
 // ── Response DTOs ────────────────────────────────────────────────────────────
 
 type siteSummariesResponse struct {
@@ -416,6 +506,8 @@ type siteSummaryResponse struct {
 	SiteID                    uuid.UUID                    `json:"site_id"`
 	SiteName                  string                       `json:"site_name"`
 	SetupStatus               string                       `json:"setup_status"`
+	SetupIssues               []string                     `json:"setup_issues"`
+	SiteCoreHourlyRateMinor   *int                         `json:"site_core_hourly_rate_minor"`
 	ActiveManagerCount        int                          `json:"active_manager_count"`
 	PendingManagerInviteCount int                          `json:"pending_manager_invite_count"`
 	ActiveChildrenCount       int                          `json:"active_children_count"`
@@ -469,6 +561,11 @@ type grantInviteDetailsResponse struct {
 	ExpiresAt string `json:"expires_at"`
 }
 
+type updateSiteBillingSetupResponse struct {
+	SiteID              uuid.UUID `json:"site_id"`
+	CoreHourlyRateMinor int       `json:"core_hourly_rate_minor"`
+}
+
 func toManagerAccessResponse(item application.ManagerAccessItem) managerAccessResponse {
 	return managerAccessResponse{
 		MembershipID: item.MembershipID.String(),
@@ -514,6 +611,8 @@ func toSiteSummaryResponse(s domain.SiteSummary) siteSummaryResponse {
 		SiteID:                    s.SiteID,
 		SiteName:                  s.SiteName,
 		SetupStatus:               s.SetupStatus,
+		SetupIssues:               s.SetupIssues,
+		SiteCoreHourlyRateMinor:   s.SiteCoreHourlyRateMinor,
 		ActiveManagerCount:        s.ActiveManagerCount,
 		PendingManagerInviteCount: s.PendingManagerInviteCount,
 		ActiveChildrenCount:       s.ActiveChildrenCount,
