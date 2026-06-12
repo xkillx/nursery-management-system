@@ -1,29 +1,27 @@
 <div class="min-h-dvh bg-slate-50 text-slate-900 font-outfit dark:bg-gray-950 dark:text-white/90">
-  <main class="mx-auto max-w-[1280px] px-4 py-6 md:px-8 md:py-8">
+  <main class="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
     @if (errorMessage) {
-      <app-alert variant="error" [message]="errorMessage" class="mb-5" />
+      <app-alert variant="error" [message]="errorMessage" class="mb-6" />
     }
     @if (successMessage) {
-      <app-alert variant="success" [message]="successMessage" class="mb-5" />
+      <app-alert variant="success" [message]="successMessage" class="mb-6" />
     }
 
     @if (isLoading) {
       <app-loading-state variant="block" label="Loading registration..." />
     } @else {
       <section class="mb-8">
-        <div class="mb-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-
+        <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div class="min-w-0 flex-1">
             <h1 class="text-3xl font-bold tracking-normal text-gray-950 md:text-4xl">
               {{ steps[stepIndex].label }}
             </h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
           </div>
-
         </div>
 
         <nav aria-label="Registration progress">
-          <ol class="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <ol class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             @for (step of steps; track step.key; let i = $index) {
               <li>
                 <button
@@ -52,7 +50,7 @@
                     @if (stepIsComplete(step.key)) {
                       <ng-icon name="heroCheck" size="20" aria-hidden="true" />
                     } @else if (!canOpenStep(step.key)) {
-                      <ng-icon name="heroLockClosed" size="18" aria-hidden="true" />
+                      <ng-icon name="heroLockClosed" size="20" aria-hidden="true" />
                     } @else {
                       {{ i + 1 }}
                     }
@@ -76,11 +74,11 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
+                <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
                   <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Record the child identity, home details, and proposed start date from the paper form.</p>
                 </div>
-                <span class="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700">
+                <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700">
                   <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
                   Required details
                 </span>
@@ -157,7 +155,7 @@
 
                   <fieldset>
                     <legend class="mb-2 block text-sm font-semibold text-gray-700">Gender</legend>
-                    <div class="grid min-h-11 gap-3 sm:grid-cols-3">
+                    <div class="grid gap-3 sm:grid-cols-3">
                       @for (gender of sexOptions; track gender.value) {
                         <app-radio
                           [id]="'child-sex-' + gender.value"
@@ -165,7 +163,7 @@
                           [value]="gender.value"
                           [label]="gender.label"
                           [checked]="step1.sex === gender.value"
-                          className="min-h-11 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-theme-xs"
+                          className="min-h-12 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-theme-xs"
                           (valueChange)="step1.sex = $event"
                         />
                       }
@@ -356,8 +354,8 @@
 
            <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5">
             <div class="flex gap-3">
-              <ng-icon name="heroInformationCircle" size="24" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
-              <p class="text-sm italic leading-6 text-gray-700">
+              <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
+              <p class="text-sm leading-6 text-gray-700">
                 All information provided is stored securely in accordance with UK GDPR regulations. Paper-form evidence remains held by the nursery.
               </p>
             </div>
@@ -370,7 +368,7 @@
           <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
+                <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Medical & Health Information</h2>
                   <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Please provide detailed medical history to ensure the child's safety.</p>
                 </div>
@@ -379,9 +377,9 @@
             </div>
 
             <div class="space-y-8 p-5 md:p-6">
-              <section class="space-y-4" aria-labelledby="medical-allergies-heading">
+              <section class="space-y-5" aria-labelledby="medical-allergies-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroExclamationTriangle" size="24" class="text-warning-500" aria-hidden="true" />
+                  <ng-icon name="heroExclamationTriangle" size="20" class="shrink-0 text-warning-500" aria-hidden="true" />
                   <h4 id="medical-allergies-heading" class="text-xl font-semibold">Allergies & Dietary Needs</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-5">
@@ -404,9 +402,9 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-medications-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-medications-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroClipboardDocumentCheck" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroClipboardDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-medications-heading" class="text-xl font-semibold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5">
@@ -443,12 +441,12 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-immunisations-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-immunisations-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroShieldCheck" size="24" class="text-success-500" aria-hidden="true" />
+                  <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
                   <h4 id="medical-immunisations-heading" class="text-xl font-semibold">Immunisations</h4>
                 </div>
-                <p class="text-sm italic text-gray-600">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
+                <p class="text-sm text-gray-600">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                   @for (option of immunisationOptions; track option.value) {
                     <app-radio
@@ -457,16 +455,16 @@
                       [value]="option.value"
                       [label]="option.label"
                       [checked]="step2.immunisation_status === option.value"
-                      className="min-h-14 rounded-lg border border-gray-300 bg-white px-4"
+                      className="min-h-12 rounded-lg border border-gray-300 bg-white px-4"
                       (valueChange)="step2.immunisation_status = $event"
                     />
                   }
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-history-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-history-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroClipboardDocumentList" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroClipboardDocumentList" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-history-heading" class="text-xl font-semibold">Medical History & Diet</h4>
                 </div>
                 @if (step2.immunisation_status === 'up_to_date' || step2.immunisation_status === 'partial') {
@@ -494,12 +492,12 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-professionals-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-professionals-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroUserGroup" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-professionals-heading" class="text-xl font-semibold">Registered Professionals</h4>
                 </div>
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div class="space-y-4">
                     <h5 class="text-xs font-bold uppercase tracking-wide text-gray-500">GP / Doctor Details</h5>
                     <app-form-field label="Practice name">
@@ -527,9 +525,9 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-safeguarding-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-safeguarding-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroScale" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroScale" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-safeguarding-heading" class="text-xl font-semibold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4">
@@ -560,12 +558,12 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-developmental-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-developmental-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroSparkles" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroSparkles" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-developmental-heading" class="text-xl font-semibold">Developmental Concerns</h4>
                 </div>
-                <p class="text-sm italic text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>
+                <p class="text-sm text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                   @for (item of concernItems; track item.key) {
                     <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
@@ -581,12 +579,12 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-referrals-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-referrals-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroAcademicCap" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroAcademicCap" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-referrals-heading" class="text-xl font-semibold">Professional Referrals</h4>
                 </div>
-                <p class="text-sm italic text-gray-600">Record any referrals made by healthcare or education professionals (e.g. Community Paediatrician, Speech and Language Therapist, EYIS).</p>
+                <p class="text-sm text-gray-600">Record any referrals made by healthcare or education professionals (e.g. Community Paediatrician, Speech and Language Therapist, EYIS).</p>
                 <app-form-field label="Referral details">
                   <app-text-area
                     [(ngModel)]="step2.professional_referrals"
@@ -596,12 +594,12 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-4 border-t border-gray-200 pt-6" aria-labelledby="medical-routine-heading">
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-routine-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroInformationCircle" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroInformationCircle" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-routine-heading" class="text-xl font-semibold">Routine Care & Further Information</h4>
                 </div>
-                <p class="text-sm italic text-gray-600">Any additional information we should know about the child, such as special words, comforters, routines, etc.</p>
+                <p class="text-sm text-gray-600">Any additional information we should know about the child, such as special words, comforters, routines, etc.</p>
                 <app-form-field label="Routine care notes">
                   <app-text-area
                     [(ngModel)]="step2.routine_care_notes"
@@ -625,7 +623,7 @@
           </div>
 
           <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500">
-            <ng-icon name="heroLockClosed" size="20" class="text-success-500" aria-hidden="true" />
+            <ng-icon name="heroLockClosed" size="16" class="text-success-500" aria-hidden="true" />
             Secure Data Encryption Active • GDPR Compliant Nursery Records
           </div>
         </section>
@@ -636,14 +634,14 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroUserGroup" size="24" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Parent/Carer Details</h2>
               </div>
             </div>
-            <div class="p-5 md:p-6">
+            <div class="p-5 md:p-6 space-y-6">
 
             @if (parentCarersDraft[0]; as parent) {
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <app-form-field label="Primary parent/carer full name">
                   <app-input-field
                     type="text"
@@ -688,7 +686,7 @@
                   />
                 </app-form-field>
               </div>
-              <div class="mt-4 flex items-center gap-4">
+              <div class="flex items-center gap-4">
                 <app-checkbox
                   name="parent1_has_responsibility"
                   [(ngModel)]="step3.parent1_has_responsibility"
@@ -698,12 +696,12 @@
             }
 
             @if (step3.show_second_parent) {
-              <div class="mt-8 border-t border-gray-200 pt-6">
-                <div class="mb-4 flex items-center justify-between">
+              <div class="border-t border-gray-200 pt-6">
+                <div class="mb-4 flex items-center justify-between gap-3">
                   <h4 class="text-lg font-bold text-gray-950">Second Parent/Carer</h4>
-                  <button type="button" (click)="step3.show_second_parent = false" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
+                  <button type="button" (click)="step3.show_second_parent = false" class="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
                 </div>
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                   <app-form-field label="Full name">
                     <app-input-field
                       type="text"
@@ -754,7 +752,7 @@
                 </div>
               </div>
             } @else {
-              <div class="mt-6">
+              <div>
                 <button type="button" (click)="step3.show_second_parent = true" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
                   <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
                   Add second parent/carer
@@ -762,7 +760,7 @@
               </div>
             }
 
-            <div class="mt-6 rounded-lg bg-brand-50 p-5">
+            <div class="rounded-lg bg-brand-50 p-5">
               <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
               <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <div class="space-y-3">
@@ -825,7 +823,7 @@
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroIdentification" size="24" class="text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroIdentification" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Emergency Contacts</h2>
                 </div>
                 <button type="button" (click)="addEmergencyContact()" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
@@ -869,7 +867,7 @@
                         [(ngModel)]="emergencyAuthorisedFlags[i]"
                         label="Authorised to collect child from nursery"
                       />
-                      <button type="button" (click)="removeEmergencyContact(i)" class="min-h-11 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
+                      <button type="button" (click)="removeEmergencyContact(i)" class="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
                     </div>
                   </div>
                 }
@@ -881,12 +879,12 @@
             <div class="absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-brand-50"></div>
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroLockClosed" size="24" class="relative text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroLockClosed" size="20" class="relative shrink-0 text-brand-600" aria-hidden="true" />
                 <h2 class="relative text-2xl font-bold text-gray-950 dark:text-white/90">Authorised Collection Password</h2>
               </div>
             </div>
-            <div class="p-5 md:p-6">
-            <p class="relative mb-6 max-w-3xl leading-7 text-gray-700">
+            <div class="p-5 md:p-6 space-y-5">
+            <p class="relative max-w-2xl leading-6 text-gray-700">
               As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
             </p>
             <div class="relative grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -908,7 +906,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="relative mt-5 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
+            <div class="relative rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
               Please share this password securely with all authorised collectors listed above.
             </div>
             </div>
@@ -931,27 +929,27 @@
         <section class="space-y-6">
           <div>
             <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Permissions & Consents</h2>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Step 4: Confirm operational and safety permissions from the completed paper form.</p>
+            <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 4: Confirm operational and safety permissions from the completed paper form.</p>
           </div>
 
           <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4">
-            <ng-icon name="heroInformationCircle" size="22" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
+            <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
             <p class="text-sm leading-6 text-gray-700">Every consent decision must be recorded explicitly. This screen records paper-form decisions only; no uploads or digital signature capture are part of this workflow.</p>
           </div>
 
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroUserGroup" size="22" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Professional Liaison</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6">
-            <p class="mb-5 text-sm leading-6 text-gray-600">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
+            <div class="p-5 md:p-6 space-y-5">
+            <p class="max-w-3xl text-sm leading-6 text-gray-600">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
             <div class="space-y-3">
               @for (item of professionalConsentItems; track item.key) {
                 <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4">
-                  <div>
+                  <div class="min-w-0">
                     <p class="font-bold">{{ item.label }}</p>
                     <p class="text-xs text-gray-600">{{ item.detail }}</p>
                   </div>
@@ -971,12 +969,12 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroShieldCheck" size="22" class="text-error-500" aria-hidden="true" />
+                <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-error-500" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Child Protection & Medical Authority</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6">
-            <div class="mb-5 rounded-lg border border-error-200 bg-error-50 p-4">
+            <div class="p-5 md:p-6 space-y-5">
+            <div class="rounded-lg border border-error-200 bg-error-50 p-4">
               <p class="text-sm font-medium leading-6 text-error-700">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1010,7 +1008,7 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroHeart" size="22" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroHeart" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Activities & Daily Care</h3>
               </div>
             </div>
@@ -1033,14 +1031,14 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroCamera" size="22" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroCamera" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Photographs & Social Media</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6">
+            <div class="p-5 md:p-6 space-y-5">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               @for (item of photoConsentItems; track item.key) {
-                <div class="min-h-14 rounded-lg border border-gray-200 bg-brand-50 p-4">
+                <div class="rounded-lg border border-gray-200 bg-brand-50 p-4">
                   <app-checkbox
                     [name]="'photo-consent-' + item.key"
                     [label]="item.label"
@@ -1050,9 +1048,9 @@
                 </div>
               }
             </div>
-            <div class="mt-5 rounded-lg border-2 border-dashed border-brand-200 p-5">
+            <div class="rounded-lg border-2 border-dashed border-brand-200 p-5">
               <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
+                <div class="min-w-0">
                   <p class="font-bold">TikTok, Instagram & Facebook</p>
                   <p class="text-xs text-gray-600">Consent to appearing on official nursery social media accounts.</p>
                 </div>
@@ -1076,11 +1074,11 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroDocumentCheck" size="22" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Paper-Form Evidence & Confirmation</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6">
+            <div class="p-5 md:p-6 space-y-5">
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
               <app-form-field label="Parent/guardian name" [required]="true">
                 <app-input-field
@@ -1098,7 +1096,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
               <div class="rounded-lg bg-brand-50 p-4">
                 <app-checkbox
                   name="paper_form_on_file"
@@ -1120,7 +1118,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
               <app-form-field label="Deposit status">
                 <app-select
                   [(ngModel)]="officeEvidence.depositStatus"
@@ -1145,7 +1143,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
               <app-form-field label="Term time only space">
                 <app-select
                   [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
@@ -1166,7 +1164,7 @@
                 />
               </app-form-field>
             </div>
-            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
               <app-form-field label="Red Book checked date">
                 <app-date-picker
                   [(ngModel)]="officeEvidence.redBookCheckedDate"
@@ -1186,7 +1184,7 @@
                 />
               </app-form-field>
             </div>
-            <app-form-field className="mt-5" label="Notes / exceptions">
+            <app-form-field label="Notes / exceptions">
               <app-text-area
                 [(ngModel)]="step4.notes_exceptions"
                 [rows]="3"
@@ -1199,12 +1197,12 @@
           <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex items-center gap-3">
-                <ng-icon name="heroShieldCheck" size="22" class="text-brand-600" aria-hidden="true" />
+                <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                 <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">GDPR Declaration</h3>
               </div>
             </div>
-            <div class="p-5 md:p-6">
-              <p class="mb-5 text-sm leading-6 text-gray-600">
+            <div class="p-5 md:p-6 space-y-5">
+              <p class="max-w-3xl text-sm leading-6 text-gray-600">
                 The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
               </p>
               <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -1242,19 +1240,19 @@
       @if (currentStep === 'review-complete') {
         <section class="space-y-6">
           <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <nav class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+            <div class="min-w-0">
+              <nav class="mb-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 <span>Admissions</span>
-                <span>/</span>
+                <span aria-hidden="true">/</span>
                 <span>New Registrations</span>
-                <span>/</span>
+                <span aria-hidden="true">/</span>
                 <span class="font-semibold text-gray-900">{{ childFullNameDraft || child?.fullName || 'Child' }}</span>
               </nav>
               <h2 class="text-3xl font-bold text-gray-950 md:text-4xl">Review Application: {{ childFullNameDraft || child?.fullName || 'Child' }}</h2>
             </div>
             <div class="flex flex-wrap gap-3">
-              <button type="button" (click)="navigateToChildDetail()" class="min-h-11 rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">Open Child Record</button>
-              <button type="button" (click)="markComplete()" [disabled]="!canMarkComplete || isSaving" class="min-h-11 rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
+              <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">Open Child Record</button>
+              <button type="button" (click)="markComplete()" [disabled]="!canMarkComplete || isSaving" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
                 {{ isReviewedComplete ? 'Reviewed Complete' : 'Mark Reviewed/Complete' }}
               </button>
             </div>
@@ -1264,9 +1262,9 @@
             <div class="rounded-lg border border-error-200 border-l-error-500 bg-error-50 p-5">
               <div class="flex items-start gap-4">
                 <div class="rounded-lg bg-error-100 p-3 text-error-700">
-                  <ng-icon name="heroExclamationTriangle" size="26" aria-hidden="true" />
+                  <ng-icon name="heroExclamationTriangle" size="24" aria-hidden="true" />
                 </div>
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                   <h4 class="text-xl font-bold text-error-700">Critical Medical Alerts</h4>
                   <div class="mt-3 flex flex-wrap gap-3">
                     @if (step2.has_allergies) {
@@ -1290,7 +1288,7 @@
                 </div>
               </div>
               <div class="p-5 md:p-6">
-              <div class="grid grid-cols-1 gap-8 p-6 md:grid-cols-2">
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div class="space-y-5">
                   <div>
                     <p class="mb-1 text-xs font-bold uppercase text-gray-500">Full Name</p>
@@ -1317,7 +1315,7 @@
                   </div>
                   <div>
                     <p class="mb-1 text-xs font-bold uppercase text-gray-500">Sessions Requested</p>
-                    <div class="mt-2 flex gap-2">
+                    <div class="mt-2 flex flex-wrap gap-2">
                       @for (day of ['MON', 'TUE', 'WED']; track day) {
                         <span class="rounded bg-brand-500 px-3 py-1 text-xs font-bold text-white">{{ day }}</span>
                       }
@@ -1331,17 +1329,17 @@
             </div>
             </section>
 
-            <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 text-center lg:col-span-4">
+            <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 text-center lg:col-span-4">
               <div class="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-lg border-4 border-white bg-[linear-gradient(135deg,#dbeafe,#dcfce7)] text-brand-700 shadow-theme-md">
-                <ng-icon name="heroAcademicCap" size="56" aria-hidden="true" />
+                <ng-icon name="heroAcademicCap" size="48" aria-hidden="true" />
               </div>
               <h4 class="text-2xl font-bold">{{ childFullNameDraft || child?.fullName || 'Child' }}</h4>
-              <p class="mx-auto mt-2 max-w-xs italic leading-6 text-gray-500">{{ step1.notes || 'Registration details ready for manager review.' }}</p>
+              <p class="mx-auto mt-2 max-w-xs leading-6 text-gray-500">{{ step1.notes || 'Registration details ready for manager review.' }}</p>
               <div class="mt-6 rounded-lg bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700">Paper evidence metadata only</div>
             </aside>
 
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 lg:col-span-6">
-              <div class="mb-5 flex items-center justify-between">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 lg:col-span-6">
+              <div class="mb-5 flex items-center justify-between gap-3">
                 <h4 class="text-xl font-semibold text-gray-950 dark:text-white/90">Room Availability</h4>
                 <span class="text-sm font-semibold text-brand-600">Toddler Room (2-3 yrs)</span>
               </div>
@@ -1352,29 +1350,29 @@
               <div class="h-2 overflow-hidden rounded-full bg-brand-50">
                 <div class="h-full w-[87%] bg-success-500"></div>
               </div>
-              <p class="mt-5 leading-7 text-gray-700">Approving this registration keeps the Toddler Room within OFSTED ratio limits for the recorded sessions.</p>
+              <p class="mt-5 leading-6 text-gray-700">Approving this registration keeps the Toddler Room within OFSTED ratio limits for the recorded sessions.</p>
             </section>
 
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 lg:col-span-6">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 lg:col-span-6">
               <h4 class="mb-5 text-xl font-semibold text-gray-950 dark:text-white/90">Document Status</h4>
               <div class="space-y-3">
                 <div class="flex items-center justify-between rounded bg-brand-50 p-3">
                   <span class="flex items-center gap-3">
-                    <ng-icon name="heroCheck" size="22" class="text-success-500" aria-hidden="true" />
+                    <ng-icon name="heroCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
                     Birth Certificate / Passport
                   </span>
                   <span class="text-sm font-semibold text-gray-600">{{ officeEvidence.birthCertificatePassportStatus || 'Unknown' }}</span>
                 </div>
                 <div class="flex items-center justify-between rounded bg-brand-50 p-3">
                   <span class="flex items-center gap-3">
-                    <ng-icon name="heroCheck" size="22" class="text-success-500" aria-hidden="true" />
+                    <ng-icon name="heroCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
                     Paper Consent Record
                   </span>
                   <span class="text-sm font-semibold text-gray-600">{{ consentCompleteLabel() }}</span>
                 </div>
                 <div class="flex items-center justify-between rounded border border-error-200 bg-error-50 p-3">
                   <span class="flex items-center gap-3 font-bold text-error-700">
-                    <ng-icon name="heroExclamationTriangle" size="22" aria-hidden="true" />
+                    <ng-icon name="heroExclamationTriangle" size="20" aria-hidden="true" />
                     Overall Office Checklist
                   </span>
                   <span class="text-sm font-bold text-brand-600">{{ officeCompleteLabel() }}</span>
