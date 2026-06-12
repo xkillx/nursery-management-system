@@ -8,10 +8,11 @@
   [attr.aria-invalid]="error"
   [attr.aria-describedby]="describedBy || null"
   (change)="onChange($event)"
+  (blur)="markTouched()"
 >
   <option
     value=""
-    disabled
+    [disabled]="placeholderDisabled"
     [selected]="!value"
     class="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
   >

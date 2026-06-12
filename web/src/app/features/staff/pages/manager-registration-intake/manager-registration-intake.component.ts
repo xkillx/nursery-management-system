@@ -28,6 +28,12 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { RadioComponent } from '../../../../shared/components/form/input/radio.component';
+import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
@@ -79,7 +85,13 @@ type ConsentItem = {
     FormsModule,
     NgIcon,
     AlertComponent,
+    CheckboxComponent,
+    FormFieldComponent,
+    InputFieldComponent,
     LoadingStateComponent,
+    RadioComponent,
+    SelectComponent,
+    TextAreaComponent,
   ],
   providers: [
     provideIcons({
@@ -146,6 +158,25 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
 
   readonly languageOptions = ['English', 'Polish', 'Punjabi', 'Arabic', 'Urdu', 'Spanish', 'Other'];
   readonly relationshipOptions = ['Mother', 'Father', 'Parent', 'Carer', 'Grandparent', 'Aunt', 'Uncle', 'Other'];
+  readonly sexOptions: Option[] = [
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' },
+  ];
+  readonly languageSelectOptions: Option[] = this.languageOptions.map((language) => ({
+    value: language,
+    label: language,
+  }));
+  readonly relationshipSelectOptions: Option[] = this.relationshipOptions.map((relationship) => ({
+    value: relationship,
+    label: relationship,
+  }));
+  readonly evidenceStatusOptions: Option[] = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'complete', label: 'Complete' },
+    { value: 'missing', label: 'Still needed' },
+    { value: 'not_applicable', label: 'Not applicable' },
+  ];
   readonly todayIso = new Date().toISOString().slice(0, 10);
   readonly step1RequiredFields: Step1RequiredField[] = [
     'first_name',
@@ -153,10 +184,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     'date_of_birth',
     'start_date',
   ];
-  readonly fieldBaseClass = 'h-12 w-full rounded-lg border bg-white px-4 text-base text-gray-900 shadow-theme-xs outline-hidden transition placeholder:text-gray-400 focus:ring-4';
-  readonly textareaBaseClass = 'w-full rounded-lg border bg-white px-4 py-3 text-base text-gray-900 shadow-theme-xs outline-hidden transition placeholder:text-gray-400 focus:ring-4';
-  readonly fieldDefaultClass = 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/10';
-  readonly fieldErrorClass = 'border-error-500 bg-error-50/40 focus:border-error-500 focus:ring-error-500/15';
   readonly immunisationOptions = [
     { value: 'up_to_date', label: 'Fully Up-to-Date' },
     { value: 'partial', label: 'Partially (Delayed)' },
@@ -455,6 +482,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     return (this.step1Submitted || !!this.step1Touched[field]) && !!this.step1FieldError(field);
   }
 
+  step1VisibleError(field: Step1Field): string {
+    return this.shouldShowStep1Error(field) ? this.step1FieldError(field) ?? '' : '';
+  }
+
   markStep1Touched(field: Step1Field): void {
     this.step1Touched[field] = true;
   }
@@ -467,10 +498,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
       start_date: 'Proposed start date',
     };
     return labels[field];
-  }
-
-  fieldStateClass(field: Step1Field): string {
-    return this.shouldShowStep1Error(field) ? this.fieldErrorClass : this.fieldDefaultClass;
   }
 
   saveChildBasics(advance = true): void {

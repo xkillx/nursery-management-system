@@ -1,9 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   selector: 'app-text-area',
   imports: [CommonModule],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => TextAreaComponent),
+      multi: true,
+    },
+  ],
   template: `
     <div class="relative">
       <textarea
@@ -13,9 +21,11 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [rows]="rows"
         [value]="value"
         [disabled]="disabled"
+        [attr.autocomplete]="autocomplete || null"
         [attr.aria-invalid]="error"
         [attr.aria-describedby]="describedBy || null"
         (input)="onInput($event)"
+        (blur)="markTouched()"
         [ngClass]="textareaClasses"
       ></textarea>
       @if (hint) {
@@ -29,7 +39,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   `,
   styles: ``,
 })
-export class TextAreaComponent {
+export class TextAreaComponent implements ControlValueAccessor {
 
   @Input() id?: string = '';
   @Input() name?: string = '';
@@ -41,12 +51,40 @@ export class TextAreaComponent {
   @Input() error = false;
   @Input() hint = '';
   @Input() describedBy?: string;
+  @Input() autocomplete?: string;
 
   @Output() valueChange = new EventEmitter<string>();
+  @Output() blurred = new EventEmitter<void>();
+
+  private onChange: (value: string) => void = () => {};
+  private onTouched: () => void = () => {};
 
   onInput(event: Event) {
     const val = (event.target as HTMLTextAreaElement).value;
+    this.value = val;
+    this.onChange(val);
     this.valueChange.emit(val);
+  }
+
+  markTouched() {
+    this.onTouched();
+    this.blurred.emit();
+  }
+
+  writeValue(value: string | null): void {
+    this.value = value ?? '';
+  }
+
+  registerOnChange(fn: (value: string) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
   }
 
   get textareaClasses(): string {

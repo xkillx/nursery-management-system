@@ -9,6 +9,11 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import {
@@ -30,7 +35,8 @@ import {
   imports: [
     RouterLink, DatePipe, FormsModule,
     AlertComponent, LoadingStateComponent, PageHeaderComponent,
-    ButtonComponent,
+    ButtonComponent, CheckboxComponent, FormFieldComponent, InputFieldComponent,
+    SelectComponent, TextAreaComponent,
   ],
   templateUrl: './manager-child-registration.component.html',
 })
@@ -69,6 +75,40 @@ export class ManagerChildRegistrationComponent implements OnInit {
   gdprName = '';
   gdprDate = '';
   officeDraft: OfficeUseChecklist | null = null;
+
+  readonly sexOptions: Option[] = [
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  readonly yesNoUnknownOptions: Option[] = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+  ];
+
+  readonly immunisationStatusOptions: Option[] = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'up_to_date', label: 'Up to date' },
+    { value: 'refused', label: 'Refused' },
+    { value: 'partial', label: 'Partial' },
+    { value: 'not_recorded', label: 'Not recorded' },
+  ];
+
+  readonly officeCheckStatusOptions: Option[] = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'complete', label: 'Complete' },
+    { value: 'missing', label: 'Still needed' },
+    { value: 'not_applicable', label: 'Not applicable' },
+  ];
+
+  readonly termTimeOnlySpaceOptions: Option[] = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'not_applicable', label: 'Not applicable' },
+  ];
 
   ngOnInit(): void {
     this.childId = this.route.snapshot.paramMap.get('childId');

@@ -22,7 +22,7 @@ import { Component, Input } from '@angular/core';
         <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ hint }}</p>
       }
       @if (error) {
-        <p class="mt-1.5 text-xs text-error-500">{{ error }}</p>
+        <p [id]="errorId || null" class="mt-1.5 text-xs text-error-500">{{ error }}</p>
       }
     </div>
   `,
@@ -33,5 +33,6 @@ export class FormFieldComponent {
   @Input() required = false;
   @Input() hint = '';
   @Input() error = '';
+  @Input() errorId = '';
   @Input() className = '';
 }

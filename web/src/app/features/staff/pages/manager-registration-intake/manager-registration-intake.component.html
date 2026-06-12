@@ -199,123 +199,114 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <label class="block" for="child-first-name">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">First name(s) <span class="text-error-600">*</span></span>
-                    <input
+                  <app-form-field
+                    label="First name(s)"
+                    labelFor="child-first-name"
+                    [required]="true"
+                    errorId="child-first-name-error"
+                    [error]="step1VisibleError('first_name')"
+                  >
+                    <app-input-field
                       id="child-first-name"
                       name="first_name"
                       type="text"
                       [(ngModel)]="step1.first_name"
-                      (blur)="markStep1Touched('first_name')"
-                      [class]="fieldBaseClass + ' ' + fieldStateClass('first_name')"
-                      [attr.aria-invalid]="shouldShowStep1Error('first_name') ? 'true' : 'false'"
-                      [attr.aria-describedby]="shouldShowStep1Error('first_name') ? 'child-first-name-error' : null"
+                      (blurred)="markStep1Touched('first_name')"
+                      [error]="shouldShowStep1Error('first_name')"
+                      [describedBy]="shouldShowStep1Error('first_name') ? 'child-first-name-error' : undefined"
                       autocomplete="given-name"
                       placeholder="e.g. James Arthur"
                     />
-                    @if (shouldShowStep1Error('first_name')) {
-                      <p id="child-first-name-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
-                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
-                        {{ step1FieldError('first_name') }}
-                      </p>
-                    }
-                  </label>
+                  </app-form-field>
 
-                  <label class="block" for="child-surname">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Surname <span class="text-error-600">*</span></span>
-                    <input
+                  <app-form-field
+                    label="Surname"
+                    labelFor="child-surname"
+                    [required]="true"
+                    errorId="child-surname-error"
+                    [error]="step1VisibleError('surname')"
+                  >
+                    <app-input-field
                       id="child-surname"
                       name="surname"
                       type="text"
                       [(ngModel)]="step1.surname"
-                      (blur)="markStep1Touched('surname')"
-                      [class]="fieldBaseClass + ' ' + fieldStateClass('surname')"
-                      [attr.aria-invalid]="shouldShowStep1Error('surname') ? 'true' : 'false'"
-                      [attr.aria-describedby]="shouldShowStep1Error('surname') ? 'child-surname-error' : null"
+                      (blurred)="markStep1Touched('surname')"
+                      [error]="shouldShowStep1Error('surname')"
+                      [describedBy]="shouldShowStep1Error('surname') ? 'child-surname-error' : undefined"
                       autocomplete="family-name"
                       placeholder="e.g. Smith"
                     />
-                    @if (shouldShowStep1Error('surname')) {
-                      <p id="child-surname-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
-                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
-                        {{ step1FieldError('surname') }}
-                      </p>
-                    }
-                  </label>
+                  </app-form-field>
                 </div>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <label class="block" for="child-date-of-birth">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Date of birth <span class="text-error-600">*</span></span>
-                    <input
+                  <app-form-field
+                    label="Date of birth"
+                    labelFor="child-date-of-birth"
+                    [required]="true"
+                    errorId="child-date-of-birth-error"
+                    [error]="step1VisibleError('date_of_birth')"
+                  >
+                    <app-input-field
                       id="child-date-of-birth"
                       name="date_of_birth"
                       type="date"
                       [(ngModel)]="step1.date_of_birth"
-                      (blur)="markStep1Touched('date_of_birth')"
+                      (blurred)="markStep1Touched('date_of_birth')"
                       [max]="todayIso"
-                      [class]="fieldBaseClass + ' ' + fieldStateClass('date_of_birth')"
-                      [attr.aria-invalid]="shouldShowStep1Error('date_of_birth') ? 'true' : 'false'"
-                      [attr.aria-describedby]="shouldShowStep1Error('date_of_birth') ? 'child-date-of-birth-error' : null"
+                      [error]="shouldShowStep1Error('date_of_birth')"
+                      [describedBy]="shouldShowStep1Error('date_of_birth') ? 'child-date-of-birth-error' : undefined"
                     />
-                    @if (shouldShowStep1Error('date_of_birth')) {
-                      <p id="child-date-of-birth-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
-                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
-                        {{ step1FieldError('date_of_birth') }}
-                      </p>
-                    }
-                  </label>
+                  </app-form-field>
 
                   <fieldset>
                     <legend class="mb-2 block text-sm font-semibold text-gray-700">Gender</legend>
-                    <div class="grid grid-cols-3 gap-3">
-                      @for (gender of ['male', 'female', 'other']; track gender) {
-                        <label class="cursor-pointer">
-                          <input class="peer sr-only" type="radio" name="sex" [value]="gender" [(ngModel)]="step1.sex" />
-                          <span class="flex h-12 items-center justify-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold capitalize text-gray-700 transition peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-brand-500/10">
-                            {{ gender }}
-                          </span>
-                        </label>
+                    <div class="grid min-h-11 gap-3 sm:grid-cols-3">
+                      @for (gender of sexOptions; track gender.value) {
+                        <app-radio
+                          [id]="'child-sex-' + gender.value"
+                          name="sex"
+                          [value]="gender.value"
+                          [label]="gender.label"
+                          [checked]="step1.sex === gender.value"
+                          className="min-h-11 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-theme-xs"
+                          (valueChange)="step1.sex = $event"
+                        />
                       }
                     </div>
                   </fieldset>
                 </div>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <label class="block" for="child-first-language">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Primary language spoken at home</span>
-                    <select
+                  <app-form-field label="Primary language spoken at home" labelFor="child-first-language">
+                    <app-select
                       id="child-first-language"
                       name="first_language"
                       [(ngModel)]="step1.first_language"
-                      [class]="fieldBaseClass + ' appearance-none ' + fieldDefaultClass"
-                    >
-                      <option value="">Select a language...</option>
-                      @for (language of languageOptions; track language) {
-                        <option [value]="language">{{ language }}</option>
-                      }
-                    </select>
-                  </label>
+                      [options]="languageSelectOptions"
+                      placeholder="Select a language..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
 
-                  <label class="block" for="child-start-date">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Proposed start date <span class="text-error-600">*</span></span>
-                    <input
+                  <app-form-field
+                    label="Proposed start date"
+                    labelFor="child-start-date"
+                    [required]="true"
+                    errorId="child-start-date-error"
+                    [error]="step1VisibleError('start_date')"
+                  >
+                    <app-input-field
                       id="child-start-date"
                       name="start_date"
                       type="date"
                       [(ngModel)]="step1.start_date"
-                      (blur)="markStep1Touched('start_date')"
-                      [class]="fieldBaseClass + ' ' + fieldStateClass('start_date')"
-                      [attr.aria-invalid]="shouldShowStep1Error('start_date') ? 'true' : 'false'"
-                      [attr.aria-describedby]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : null"
+                      (blurred)="markStep1Touched('start_date')"
+                      [error]="shouldShowStep1Error('start_date')"
+                      [describedBy]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : undefined"
                     />
-                    @if (shouldShowStep1Error('start_date')) {
-                      <p id="child-start-date-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
-                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
-                        {{ step1FieldError('start_date') }}
-                      </p>
-                    }
-                  </label>
+                  </app-form-field>
                 </div>
               </section>
 
@@ -325,28 +316,50 @@
                   <p class="mt-1 text-sm text-gray-500">Optional details can be completed now or updated later.</p>
                 </div>
 
-                <label class="block" for="child-home-address">
-                  <span class="mb-2 block text-sm font-semibold text-gray-700">Address line 1</span>
-                  <input id="child-home-address" name="home_address" type="text" [(ngModel)]="step1.home_address" [class]="fieldBaseClass + ' ' + fieldDefaultClass" autocomplete="street-address" />
-                </label>
+                <app-form-field label="Address line 1" labelFor="child-home-address">
+                  <app-input-field
+                    id="child-home-address"
+                    name="home_address"
+                    type="text"
+                    [(ngModel)]="step1.home_address"
+                    autocomplete="street-address"
+                  />
+                </app-form-field>
 
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <label class="block" for="child-home-telephone">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Home telephone</span>
-                    <input id="child-home-telephone" name="home_telephone" type="tel" [(ngModel)]="step1.home_telephone" [class]="fieldBaseClass + ' ' + fieldDefaultClass" autocomplete="tel" />
-                  </label>
-                  <label class="block" for="child-home-postcode">
-                    <span class="mb-2 block text-sm font-semibold text-gray-700">Postcode</span>
-                    <input id="child-home-postcode" name="home_postcode" type="text" [(ngModel)]="step1.home_postcode" [class]="fieldBaseClass + ' uppercase ' + fieldDefaultClass" autocomplete="postal-code" placeholder="SW1A 1AA" />
-                  </label>
+                  <app-form-field label="Home telephone" labelFor="child-home-telephone">
+                    <app-input-field
+                      id="child-home-telephone"
+                      name="home_telephone"
+                      type="tel"
+                      [(ngModel)]="step1.home_telephone"
+                      autocomplete="tel"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Postcode" labelFor="child-home-postcode">
+                    <app-input-field
+                      id="child-home-postcode"
+                      name="home_postcode"
+                      type="text"
+                      [(ngModel)]="step1.home_postcode"
+                      autocomplete="postal-code"
+                      className="uppercase"
+                      placeholder="SW1A 1AA"
+                    />
+                  </app-form-field>
                 </div>
               </section>
 
               <section class="border-t border-gray-200 pt-6" aria-labelledby="child-notes-heading">
-                <label class="block" for="child-notes">
-                  <span id="child-notes-heading" class="mb-2 block text-sm font-semibold text-gray-700">Child notes</span>
-                  <textarea id="child-notes" name="notes" [(ngModel)]="step1.notes" rows="4" [class]="textareaBaseClass + ' ' + fieldDefaultClass" placeholder="Optional notes from the paper registration form"></textarea>
-                </label>
+                <app-form-field label="Child notes" labelFor="child-notes">
+                  <app-text-area
+                    id="child-notes"
+                    name="notes"
+                    [(ngModel)]="step1.notes"
+                    [rows]="4"
+                    placeholder="Optional notes from the paper registration form"
+                  />
+                </app-form-field>
               </section>
 
               <div class="flex flex-col items-stretch justify-between gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
@@ -390,12 +403,21 @@
                   <h4 class="text-xl font-semibold">Allergies & Dietary Needs</h4>
                 </div>
                 <div class="rounded-lg border border-error-200 bg-error-50 p-5">
-                  <label class="flex min-h-11 items-center gap-3 text-lg">
-                    <input type="checkbox" [(ngModel)]="step2.has_allergies" class="h-5 w-5 rounded border-gray-300 text-error-500 focus:ring-error-500" />
-                    Does the child have any known allergies?
-                  </label>
+                  <app-checkbox
+                    name="has_allergies"
+                    [(ngModel)]="step2.has_allergies"
+                    label="Does the child have any known allergies?"
+                    className="checked:bg-error-500"
+                  />
                   @if (step2.has_allergies) {
-                    <textarea [(ngModel)]="step2.allergy_details" rows="4" class="mt-4 w-full rounded-lg border border-error-200 bg-white px-4 py-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Please list all allergies, severity, and typical reactions..."></textarea>
+                    <app-form-field className="mt-4" label="Allergy details">
+                      <app-text-area
+                        className="border-error-200 bg-white"
+                        [(ngModel)]="step2.allergy_details"
+                        [rows]="4"
+                        placeholder="Please list all allergies, severity, and typical reactions..."
+                      />
+                    </app-form-field>
                   }
                 </div>
               </section>
@@ -406,24 +428,34 @@
                   <h4 class="text-xl font-semibold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5">
-                  <label class="flex min-h-11 items-center gap-3 text-lg">
-                    <input type="checkbox" [(ngModel)]="step2.on_medication" class="h-5 w-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                    Is the child currently taking any regular medication?
-                  </label>
+                  <app-checkbox
+                    name="on_medication"
+                    [(ngModel)]="step2.on_medication"
+                    label="Is the child currently taking any regular medication?"
+                  />
                   @if (step2.on_medication) {
                     <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <label class="block">
-                        <span class="mb-2 block text-sm font-medium text-gray-700">Medication Name</span>
-                        <input type="text" [(ngModel)]="step2.medication_name" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Inhaler" />
-                      </label>
-                      <label class="block">
-                        <span class="mb-2 block text-sm font-medium text-gray-700">Dosage & Frequency</span>
-                        <input type="text" [(ngModel)]="step2.medication_dosage" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. 2 puffs when required" />
-                      </label>
-                      <label class="block md:col-span-2">
-                        <span class="mb-2 block text-sm font-medium text-gray-700">Storage Requirements</span>
-                        <input type="text" [(ngModel)]="step2.medication_storage" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Refrigerator" />
-                      </label>
+                      <app-form-field label="Medication name">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="step2.medication_name"
+                          placeholder="e.g. Inhaler"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Dosage and frequency">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="step2.medication_dosage"
+                          placeholder="e.g. 2 puffs when required"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Storage requirements" className="md:col-span-2">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="step2.medication_storage"
+                          placeholder="e.g. Refrigerator"
+                        />
+                      </app-form-field>
                     </div>
                   }
                 </div>
@@ -437,13 +469,15 @@
                 <p class="text-sm italic text-gray-600">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                   @for (option of immunisationOptions; track option.value) {
-                    <label class="cursor-pointer">
-                      <input class="peer sr-only" type="radio" name="immunisation_status" [value]="option.value" [(ngModel)]="step2.immunisation_status" />
-                      <span class="flex min-h-14 items-center gap-3 rounded-lg border border-[#d0d5dd] bg-white px-4 font-medium transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">
-                        <span class="h-5 w-5 rounded-full border border-gray-400 peer-checked:border-brand-600"></span>
-                        {{ option.label }}
-                      </span>
-                    </label>
+                    <app-radio
+                      [id]="'immunisation-' + option.value"
+                      name="immunisation_status"
+                      [value]="option.value"
+                      [label]="option.label"
+                      [checked]="step2.immunisation_status === option.value"
+                      className="min-h-14 rounded-lg border border-[#d0d5dd] bg-white px-4"
+                      (valueChange)="step2.immunisation_status = $event"
+                    />
                   }
                 </div>
               </section>
@@ -456,15 +490,27 @@
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <div class="space-y-4">
                     <h5 class="text-xs font-bold uppercase tracking-wide text-gray-500">GP / Doctor Details</h5>
-                    <input type="text" [(ngModel)]="step2.doctor_practice" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Practice Name" />
-                    <input type="text" [(ngModel)]="step2.doctor_name" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Doctor's Name" />
-                    <input type="tel" [(ngModel)]="step2.doctor_phone" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Contact Number" />
+                    <app-form-field label="Practice name">
+                      <app-input-field type="text" [(ngModel)]="step2.doctor_practice" placeholder="Practice name" />
+                    </app-form-field>
+                    <app-form-field label="Doctor's name">
+                      <app-input-field type="text" [(ngModel)]="step2.doctor_name" placeholder="Doctor's name" />
+                    </app-form-field>
+                    <app-form-field label="Doctor contact number">
+                      <app-input-field type="tel" [(ngModel)]="step2.doctor_phone" autocomplete="tel" placeholder="Contact number" />
+                    </app-form-field>
                   </div>
                   <div class="space-y-4">
                     <h5 class="text-xs font-bold uppercase tracking-wide text-gray-500">Health Visitor Details</h5>
-                    <input type="text" [(ngModel)]="step2.health_visitor_name" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Health Visitor Name" />
-                    <input type="text" [(ngModel)]="step2.health_visitor_clinic" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Clinic / Office" />
-                    <input type="tel" [(ngModel)]="step2.health_visitor_phone" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Contact Number" />
+                    <app-form-field label="Health visitor name">
+                      <app-input-field type="text" [(ngModel)]="step2.health_visitor_name" placeholder="Health visitor name" />
+                    </app-form-field>
+                    <app-form-field label="Clinic / office">
+                      <app-input-field type="text" [(ngModel)]="step2.health_visitor_clinic" placeholder="Clinic / office" />
+                    </app-form-field>
+                    <app-form-field label="Health visitor contact number">
+                      <app-input-field type="tel" [(ngModel)]="step2.health_visitor_phone" autocomplete="tel" placeholder="Contact number" />
+                    </app-form-field>
                   </div>
                 </div>
               </section>
@@ -499,26 +545,41 @@
 
             @if (parentCarersDraft[0]; as parent) {
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Primary Parent/Carer Full Name</span>
-                  <input type="text" [(ngModel)]="parent.fullName" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Sarah Johnson" />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Relationship to Child</span>
-                  <select [(ngModel)]="parent.relationshipToChild" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10">
-                    @for (relationship of relationshipOptions; track relationship) {
-                      <option [value]="relationship">{{ relationship }}</option>
-                    }
-                  </select>
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Contact Number</span>
-                  <input type="tel" [(ngModel)]="parent.telephone" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="+44 7000 000000" />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Email Address</span>
-                  <input type="email" [(ngModel)]="parent.email" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="sarah.j@example.com" />
-                </label>
+                <app-form-field label="Primary parent/carer full name">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="parent.fullName"
+                    autocomplete="name"
+                    className="h-12"
+                    placeholder="e.g. Sarah Johnson"
+                  />
+                </app-form-field>
+                <app-form-field label="Relationship to child">
+                  <app-select
+                    [(ngModel)]="parent.relationshipToChild"
+                    [options]="relationshipSelectOptions"
+                    placeholder="Select relationship"
+                    [placeholderDisabled]="false"
+                  />
+                </app-form-field>
+                <app-form-field label="Contact number">
+                  <app-input-field
+                    type="tel"
+                    [(ngModel)]="parent.telephone"
+                    autocomplete="tel"
+                    className="h-12"
+                    placeholder="+44 7000 000000"
+                  />
+                </app-form-field>
+                <app-form-field label="Email address">
+                  <app-input-field
+                    type="email"
+                    [(ngModel)]="parent.email"
+                    autocomplete="email"
+                    className="h-12"
+                    placeholder="sarah.j@example.com"
+                  />
+                </app-form-field>
               </div>
             }
 
@@ -526,19 +587,25 @@
               <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
               <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div class="space-y-3">
-                  <label class="flex min-h-11 items-center gap-3">
-                    <input type="checkbox" [(ngModel)]="step3.applying_for_funding" class="h-4 w-4 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                    Applying for 15/30 Hours Funding?
-                  </label>
-                  <label class="flex min-h-11 items-center gap-3">
-                    <input type="checkbox" [(ngModel)]="step3.early_years_pupil_premium" class="h-4 w-4 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                    Eligible for Early Years Pupil Premium (EYPP)?
-                  </label>
+                  <app-checkbox
+                    name="applying_for_funding"
+                    [(ngModel)]="step3.applying_for_funding"
+                    label="Applying for 15/30 Hours Funding?"
+                  />
+                  <app-checkbox
+                    name="early_years_pupil_premium"
+                    [(ngModel)]="step3.early_years_pupil_premium"
+                    label="Eligible for Early Years Pupil Premium (EYPP)?"
+                  />
                 </div>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">National Insurance Number (for verification)</span>
-                  <input type="text" [(ngModel)]="step3.national_insurance_number" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 uppercase outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="QQ 12 34 56 C" />
-                </label>
+                <app-form-field label="National Insurance Number (for verification)">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step3.national_insurance_number"
+                    className="h-12 uppercase bg-white"
+                    placeholder="QQ 12 34 56 C"
+                  />
+                </app-form-field>
               </div>
             </div>
           </section>
@@ -559,24 +626,36 @@
               @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
                 <div class="rounded-lg border border-[#e2e8f0] p-4">
                   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <label class="block">
-                      <span class="mb-2 block text-xs font-medium text-gray-700">Contact Name</span>
-                      <input type="text" [(ngModel)]="contact.fullName" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Full Name" />
-                    </label>
-                    <label class="block">
-                      <span class="mb-2 block text-xs font-medium text-gray-700">Relationship</span>
-                      <input type="text" [(ngModel)]="contact.relationshipToChild" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Grandparent" />
-                    </label>
-                    <label class="block">
-                      <span class="mb-2 block text-xs font-medium text-gray-700">Phone Number</span>
-                      <input type="tel" [(ngModel)]="contact.telephone" class="h-11 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Phone Number" />
-                    </label>
+                    <app-form-field label="Contact name">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="contact.fullName"
+                        autocomplete="name"
+                        placeholder="Full name"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Relationship">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="contact.relationshipToChild"
+                        placeholder="e.g. Grandparent"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Phone number">
+                      <app-input-field
+                        type="tel"
+                        [(ngModel)]="contact.telephone"
+                        autocomplete="tel"
+                        placeholder="Phone number"
+                      />
+                    </app-form-field>
                   </div>
                   <div class="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <label class="flex min-h-11 items-center gap-3">
-                      <input type="checkbox" [(ngModel)]="emergencyAuthorisedFlags[i]" class="h-4 w-4 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                      Authorised to collect child from nursery
-                    </label>
+                    <app-checkbox
+                      [name]="'emergency-authorised-' + i"
+                      [(ngModel)]="emergencyAuthorisedFlags[i]"
+                      label="Authorised to collect child from nursery"
+                    />
                     <button type="button" (click)="removeEmergencyContact(i)" class="min-h-11 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
                   </div>
                 </div>
@@ -594,14 +673,23 @@
               As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
             </p>
             <div class="relative grid grid-cols-1 gap-5 md:grid-cols-2">
-              <label class="block">
-                <span class="mb-2 block text-sm font-medium text-gray-700">Set Collection Password</span>
-                <input type="password" [(ngModel)]="step3.collection_password" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Min. 6 characters" />
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-sm font-medium text-gray-700">Password Hint (Optional)</span>
-                <input type="text" [(ngModel)]="step3.collection_password_hint" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Mother's maiden name" />
-              </label>
+              <app-form-field label="Set collection password">
+                <app-input-field
+                  type="password"
+                  [(ngModel)]="step3.collection_password"
+                  autocomplete="new-password"
+                  className="h-12"
+                  placeholder="Min. 6 characters"
+                />
+              </app-form-field>
+              <app-form-field label="Password hint (optional)">
+                <app-input-field
+                  type="text"
+                  [(ngModel)]="step3.collection_password_hint"
+                  className="h-12"
+                  placeholder="e.g. Mother's maiden name"
+                />
+              </app-form-field>
             </div>
             <div class="relative mt-5 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
               Please share this password securely with all authorised collectors listed above.
@@ -646,10 +734,13 @@
                     <p class="font-bold">{{ item.label }}</p>
                     <p class="text-xs text-gray-600">{{ item.detail }}</p>
                   </div>
-                  <label class="relative inline-flex min-h-11 shrink-0 items-center">
-                    <input class="peer sr-only" type="checkbox" [ngModel]="consentValue(item.key)" (ngModelChange)="setConsentValue(item.key, $event)" />
-                    <span class="h-6 w-11 rounded-full bg-[#dbe2f9] after:absolute after:left-0.5 after:top-[11px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition peer-checked:bg-brand-600 peer-checked:after:translate-x-5"></span>
-                  </label>
+                  <app-checkbox
+                    class="shrink-0"
+                    [name]="'professional-consent-' + item.key"
+                    [ariaLabel]="'Allow ' + item.label"
+                    [ngModel]="consentValue(item.key)"
+                    (ngModelChange)="setConsentValue(item.key, $event)"
+                  />
                 </div>
               }
             </div>
@@ -664,19 +755,29 @@
               <p class="text-sm font-medium leading-6 text-error-700">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label class="flex min-h-12 items-start gap-3">
-                <input type="checkbox" [(ngModel)]="step4.safeguarding_reporting_acknowledgement" class="mt-1 h-5 w-5 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                <span>I/We understand safeguarding concerns will be reported to relevant authorities.</span>
-              </label>
-              <label class="flex min-h-12 items-start gap-3">
-                <input type="checkbox" [(ngModel)]="step4.urgent_medical_treatment" class="mt-1 h-5 w-5 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                <span>Urgent medical treatment may be sought when required.</span>
-              </label>
-              <label class="flex min-h-12 items-start gap-3">
-                <input type="checkbox" [(ngModel)]="step4.plasters" class="mt-1 h-5 w-5 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                <span>Staff may use plasters as part of routine first aid.</span>
-              </label>
-              <input type="text" [(ngModel)]="step4.urgent_medical_treatment_exceptions" class="h-12 rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Urgent treatment exceptions, if any" />
+              <app-checkbox
+                name="safeguarding_reporting_acknowledgement"
+                [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
+                label="I/We understand safeguarding concerns will be reported to relevant authorities."
+              />
+              <app-checkbox
+                name="urgent_medical_treatment"
+                [(ngModel)]="step4.urgent_medical_treatment"
+                label="Urgent medical treatment may be sought when required."
+              />
+              <app-checkbox
+                name="plasters"
+                [(ngModel)]="step4.plasters"
+                label="Staff may use plasters as part of routine first aid."
+              />
+              <app-form-field label="Urgent treatment exceptions">
+                <app-input-field
+                  type="text"
+                  [(ngModel)]="step4.urgent_medical_treatment_exceptions"
+                  className="h-12"
+                  placeholder="Urgent treatment exceptions, if any"
+                />
+              </app-form-field>
             </div>
           </section>
 
@@ -687,10 +788,14 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               @for (item of activityConsentItems; track item.key) {
-                <label class="flex min-h-11 items-start gap-3 rounded-lg p-2 hover:bg-[#f0f3ff]">
-                  <input type="checkbox" class="mt-1 h-4 w-4 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" [ngModel]="consentValue(item.key)" (ngModelChange)="setConsentValue(item.key, $event)" />
-                  <span class="text-sm">{{ item.label }}</span>
-                </label>
+                <div class="rounded-lg p-2 hover:bg-[#f0f3ff]">
+                  <app-checkbox
+                    [name]="'activity-consent-' + item.key"
+                    [label]="item.label"
+                    [ngModel]="consentValue(item.key)"
+                    (ngModelChange)="setConsentValue(item.key, $event)"
+                  />
+                </div>
               }
             </div>
           </section>
@@ -702,10 +807,14 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               @for (item of photoConsentItems; track item.key) {
-                <label class="flex min-h-14 items-center gap-3 rounded-lg border border-[#e2e8f0] bg-[#f0f3ff] p-4">
-                  <input type="checkbox" class="h-5 w-5 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" [ngModel]="consentValue(item.key)" (ngModelChange)="setConsentValue(item.key, $event)" />
-                  <span class="text-sm font-medium">{{ item.label }}</span>
-                </label>
+                <div class="min-h-14 rounded-lg border border-[#e2e8f0] bg-[#f0f3ff] p-4">
+                  <app-checkbox
+                    [name]="'photo-consent-' + item.key"
+                    [label]="item.label"
+                    [ngModel]="consentValue(item.key)"
+                    (ngModelChange)="setConsentValue(item.key, $event)"
+                  />
+                </div>
               }
             </div>
             <div class="mt-5 rounded-lg border-2 border-dashed border-brand-200 p-5">
@@ -714,12 +823,19 @@
                   <p class="font-bold">TikTok, Instagram & Facebook</p>
                   <p class="text-xs text-gray-600">Consent to appearing on official nursery social media accounts.</p>
                 </div>
-                <label class="relative inline-flex min-h-11 items-center">
-                  <input class="peer sr-only" type="checkbox" [(ngModel)]="step4.social_media" />
-                  <span class="h-7 w-14 rounded-full bg-[#dbe2f9] after:absolute after:left-0.5 after:top-2 after:h-6 after:w-6 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition peer-checked:bg-brand-600 peer-checked:after:translate-x-7"></span>
-                </label>
+                <app-checkbox
+                  name="social_media"
+                  [(ngModel)]="step4.social_media"
+                  label="Allow"
+                />
               </div>
-              <input type="text" [(ngModel)]="step4.social_media_channel_notes" class="mt-4 h-11 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Channel notes" />
+              <app-form-field className="mt-4" label="Channel notes">
+                <app-input-field
+                  type="text"
+                  [(ngModel)]="step4.social_media_channel_notes"
+                  placeholder="Channel notes"
+                />
+              </app-form-field>
             </div>
           </section>
 
@@ -729,38 +845,53 @@
               <h4 class="text-xl font-bold">Paper-Form Evidence & Confirmation</h4>
             </div>
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <label class="block">
-                <span class="mb-2 block text-sm font-bold">Parent/Guardian Name</span>
-                <input type="text" [(ngModel)]="step4.signer_name" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Enter full name from paper form" />
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-sm font-bold">Signed Date</span>
-                <input type="date" [(ngModel)]="step4.signed_date" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
-              </label>
+              <app-form-field label="Parent/guardian name" [required]="true">
+                <app-input-field
+                  type="text"
+                  [(ngModel)]="step4.signer_name"
+                  autocomplete="name"
+                  className="h-12"
+                  placeholder="Enter full name from paper form"
+                />
+              </app-form-field>
+              <app-form-field label="Signed date" [required]="true">
+                <app-input-field
+                  type="date"
+                  [(ngModel)]="step4.signed_date"
+                  className="h-12"
+                />
+              </app-form-field>
             </div>
             <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
-              <label class="flex min-h-12 items-start gap-3 rounded-lg bg-brand-50 p-4">
-                <input type="checkbox" [(ngModel)]="step4.paper_form_on_file" class="mt-1 h-5 w-5 rounded border-[#c5c5d8] text-brand-600 focus:ring-brand-500" />
-                <span class="font-medium">Signed paper form is on file</span>
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-sm font-medium text-gray-700">Application date</span>
-                <input type="date" [(ngModel)]="officeEvidence.applicationDate" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-sm font-medium text-gray-700">Birth certificate/passport</span>
-                <select [(ngModel)]="officeEvidence.birthCertificatePassportStatus" class="h-12 w-full rounded-lg border border-[#d0d5dd] px-4 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10">
-                  <option value="unknown">Unknown</option>
-                  <option value="complete">Complete</option>
-                  <option value="missing">Still needed</option>
-                  <option value="not_applicable">Not applicable</option>
-                </select>
-              </label>
+              <div class="rounded-lg bg-brand-50 p-4">
+                <app-checkbox
+                  name="paper_form_on_file"
+                  [(ngModel)]="step4.paper_form_on_file"
+                  label="Signed paper form is on file"
+                />
+              </div>
+              <app-form-field label="Application date">
+                <app-input-field
+                  type="date"
+                  [(ngModel)]="officeEvidence.applicationDate"
+                  className="h-12"
+                />
+              </app-form-field>
+              <app-form-field label="Birth certificate/passport">
+                <app-select
+                  [(ngModel)]="officeEvidence.birthCertificatePassportStatus"
+                  [options]="evidenceStatusOptions"
+                  placeholder="Select status"
+                />
+              </app-form-field>
             </div>
-            <label class="mt-5 block">
-              <span class="mb-2 block text-sm font-medium text-gray-700">Notes / exceptions</span>
-              <textarea [(ngModel)]="step4.notes_exceptions" rows="3" class="w-full rounded-lg border border-[#d0d5dd] px-4 py-3 outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Optional paper-form exceptions or office-use notes"></textarea>
-            </label>
+            <app-form-field className="mt-5" label="Notes / exceptions">
+              <app-text-area
+                [(ngModel)]="step4.notes_exceptions"
+                [rows]="3"
+                placeholder="Optional paper-form exceptions or office-use notes"
+              />
+            </app-form-field>
           </section>
 
           <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">

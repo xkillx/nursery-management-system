@@ -40,6 +40,14 @@ describe('FormFieldComponent', () => {
     expect(compiled.textContent).toContain('This field is required');
   });
 
+  it('applies an id to the error message when provided', () => {
+    component.error = 'This field is required';
+    component.errorId = 'email-error';
+    fixture.detectChanges();
+    const error = (fixture.nativeElement as HTMLElement).querySelector('#email-error');
+    expect(error?.textContent).toContain('This field is required');
+  });
+
   it('renders hint when no error', () => {
     component.hint = 'Enter at least 3 characters';
     fixture.detectChanges();
