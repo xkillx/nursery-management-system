@@ -300,6 +300,16 @@ func InsertBranch(t testing.TB, pool *pgxpool.Pool, tenantID, branchID uuid.UUID
 	}
 }
 
+// SetBranchCoreHourlyRate sets the core_hourly_rate_minor column on a branch.
+func SetBranchCoreHourlyRate(t testing.TB, pool *pgxpool.Pool, branchID uuid.UUID, rateMinor int) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		"UPDATE branches SET core_hourly_rate_minor = $1 WHERE id = $2", rateMinor, branchID)
+	if err != nil {
+		t.Fatalf("set branch core hourly rate: %v", err)
+	}
+}
+
 // InsertUser inserts a user and returns their ID.
 func InsertUser(t testing.TB, pool *pgxpool.Pool, id uuid.UUID, email, passwordHash string, isActive bool) {
 	t.Helper()

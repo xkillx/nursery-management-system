@@ -540,7 +540,7 @@ Steps:
 3. Confirm status filter defaults to Active.
 4. Change status to Inactive.
 5. Change status to All.
-6. Confirm table columns: Name, DOB, Start, Rate, Active, Enrollment, Missing requirements, Linked guardians, Actions.
+6. Confirm table columns: Name, DOB, Start, Active, Enrollment, Missing requirements, Linked guardians, Actions.
 7. Click Next pagination when enabled.
 8. Click Previous pagination.
 
@@ -549,7 +549,6 @@ Expected result:
 - List reloads when status changes and offset resets.
 - Loading row displays while data is loading.
 - Empty state says `No children found` when no rows match.
-- Rates display in GBP format.
 - Active and enrollment badges are visible.
 - Pagination buttons enable and disable based on available rows.
 
@@ -569,9 +568,8 @@ Steps:
 4. Enter Full name.
 5. Enter Date of birth.
 6. Enter Start date.
-7. Enter Core hourly rate.
-8. Optionally enter End date and Notes.
-9. Click `Create child`.
+7. Optionally enter End date and Notes.
+8. Click `Create child`.
 
 Expected result:
 
@@ -592,7 +590,7 @@ Steps:
 
 1. Open the Create child form.
 2. Submit with required fields blank.
-3. Enter invalid or out-of-policy values, such as negative hourly rate if allowed by browser input.
+3. Enter invalid or out-of-policy values, such as future start date.
 4. Observe field and server error display.
 5. Click `Cancel`.
 
@@ -616,7 +614,7 @@ Steps:
 2. Click `Edit` on a child row.
 3. Confirm form title is `Edit child`.
 4. Confirm existing values are prepopulated.
-5. Change Notes or Core hourly rate.
+5. Change Notes or other fields.
 6. Click `Save changes`.
 
 Expected result:
@@ -644,6 +642,28 @@ Expected result:
 - Detail page opens at `/staff/manager/children/:childId`.
 - Back link returns to the children list.
 
+### CHILD-006 - Child form no longer includes hourly rate
+
+Priority: High
+
+Preconditions:
+
+- Manager account is signed in.
+
+Steps:
+
+1. Navigate to children list.
+2. Click "Add child".
+3. Observe the form fields.
+4. Click Edit on any existing child.
+5. Observe the form fields.
+
+Expected result:
+
+- The child create/edit form does not contain a "Core hourly rate" field.
+- The children list table does not have a "Rate" column.
+- Child detail page shows "Site core hourly rate" instead of "Core hourly rate".
+
 ## Manager Child Detail And Funding
 
 ### CHILD-DETAIL-001 - Child detail summary
@@ -664,7 +684,8 @@ Steps:
 
 Expected result:
 
-- DOB, start date, end date, active badge, hourly rate, and notes display correctly.
+- DOB, start date, end date, active badge, and notes display correctly.
+- Site core hourly rate displays or shows "Not set" when null.
 - Enrollment badge shows complete or incomplete state.
 - Missing requirements are visible for incomplete enrollment.
 
@@ -2505,7 +2526,7 @@ Steps:
 Expected result:
 - Shows overall status: Reviewed Complete, Needs Review, or Incomplete.
 - Links to Continue intake and Registration editor are present.
-- Billing rate section shows "Not set" when null.
+- Site core hourly rate section shows "Not set" when null.
 
 ## Existing Flow Integrity (Unchanged)
 
@@ -2533,6 +2554,52 @@ Steps:
 Expected result:
 - PATCH/POST endpoints are called individually.
 - Existing behaviour is unchanged.
+
+## Owner Site Overview And Billing Setup
+
+### OW-001 - Owner sets site core hourly rate
+
+Priority: High
+
+Preconditions:
+
+- Owner account is signed in.
+- At least one active site exists with no core hourly rate set.
+
+Steps:
+
+1. Navigate to owner site overview.
+2. Identify a site with "No rate set" badge.
+3. Click the Edit button next to the rate display.
+4. Enter a positive hourly rate (e.g., 7.50).
+5. Click Save.
+
+Expected result:
+
+- The rate display updates to show the entered rate (e.g., £7.50/hr).
+- The "No rate set" badge is removed if no other setup issues exist.
+- The setup status updates from "incomplete_setup" to "complete" if this was the only issue.
+
+### OW-002 - Owner rate validation
+
+Priority: High
+
+Preconditions:
+
+- Owner account is signed in.
+
+Steps:
+
+1. Navigate to owner site overview.
+2. Attempt to save with blank/empty rate.
+3. Attempt to save with zero rate (0 or 0.00).
+4. Attempt to save with negative rate (-5.00).
+
+Expected result:
+
+- Local validation prevents submission for blank/zero values.
+- API returns a validation error for invalid values.
+- The rate does not change.
 
 ## Final Regression Checklist
 

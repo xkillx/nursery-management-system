@@ -9,6 +9,8 @@ INSERT INTO branches (id, tenant_id, name)
 VALUES ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Seed Branch')
 ON CONFLICT (tenant_id, name) DO UPDATE SET updated_at = now();
 
+UPDATE branches SET core_hourly_rate_minor = 1200 WHERE id = '22222222-2222-2222-2222-222222222222';
+
 INSERT INTO users (id, email, email_normalized, password_hash, is_active)
 VALUES
   ('33333333-3333-3333-3333-333333333333', 'manager@seed.local', 'manager@seed.local', 'seed', true),

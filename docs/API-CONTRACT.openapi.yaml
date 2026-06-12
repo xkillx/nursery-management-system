@@ -41,6 +41,8 @@ tags:
     description: Parent-facing invoice views
   - name: Payments
     description: Stripe checkout, webhooks, and payment diagnostics
+  - name: Owner
+    description: Owner site overview, billing setup, and manager access
   - name: Deferred
     description: Proposed contracts not yet implemented
 
@@ -108,6 +110,143 @@ components:
         request_id: "00000000-0000-0000-0000-000000000001"
         details:
           field: email
+
+    OwnerAttendanceSummary:
+      type: object
+      properties:
+        checked_in_today_count:
+          type: integer
+        incomplete_attendance_count:
+          type: integer
+
+    OwnerFundingReadiness:
+      type: object
+      properties:
+        included_child_count:
+          type: integer
+        flagged_child_count:
+          type: integer
+        missing_profile_count:
+          type: integer
+        explicit_zero_count:
+          type: integer
+        under_one_hour_count:
+          type: integer
+        above_160_hours_count:
+          type: integer
+
+    OwnerInvoicePaymentHealth:
+      type: object
+      properties:
+        draft_count:
+          type: integer
+        issued_count:
+          type: integer
+        overdue_count:
+          type: integer
+        payment_failed_count:
+          type: integer
+        paid_count:
+          type: integer
+        total_issued_minor:
+          type: integer
+        total_paid_minor:
+          type: integer
+        outstanding_minor:
+          type: integer
+        overdue_outstanding_minor:
+          type: integer
+        failed_payment_count:
+          type: integer
+
+    OwnerSiteSummary:
+      type: object
+      properties:
+        site_id:
+          type: string
+          format: uuid
+        site_name:
+          type: string
+        setup_status:
+          type: string
+        active_manager_count:
+          type: integer
+        pending_manager_invite_count:
+          type: integer
+        active_children_count:
+          type: integer
+        site_core_hourly_rate_minor:
+          type: integer
+          nullable: true
+          description: Positive GBP pence per hour, or null when not set
+          minimum: 1
+        setup_issues:
+          type: array
+          items:
+            type: string
+        attendance:
+          $ref: "#/components/schemas/OwnerAttendanceSummary"
+        funding_readiness:
+          $ref: "#/components/schemas/OwnerFundingReadiness"
+        invoice_payment_health:
+          $ref: "#/components/schemas/OwnerInvoicePaymentHealth"
+
+    OwnerSiteSummaryTotals:
+      type: object
+      properties:
+        active_manager_count:
+          type: integer
+        pending_manager_invite_count:
+          type: integer
+        active_children_count:
+          type: integer
+        checked_in_today_count:
+          type: integer
+        incomplete_attendance_count:
+          type: integer
+        draft_count:
+          type: integer
+        issued_count:
+          type: integer
+        overdue_count:
+          type: integer
+        payment_failed_count:
+          type: integer
+        paid_count:
+          type: integer
+        total_issued_minor:
+          type: integer
+        total_paid_minor:
+          type: integer
+        outstanding_minor:
+          type: integer
+        overdue_outstanding_minor:
+          type: integer
+
+    OwnerSiteSummariesResponse:
+      type: object
+      properties:
+        billing_month:
+          type: string
+        attendance_local_date:
+          type: string
+        currency_code:
+          type: string
+        totals:
+          $ref: "#/components/schemas/OwnerSiteSummaryTotals"
+        sites:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnerSiteSummary"
+
+    UpdateSiteBillingSetupRequest:
+      type: object
+      required: [core_hourly_rate_minor]
+      properties:
+        core_hourly_rate_minor:
+          type: integer
+          minimum: 1
+          description: Positive GBP pence per hour
 
     HealthResponse:
       type: object
@@ -1058,12 +1197,12 @@ components:
                 start_date:
                   type: string
                   format: date
-                core_hourly_rate_minor:
-                  type: integer
-                  nullable: true
-                  minimum: 0
-                  description: Optional at creation; null means billing rate not yet set
-            default: 0
+        core_hourly_rate_minor:
+          type: integer
+          deprecated: true
+          description: Legacy field. Child-specific billing rates are no longer supported; use site-level core hourly rate instead.
+          nullable: true
+          minimum: 0
       responses:
         "200":
           description: Guardians list
@@ -2986,6 +3125,62 @@ components:
           $ref: "#/components/responses/ForbiddenRole"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/owner/sites/{site_id}/billing-setup:
+    put:
+      operationId: updateSiteBillingSetup
+      summary: Set or update the core hourly rate for a site
+      tags: [Owner]
+      x-implementation-status: new
+      x-roles: [owner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSiteBillingSetupRequest"
+      responses:
+        "200":
+          description: Updated site billing setup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerSiteSummary"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: validation_error
+                message: Core hourly rate must be a positive integer.
+                request_id: "00000000-0000-0000-0000-000000000002"
+                details:
+                  field: core_hourly_rate_minor
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          description: Site not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: site_not_found
+                message: Site not found.
+                request_id: "00000000-0000-0000-0000-000000000003"
 
   /api/v1/children/with-registration:
     post:

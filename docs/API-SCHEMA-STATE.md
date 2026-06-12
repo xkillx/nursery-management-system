@@ -1,10 +1,10 @@
 # API Schema State
 
-> **Verified as of 2026-06-11.** Latest migration: 000017.
+> **Verified as of 2026-06-12.** Latest migration: 000022.
 
-- **Last verification date**: 2026-06-11
-- **Verified migration version**: 17
-- **Latest migration**: 000017 (`add_child_registration_office_checklists`)
+- **Last verification date**: 2026-06-12
+- **Verified migration version**: 22
+- **Latest migration**: 000022 (`add_branch_core_hourly_rate`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
@@ -17,7 +17,7 @@
 | Table | Key columns | Notes |
 |---|---|---|
 | `tenants` | `id UUID PK`, `name TEXT` | Top-level multi-tenant entity |
-| `branches` | `id UUID PK`, `tenant_id FK`, `name TEXT` | Unique `(tenant_id, name)`, composite unique `(tenant_id, id)` |
+| `branches` | `id UUID PK`, `tenant_id FK`, `name TEXT`, `core_hourly_rate_minor INTEGER` | Unique `(tenant_id, name)`, composite unique `(tenant_id, id)`. `core_hourly_rate_minor` nullable; must be positive if set (CHECK). |
 
 ### Users & Authentication
 
@@ -32,7 +32,7 @@
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `date_of_birth`, `start_date`, `end_date`, `core_hourly_rate_minor`, `is_active`, `left_at`, `left_reason_code`, `left_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `core_hourly_rate_minor >= 0`. `start_date <= end_date`. |
+| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `date_of_birth`, `start_date`, `end_date`, `core_hourly_rate_minor`, `is_active`, `left_at`, `left_reason_code`, `left_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `core_hourly_rate_minor >= 0` (legacy; not used for billing — site rate is authoritative). `start_date <= end_date`. |
 | `guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `relationship`, `phone`, `email`, `is_active`, `deactivated_at`, `deactivation_reason_code`, `deactivation_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. |
 | `guardian_child_links` | `id UUID PK`, `tenant_id`, `branch_id`, `guardian_id FK`, `child_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique index on active `(guardian_id, child_id)`. End-reason consistency check. |
 | `parent_membership_guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `membership_id FK`, `guardian_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique: one active mapping per membership, one active `(membership_id, guardian_id)` pair. End-reason consistency check. Triggers enforce parent role and active entities. |
@@ -152,6 +152,7 @@ Registration enums used by: `child_registration_profiles` and `child_registratio
 |---|---|---|---|
 | `branches_tenant_id_id_unique` | `branches` | UNIQUE btree | Scope composite key |
 | `branches_tenant_id_name_key` | `branches` | UNIQUE btree | Branch name per tenant |
+| `idx_branches_core_hourly_rate` | `branches` | btree | Lookup by core hourly rate |
 | `users_email_normalized_key` | `users` | UNIQUE btree | Case-insensitive email |
 | `memberships_scope_id_unique` | `memberships` | UNIQUE btree | Scope composite key |
 | `memberships_tenant_id_branch_id_user_id_key` | `memberships` | UNIQUE btree | One membership per user per branch |
