@@ -77,10 +77,10 @@ func EvaluateChildReadiness(
 			Message: "No active guardian linked to this child.",
 		})
 	}
-	if child.CoreHourlyRateMinor == nil || *child.CoreHourlyRateMinor < 0 {
+	if child.CoreHourlyRateMinor == nil || *child.CoreHourlyRateMinor <= 0 {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code:    domain.BlockerMissingBillingRate,
-			Message: "Billing rate is missing or invalid.",
+			Message: "Site billing rate is missing or invalid.",
 		})
 	}
 	if child.FundingProfileID == nil {
