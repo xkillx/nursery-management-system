@@ -229,6 +229,7 @@
                     type="text"
                     [(ngModel)]="step1.home_address"
                     autocomplete="street-address"
+                    placeholder="e.g. 123 High Street"
                   />
                 </app-form-field>
 
@@ -240,9 +241,10 @@
                       type="tel"
                       [(ngModel)]="step1.home_telephone"
                       autocomplete="tel"
+                      placeholder="e.g. 020 1234 5678"
                     />
                   </app-form-field>
-                  <app-form-field label="Postcode" labelFor="child-home-postcode">
+                  <app-form-field label="Post code" labelFor="child-home-postcode">
                     <app-input-field
                       id="child-home-postcode"
                       name="home_postcode"

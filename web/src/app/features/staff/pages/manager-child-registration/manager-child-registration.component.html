@@ -74,13 +74,13 @@
             />
           </app-form-field>
           <app-form-field label="Religion">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.religion" />
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.religion" placeholder="e.g. Christian, Muslim, Hindu" />
           </app-form-field>
           <app-form-field label="Ethnic origin">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.ethnicOrigin" />
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.ethnicOrigin" placeholder="e.g. White British, Asian" />
           </app-form-field>
           <app-form-field label="First language">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.firstLanguage" />
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.firstLanguage" placeholder="e.g. English, Urdu" />
           </app-form-field>
           <app-form-field label="Other languages">
             <app-input-field
@@ -90,11 +90,11 @@
               placeholder="Comma separated"
             />
           </app-form-field>
-          <app-form-field label="Home postcode">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.homePostcode" className="uppercase" />
+          <app-form-field label="Home post code">
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.homePostcode" className="uppercase" placeholder="SW1A 1AA" />
           </app-form-field>
           <app-form-field label="Home telephone">
-            <app-input-field type="tel" [(ngModel)]="demoHomeDraft.homeTelephone" autocomplete="tel" />
+            <app-input-field type="tel" [(ngModel)]="demoHomeDraft.homeTelephone" autocomplete="tel" placeholder="e.g. 020 1234 5678" />
           </app-form-field>
           <app-form-field label="Disability status">
             <app-select
@@ -105,10 +105,10 @@
             />
           </app-form-field>
           <app-form-field label="Disability notes">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.disabilityNotes" />
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.disabilityNotes" placeholder="Optional notes" />
           </app-form-field>
           <app-form-field label="Access requirements">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.accessRequirements" />
+            <app-input-field type="text" [(ngModel)]="demoHomeDraft.accessRequirements" placeholder="e.g. Wheelchair access, BSL interpreter" />
           </app-form-field>
         </div>
         <app-form-field className="mt-4" label="Home address">
@@ -150,31 +150,31 @@
             <app-select [(ngModel)]="medicalDietaryDraft.medicalConditionsStatus" [options]="yesNoUnknownOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Medical conditions notes">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.medicalConditionsNotes" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.medicalConditionsNotes" placeholder="e.g. Asthma, eczema" />
           </app-form-field>
           <app-form-field label="Prescribed medication">
             <app-select [(ngModel)]="medicalDietaryDraft.prescribedMedicationStatus" [options]="yesNoUnknownOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Medication notes">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.medicationNotes" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.medicationNotes" placeholder="Name, dosage, frequency" />
           </app-form-field>
           <app-form-field label="Immunisation status">
             <app-select [(ngModel)]="medicalDietaryDraft.immunisationStatus" [options]="immunisationStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Immunisation country">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.immunisationCountry" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.immunisationCountry" placeholder="e.g. United Kingdom" />
           </app-form-field>
           <app-form-field label="Illness/diagnosis history">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.illnessDiagnosisHistory" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.illnessDiagnosisHistory" placeholder="e.g. Chickenpox, measles" />
           </app-form-field>
           <app-form-field label="Dietary requirements">
             <app-select [(ngModel)]="medicalDietaryDraft.dietaryRequirementsStatus" [options]="yesNoUnknownOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Dietary requirements notes">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.dietaryRequirementsNotes" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.dietaryRequirementsNotes" placeholder="e.g. Gluten-free, vegetarian" />
           </app-form-field>
           <app-form-field label="Dietary side effects">
-            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.dietarySideEffects" />
+            <app-input-field type="text" [(ngModel)]="medicalDietaryDraft.dietarySideEffects" placeholder="e.g. Rashes, digestive issues" />
           </app-form-field>
         </div>
         <div class="mt-4 flex items-center gap-4">
@@ -202,25 +202,25 @@
       @if (healthContactsDraft) {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <app-form-field label="Doctor name">
-            <app-input-field type="text" [(ngModel)]="healthContactsDraft.doctorName" />
+            <app-input-field type="text" [(ngModel)]="healthContactsDraft.doctorName" placeholder="e.g. Dr. Smith" />
           </app-form-field>
           <app-form-field label="Doctor phone">
-            <app-input-field type="tel" [(ngModel)]="healthContactsDraft.doctorPhone" autocomplete="tel" />
+            <app-input-field type="tel" [(ngModel)]="healthContactsDraft.doctorPhone" autocomplete="tel" placeholder="e.g. 020 1234 5678" />
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Doctor address">
-          <app-input-field type="text" [(ngModel)]="healthContactsDraft.doctorAddress" />
+          <app-input-field type="text" [(ngModel)]="healthContactsDraft.doctorAddress" placeholder="Full address" />
         </app-form-field>
         <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <app-form-field label="Health visitor name">
-            <app-input-field type="text" [(ngModel)]="healthContactsDraft.healthVisitorName" />
+            <app-input-field type="text" [(ngModel)]="healthContactsDraft.healthVisitorName" placeholder="e.g. Jane Doe" />
           </app-form-field>
           <app-form-field label="Health visitor phone">
-            <app-input-field type="tel" [(ngModel)]="healthContactsDraft.healthVisitorPhone" autocomplete="tel" />
+            <app-input-field type="tel" [(ngModel)]="healthContactsDraft.healthVisitorPhone" autocomplete="tel" placeholder="e.g. 020 1234 5678" />
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Health visitor address">
-          <app-input-field type="text" [(ngModel)]="healthContactsDraft.healthVisitorAddress" />
+          <app-input-field type="text" [(ngModel)]="healthContactsDraft.healthVisitorAddress" placeholder="Full address" />
         </app-form-field>
         <div class="mt-4 flex items-center gap-4">
           <app-checkbox [(ngModel)]="healthContactsDraft.healthContactsReviewed" label="Section reviewed" />
@@ -246,11 +246,11 @@
             <app-select [(ngModel)]="socialDevDraft.socialServicesStatus" [options]="yesNoUnknownOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Social services notes">
-            <app-input-field type="text" [(ngModel)]="socialDevDraft.socialServicesNotes" />
+            <app-input-field type="text" [(ngModel)]="socialDevDraft.socialServicesNotes" placeholder="Referral details, case number" />
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Social worker contact details">
-          <app-input-field type="text" [(ngModel)]="socialDevDraft.socialWorkerContactDetails" />
+          <app-input-field type="text" [(ngModel)]="socialDevDraft.socialWorkerContactDetails" placeholder="Name, phone, email" />
         </app-form-field>
         <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <app-form-field label="Walking concern">
@@ -350,22 +350,23 @@
         <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-gray-700">
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <app-form-field label="Full name">
-              <app-input-field type="text" [(ngModel)]="contact.fullName" autocomplete="name" />
+              <app-input-field type="text" [(ngModel)]="contact.fullName" autocomplete="name" placeholder="e.g. John Doe" />
             </app-form-field>
             <app-form-field label="Relationship">
-              <app-input-field type="text" [(ngModel)]="contact.relationshipToChild" />
+              <app-input-field type="text" [(ngModel)]="contact.relationshipToChild" placeholder="e.g. Mother, Father" />
             </app-form-field>
             <app-form-field label="Telephone">
-              <app-input-field type="tel" [(ngModel)]="contact.telephone" autocomplete="tel" />
+              <app-input-field type="tel" [(ngModel)]="contact.telephone" autocomplete="tel" placeholder="e.g. 020 1234 5678" />
             </app-form-field>
             <app-form-field label="Email">
-              <app-input-field type="email" [(ngModel)]="contact.email" autocomplete="email" />
+              <app-input-field type="email" [(ngModel)]="contact.email" autocomplete="email" placeholder="e.g. name@example.com" />
             </app-form-field>
             <app-form-field label="Address">
               <app-input-field
                 type="text"
                 [ngModel]="addressToString(contact.address)"
                 (ngModelChange)="contact.address = stringToAddress($event)"
+                placeholder="Full address"
               />
             </app-form-field>
             <app-form-field label="Work address">
@@ -373,6 +374,7 @@
                 type="text"
                 [ngModel]="addressToString(contact.workAddress)"
                 (ngModelChange)="contact.workAddress = stringToAddress($event)"
+                placeholder="Full address"
               />
             </app-form-field>
           </div>
@@ -400,22 +402,23 @@
         <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-gray-700">
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <app-form-field label="Full name">
-              <app-input-field type="text" [(ngModel)]="contact.fullName" autocomplete="name" />
+              <app-input-field type="text" [(ngModel)]="contact.fullName" autocomplete="name" placeholder="e.g. John Doe" />
             </app-form-field>
             <app-form-field label="Relationship">
-              <app-input-field type="text" [(ngModel)]="contact.relationshipToChild" />
+              <app-input-field type="text" [(ngModel)]="contact.relationshipToChild" placeholder="e.g. Mother, Father" />
             </app-form-field>
             <app-form-field label="Telephone">
-              <app-input-field type="tel" [(ngModel)]="contact.telephone" autocomplete="tel" />
+              <app-input-field type="tel" [(ngModel)]="contact.telephone" autocomplete="tel" placeholder="e.g. 020 1234 5678" />
             </app-form-field>
             <app-form-field label="Email">
-              <app-input-field type="email" [(ngModel)]="contact.email" autocomplete="email" />
+              <app-input-field type="email" [(ngModel)]="contact.email" autocomplete="email" placeholder="e.g. name@example.com" />
             </app-form-field>
             <app-form-field label="Address">
               <app-input-field
                 type="text"
                 [ngModel]="addressToString(contact.address)"
                 (ngModelChange)="contact.address = stringToAddress($event)"
+                placeholder="Full address"
               />
             </app-form-field>
             <app-form-field label="Work address">
@@ -423,6 +426,7 @@
                 type="text"
                 [ngModel]="addressToString(contact.workAddress)"
                 (ngModelChange)="contact.workAddress = stringToAddress($event)"
+                placeholder="Full address"
               />
             </app-form-field>
           </div>
@@ -508,7 +512,7 @@
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Funding support notes">
-          <app-input-field type="text" [(ngModel)]="fundingSupportDraft.fundingSupportNotes" />
+          <app-input-field type="text" [(ngModel)]="fundingSupportDraft.fundingSupportNotes" placeholder="Additional information" />
         </app-form-field>
         <div class="mt-4 flex items-center gap-4">
           <app-checkbox [(ngModel)]="fundingSupportDraft.fundingSupportReviewed" label="Section reviewed" />
@@ -530,7 +534,7 @@
       }
       @if (routineCareDraft) {
         <app-form-field className="mt-3" label="Routine/free-text notes">
-          <app-text-area [(ngModel)]="routineCareDraft.routineCareNotes" [rows]="3" />
+          <app-text-area [(ngModel)]="routineCareDraft.routineCareNotes" [rows]="3" placeholder="Sleep patterns, comfort preferences, nappy routine" />
         </app-form-field>
         <div class="mt-4 flex items-center gap-4">
           <app-checkbox [(ngModel)]="routineCareDraft.routineCareReviewed" label="Section reviewed" />
@@ -616,7 +620,7 @@
             <app-select [(ngModel)]="officeDraft.sessionsDaysRequestedStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Sessions/days requested">
-            <app-input-field type="text" [(ngModel)]="officeDraft.sessionsDaysRequested" />
+            <app-input-field type="text" [(ngModel)]="officeDraft.sessionsDaysRequested" placeholder="e.g. Mon-Wed, 9am-3pm" />
           </app-form-field>
           <app-form-field label="Term-time-only space status">
             <app-select [(ngModel)]="officeDraft.termTimeOnlySpaceStatus" [options]="termTimeOnlySpaceOptions" placeholder="--" [placeholderDisabled]="false" />
@@ -653,7 +657,7 @@
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Checklist notes">
-          <app-text-area [(ngModel)]="officeDraft.notes" [rows]="2" />
+          <app-text-area [(ngModel)]="officeDraft.notes" [rows]="2" placeholder="Internal notes" />
         </app-form-field>
       }
       <div class="mt-4">
