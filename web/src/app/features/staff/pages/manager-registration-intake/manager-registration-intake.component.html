@@ -262,6 +262,88 @@
                 </div>
               </section>
 
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="additional-details-heading">
+                <div>
+                  <h3 id="additional-details-heading" class="text-lg font-bold text-gray-950">Additional Details</h3>
+                  <p class="mt-1 text-sm text-gray-500">Demographics and access information from the paper form.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  <app-form-field label="Religion" labelFor="child-religion">
+                    <app-select
+                      id="child-religion"
+                      name="religion"
+                      [(ngModel)]="step1.religion"
+                      [options]="religionOptions"
+                      placeholder="Select religion..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
+
+                  <app-form-field label="Ethnic origin" labelFor="child-ethnic-origin">
+                    <app-select
+                      id="child-ethnic-origin"
+                      name="ethnic_origin"
+                      [(ngModel)]="step1.ethnic_origin"
+                      [options]="ethnicOriginOptions"
+                      placeholder="Select ethnic origin..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
+
+                  <app-form-field label="Other languages spoken" labelFor="child-other-languages">
+                    <app-input-field
+                      id="child-other-languages"
+                      name="other_languages"
+                      type="text"
+                      [(ngModel)]="step1.other_languages"
+                      placeholder="e.g. Urdu, Polish"
+                    />
+                  </app-form-field>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  <app-form-field label="Disability" labelFor="child-disability-status">
+                    <app-select
+                      id="child-disability-status"
+                      name="disability_status"
+                      [(ngModel)]="step1.disability_status"
+                      [options]="yesNoOptions"
+                      placeholder="Select..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
+
+                  @if (step1.disability_status === 'yes') {
+                    <app-form-field label="Disability details" labelFor="child-disability-notes" className="md:col-span-2">
+                      <app-input-field
+                        id="child-disability-notes"
+                        name="disability_notes"
+                        type="text"
+                        [(ngModel)]="step1.disability_notes"
+                        placeholder="Brief description of disability and any support needs"
+                      />
+                    </app-form-field>
+                  }
+
+                  <app-form-field label="Access requirements" labelFor="child-access-requirements" className="md:col-span-2">
+                    <app-input-field
+                      id="child-access-requirements"
+                      name="access_requirements"
+                      type="text"
+                      [(ngModel)]="step1.access_requirements"
+                      placeholder="e.g. Wheelchair access, visual aids"
+                    />
+                  </app-form-field>
+                </div>
+
+                @if (!step1.disability_status) {
+                  <app-form-field label="Disability notes" labelFor="child-disability-notes-empty" className="hidden">
+                    <app-input-field id="child-disability-notes-empty" type="hidden" />
+                  </app-form-field>
+                }
+              </section>
+
               <section class="border-t border-gray-200 pt-6" aria-labelledby="child-notes-heading">
                 <app-form-field label="Child notes" labelFor="child-notes">
                   <app-text-area
@@ -396,6 +478,36 @@
                 </div>
               </section>
 
+              <section class="space-y-4 border-t border-gray-200 pt-8">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroClipboardDocumentList" size="24" class="text-gray-700" aria-hidden="true" />
+                  <h4 class="text-xl font-semibold">Medical History & Diet</h4>
+                </div>
+                @if (step2.immunisation_status === 'up_to_date' || step2.immunisation_status === 'partial') {
+                  <app-form-field label="Country where child was immunised">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step2.immunisation_country"
+                      placeholder="e.g. United Kingdom"
+                    />
+                  </app-form-field>
+                }
+                <app-form-field label="History of illness or diagnosis">
+                  <app-text-area
+                    [(ngModel)]="step2.illness_diagnosis_history"
+                    [rows]="3"
+                    placeholder="Record any known history of illness, diagnosis, or hospital stays"
+                  />
+                </app-form-field>
+                <app-form-field label="Dietary side effects">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step2.dietary_side_effects"
+                    placeholder="e.g. Lactose intolerance causes bloating"
+                  />
+                </app-form-field>
+              </section>
+
               <section class="space-y-5 border-t border-gray-200 pt-8">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroUserGroup" size="24" class="text-gray-700" aria-hidden="true" />
@@ -427,6 +539,90 @@
                     </app-form-field>
                   </div>
                 </div>
+              </section>
+
+              <section class="space-y-5 border-t border-gray-200 pt-8">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroUser" size="24" class="text-gray-700" aria-hidden="true" />
+                  <h4 class="text-xl font-semibold">Social Services & Safeguarding</h4>
+                </div>
+                <div class="rounded-lg border border-warning-200 bg-warning-50 p-4">
+                  <app-checkbox
+                    name="social_services_involvement"
+                    [(ngModel)]="step2.social_services_involvement"
+                    label="Has the child or anyone in the family been referred to or in contact with social services?"
+                    className="checked:bg-warning-500"
+                  />
+                  @if (step2.social_services_involvement) {
+                    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <app-form-field label="Details of social services involvement">
+                        <app-text-area
+                          [(ngModel)]="step2.social_services_details"
+                          [rows]="3"
+                          placeholder="Provide details of the referral or contact"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Social worker contact details">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="step2.social_worker_contact"
+                          placeholder="Name, phone, and email if available"
+                        />
+                      </app-form-field>
+                    </div>
+                  }
+                </div>
+              </section>
+
+              <section class="space-y-4 border-t border-gray-200 pt-8">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroHeart" size="24" class="text-gray-700" aria-hidden="true" />
+                  <h4 class="text-xl font-semibold">Developmental Concerns</h4>
+                </div>
+                <p class="text-sm italic text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  @for (item of concernItems; track item.key) {
+                    <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
+                      <span class="text-sm font-medium">{{ item.label }}</span>
+                      <app-checkbox
+                        [name]="'concern-' + item.key"
+                        [ariaLabel]="item.label"
+                        [ngModel]="getConcernValue(item.key)"
+                        (ngModelChange)="setConcernValue(item.key, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+              </section>
+
+              <section class="space-y-4 border-t border-gray-200 pt-8">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroAcademicCap" size="24" class="text-gray-700" aria-hidden="true" />
+                  <h4 class="text-xl font-semibold">Professional Referrals</h4>
+                </div>
+                <p class="text-sm italic text-gray-600">Record any referrals made by healthcare or education professionals (e.g. Community Paediatrician, Speech and Language Therapist, EYIS).</p>
+                <app-form-field label="Referral details">
+                  <app-text-area
+                    [(ngModel)]="step2.professional_referrals"
+                    [rows]="3"
+                    placeholder="e.g. Speech & Language Therapist — referred Jan 2025 by Dr Smith — on waiting list"
+                  />
+                </app-form-field>
+              </section>
+
+              <section class="space-y-4 border-t border-gray-200 pt-8">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroInformationCircle" size="24" class="text-gray-700" aria-hidden="true" />
+                  <h4 class="text-xl font-semibold">Routine Care & Further Information</h4>
+                </div>
+                <p class="text-sm italic text-gray-600">Any additional information we should know about the child, such as special words, comforters, routines, etc.</p>
+                <app-form-field label="Routine care notes">
+                  <app-text-area
+                    [(ngModel)]="step2.routine_care_notes"
+                    [rows]="3"
+                    placeholder="e.g. Child uses a comforter called 'Blanky' at nap time"
+                  />
+                </app-form-field>
               </section>
 
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
@@ -497,12 +693,92 @@
                     placeholder="sarah.j@example.com"
                   />
                 </app-form-field>
+                <app-form-field label="Home address" className="md:col-span-2">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step3.parent1_address"
+                    className="h-12"
+                    placeholder="e.g. 123 High Street, London"
+                  />
+                </app-form-field>
+              </div>
+              <div class="mt-4 flex items-center gap-4">
+                <app-checkbox
+                  name="parent1_has_responsibility"
+                  [(ngModel)]="step3.parent1_has_responsibility"
+                  label="Holds parental responsibility"
+                />
+              </div>
+            }
+
+            @if (step3.show_second_parent) {
+              <div class="mt-8 border-t border-gray-200 pt-6">
+                <div class="mb-4 flex items-center justify-between">
+                  <h4 class="text-lg font-bold text-gray-950">Second Parent/Carer</h4>
+                  <button type="button" (click)="step3.show_second_parent = false" class="min-h-10 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
+                </div>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <app-form-field label="Full name">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step3.second_parent_name"
+                      className="h-12"
+                      placeholder="e.g. Mark Johnson"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Relationship to child">
+                    <app-select
+                      [(ngModel)]="step3.second_parent_relationship"
+                      [options]="relationshipSelectOptions"
+                      placeholder="Select relationship"
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Contact number">
+                    <app-input-field
+                      type="tel"
+                      [(ngModel)]="step3.second_parent_telephone"
+                      className="h-12"
+                      placeholder="+44 7000 000000"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Email address">
+                    <app-input-field
+                      type="email"
+                      [(ngModel)]="step3.second_parent_email"
+                      className="h-12"
+                      placeholder="mark.j@example.com"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Home address" className="md:col-span-2">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step3.second_parent_address"
+                      className="h-12"
+                      placeholder="Different address if applicable"
+                    />
+                  </app-form-field>
+                </div>
+                <div class="mt-4 flex items-center gap-4">
+                  <app-checkbox
+                    name="second_parent_has_responsibility"
+                    [(ngModel)]="step3.second_parent_has_responsibility"
+                    label="Holds parental responsibility"
+                  />
+                </div>
+              </div>
+            } @else {
+              <div class="mt-6">
+                <button type="button" (click)="step3.show_second_parent = true" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
+                  <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
+                  Add second parent/carer
+                </button>
               </div>
             }
 
             <div class="mt-6 rounded-lg bg-brand-50 p-5">
               <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
-              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <div class="space-y-3">
                   <app-checkbox
                     name="applying_for_funding"
@@ -515,6 +791,37 @@
                     label="Eligible for Early Years Pupil Premium (EYPP)?"
                   />
                 </div>
+                <div class="space-y-3">
+                  <app-checkbox
+                    name="working_tax_credit"
+                    [(ngModel)]="step3.working_tax_credit"
+                    label="Working Tax Credit?"
+                  />
+                  <app-checkbox
+                    name="college_uni_paid_to_parent"
+                    [(ngModel)]="step3.college_uni_paid_to_parent"
+                    label="College/Uni funding paid to parent?"
+                  />
+                  <app-checkbox
+                    name="college_uni_paid_to_nursery"
+                    [(ngModel)]="step3.college_uni_paid_to_nursery"
+                    label="College/Uni funding paid to nursery?"
+                  />
+                </div>
+                <div class="space-y-3">
+                  <app-checkbox
+                    name="funding_3yo_term_time"
+                    [(ngModel)]="step3.funding_3yo_term_time"
+                    label="3YO Term Time Only?"
+                  />
+                  <app-checkbox
+                    name="funding_2yo_term_time"
+                    [(ngModel)]="step3.funding_2yo_term_time"
+                    label="2YO Term Time Only?"
+                  />
+                </div>
+              </div>
+              <div class="mt-4">
                 <app-form-field label="National Insurance Number (for verification)">
                   <app-input-field
                     type="text"
@@ -827,6 +1134,72 @@
                 />
               </app-form-field>
             </div>
+            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <app-form-field label="Deposit status">
+                <app-select
+                  [(ngModel)]="officeEvidence.depositStatus"
+                  [options]="evidenceStatusOptions"
+                  placeholder="Select status"
+                />
+              </app-form-field>
+              @if (officeEvidence.depositStatus === 'complete') {
+                <app-form-field label="Deposit paid date">
+                  <app-date-picker
+                    [(ngModel)]="officeEvidence.depositPaidDate"
+                    className="h-12"
+                  />
+                </app-form-field>
+              }
+              <app-form-field label="Sessions/days requested">
+                <app-input-field
+                  type="text"
+                  [(ngModel)]="officeEvidence.sessionsDaysRequested"
+                  className="h-12"
+                  placeholder="e.g. Mon-Wed 8am-6pm"
+                />
+              </app-form-field>
+            </div>
+            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <app-form-field label="Term time only space">
+                <app-select
+                  [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
+                  [options]="evidenceStatusOptions"
+                  placeholder="Select status"
+                />
+              </app-form-field>
+              <app-form-field label="Contract date">
+                <app-date-picker
+                  [(ngModel)]="officeEvidence.contractDate"
+                  className="h-12"
+                />
+              </app-form-field>
+              <app-form-field label="Handbook date">
+                <app-date-picker
+                  [(ngModel)]="officeEvidence.handbookDate"
+                  className="h-12"
+                />
+              </app-form-field>
+            </div>
+            <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <app-form-field label="Red Book checked date">
+                <app-date-picker
+                  [(ngModel)]="officeEvidence.redBookCheckedDate"
+                  className="h-12"
+                />
+              </app-form-field>
+              <app-form-field label="Birth cert/passport checked date">
+                <app-date-picker
+                  [(ngModel)]="officeEvidence.birthCertificatePassportCheckedDate"
+                  className="h-12"
+                />
+              </app-form-field>
+              <app-form-field label="Proof of address checked date">
+                <app-date-picker
+                  [(ngModel)]="officeEvidence.proofOfAddressCheckedDate"
+                  className="h-12"
+                />
+              </app-form-field>
+            </div>
             <app-form-field className="mt-5" label="Notes / exceptions">
               <app-text-area
                 [(ngModel)]="step4.notes_exceptions"
@@ -834,6 +1207,36 @@
                 placeholder="Optional paper-form exceptions or office-use notes"
               />
             </app-form-field>
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroShieldCheck" size="22" class="text-brand-600" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">GDPR Declaration</h3>
+              </div>
+            </div>
+            <div class="p-5 md:p-6">
+              <p class="mb-5 text-sm leading-6 text-gray-600">
+                The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
+              </p>
+              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <app-form-field label="GDPR declared by (name)">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step4_gdpr.gdpr_declared_by_name"
+                    className="h-12"
+                    placeholder="Enter parent/carer full name"
+                  />
+                </app-form-field>
+                <app-form-field label="GDPR declaration date">
+                  <app-date-picker
+                    [(ngModel)]="step4_gdpr.gdpr_declaration_date"
+                    className="h-12"
+                  />
+                </app-form-field>
+              </div>
             </div>
           </section>
 
