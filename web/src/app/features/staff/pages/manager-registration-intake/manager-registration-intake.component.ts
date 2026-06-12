@@ -592,6 +592,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (idx < this.steps.length - 1) {
       this.currentStep = this.steps[idx + 1].key;
       this.errorMessage = null;
+      setTimeout(() => this.focusStepHeading(), 50);
     }
   }
 
@@ -600,6 +601,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (idx > 0) {
       this.currentStep = this.steps[idx - 1].key;
       this.errorMessage = null;
+      setTimeout(() => this.focusStepHeading(), 50);
     }
   }
 
@@ -1528,6 +1530,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  private focusStepHeading(): void {
+    const heading = document.getElementById('step-heading');
+    heading?.focus();
+  }
+
   private focusFirstStep1Error(): void {
     const fieldIds: Record<Step1RequiredField, string> = {
       first_name: 'child-first-name',
@@ -1539,9 +1546,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (!firstInvalidField) return;
 
     setTimeout(() => {
-      const element = globalThis.document?.getElementById(fieldIds[firstInvalidField]);
-      element?.focus();
-    });
+      const nativeInput = document.querySelector<HTMLElement>(`input#${fieldIds[firstInvalidField]}`);
+      if (nativeInput) {
+        nativeInput.focus();
+        nativeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
   }
 
   private subscribeToDraftAutoSave(): void {

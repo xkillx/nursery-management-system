@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -15,6 +15,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   template: `
     <div class="relative">
       <input
+        #inputRef
         [type]="type"
         [id]="id"
         [name]="name"
@@ -50,6 +51,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 })
 export class InputFieldComponent implements ControlValueAccessor {
 
+  @ViewChild('inputRef', { static: false }) inputRef!: ElementRef<HTMLInputElement>;
+
   @Input() type: string = 'text';
   @Input() id?: string = '';
   @Input() name?: string = '';
@@ -69,6 +72,12 @@ export class InputFieldComponent implements ControlValueAccessor {
 
   @Output() valueChange = new EventEmitter<string | number>();
   @Output() blurred = new EventEmitter<void>();
+
+  focus(): void {
+    if (this.inputRef) {
+      this.inputRef.nativeElement.focus();
+    }
+  }
 
   private onChange: (value: string | number) => void = () => {};
   private onTouched: () => void = () => {};

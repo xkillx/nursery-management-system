@@ -35,7 +35,7 @@
       <section class="mb-8">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div class="min-w-0 flex-1">
-            <h1 class="text-3xl font-bold tracking-normal text-gray-950 md:text-4xl">
+            <h1 id="step-heading" tabindex="-1" class="text-3xl font-bold tracking-normal text-gray-950 md:text-4xl">
               {{ steps[stepIndex].label }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
@@ -521,8 +521,8 @@
                   <h4 id="medical-professionals-heading" class="text-xl font-semibold">Registered Professionals</h4>
                 </div>
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div class="space-y-4">
-                    <h5 class="text-xs font-bold uppercase tracking-wide text-gray-500">GP / Doctor Details</h5>
+                  <div class="space-y-6">
+                    <h5 class="text-sm font-semibold uppercase tracking-wide text-gray-600">GP / Doctor Details</h5>
                     <app-form-field label="Practice name">
                       <app-input-field type="text" [(ngModel)]="step2.doctor_practice" placeholder="Practice name" />
                     </app-form-field>
@@ -533,8 +533,8 @@
                       <app-input-field type="tel" [(ngModel)]="step2.doctor_phone" autocomplete="tel" placeholder="Contact number" />
                     </app-form-field>
                   </div>
-                  <div class="space-y-4">
-                    <h5 class="text-xs font-bold uppercase tracking-wide text-gray-500">Health Visitor Details</h5>
+                  <div class="space-y-6">
+                    <h5 class="text-sm font-semibold uppercase tracking-wide text-gray-600">Health Visitor Details</h5>
                     <app-form-field label="Health visitor name">
                       <app-input-field type="text" [(ngModel)]="step2.health_visitor_name" placeholder="Health visitor name" />
                     </app-form-field>

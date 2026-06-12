@@ -1,4 +1,4 @@
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface Option {
@@ -19,6 +19,8 @@ export interface Option {
   templateUrl: './select.component.html',
 })
 export class SelectComponent implements ControlValueAccessor, OnInit {
+  @ViewChild('selectRef', { static: false }) selectRef!: ElementRef<HTMLSelectElement>;
+
   @Input() options: Option[] = [];
   @Input() placeholder: string = 'Select an option';
   @Input() className: string = '';
@@ -33,6 +35,12 @@ export class SelectComponent implements ControlValueAccessor, OnInit {
 
   @Output() valueChange = new EventEmitter<string>();
   @Output() blurred = new EventEmitter<void>();
+
+  focus(): void {
+    if (this.selectRef) {
+      this.selectRef.nativeElement.focus();
+    }
+  }
 
   private propagateChange: (value: string) => void = () => {};
   private propagateTouched: () => void = () => {};

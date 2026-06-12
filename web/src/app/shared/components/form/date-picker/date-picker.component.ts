@@ -106,6 +106,12 @@ export class DatePickerComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
+  focus(): void {
+    if (this.dateInput) {
+      this.dateInput.nativeElement.focus();
+    }
+  }
+
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
     if (this.flatpickrInstance) {
