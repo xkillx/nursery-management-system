@@ -1,10 +1,10 @@
 <div class="min-h-dvh bg-slate-50 text-slate-900 font-outfit dark:bg-gray-950 dark:text-white/90">
   <main class="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
     @if (errorMessage) {
-      <app-alert variant="error" [message]="errorMessage" class="mb-6" />
+      <app-alert variant="error" [message]="errorMessage" [dismissible]="true" (dismissed)="dismissErrorMessage()" class="mb-6" />
     }
     @if (successMessage) {
-      <app-alert variant="success" [message]="successMessage" class="mb-6" />
+      <app-alert variant="success" [message]="successMessage" [dismissible]="true" (dismissed)="dismissSuccessMessage()" class="mb-6" />
     }
 
     @if (isLoading) {
@@ -387,7 +387,7 @@
             </form>
           </section>
 
-           <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5">
+          <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5">
             <div class="flex gap-3">
               <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
               <p class="text-sm leading-6 text-gray-700">
@@ -673,81 +673,22 @@
                 <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Parent/Carer Details</h2>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-6">
+            <div class="space-y-6 p-5 md:p-6">
 
-            @if (parentCarersDraft[0]; as parent) {
-              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <app-form-field label="Primary parent/carer full name">
-                  <app-input-field
-                    type="text"
-                    [(ngModel)]="parent.fullName"
-                    autocomplete="name"
-                    className="h-12"
-                    placeholder="e.g. Sarah Johnson"
-                  />
-                </app-form-field>
-                <app-form-field label="Relationship to child">
-                  <app-select
-                    [(ngModel)]="parent.relationshipToChild"
-                    [options]="relationshipSelectOptions"
-                    placeholder="Select relationship"
-                    [placeholderDisabled]="false"
-                  />
-                </app-form-field>
-                <app-form-field label="Contact number">
-                  <app-input-field
-                    type="tel"
-                    [(ngModel)]="parent.telephone"
-                    autocomplete="tel"
-                    className="h-12"
-                    placeholder="+44 7000 000000"
-                  />
-                </app-form-field>
-                <app-form-field label="Email address">
-                  <app-input-field
-                    type="email"
-                    [(ngModel)]="parent.email"
-                    autocomplete="email"
-                    className="h-12"
-                    placeholder="sarah.j@example.com"
-                  />
-                </app-form-field>
-                <app-form-field label="Home address" className="md:col-span-2">
-                  <app-input-field
-                    type="text"
-                    [(ngModel)]="step3.parent1_address"
-                    className="h-12"
-                    placeholder="e.g. 123 High Street, London"
-                  />
-                </app-form-field>
-              </div>
-              <div class="flex items-center gap-4">
-                <app-checkbox
-                  name="parent1_has_responsibility"
-                  [(ngModel)]="step3.parent1_has_responsibility"
-                  label="Holds parental responsibility"
-                />
-              </div>
-            }
-
-            @if (step3.show_second_parent) {
-              <div class="border-t border-gray-200 pt-6">
-                <div class="mb-4 flex items-center justify-between gap-3">
-                  <h4 class="text-lg font-bold text-gray-950">Second Parent/Carer</h4>
-                  <button type="button" (click)="step3.show_second_parent = false" class="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
-                </div>
+              @if (parentCarersDraft[0]; as parent) {
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <app-form-field label="Full name">
+                  <app-form-field label="Primary parent/carer full name">
                     <app-input-field
                       type="text"
-                      [(ngModel)]="step3.second_parent_name"
+                      [(ngModel)]="parent.fullName"
+                      autocomplete="name"
                       className="h-12"
-                      placeholder="e.g. Mark Johnson"
+                      placeholder="e.g. Sarah Johnson"
                     />
                   </app-form-field>
                   <app-form-field label="Relationship to child">
                     <app-select
-                      [(ngModel)]="step3.second_parent_relationship"
+                      [(ngModel)]="parent.relationshipToChild"
                       [options]="relationshipSelectOptions"
                       placeholder="Select relationship"
                       [placeholderDisabled]="false"
@@ -756,7 +697,8 @@
                   <app-form-field label="Contact number">
                     <app-input-field
                       type="tel"
-                      [(ngModel)]="step3.second_parent_telephone"
+                      [(ngModel)]="parent.telephone"
+                      autocomplete="tel"
                       className="h-12"
                       placeholder="+44 7000 000000"
                     />
@@ -764,93 +706,151 @@
                   <app-form-field label="Email address">
                     <app-input-field
                       type="email"
-                      [(ngModel)]="step3.second_parent_email"
+                      [(ngModel)]="parent.email"
+                      autocomplete="email"
                       className="h-12"
-                      placeholder="mark.j@example.com"
+                      placeholder="sarah.j@example.com"
                     />
                   </app-form-field>
                   <app-form-field label="Home address" className="md:col-span-2">
                     <app-input-field
                       type="text"
-                      [(ngModel)]="step3.second_parent_address"
+                      [(ngModel)]="step3.parent1_address"
                       className="h-12"
-                      placeholder="Different address if applicable"
+                      placeholder="e.g. 123 High Street, London"
                     />
                   </app-form-field>
                 </div>
-                <div class="mt-4 flex items-center gap-4">
+                <div class="flex items-center gap-4">
                   <app-checkbox
-                    name="second_parent_has_responsibility"
-                    [(ngModel)]="step3.second_parent_has_responsibility"
+                    name="parent1_has_responsibility"
+                    [(ngModel)]="step3.parent1_has_responsibility"
                     label="Holds parental responsibility"
                   />
                 </div>
-              </div>
-            } @else {
-              <div>
-                <button type="button" (click)="step3.show_second_parent = true" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
-                  <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
-                  Add second parent/carer
-                </button>
-              </div>
-            }
+              }
 
-            <div class="rounded-lg bg-brand-50 p-5">
-              <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
-              <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                <div class="space-y-3">
-                  <app-checkbox
-                    name="applying_for_funding"
-                    [(ngModel)]="step3.applying_for_funding"
-                    label="Applying for 15/30 Hours Funding?"
-                  />
-                  <app-checkbox
-                    name="early_years_pupil_premium"
-                    [(ngModel)]="step3.early_years_pupil_premium"
-                    label="Eligible for Early Years Pupil Premium (EYPP)?"
-                  />
+              @if (step3.show_second_parent) {
+                <div class="border-t border-gray-200 pt-6">
+                  <div class="mb-4 flex items-center justify-between gap-3">
+                    <h4 class="text-lg font-bold text-gray-950">Second Parent/Carer</h4>
+                    <button type="button" (click)="step3.show_second_parent = false" class="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
+                  </div>
+                  <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <app-form-field label="Full name">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="step3.second_parent_name"
+                        className="h-12"
+                        placeholder="e.g. Mark Johnson"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Relationship to child">
+                      <app-select
+                        [(ngModel)]="step3.second_parent_relationship"
+                        [options]="relationshipSelectOptions"
+                        placeholder="Select relationship"
+                        [placeholderDisabled]="false"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Contact number">
+                      <app-input-field
+                        type="tel"
+                        [(ngModel)]="step3.second_parent_telephone"
+                        className="h-12"
+                        placeholder="+44 7000 000000"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Email address">
+                      <app-input-field
+                        type="email"
+                        [(ngModel)]="step3.second_parent_email"
+                        className="h-12"
+                        placeholder="mark.j@example.com"
+                      />
+                    </app-form-field>
+                    <app-form-field label="Home address" className="md:col-span-2">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="step3.second_parent_address"
+                        className="h-12"
+                        placeholder="Different address if applicable"
+                      />
+                    </app-form-field>
+                  </div>
+                  <div class="mt-4 flex items-center gap-4">
+                    <app-checkbox
+                      name="second_parent_has_responsibility"
+                      [(ngModel)]="step3.second_parent_has_responsibility"
+                      label="Holds parental responsibility"
+                    />
+                  </div>
                 </div>
-                <div class="space-y-3">
-                  <app-checkbox
-                    name="working_tax_credit"
-                    [(ngModel)]="step3.working_tax_credit"
-                    label="Working Tax Credit?"
-                  />
-                  <app-checkbox
-                    name="college_uni_paid_to_parent"
-                    [(ngModel)]="step3.college_uni_paid_to_parent"
-                    label="College/Uni funding paid to parent?"
-                  />
-                  <app-checkbox
-                    name="college_uni_paid_to_nursery"
-                    [(ngModel)]="step3.college_uni_paid_to_nursery"
-                    label="College/Uni funding paid to nursery?"
-                  />
+              } @else {
+                <div>
+                  <button type="button" (click)="step3.show_second_parent = true" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
+                    <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
+                    Add second parent/carer
+                  </button>
                 </div>
-                <div class="space-y-3">
-                  <app-checkbox
-                    name="funding_3yo_term_time"
-                    [(ngModel)]="step3.funding_3yo_term_time"
-                    label="3YO Term Time Only?"
-                  />
-                  <app-checkbox
-                    name="funding_2yo_term_time"
-                    [(ngModel)]="step3.funding_2yo_term_time"
-                    label="2YO Term Time Only?"
-                  />
+              }
+
+              <div class="rounded-lg bg-brand-50 p-5">
+                <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  <div class="space-y-3">
+                    <app-checkbox
+                      name="applying_for_funding"
+                      [(ngModel)]="step3.applying_for_funding"
+                      label="Applying for 15/30 Hours Funding?"
+                    />
+                    <app-checkbox
+                      name="early_years_pupil_premium"
+                      [(ngModel)]="step3.early_years_pupil_premium"
+                      label="Eligible for Early Years Pupil Premium (EYPP)?"
+                    />
+                  </div>
+                  <div class="space-y-3">
+                    <app-checkbox
+                      name="working_tax_credit"
+                      [(ngModel)]="step3.working_tax_credit"
+                      label="Working Tax Credit?"
+                    />
+                    <app-checkbox
+                      name="college_uni_paid_to_parent"
+                      [(ngModel)]="step3.college_uni_paid_to_parent"
+                      label="College/Uni funding paid to parent?"
+                    />
+                    <app-checkbox
+                      name="college_uni_paid_to_nursery"
+                      [(ngModel)]="step3.college_uni_paid_to_nursery"
+                      label="College/Uni funding paid to nursery?"
+                    />
+                  </div>
+                  <div class="space-y-3">
+                    <app-checkbox
+                      name="funding_3yo_term_time"
+                      [(ngModel)]="step3.funding_3yo_term_time"
+                      label="3YO Term Time Only?"
+                    />
+                    <app-checkbox
+                      name="funding_2yo_term_time"
+                      [(ngModel)]="step3.funding_2yo_term_time"
+                      label="2YO Term Time Only?"
+                    />
+                  </div>
+                </div>
+                <div class="mt-4">
+                  <app-form-field label="National Insurance Number (for verification)">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step3.national_insurance_number"
+                      className="h-12 uppercase bg-white"
+                      placeholder="QQ 12 34 56 C"
+                    />
+                  </app-form-field>
                 </div>
               </div>
-              <div class="mt-4">
-                <app-form-field label="National Insurance Number (for verification)">
-                  <app-input-field
-                    type="text"
-                    [(ngModel)]="step3.national_insurance_number"
-                    className="h-12 uppercase bg-white"
-                    placeholder="QQ 12 34 56 C"
-                  />
-                </app-form-field>
-              </div>
-            </div>
             </div>
           </section>
 
@@ -918,32 +918,32 @@
                 <h2 class="relative text-2xl font-bold text-gray-950 dark:text-white/90">Authorised Collection Password</h2>
               </div>
             </div>
-            <div class="p-5 md:p-6 space-y-5">
-            <p class="relative max-w-2xl leading-6 text-gray-700">
-              As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
-            </p>
-            <div class="relative grid grid-cols-1 gap-5 md:grid-cols-2">
-              <app-form-field label="Set collection password">
-                <app-input-field
-                  type="password"
-                  [(ngModel)]="step3.collection_password"
-                  autocomplete="new-password"
-                  className="h-12"
-                  placeholder="Min. 6 characters"
-                />
-              </app-form-field>
-              <app-form-field label="Password hint (optional)">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="step3.collection_password_hint"
-                  className="h-12"
-                  placeholder="e.g. Mother's maiden name"
-                />
-              </app-form-field>
-            </div>
-            <div class="relative rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
-              Please share this password securely with all authorised collectors listed above.
-            </div>
+            <div class="space-y-5 p-5 md:p-6">
+              <p class="relative max-w-2xl leading-6 text-gray-700">
+                As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
+              </p>
+              <div class="relative grid grid-cols-1 gap-5 md:grid-cols-2">
+                <app-form-field label="Set collection password">
+                  <app-input-field
+                    type="password"
+                    [(ngModel)]="step3.collection_password"
+                    autocomplete="new-password"
+                    className="h-12"
+                    placeholder="Min. 6 characters"
+                  />
+                </app-form-field>
+                <app-form-field label="Password hint (optional)">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step3.collection_password_hint"
+                    className="h-12"
+                    placeholder="e.g. Mother's maiden name"
+                  />
+                </app-form-field>
+              </div>
+              <div class="relative rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
+                Please share this password securely with all authorised collectors listed above.
+              </div>
             </div>
           </section>
 

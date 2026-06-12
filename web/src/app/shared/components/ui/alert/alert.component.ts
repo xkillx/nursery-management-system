@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { SafeHtmlPipe } from '../../../pipe/safe-html.pipe';
 import { RouterModule } from '@angular/router';
 
@@ -22,6 +22,8 @@ export class AlertComponent {
   @Input() linkHref: string = '#';
   @Input() linkText: string = 'Learn more';
   @Input() compact = false;
+  @Input() dismissible = false;
+  @Output() dismissed = new EventEmitter<void>();
 
   get roleAttribute(): string {
     if (this.variant === 'error' || this.variant === 'warning') return 'alert';

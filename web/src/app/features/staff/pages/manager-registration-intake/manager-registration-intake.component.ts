@@ -1293,6 +1293,14 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.isDraftRestoredBannerVisible = false;
   }
 
+  protected dismissErrorMessage(): void {
+    this.errorMessage = null;
+  }
+
+  protected dismissSuccessMessage(): void {
+    this.successMessage = null;
+  }
+
   protected formatDraftTimestamp(value: string | null): string {
     if (!value) return '';
     const date = new Date(value);
