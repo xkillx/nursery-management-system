@@ -18,12 +18,11 @@ import (
 )
 
 type CreateChildParams struct {
-	FullName            string
-	DateOfBirth         string
-	StartDate           string
-	EndDate             string
-	CoreHourlyRateMinor *int
-	Notes               string
+	FullName    string
+	DateOfBirth string
+	StartDate   string
+	EndDate     string
+	Notes       string
 }
 
 type CreateChild struct {
@@ -52,10 +51,6 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "start_date")
 	}
 
-	if params.CoreHourlyRateMinor != nil && *params.CoreHourlyRateMinor < 0 {
-		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "core_hourly_rate_minor")
-	}
-
 	var endDate *time.Time
 	if strings.TrimSpace(params.EndDate) != "" {
 		parsed, parseErr := parseDate(params.EndDate)
@@ -71,13 +66,12 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 	notes := strings.TrimSpace(params.Notes)
 
 	child := domain.Child{
-		ID:                  uid.NewUUID(),
-		FullName:            fullName,
-		DateOfBirth:         dob,
-		StartDate:           startDate,
-		EndDate:             endDate,
-		CoreHourlyRateMinor: params.CoreHourlyRateMinor,
-		IsActive:            true,
+		ID:          uid.NewUUID(),
+		FullName:    fullName,
+		DateOfBirth: dob,
+		StartDate:   startDate,
+		EndDate:     endDate,
+		IsActive:    true,
 	}
 
 	if err := uc.repo.Create(ctx, child, notes, actor.TenantID, actor.BranchID); err != nil {

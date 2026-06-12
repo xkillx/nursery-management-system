@@ -7,21 +7,22 @@ import (
 )
 
 type childResponse struct {
-	ID                  string   `json:"id"`
-	FullName            string   `json:"full_name"`
-	DateOfBirth         string   `json:"date_of_birth"`
-	StartDate           string   `json:"start_date"`
-	EndDate             *string  `json:"end_date,omitempty"`
-	CoreHourlyRateMinor *int     `json:"core_hourly_rate_minor"`
-	Notes               *string  `json:"notes,omitempty"`
-	IsActive            bool     `json:"is_active"`
-	LeftAt              *string  `json:"left_at,omitempty"`
-	LeftReasonCode      *string  `json:"left_reason_code,omitempty"`
-	LeftReasonNote      *string  `json:"left_reason_note,omitempty"`
-	EnrollmentComplete  bool     `json:"enrollment_complete"`
-	MissingRequirements []string `json:"missing_requirements,omitempty"`
-	CreatedAt           string   `json:"created_at"`
-	UpdatedAt           string   `json:"updated_at"`
+	ID                      string   `json:"id"`
+	FullName                string   `json:"full_name"`
+	DateOfBirth             string   `json:"date_of_birth"`
+	StartDate               string   `json:"start_date"`
+	EndDate                 *string  `json:"end_date,omitempty"`
+	CoreHourlyRateMinor     *int     `json:"core_hourly_rate_minor"`
+	SiteCoreHourlyRateMinor *int     `json:"site_core_hourly_rate_minor"`
+	Notes                   *string  `json:"notes,omitempty"`
+	IsActive                bool     `json:"is_active"`
+	LeftAt                  *string  `json:"left_at,omitempty"`
+	LeftReasonCode          *string  `json:"left_reason_code,omitempty"`
+	LeftReasonNote          *string  `json:"left_reason_note,omitempty"`
+	EnrollmentComplete      bool     `json:"enrollment_complete"`
+	MissingRequirements     []string `json:"missing_requirements,omitempty"`
+	CreatedAt               string   `json:"created_at"`
+	UpdatedAt               string   `json:"updated_at"`
 }
 
 type attendanceChildResponse struct {
@@ -38,19 +39,20 @@ type attendanceChildResponse struct {
 
 func toChildResponse(child domain.Child) childResponse {
 	resp := childResponse{
-		ID:                  child.ID.String(),
-		FullName:            child.FullName,
-		DateOfBirth:         child.DateOfBirth.Format("2006-01-02"),
-		StartDate:           child.StartDate.Format("2006-01-02"),
-		CoreHourlyRateMinor: child.CoreHourlyRateMinor,
-		Notes:               child.Notes,
-		IsActive:            child.IsActive,
-		LeftReasonCode:      child.LeftReasonCode,
-		LeftReasonNote:      child.LeftReasonNote,
-		EnrollmentComplete:  child.EnrollmentComplete(),
-		MissingRequirements: child.MissingRequirements(),
-		CreatedAt:           child.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt:           child.UpdatedAt.UTC().Format(time.RFC3339),
+		ID:                      child.ID.String(),
+		FullName:                child.FullName,
+		DateOfBirth:             child.DateOfBirth.Format("2006-01-02"),
+		StartDate:               child.StartDate.Format("2006-01-02"),
+		CoreHourlyRateMinor:     child.CoreHourlyRateMinor,
+		SiteCoreHourlyRateMinor: child.SiteCoreHourlyRateMinor,
+		Notes:                   child.Notes,
+		IsActive:                child.IsActive,
+		LeftReasonCode:          child.LeftReasonCode,
+		LeftReasonNote:          child.LeftReasonNote,
+		EnrollmentComplete:      child.EnrollmentComplete(),
+		MissingRequirements:     child.MissingRequirements(),
+		CreatedAt:               child.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:               child.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 
 	if child.EndDate != nil {

@@ -16,12 +16,11 @@ import (
 )
 
 type UpdateChildParams struct {
-	FullName            string
-	DateOfBirth         string
-	StartDate           string
-	EndDate             string
-	CoreHourlyRateMinor *int
-	Notes               string
+	FullName    string
+	DateOfBirth string
+	StartDate   string
+	EndDate     string
+	Notes       string
 }
 
 type UpdateChild struct {
@@ -72,13 +71,6 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "end_date")
 		}
 		fields["end_date"] = endDate
-	}
-
-	if params.CoreHourlyRateMinor != nil {
-		if *params.CoreHourlyRateMinor < 0 {
-			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "core_hourly_rate_minor")
-		}
-		fields["core_hourly_rate_minor"] = *params.CoreHourlyRateMinor
 	}
 
 	if params.Notes != "" {
@@ -138,7 +130,7 @@ func buildUpdateSetClause(fields map[string]any, argPos int) (string, []any) {
 
 // orderedFieldColumns returns column names in a deterministic order.
 func orderedFieldColumns(fields map[string]any) []string {
-	order := []string{"full_name", "date_of_birth", "start_date", "end_date", "core_hourly_rate_minor", "notes"}
+	order := []string{"full_name", "date_of_birth", "start_date", "end_date", "notes"}
 	result := make([]string, 0, len(fields))
 	for _, col := range order {
 		if _, ok := fields[col]; ok {

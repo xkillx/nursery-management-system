@@ -176,11 +176,10 @@ func TestChildCreate_NullNotes(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	child := childdomain.Child{
-		ID:                  childID,
-		FullName:            "NoNotes",
-		DateOfBirth:         dbtest.DateAt(2022, 6, 10),
-		StartDate:           dbtest.DateAt(2024, 9, 1),
-		CoreHourlyRateMinor: intPtr(400),
+		ID:          childID,
+		FullName:    "NoNotes",
+		DateOfBirth: dbtest.DateAt(2022, 6, 10),
+		StartDate:   dbtest.DateAt(2024, 9, 1),
 	}
 
 	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
@@ -188,12 +187,16 @@ func TestChildCreate_NullNotes(t *testing.T) {
 	}
 
 	var notes *string
-	err := pool.QueryRow(ctx, "SELECT notes FROM children WHERE id = $1", childID).Scan(&notes)
+	var rate *int
+	err := pool.QueryRow(ctx, "SELECT notes, core_hourly_rate_minor FROM children WHERE id = $1", childID).Scan(&notes, &rate)
 	if err != nil {
 		t.Fatalf("query notes: %v", err)
 	}
 	if notes != nil {
 		t.Errorf("notes = %v, want nil", notes)
+	}
+	if rate != nil {
+		t.Errorf("core_hourly_rate_minor = %v, want nil", rate)
 	}
 }
 
@@ -204,12 +207,11 @@ func TestChildCreate_WithEndDate(t *testing.T) {
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	endDate := dbtest.DateAt(2025, 7, 31)
 	child := childdomain.Child{
-		ID:                  childID,
-		FullName:            "WithEnd",
-		DateOfBirth:         dbtest.DateAt(2022, 6, 10),
-		StartDate:           dbtest.DateAt(2024, 9, 1),
-		EndDate:             &endDate,
-		CoreHourlyRateMinor: intPtr(400),
+		ID:          childID,
+		FullName:    "WithEnd",
+		DateOfBirth: dbtest.DateAt(2022, 6, 10),
+		StartDate:   dbtest.DateAt(2024, 9, 1),
+		EndDate:     &endDate,
 	}
 
 	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {

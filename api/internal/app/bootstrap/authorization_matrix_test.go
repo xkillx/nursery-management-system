@@ -622,7 +622,7 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		// Children
 		{"list children", "GET", "/api/v1/children", ""},
 		{"get child", "GET", "/api/v1/children/" + h.childA.String(), ""},
-		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01","core_hourly_rate_minor":500}`},
+		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
 		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"full_name":"Y"}`},
 		{"mark inactive", "POST", "/api/v1/children/" + h.childA.String() + "/actions/mark-inactive", `{"reason_code":"other"}`},
 
@@ -707,7 +707,7 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 	}{
 		{"list children", "GET", "/api/v1/children", ""},
 		{"get child", "GET", "/api/v1/children/" + h.childA.String(), ""},
-		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01","core_hourly_rate_minor":500}`},
+		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
 		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"full_name":"Y"}`},
 		{"mark inactive", "POST", "/api/v1/children/" + h.childA.String() + "/actions/mark-inactive", `{"reason_code":"other"}`},
 

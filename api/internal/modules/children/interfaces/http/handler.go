@@ -127,13 +127,17 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 		return
 	}
 
+	if req.CoreHourlyRateMinor != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "child-specific billing rates are not supported; site rates are configured by owners")
+		return
+	}
+
 	params := application.CreateChildParams{
-		FullName:            req.FullName,
-		DateOfBirth:         req.DateOfBirth,
-		StartDate:           req.StartDate,
-		EndDate:             req.EndDate,
-		CoreHourlyRateMinor: req.CoreHourlyRateMinor,
-		Notes:               req.Notes,
+		FullName:    req.FullName,
+		DateOfBirth: req.DateOfBirth,
+		StartDate:   req.StartDate,
+		EndDate:     req.EndDate,
+		Notes:       req.Notes,
 	}
 
 	child, err := h.createChild.Execute(c.Request.Context(), actor, params)
@@ -160,13 +164,17 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 		return
 	}
 
+	if req.CoreHourlyRateMinor != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "child-specific billing rates are not supported; site rates are configured by owners")
+		return
+	}
+
 	params := application.UpdateChildParams{
-		FullName:            req.FullName,
-		DateOfBirth:         req.DateOfBirth,
-		StartDate:           req.StartDate,
-		EndDate:             req.EndDate,
-		CoreHourlyRateMinor: req.CoreHourlyRateMinor,
-		Notes:               req.Notes,
+		FullName:    req.FullName,
+		DateOfBirth: req.DateOfBirth,
+		StartDate:   req.StartDate,
+		EndDate:     req.EndDate,
+		Notes:       req.Notes,
 	}
 
 	child, err := h.updateChild.Execute(c.Request.Context(), actor, childID, params)

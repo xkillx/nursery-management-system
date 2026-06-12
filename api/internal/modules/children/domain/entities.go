@@ -8,20 +8,21 @@ import (
 )
 
 type Child struct {
-	ID                  uuid.UUID
-	FullName            string
-	DateOfBirth         time.Time
-	StartDate           time.Time
-	EndDate             *time.Time
-	CoreHourlyRateMinor *int
-	Notes               *string
-	IsActive            bool
-	LeftAt              *time.Time
-	LeftReasonCode      *string
-	LeftReasonNote      *string
-	HasGuardianLink     bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID                      uuid.UUID
+	FullName                string
+	DateOfBirth             time.Time
+	StartDate               time.Time
+	EndDate                 *time.Time
+	CoreHourlyRateMinor     *int
+	SiteCoreHourlyRateMinor *int
+	Notes                   *string
+	IsActive                bool
+	LeftAt                  *time.Time
+	LeftReasonCode          *string
+	LeftReasonNote          *string
+	HasGuardianLink         bool
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 type ReasonCode string
@@ -56,9 +57,6 @@ func (c Child) MissingRequirements() []string {
 	}
 	if c.StartDate.IsZero() {
 		missing = append(missing, "start_date")
-	}
-	if c.CoreHourlyRateMinor == nil || *c.CoreHourlyRateMinor < 0 {
-		missing = append(missing, "billing_rate")
 	}
 	if !c.HasGuardianLink {
 		missing = append(missing, "guardian_link")

@@ -140,7 +140,7 @@ func TestPeopleWriteRoleGuards(t *testing.T) {
 			name:       "create child",
 			method:     http.MethodPost,
 			path:       "/api/v1/children",
-			body:       `{"full_name":"New Child","date_of_birth":"2021-05-01","start_date":"2024-01-01","core_hourly_rate_minor":450}`,
+			body:       `{"full_name":"New Child","date_of_birth":"2021-05-01","start_date":"2024-01-01"}`,
 			wantStatus: http.StatusCreated,
 		},
 		{

@@ -38,7 +38,8 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 	out := make([]domain.Child, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
-			row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+			row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
+			row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 			row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt))
 	}
 	return out, nil
@@ -58,7 +59,8 @@ func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uu
 		return domain.Child{}, false, fmt.Errorf("query child by id: %w", err)
 	}
 	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
-		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
+		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
@@ -72,7 +74,7 @@ func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes 
 		DateOfBirth:         timeToPgtypeDate(child.DateOfBirth),
 		StartDate:           timeToPgtypeDate(child.StartDate),
 		EndDate:             timeToPgtypeDatePtr(child.EndDate),
-		CoreHourlyRateMinor: intToPgtypeInt4(child.CoreHourlyRateMinor),
+		CoreHourlyRateMinor: pgtype.Int4{},
 		Column9:             notes,
 	})
 }
@@ -104,14 +106,6 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 		params.SetEndDate = int32(1)
 		if t, ok := v.(time.Time); ok {
 			params.EndDate = timeToPgtypeDate(t)
-		}
-	}
-	if v, ok := fields["core_hourly_rate_minor"]; ok {
-		params.SetCoreHourlyRateMinor = int32(1)
-		if val, ok := v.(*int); ok && val != nil {
-			params.CoreHourlyRateMinor = pgtype.Int4{Int32: int32(*val), Valid: true}
-		} else if val, ok := v.(int); ok {
-			params.CoreHourlyRateMinor = pgtype.Int4{Int32: int32(val), Valid: true}
 		}
 	}
 	if v, ok := fields["notes"]; ok {
@@ -152,7 +146,8 @@ func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenan
 		return domain.Child{}, false, fmt.Errorf("query child for update: %w", err)
 	}
 	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
-		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
+		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
@@ -214,7 +209,8 @@ func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, 
 		return domain.Child{}, false, fmt.Errorf("get child for attendance check: %w", err)
 	}
 	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
-		row.CoreHourlyRateMinor, row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
+		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
+		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
@@ -240,25 +236,27 @@ func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, 
 
 func mapChildRow(
 	id pgtype.UUID, fullName string, dateOfBirth, startDate, endDate pgtype.Date,
-	coreHourlyRateMinor pgtype.Int4, notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
+	coreHourlyRateMinor pgtype.Int4, siteCoreHourlyRateMinor pgtype.Int4,
+	notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
 	leftReasonCode interface{}, leftReasonNote pgtype.Text, hasGuardianLink bool,
 	createdAt, updatedAt pgtype.Timestamptz,
 ) domain.Child {
 	return domain.Child{
-		ID:                  pgtypeUUIDToUUID(id),
-		FullName:            fullName,
-		DateOfBirth:         pgtypeDateToTime(dateOfBirth),
-		StartDate:           pgtypeDateToTime(startDate),
-		EndDate:             pgtypeDateToTimePtr(endDate),
-		CoreHourlyRateMinor: pgtypeInt4ToIntPtr(coreHourlyRateMinor),
-		Notes:               pgtypeTextToStringPtr(notes),
-		IsActive:            isActive,
-		LeftAt:              pgtypeTimestamptzToTimePtr(leftAt),
-		LeftReasonCode:      ifaceToStringPtr(leftReasonCode),
-		LeftReasonNote:      pgtypeTextToStringPtr(leftReasonNote),
-		HasGuardianLink:     hasGuardianLink,
-		CreatedAt:           pgtypeTimestamptzToTime(createdAt),
-		UpdatedAt:           pgtypeTimestamptzToTime(updatedAt),
+		ID:                      pgtypeUUIDToUUID(id),
+		FullName:                fullName,
+		DateOfBirth:             pgtypeDateToTime(dateOfBirth),
+		StartDate:               pgtypeDateToTime(startDate),
+		EndDate:                 pgtypeDateToTimePtr(endDate),
+		CoreHourlyRateMinor:     pgtypeInt4ToIntPtr(coreHourlyRateMinor),
+		SiteCoreHourlyRateMinor: pgtypeInt4ToIntPtr(siteCoreHourlyRateMinor),
+		Notes:                   pgtypeTextToStringPtr(notes),
+		IsActive:                isActive,
+		LeftAt:                  pgtypeTimestamptzToTimePtr(leftAt),
+		LeftReasonCode:          ifaceToStringPtr(leftReasonCode),
+		LeftReasonNote:          pgtypeTextToStringPtr(leftReasonNote),
+		HasGuardianLink:         hasGuardianLink,
+		CreatedAt:               pgtypeTimestamptzToTime(createdAt),
+		UpdatedAt:               pgtypeTimestamptzToTime(updatedAt),
 	}
 }
 
