@@ -14,6 +14,7 @@ import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord 
 import { RegistrationProfileCompleteness, OfficeUseCompleteness, RegistrationWorkflowStatus } from '../../models/registration-profile.models';
 import { formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { formatCompletionStatus, getCompletionBadgeClass } from '../../utils/registration-profile-formatters';
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -29,6 +30,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
     RouterLink,
     ChildFormComponent,
     PageHeaderComponent,
+    SelectComponent,
     ButtonComponent,
     AlertComponent,
     StatusBadgeComponent,
@@ -182,6 +184,13 @@ export class ManagerChildDetailComponent implements OnInit {
   get availableGuardians(): GuardianRecord[] {
     const linkedIds = new Set(this.linkedGuardians.map(l => l.guardianId));
     return this.allGuardians.filter(g => !linkedIds.has(g.id));
+  }
+
+  get guardianOptions(): Option[] {
+    return [
+      { value: '', label: 'Select guardian...' },
+      ...this.availableGuardians.map(g => ({ value: g.id, label: g.fullName })),
+    ];
   }
 
   get fundingNotSet(): boolean {

@@ -27,20 +27,13 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Child</label>
-      <select
-        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        [ngModel]="selectedChildId"
-        (ngModelChange)="selectedChildId = $event; onChildChange()"
-        name="childSelect"
-      >
-        <option [ngValue]="null">Select a child...</option>
-        <option
-          *ngFor="let child of isActiveChildrenFirst"
-          [ngValue]="child.id"
-        >
-          {{ child.fullName }}{{ !child.isActive ? ' (inactive)' : '' }}
-        </option>
-      </select>
+      <app-select
+        [options]="childSelectOptions"
+        [ngModel]="selectedChildId ?? ''"
+        (ngModelChange)="onChildSelect($event)"
+        placeholder="Select a child..."
+        [placeholderDisabled]="false"
+      />
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Local date</label>
@@ -163,15 +156,13 @@
 
     <div>
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
-      <select
-        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        [ngModel]="reasonCode"
-        (ngModelChange)="reasonCode = $event; onReasonChange()"
-        name="reasonCode"
-      >
-        <option [ngValue]="''">Select a reason...</option>
-        <option *ngFor="let r of reasonOptions" [ngValue]="r.code">{{ r.label }}</option>
-      </select>
+      <app-select
+        [options]="reasonSelectOptions"
+        [(ngModel)]="reasonCode"
+        placeholder="Select a reason..."
+        [placeholderDisabled]="false"
+        (ngModelChange)="onReasonChange()"
+      />
       <p *ngIf="getFieldError('reasonCode')" class="mt-1 text-xs text-error-500">
         {{ getFieldError('reasonCode') }}
       </p>

@@ -8,6 +8,7 @@ import { ChildFormComponent } from '../../components/child-form/child-form.compo
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { formatHourlyRateGbp, missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -22,6 +23,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
   imports: [
     CommonModule,
     RouterLink,
+    SelectComponent,
     ChildFormComponent,
     PageHeaderComponent,
     ButtonComponent,
@@ -42,6 +44,9 @@ export class ManagerChildrenComponent {
 
   readonly statusLabel = statusFilterLabel;
   readonly formatRate = formatHourlyRateGbp;
+  get statusSelectOptions(): Option[] {
+    return this.statusOptions.map(s => ({ value: s, label: statusFilterLabel(s) }));
+  }
   readonly requirementLabel = missingRequirementLabel;
 
   children: ChildRecord[] = [];

@@ -6,16 +6,12 @@
   >
     <div actions class="flex items-center gap-3">
       <label for="status-filter" class="sr-only">Filter by status</label>
-      <select
+      <app-select
         id="status-filter"
+        [options]="statusFilterOptions"
         [ngModel]="status"
         (ngModelChange)="setStatusFilter($event)"
-        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-      >
-        @for (opt of statusOptions; track opt) {
-          <option [value]="opt">{{ opt === 'all' ? 'All statuses' : (opt | titlecase) }}</option>
-        }
-      </select>
+      />
     </div>
   </app-page-header>
 
@@ -46,17 +42,12 @@
 
       <div class="w-full sm:w-44">
         <label for="invite-role" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-        <select
+        <app-select
           id="invite-role"
+          [options]="roleOptions"
           [(ngModel)]="role"
-          name="role"
-          class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
-          [class.border-error-500]="fieldErrors['role']"
-        >
-          @for (opt of roleOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
+          [error]="!!fieldErrors['role']"
+        />
         @if (fieldErrors['role']) {
           <p class="mt-1 text-xs text-error-500">{{ fieldErrors['role'] }}</p>
         }

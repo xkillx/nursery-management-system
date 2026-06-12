@@ -16,32 +16,25 @@
   <div class="mt-4 flex flex-wrap items-end gap-4">
     <div>
       <label for="site-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
-      <select
+      <app-select
         id="site-select"
-        [(ngModel)]="selectedSiteId"
-        (ngModelChange)="onSiteSelect()"
-        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-      >
-        <option [ngValue]="null" disabled>Select a site</option>
-        @for (site of sites; track site.siteId) {
-          <option [ngValue]="site.siteId">{{ site.siteName }}</option>
-        }
-      </select>
+        [options]="siteOptions"
+        [ngModel]="selectedSiteId ?? ''"
+        (ngModelChange)="onSiteValueChange($event)"
+        placeholder="Select a site"
+        [placeholderDisabled]="true"
+      />
     </div>
 
     @if (selectedSiteId) {
       <div>
         <label for="status-filter" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-        <select
+        <app-select
           id="status-filter"
+          [options]="statusFilterOptions"
           [(ngModel)]="statusFilter"
           (ngModelChange)="onStatusFilterChange()"
-          class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="all">All</option>
-        </select>
+        />
       </div>
     }
   </div>

@@ -10,6 +10,7 @@ import {
   InviteRole,
   InviteStatusFilter,
 } from '../../models/invites.models';
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -19,7 +20,14 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/ui/mo
 import { ToastService } from '../../../../shared/services/toast.service';
 
 const STATUS_OPTIONS: InviteStatusFilter[] = ['pending', 'all', 'accepted', 'revoked', 'expired'];
-const ROLE_OPTIONS: { value: InviteRole; label: string }[] = [
+const STATUS_FILTER_OPTIONS: Option[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'revoked', label: 'Revoked' },
+  { value: 'expired', label: 'Expired' },
+];
+const ROLE_OPTIONS: Option[] = [
   { value: 'practitioner', label: 'Practitioner' },
   { value: 'parent', label: 'Parent' },
 ];
@@ -30,6 +38,7 @@ const ROLE_OPTIONS: { value: InviteRole; label: string }[] = [
     CommonModule,
     FormsModule,
     PageHeaderComponent,
+    SelectComponent,
     AlertComponent,
     StatusBadgeComponent,
     EmptyStateComponent,
@@ -44,6 +53,7 @@ export class ManagerInvitesComponent {
   private readonly toast = inject(ToastService);
 
   readonly statusOptions = STATUS_OPTIONS;
+  readonly statusFilterOptions = STATUS_FILTER_OPTIONS;
   readonly roleOptions = ROLE_OPTIONS;
 
   invites: InviteRecord[] = [];

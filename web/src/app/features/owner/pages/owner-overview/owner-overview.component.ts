@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -23,6 +24,7 @@ import { formatGbp, formatSetupStatus, isExceptionSite } from '../../utils/owner
     FormsModule,
     RouterModule,
     PageHeaderComponent,
+    SelectComponent,
     LoadingStateComponent,
     EmptyStateComponent,
     AlertComponent,
@@ -63,6 +65,18 @@ export class OwnerOverviewComponent implements OnInit {
   formatGbp = formatGbp;
   formatSetupStatus = formatSetupStatus;
   isExceptionSite = isExceptionSite;
+
+  get siteFilterOptions(): Option[] {
+    return [
+      { value: '', label: 'All sites' },
+      ...this.sites.map(s => ({ value: s.siteId, label: s.siteName })),
+    ];
+  }
+
+  onSiteFilterChange(value: string): void {
+    this.selectedSiteId = value || null;
+    this.onSiteFocus(this.selectedSiteId);
+  }
 
   onBillingMonthChange(): void {
     this.billingMonthError = null;

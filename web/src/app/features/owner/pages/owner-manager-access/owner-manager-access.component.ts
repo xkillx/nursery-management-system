@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -26,6 +27,7 @@ import { formatGrantOutcome } from '../../utils/owner-formatters';
     FormsModule,
     RouterModule,
     PageHeaderComponent,
+    SelectComponent,
     LoadingStateComponent,
     EmptyStateComponent,
     AlertComponent,
@@ -55,12 +57,27 @@ export class OwnerManagerAccessComponent implements OnInit {
 
   formatGrantOutcome = formatGrantOutcome;
 
+  get siteOptions(): Option[] {
+    return this.sites.map(s => ({ value: s.siteId, label: s.siteName }));
+  }
+
+  readonly statusFilterOptions: Option[] = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'all', label: 'All' },
+  ];
+
   ngOnInit(): void {
     this.loadSites();
   }
 
   get canSubmitGrant(): boolean {
     return !!this.selectedSiteId && !!this.grantEmail.trim() && !this.submitting;
+  }
+
+  onSiteValueChange(value: string): void {
+    this.selectedSiteId = value || null;
+    this.onSiteSelect();
   }
 
   onSiteSelect(): void {

@@ -170,15 +170,10 @@
       <div class="mt-4 flex items-end gap-3">
         <div class="flex-1">
           <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Link an active guardian</label>
-          <select
+          <app-select
+            [options]="guardianOptions"
             [(ngModel)]="selectedGuardianId"
-            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
-          >
-            <option value="">Select guardian...</option>
-            @for (g of availableGuardians; track g.id) {
-              <option [value]="g.id">{{ g.fullName }}</option>
-            }
-          </select>
+          />
         </div>
         <app-button
           variant="primary"

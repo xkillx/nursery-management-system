@@ -25,17 +25,12 @@
     </div>
     <div>
       <label for="site-filter" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
-      <select
+      <app-select
         id="site-filter"
-        [ngModel]="selectedSiteId"
-        (ngModelChange)="onSiteFocus($event)"
-        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-      >
-        <option [ngValue]="null">All sites</option>
-        @for (site of sites; track site.siteId) {
-          <option [ngValue]="site.siteId">{{ site.siteName }}</option>
-        }
-      </select>
+        [options]="siteFilterOptions"
+        [ngModel]="selectedSiteId ?? ''"
+        (ngModelChange)="onSiteFilterChange($event)"
+      />
     </div>
   </div>
 

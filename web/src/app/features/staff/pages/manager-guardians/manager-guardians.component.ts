@@ -9,6 +9,7 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { StatusFilter } from '../../models/children.models';
 import { GuardianRecord, GuardianWritePayload } from '../../models/guardians.models';
 import { statusFilterLabel } from '../../utils/manager-list-formatters';
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -25,6 +26,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
     RouterLink,
     GuardianFormComponent,
     PageHeaderComponent,
+    SelectComponent,
     ButtonComponent,
     AlertComponent,
     StatusBadgeComponent,
@@ -42,6 +44,10 @@ export class ManagerGuardiansComponent {
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
 
   readonly statusLabel = statusFilterLabel;
+
+  get statusSelectOptions(): Option[] {
+    return this.statusOptions.map(s => ({ value: s, label: statusFilterLabel(s) }));
+  }
 
   guardians: GuardianRecord[] = [];
   status: StatusFilter = 'active';

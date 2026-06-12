@@ -6,15 +6,12 @@
   >
     <div class="flex items-center gap-3" actions>
       <label class="text-sm text-gray-600 dark:text-gray-300">Status</label>
-      <select
+      <app-select
+        [options]="statusSelectOptions"
         [value]="status"
-        (change)="onStatusChange(($any($event.target).value))"
-        class="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
-      >
-        @for (option of statusOptions; track option) {
-          <option [value]="option">{{ statusLabel(option) }}</option>
-        }
-      </select>
+        (valueChange)="onStatusChange($event)"
+        className="h-10"
+      />
       <a
         routerLink="/staff/manager/guardians"
         class="inline-flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"

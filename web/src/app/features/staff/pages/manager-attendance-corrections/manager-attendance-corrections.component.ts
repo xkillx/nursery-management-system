@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, switchMap, takeUntil, tap } from 'rxjs';
 
+import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -56,6 +57,7 @@ interface CorrectionError {
   imports: [
     CommonModule,
     FormsModule,
+    SelectComponent,
     PageHeaderComponent,
     ButtonComponent,
     AlertComponent,
@@ -96,6 +98,22 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
   correctionError: CorrectionError | null = null;
 
   readonly reasonOptions = REASON_OPTIONS;
+
+  get childSelectOptions(): Option[] {
+    return this.isActiveChildrenFirst.map(c => ({
+      value: c.id,
+      label: c.fullName + (!c.isActive ? ' (inactive)' : ''),
+    }));
+  }
+
+  get reasonSelectOptions(): Option[] {
+    return this.reasonOptions.map(r => ({ value: r.code, label: r.label }));
+  }
+
+  onChildSelect(value: string): void {
+    this.selectedChildId = value || null;
+    this.onChildChange();
+  }
 
   get isMissedSessionMode(): boolean {
     return this.selectedChildId != null && this.selectedSessionId === null;
