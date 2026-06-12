@@ -1,27 +1,5 @@
-<div class="min-h-dvh bg-[#f9f9ff] text-[#111c2d] font-outfit">
-  <header class="sticky top-0 z-30 border-b border-[#e2e8f0] bg-white/95 px-4 py-3 backdrop-blur md:px-8">
-    <div class="mx-auto flex max-w-[1220px] items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded bg-brand-500 text-white shadow-theme-xs">
-          <ng-icon name="heroAcademicCap" size="24" aria-hidden="true" />
-        </div>
-        <div>
-          <h1 class="text-xl font-bold leading-6 text-brand-600 md:text-2xl">NurseryPro UK</h1>
-          <p class="text-xs font-medium text-gray-500 md:text-sm">Child Registration Portal</p>
-        </div>
-      </div>
-
-      <div class="hidden items-center gap-4 text-sm md:flex">
-        <span class="text-gray-500">Need help?</span>
-        <button type="button" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold text-brand-600 hover:bg-brand-50 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30">
-          <ng-icon name="heroQuestionMarkCircle" size="20" aria-hidden="true" />
-          Support
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="mx-auto max-w-[1220px] px-4 py-6 md:px-8 md:py-10">
+<div class="min-h-dvh bg-slate-50 text-slate-900 font-outfit dark:bg-gray-950 dark:text-white/90">
+  <main class="mx-auto max-w-[1280px] px-4 py-6 md:px-8 md:py-8">
     @if (errorMessage) {
       <app-alert variant="error" [message]="errorMessage" class="mb-5" />
     }
@@ -33,34 +11,46 @@
       <app-loading-state variant="block" label="Loading registration..." />
     } @else {
       <section class="mb-8">
-        <div class="mb-5 flex items-end justify-between gap-4">
+        <div class="mb-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p class="text-sm font-semibold text-brand-600">Step {{ currentStepNumber }} of {{ steps.length }}</p>
-            <h2 class="mt-1 text-2xl font-bold text-gray-900 md:text-4xl">
+            <div class="mb-3 flex flex-wrap items-center gap-2">
+              <span class="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold uppercase text-brand-700">Registration intake</span>
+              <span class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-theme-xs">Step {{ currentStepNumber }} of {{ steps.length }}</span>
+              @if (childId) {
+                <span class="rounded-full border border-success-200 bg-success-50 px-3 py-1 text-xs font-semibold text-success-700">Child record created</span>
+              }
+            </div>
+            <h1 class="text-3xl font-bold tracking-normal text-gray-950 md:text-4xl">
               {{ steps[stepIndex].label }}
-            </h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
+            </h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
           </div>
           @if (childId) {
             <button
               type="button"
               (click)="navigateToChildDetail()"
-              class="hidden min-h-11 items-center rounded-lg border border-[#e2e8f0] bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30 md:inline-flex"
+              class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10"
             >
               View child record
             </button>
           }
         </div>
 
-        <nav aria-label="Registration progress" class="overflow-x-auto pb-2">
-          <ol class="flex min-w-[720px] items-start gap-3">
+        <nav aria-label="Registration progress">
+          <ol class="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
             @for (step of steps; track step.key; let i = $index) {
-              <li class="flex flex-1 items-start gap-3">
+              <li>
                 <button
                   type="button"
                   (click)="goToStep(step.key)"
-                  class="group flex min-h-12 min-w-0 flex-col items-center gap-2 text-center focus:outline-hidden"
+                  [disabled]="!canOpenStep(step.key)"
+                  class="group flex min-h-[72px] w-full items-center gap-3 rounded-lg border bg-white p-3 text-left shadow-theme-xs transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:cursor-not-allowed"
                   [attr.aria-current]="stepIsActive(step.key) ? 'step' : null"
+                  [class.border-brand-300]="stepIsActive(step.key)"
+                  [class.bg-brand-50]="stepIsActive(step.key)"
+                  [class.border-success-200]="stepIsComplete(step.key)"
+                  [class.border-gray-200]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                  [class.opacity-65]="!canOpenStep(step.key)"
                 >
                   <span
                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-sm font-bold transition"
@@ -69,24 +59,25 @@
                     [class.text-white]="stepIsActive(step.key)"
                     [class.border-success-500]="stepIsComplete(step.key)"
                     [class.bg-success-500]="stepIsComplete(step.key)"
-                    [class.border-[#c5c5d8]]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
-                    [class.bg-[#d9e3fb]]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                    [class.border-gray-200]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                    [class.bg-gray-50]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
                     [class.text-gray-500]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
                   >
                     @if (stepIsComplete(step.key)) {
                       <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                    } @else if (!canOpenStep(step.key)) {
+                      <ng-icon name="heroLockClosed" size="18" aria-hidden="true" />
                     } @else {
                       {{ i + 1 }}
                     }
                   </span>
-                  <span class="text-xs font-bold" [class.text-brand-600]="stepIsActive(step.key)" [class.text-gray-500]="!stepIsActive(step.key)">
-                    {{ step.shortLabel }}
+                  <span class="min-w-0">
+                    <span class="block text-sm font-bold" [class.text-brand-700]="stepIsActive(step.key)" [class.text-gray-900]="!stepIsActive(step.key)">
+                      {{ step.shortLabel }}
+                    </span>
+                    <span class="mt-0.5 block text-xs leading-5 text-gray-500">{{ step.description }}</span>
                   </span>
                 </button>
-
-                @if (i < steps.length - 1) {
-                  <span class="mt-5 h-0.5 flex-1 rounded-full" [class.bg-brand-500]="stepIsComplete(steps[i + 1].key) || stepIsComplete(step.key)" [class.bg-[#c5c5d8]]="!stepIsComplete(steps[i + 1].key) && !stepIsComplete(step.key)"></span>
-                }
               </li>
             }
           </ol>
@@ -94,144 +85,283 @@
       </section>
 
       @if (currentStep === 'child-basics') {
-        <section class="grid grid-cols-1 gap-8 lg:grid-cols-[380px_1fr]">
-          <aside class="space-y-6">
-            <div class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-              <h3 class="mb-5 text-lg font-semibold">Registration Progress</h3>
+        <section class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h2 class="text-lg font-bold text-gray-950">Registration readiness</h2>
+                  <p class="mt-1 text-sm leading-6 text-gray-600">{{ step1ReadinessLabel }}</p>
+                </div>
+                <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ step1CompletionPercent }}%</span>
+              </div>
+              <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-100" aria-hidden="true">
+                <div class="h-full rounded-full bg-brand-600 transition-all" [style.width.%]="step1CompletionPercent"></div>
+              </div>
+              @if (step1MissingRequiredFields.length > 0) {
+                <div class="mt-5">
+                  <p class="mb-2 text-xs font-bold uppercase text-gray-500">Still needed</p>
+                  <div class="flex flex-wrap gap-2">
+                    @for (field of step1MissingRequiredFields; track field) {
+                      <span class="inline-flex items-center gap-1 rounded-full border border-error-200 bg-error-50 px-2.5 py-1 text-xs font-semibold text-error-700">
+                        <ng-icon name="heroExclamationTriangle" size="14" aria-hidden="true" />
+                        {{ step1FieldLabel(field) }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="mt-5 flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 p-3 text-sm font-medium text-success-700">
+                  <ng-icon name="heroCheck" size="18" class="mt-0.5 shrink-0" aria-hidden="true" />
+                  Core details are complete.
+                </div>
+              }
+            </section>
+
+            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
+              <h2 class="text-lg font-bold text-gray-950">Child snapshot</h2>
+              <dl class="mt-4 space-y-4 text-sm">
+                <div>
+                  <dt class="text-xs font-bold uppercase text-gray-500">Name</dt>
+                  <dd class="mt-1 font-semibold text-gray-900">{{ childFullNameDraft || 'Not entered' }}</dd>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <dt class="text-xs font-bold uppercase text-gray-500">Age</dt>
+                    <dd class="mt-1 font-semibold text-gray-900">{{ childAgeLabel }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-bold uppercase text-gray-500">Start</dt>
+                    <dd class="mt-1 font-semibold text-gray-900">{{ step1.start_date || 'Not set' }}</dd>
+                  </div>
+                </div>
+              </dl>
+            </section>
+
+            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
+              <h2 class="mb-4 text-lg font-bold text-gray-950">Workflow steps</h2>
               <div class="space-y-2">
                 @for (step of steps; track step.key; let i = $index) {
                   <button
                     type="button"
                     (click)="goToStep(step.key)"
-                    class="flex w-full items-center gap-3 rounded-lg p-3 text-left transition"
+                    [disabled]="!canOpenStep(step.key)"
+                    class="flex w-full items-center gap-3 rounded-lg p-3 text-left transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:cursor-not-allowed"
                     [class.border-l-4]="stepIsActive(step.key)"
                     [class.border-brand-600]="stepIsActive(step.key)"
                     [class.bg-brand-50]="stepIsActive(step.key)"
-                    [class.opacity-55]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                    [class.opacity-55]="!canOpenStep(step.key)"
                   >
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold"
                       [class.bg-brand-600]="stepIsActive(step.key)"
                       [class.bg-success-500]="stepIsComplete(step.key)"
-                      [class.bg-[#d9e3fb]]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                      [class.bg-gray-100]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
                       [class.text-white]="stepIsActive(step.key) || stepIsComplete(step.key)"
                       [class.text-gray-500]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
                     >
                       @if (stepIsComplete(step.key)) {
                         <ng-icon name="heroCheck" size="18" aria-hidden="true" />
+                      } @else if (!canOpenStep(step.key)) {
+                        <ng-icon name="heroLockClosed" size="16" aria-hidden="true" />
                       } @else {
                         {{ i + 1 }}
                       }
                     </span>
-                    <span>
-                      <span class="block text-sm font-semibold" [class.text-brand-600]="stepIsActive(step.key)">{{ step.label }}</span>
+                    <span class="min-w-0">
+                      <span class="block text-sm font-semibold" [class.text-brand-700]="stepIsActive(step.key)">{{ step.label }}</span>
                       <span class="block text-xs text-gray-500">{{ step.description }}</span>
                     </span>
                   </button>
                 }
               </div>
-            </div>
-
-            <div class="hidden overflow-hidden rounded-lg border border-[#d8ddf0] bg-white shadow-theme-xs lg:block">
-              <div class="h-64 bg-[linear-gradient(180deg,rgba(70,95,255,0.04),rgba(70,95,255,0.78)),url('https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=900&q=80')] bg-cover bg-center"></div>
-              <p class="-mt-24 p-6 text-base font-semibold italic leading-7 text-white">
-                "Dedicated to providing the best start for your little ones in a safe, professional environment."
-              </p>
-            </div>
+            </section>
           </aside>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white shadow-theme-xs">
-            <div class="border-b border-[#e2e8f0] bg-[#f0f3ff] p-6">
-              <h3 class="text-2xl font-bold">Child Registration</h3>
-              <p class="mt-1 text-sm text-gray-600">Step 1: Please enter the primary details for the child being registered.</p>
+          <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-950">Child registration</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600">Record the child identity, home details, and proposed start date from the paper form.</p>
+                </div>
+                <span class="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700">
+                  <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
+                  Required details
+                </span>
+              </div>
             </div>
 
-            <div class="space-y-6 p-6">
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">First Name(s)</span>
-                  <input type="text" [(ngModel)]="step1.first_name" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. James Arthur" />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Surname</span>
-                  <input type="text" [(ngModel)]="step1.surname" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="e.g. Smith" />
-                </label>
-              </div>
-
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Date of Birth</span>
-                  <input type="date" [(ngModel)]="step1.date_of_birth" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
-                </label>
-
+            <form class="space-y-8 p-5 md:p-6" (ngSubmit)="saveChildBasics()" novalidate>
+              <section class="space-y-5" aria-labelledby="child-identity-heading">
                 <div>
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Gender</span>
-                  <div class="grid h-12 grid-cols-3 gap-3">
-                    @for (gender of ['male', 'female', 'other']; track gender) {
-                      <label class="cursor-pointer">
-                        <input class="peer sr-only" type="radio" name="sex" [value]="gender" [(ngModel)]="step1.sex" />
-                        <span class="flex h-12 items-center justify-center rounded-lg border border-[#d0d5dd] bg-white text-sm font-medium capitalize transition peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white">
-                          {{ gender }}
-                        </span>
-                      </label>
-                    }
-                  </div>
+                  <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950">Identity</h3>
+                  <p class="mt-1 text-sm text-gray-500">First name, surname, date of birth, and start date are required.</p>
                 </div>
-              </div>
 
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Primary Language Spoken at Home</span>
-                  <select [(ngModel)]="step1.first_language" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10">
-                    <option value="">Select a language...</option>
-                    @for (language of languageOptions; track language) {
-                      <option [value]="language">{{ language }}</option>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label class="block" for="child-first-name">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">First name(s) <span class="text-error-600">*</span></span>
+                    <input
+                      id="child-first-name"
+                      name="first_name"
+                      type="text"
+                      [(ngModel)]="step1.first_name"
+                      (blur)="markStep1Touched('first_name')"
+                      [class]="fieldBaseClass + ' ' + fieldStateClass('first_name')"
+                      [attr.aria-invalid]="shouldShowStep1Error('first_name') ? 'true' : 'false'"
+                      [attr.aria-describedby]="shouldShowStep1Error('first_name') ? 'child-first-name-error' : null"
+                      autocomplete="given-name"
+                      placeholder="e.g. James Arthur"
+                    />
+                    @if (shouldShowStep1Error('first_name')) {
+                      <p id="child-first-name-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
+                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
+                        {{ step1FieldError('first_name') }}
+                      </p>
                     }
-                  </select>
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Proposed Start Date</span>
-                  <input type="date" [(ngModel)]="step1.start_date" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
-                </label>
-              </div>
-
-              <div class="border-t border-[#e2e8f0] pt-6">
-                <h4 class="mb-4 text-sm font-bold uppercase text-brand-600">Home Address</h4>
-                <div class="space-y-5">
-                  <label class="block">
-                    <span class="mb-2 block text-sm font-medium text-gray-700">Address Line 1</span>
-                    <input type="text" [(ngModel)]="step1.home_address" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
                   </label>
-                  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <label class="block">
-                      <span class="mb-2 block text-sm font-medium text-gray-700">Home Telephone</span>
-                      <input type="tel" [(ngModel)]="step1.home_telephone" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" />
-                    </label>
-                    <label class="block">
-                      <span class="mb-2 block text-sm font-medium text-gray-700">Postcode</span>
-                      <input type="text" [(ngModel)]="step1.home_postcode" class="h-12 w-full rounded-lg border border-[#d0d5dd] bg-white px-4 text-base uppercase outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="SW1A 1AA" />
-                    </label>
-                  </div>
+
+                  <label class="block" for="child-surname">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Surname <span class="text-error-600">*</span></span>
+                    <input
+                      id="child-surname"
+                      name="surname"
+                      type="text"
+                      [(ngModel)]="step1.surname"
+                      (blur)="markStep1Touched('surname')"
+                      [class]="fieldBaseClass + ' ' + fieldStateClass('surname')"
+                      [attr.aria-invalid]="shouldShowStep1Error('surname') ? 'true' : 'false'"
+                      [attr.aria-describedby]="shouldShowStep1Error('surname') ? 'child-surname-error' : null"
+                      autocomplete="family-name"
+                      placeholder="e.g. Smith"
+                    />
+                    @if (shouldShowStep1Error('surname')) {
+                      <p id="child-surname-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
+                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
+                        {{ step1FieldError('surname') }}
+                      </p>
+                    }
+                  </label>
                 </div>
-              </div>
 
-              <div class="border-t border-[#e2e8f0] pt-6">
-                <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-gray-700">Child notes</span>
-                  <textarea [(ngModel)]="step1.notes" rows="3" class="w-full rounded-lg border border-[#d0d5dd] bg-white px-4 py-3 text-base outline-hidden transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10" placeholder="Optional notes from the paper registration form"></textarea>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label class="block" for="child-date-of-birth">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Date of birth <span class="text-error-600">*</span></span>
+                    <input
+                      id="child-date-of-birth"
+                      name="date_of_birth"
+                      type="date"
+                      [(ngModel)]="step1.date_of_birth"
+                      (blur)="markStep1Touched('date_of_birth')"
+                      [max]="todayIso"
+                      [class]="fieldBaseClass + ' ' + fieldStateClass('date_of_birth')"
+                      [attr.aria-invalid]="shouldShowStep1Error('date_of_birth') ? 'true' : 'false'"
+                      [attr.aria-describedby]="shouldShowStep1Error('date_of_birth') ? 'child-date-of-birth-error' : null"
+                    />
+                    @if (shouldShowStep1Error('date_of_birth')) {
+                      <p id="child-date-of-birth-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
+                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
+                        {{ step1FieldError('date_of_birth') }}
+                      </p>
+                    }
+                  </label>
+
+                  <fieldset>
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700">Gender</legend>
+                    <div class="grid grid-cols-3 gap-3">
+                      @for (gender of ['male', 'female', 'other']; track gender) {
+                        <label class="cursor-pointer">
+                          <input class="peer sr-only" type="radio" name="sex" [value]="gender" [(ngModel)]="step1.sex" />
+                          <span class="flex h-12 items-center justify-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold capitalize text-gray-700 transition peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-brand-500/10">
+                            {{ gender }}
+                          </span>
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label class="block" for="child-first-language">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Primary language spoken at home</span>
+                    <select
+                      id="child-first-language"
+                      name="first_language"
+                      [(ngModel)]="step1.first_language"
+                      [class]="fieldBaseClass + ' appearance-none ' + fieldDefaultClass"
+                    >
+                      <option value="">Select a language...</option>
+                      @for (language of languageOptions; track language) {
+                        <option [value]="language">{{ language }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="block" for="child-start-date">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Proposed start date <span class="text-error-600">*</span></span>
+                    <input
+                      id="child-start-date"
+                      name="start_date"
+                      type="date"
+                      [(ngModel)]="step1.start_date"
+                      (blur)="markStep1Touched('start_date')"
+                      [class]="fieldBaseClass + ' ' + fieldStateClass('start_date')"
+                      [attr.aria-invalid]="shouldShowStep1Error('start_date') ? 'true' : 'false'"
+                      [attr.aria-describedby]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : null"
+                    />
+                    @if (shouldShowStep1Error('start_date')) {
+                      <p id="child-start-date-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-error-600">
+                        <ng-icon name="heroExclamationTriangle" size="16" aria-hidden="true" />
+                        {{ step1FieldError('start_date') }}
+                      </p>
+                    }
+                  </label>
+                </div>
+              </section>
+
+              <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="home-address-heading">
+                <div>
+                  <h3 id="home-address-heading" class="text-lg font-bold text-gray-950">Home address</h3>
+                  <p class="mt-1 text-sm text-gray-500">Optional details can be completed now or updated later.</p>
+                </div>
+
+                <label class="block" for="child-home-address">
+                  <span class="mb-2 block text-sm font-semibold text-gray-700">Address line 1</span>
+                  <input id="child-home-address" name="home_address" type="text" [(ngModel)]="step1.home_address" [class]="fieldBaseClass + ' ' + fieldDefaultClass" autocomplete="street-address" />
                 </label>
-              </div>
 
-              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-[#e2e8f0] pt-6 sm:flex-row sm:items-center">
-                <button type="button" class="min-h-12 rounded-lg px-6 text-base font-semibold text-gray-600 hover:bg-[#f0f3ff]">Save for Later</button>
-                <button type="button" (click)="saveChildBasics()" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-500 px-8 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600 disabled:opacity-60">
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label class="block" for="child-home-telephone">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Home telephone</span>
+                    <input id="child-home-telephone" name="home_telephone" type="tel" [(ngModel)]="step1.home_telephone" [class]="fieldBaseClass + ' ' + fieldDefaultClass" autocomplete="tel" />
+                  </label>
+                  <label class="block" for="child-home-postcode">
+                    <span class="mb-2 block text-sm font-semibold text-gray-700">Postcode</span>
+                    <input id="child-home-postcode" name="home_postcode" type="text" [(ngModel)]="step1.home_postcode" [class]="fieldBaseClass + ' uppercase ' + fieldDefaultClass" autocomplete="postal-code" placeholder="SW1A 1AA" />
+                  </label>
+                </div>
+              </section>
+
+              <section class="border-t border-gray-200 pt-6" aria-labelledby="child-notes-heading">
+                <label class="block" for="child-notes">
+                  <span id="child-notes-heading" class="mb-2 block text-sm font-semibold text-gray-700">Child notes</span>
+                  <textarea id="child-notes" name="notes" [(ngModel)]="step1.notes" rows="4" [class]="textareaBaseClass + ' ' + fieldDefaultClass" placeholder="Optional notes from the paper registration form"></textarea>
+                </label>
+              </section>
+
+              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
+                <button type="button" (click)="saveChildBasics(false)" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center rounded-lg px-6 text-base font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:opacity-60">
+                  {{ isSaving ? 'Saving...' : 'Save draft' }}
+                </button>
+                <button type="submit" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-60">
                   {{ isSaving ? 'Saving...' : 'Continue' }}
                   <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                 </button>
               </div>
-            </div>
+            </form>
           </section>
 
-          <div class="lg:col-start-2 rounded-lg border border-dashed border-[#c5c5d8] bg-[#dfe8ff]/30 p-5">
+          <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5 lg:col-start-2">
             <div class="flex gap-3">
               <ng-icon name="heroInformationCircle" size="24" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
               <p class="text-sm italic leading-6 text-gray-700">

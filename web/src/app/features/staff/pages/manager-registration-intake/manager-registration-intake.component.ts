@@ -52,6 +52,20 @@ type IntakeStep = {
   description: string;
 };
 
+type Step1Field =
+  | 'first_name'
+  | 'surname'
+  | 'date_of_birth'
+  | 'start_date'
+  | 'sex'
+  | 'first_language'
+  | 'home_address'
+  | 'home_postcode'
+  | 'home_telephone'
+  | 'notes';
+
+type Step1RequiredField = Extract<Step1Field, 'first_name' | 'surname' | 'date_of_birth' | 'start_date'>;
+
 type ConsentItem = {
   key: keyof ConsentWritePayload;
   label: string;
@@ -132,6 +146,17 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
 
   readonly languageOptions = ['English', 'Polish', 'Punjabi', 'Arabic', 'Urdu', 'Spanish', 'Other'];
   readonly relationshipOptions = ['Mother', 'Father', 'Parent', 'Carer', 'Grandparent', 'Aunt', 'Uncle', 'Other'];
+  readonly todayIso = new Date().toISOString().slice(0, 10);
+  readonly step1RequiredFields: Step1RequiredField[] = [
+    'first_name',
+    'surname',
+    'date_of_birth',
+    'start_date',
+  ];
+  readonly fieldBaseClass = 'h-12 w-full rounded-lg border bg-white px-4 text-base text-gray-900 shadow-theme-xs outline-hidden transition placeholder:text-gray-400 focus:ring-4';
+  readonly textareaBaseClass = 'w-full rounded-lg border bg-white px-4 py-3 text-base text-gray-900 shadow-theme-xs outline-hidden transition placeholder:text-gray-400 focus:ring-4';
+  readonly fieldDefaultClass = 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/10';
+  readonly fieldErrorClass = 'border-error-500 bg-error-50/40 focus:border-error-500 focus:ring-error-500/15';
   readonly immunisationOptions = [
     { value: 'up_to_date', label: 'Fully Up-to-Date' },
     { value: 'partial', label: 'Partially (Delayed)' },
@@ -198,6 +223,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
   errorMessage: string | null = null;
   fieldErrors: Record<string, string> = {};
   successMessage: string | null = null;
+  step1Submitted = false;
+  step1Touched: Partial<Record<Step1Field, boolean>> = {};
 
   step1 = {
     first_name: '',
@@ -317,6 +344,51 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     return this.stepIndex + 1;
   }
 
+  get step1MissingRequiredFields(): Step1RequiredField[] {
+    return this.step1RequiredFields.filter(field => !!this.step1FieldError(field));
+  }
+
+  get step1CompletionPercent(): number {
+    const complete = this.step1RequiredFields.length - this.step1MissingRequiredFields.length;
+    return Math.round((complete / this.step1RequiredFields.length) * 100);
+  }
+
+  get step1ReadinessLabel(): string {
+    const missingCount = this.step1MissingRequiredFields.length;
+    if (missingCount === 0) {
+      return 'Ready to continue';
+    }
+    return `${missingCount} required ${missingCount === 1 ? 'field' : 'fields'} missing`;
+  }
+
+  get childAgeLabel(): string {
+    if (!this.step1.date_of_birth) {
+      return 'Age not set';
+    }
+
+    const birthDate = new Date(`${this.step1.date_of_birth}T00:00:00`);
+    if (Number.isNaN(birthDate.getTime())) {
+      return 'Age not set';
+    }
+
+    const today = new Date();
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth();
+    if (today.getDate() < birthDate.getDate()) {
+      months -= 1;
+    }
+
+    if (months < 0) {
+      return 'Date is in the future';
+    }
+
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    if (years === 0) {
+      return `${remainingMonths}m old`;
+    }
+    return `${years}y ${remainingMonths}m old`;
+  }
+
   get allergyStatusLabel(): string {
     return this.step2.has_allergies ? 'Recorded' : 'No known allergies recorded';
   }
@@ -338,7 +410,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
   }
 
   goToStep(step: StepperStep): void {
-    if (!this.childId && step !== 'child-basics') {
+    if (!this.canOpenStep(step)) {
       this.errorMessage = 'Create the child record before continuing to later registration steps.';
       return;
     }
@@ -354,15 +426,68 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     return this.steps.findIndex(s => s.key === step) < this.stepIndex;
   }
 
-  saveChildBasics(): void {
-    if (!this.childFullNameDraft || !this.step1.date_of_birth || !this.step1.start_date) {
-      this.errorMessage = 'First name, surname, date of birth, and proposed start date are required.';
+  canOpenStep(step: StepperStep): boolean {
+    return step === 'child-basics' || !!this.childId;
+  }
+
+  step1FieldError(field: Step1Field): string | null {
+    if (field === 'first_name' && !this.step1.first_name.trim()) {
+      return 'Enter the child\'s first name.';
+    }
+    if (field === 'surname' && !this.step1.surname.trim()) {
+      return 'Enter the child\'s surname.';
+    }
+    if (field === 'date_of_birth') {
+      if (!this.step1.date_of_birth) {
+        return 'Enter the child\'s date of birth.';
+      }
+      if (this.step1.date_of_birth > this.todayIso) {
+        return 'Date of birth cannot be in the future.';
+      }
+    }
+    if (field === 'start_date' && !this.step1.start_date) {
+      return 'Enter the proposed start date.';
+    }
+    return null;
+  }
+
+  shouldShowStep1Error(field: Step1Field): boolean {
+    return (this.step1Submitted || !!this.step1Touched[field]) && !!this.step1FieldError(field);
+  }
+
+  markStep1Touched(field: Step1Field): void {
+    this.step1Touched[field] = true;
+  }
+
+  step1FieldLabel(field: Step1RequiredField): string {
+    const labels: Record<Step1RequiredField, string> = {
+      first_name: 'First name',
+      surname: 'Surname',
+      date_of_birth: 'Date of birth',
+      start_date: 'Proposed start date',
+    };
+    return labels[field];
+  }
+
+  fieldStateClass(field: Step1Field): string {
+    return this.shouldShowStep1Error(field) ? this.fieldErrorClass : this.fieldDefaultClass;
+  }
+
+  saveChildBasics(advance = true): void {
+    this.step1Submitted = true;
+
+    if (this.step1MissingRequiredFields.length > 0) {
+      this.errorMessage = advance
+        ? 'Complete the required child details before continuing.'
+        : 'Complete the required child details before saving a draft.';
+      this.focusFirstStep1Error();
       return;
     }
 
     this.isSaving = true;
     this.errorMessage = null;
     this.fieldErrors = {};
+    this.successMessage = null;
 
     const payload: ChildWritePayload = {
       full_name: this.childFullNameDraft,
@@ -372,7 +497,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     };
 
     if (this.childId) {
-      this.saveStep1Profile(this.childId);
+      this.saveStep1Profile(this.childId, advance);
       return;
     }
 
@@ -380,7 +505,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
       next: (child) => {
         this.child = child;
         this.childId = child.id;
-        this.saveStep1Profile(child.id);
+        this.saveStep1Profile(child.id, advance);
       },
       error: (error) => {
         this.isSaving = false;
@@ -611,7 +736,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     return this.workflowStatus?.office_completeness?.is_complete ? 'Complete' : 'Incomplete';
   }
 
-  private saveStep1Profile(childId: string): void {
+  private saveStep1Profile(childId: string, advance: boolean): void {
     this.staffApi.patchRegistrationProfile(childId, {
       demographics_home: {
         sex: this.step1.sex || null,
@@ -624,7 +749,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.isSaving = false;
-        this.nextStep();
+        if (advance) {
+          this.nextStep();
+        } else {
+          this.successMessage = 'Child details saved.';
+        }
       },
       error: (error) => {
         this.isSaving = false;
@@ -780,5 +909,21 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
   private stringToAddress(value: string): Record<string, unknown> | null {
     const trimmed = value.trim();
     return trimmed ? { text: trimmed } : null;
+  }
+
+  private focusFirstStep1Error(): void {
+    const fieldIds: Record<Step1RequiredField, string> = {
+      first_name: 'child-first-name',
+      surname: 'child-surname',
+      date_of_birth: 'child-date-of-birth',
+      start_date: 'child-start-date',
+    };
+    const firstInvalidField = this.step1MissingRequiredFields[0];
+    if (!firstInvalidField) return;
+
+    setTimeout(() => {
+      const element = globalThis.document?.getElementById(fieldIds[firstInvalidField]);
+      element?.focus();
+    });
   }
 }
