@@ -10,6 +10,32 @@
     @if (isLoading) {
       <app-loading-state variant="block" label="Loading registration..." />
     } @else {
+      @if (isDraftRestoredBannerVisible) {
+        <div class="mb-6 flex flex-col gap-3 rounded-lg border border-success-200 bg-success-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <ng-icon name="heroCheck" size="20" class="mt-0.5 shrink-0 text-success-600" aria-hidden="true" />
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-success-700">In-progress draft restored</p>
+              <p class="mt-1 text-xs text-success-700/80">
+                Your previous inputs were saved locally
+                @if (draftRestoredAt) {
+                  <span> on {{ formatDraftTimestamp(draftRestoredAt) }}</span>
+                }.
+                Continue where you left off.
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" (click)="discardDraft()" class="inline-flex min-h-10 items-center rounded-lg border border-error-200 bg-white px-3 text-sm font-semibold text-error-600 hover:bg-error-50">
+              Discard draft
+            </button>
+            <button type="button" (click)="dismissDraftBanner()" class="inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold text-success-700 hover:bg-success-100">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      }
+
       <section class="mb-8">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div class="min-w-0 flex-1">
@@ -17,6 +43,15 @@
               {{ steps[stepIndex].label }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
+            @if (hasStoredDraft && !isDraftRestoredBannerVisible) {
+              <p class="mt-2 inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+                <ng-icon name="heroCloudArrowUp" size="14" aria-hidden="true" />
+                Draft auto-saved
+                @if (draftSavedAt) {
+                  <span> at {{ formatDraftTimestamp(draftSavedAt) }}</span>
+                }
+              </p>
+            }
           </div>
         </div>
 

@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { combineLatest, Observable } from 'rxjs';
+import { Subject, combineLatest, debounceTime, Observable, takeUntil } from 'rxjs';
 import {
   heroAcademicCap,
   heroArrowLeft,
@@ -11,6 +11,7 @@ import {
   heroCamera,
   heroCheck,
   heroClipboardDocumentCheck,
+  heroCloudArrowUp,
   heroDocumentCheck,
   heroExclamationTriangle,
   heroHeart,
@@ -35,6 +36,7 @@ import { SelectComponent, type Option } from '../../../../shared/components/form
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
+import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
   ConsentWritePayload,
@@ -84,6 +86,87 @@ type ConsentItem = {
   detail: string;
 };
 
+type RegistrationDraft = {
+  currentStep: StepperStep;
+  step1: {
+    first_name: string;
+    surname: string;
+    date_of_birth: string;
+    start_date: string;
+    sex: string;
+    first_language: string;
+    home_address: string;
+    home_postcode: string;
+    home_telephone: string;
+    notes: string;
+    religion: string;
+    ethnic_origin: string;
+    other_languages: string;
+    disability_status: string;
+    disability_notes: string;
+    access_requirements: string;
+  };
+  step2: {
+    has_allergies: boolean;
+    allergy_details: string;
+    on_medication: boolean;
+    medication_name: string;
+    medication_dosage: string;
+    medication_storage: string;
+    immunisation_status: string;
+    immunisation_country: string;
+    illness_diagnosis_history: string;
+    dietary_side_effects: string;
+    doctor_practice: string;
+    doctor_name: string;
+    doctor_phone: string;
+    health_visitor_name: string;
+    health_visitor_clinic: string;
+    health_visitor_phone: string;
+    social_services_involvement: boolean;
+    social_services_details: string;
+    social_worker_contact: string;
+    concern_walking: boolean;
+    concern_speech_language: boolean;
+    concern_hearing: boolean;
+    concern_sight: boolean;
+    concern_emotional_wellbeing: boolean;
+    concern_behaviour: boolean;
+    professional_referrals: string;
+    routine_care_notes: string;
+  };
+  step3: {
+    collection_password: string;
+    collection_password_hint: string;
+    national_insurance_number: string;
+    applying_for_funding: boolean;
+    early_years_pupil_premium: boolean;
+    working_tax_credit: boolean;
+    college_uni_paid_to_parent: boolean;
+    college_uni_paid_to_nursery: boolean;
+    funding_3yo_term_time: boolean;
+    funding_2yo_term_time: boolean;
+    parent1_address: string;
+    parent1_has_responsibility: boolean;
+    show_second_parent: boolean;
+    second_parent_name: string;
+    second_parent_relationship: string;
+    second_parent_telephone: string;
+    second_parent_email: string;
+    second_parent_address: string;
+    second_parent_has_responsibility: boolean;
+  };
+  step4: ConsentWritePayload;
+  step4_gdpr: {
+    gdpr_declared_by_name: string;
+    gdpr_declaration_date: string;
+  };
+  officeEvidence: Partial<OfficeUseChecklist>;
+  parentCarersDraft: RegistrationContactEntry[];
+  emergencyContactsDraft: RegistrationContactEntry[];
+  emergencyAuthorisedFlags: boolean[];
+};
+
 @Component({
   selector: 'app-manager-registration-intake',
   imports: [
@@ -108,6 +191,7 @@ type ConsentItem = {
       heroCamera,
       heroCheck,
       heroClipboardDocumentCheck,
+      heroCloudArrowUp,
       heroDocumentCheck,
       heroExclamationTriangle,
       heroHeart,
@@ -122,11 +206,15 @@ type ConsentItem = {
   ],
   templateUrl: './manager-registration-intake.component.html',
 })
-export class ManagerRegistrationIntakeComponent implements OnInit {
+export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly draftStorage = inject(RegistrationDraftStorage);
+  private readonly destroy$ = new Subject<void>();
+  private readonly draftChanges$ = new Subject<void>();
+  private hasRestoredDraft = false;
 
   readonly steps: IntakeStep[] = [
     {
@@ -297,6 +385,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
   successMessage: string | null = null;
   step1Submitted = false;
   step1Touched: Partial<Record<Step1Field, boolean>> = {};
+  hasStoredDraft = false;
+  draftRestoredAt: string | null = null;
+  draftSavedAt: string | null = null;
+  isDraftRestoredBannerVisible = false;
 
   step1 = {
     first_name: '',
@@ -430,7 +522,22 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
       this.isNewRegistration = false;
       this.childId = childIdParam;
       this.loadChildAndStatus();
+      return;
     }
+
+    this.restoreDraftIfPresent();
+    this.subscribeToDraftAutoSave();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  @HostListener('input')
+  @HostListener('change')
+  protected onFormInput(): void {
+    this.notifyDraftChanged();
   }
 
   get stepIndex(): number {
@@ -577,6 +684,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
       next: (child) => {
         this.child = child;
         this.childId = child.id;
+        this.draftStorage.clear();
+        this.hasStoredDraft = false;
+        this.draftSavedAt = null;
+        this.draftRestoredAt = null;
+        this.isDraftRestoredBannerVisible = false;
         this.saveStep1Profile(child.id, advance);
       },
       error: (error) => {
@@ -799,6 +911,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
         ).subscribe({
           next: () => {
             this.isSaving = false;
+            this.draftStorage.clear();
+            this.hasStoredDraft = false;
+            this.draftSavedAt = null;
+            this.draftRestoredAt = null;
+            this.isDraftRestoredBannerVisible = false;
             this.loadStatus();
             this.nextStep();
           },
@@ -846,6 +963,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
   addEmergencyContact(): void {
     this.emergencyContactsDraft.push(this.emptyContact(''));
     this.emergencyAuthorisedFlags.push(false);
+    this.notifyDraftChanged();
   }
 
   removeEmergencyContact(index: number): void {
@@ -854,6 +972,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     if (this.emergencyContactsDraft.length === 0) {
       this.addEmergencyContact();
     }
+    this.notifyDraftChanged();
   }
 
   protected getConcernValue(key: string): boolean {
@@ -862,6 +981,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
 
   protected setConcernValue(key: string, value: boolean): void {
     (this.step2 as Record<string, boolean | string>)[key] = value;
+    this.notifyDraftChanged();
   }
 
   protected trackByIndex(index: number): number {
@@ -874,6 +994,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
 
   protected setConsentValue(key: keyof ConsentWritePayload, checked: boolean): void {
     (this.step4[key] as boolean) = checked;
+    this.notifyDraftChanged();
   }
 
   protected profileCompleteLabel(): string {
@@ -1143,5 +1264,239 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
       const element = globalThis.document?.getElementById(fieldIds[firstInvalidField]);
       element?.focus();
     });
+  }
+
+  private subscribeToDraftAutoSave(): void {
+    this.draftChanges$
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
+      .subscribe(() => this.persistDraft());
+  }
+
+  protected notifyDraftChanged(): void {
+    if (!this.isNewRegistration || this.childId) {
+      return;
+    }
+    this.draftChanges$.next();
+  }
+
+  protected discardDraft(): void {
+    this.draftStorage.clear();
+    this.hasStoredDraft = false;
+    this.draftRestoredAt = null;
+    this.draftSavedAt = null;
+    this.isDraftRestoredBannerVisible = false;
+    this.resetDrafts();
+    this.successMessage = 'Draft cleared. You can start a new registration.';
+  }
+
+  protected dismissDraftBanner(): void {
+    this.isDraftRestoredBannerVisible = false;
+  }
+
+  protected formatDraftTimestamp(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString();
+  }
+
+  private persistDraft(): void {
+    if (!this.isNewRegistration || this.childId || this.hasRestoredDraft === false && this.isEmptyDraft()) {
+      return;
+    }
+    const payload: RegistrationDraft = {
+      currentStep: this.currentStep,
+      step1: { ...this.step1 },
+      step2: { ...this.step2 },
+      step3: { ...this.step3 },
+      step4: { ...this.step4 },
+      step4_gdpr: { ...this.step4_gdpr },
+      officeEvidence: { ...this.officeEvidence },
+      parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
+      emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
+      emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
+    };
+    this.draftStorage.save(payload, this.currentStep);
+    this.draftSavedAt = new Date().toISOString();
+    this.hasStoredDraft = true;
+  }
+
+  private restoreDraftIfPresent(): void {
+    if (!this.isNewRegistration) return;
+    const raw = this.draftStorage.load();
+    if (!raw) return;
+
+    try {
+      const draft = JSON.parse(raw) as Partial<RegistrationDraft>;
+      this.applyDraft(draft);
+      this.draftRestoredAt = this.draftStorage.loadSavedAt();
+      this.draftSavedAt = this.draftRestoredAt;
+      this.hasStoredDraft = true;
+      this.isDraftRestoredBannerVisible = true;
+    } catch {
+      this.draftStorage.clear();
+    }
+  }
+
+  private applyDraft(draft: Partial<RegistrationDraft>): void {
+    if (draft.step1) this.step1 = { ...this.step1, ...draft.step1 };
+    if (draft.step2) this.step2 = { ...this.step2, ...draft.step2 };
+    if (draft.step3) this.step3 = { ...this.step3, ...draft.step3 };
+    if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
+    if (draft.step4_gdpr) this.step4_gdpr = { ...this.step4_gdpr, ...draft.step4_gdpr };
+    if (draft.officeEvidence) this.officeEvidence = { ...this.officeEvidence, ...draft.officeEvidence };
+    if (draft.parentCarersDraft?.length) {
+      this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
+    }
+    if (draft.emergencyContactsDraft?.length) {
+      this.emergencyContactsDraft = draft.emergencyContactsDraft.map(contact => ({ ...contact }));
+    }
+    if (draft.emergencyAuthorisedFlags?.length) {
+      this.emergencyAuthorisedFlags = [...draft.emergencyAuthorisedFlags];
+    }
+    if (draft.currentStep && this.steps.some(step => step.key === draft.currentStep)) {
+      this.currentStep = draft.currentStep;
+    }
+    this.step1Submitted = !!draft.step1?.first_name?.trim();
+    this.successMessage = 'Restored your in-progress registration draft.';
+  }
+
+  private isEmptyDraft(): boolean {
+    const step1Empty = Object.values(this.step1).every(value => !String(value ?? '').trim());
+    const step2Empty = Object.entries(this.step2).every(([key, value]) => {
+      if (typeof value === 'boolean') return value === false;
+      return !String(value ?? '').trim();
+    });
+    const step3Empty = Object.entries(this.step3).every(([key, value]) => {
+      if (typeof value === 'boolean') return value === false;
+      return !String(value ?? '').trim();
+    });
+    return step1Empty && step2Empty && step3Empty;
+  }
+
+  private resetDrafts(): void {
+    this.step1 = {
+      first_name: '',
+      surname: '',
+      date_of_birth: '',
+      start_date: '',
+      sex: '',
+      first_language: '',
+      home_address: '',
+      home_postcode: '',
+      home_telephone: '',
+      notes: '',
+      religion: '',
+      ethnic_origin: '',
+      other_languages: '',
+      disability_status: '',
+      disability_notes: '',
+      access_requirements: '',
+    };
+    this.step2 = {
+      has_allergies: false,
+      allergy_details: '',
+      on_medication: false,
+      medication_name: '',
+      medication_dosage: '',
+      medication_storage: '',
+      immunisation_status: '',
+      immunisation_country: '',
+      illness_diagnosis_history: '',
+      dietary_side_effects: '',
+      doctor_practice: '',
+      doctor_name: '',
+      doctor_phone: '',
+      health_visitor_name: '',
+      health_visitor_clinic: '',
+      health_visitor_phone: '',
+      social_services_involvement: false,
+      social_services_details: '',
+      social_worker_contact: '',
+      concern_walking: false,
+      concern_speech_language: false,
+      concern_hearing: false,
+      concern_sight: false,
+      concern_emotional_wellbeing: false,
+      concern_behaviour: false,
+      professional_referrals: '',
+      routine_care_notes: '',
+    };
+    this.step3 = {
+      collection_password: '',
+      collection_password_hint: '',
+      national_insurance_number: '',
+      applying_for_funding: false,
+      early_years_pupil_premium: false,
+      working_tax_credit: false,
+      college_uni_paid_to_parent: false,
+      college_uni_paid_to_nursery: false,
+      funding_3yo_term_time: false,
+      funding_2yo_term_time: false,
+      parent1_address: '',
+      parent1_has_responsibility: true,
+      show_second_parent: false,
+      second_parent_name: '',
+      second_parent_relationship: '',
+      second_parent_telephone: '',
+      second_parent_email: '',
+      second_parent_address: '',
+      second_parent_has_responsibility: true,
+    };
+    this.step4 = {
+      signer_name: '',
+      signed_date: '',
+      paper_form_on_file: true,
+      urgent_medical_treatment: true,
+      plasters: true,
+      safeguarding_reporting_acknowledgement: true,
+      area_senco_liaison: true,
+      health_visitor_liaison: true,
+      transition_documents: true,
+      local_outings: true,
+      face_painting: true,
+      parent_supplied_sun_cream: true,
+      parent_supplied_nappy_cream: true,
+      development_profile_photos: true,
+      nursery_display_boards: true,
+      promotional_literature: true,
+      nursery_website: true,
+      staff_student_coursework: true,
+      social_media: true,
+      social_media_channel_notes: 'TikTok, Instagram, Facebook',
+      urgent_medical_treatment_exceptions: null,
+      notes_exceptions: null,
+    };
+    this.step4_gdpr = {
+      gdpr_declared_by_name: '',
+      gdpr_declaration_date: '',
+    };
+    this.officeEvidence = {
+      applicationDateStatus: 'complete',
+      applicationDate: '',
+      birthCertificatePassportStatus: 'unknown',
+      proofOfAddressStatus: 'unknown',
+      redBookStatus: 'unknown',
+      handbookStatus: 'unknown',
+      contractStatus: 'unknown',
+      notes: '',
+      depositStatus: 'unknown',
+      depositPaidDate: '',
+      sessionsDaysRequestedStatus: 'unknown',
+      sessionsDaysRequested: '',
+      termTimeOnlySpaceStatus: 'unknown',
+      contractDate: '',
+      handbookDate: '',
+      redBookCheckedDate: '',
+      birthCertificatePassportCheckedDate: '',
+      proofOfAddressCheckedDate: '',
+    };
+    this.parentCarersDraft = [this.emptyContact('Mother')];
+    this.emergencyContactsDraft = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
+    this.emergencyAuthorisedFlags = [true, false];
+    this.step1Touched = {};
+    this.step1Submitted = false;
+    this.fieldErrors = {};
+    this.errorMessage = null;
   }
 }
