@@ -22,13 +22,12 @@
         routerLink="/staff/manager/registrations/new"
         class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
       >New Registration</a>
-      <app-button variant="outline" size="sm" (btnClick)="openCreate()">Add child</app-button>
     </div>
   </app-page-header>
 
   @if (showForm) {
     <app-child-form
-      [mode]="formMode"
+      mode="edit"
       [selectedChild]="selectedChild"
       [submitting]="isSaving"
       [fieldErrors]="fieldErrors"
@@ -62,7 +61,7 @@
         } @else if (children.length === 0) {
           <tr>
             <td colspan="8">
-              <app-empty-state title="No children found" message="Adjust filters or add a new child."></app-empty-state>
+              <app-empty-state title="No children found" message="Adjust filters or register a new child."></app-empty-state>
             </td>
           </tr>
         } @else {

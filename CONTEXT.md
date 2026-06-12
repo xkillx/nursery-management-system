@@ -58,7 +58,7 @@ A manager-facing workflow where nursery staff enter registration and consent inf
 
 ## Registration Intake Entry Points (Post-MVP)
 
-For brand-new children, managers should normally start from the guided registration intake workflow rather than the quick Add Child action. Add Child remains available as a shortcut for operational setup, corrections, or cases where registration paperwork will be completed later.
+For brand-new children, managers use the guided registration intake workflow as the only entry point for creating child records. The quick Add Child action has been removed; all new child creation goes through the registration intake.
 
 ## Guided Registration Intake (Post-MVP)
 

@@ -56,7 +56,6 @@ export class ManagerChildrenComponent {
   isSaving = false;
 
   selectedChild: ChildRecord | null = null;
-  formMode: 'create' | 'edit' = 'create';
   showForm = false;
 
   errorMessage: string | null = null;
@@ -95,16 +94,7 @@ export class ManagerChildrenComponent {
     this.loadChildren();
   }
 
-  openCreate(): void {
-    this.formMode = 'create';
-    this.selectedChild = null;
-    this.fieldErrors = {};
-    this.errorMessage = null;
-    this.showForm = true;
-  }
-
   openEdit(child: ChildRecord): void {
-    this.formMode = 'edit';
     this.selectedChild = child;
     this.fieldErrors = {};
     this.errorMessage = null;
@@ -123,12 +113,7 @@ export class ManagerChildrenComponent {
     this.fieldErrors = {};
     this.errorMessage = null;
 
-    const request$ =
-      this.formMode === 'create'
-        ? this.staffApi.createChild(payload)
-        : this.staffApi.updateChild(this.selectedChild!.id, payload);
-
-    request$.subscribe({
+    this.staffApi.updateChild(this.selectedChild!.id, payload).subscribe({
       next: () => {
         this.isSaving = false;
         this.closeForm();
