@@ -7,7 +7,6 @@ import {
   heroAcademicCap,
   heroArrowLeft,
   heroArrowRight,
-  heroBell,
   heroCamera,
   heroCheck,
   heroClipboardDocumentCheck,
@@ -19,7 +18,6 @@ import {
   heroLockClosed,
   heroPaperAirplane,
   heroPlusCircle,
-  heroQuestionMarkCircle,
   heroShieldCheck,
   heroUserGroup,
 } from '@ng-icons/heroicons/outline';
@@ -98,7 +96,6 @@ type ConsentItem = {
       heroAcademicCap,
       heroArrowLeft,
       heroArrowRight,
-      heroBell,
       heroCamera,
       heroCheck,
       heroClipboardDocumentCheck,
@@ -110,7 +107,6 @@ type ConsentItem = {
       heroLockClosed,
       heroPaperAirplane,
       heroPlusCircle,
-      heroQuestionMarkCircle,
       heroShieldCheck,
       heroUserGroup,
     }),
@@ -375,46 +371,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
     return this.step1RequiredFields.filter(field => !!this.step1FieldError(field));
   }
 
-  get step1CompletionPercent(): number {
-    const complete = this.step1RequiredFields.length - this.step1MissingRequiredFields.length;
-    return Math.round((complete / this.step1RequiredFields.length) * 100);
-  }
 
-  get step1ReadinessLabel(): string {
-    const missingCount = this.step1MissingRequiredFields.length;
-    if (missingCount === 0) {
-      return 'Ready to continue';
-    }
-    return `${missingCount} required ${missingCount === 1 ? 'field' : 'fields'} missing`;
-  }
-
-  get childAgeLabel(): string {
-    if (!this.step1.date_of_birth) {
-      return 'Age not set';
-    }
-
-    const birthDate = new Date(`${this.step1.date_of_birth}T00:00:00`);
-    if (Number.isNaN(birthDate.getTime())) {
-      return 'Age not set';
-    }
-
-    const today = new Date();
-    let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth();
-    if (today.getDate() < birthDate.getDate()) {
-      months -= 1;
-    }
-
-    if (months < 0) {
-      return 'Date is in the future';
-    }
-
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    if (years === 0) {
-      return `${remainingMonths}m old`;
-    }
-    return `${years}y ${remainingMonths}m old`;
-  }
 
   get allergyStatusLabel(): string {
     return this.step2.has_allergies ? 'Recorded' : 'No known allergies recorded';
@@ -488,16 +445,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit {
 
   markStep1Touched(field: Step1Field): void {
     this.step1Touched[field] = true;
-  }
-
-  step1FieldLabel(field: Step1RequiredField): string {
-    const labels: Record<Step1RequiredField, string> = {
-      first_name: 'First name',
-      surname: 'Surname',
-      date_of_birth: 'Date of birth',
-      start_date: 'Proposed start date',
-    };
-    return labels[field];
   }
 
   saveChildBasics(advance = true): void {

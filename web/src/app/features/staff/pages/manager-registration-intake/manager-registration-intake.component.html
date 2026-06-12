@@ -85,97 +85,7 @@
       </section>
 
       @if (currentStep === 'child-basics') {
-        <section class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-950">Registration readiness</h2>
-                  <p class="mt-1 text-sm leading-6 text-gray-600">{{ step1ReadinessLabel }}</p>
-                </div>
-                <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ step1CompletionPercent }}%</span>
-              </div>
-              <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-100" aria-hidden="true">
-                <div class="h-full rounded-full bg-brand-600 transition-all" [style.width.%]="step1CompletionPercent"></div>
-              </div>
-              @if (step1MissingRequiredFields.length > 0) {
-                <div class="mt-5">
-                  <p class="mb-2 text-xs font-bold uppercase text-gray-500">Still needed</p>
-                  <div class="flex flex-wrap gap-2">
-                    @for (field of step1MissingRequiredFields; track field) {
-                      <span class="inline-flex items-center gap-1 rounded-full border border-error-200 bg-error-50 px-2.5 py-1 text-xs font-semibold text-error-700">
-                        <ng-icon name="heroExclamationTriangle" size="14" aria-hidden="true" />
-                        {{ step1FieldLabel(field) }}
-                      </span>
-                    }
-                  </div>
-                </div>
-              } @else {
-                <div class="mt-5 flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 p-3 text-sm font-medium text-success-700">
-                  <ng-icon name="heroCheck" size="18" class="mt-0.5 shrink-0" aria-hidden="true" />
-                  Core details are complete.
-                </div>
-              }
-            </section>
-
-            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
-              <h2 class="text-lg font-bold text-gray-950">Child snapshot</h2>
-              <dl class="mt-4 space-y-4 text-sm">
-                <div>
-                  <dt class="text-xs font-bold uppercase text-gray-500">Name</dt>
-                  <dd class="mt-1 font-semibold text-gray-900">{{ childFullNameDraft || 'Not entered' }}</dd>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <dt class="text-xs font-bold uppercase text-gray-500">Age</dt>
-                    <dd class="mt-1 font-semibold text-gray-900">{{ childAgeLabel }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-xs font-bold uppercase text-gray-500">Start</dt>
-                    <dd class="mt-1 font-semibold text-gray-900">{{ step1.start_date || 'Not set' }}</dd>
-                  </div>
-                </div>
-              </dl>
-            </section>
-
-            <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs">
-              <h2 class="mb-4 text-lg font-bold text-gray-950">Workflow steps</h2>
-              <div class="space-y-2">
-                @for (step of steps; track step.key; let i = $index) {
-                  <button
-                    type="button"
-                    (click)="goToStep(step.key)"
-                    [disabled]="!canOpenStep(step.key)"
-                    class="flex w-full items-center gap-3 rounded-lg p-3 text-left transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:cursor-not-allowed"
-                    [class.border-l-4]="stepIsActive(step.key)"
-                    [class.border-brand-600]="stepIsActive(step.key)"
-                    [class.bg-brand-50]="stepIsActive(step.key)"
-                    [class.opacity-55]="!canOpenStep(step.key)"
-                  >
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold"
-                      [class.bg-brand-600]="stepIsActive(step.key)"
-                      [class.bg-success-500]="stepIsComplete(step.key)"
-                      [class.bg-gray-100]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
-                      [class.text-white]="stepIsActive(step.key) || stepIsComplete(step.key)"
-                      [class.text-gray-500]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
-                    >
-                      @if (stepIsComplete(step.key)) {
-                        <ng-icon name="heroCheck" size="18" aria-hidden="true" />
-                      } @else if (!canOpenStep(step.key)) {
-                        <ng-icon name="heroLockClosed" size="16" aria-hidden="true" />
-                      } @else {
-                        {{ i + 1 }}
-                      }
-                    </span>
-                    <span class="min-w-0">
-                      <span class="block text-sm font-semibold" [class.text-brand-700]="stepIsActive(step.key)">{{ step.label }}</span>
-                      <span class="block text-xs text-gray-500">{{ step.description }}</span>
-                    </span>
-                  </button>
-                }
-              </div>
-            </section>
-          </aside>
+        <section class="space-y-6">
 
           <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6">
@@ -374,7 +284,7 @@
             </form>
           </section>
 
-          <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5 lg:col-start-2">
+           <div class="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 p-5">
             <div class="flex gap-3">
               <ng-icon name="heroInformationCircle" size="24" class="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
               <p class="text-sm italic leading-6 text-gray-700">
