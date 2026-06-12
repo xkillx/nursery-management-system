@@ -4,13 +4,13 @@
 -- ── Site lookups ──────────────────────────────────────────────────────────────
 
 -- name: OwnerGetActiveSites :many
-SELECT id, name
+SELECT id, name, core_hourly_rate_minor
 FROM branches
 WHERE tenant_id = $1 AND is_active = true
 ORDER BY name;
 
 -- name: OwnerGetActiveSite :one
-SELECT id, name
+SELECT id, name, core_hourly_rate_minor
 FROM branches
 WHERE tenant_id = $1 AND id = $2 AND is_active = true;
 

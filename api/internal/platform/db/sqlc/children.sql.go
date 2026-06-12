@@ -72,6 +72,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -88,6 +89,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = $3
@@ -100,20 +102,21 @@ type ChildrenGetByIDParams struct {
 }
 
 type ChildrenGetByIDRow struct {
-	ID                  pgtype.UUID
-	FullName            string
-	DateOfBirth         pgtype.Date
-	StartDate           pgtype.Date
-	EndDate             pgtype.Date
-	CoreHourlyRateMinor pgtype.Int4
-	Notes               pgtype.Text
-	IsActive            bool
-	LeftAt              pgtype.Timestamptz
-	LeftReasonCode      interface{}
-	LeftReasonNote      pgtype.Text
-	HasGuardianLink     bool
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
+	ID                      pgtype.UUID
+	FullName                string
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	CoreHourlyRateMinor     pgtype.Int4
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	LeftAt                  pgtype.Timestamptz
+	LeftReasonCode          interface{}
+	LeftReasonNote          pgtype.Text
+	HasGuardianLink         bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
 }
 
 func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams) (ChildrenGetByIDRow, error) {
@@ -126,6 +129,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.StartDate,
 		&i.EndDate,
 		&i.CoreHourlyRateMinor,
+		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
 		&i.LeftAt,
@@ -145,6 +149,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -161,6 +166,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = $3
@@ -174,20 +180,21 @@ type ChildrenGetByIDForUpdateParams struct {
 }
 
 type ChildrenGetByIDForUpdateRow struct {
-	ID                  pgtype.UUID
-	FullName            string
-	DateOfBirth         pgtype.Date
-	StartDate           pgtype.Date
-	EndDate             pgtype.Date
-	CoreHourlyRateMinor pgtype.Int4
-	Notes               pgtype.Text
-	IsActive            bool
-	LeftAt              pgtype.Timestamptz
-	LeftReasonCode      interface{}
-	LeftReasonNote      pgtype.Text
-	HasGuardianLink     bool
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
+	ID                      pgtype.UUID
+	FullName                string
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	CoreHourlyRateMinor     pgtype.Int4
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	LeftAt                  pgtype.Timestamptz
+	LeftReasonCode          interface{}
+	LeftReasonNote          pgtype.Text
+	HasGuardianLink         bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
 }
 
 func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetByIDForUpdateParams) (ChildrenGetByIDForUpdateRow, error) {
@@ -200,6 +207,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.StartDate,
 		&i.EndDate,
 		&i.CoreHourlyRateMinor,
+		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
 		&i.LeftAt,
@@ -246,6 +254,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -262,6 +271,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND (
@@ -282,20 +292,21 @@ type ChildrenListParams struct {
 }
 
 type ChildrenListRow struct {
-	ID                  pgtype.UUID
-	FullName            string
-	DateOfBirth         pgtype.Date
-	StartDate           pgtype.Date
-	EndDate             pgtype.Date
-	CoreHourlyRateMinor pgtype.Int4
-	Notes               pgtype.Text
-	IsActive            bool
-	LeftAt              pgtype.Timestamptz
-	LeftReasonCode      interface{}
-	LeftReasonNote      pgtype.Text
-	HasGuardianLink     bool
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
+	ID                      pgtype.UUID
+	FullName                string
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	CoreHourlyRateMinor     pgtype.Int4
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	LeftAt                  pgtype.Timestamptz
+	LeftReasonCode          interface{}
+	LeftReasonNote          pgtype.Text
+	HasGuardianLink         bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
 }
 
 func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]ChildrenListRow, error) {
@@ -320,6 +331,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.StartDate,
 			&i.EndDate,
 			&i.CoreHourlyRateMinor,
+			&i.SiteCoreHourlyRateMinor,
 			&i.Notes,
 			&i.IsActive,
 			&i.LeftAt,

@@ -1223,7 +1223,7 @@ SELECT
     c.date_of_birth,
     c.start_date,
     c.end_date,
-    c.core_hourly_rate_minor,
+    b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
         FROM guardian_child_links gcl
@@ -1237,6 +1237,7 @@ SELECT
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 LEFT JOIN funding_profiles fp
     ON fp.tenant_id = c.tenant_id
     AND fp.branch_id = c.branch_id
@@ -1427,7 +1428,7 @@ SELECT
     c.date_of_birth,
     c.start_date,
     c.end_date,
-    c.core_hourly_rate_minor,
+    b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
         FROM guardian_child_links gcl
@@ -1441,6 +1442,7 @@ SELECT
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 LEFT JOIN funding_profiles fp
     ON fp.tenant_id = c.tenant_id
     AND fp.branch_id = c.branch_id
@@ -1725,7 +1727,7 @@ SELECT
     c.date_of_birth,
     c.start_date,
     c.end_date,
-    c.core_hourly_rate_minor,
+    b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
         FROM guardian_child_links gcl
@@ -1739,6 +1741,7 @@ SELECT
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 LEFT JOIN funding_profiles fp
     ON fp.tenant_id = c.tenant_id
     AND fp.branch_id = c.branch_id

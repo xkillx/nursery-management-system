@@ -414,7 +414,7 @@ func (q *Queries) OwnerFindPendingManagerInvite(ctx context.Context, arg OwnerFi
 }
 
 const ownerGetActiveSite = `-- name: OwnerGetActiveSite :one
-SELECT id, name
+SELECT id, name, core_hourly_rate_minor
 FROM branches
 WHERE tenant_id = $1 AND id = $2 AND is_active = true
 `
@@ -425,29 +425,31 @@ type OwnerGetActiveSiteParams struct {
 }
 
 type OwnerGetActiveSiteRow struct {
-	ID   pgtype.UUID
-	Name string
+	ID                  pgtype.UUID
+	Name                string
+	CoreHourlyRateMinor pgtype.Int4
 }
 
 func (q *Queries) OwnerGetActiveSite(ctx context.Context, arg OwnerGetActiveSiteParams) (OwnerGetActiveSiteRow, error) {
 	row := q.db.QueryRow(ctx, ownerGetActiveSite, arg.TenantID, arg.ID)
 	var i OwnerGetActiveSiteRow
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(&i.ID, &i.Name, &i.CoreHourlyRateMinor)
 	return i, err
 }
 
 const ownerGetActiveSites = `-- name: OwnerGetActiveSites :many
 
 
-SELECT id, name
+SELECT id, name, core_hourly_rate_minor
 FROM branches
 WHERE tenant_id = $1 AND is_active = true
 ORDER BY name
 `
 
 type OwnerGetActiveSitesRow struct {
-	ID   pgtype.UUID
-	Name string
+	ID                  pgtype.UUID
+	Name                string
+	CoreHourlyRateMinor pgtype.Int4
 }
 
 // Owner module queries: site summaries and manager-access administration.
@@ -462,7 +464,7 @@ func (q *Queries) OwnerGetActiveSites(ctx context.Context, tenantID pgtype.UUID)
 	var items []OwnerGetActiveSitesRow
 	for rows.Next() {
 		var i OwnerGetActiveSitesRow
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.CoreHourlyRateMinor); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

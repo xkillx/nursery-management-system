@@ -299,12 +299,13 @@ type AuditLog struct {
 }
 
 type Branch struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	Name      string
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	IsActive  bool
+	ID                  pgtype.UUID
+	TenantID            pgtype.UUID
+	Name                string
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+	IsActive            bool
+	CoreHourlyRateMinor pgtype.Int4
 }
 
 type Child struct {

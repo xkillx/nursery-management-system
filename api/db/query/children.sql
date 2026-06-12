@@ -5,6 +5,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -21,6 +22,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND (
@@ -38,6 +40,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -54,6 +57,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = $3;
@@ -93,6 +97,7 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        c.core_hourly_rate_minor,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
        c.left_at,
@@ -109,6 +114,7 @@ SELECT c.id,
        c.created_at,
        c.updated_at
 FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = $3
