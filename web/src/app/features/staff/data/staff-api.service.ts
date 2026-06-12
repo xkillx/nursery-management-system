@@ -12,6 +12,7 @@ import {
   RegistrationProfileResponse, CollectionPasswordPayload,
   RegistrationOfficeUseChecklistResponse, OfficeUseChecklist,
   ConsentRecord, ConsentWithCompletenessResponse, ConsentWritePayload, RegistrationWorkflowStatus,
+  CompleteRegistrationPayload, CompleteRegistrationResponse,
 } from '../models/registration-profile.models';
 
 interface StaffListResponse<T> {
@@ -705,6 +706,10 @@ export class StaffApiService {
 
   createRegistrationCompletionAttestation(childId: string): Observable<unknown> {
     return this.http.post(apiUrl(`/children/${childId}/registration-completion-attestations`), null);
+  }
+
+  submitCompleteRegistration(payload: CompleteRegistrationPayload): Observable<CompleteRegistrationResponse> {
+    return this.http.post<CompleteRegistrationResponse>(apiUrl('/children/with-registration'), payload);
   }
 
   private toOfficeChecklistRecord(checklist: RegistrationOfficeUseChecklistApiModel): RegistrationOfficeUseChecklistResponse {

@@ -837,6 +837,187 @@ components:
               description: Core hourly rate in minor units (pence), null when not set
               minimum: 0
             default: 0
+
+    CompleteRegistrationRequest:
+      type: object
+      description: Complete registration payload sent by the guided intake stepper at step 5
+      required: [child, consents]
+      properties:
+        child:
+          type: object
+          required: [full_name, date_of_birth, start_date]
+          properties:
+            full_name:
+              type: string
+            date_of_birth:
+              type: string
+              format: date
+            start_date:
+              type: string
+              format: date
+            notes:
+              type: string
+        registration_profile:
+          type: object
+          description: All registration profile sections
+          properties:
+            demographics_home:
+              type: object
+            medical_dietary:
+              type: object
+            health_contacts:
+              type: object
+            social_development:
+              type: object
+            parent_carers:
+              type: array
+              items:
+                type: object
+            emergency_contacts:
+              type: array
+              items:
+                type: object
+            authorised_collectors:
+              type: array
+              items:
+                type: object
+            collection:
+              type: object
+            funding_support:
+              type: object
+            routine_care:
+              type: object
+            gdpr_declaration:
+              type: object
+        consents:
+          type: object
+          required: [signer_name, signed_date]
+          properties:
+            signer_name:
+              type: string
+            signed_date:
+              type: string
+              format: date
+            paper_form_on_file:
+              type: boolean
+            urgent_medical_treatment:
+              type: boolean
+            urgent_medical_treatment_exceptions:
+              type: string
+              nullable: true
+            plasters:
+              type: boolean
+            safeguarding_reporting_acknowledgement:
+              type: boolean
+            area_senco_liaison:
+              type: boolean
+            health_visitor_liaison:
+              type: boolean
+            transition_documents:
+              type: boolean
+            local_outings:
+              type: boolean
+            face_painting:
+              type: boolean
+            parent_supplied_sun_cream:
+              type: boolean
+            parent_supplied_nappy_cream:
+              type: boolean
+            development_profile_photos:
+              type: boolean
+            nursery_display_boards:
+              type: boolean
+            promotional_literature:
+              type: boolean
+            nursery_website:
+              type: boolean
+            staff_student_coursework:
+              type: boolean
+            social_media:
+              type: boolean
+            social_media_channel_notes:
+              type: string
+              nullable: true
+            notes_exceptions:
+              type: string
+              nullable: true
+        collection_password:
+          type: string
+          description: Optional collection password to set
+        office_checklist:
+          type: object
+          description: Office-use checklist items
+          properties:
+            deposit_status:
+              type: string
+            deposit_paid_date:
+              type: string
+              nullable: true
+            application_date_status:
+              type: string
+            application_date:
+              type: string
+              nullable: true
+            start_date_status:
+              type: string
+            date_left:
+              type: string
+              nullable: true
+            sessions_days_requested_status:
+              type: string
+            sessions_days_requested:
+              type: string
+              nullable: true
+            term_time_only_space_status:
+              type: string
+            contract_status:
+              type: string
+            contract_date:
+              type: string
+              nullable: true
+            handbook_status:
+              type: string
+            handbook_date:
+              type: string
+              nullable: true
+            red_book_status:
+              type: string
+            red_book_checked_date:
+              type: string
+              nullable: true
+            birth_certificate_passport_status:
+              type: string
+            birth_certificate_passport_checked_date:
+              type: string
+              nullable: true
+            proof_of_address_status:
+              type: string
+            proof_of_address_checked_date:
+              type: string
+              nullable: true
+            notes:
+              type: string
+              nullable: true
+
+    CompleteRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        start_date:
+          type: string
+          format: date
+          type: object
+          properties:
+            core_hourly_rate_minor:
+              type: integer
+              nullable: true
+              description: Core hourly rate in minor units (pence), null when not set
+              minimum: 0
+            default: 0
       responses:
         "200":
           description: Children list
@@ -2805,3 +2986,33 @@ components:
           $ref: "#/components/responses/ForbiddenRole"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/children/with-registration:
+    post:
+      operationId: submitCompleteRegistration
+      summary: Create child record with full registration atomically
+      description: Accepts all registration steps (child basics, profile, consents, collection password, office checklist) in one request. Creates everything atomically in a single transaction. Acts as the implicit attestation for the guided intake stepper flow.
+      tags: [Registration Profiles]
+      x-implementation-status: new
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteRegistrationRequest"
+      responses:
+        "200":
+          description: Child record created successfully with full registration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"

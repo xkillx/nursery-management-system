@@ -238,6 +238,27 @@ export interface RegistrationProfileResponse {
   completeness: RegistrationProfileCompleteness;
 }
 
+export interface CompleteRegistrationChildPayload {
+  full_name: string;
+  date_of_birth: string;
+  start_date: string;
+  notes?: string;
+}
+
+export interface CompleteRegistrationPayload {
+  child: CompleteRegistrationChildPayload;
+  registration_profile?: Record<string, unknown>;
+  consents?: ConsentWritePayload;
+  collection_password?: string;
+  office_checklist?: Record<string, unknown>;
+}
+
+export interface CompleteRegistrationResponse {
+  id: string;
+  full_name: string;
+  start_date: string;
+}
+
 export interface CollectionPasswordPayload {
   password: string;
 }

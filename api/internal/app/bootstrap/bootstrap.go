@@ -250,6 +250,12 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC, regProfileGetOfficeUC, regProfileUpdateOfficeUC, regProfileGetConsentsUC, regProfileCreateConsentUC, regProfileGetWorkflowStatusUC, regProfileCreateAttestationUC)
 	regProfileHandler.RegisterRoutes(manager)
 
+	// Registration submit (atomic create)
+	childCreatorAdapter := &childCreatorAdapter{repo: childRepo}
+	submitUC := regprofileapp.NewSubmitCompleteRegistration(regProfileRepo, regProfileRepo, childCreatorAdapter, auditWriter, txManager)
+	submitHandler := regprofilehandler.NewSubmitHandler(submitUC)
+	submitHandler.RegisterRoutes(manager)
+
 	// Funding module
 	fundingRepo := fundingpostgres.NewRepository(pool)
 	fundingHandler := fundinghandler.NewHandler(

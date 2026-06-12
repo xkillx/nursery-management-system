@@ -1286,10 +1286,16 @@
               <h2 class="text-3xl font-bold text-gray-950 md:text-4xl">Review Application: {{ childFullNameDraft || child?.fullName || 'Child' }}</h2>
             </div>
             <div class="flex flex-wrap gap-3">
-              <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">Open Child Record</button>
-              <button type="button" (click)="markComplete()" [disabled]="!canMarkComplete || isSaving" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
-                {{ isReviewedComplete ? 'Reviewed Complete' : 'Mark Reviewed/Complete' }}
-              </button>
+              @if (!isNewRegistration) {
+                <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">Open Child Record</button>
+                <button type="button" (click)="submitRegistration()" [disabled]="!canMarkComplete || isSaving" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
+                  {{ isReviewedComplete ? 'Reviewed Complete' : 'Mark Reviewed/Complete' }}
+                </button>
+              } @else {
+                <button type="button" (click)="submitRegistration()" [disabled]="!canSubmitLocally() || isSaving" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
+                  {{ isSaving ? 'Creating...' : 'Complete Registration' }}
+                </button>
+              }
             </div>
           </div>
 
@@ -1319,7 +1325,7 @@
               <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
                 <div class="flex items-center justify-between gap-3">
                   <h3 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child & Family Details</h3>
-                  <span class="rounded bg-success-50 px-3 py-1 text-xs font-bold uppercase text-success-700">{{ profileCompleteLabel() }}</span>
+                  <span class="rounded bg-success-50 px-3 py-1 text-xs font-bold uppercase text-success-700">{{ isNewRegistration ? (isProfileCompleteLocally() ? 'Complete' : 'Incomplete') : profileCompleteLabel() }}</span>
                 </div>
               </div>
               <div class="p-5 md:p-6">
@@ -1403,14 +1409,14 @@
                     <ng-icon name="heroCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
                     Paper Consent Record
                   </span>
-                  <span class="text-sm font-semibold text-gray-600">{{ consentCompleteLabel() }}</span>
+                  <span class="text-sm font-semibold text-gray-600">{{ isNewRegistration ? (isConsentsCompleteLocally() ? 'Complete' : 'Incomplete') : consentCompleteLabel() }}</span>
                 </div>
                 <div class="flex items-center justify-between rounded border border-error-200 bg-error-50 p-3">
                   <span class="flex items-center gap-3 font-bold text-error-700">
                     <ng-icon name="heroExclamationTriangle" size="20" aria-hidden="true" />
                     Overall Office Checklist
                   </span>
-                  <span class="text-sm font-bold text-brand-600">{{ officeCompleteLabel() }}</span>
+                  <span class="text-sm font-bold text-brand-600">{{ isNewRegistration ? (isOfficeCompleteLocally() ? 'Complete' : 'Incomplete') : officeCompleteLabel() }}</span>
                 </div>
               </div>
             </section>
@@ -1421,10 +1427,12 @@
               <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
               Back
             </button>
-            <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20">
-              Open Child Record
-              <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
-            </button>
+            @if (!isNewRegistration) {
+              <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20">
+                Open Child Record
+                <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+              </button>
+            }
           </div>
         </section>
       }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
@@ -18,7 +19,10 @@ import (
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	regprofiledomain "nursery-management-system/api/internal/modules/registrationprofiles/domain"
+	"nursery-management-system/api/internal/platform/db/sqlc"
 	"nursery-management-system/api/internal/platform/email"
+	"nursery-management-system/api/internal/platform/uid"
 )
 
 type guardianCheckerAdapter struct {
@@ -139,7 +143,37 @@ func (a *ownerEmailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail
 	return a.sender.Send(ctx, msg)
 }
 
+type childCreatorAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *childCreatorAdapter) CreateChild(ctx context.Context, tx pgx.Tx, child regprofiledomain.ChildInfo, tenantID, branchID uuid.UUID) (regprofiledomain.ChildCreationResult, error) {
+	childID := uid.NewUUID()
+	q := sqlc.New(tx)
+	err := q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
+		ID:                  pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
+		TenantID:            pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
+		BranchID:            pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
+		FullName:            child.FullName,
+		DateOfBirth:         pgtype.Date{Time: child.DateOfBirth, Valid: true},
+		StartDate:           pgtype.Date{Time: child.StartDate, Valid: true},
+		CoreHourlyRateMinor: pgtype.Int4{Valid: false},
+		Column9:             child.Notes,
+	})
+	if err != nil {
+		return regprofiledomain.ChildCreationResult{}, fmt.Errorf("create child: %w", err)
+	}
+
+	return regprofiledomain.ChildCreationResult{
+		ID:        childID,
+		FullName:  child.FullName,
+		StartDate: child.StartDate,
+	}, nil
+}
+
 var (
+	_ regprofiledomain.ChildCreator = (*childCreatorAdapter)(nil)
+
 	_ ownerdomain.InviteTokenGenerator = (*ownerInviteTokenAdapter)(nil)
 	_ ownerdomain.ManagerInviteSender  = (*ownerEmailSenderAdapter)(nil)
 )

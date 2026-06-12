@@ -2357,76 +2357,121 @@ Expected result:
 - Buttons and controls are not clipped or overlapping.
 - On mobile, fields stack in a single column.
 
-## Registration Intake & Workflow Status
+## Registration Intake Draft Flow (New)
 
-### FT-REG-01: Start New Registration from Children Page
+### FT-REG-DRAFT-01: Start New Registration — No API Calls Until Step 5
 
-Precondition: Manager is logged in.
+Precondition: Manager is logged in. Open browser dev tools Network tab.
 
 Steps:
-- Navigate to `/staff/manager/children`.
-- Click **New Registration** (primary button).
-- Enter child full name, date of birth, and start/proposed start date.
-- Leave rate field empty (not required).
-- Click **Create child & continue**.
+- Navigate to `/staff/manager/registrations/new`.
+- Enter child first name, surname, date of birth, and start date.
+- Click **Continue**.
+- Fill in some Medical & Health fields, click **Next Step: Contacts**.
+- Fill in some Contacts, click **Continue to Consents**.
+- Fill in Consents (signer name and signed date required), click **Submit Application**.
 
 Expected result:
-- Child is created without billing rate.
-- Stepper advances to Medical & Health step.
-- Child appears in Children list with billing rate showing "Not set".
-- Enrollment shows "Incomplete" with "billing_rate" in missing requirements.
+- Steps 1-4 make **zero** API calls to the backend (check Network tab).
+- Draft auto-save indicator shows after each step.
+- Only step 5 (or the review step submit) calls `POST /api/v1/children/with-registration`.
 
-### FT-REG-02: Save and Resume Registration Intake Midway
+### FT-REG-DRAFT-02: Steps Are Navigable Without Child ID
 
-Precondition: Child has been created via New Registration.
+Precondition: No child has been created (new registration).
 
 Steps:
-- Complete Child Basics step, then navigate away (e.g., go to dashboard).
-- Return via child detail page by clicking Continue intake.
-- Verify the child's data is still loaded.
-- Step through remaining steps.
+- Navigate to `/staff/manager/registrations/new`.
+- Click each step tab in the stepper header (Details, Medical, Contacts, Consents, Review).
 
 Expected result:
-- Child data is preserved.
-- Stepper shows same child on resume.
+- All 5 step tabs are clickable and accessible.
+- No error message about creating a child record first.
+- No API calls are triggered.
 
-### FT-REG-03: Record Paper-Form Consent Decisions
+### FT-REG-DRAFT-03: Draft Persists Across Browser Close
 
 Steps:
-- Navigate to Consents & Evidence step.
-- Enter signer name, signed date, and check paper-form-on-file.
-- Consent decisions default to yes; leave all as-is.
-- Save consents.
+- Navigate to `/staff/manager/registrations/new`.
+- Fill step 1 (child basics) and advance to step 2.
+- Fill step 2 with medical details.
+- Close browser tab.
+- Reopen `/staff/manager/registrations/new`.
 
 Expected result:
-- Consent record is created and visible via GET `/children/{child_id}/registration-consents`.
-- Review step shows consent completeness as complete.
+- Draft restored banner appears at top.
+- All previously entered data is populated.
+- Recovered draft step is preserved (if you were on step 2, it returns to step 2).
+- Continue filling data; draft auto-saves.
 
-### FT-REG-04: Consent Missing Decisions Blocks Save
+### FT-REG-DRAFT-04: Submit Complete Registration at Step 5
+
+Precondition: All 4 data steps have been filled with valid data.
 
 Steps:
-- On Consents & Evidence step, leave signer name blank.
-- Click Save consents & continue.
+- Navigate to Review step (step 5).
+- Verify all collected data is displayed correctly (child name, DOB, start date, medical info, contacts, consents, office checklist).
+- Verify **Complete Registration** button is enabled (local completeness checks pass).
+- Click **Complete Registration**.
 
 Expected result:
-- Error message "Signer name and signed date are required."
-- Stepper does not advance.
+- `POST /api/v1/children/with-registration` is called with the complete payload.
+- On success: navigates to child detail page.
+- Draft is cleared (reopen `/staff/manager/registrations/new` shows empty form).
+- Child detail page shows correct name, DOB, and start date.
 
-### FT-REG-05: Mark Registration Reviewed/Complete
-
-Precondition: Profile, office checklist, and consent completeness all report complete.
+### FT-REG-DRAFT-05: Submission Fails With Validation Errors
 
 Steps:
-- Navigate to Review & Complete step.
-- Verify that **Mark Registration Reviewed/Complete** button is enabled.
+- Navigate to step 5 with empty required fields (e.g., missing first_name, missing signer_name).
+- Click **Complete Registration**.
+
+Expected result:
+- **Complete Registration** button is disabled because local completeness checks (`canSubmitLocally()`) return false.
+- Field-level errors are shown.
+
+### FT-REG-DRAFT-06: No Child Created on Abandonment
+
+Steps:
+- Start a new registration, fill steps 1-3, but do NOT complete step 5.
+- Navigate away or close browser.
+
+Expected result:
+- No child record was created — verify no new child appears in the Children list.
+- Reopening `/staff/manager/registrations/new` restores the draft.
+
+## Registration Intake Resume Flow (Existing — Unchanged)
+
+### FT-REG-01: Resume Existing Registration via Child Detail
+
+Precondition: A child record exists with an in-progress registration.
+
+Steps:
+- Navigate to child detail page.
+- Click **Continue intake**.
+- Verify existing child data loads from backend.
+- All steps reflect saved backend data.
+
+Expected result:
+- Existing resume route (`/staff/manager/registrations/:childId/intake`) works.
+- Child data loaded from backend, not localStorage draft.
+- API calls for individual steps 1-4 still fire (medial health, contacts, consents).
+- Step 5 uses existing attestation endpoint.
+
+### FT-REG-02: Mark Registration Reviewed/Complete (Resume Flow)
+
+Precondition: Profile, office checklist, and consent completeness all report complete via backend.
+
+Steps:
+- Navigate to Review & Complete step via resume route.
+- Verify that **Mark Reviewed/Complete** button is enabled.
 - Click to attest.
 
 Expected result:
-- Attestation created.
+- Attestation created via existing endpoint.
 - Status changes to "Reviewed Complete".
-- Button becomes disabled.
 
-### FT-REG-06: Source Change After Attestation Triggers Needs Review
+### FT-REG-03: Source Change After Attestation Triggers Needs Review
 
 Precondition: Registration is reviewed/complete.
 
@@ -2438,7 +2483,7 @@ Expected result:
 - Status changes to "Needs Review".
 - Manager can re-attest completion.
 
-### FT-REG-07: No Automatic Guardian Creation From Contacts
+### FT-REG-04: No Automatic Guardian Creation From Contacts
 
 Steps:
 - Complete registration intake up to Contacts & Collection step.
@@ -2449,7 +2494,7 @@ Expected result:
 - Registration contact entries do not appear as guardians.
 - Manager must explicitly create/link guardians via child detail or guardian management page.
 
-### FT-REG-08: Child Detail Shows Overall Registration Status
+### FT-REG-05: Child Detail Shows Overall Registration Status
 
 Precondition: Child has been created via New Registration.
 
@@ -2461,6 +2506,33 @@ Expected result:
 - Shows overall status: Reviewed Complete, Needs Review, or Incomplete.
 - Links to Continue intake and Registration editor are present.
 - Billing rate section shows "Not set" when null.
+
+## Existing Flow Integrity (Unchanged)
+
+### FT-REG-06: Quick Add Child Still Creates Immediately
+
+Precondition: Manager is logged in.
+
+Steps:
+- Navigate to `/staff/manager/children`.
+- Click **Add Child**.
+- Enter child details and submit.
+
+Expected result:
+- Child record is created immediately via `POST /api/v1/children`.
+- No draft flow.
+
+### FT-REG-07: Section-by-Section Registration Editor Still Works
+
+Precondition: Child exists.
+
+Steps:
+- Navigate to child's section-by-section registration editor.
+- Update a profile section and save.
+
+Expected result:
+- PATCH/POST endpoints are called individually.
+- Existing behaviour is unchanged.
 
 ## Final Regression Checklist
 

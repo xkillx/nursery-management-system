@@ -90,6 +90,7 @@ func TestPeopleRoutesInventory(t *testing.T) {
 		"PATCH /api/v1/guardians/:guardian_id",
 		"POST /api/v1/guardians/:guardian_id/actions/deactivate",
 		"POST /api/v1/guardians/:guardian_id/actions/reactivate",
+		"POST /api/v1/children/with-registration",
 		"POST /api/v1/guardian-child-links",
 		"POST /api/v1/guardian-child-links/:link_id/actions/end",
 		"GET /api/v1/children/:child_id/guardian-child-links",
