@@ -18,23 +18,11 @@
     </app-form-field>
 
     <app-form-field label="Date of birth" [required]="true" [error]="fieldErrors['date_of_birth'] || ''">
-      <input
-        type="date"
-        name="date_of_birth"
-        [(ngModel)]="form.date_of_birth"
-        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
-        required
-      />
+      <app-date-picker [(ngModel)]="form.date_of_birth" />
     </app-form-field>
 
     <app-form-field label="Start date" [required]="true" [error]="fieldErrors['start_date'] || ''">
-      <input
-        type="date"
-        name="start_date"
-        [(ngModel)]="form.start_date"
-        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
-        required
-      />
+      <app-date-picker [(ngModel)]="form.start_date" />
     </app-form-field>
 
     <app-form-field label="Core hourly rate (£/hr)" [required]="false" [error]="fieldErrors['core_hourly_rate_minor'] || ''">
@@ -50,12 +38,7 @@
     </app-form-field>
 
     <app-form-field label="End date (optional)" [error]="fieldErrors['end_date'] || ''">
-      <input
-        type="date"
-        name="end_date"
-        [(ngModel)]="form.end_date"
-        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
-      />
+      <app-date-picker [(ngModel)]="form.end_date" />
     </app-form-field>
 
     <app-form-field label="Notes (optional)">

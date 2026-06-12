@@ -7,6 +7,7 @@ import { minorToPounds, poundsToMinor } from '../../utils/manager-list-formatter
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 
 type ChildFormValue = {
   full_name: string;
@@ -25,6 +26,7 @@ type ChildFormValue = {
     FormFieldComponent,
     ButtonComponent,
     AlertComponent,
+    DatePickerComponent,
   ],
   templateUrl: './child-form.component.html',
 })

@@ -32,6 +32,7 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { RadioComponent } from '../../../../shared/components/form/input/radio.component';
 import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
@@ -90,6 +91,7 @@ type ConsentItem = {
     RadioComponent,
     SelectComponent,
     TextAreaComponent,
+    DatePickerComponent,
   ],
   providers: [
     provideIcons({

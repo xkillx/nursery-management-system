@@ -555,7 +555,7 @@
           <app-input-field type="text" [(ngModel)]="gdprName" autocomplete="name" />
         </app-form-field>
         <app-form-field label="Declaration date">
-          <app-input-field type="date" [(ngModel)]="gdprDate" />
+          <app-date-picker [(ngModel)]="gdprDate" />
         </app-form-field>
       </div>
       @if (profile?.gdprDeclaration?.gdprDeclaredAt) {
@@ -598,19 +598,19 @@
             <app-select [(ngModel)]="officeDraft.depositStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Deposit paid date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.depositPaidDate" />
+            <app-date-picker [(ngModel)]="officeDraft.depositPaidDate" />
           </app-form-field>
           <app-form-field label="Application date status">
             <app-select [(ngModel)]="officeDraft.applicationDateStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Application date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.applicationDate" />
+            <app-date-picker [(ngModel)]="officeDraft.applicationDate" />
           </app-form-field>
           <app-form-field label="Start date status">
             <app-select [(ngModel)]="officeDraft.startDateStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Date left">
-            <app-input-field type="date" [(ngModel)]="officeDraft.dateLeft" />
+            <app-date-picker [(ngModel)]="officeDraft.dateLeft" />
           </app-form-field>
           <app-form-field label="Sessions/days requested status">
             <app-select [(ngModel)]="officeDraft.sessionsDaysRequestedStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
@@ -625,31 +625,31 @@
             <app-select [(ngModel)]="officeDraft.contractStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Contract/signature date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.contractDate" />
+            <app-date-picker [(ngModel)]="officeDraft.contractDate" />
           </app-form-field>
           <app-form-field label="Handbook status">
             <app-select [(ngModel)]="officeDraft.handbookStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Handbook date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.handbookDate" />
+            <app-date-picker [(ngModel)]="officeDraft.handbookDate" />
           </app-form-field>
           <app-form-field label="Red Book status">
             <app-select [(ngModel)]="officeDraft.redBookStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Red Book checked date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.redBookCheckedDate" />
+            <app-date-picker [(ngModel)]="officeDraft.redBookCheckedDate" />
           </app-form-field>
           <app-form-field label="Birth certificate/passport status">
             <app-select [(ngModel)]="officeDraft.birthCertificatePassportStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Birth certificate/passport checked date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.birthCertificatePassportCheckedDate" />
+            <app-date-picker [(ngModel)]="officeDraft.birthCertificatePassportCheckedDate" />
           </app-form-field>
           <app-form-field label="Proof of address status">
             <app-select [(ngModel)]="officeDraft.proofOfAddressStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
           </app-form-field>
           <app-form-field label="Proof of address checked date">
-            <app-input-field type="date" [(ngModel)]="officeDraft.proofOfAddressCheckedDate" />
+            <app-date-picker [(ngModel)]="officeDraft.proofOfAddressCheckedDate" />
           </app-form-field>
         </div>
         <app-form-field className="mt-3" label="Checklist notes">

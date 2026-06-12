@@ -158,10 +158,8 @@
                     errorId="child-date-of-birth-error"
                     [error]="step1VisibleError('date_of_birth')"
                   >
-                    <app-input-field
+                    <app-date-picker
                       id="child-date-of-birth"
-                      name="date_of_birth"
-                      type="date"
                       [(ngModel)]="step1.date_of_birth"
                       (blurred)="markStep1Touched('date_of_birth')"
                       [max]="todayIso"
@@ -207,10 +205,8 @@
                     errorId="child-start-date-error"
                     [error]="step1VisibleError('start_date')"
                   >
-                    <app-input-field
+                    <app-date-picker
                       id="child-start-date"
-                      name="start_date"
-                      type="date"
                       [(ngModel)]="step1.start_date"
                       (blurred)="markStep1Touched('start_date')"
                       [error]="shouldShowStep1Error('start_date')"
@@ -765,8 +761,7 @@
                 />
               </app-form-field>
               <app-form-field label="Signed date" [required]="true">
-                <app-input-field
-                  type="date"
+                <app-date-picker
                   [(ngModel)]="step4.signed_date"
                   className="h-12"
                 />
@@ -781,8 +776,7 @@
                 />
               </div>
               <app-form-field label="Application date">
-                <app-input-field
-                  type="date"
+                <app-date-picker
                   [(ngModel)]="officeEvidence.applicationDate"
                   className="h-12"
                 />

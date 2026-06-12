@@ -7,6 +7,7 @@ import { Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
@@ -61,6 +62,7 @@ interface CorrectionError {
     StatusBadgeComponent,
     LoadingStateComponent,
     EmptyStateComponent,
+    DatePickerComponent,
   ],
   templateUrl: './manager-attendance-corrections.component.html',
 })

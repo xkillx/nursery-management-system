@@ -14,6 +14,7 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import {
@@ -36,7 +37,7 @@ import {
     RouterLink, DatePipe, FormsModule,
     AlertComponent, LoadingStateComponent, PageHeaderComponent,
     ButtonComponent, CheckboxComponent, FormFieldComponent, InputFieldComponent,
-    SelectComponent, TextAreaComponent,
+    SelectComponent, TextAreaComponent, DatePickerComponent,
   ],
   templateUrl: './manager-child-registration.component.html',
 })
