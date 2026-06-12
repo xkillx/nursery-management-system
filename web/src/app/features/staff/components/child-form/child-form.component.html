@@ -18,11 +18,11 @@
     </app-form-field>
 
     <app-form-field label="Date of birth" [required]="true" [error]="fieldErrors['date_of_birth'] || ''">
-      <app-date-picker [(ngModel)]="form.date_of_birth" />
+      <app-date-picker name="date_of_birth" [(ngModel)]="form.date_of_birth" />
     </app-form-field>
 
     <app-form-field label="Start date" [required]="true" [error]="fieldErrors['start_date'] || ''">
-      <app-date-picker [(ngModel)]="form.start_date" />
+      <app-date-picker name="start_date" [(ngModel)]="form.start_date" />
     </app-form-field>
 
     <app-form-field label="Core hourly rate (£/hr)" [required]="false" [error]="fieldErrors['core_hourly_rate_minor'] || ''">
@@ -38,7 +38,7 @@
     </app-form-field>
 
     <app-form-field label="End date (optional)" [error]="fieldErrors['end_date'] || ''">
-      <app-date-picker [(ngModel)]="form.end_date" />
+      <app-date-picker name="end_date" [(ngModel)]="form.end_date" />
     </app-form-field>
 
     <app-form-field label="Notes (optional)">

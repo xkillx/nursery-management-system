@@ -160,6 +160,7 @@
                   >
                     <app-date-picker
                       id="child-date-of-birth"
+                      name="date_of_birth"
                       [(ngModel)]="step1.date_of_birth"
                       (blurred)="markStep1Touched('date_of_birth')"
                       [max]="todayIso"
@@ -207,6 +208,7 @@
                   >
                     <app-date-picker
                       id="child-start-date"
+                      name="start_date"
                       [(ngModel)]="step1.start_date"
                       (blurred)="markStep1Touched('start_date')"
                       [error]="shouldShowStep1Error('start_date')"

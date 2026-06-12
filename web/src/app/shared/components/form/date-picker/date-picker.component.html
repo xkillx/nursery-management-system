@@ -3,10 +3,11 @@
   <app-label [for]="id">{{ label }}</app-label>
   }
   <div class="relative">
-    <input
-      #dateInput
-      [id]="id"
-      [placeholder]="placeholder"
+      <input
+        #dateInput
+        [id]="id"
+        [name]="name"
+        [placeholder]="placeholder"
       [class]="inputClasses"
       [attr.aria-describedby]="describedBy || null"
       [attr.aria-invalid]="error"

@@ -21,6 +21,7 @@ import "flatpickr/dist/flatpickr.css";
 export class DatePickerComponent implements ControlValueAccessor {
 
   @Input() id!: string;
+  @Input() name: string = '';
   @Input() mode: 'single' | 'multiple' | 'range' | 'time' = 'single';
   @Input() defaultDate?: string | Date | string[] | Date[];
   @Input() label?: string;
