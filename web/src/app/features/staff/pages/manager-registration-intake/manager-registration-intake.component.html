@@ -3,10 +3,6 @@
     @if (errorMessage) {
       <app-alert variant="error" [message]="errorMessage" [dismissible]="true" (dismissed)="dismissErrorMessage()" class="mb-6" />
     }
-    @if (successMessage) {
-      <app-alert variant="success" [message]="successMessage" [dismissible]="true" (dismissed)="dismissSuccessMessage()" class="mb-6" />
-    }
-
     @if (isLoading) {
       <app-loading-state variant="block" label="Loading registration..." />
     } @else {
@@ -43,15 +39,7 @@
               {{ steps[stepIndex].label }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-600 md:text-base">{{ steps[stepIndex].description }}</p>
-            @if (hasStoredDraft && !isDraftRestoredBannerVisible) {
-              <p class="mt-2 inline-flex items-center gap-2 text-xs font-medium text-gray-500">
-                <ng-icon name="heroCloudArrowUp" size="14" aria-hidden="true" />
-                Draft auto-saved
-                @if (draftSavedAt) {
-                  <span> at {{ formatDraftTimestamp(draftSavedAt) }}</span>
-                }
-              </p>
-            }
+
           </div>
         </div>
 
@@ -562,7 +550,7 @@
 
               <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-safeguarding-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroScale" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-safeguarding-heading" class="text-xl font-semibold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4">
@@ -595,7 +583,7 @@
 
               <section class="space-y-5 border-t border-gray-200 pt-6" aria-labelledby="medical-developmental-heading">
                 <div class="flex items-center gap-3">
-                  <ng-icon name="heroSparkles" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <ng-icon name="heroChartBarSquare" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-developmental-heading" class="text-xl font-semibold">Developmental Concerns</h4>
                 </div>
                 <p class="text-sm text-gray-600">Please indicate any concerns you have about the child's development in the following areas.</p>

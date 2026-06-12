@@ -9,8 +9,10 @@ import {
   heroArrowLeft,
   heroArrowRight,
   heroCamera,
+  heroChartBarSquare,
   heroCheck,
   heroClipboardDocumentCheck,
+  heroClipboardDocumentList,
   heroCloudArrowUp,
   heroDocumentCheck,
   heroExclamationTriangle,
@@ -190,8 +192,10 @@ type RegistrationDraft = {
       heroArrowLeft,
       heroArrowRight,
       heroCamera,
+      heroChartBarSquare,
       heroCheck,
       heroClipboardDocumentCheck,
+      heroClipboardDocumentList,
       heroCloudArrowUp,
       heroDocumentCheck,
       heroExclamationTriangle,
@@ -1560,6 +1564,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.draftSavedAt = null;
     this.isDraftRestoredBannerVisible = false;
     this.resetDrafts();
+    this.currentStep = 'child-basics';
     this.successMessage = 'Draft cleared. You can start a new registration.';
   }
 
