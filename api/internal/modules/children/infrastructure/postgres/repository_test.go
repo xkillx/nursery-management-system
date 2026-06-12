@@ -81,8 +81,8 @@ func TestChildGetByID_Success(t *testing.T) {
 	if !child.IsActive {
 		t.Error("IsActive = false, want true")
 	}
-	if child.CoreHourlyRateMinor != 500 {
-		t.Errorf("CoreHourlyRateMinor = %d, want 500", child.CoreHourlyRateMinor)
+	if child.CoreHourlyRateMinor == nil || *child.CoreHourlyRateMinor != 500 {
+		t.Errorf("CoreHourlyRateMinor = %v, want 500", child.CoreHourlyRateMinor)
 	}
 }
 
@@ -180,7 +180,7 @@ func TestChildCreate_NullNotes(t *testing.T) {
 		FullName:            "NoNotes",
 		DateOfBirth:         dbtest.DateAt(2022, 6, 10),
 		StartDate:           dbtest.DateAt(2024, 9, 1),
-		CoreHourlyRateMinor: 400,
+		CoreHourlyRateMinor: intPtr(400),
 	}
 
 	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
@@ -209,7 +209,7 @@ func TestChildCreate_WithEndDate(t *testing.T) {
 		DateOfBirth:         dbtest.DateAt(2022, 6, 10),
 		StartDate:           dbtest.DateAt(2024, 9, 1),
 		EndDate:             &endDate,
-		CoreHourlyRateMinor: 400,
+		CoreHourlyRateMinor: intPtr(400),
 	}
 
 	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
@@ -250,8 +250,8 @@ func TestChildUpdate_SelectiveFields(t *testing.T) {
 	if got.FullName != "Updated" {
 		t.Errorf("FullName = %s, want Updated", got.FullName)
 	}
-	if got.CoreHourlyRateMinor != 500 {
-		t.Errorf("CoreHourlyRateMinor = %d, want 500 (unchanged)", got.CoreHourlyRateMinor)
+	if got.CoreHourlyRateMinor == nil || *got.CoreHourlyRateMinor != 500 {
+		t.Errorf("CoreHourlyRateMinor = %v, want 500 (unchanged)", got.CoreHourlyRateMinor)
 	}
 }
 
@@ -456,3 +456,5 @@ func TestChildListAttendance(t *testing.T) {
 		t.Error("EnrollmentComplete = false, want true")
 	}
 }
+
+func intPtr(v int) *int { return &v }

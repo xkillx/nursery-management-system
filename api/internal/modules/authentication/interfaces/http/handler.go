@@ -152,6 +152,9 @@ func (h *Handler) loginHandler(c *gin.Context) {
 				"available_memberships": choices,
 			})
 		default:
+			if h.logger != nil {
+				h.logger.Error("login_unexpected_error", "error", err, "request_id", httpserver.RequestIDFromContext(c))
+			}
 			h.internalError(c)
 		}
 		return

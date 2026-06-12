@@ -1269,7 +1269,7 @@ type ListCandidateChildrenForUpdateRow struct {
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
-	CoreHourlyRateMinor    int32
+	CoreHourlyRateMinor    pgtype.Int4
 	HasGuardianLink        bool
 	FundingProfileID       pgtype.UUID
 	FundedAllowanceMinutes pgtype.Int4
@@ -1469,7 +1469,7 @@ type ListSelectedChildrenForUpdateRow struct {
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
-	CoreHourlyRateMinor    int32
+	CoreHourlyRateMinor    pgtype.Int4
 	HasGuardianLink        bool
 	FundingProfileID       pgtype.UUID
 	FundedAllowanceMinutes pgtype.Int4
@@ -1770,7 +1770,7 @@ type PreflightListChildrenRow struct {
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
-	CoreHourlyRateMinor    int32
+	CoreHourlyRateMinor    pgtype.Int4
 	HasGuardianLink        bool
 	FundingProfileID       pgtype.UUID
 	FundedAllowanceMinutes pgtype.Int4

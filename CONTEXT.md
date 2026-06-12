@@ -52,6 +52,42 @@ Registration profile completeness describes whether the child-linked registratio
 
 The manager registration/enrolment workflow may present registration profile completion and office-use checklist completion together, but they remain separate statuses because one describes child and family care information while the other describes nursery administrative verification. These statuses are manager follow-up indicators only and do not change the MVP enrollment gate for attendance, funding, invoicing, or parent invoice access.
 
+## Manager-Assisted Registration Intake (Post-MVP)
+
+A manager-facing workflow where nursery staff enter registration and consent information into the system after a parent or carer has completed the physical form. It is not a parent self-service registration portal, although a later digital parent journey may reuse the same registration and consent concepts.
+
+## Registration Intake Entry Points (Post-MVP)
+
+For brand-new children, managers should normally start from the guided registration intake workflow rather than the quick Add Child action. Add Child remains available as a shortcut for operational setup, corrections, or cases where registration paperwork will be completed later.
+
+## Guided Registration Intake (Post-MVP)
+
+New manager-assisted registration intake should use a guided stepper aligned to the paper-form transcription workflow. The existing child detail registration editor remains useful for revisiting and editing saved sections after initial intake.
+
+## Registration Intake Child Creation (Post-MVP)
+
+Starting a new guided registration creates the child record immediately in an incomplete registration/enrolment state. The product does not introduce a separate pending application object for this workflow; existing attendance and billing readiness gates continue to control operational use.
+
+## Registration-Sourced Child Basics (Post-MVP)
+
+Child basics entered during guided registration create or update the operational child record so managers do not re-enter the same child identity and start-date information in the Children module. The Children module remains the operational place to view and maintain those child basics after intake.
+
+## Registration vs Billing Setup (Post-MVP)
+
+The child's core hourly rate remains an enrollment and billing setup field rather than a registration intake field. Registration may be reviewed or complete while operational enrollment remains incomplete until billing rate and guardian-link requirements are satisfied.
+
+## Registration Reviewed/Complete (Post-MVP)
+
+Manager-assisted registration intake ends when a manager marks the registration reviewed or complete. The workflow does not use admissions-style approve, reject, or request-more-information states; missing or unclear physical-form information remains visible as follow-up work.
+
+## Registration Completion Attestation (Post-MVP)
+
+Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. It is not purely automatic; required profile, paper-form consent, and office-use evidence readiness determine whether the manager can make the attestation, and later changes return the registration to needs-review until a manager attests again.
+
+## Registration Reviewed/Complete Requirements (Post-MVP)
+
+Managers may mark registration reviewed or complete only after required registration sections have been reviewed: child identity, home/contact details, medical and dietary information, parent/carer responsibility, emergency contacts, authorised collection and password policy, core safeguarding/GDPR acknowledgements, consent signer/date, and office-use evidence checklist. Optional details may remain blank when the manager explicitly records none, no, unknown, or not applicable.
+
 ## Registration Section Completeness (Post-MVP)
 
 Registration profile completeness is section-based rather than a requirement that every paper-form field is filled. A section may be complete when the manager has reviewed it and captured the relevant information, including explicit none, no, or not-applicable answers where there is nothing to record.
@@ -88,6 +124,10 @@ A sensitive collection secret recorded for emergency child collection when the n
 
 Parent/carer, emergency contact, and authorised collector entries captured in the registration/enrolment profile describe the form-submitted family and collection context. They do not automatically create or update guardian records, guardian-child links, parent invitations, parent memberships, or parent portal access.
 
+## Registration-to-Guardian Linking (Post-MVP)
+
+Parent/carer entries captured during registration may be used by a manager to create or link operational guardian records, but that action must be explicit. Registration transcription must not automatically create guardians, alter guardian-child links, or grant parent portal access.
+
 ## Registration Funding Support Notes (Post-MVP)
 
 Benefits and funding-support answers captured from the registration form are informational profile notes for managers. They do not change Funding v1 profiles, invoice generation, funded deductions, invoice preflight, or billing readiness.
@@ -95,6 +135,18 @@ Benefits and funding-support answers captured from the registration form are inf
 ## Consent and Acknowledgement Ledger (Post-MVP)
 
 A history of parent or guardian decisions and acknowledgements for care, safeguarding, outings, creams, media, and similar permissions. It is distinct from the registration/enrolment profile because decisions may be signed, superseded, reviewed, or evidenced over time.
+
+## Paper-Form Consent Record (Post-MVP)
+
+A consent ledger entry recorded by a manager from a signed physical form. The app records the parent or carer decision, signer name, signed date, and manager-entry metadata while treating the physical form as the legal evidence on file.
+
+## Paper-Form Consent Completeness (Post-MVP)
+
+Every consent and acknowledgement item on the physical form needs an explicit recorded decision before registration can be marked reviewed or complete. Optional permissions may be yes or no, but they should not remain blank; mandatory acknowledgements, signer name, signed date, and paper-form-on-file evidence must be present.
+
+## Paper Evidence Metadata (Post-MVP)
+
+Registration evidence tracking records whether required physical forms and documents are on file or have been checked. It does not include upload, scanning, preview, or digital storage of the physical evidence in this tranche.
 
 ## Office-Use Enrolment Checklist (Post-MVP)
 
