@@ -87,12 +87,12 @@
       @if (currentStep === 'child-basics') {
         <section class="space-y-6">
 
-          <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6">
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <h2 class="text-2xl font-bold text-gray-950">Child registration</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600">Record the child identity, home details, and proposed start date from the paper form.</p>
+                  <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Record the child identity, home details, and proposed start date from the paper form.</p>
                 </div>
                 <span class="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700">
                   <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
@@ -298,17 +298,19 @@
       }
 
       @if (currentStep === 'medical-health') {
-        <section class="mx-auto max-w-[900px]">
-          <div class="rounded-lg border border-[#e2e8f0] bg-white shadow-theme-xs">
-            <div class="flex items-center justify-between border-b border-[#e2e8f0] bg-[#f0f3ff] p-6">
-              <div>
-                <h3 class="text-2xl font-bold">Medical & Health Information</h3>
-                <p class="mt-1 text-sm text-gray-600">Step 2: Please provide detailed medical history to ensure the child's safety.</p>
+        <section>
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Medical & Health Information</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Please provide detailed medical history to ensure the child's safety.</p>
+                </div>
+                <ng-icon name="heroHeart" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
-              <ng-icon name="heroHeart" size="42" class="text-brand-300" aria-hidden="true" />
             </div>
 
-            <div class="space-y-8 p-6">
+            <div class="space-y-8 p-5 md:p-6">
               <section class="space-y-4">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroExclamationTriangle" size="24" class="text-error-500" aria-hidden="true" />
@@ -334,7 +336,7 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-[#e2e8f0] pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-8">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentCheck" size="24" class="text-brand-600" aria-hidden="true" />
                   <h4 class="text-xl font-semibold">Routine Medications</h4>
@@ -373,7 +375,7 @@
                 </div>
               </section>
 
-              <section class="space-y-4 border-t border-[#e2e8f0] pt-8">
+              <section class="space-y-4 border-t border-gray-200 pt-8">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="24" class="text-success-500" aria-hidden="true" />
                   <h4 class="text-xl font-semibold">Immunisations</h4>
@@ -387,14 +389,14 @@
                       [value]="option.value"
                       [label]="option.label"
                       [checked]="step2.immunisation_status === option.value"
-                      className="min-h-14 rounded-lg border border-[#d0d5dd] bg-white px-4"
+                      className="min-h-14 rounded-lg border border-gray-300 bg-white px-4"
                       (valueChange)="step2.immunisation_status = $event"
                     />
                   }
                 </div>
               </section>
 
-              <section class="space-y-5 border-t border-[#e2e8f0] pt-8">
+              <section class="space-y-5 border-t border-gray-200 pt-8">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroUserGroup" size="24" class="text-gray-700" aria-hidden="true" />
                   <h4 class="text-xl font-semibold">Registered Professionals</h4>
@@ -427,8 +429,8 @@
                 </div>
               </section>
 
-              <div class="flex flex-col gap-3 border-t border-[#e2e8f0] pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
+              <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back to Child Details
                 </button>
@@ -448,12 +450,15 @@
       }
 
       @if (currentStep === 'contacts-collection') {
-        <section class="mx-auto max-w-[1000px] space-y-6">
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-6 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroUserGroup" size="24" class="text-brand-600" aria-hidden="true" />
-              <h3 class="text-2xl font-bold">Parent/Carer Details</h3>
+        <section class="space-y-6">
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroUserGroup" size="24" class="text-brand-600" aria-hidden="true" />
+                <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Parent/Carer Details</h2>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
 
             @if (parentCarersDraft[0]; as parent) {
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -495,7 +500,7 @@
               </div>
             }
 
-            <div class="mt-6 rounded-lg bg-[#e8eeff] p-5">
+            <div class="mt-6 rounded-lg bg-brand-50 p-5">
               <h4 class="mb-4 text-sm font-bold uppercase text-brand-700">Funding & Eligibility</h4>
               <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div class="space-y-3">
@@ -520,67 +525,74 @@
                 </app-form-field>
               </div>
             </div>
+            </div>
           </section>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-6 flex items-center justify-between gap-3 border-b border-[#e2e8f0] pb-4">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroIdentification" size="24" class="text-brand-600" aria-hidden="true" />
-                <h3 class="text-2xl font-bold">Emergency Contacts</h3>
-              </div>
-              <button type="button" (click)="addEmergencyContact()" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
-                <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
-                Add Contact
-              </button>
-            </div>
-
-            <div class="space-y-5">
-              @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
-                <div class="rounded-lg border border-[#e2e8f0] p-4">
-                  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <app-form-field label="Contact name">
-                      <app-input-field
-                        type="text"
-                        [(ngModel)]="contact.fullName"
-                        autocomplete="name"
-                        placeholder="Full name"
-                      />
-                    </app-form-field>
-                    <app-form-field label="Relationship">
-                      <app-input-field
-                        type="text"
-                        [(ngModel)]="contact.relationshipToChild"
-                        placeholder="e.g. Grandparent"
-                      />
-                    </app-form-field>
-                    <app-form-field label="Phone number">
-                      <app-input-field
-                        type="tel"
-                        [(ngModel)]="contact.telephone"
-                        autocomplete="tel"
-                        placeholder="Phone number"
-                      />
-                    </app-form-field>
-                  </div>
-                  <div class="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <app-checkbox
-                      [name]="'emergency-authorised-' + i"
-                      [(ngModel)]="emergencyAuthorisedFlags[i]"
-                      label="Authorised to collect child from nursery"
-                    />
-                    <button type="button" (click)="removeEmergencyContact(i)" class="min-h-11 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
-                  </div>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroIdentification" size="24" class="text-brand-600" aria-hidden="true" />
+                  <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Emergency Contacts</h2>
                 </div>
-              }
+                <button type="button" (click)="addEmergencyContact()" class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
+                  <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
+                  Add Contact
+                </button>
+              </div>
+            </div>
+            <div class="p-5 md:p-6">
+              <div class="space-y-5">
+                @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
+                  <div class="rounded-lg border border-gray-200 p-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <app-form-field label="Contact name">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="contact.fullName"
+                          autocomplete="name"
+                          placeholder="Full name"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Relationship">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="contact.relationshipToChild"
+                          placeholder="e.g. Grandparent"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Phone number">
+                        <app-input-field
+                          type="tel"
+                          [(ngModel)]="contact.telephone"
+                          autocomplete="tel"
+                          placeholder="Phone number"
+                        />
+                      </app-form-field>
+                    </div>
+                    <div class="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                      <app-checkbox
+                        [name]="'emergency-authorised-' + i"
+                        [(ngModel)]="emergencyAuthorisedFlags[i]"
+                        label="Authorised to collect child from nursery"
+                      />
+                      <button type="button" (click)="removeEmergencyContact(i)" class="min-h-11 rounded-lg px-3 text-sm font-semibold text-error-600 hover:bg-error-50">Remove</button>
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
           </section>
 
-          <section class="relative overflow-hidden rounded-lg border border-[#e2e8f0] bg-white p-6">
+          <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-brand-50"></div>
-            <div class="relative mb-6 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroLockClosed" size="24" class="text-brand-600" aria-hidden="true" />
-              <h3 class="text-2xl font-bold">Authorised Collection Password</h3>
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroLockClosed" size="24" class="relative text-brand-600" aria-hidden="true" />
+                <h2 class="relative text-2xl font-bold text-gray-950 dark:text-white/90">Authorised Collection Password</h2>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <p class="relative mb-6 max-w-3xl leading-7 text-gray-700">
               As per our safety protocol, an <strong>Authorised Collection Password</strong> must be provided if anyone other than the primary parent/carer is collecting the child. This password will be verified by staff before release.
             </p>
@@ -606,14 +618,15 @@
             <div class="relative mt-5 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
               Please share this password securely with all authorised collectors listed above.
             </div>
+            </div>
           </section>
 
-          <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">
               <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
               Back to Medical Info
             </button>
-            <button type="button" (click)="saveContactsCollection()" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-500 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-600 disabled:opacity-60">
+            <button type="button" (click)="saveContactsCollection()" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-60">
               {{ isSaving ? 'Saving...' : 'Continue to Consents' }}
               <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
             </button>
@@ -622,10 +635,10 @@
       }
 
       @if (currentStep === 'consents-evidence') {
-        <section class="mx-auto max-w-[1000px] space-y-6">
+        <section class="space-y-6">
           <div>
-            <h3 class="text-2xl font-bold">Permissions & Consents</h3>
-            <p class="mt-1 text-sm text-gray-600">Step 4: Confirm operational and safety permissions from the completed paper form.</p>
+            <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Permissions & Consents</h2>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Step 4: Confirm operational and safety permissions from the completed paper form.</p>
           </div>
 
           <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4">
@@ -633,15 +646,18 @@
             <p class="text-sm leading-6 text-gray-700">Every consent decision must be recorded explicitly. This screen records paper-form decisions only; no uploads or digital signature capture are part of this workflow.</p>
           </div>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-5 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroUserGroup" size="22" class="text-brand-600" aria-hidden="true" />
-              <h4 class="text-xl font-bold">Professional Liaison</h4>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroUserGroup" size="22" class="text-brand-600" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Professional Liaison</h3>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <p class="mb-5 text-sm leading-6 text-gray-600">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
             <div class="space-y-3">
               @for (item of professionalConsentItems; track item.key) {
-                <div class="flex items-center justify-between gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
+                <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4">
                   <div>
                     <p class="font-bold">{{ item.label }}</p>
                     <p class="text-xs text-gray-600">{{ item.detail }}</p>
@@ -656,13 +672,17 @@
                 </div>
               }
             </div>
+            </div>
           </section>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-5 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroShieldCheck" size="22" class="text-error-500" aria-hidden="true" />
-              <h4 class="text-xl font-bold">Child Protection & Medical Authority</h4>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroShieldCheck" size="22" class="text-error-500" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Child Protection & Medical Authority</h3>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <div class="mb-5 rounded-lg border border-error-200 bg-error-50 p-4">
               <p class="text-sm font-medium leading-6 text-error-700">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
             </div>
@@ -691,16 +711,20 @@
                 />
               </app-form-field>
             </div>
+            </div>
           </section>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-5 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroHeart" size="22" class="text-brand-600" aria-hidden="true" />
-              <h4 class="text-xl font-bold">Activities & Daily Care</h4>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroHeart" size="22" class="text-brand-600" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Activities & Daily Care</h3>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               @for (item of activityConsentItems; track item.key) {
-                <div class="rounded-lg p-2 hover:bg-[#f0f3ff]">
+                <div class="rounded-lg p-2 hover:bg-brand-50">
                   <app-checkbox
                     [name]="'activity-consent-' + item.key"
                     [label]="item.label"
@@ -710,16 +734,20 @@
                 </div>
               }
             </div>
+            </div>
           </section>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-5 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroCamera" size="22" class="text-brand-600" aria-hidden="true" />
-              <h4 class="text-xl font-bold">Photographs & Social Media</h4>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroCamera" size="22" class="text-brand-600" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Photographs & Social Media</h3>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               @for (item of photoConsentItems; track item.key) {
-                <div class="min-h-14 rounded-lg border border-[#e2e8f0] bg-[#f0f3ff] p-4">
+                <div class="min-h-14 rounded-lg border border-gray-200 bg-brand-50 p-4">
                   <app-checkbox
                     [name]="'photo-consent-' + item.key"
                     [label]="item.label"
@@ -749,13 +777,17 @@
                 />
               </app-form-field>
             </div>
+            </div>
           </section>
 
-          <section class="rounded-lg border border-[#e2e8f0] bg-white p-6">
-            <div class="mb-5 flex items-center gap-3 border-b border-[#e2e8f0] pb-4">
-              <ng-icon name="heroDocumentCheck" size="22" class="text-brand-600" aria-hidden="true" />
-              <h4 class="text-xl font-bold">Paper-Form Evidence & Confirmation</h4>
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroDocumentCheck" size="22" class="text-brand-600" aria-hidden="true" />
+                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Paper-Form Evidence & Confirmation</h3>
+              </div>
             </div>
+            <div class="p-5 md:p-6">
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
               <app-form-field label="Parent/guardian name" [required]="true">
                 <app-input-field
@@ -802,14 +834,15 @@
                 placeholder="Optional paper-form exceptions or office-use notes"
               />
             </app-form-field>
+            </div>
           </section>
 
-          <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">
               <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
               Back
             </button>
-            <button type="button" (click)="saveConsentsEvidence()" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 disabled:opacity-60">
+            <button type="button" (click)="saveConsentsEvidence()" [disabled]="isSaving" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-60">
               {{ isSaving ? 'Submitting...' : 'Submit Application' }}
               <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
             </button>
@@ -818,7 +851,7 @@
       }
 
       @if (currentStep === 'review-complete') {
-        <section class="mx-auto max-w-[1100px] space-y-6">
+        <section class="space-y-6">
           <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <nav class="mb-2 flex items-center gap-2 text-sm text-gray-500">
@@ -828,11 +861,11 @@
                 <span>/</span>
                 <span class="font-semibold text-gray-900">{{ childFullNameDraft || child?.fullName || 'Child' }}</span>
               </nav>
-              <h3 class="text-3xl font-bold md:text-4xl">Review Application: {{ childFullNameDraft || child?.fullName || 'Child' }}</h3>
+              <h2 class="text-3xl font-bold text-gray-950 md:text-4xl">Review Application: {{ childFullNameDraft || child?.fullName || 'Child' }}</h2>
             </div>
             <div class="flex flex-wrap gap-3">
-              <button type="button" (click)="navigateToChildDetail()" class="min-h-11 rounded-lg border border-[#d0d5dd] bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Open Child Record</button>
-              <button type="button" (click)="markComplete()" [disabled]="!canMarkComplete || isSaving" class="min-h-11 rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 disabled:opacity-50">
+              <button type="button" (click)="navigateToChildDetail()" class="min-h-11 rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">Open Child Record</button>
+              <button type="button" (click)="markComplete()" [disabled]="!canMarkComplete || isSaving" class="min-h-11 rounded-lg bg-brand-600 px-6 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50">
                 {{ isReviewedComplete ? 'Reviewed Complete' : 'Mark Reviewed/Complete' }}
               </button>
             </div>
@@ -860,11 +893,14 @@
           }
 
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <section class="rounded-lg border border-[#e2e8f0] bg-white lg:col-span-8">
-              <div class="flex items-center justify-between border-b border-[#e2e8f0] p-5">
-                <h4 class="text-2xl font-bold">Child & Family Details</h4>
-                <span class="rounded bg-success-50 px-3 py-1 text-xs font-bold uppercase text-success-700">{{ profileCompleteLabel() }}</span>
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] lg:col-span-8">
+              <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child & Family Details</h3>
+                  <span class="rounded bg-success-50 px-3 py-1 text-xs font-bold uppercase text-success-700">{{ profileCompleteLabel() }}</span>
+                </div>
               </div>
+              <div class="p-5 md:p-6">
               <div class="grid grid-cols-1 gap-8 p-6 md:grid-cols-2">
                 <div class="space-y-5">
                   <div>
@@ -897,15 +933,16 @@
                         <span class="rounded bg-brand-500 px-3 py-1 text-xs font-bold text-white">{{ day }}</span>
                       }
                       @for (day of ['THU', 'FRI']; track day) {
-                        <span class="rounded bg-[#e8eeff] px-3 py-1 text-xs font-bold text-gray-500">{{ day }}</span>
+                        <span class="rounded bg-brand-50 px-3 py-1 text-xs font-bold text-gray-500">{{ day }}</span>
                       }
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
             </section>
 
-            <aside class="rounded-lg border border-[#e2e8f0] bg-white p-6 text-center lg:col-span-4">
+            <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 text-center lg:col-span-4">
               <div class="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-lg border-4 border-white bg-[linear-gradient(135deg,#dbeafe,#dcfce7)] text-brand-700 shadow-theme-md">
                 <ng-icon name="heroAcademicCap" size="56" aria-hidden="true" />
               </div>
@@ -914,32 +951,32 @@
               <div class="mt-6 rounded-lg bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700">Paper evidence metadata only</div>
             </aside>
 
-            <section class="rounded-lg border border-[#e2e8f0] bg-white p-6 lg:col-span-6">
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 lg:col-span-6">
               <div class="mb-5 flex items-center justify-between">
-                <h4 class="text-xl font-semibold">Room Availability</h4>
+                <h4 class="text-xl font-semibold text-gray-950 dark:text-white/90">Room Availability</h4>
                 <span class="text-sm font-semibold text-brand-600">Toddler Room (2-3 yrs)</span>
               </div>
               <div class="mb-2 flex justify-between text-xs font-bold uppercase text-gray-500">
                 <span>Current Capacity</span>
                 <span>14/16</span>
               </div>
-              <div class="h-2 overflow-hidden rounded-full bg-[#e8eeff]">
+              <div class="h-2 overflow-hidden rounded-full bg-brand-50">
                 <div class="h-full w-[87%] bg-success-500"></div>
               </div>
               <p class="mt-5 leading-7 text-gray-700">Approving this registration keeps the Toddler Room within OFSTED ratio limits for the recorded sessions.</p>
             </section>
 
-            <section class="rounded-lg border border-[#e2e8f0] bg-white p-6 lg:col-span-6">
-              <h4 class="mb-5 text-xl font-semibold">Document Status</h4>
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] p-5 md:p-6 lg:col-span-6">
+              <h4 class="mb-5 text-xl font-semibold text-gray-950 dark:text-white/90">Document Status</h4>
               <div class="space-y-3">
-                <div class="flex items-center justify-between rounded bg-[#f0f3ff] p-3">
+                <div class="flex items-center justify-between rounded bg-brand-50 p-3">
                   <span class="flex items-center gap-3">
                     <ng-icon name="heroCheck" size="22" class="text-success-500" aria-hidden="true" />
                     Birth Certificate / Passport
                   </span>
                   <span class="text-sm font-semibold text-gray-600">{{ officeEvidence.birthCertificatePassportStatus || 'Unknown' }}</span>
                 </div>
-                <div class="flex items-center justify-between rounded bg-[#f0f3ff] p-3">
+                <div class="flex items-center justify-between rounded bg-brand-50 p-3">
                   <span class="flex items-center gap-3">
                     <ng-icon name="heroCheck" size="22" class="text-success-500" aria-hidden="true" />
                     Paper Consent Record
@@ -957,12 +994,12 @@
             </section>
           </div>
 
-          <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-6 font-semibold text-gray-700 hover:bg-gray-50">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" (click)="prevStep()" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-brand-500/10">
               <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
               Back
             </button>
-            <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700">
+            <button type="button" (click)="navigateToChildDetail()" class="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-600 px-8 font-semibold text-white shadow-theme-md hover:bg-brand-700 focus:outline-hidden focus:ring-4 focus:ring-brand-500/20">
               Open Child Record
               <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
             </button>
