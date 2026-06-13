@@ -1284,13 +1284,28 @@
                 <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
                 <div class="space-y-3">
                   @for (item of professionalConsentItems; track item.key) {
-                    <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/50">
+                    <div
+                      role="button"
+                      tabindex="0"
+                      class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-4 transition dark:text-gray-300"
+                      [class.border-brand-200]="consentValue(item.key)"
+                      [class.bg-brand-50]="consentValue(item.key)"
+                      [class.border-gray-200]="!consentValue(item.key)"
+                      [class.bg-white]="!consentValue(item.key)"
+                      [ngClass]="{
+                        'dark:border-brand-500/40 dark:bg-brand-500/10': consentValue(item.key),
+                        'dark:border-gray-800 dark:bg-gray-900/50': !consentValue(item.key)
+                      }"
+                      (click)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.enter)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.space)="setConsentValue(item.key, !consentValue(item.key)); $event.preventDefault()"
+                    >
                       <div class="min-w-0">
                         <p class="font-bold">{{ item.label }}</p>
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
                       <app-checkbox
-                        class="shrink-0"
+                        class="shrink-0 pointer-events-none"
                         [name]="'professional-consent-' + item.key"
                         [ariaLabel]="'Allow ' + item.label"
                         [ngModel]="consentValue(item.key)"
