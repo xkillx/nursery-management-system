@@ -815,6 +815,14 @@
                       placeholder="sarah.j@example.com"
                     />
                   </app-form-field>
+                  <app-form-field label="Work address" className="md:col-span-2">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step3.parent1_work_address"
+                      
+                      placeholder="Work address if applicable"
+                    />
+                  </app-form-field>
                   <app-form-field label="Home address" className="md:col-span-2">
                     <app-input-field
                       type="text"
@@ -872,6 +880,14 @@
                         placeholder="mark.j@example.com"
                       />
                     </app-form-field>
+                    <app-form-field label="Work address" className="md:col-span-2">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="step3.second_parent_work_address"
+                        
+                        placeholder="Work address if applicable"
+                      />
+                    </app-form-field>
                     <app-form-field label="Home address" className="md:col-span-2">
                       <app-input-field
                         type="text"
@@ -911,6 +927,20 @@
             <div class="space-y-6 p-5 md:p-6">
               <div class="rounded-lg bg-brand-50 p-5 dark:bg-brand-500/10">
                 <div class="space-y-5">
+                  <div>
+                    <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Benefits Declaration</p>
+                    <app-form-field label="Are you in receipt of any benefits that contribute to your child's nursery fees?">
+                      <app-select
+                        [(ngModel)]="step3.receives_benefits"
+                        [options]="yesNoOptions"
+                        placeholder="Select..."
+                        [placeholderDisabled]="false"
+                      />
+                    </app-form-field>
+                  </div>
+
+                  <div aria-hidden="true" class="border-t border-brand-200/40 dark:border-gray-700"></div>
+
                   <div>
                     <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Core Funding</p>
                     <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -967,6 +997,19 @@
                       />
                     </div>
                   </div>
+
+                  <div aria-hidden="true" class="border-t border-brand-200/40 dark:border-gray-700"></div>
+
+                  <div>
+                    <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Other Benefits</p>
+                    <app-form-field label="Other benefits">
+                      <app-input-field
+                        type="text"
+                        [(ngModel)]="step3.other_benefits"
+                        placeholder="e.g. Universal Credit, Housing Benefit"
+                      />
+                    </app-form-field>
+                  </div>
                 </div>
 
                 <div class="mt-5">
@@ -1022,6 +1065,13 @@
                           [(ngModel)]="contact.telephone"
                           autocomplete="tel"
                           placeholder="Phone number"
+                        />
+                      </app-form-field>
+                      <app-form-field label="Address" className="md:col-span-3">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="emergencyContactAddresses[i]"
+                          placeholder="Full address"
                         />
                       </app-form-field>
                     </div>

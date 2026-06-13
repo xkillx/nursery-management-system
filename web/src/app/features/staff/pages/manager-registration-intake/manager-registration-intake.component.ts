@@ -161,6 +161,7 @@ type RegistrationDraft = {
     funding_3yo_term_time: boolean;
     funding_2yo_term_time: boolean;
     parent1_address: string;
+    parent1_work_address: string;
     parent1_has_responsibility: boolean;
     show_second_parent: boolean;
     second_parent_name: string;
@@ -168,7 +169,10 @@ type RegistrationDraft = {
     second_parent_telephone: string;
     second_parent_email: string;
     second_parent_address: string;
+    second_parent_work_address: string;
     second_parent_has_responsibility: boolean;
+    receives_benefits: string;
+    other_benefits: string;
   };
   step4: ConsentWritePayload;
   step4_gdpr: {
@@ -179,6 +183,7 @@ type RegistrationDraft = {
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
+  emergencyContactAddresses: string[];
   referralsDraft: ReferralEntry[];
 };
 
@@ -465,6 +470,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     funding_3yo_term_time: false,
     funding_2yo_term_time: false,
     parent1_address: '',
+    parent1_work_address: '',
     parent1_has_responsibility: true,
     show_second_parent: false,
     second_parent_name: '',
@@ -472,7 +478,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     second_parent_telephone: '',
     second_parent_email: '',
     second_parent_address: '',
+    second_parent_work_address: '',
     second_parent_has_responsibility: true,
+    receives_benefits: '',
+    other_benefits: '',
   };
 
   step4: ConsentWritePayload = {
@@ -529,6 +538,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   parentCarersDraft: RegistrationContactEntry[] = [this.emptyContact('Mother')];
   emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
   emergencyAuthorisedFlags = [true, false];
+  emergencyContactAddresses: string[] = ['', ''];
   referralsDraft: ReferralEntry[] = [];
 
   readonly referralTypeOptions: Option[] = [
@@ -847,6 +857,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           address: this.step3.parent1_address
             ? { text: this.step3.parent1_address.trim() }
             : this.parentCarersDraft[0].address,
+          workAddress: this.step3.parent1_work_address
+            ? { text: this.step3.parent1_work_address.trim() }
+            : this.parentCarersDraft[0].workAddress,
         }
       : null;
 
@@ -862,15 +875,29 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           : null,
         telephone: this.step3.second_parent_telephone.trim() || null,
         email: this.step3.second_parent_email.trim() || null,
-        workAddress: null,
+        workAddress: this.step3.second_parent_work_address.trim()
+          ? { text: this.step3.second_parent_work_address.trim() } as unknown as Record<string, unknown>
+          : null,
         hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
       });
     }
 
-    const emergencyContacts = this.filterContacts(this.emergencyContactsDraft);
+    const emergencyContacts = this.filterContacts(this.emergencyContactsDraft)
+      .map((contact, index) => ({
+        ...contact,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() } as unknown as Record<string, unknown>
+          : contact.address,
+      }));
     const authorisedCollectors = this.emergencyContactsDraft
       .filter((contact, index) => this.emergencyAuthorisedFlags[index] && this.contactHasValue(contact))
-      .map((contact) => ({ ...contact, hasParentalResponsibility: null }));
+      .map((contact, index) => ({
+        ...contact,
+        hasParentalResponsibility: null,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() } as unknown as Record<string, unknown>
+          : contact.address,
+      }));
 
     this.staffApi.patchRegistrationProfile(this.childId!, {
       parent_carers: parentCarers,
@@ -878,11 +905,13 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       authorised_collectors: authorisedCollectors,
       funding_support: {
         benefits_contribute_to_fees: this.step3.applying_for_funding ? 'yes' : 'unknown',
+        receives_benefits: this.step3.receives_benefits || 'unknown',
         working_tax_credit: this.step3.working_tax_credit ? 'yes' : 'unknown',
         college_uni_paid_to_parent: this.step3.college_uni_paid_to_parent ? 'yes' : 'unknown',
         college_uni_paid_to_nursery: this.step3.college_uni_paid_to_nursery ? 'yes' : 'unknown',
         funding_3yo_term_time: this.step3.funding_3yo_term_time ? 'yes' : 'unknown',
         funding_2yo_term_time: this.step3.funding_2yo_term_time ? 'yes' : 'unknown',
+        other_benefits: this.step3.other_benefits.trim() || null,
         funding_support_notes: this.step3.national_insurance_number
           ? `National Insurance Number captured for funding verification: ${this.step3.national_insurance_number}`
           : null,
@@ -1050,12 +1079,14 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   addEmergencyContact(): void {
     this.emergencyContactsDraft.push(this.emptyContact(''));
     this.emergencyAuthorisedFlags.push(false);
+    this.emergencyContactAddresses.push('');
     this.notifyDraftChanged();
   }
 
   removeEmergencyContact(index: number): void {
     this.emergencyContactsDraft.splice(index, 1);
     this.emergencyAuthorisedFlags.splice(index, 1);
+    this.emergencyContactAddresses.splice(index, 1);
     if (this.emergencyContactsDraft.length === 0) {
       this.addEmergencyContact();
     }
@@ -1688,6 +1719,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
       emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
+      emergencyContactAddresses: [...this.emergencyContactAddresses],
       referralsDraft: this.referralsDraft.map(r => ({ ...r })),
     };
     this.draftStorage.save(payload, this.currentStep);
@@ -1731,6 +1763,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
     if (draft.emergencyAuthorisedFlags?.length) {
       this.emergencyAuthorisedFlags = [...draft.emergencyAuthorisedFlags];
+    }
+    if (draft.emergencyContactAddresses?.length) {
+      this.emergencyContactAddresses = [...draft.emergencyContactAddresses];
     }
     if (draft.referralsDraft?.length) {
       this.referralsDraft = draft.referralsDraft.map(r => ({ ...r }));
@@ -1819,6 +1854,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       funding_3yo_term_time: false,
       funding_2yo_term_time: false,
       parent1_address: '',
+      parent1_work_address: '',
       parent1_has_responsibility: true,
       show_second_parent: false,
       second_parent_name: '',
@@ -1826,7 +1862,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       second_parent_telephone: '',
       second_parent_email: '',
       second_parent_address: '',
+      second_parent_work_address: '',
       second_parent_has_responsibility: true,
+      receives_benefits: '',
+      other_benefits: '',
     };
     this.step4 = {
       signer_name: '',
@@ -1879,6 +1918,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
     this.emergencyAuthorisedFlags = [true, false];
+    this.emergencyContactAddresses = ['', ''];
     this.referralsDraft = [];
     this.step1Touched = {};
     this.step1Submitted = false;
