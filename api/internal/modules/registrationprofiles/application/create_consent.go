@@ -27,6 +27,7 @@ type CreateConsentParams struct {
 	UrgentMedicalTreatmentExceptions *string `json:"urgent_medical_treatment_exceptions,omitempty"`
 	Plasters                       bool   `json:"plasters"`
 	SafeguardingReportingAcknowledgement bool `json:"safeguarding_reporting_acknowledgement"`
+	InformationSharingConsent      bool   `json:"information_sharing_consent"`
 	AreaSENCOLiaison               bool   `json:"area_senco_liaison"`
 	HealthVisitorLiaison           bool   `json:"health_visitor_liaison"`
 	TransitionDocuments            bool   `json:"transition_documents"`
@@ -92,6 +93,7 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 		UrgentMedicalTreatmentExceptions: params.UrgentMedicalTreatmentExceptions,
 		Plasters:                       params.Plasters,
 		SafeguardingReportingAcknowledgement: params.SafeguardingReportingAcknowledgement,
+		InformationSharingConsent:      params.InformationSharingConsent,
 		AreaSENCOLiaison:               params.AreaSENCOLiaison,
 		HealthVisitorLiaison:           params.HealthVisitorLiaison,
 		TransitionDocuments:            params.TransitionDocuments,

@@ -509,6 +509,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     urgent_medical_treatment: true,
     plasters: true,
     safeguarding_reporting_acknowledgement: true,
+    information_sharing_consent: true,
     area_senco_liaison: true,
     health_visitor_liaison: true,
     transition_documents: true,
@@ -1417,6 +1418,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
         plasters: this.step4.plasters,
         safeguarding_reporting_acknowledgement: this.step4.safeguarding_reporting_acknowledgement,
+        information_sharing_consent: this.step4.information_sharing_consent,
         area_senco_liaison: this.step4.area_senco_liaison,
         health_visitor_liaison: this.step4.health_visitor_liaison,
         transition_documents: this.step4.transition_documents,
@@ -1481,6 +1483,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       && !!this.step4.signed_date
       && this.step4.paper_form_on_file
       && this.step4.safeguarding_reporting_acknowledgement
+      && this.step4.information_sharing_consent
     );
   }
 
@@ -2055,6 +2058,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       urgent_medical_treatment: true,
       plasters: true,
       safeguarding_reporting_acknowledgement: true,
+      information_sharing_consent: true,
       area_senco_liaison: true,
       health_visitor_liaison: true,
       transition_documents: true,

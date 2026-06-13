@@ -28,6 +28,7 @@ type ConsentRecord struct {
 	UrgentMedicalTreatmentExceptions *string
 	Plasters                       bool
 	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent      bool
 	AreaSENCOLiaison               bool
 	HealthVisitorLiaison           bool
 	TransitionDocuments            bool
@@ -70,6 +71,10 @@ func ComputeConsentCompleteness(record *ConsentRecord) ConsentCompleteness {
 
 	if !record.SafeguardingReportingAcknowledgement {
 		missing = append(missing, "safeguarding_reporting_acknowledgement")
+	}
+
+	if !record.InformationSharingConsent {
+		missing = append(missing, "information_sharing_consent")
 	}
 
 	if record.SignerName == "" {

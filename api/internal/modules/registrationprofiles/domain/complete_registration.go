@@ -137,6 +137,7 @@ type ConsentInput struct {
 	UrgentMedicalTreatmentExceptions *string
 	Plasters                       bool
 	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent      bool
 	AreaSENCOLiaison               bool
 	HealthVisitorLiaison           bool
 	TransitionDocuments            bool

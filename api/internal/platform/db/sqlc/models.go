@@ -355,6 +355,7 @@ type ChildRegistrationConsentRecord struct {
 	UrgentMedicalTreatmentExceptions     pgtype.Text
 	Plasters                             bool
 	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent            bool
 	AreaSencoLiaison                     bool
 	HealthVisitorLiaison                 bool
 	TransitionDocuments                  bool

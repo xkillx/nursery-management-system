@@ -1345,7 +1345,7 @@
                     <app-checkbox
                       name="safeguarding_reporting_acknowledgement"
                       [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
-                      label="I/We understand safeguarding concerns will be reported to relevant authorities."
+                      label="I understand that safeguarding concerns may be reported to relevant authorities."
                       className="pointer-events-none"
                     />
                   </div>
@@ -1368,7 +1368,7 @@
                     <app-checkbox
                       name="urgent_medical_treatment"
                       [(ngModel)]="step4.urgent_medical_treatment"
-                      label="Urgent medical treatment may be sought when required."
+                      label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
                       className="pointer-events-none"
                     />
                   </div>
@@ -1391,19 +1391,42 @@
                     <app-checkbox
                       name="plasters"
                       [(ngModel)]="step4.plasters"
-                      label="Staff may use plasters as part of routine first aid."
+                      label="I consent to trained staff administering routine first aid, including the use of plasters."
                       className="pointer-events-none"
                     />
                   </div>
-                  <app-form-field label="Urgent treatment exceptions">
-                    <app-input-field
-                      type="text"
-                      [(ngModel)]="step4.urgent_medical_treatment_exceptions"
-                      
-                      placeholder="Urgent treatment exceptions, if any"
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.information_sharing_consent"
+                    [class.bg-brand-50]="step4.information_sharing_consent"
+                    [class.border-gray-200]="!step4.information_sharing_consent"
+                    [class.bg-white]="!step4.information_sharing_consent"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.information_sharing_consent,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.information_sharing_consent
+                    }"
+                    (click)="step4.information_sharing_consent = !step4.information_sharing_consent"
+                    (keydown.enter)="step4.information_sharing_consent = !step4.information_sharing_consent"
+                    (keydown.space)="step4.information_sharing_consent = !step4.information_sharing_consent; $event.preventDefault()"
+                  >
+                    <app-checkbox
+                      name="information_sharing_consent"
+                      [(ngModel)]="step4.information_sharing_consent"
+                      label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
+                      className="pointer-events-none"
                     />
-                  </app-form-field>
+                  </div>
                 </div>
+                <app-form-field label="Urgent treatment exceptions" className="md:max-w-1/2">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="step4.urgent_medical_treatment_exceptions"
+                    
+                    placeholder="Urgent treatment exceptions, if any"
+                  />
+                </app-form-field>
               </section>
 
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="activities-heading">

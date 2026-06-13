@@ -1,0 +1,2 @@
+ALTER TABLE child_registration_consent_records
+DROP COLUMN information_sharing_consent;

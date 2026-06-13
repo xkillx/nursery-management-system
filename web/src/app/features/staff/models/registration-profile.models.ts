@@ -169,6 +169,7 @@ export interface ConsentWritePayload {
   urgent_medical_treatment_exceptions?: string | null;
   plasters: boolean;
   safeguarding_reporting_acknowledgement: boolean;
+  information_sharing_consent: boolean;
   area_senco_liaison: boolean;
   health_visitor_liaison: boolean;
   transition_documents: boolean;

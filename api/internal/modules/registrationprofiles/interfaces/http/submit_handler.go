@@ -183,6 +183,7 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 			UrgentMedicalTreatmentExceptions: req.Consents.UrgentMedicalTreatmentExceptions,
 			Plasters:                       req.Consents.Plasters,
 			SafeguardingReportingAcknowledgement: req.Consents.SafeguardingReportingAcknowledgement,
+			InformationSharingConsent:      req.Consents.InformationSharingConsent,
 			AreaSENCOLiaison:               req.Consents.AreaSENCOLiaison,
 			HealthVisitorLiaison:           req.Consents.HealthVisitorLiaison,
 			TransitionDocuments:            req.Consents.TransitionDocuments,
