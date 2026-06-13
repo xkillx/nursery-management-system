@@ -4,6 +4,9 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-form-field',
   imports: [CommonModule],
+  host: {
+    class: 'block',
+  },
   template: `
     <div [class]="className">
       @if (label) {

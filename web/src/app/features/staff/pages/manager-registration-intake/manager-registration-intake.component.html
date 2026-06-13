@@ -572,14 +572,14 @@
                 </app-form-field>
               </section>
 
-              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="medical-professionals-heading">
+              <section class="space-y-8 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="medical-professionals-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="medical-professionals-heading" class="text-lg font-bold">Registered Professionals</h4>
                 </div>
-                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    <div class="space-y-6">
-                    <h5 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">GP / Doctor Details</h5>
+                <div class="grid grid-cols-1 gap-8 lg:gap-10 md:grid-cols-2">
+                  <div class="grid gap-y-6 rounded-lg border border-gray-200 bg-gray-50/60 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <h5 class="border-b border-gray-200 pb-3 text-sm font-semibold uppercase text-gray-600 dark:border-gray-800 dark:text-gray-400">GP / Doctor Details</h5>
                     <app-form-field label="Doctor's name">
                       <app-input-field type="text" [(ngModel)]="step2.doctor_name" placeholder="Doctor's name" />
                     </app-form-field>
@@ -590,8 +590,8 @@
                       <app-input-field type="tel" [(ngModel)]="step2.doctor_phone" autocomplete="tel" placeholder="Contact number" />
                     </app-form-field>
                   </div>
-                  <div class="space-y-6">
-                    <h5 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Health Visitor Details</h5>
+                  <div class="grid gap-y-6 rounded-lg border border-gray-200 bg-gray-50/60 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <h5 class="border-b border-gray-200 pb-3 text-sm font-semibold uppercase text-gray-600 dark:border-gray-800 dark:text-gray-400">Health Visitor Details</h5>
                     <app-form-field label="Health visitor name">
                       <app-input-field type="text" [(ngModel)]="step2.health_visitor_name" placeholder="Health visitor name" />
                     </app-form-field>
