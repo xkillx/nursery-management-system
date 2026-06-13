@@ -66,18 +66,17 @@
             <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
               <div
                 class="h-full rounded-full bg-brand-500 transition-all"
-                [class.w-1/5]="stepIndex === 0"
-                [class.w-2/5]="stepIndex === 1"
-                [class.w-3/5]="stepIndex === 2"
-                [class.w-4/5]="stepIndex === 3"
-                [class.w-full]="stepIndex === 4"
+                [class.w-1/4]="stepIndex === 0"
+                [class.w-1/2]="stepIndex === 1"
+                [class.w-3/4]="stepIndex === 2"
+                [class.w-full]="stepIndex === 3"
               ></div>
             </div>
           </aside>
         </div>
 
         <nav class="p-4 md:p-5" aria-label="Registration progress">
-          <ol class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <ol class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             @for (step of steps; track step.key; let i = $index) {
               <li>
                 <button
@@ -1368,176 +1367,21 @@
               <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
               Back
             </app-button>
-            <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveConsentsEvidence()">
-              {{ isSaving ? 'Submitting...' : 'Submit Application' }}
-              <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
-            </app-button>
-          </div>
-        </section>
-      }
-
-      @if (currentStep === 'review-complete') {
-        <section class="space-y-6">
-          <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div class="min-w-0">
-              <nav class="mb-2 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>Admissions</span>
-                <span aria-hidden="true">/</span>
-                <span>New Registrations</span>
-                <span aria-hidden="true">/</span>
-                <span class="font-semibold text-gray-900 dark:text-white/90">{{ childFullNameDraft || child?.fullName || 'Child' }}</span>
-              </nav>
-              <h2 class="text-3xl font-bold text-gray-950 dark:text-white/90 md:text-4xl">Review Application: {{ childFullNameDraft || child?.fullName || 'Child' }}</h2>
-            </div>
-            <div class="flex flex-wrap gap-3">
-              @if (!isNewRegistration) {
-                <app-button type="button" variant="outline" size="sm" className="min-h-11 px-5 shadow-theme-xs" (btnClick)="navigateToChildDetail()">Open Child Record</app-button>
-                <app-button type="button" size="sm" [loading]="isSaving" [disabled]="!canMarkComplete || isSaving" className="min-h-11 px-6 shadow-theme-xs" (btnClick)="submitRegistration()">
-                  {{ isReviewedComplete ? 'Reviewed Complete' : 'Mark Reviewed/Complete' }}
-                </app-button>
-              } @else {
-                <app-button type="button" size="sm" [loading]="isSaving" [disabled]="!canSubmitLocally() || isSaving" className="min-h-11 px-6 shadow-theme-xs" (btnClick)="submitRegistration()">
-                  {{ isSaving ? 'Creating...' : 'Complete Registration' }}
-                </app-button>
-              }
-            </div>
-          </div>
-
-          @if (step2.has_allergies || step2.on_medication) {
-            <div class="rounded-lg border border-error-200 border-l-error-500 bg-error-50 p-5 dark:border-error-500/30 dark:border-l-error-400 dark:bg-error-500/10">
-              <div class="flex items-start gap-4">
-                <div class="rounded-lg bg-error-100 p-3 text-error-700 dark:bg-error-500/15 dark:text-error-300">
-                  <ng-icon name="heroExclamationTriangle" size="24" aria-hidden="true" />
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h4 class="text-xl font-bold text-error-700 dark:text-error-300">Critical Medical Alerts</h4>
-                  <div class="mt-3 flex flex-wrap gap-3">
-                    @if (step2.has_allergies) {
-                      <span class="rounded border border-error-200 bg-white/70 px-3 py-2 text-sm font-medium text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300">{{ allergyStatusLabel }}</span>
-                    }
-                    @if (step2.on_medication) {
-                      <span class="rounded border border-error-200 bg-white/70 px-3 py-2 text-sm font-medium text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300">Medication recorded</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
-
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] lg:col-span-8">
-              <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-                <div class="flex items-center justify-between gap-3">
-                  <h3 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child & Family Details</h3>
-                  <app-badge [color]="isNewRegistration ? (isProfileCompleteLocally() ? 'success' : 'warning') : (profileCompleteLabel() === 'Complete' ? 'success' : 'warning')" size="sm">
-                    {{ isNewRegistration ? (isProfileCompleteLocally() ? 'Complete' : 'Incomplete') : profileCompleteLabel() }}
-                  </app-badge>
-                </div>
-              </div>
-              <div class="p-5 md:p-6">
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div class="space-y-6">
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Full Name</p>
-                    <p class="text-lg">{{ childFullNameDraft || child?.fullName || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Date of Birth</p>
-                    <p class="text-lg">{{ step1.date_of_birth || child?.dateOfBirth || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Proposed Start Date</p>
-                    <p class="text-lg">{{ step1.start_date || child?.startDate || '-' }}</p>
-                  </div>
-                </div>
-                <div class="space-y-6">
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Primary Contact</p>
-                    <p class="text-lg">{{ parentCarersDraft[0]?.fullName || '-' }} <span class="text-gray-500 dark:text-gray-400">({{ parentCarersDraft[0]?.relationshipToChild || 'Parent/Carer' }})</span></p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ parentCarersDraft[0]?.email || 'No email' }} | {{ parentCarersDraft[0]?.telephone || 'No phone' }}</p>
-                  </div>
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Home Address</p>
-                    <p class="text-lg">{{ step1.home_address || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="mb-1 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Sessions Requested</p>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      @for (day of ['MON', 'TUE', 'WED']; track day) {
-                        <app-badge variant="solid" color="primary" size="sm">{{ day }}</app-badge>
-                      }
-                      @for (day of ['THU', 'FRI']; track day) {
-                        <app-badge color="light" size="sm">{{ day }}</app-badge>
-                      }
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </section>
-
-            <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 text-center lg:col-span-4">
-              <div class="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-lg border-4 border-white bg-[linear-gradient(135deg,#dbeafe,#dcfce7)] text-brand-700 shadow-theme-md dark:border-gray-800 dark:bg-[linear-gradient(135deg,rgba(70,95,255,0.22),rgba(18,183,106,0.18))] dark:text-brand-300">
-                <ng-icon name="heroAcademicCap" size="48" aria-hidden="true" />
-              </div>
-              <h4 class="text-2xl font-bold">{{ childFullNameDraft || child?.fullName || 'Child' }}</h4>
-              <p class="mx-auto mt-2 max-w-xs leading-6 text-gray-500 dark:text-gray-400">{{ step1.notes || 'Registration details ready for manager review.' }}</p>
-              <div class="mt-6 rounded-lg bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">Paper evidence metadata only</div>
-            </aside>
-
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 lg:col-span-6">
-              <div class="mb-5 flex items-center justify-between gap-3">
-                <h4 class="text-xl font-semibold text-gray-950 dark:text-white/90">Room Availability</h4>
-                <span class="text-sm font-semibold text-brand-600 dark:text-brand-300">Toddler Room (2-3 yrs)</span>
-              </div>
-              <div class="mb-2 flex justify-between text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
-                <span>Current Capacity</span>
-                <span>14/16</span>
-              </div>
-              <div class="h-2 overflow-hidden rounded-full bg-brand-50 dark:bg-brand-500/10">
-                <div class="h-full w-[87%] bg-success-500"></div>
-              </div>
-              <p class="mt-5 leading-6 text-gray-700 dark:text-gray-300">Approving this registration keeps the Toddler Room within OFSTED ratio limits for the recorded sessions.</p>
-            </section>
-
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:p-6 lg:col-span-6">
-              <h4 class="mb-5 text-xl font-semibold text-gray-950 dark:text-white/90">Document Status</h4>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between rounded bg-brand-50 p-3 dark:bg-brand-500/10">
-                  <span class="flex items-center gap-3">
-                    <ng-icon name="heroCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
-                    Birth Certificate / Passport
-                  </span>
-                  <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">{{ officeEvidence.birthCertificatePassportStatus || 'Unknown' }}</span>
-                </div>
-                <div class="flex items-center justify-between rounded bg-brand-50 p-3 dark:bg-brand-500/10">
-                  <span class="flex items-center gap-3">
-                    <ng-icon name="heroCheck" size="20" class="shrink-0 text-success-500" aria-hidden="true" />
-                    Paper Consent Record
-                  </span>
-                  <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">{{ isNewRegistration ? (isConsentsCompleteLocally() ? 'Complete' : 'Incomplete') : consentCompleteLabel() }}</span>
-                </div>
-                <div class="flex items-center justify-between rounded border border-error-200 bg-error-50 p-3 dark:border-error-500/30 dark:bg-error-500/10">
-                  <span class="flex items-center gap-3 font-bold text-error-700 dark:text-error-300">
-                    <ng-icon name="heroExclamationTriangle" size="20" aria-hidden="true" />
-                    Overall Office Checklist
-                  </span>
-                  <span class="text-sm font-bold text-brand-600 dark:text-brand-300">{{ isNewRegistration ? (isOfficeCompleteLocally() ? 'Complete' : 'Incomplete') : officeCompleteLabel() }}</span>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()">
-              <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
-              Back
-            </app-button>
-            @if (!isNewRegistration) {
-              <app-button type="button" size="md" className="min-h-12 px-8 shadow-theme-md" (btnClick)="navigateToChildDetail()">
-                Open Child Record
-                <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+            @if (isNewRegistration) {
+              <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canSubmitLocally() || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
+                {{ isSaving ? 'Creating...' : 'Complete Registration' }}
+                <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
               </app-button>
+            } @else {
+              <div class="flex flex-wrap gap-3">
+                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="saveConsentsEvidence()">
+                  {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                </app-button>
+                <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canMarkComplete || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
+                  {{ isSaving ? 'Completing...' : 'Mark Reviewed/Complete' }}
+                  <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                </app-button>
+              </div>
             }
           </div>
         </section>

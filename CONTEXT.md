@@ -66,7 +66,7 @@ New manager-assisted registration intake should use a guided stepper aligned to 
 
 ## Registration Intake Child Creation (Post-MVP)
 
-Starting a new guided registration collects all steps (child basics, medical/health, contacts, consents, office-use checklist) as a frontend-local draft before any server-side record exists. The child record, registration profile, consent records, collection password, and office-use checklist are created atomically when the manager completes the review step. The product does not introduce a separate pending application or server-side draft object; in-progress drafts survive only in browser localStorage. Existing "Add Child" and section-by-section registration editor flows are unaffected.
+Starting a new guided registration collects all steps (child basics, medical/health, contacts, consents, office-use checklist) as a frontend-local draft before any server-side record exists. The child record, registration profile, consent records, collection password, and office-use checklist are created atomically when the manager completes the final permissions, consents, and evidence step. The product does not introduce a separate pending application or server-side draft object; in-progress drafts survive only in browser localStorage. Existing "Add Child" and section-by-section registration editor flows are unaffected.
 
 ## Registration-Sourced Child Basics (Post-MVP)
 
@@ -82,7 +82,7 @@ Manager-assisted registration intake ends when a manager marks the registration 
 
 ## Registration Completion Attestation (Post-MVP)
 
-Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. For the guided intake stepper, the atomic submission at step 5 serves as the implicit attestation — the child record and registration are created as complete. For the section-by-section registration editor, attestation remains an explicit separate action. In both cases, later changes return the registration to needs-review until a manager attests again.
+Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. For the guided intake stepper, the atomic submission from the final permissions, consents, and evidence step serves as the implicit attestation, so the child record and registration are created as complete without a separate review step. For the section-by-section registration editor, attestation remains an explicit separate action. In both cases, later changes return the registration to needs-review until a manager attests again.
 
 ## Registration Reviewed/Complete Requirements (Post-MVP)
 

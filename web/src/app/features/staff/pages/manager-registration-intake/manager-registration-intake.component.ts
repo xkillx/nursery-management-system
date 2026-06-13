@@ -55,8 +55,9 @@ type StepperStep =
   | 'child-basics'
   | 'medical-health'
   | 'contacts-collection'
-  | 'consents-evidence'
-  | 'review-complete';
+  | 'consents-evidence';
+
+type StoredStepperStep = StepperStep | 'review-complete';
 
 type IntakeStep = {
   key: StepperStep;
@@ -100,7 +101,7 @@ type ConsentItem = {
 };
 
 type RegistrationDraft = {
-  currentStep: StepperStep;
+  currentStep: StoredStepperStep;
   step1: {
     first_name: string;
     surname: string;
@@ -258,12 +259,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       label: 'Permissions & Consents',
       shortLabel: 'Consents',
       description: 'Terms and decisions',
-    },
-    {
-      key: 'review-complete',
-      label: 'Review',
-      shortLabel: 'Review',
-      description: 'Complete registration',
     },
   ];
 
@@ -581,7 +576,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   get isLastStep(): boolean {
-    return this.currentStep === 'review-complete';
+    return this.stepIndex === this.steps.length - 1;
   }
 
   get canMarkComplete(): boolean {
@@ -935,7 +930,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
     if (this.isNewRegistration) {
       this.successMessage = 'Consents & evidence saved to draft.';
-      this.nextStep();
       return;
     }
 
@@ -980,13 +974,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         ).subscribe({
           next: () => {
             this.isSaving = false;
+            this.successMessage = 'Consents & evidence saved.';
             this.loadStatus();
-            this.nextStep();
           },
           error: () => {
             this.isSaving = false;
             this.loadStatus();
-            this.nextStep();
           },
         });
       },
@@ -1725,8 +1718,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (draft.referralsDraft?.length) {
       this.referralsDraft = draft.referralsDraft.map(r => ({ ...r }));
     }
-    if (draft.currentStep && this.steps.some(step => step.key === draft.currentStep)) {
-      this.currentStep = draft.currentStep;
+    if (draft.currentStep) {
+      if (this.steps.some(step => step.key === draft.currentStep)) {
+        this.currentStep = draft.currentStep as StepperStep;
+      } else if (draft.currentStep === 'review-complete') {
+        this.currentStep = 'consents-evidence';
+      }
     }
     this.step1Submitted = !!draft.step1?.first_name?.trim();
     this.successMessage = 'Restored your in-progress registration draft.';
