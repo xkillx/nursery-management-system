@@ -355,7 +355,6 @@ type ChildRegistrationConsentRecord struct {
 	UrgentMedicalTreatmentExceptions     pgtype.Text
 	Plasters                             bool
 	SafeguardingReportingAcknowledgement bool
-	InformationSharingConsent            bool
 	AreaSencoLiaison                     bool
 	HealthVisitorLiaison                 bool
 	TransitionDocuments                  bool
@@ -374,6 +373,8 @@ type ChildRegistrationConsentRecord struct {
 	EnteredByUserID                      pgtype.UUID
 	EnteredByMembershipID                pgtype.UUID
 	CreatedAt                            pgtype.Timestamptz
+	InformationSharingConsent            bool
+	GdprDataProcessingConsent            bool
 }
 
 type ChildRegistrationContact struct {

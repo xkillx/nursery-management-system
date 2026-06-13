@@ -29,6 +29,7 @@ type ConsentRecord struct {
 	Plasters                       bool
 	SafeguardingReportingAcknowledgement bool
 	InformationSharingConsent      bool
+	GDPRDataProcessingConsent      bool
 	AreaSENCOLiaison               bool
 	HealthVisitorLiaison           bool
 	TransitionDocuments            bool
@@ -74,10 +75,14 @@ func ComputeConsentCompleteness(record *ConsentRecord) ConsentCompleteness {
 	}
 
 	if !record.InformationSharingConsent {
-		missing = append(missing, "information_sharing_consent")
-	}
+			missing = append(missing, "information_sharing_consent")
+		}
 
-	if record.SignerName == "" {
+		if !record.GDPRDataProcessingConsent {
+			missing = append(missing, "gdpr_data_processing_consent")
+		}
+
+		if record.SignerName == "" {
 		missing = append(missing, "signer_name")
 	}
 

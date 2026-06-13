@@ -138,6 +138,7 @@ type ConsentInput struct {
 	Plasters                       bool
 	SafeguardingReportingAcknowledgement bool
 	InformationSharingConsent      bool
+	GDPRDataProcessingConsent      bool
 	AreaSENCOLiaison               bool
 	HealthVisitorLiaison           bool
 	TransitionDocuments            bool
