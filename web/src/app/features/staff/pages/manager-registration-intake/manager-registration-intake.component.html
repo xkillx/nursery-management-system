@@ -1042,10 +1042,11 @@
                           />
                         </app-form-field>
                         <app-form-field label="Relationship">
-                          <app-input-field
-                            type="text"
+                          <app-select
                             [(ngModel)]="contact.relationshipToChild"
-                            placeholder="e.g. Grandparent"
+                            [options]="relationshipSelectOptions"
+                            placeholder="Select relationship"
+                            [placeholderDisabled]="false"
                           />
                         </app-form-field>
                         <app-form-field label="Phone number">
