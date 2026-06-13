@@ -812,7 +812,7 @@
                         type="text"
                         [(ngModel)]="parent.fullName"
                         autocomplete="name"
-                        
+
                         placeholder="e.g. Sarah Johnson"
                       />
                     </app-form-field>
@@ -829,7 +829,7 @@
                         type="tel"
                         [(ngModel)]="parent.telephone"
                         autocomplete="tel"
-                        
+
                         placeholder="+44 7000 000000"
                       />
                     </app-form-field>
@@ -838,7 +838,7 @@
                         type="email"
                         [(ngModel)]="parent.email"
                         autocomplete="email"
-                        
+
                         placeholder="sarah.j@example.com"
                       />
                     </app-form-field>
@@ -846,7 +846,7 @@
                       <app-input-field
                         type="text"
                         [(ngModel)]="step3.parent1_work_address"
-                        
+
                         placeholder="Work address if applicable"
                       />
                     </app-form-field>
@@ -854,7 +854,7 @@
                       <app-input-field
                         type="text"
                         [(ngModel)]="step3.parent1_address"
-                        
+
                         placeholder="e.g. 123 High Street, London"
                       />
                     </app-form-field>
@@ -879,7 +879,7 @@
                         <app-input-field
                           type="text"
                           [(ngModel)]="step3.second_parent_name"
-                          
+
                           placeholder="e.g. Mark Johnson"
                         />
                       </app-form-field>
@@ -895,7 +895,7 @@
                         <app-input-field
                           type="tel"
                           [(ngModel)]="step3.second_parent_telephone"
-                          
+
                           placeholder="+44 7000 000000"
                         />
                       </app-form-field>
@@ -903,7 +903,7 @@
                         <app-input-field
                           type="email"
                           [(ngModel)]="step3.second_parent_email"
-                          
+
                           placeholder="mark.j@example.com"
                         />
                       </app-form-field>
@@ -911,7 +911,7 @@
                         <app-input-field
                           type="text"
                           [(ngModel)]="step3.second_parent_work_address"
-                          
+
                           placeholder="Work address if applicable"
                         />
                       </app-form-field>
@@ -919,7 +919,7 @@
                         <app-input-field
                           type="text"
                           [(ngModel)]="step3.second_parent_address"
-                          
+
                           placeholder="Different address if applicable"
                         />
                       </app-form-field>
@@ -1204,7 +1204,7 @@
                         [type]="showCollectionPassword ? 'text' : 'password'"
                         [(ngModel)]="step3.collection_password"
                         autocomplete="new-password"
-                        
+
                         placeholder="Min. 6 characters"
                       />
                       <button
@@ -1225,7 +1225,7 @@
                     <app-input-field
                       type="text"
                       [(ngModel)]="step3.collection_password_hint"
-                      
+
                       placeholder="e.g. Mother's maiden name"
                     />
                   </app-form-field>
@@ -1423,7 +1423,7 @@
                   <app-input-field
                     type="text"
                     [(ngModel)]="step4.urgent_medical_treatment_exceptions"
-                    
+
                     placeholder="Urgent treatment exceptions, if any"
                   />
                 </app-form-field>
@@ -1513,14 +1513,14 @@
                       type="text"
                       [(ngModel)]="step4.signer_name"
                       autocomplete="name"
-                      
+
                       placeholder="Enter full name from paper form"
                     />
                   </app-form-field>
                   <app-form-field label="Signed date" [required]="true">
                     <app-date-picker
                       [(ngModel)]="step4.signed_date"
-                      
+
                     />
                   </app-form-field>
                 </div>
@@ -1535,7 +1535,7 @@
                   <app-form-field label="Application date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.applicationDate"
-                      
+
                     />
                   </app-form-field>
                   <app-form-field label="Birth certificate/passport">
@@ -1558,7 +1558,7 @@
                     <app-form-field label="Deposit paid date">
                       <app-date-picker
                         [(ngModel)]="officeEvidence.depositPaidDate"
-                        
+
                       />
                     </app-form-field>
                   }
@@ -1566,7 +1566,7 @@
                     <app-input-field
                       type="text"
                       [(ngModel)]="officeEvidence.sessionsDaysRequested"
-                      
+
                       placeholder="e.g. Mon-Wed 8am-6pm"
                     />
                   </app-form-field>
@@ -1582,13 +1582,13 @@
                   <app-form-field label="Contract date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.contractDate"
-                      
+
                     />
                   </app-form-field>
                   <app-form-field label="Handbook date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.handbookDate"
-                      
+
                     />
                   </app-form-field>
                 </div>
@@ -1596,19 +1596,19 @@
                   <app-form-field label="Red Book checked date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.redBookCheckedDate"
-                      
+
                     />
                   </app-form-field>
                   <app-form-field label="Birth cert/passport checked date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.birthCertificatePassportCheckedDate"
-                      
+
                     />
                   </app-form-field>
                   <app-form-field label="Proof of address checked date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.proofOfAddressCheckedDate"
-                      
+
                     />
                   </app-form-field>
                 </div>
@@ -1651,7 +1651,7 @@
                   <app-checkbox
                     name="gdpr_data_processing_consent"
                     [(ngModel)]="step4.gdpr_data_processing_consent"
-                    label="I confirm — the parent/carer has read and understood the GDPR declaration above"
+                    label="I confirm the parent/carer has read and understood the GDPR declaration above"
                     className="pointer-events-none"
                   />
                 </div>
