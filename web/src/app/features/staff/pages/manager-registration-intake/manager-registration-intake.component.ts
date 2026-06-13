@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -158,6 +158,7 @@ type RegistrationDraft = {
     collection_password: string;
     collection_password_hint: string;
     national_insurance_number: string;
+    funding_support_answer: string;
     applying_for_funding: boolean;
     early_years_pupil_premium: boolean;
     working_tax_credit: boolean;
@@ -177,6 +178,7 @@ type RegistrationDraft = {
     second_parent_work_address: string;
     second_parent_has_responsibility: boolean;
     other_benefits: string;
+    other_funding_selected: boolean;
     has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
@@ -243,6 +245,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly draftStorage = inject(RegistrationDraftStorage);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroy$ = new Subject<void>();
   private readonly draftChanges$ = new Subject<void>();
   private dismissTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -413,6 +416,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   successMessage: string | null = null;
   step1Submitted = false;
   step1Touched: Partial<Record<Step1Field, boolean>> = {};
+  fundingSubmitted = false;
   hasStoredDraft = false;
   draftRestoredAt: string | null = null;
   draftSavedAt: string | null = null;
@@ -474,6 +478,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     collection_password: '',
     collection_password_hint: '',
     national_insurance_number: '',
+    funding_support_answer: '',
     applying_for_funding: false,
     early_years_pupil_premium: false,
     working_tax_credit: false,
@@ -493,6 +498,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     second_parent_work_address: '',
     second_parent_has_responsibility: true,
     other_benefits: '',
+    other_funding_selected: false,
     has_funding_support: false,
   };
 
@@ -853,6 +859,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Create the child record before saving contacts.';
       return;
     }
+    if (!this.validateFundingSection()) {
+      return;
+    }
     if (this.isNewRegistration) {
       this.successMessage = 'Contacts & collection saved to draft.';
       this.nextStep();
@@ -915,19 +924,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       parent_carers: parentCarers,
       emergency_contacts: emergencyContacts,
       authorised_collectors: authorisedCollectors,
-      funding_support: {
-        benefits_contribute_to_fees: this.step3.applying_for_funding ? 'yes' : 'unknown',
-        working_tax_credit: this.step3.working_tax_credit ? 'yes' : 'unknown',
-        college_uni_paid_to_parent: this.step3.college_uni_paid_to_parent ? 'yes' : 'unknown',
-        college_uni_paid_to_nursery: this.step3.college_uni_paid_to_nursery ? 'yes' : 'unknown',
-        funding_3yo_term_time: this.step3.funding_3yo_term_time ? 'yes' : 'unknown',
-        funding_2yo_term_time: this.step3.funding_2yo_term_time ? 'yes' : 'unknown',
-        other_benefits: this.step3.other_benefits.trim() || null,
-        funding_support_notes: this.step3.national_insurance_number
-          ? `National Insurance Number captured for funding verification: ${this.step3.national_insurance_number}`
-          : null,
-        funding_support_reviewed: true,
-      },
+      funding_support: this.buildFundingSupportPayload(),
       collection: {
         over18_collection_acknowledged: true,
         emergency_collection_reviewed: true,
@@ -1039,6 +1036,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   submitRegistration(): void {
     if (this.isNewRegistration) {
+      if (!this.validateFundingSection()) {
+        return;
+      }
       const payload = this.buildCompleteRegistrationPayload();
       this.isSaving = true;
       this.errorMessage = null;
@@ -1142,6 +1142,55 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.notifyDraftChanged();
   }
 
+  protected setFundingSupportAnswer(answer: 'yes' | 'no'): void {
+    this.step3.funding_support_answer = answer;
+    this.step3.has_funding_support = answer === 'yes';
+    this.fundingSubmitted = false;
+
+    if (answer === 'no') {
+      this.clearFundingOptions();
+    }
+
+    this.notifyDraftChanged();
+  }
+
+  protected setFundingOption(
+    key: 'working_tax_credit' | 'college_uni_paid_to_parent' | 'funding_3yo_term_time' | 'funding_2yo_term_time',
+    checked: boolean,
+  ): void {
+    this.step3[key] = checked;
+    this.notifyDraftChanged();
+  }
+
+  protected setOtherFundingSelected(checked: boolean): void {
+    this.step3.other_funding_selected = checked;
+    if (!checked) {
+      this.step3.other_benefits = '';
+    }
+    this.notifyDraftChanged();
+  }
+
+  protected get fundingAnswerError(): string {
+    if (!this.fundingSubmitted || this.step3.funding_support_answer) {
+      return '';
+    }
+    return 'Select Yes or No to continue.';
+  }
+
+  protected get fundingOptionsError(): string {
+    if (!this.fundingSubmitted || this.step3.funding_support_answer !== 'yes' || this.hasSelectedFundingOption()) {
+      return '';
+    }
+    return 'Select at least one funding or benefit option.';
+  }
+
+  protected get otherFundingError(): string {
+    if (!this.fundingSubmitted || !this.step3.other_funding_selected || this.step3.other_benefits.trim()) {
+      return '';
+    }
+    return 'Enter the funding or benefit details.';
+  }
+
   protected profileCompleteLabel(): string {
     return this.workflowStatus?.profile_completeness?.is_complete ? 'Complete' : 'Incomplete';
   }
@@ -1152,6 +1201,80 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   protected officeCompleteLabel(): string {
     return this.workflowStatus?.office_completeness?.is_complete ? 'Complete' : 'Incomplete';
+  }
+
+  private validateFundingSection(): boolean {
+    this.fundingSubmitted = true;
+
+    if (this.fundingAnswerError) {
+      this.errorMessage = this.fundingAnswerError;
+      this.focusFundingControl('funding-support-yes');
+      return false;
+    }
+
+    if (this.fundingOptionsError) {
+      this.errorMessage = this.fundingOptionsError;
+      this.focusFundingControl('funding-working-tax-credit');
+      return false;
+    }
+
+    if (this.otherFundingError) {
+      this.errorMessage = this.otherFundingError;
+      this.focusFundingControl('otherFunding');
+      return false;
+    }
+
+    this.errorMessage = null;
+    return true;
+  }
+
+  private focusFundingControl(id: string): void {
+    setTimeout(() => {
+      (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>(`#${id}`)?.focus();
+    }, 0);
+  }
+
+  private hasSelectedFundingOption(): boolean {
+    return this.step3.working_tax_credit
+      || this.step3.college_uni_paid_to_parent
+      || this.step3.funding_3yo_term_time
+      || this.step3.funding_2yo_term_time
+      || this.step3.other_funding_selected;
+  }
+
+  private clearFundingOptions(): void {
+    this.step3.applying_for_funding = false;
+    this.step3.early_years_pupil_premium = false;
+    this.step3.working_tax_credit = false;
+    this.step3.college_uni_paid_to_parent = false;
+    this.step3.college_uni_paid_to_nursery = false;
+    this.step3.funding_3yo_term_time = false;
+    this.step3.funding_2yo_term_time = false;
+    this.step3.other_funding_selected = false;
+    this.step3.other_benefits = '';
+    this.step3.national_insurance_number = '';
+  }
+
+  private buildFundingSupportPayload(): Record<string, unknown> {
+    const answer = this.step3.funding_support_answer;
+    const statusFor = (selected: boolean): string => {
+      if (answer === 'yes') return selected ? 'yes' : 'no';
+      if (answer === 'no') return 'no';
+      return 'unknown';
+    };
+
+    return {
+      benefits_contribute_to_fees: answer || 'unknown',
+      working_tax_credit: statusFor(this.step3.working_tax_credit),
+      college_uni_paid_to_parent: statusFor(this.step3.college_uni_paid_to_parent),
+      college_uni_paid_to_nursery: statusFor(false),
+      funding_3yo_term_time: statusFor(this.step3.funding_3yo_term_time),
+      funding_2yo_term_time: statusFor(this.step3.funding_2yo_term_time),
+      funding_support_notes: this.step3.other_funding_selected
+        ? this.step3.other_benefits.trim() || null
+        : null,
+      funding_support_reviewed: true,
+    };
   }
 
   private buildCompleteRegistrationPayload(): CompleteRegistrationPayload {
@@ -1280,18 +1403,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           over18_collection_acknowledged: true,
           emergency_collection_reviewed: true,
         },
-        funding_support: {
-          benefits_contribute_to_fees: this.step3.applying_for_funding ? 'yes' : 'unknown',
-          working_tax_credit: this.step3.working_tax_credit ? 'yes' : 'unknown',
-          college_uni_paid_to_parent: this.step3.college_uni_paid_to_parent ? 'yes' : 'unknown',
-          college_uni_paid_to_nursery: this.step3.college_uni_paid_to_nursery ? 'yes' : 'unknown',
-          funding_3yo_term_time: this.step3.funding_3yo_term_time ? 'yes' : 'unknown',
-          funding_2yo_term_time: this.step3.funding_2yo_term_time ? 'yes' : 'unknown',
-          funding_support_notes: this.step3.national_insurance_number
-            ? `NI Number: ${this.step3.national_insurance_number}`
-            : null,
-          funding_support_reviewed: true,
-        },
+        funding_support: this.buildFundingSupportPayload(),
         routine_care: {
           routine_care_notes: this.step2.routine_care_notes.trim() || null,
           routine_care_reviewed: true,
@@ -1573,13 +1685,21 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
 
     if (profile.fundingSupport) {
-      this.step3.applying_for_funding = profile.fundingSupport.benefitsContributeToFees === 'yes';
+      this.step3.funding_support_answer =
+        profile.fundingSupport.benefitsContributeToFees === 'yes'
+          ? 'yes'
+          : profile.fundingSupport.benefitsContributeToFees === 'no'
+            ? 'no'
+            : '';
+      this.step3.has_funding_support = this.step3.funding_support_answer === 'yes';
+      this.step3.applying_for_funding = this.step3.has_funding_support;
       this.step3.working_tax_credit = profile.fundingSupport.workingTaxCredit === 'yes';
       this.step3.college_uni_paid_to_parent = profile.fundingSupport.collegeUniPaidToParent === 'yes';
       this.step3.college_uni_paid_to_nursery = profile.fundingSupport.collegeUniPaidToNursery === 'yes';
       this.step3.funding_3yo_term_time = profile.fundingSupport.funding3yoTermTime === 'yes';
       this.step3.funding_2yo_term_time = profile.fundingSupport.funding2yoTermTime === 'yes';
-      this.step3.has_funding_support = true;
+      this.step3.other_benefits = profile.fundingSupport.fundingSupportNotes ?? '';
+      this.step3.other_funding_selected = !!this.step3.other_benefits.trim();
     }
   }
 
@@ -1798,7 +1918,16 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2 = { ...this.step2, ...draft.step2 };
       this.parseSocialWorkerJson(this.step2.social_worker_contact);
     }
-    if (draft.step3) this.step3 = { ...this.step3, ...draft.step3 };
+    if (draft.step3) {
+      this.step3 = { ...this.step3, ...draft.step3 };
+      if (!this.step3.funding_support_answer && this.step3.has_funding_support) {
+        this.step3.funding_support_answer = 'yes';
+      }
+      this.step3.has_funding_support = this.step3.funding_support_answer === 'yes';
+      if (this.step3.funding_support_answer === 'no') {
+        this.clearFundingOptions();
+      }
+    }
     if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
     if (draft.step4_gdpr) this.step4_gdpr = { ...this.step4_gdpr, ...draft.step4_gdpr };
     if (draft.officeEvidence) this.officeEvidence = { ...this.officeEvidence, ...draft.officeEvidence };
@@ -1896,6 +2025,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       collection_password: '',
       collection_password_hint: '',
       national_insurance_number: '',
+      funding_support_answer: '',
       applying_for_funding: false,
       early_years_pupil_premium: false,
       working_tax_credit: false,
@@ -1915,6 +2045,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       second_parent_work_address: '',
       second_parent_has_responsibility: true,
       other_benefits: '',
+      other_funding_selected: false,
       has_funding_support: false,
     };
     this.step4 = {

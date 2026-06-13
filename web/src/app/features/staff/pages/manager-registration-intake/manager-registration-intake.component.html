@@ -939,97 +939,186 @@
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="funding-eligibility-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h4 id="funding-eligibility-heading" class="text-lg font-bold">Funding & Eligibility</h4>
+                  <h4 id="funding-eligibility-heading" class="text-lg font-bold">Funding & Benefits</h4>
                 </div>
-                <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
-                  <app-checkbox
-                    name="has_funding_support"
-                    [(ngModel)]="step3.has_funding_support"
-                    label="Does the child receive any funding support?"
-                  />
-                  @if (step3.has_funding_support) {
-                    <div class="mt-5 space-y-6">
-                      <div>
-                        <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Core Funding</p>
-                        <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                          <app-checkbox
-                            name="applying_for_funding"
-                            [(ngModel)]="step3.applying_for_funding"
-                            label="Applying for 15/30 Hours Funding?"
-                          />
-                          <app-checkbox
-                            name="early_years_pupil_premium"
-                            [(ngModel)]="step3.early_years_pupil_premium"
-                            label="Eligible for Early Years Pupil Premium (EYPP)?"
-                          />
-                          <app-checkbox
-                            name="working_tax_credit"
-                            [(ngModel)]="step3.working_tax_credit"
-                            label="Working Tax Credit?"
-                          />
-                        </div>
-                      </div>
+                <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-5">
 
-                      <div aria-hidden="true" class="border-t border-gray-200 dark:border-gray-800"></div>
+                  <fieldset class="mt-5" aria-describedby="funding-answer-error">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
+                      Does your child receive any funding or benefits that contribute towards nursery fees?
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
 
-                      <div>
-                        <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">College / University Funding</p>
-                        <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                          <app-checkbox
-                            name="college_uni_paid_to_parent"
-                            [(ngModel)]="step3.college_uni_paid_to_parent"
-                            label="College/Uni funding paid to parent?"
-                          />
-                          <app-checkbox
-                            name="college_uni_paid_to_nursery"
-                            [(ngModel)]="step3.college_uni_paid_to_nursery"
-                            label="College/Uni funding paid to nursery?"
-                          />
-                        </div>
-                      </div>
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label
+                        for="funding-support-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step3.funding_support_answer === 'yes'"
+                        [class.bg-brand-50]="step3.funding_support_answer === 'yes'"
+                        [class.text-brand-700]="step3.funding_support_answer === 'yes'"
+                        [class.border-gray-200]="step3.funding_support_answer !== 'yes'"
+                        [class.text-gray-800]="step3.funding_support_answer !== 'yes'"
+                        [class.dark:border-brand-500]="step3.funding_support_answer === 'yes'"
+                        [class.dark:bg-brand-500/10]="step3.funding_support_answer === 'yes'"
+                        [class.dark:text-brand-300]="step3.funding_support_answer === 'yes'"
+                        [class.dark:border-gray-700]="step3.funding_support_answer !== 'yes'"
+                        [class.dark:text-gray-200]="step3.funding_support_answer !== 'yes'"
+                      >
+                        <input
+                          id="funding-support-yes"
+                          type="radio"
+                          name="funding_support_answer"
+                          value="yes"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step3.funding_support_answer === 'yes'"
+                          [attr.aria-invalid]="!!fundingAnswerError"
+                          aria-describedby="funding-answer-error"
+                          (change)="setFundingSupportAnswer('yes')"
+                        />
+                        <span>Yes</span>
+                      </label>
 
-                      <div aria-hidden="true" class="border-t border-gray-200 dark:border-gray-800"></div>
-
-                      <div>
-                        <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Term Time Only</p>
-                        <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                          <app-checkbox
-                            name="funding_3yo_term_time"
-                            [(ngModel)]="step3.funding_3yo_term_time"
-                            label="3YO Term Time Only?"
-                          />
-                          <app-checkbox
-                            name="funding_2yo_term_time"
-                            [(ngModel)]="step3.funding_2yo_term_time"
-                            label="2YO Term Time Only?"
-                          />
-                        </div>
-                      </div>
-
-                      <div aria-hidden="true" class="border-t border-gray-200 dark:border-gray-800"></div>
-
-                      <div>
-                        <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Other Benefits</p>
-                        <app-form-field label="Other benefits">
-                          <app-input-field
-                            type="text"
-                            [(ngModel)]="step3.other_benefits"
-                            placeholder="e.g. Universal Credit, Housing Benefit"
-                          />
-                        </app-form-field>
-                      </div>
-
-                      <div>
-                        <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">National Insurance</p>
-                        <app-form-field label="National Insurance Number (for verification)">
-                          <app-input-field
-                            type="text"
-                            [(ngModel)]="step3.national_insurance_number"
-                            placeholder="QQ 12 34 56 C"
-                          />
-                        </app-form-field>
-                      </div>
+                      <label
+                        for="funding-support-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step3.funding_support_answer === 'no'"
+                        [class.bg-brand-50]="step3.funding_support_answer === 'no'"
+                        [class.text-brand-700]="step3.funding_support_answer === 'no'"
+                        [class.border-gray-200]="step3.funding_support_answer !== 'no'"
+                        [class.text-gray-800]="step3.funding_support_answer !== 'no'"
+                        [class.dark:border-brand-500]="step3.funding_support_answer === 'no'"
+                        [class.dark:bg-brand-500/10]="step3.funding_support_answer === 'no'"
+                        [class.dark:text-brand-300]="step3.funding_support_answer === 'no'"
+                        [class.dark:border-gray-700]="step3.funding_support_answer !== 'no'"
+                        [class.dark:text-gray-200]="step3.funding_support_answer !== 'no'"
+                      >
+                        <input
+                          id="funding-support-no"
+                          type="radio"
+                          name="funding_support_answer"
+                          value="no"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step3.funding_support_answer === 'no'"
+                          [attr.aria-invalid]="!!fundingAnswerError"
+                          aria-describedby="funding-answer-error"
+                          (change)="setFundingSupportAnswer('no')"
+                        />
+                        <span>No</span>
+                      </label>
                     </div>
+
+                    @if (fundingAnswerError) {
+                      <p id="funding-answer-error" class="mt-2 text-sm text-error-500" role="alert">{{ fundingAnswerError }}</p>
+                    }
+                  </fieldset>
+
+                  @if (step3.funding_support_answer === 'yes') {
+                    <fieldset class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40" aria-describedby="funding-options-help funding-options-error">
+                      <p id="funding-options-help" class="text-sm leading-6 text-gray-600 dark:text-gray-400">
+                        Choose every option that currently applies. You can provide more detail if you select Other.
+                      </p>
+
+                      <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <label for="funding-working-tax-credit" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                          <input
+                            id="funding-working-tax-credit"
+                            type="checkbox"
+                            name="working_tax_credit"
+                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                            [checked]="step3.working_tax_credit"
+                            [attr.aria-invalid]="!!fundingOptionsError"
+                            aria-describedby="funding-options-help funding-options-error"
+                            (change)="setFundingOption('working_tax_credit', $any($event.target).checked)"
+                          />
+                          <span>Working Tax Credit</span>
+                        </label>
+
+                        <label for="funding-college-support" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                          <input
+                            id="funding-college-support"
+                            type="checkbox"
+                            name="college_uni_paid_to_parent"
+                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                            [checked]="step3.college_uni_paid_to_parent"
+                            [attr.aria-invalid]="!!fundingOptionsError"
+                            aria-describedby="funding-options-help funding-options-error"
+                            (change)="setFundingOption('college_uni_paid_to_parent', $any($event.target).checked)"
+                          />
+                          <span>College / University Support</span>
+                        </label>
+
+                        <label for="funding-3yo-term-time" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                          <input
+                            id="funding-3yo-term-time"
+                            type="checkbox"
+                            name="funding_3yo_term_time"
+                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                            [checked]="step3.funding_3yo_term_time"
+                            [attr.aria-invalid]="!!fundingOptionsError"
+                            aria-describedby="funding-options-help funding-options-error"
+                            (change)="setFundingOption('funding_3yo_term_time', $any($event.target).checked)"
+                          />
+                          <span>3-Year-Old Funding (Term Time Only)</span>
+                        </label>
+
+                        <label for="funding-2yo-term-time" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                          <input
+                            id="funding-2yo-term-time"
+                            type="checkbox"
+                            name="funding_2yo_term_time"
+                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                            [checked]="step3.funding_2yo_term_time"
+                            [attr.aria-invalid]="!!fundingOptionsError"
+                            aria-describedby="funding-options-help funding-options-error"
+                            (change)="setFundingOption('funding_2yo_term_time', $any($event.target).checked)"
+                          />
+                          <span>2-Year-Old Funding (Term Time Only)</span>
+                        </label>
+
+                        <label for="funding-other" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                          <input
+                            id="funding-other"
+                            type="checkbox"
+                            name="other_funding_selected"
+                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                            [checked]="step3.other_funding_selected"
+                            [attr.aria-invalid]="!!fundingOptionsError"
+                            aria-controls="other-funding-field"
+                            aria-describedby="funding-options-help funding-options-error"
+                            (change)="setOtherFundingSelected($any($event.target).checked)"
+                          />
+                          <span>Other</span>
+                        </label>
+                      </div>
+
+                      @if (fundingOptionsError) {
+                        <p id="funding-options-error" class="mt-2 text-sm text-error-500" role="alert">{{ fundingOptionsError }}</p>
+                      }
+
+                      @if (step3.other_funding_selected) {
+                        <div id="other-funding-field" class="mt-4">
+                          <app-form-field
+                            label="Please specify"
+                            labelFor="otherFunding"
+                            [required]="true"
+                            hint="For example, a council scheme, employer childcare support, or another approved benefit."
+                            [error]="otherFundingError"
+                            errorId="other-funding-error"
+                          >
+                            <app-input-field
+                              id="otherFunding"
+                              name="otherFunding"
+                              type="text"
+                              [(ngModel)]="step3.other_benefits"
+                              placeholder="Enter funding or benefit details"
+                              autocomplete="off"
+                              [error]="!!otherFundingError"
+                              describedBy="other-funding-error"
+                            />
+                          </app-form-field>
+                        </div>
+                      }
+                    </fieldset>
                   }
                 </div>
               </section>
