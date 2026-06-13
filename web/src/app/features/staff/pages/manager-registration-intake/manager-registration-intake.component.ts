@@ -401,6 +401,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     { key: 'promotional_literature', label: 'Promotional Literature', detail: '' },
     { key: 'nursery_website', label: 'Nursery Website', detail: '' },
     { key: 'staff_student_coursework', label: 'Staff/Student Qualification Coursework', detail: '' },
+    { key: 'social_media', label: 'Nursery Social Media Accounts', detail: '' },
   ];
 
   currentStep: StepperStep = 'child-basics';
@@ -523,7 +524,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     nursery_website: true,
     staff_student_coursework: true,
     social_media: true,
-    social_media_channel_notes: 'TikTok, Instagram, Facebook',
     urgent_medical_treatment_exceptions: null,
     notes_exceptions: null,
   };
@@ -979,10 +979,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.errorMessage = null;
 
+    const { social_media_channel_notes: _, ...step4Base } = this.step4;
     const consentPayload: ConsentWritePayload = {
-      ...this.step4,
+      ...step4Base,
       signer_name: this.step4.signer_name.trim(),
-      social_media_channel_notes: this.step4.social_media_channel_notes?.trim() || null,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
     };
@@ -1432,7 +1432,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         nursery_website: this.step4.nursery_website,
         staff_student_coursework: this.step4.staff_student_coursework,
         social_media: this.step4.social_media,
-        social_media_channel_notes: this.step4.social_media_channel_notes?.trim() || null,
         notes_exceptions: this.step4.notes_exceptions?.trim() || null,
       },
       office_checklist: {
@@ -2072,7 +2071,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       nursery_website: true,
       staff_student_coursework: true,
       social_media: true,
-      social_media_channel_notes: 'TikTok, Instagram, Facebook',
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
     };

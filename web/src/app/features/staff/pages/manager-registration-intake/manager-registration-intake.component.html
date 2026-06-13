@@ -1497,30 +1497,7 @@
                     </div>
                   }
                 </div>
-                <div
-                  class="rounded-lg border-2 cursor-pointer border-dashed border-brand-200 p-5 dark:border-brand-500/30 dark:bg-gray-900/30"
-                  [class.border-brand-500]="step4.social_media"
-                  [class.bg-brand-50]="step4.social_media"
-                  [class.dark:border-brand-400]="step4.social_media"
-                  [class.dark:bg-brand-500/10]="step4.social_media"
-                  role="button"
-                  tabindex="0"
-                  (click)="step4.social_media = !step4.social_media"
-                  (keydown.enter)="step4.social_media = !step4.social_media"
-                  (keydown.space)="step4.social_media = !step4.social_media; $event.preventDefault()"
-                >
-                  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div class="min-w-0">
-                      <p class="font-bold">TikTok, Instagram & Facebook</p>
-                      <p class="text-xs text-gray-600 dark:text-gray-400">Consent to appearing on official nursery social media accounts.</p>
-                    </div>
-                    <app-checkbox
-                      name="social_media"
-                      [(ngModel)]="step4.social_media"
-                      label="Allow"
-                    />
-                  </div>
-                </div>
+
               </section>
 
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="paper-evidence-heading">
