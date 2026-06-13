@@ -233,6 +233,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private readonly draftStorage = inject(RegistrationDraftStorage);
   private readonly destroy$ = new Subject<void>();
   private readonly draftChanges$ = new Subject<void>();
+  private dismissTimeout: ReturnType<typeof setTimeout> | null = null;
   private hasRestoredDraft = false;
 
   readonly steps: IntakeStep[] = [
@@ -557,6 +558,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.dismissTimeout) {
+      clearTimeout(this.dismissTimeout);
+      this.dismissTimeout = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -1631,6 +1636,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   protected discardDraft(): void {
+    if (this.dismissTimeout) {
+      clearTimeout(this.dismissTimeout);
+      this.dismissTimeout = null;
+    }
     this.draftStorage.clear();
     this.hasStoredDraft = false;
     this.draftRestoredAt = null;
@@ -1642,6 +1651,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   protected dismissDraftBanner(): void {
+    if (this.dismissTimeout) {
+      clearTimeout(this.dismissTimeout);
+      this.dismissTimeout = null;
+    }
     this.isDraftRestoredBannerVisible = false;
   }
 
@@ -1694,6 +1707,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.draftSavedAt = this.draftRestoredAt;
       this.hasStoredDraft = true;
       this.isDraftRestoredBannerVisible = true;
+      this.dismissTimeout = setTimeout(() => {
+        this.isDraftRestoredBannerVisible = false;
+        this.dismissTimeout = null;
+      }, 5000);
     } catch {
       this.draftStorage.clear();
     }
