@@ -621,13 +621,29 @@
                           placeholder="Provide details of the referral or contact"
                         />
                       </app-form-field>
-                      <app-form-field label="Social worker contact details">
-                        <app-input-field
-                          type="text"
-                          [(ngModel)]="step2.social_worker_contact"
-                          placeholder="Name, phone, and email if available"
-                        />
-                      </app-form-field>
+                      <div class="space-y-6">
+                        <app-form-field label="Social worker name">
+                          <app-input-field
+                            type="text"
+                            [(ngModel)]="step2.social_worker_name"
+                            placeholder="e.g. Jane Doe"
+                          />
+                        </app-form-field>
+                        <app-form-field label="Social worker phone">
+                          <app-input-field
+                            type="tel"
+                            [(ngModel)]="step2.social_worker_phone"
+                            placeholder="e.g. 020 1234 5678"
+                          />
+                        </app-form-field>
+                        <app-form-field label="Social worker email">
+                          <app-input-field
+                            type="email"
+                            [(ngModel)]="step2.social_worker_email"
+                            placeholder="e.g. jane.doe@localauthority.gov.uk"
+                          />
+                        </app-form-field>
+                      </div>
                     </div>
                   }
                 </div>

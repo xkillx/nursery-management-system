@@ -143,6 +143,9 @@ type RegistrationDraft = {
     social_services_involvement: boolean;
     social_services_details: string;
     social_worker_contact: string;
+    social_worker_name: string;
+    social_worker_phone: string;
+    social_worker_email: string;
     concern_walking: boolean;
     concern_speech_language: boolean;
     concern_hearing: boolean;
@@ -452,16 +455,19 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     health_visitor_name: '',
     health_visitor_clinic: '',
     health_visitor_phone: '',
-    social_services_involvement: false,
-    social_services_details: '',
-    social_worker_contact: '',
-    concern_walking: false,
-    concern_speech_language: false,
-    concern_hearing: false,
-    concern_sight: false,
-    concern_emotional_wellbeing: false,
-    concern_behaviour: false,
-    routine_care_notes: '',
+      social_services_involvement: false,
+      social_services_details: '',
+      social_worker_contact: '',
+      social_worker_name: '',
+      social_worker_phone: '',
+      social_worker_email: '',
+      concern_walking: false,
+      concern_speech_language: false,
+      concern_hearing: false,
+      concern_sight: false,
+      concern_emotional_wellbeing: false,
+      concern_behaviour: false,
+      routine_care_notes: '',
   };
 
   step3 = {
@@ -815,7 +821,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       social_development: {
         social_services_status: this.step2.social_services_involvement ? 'yes' : 'no',
         social_services_notes: this.step2.social_services_details.trim() || null,
-        social_worker_contact_details: this.step2.social_worker_contact.trim() || null,
+        social_worker_contact_details: this.serializeSocialWorkerJson(),
         concern_walking: this.step2.concern_walking ? 'yes' : 'no',
         concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
         concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
@@ -1245,7 +1251,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         social_development: {
           social_services_status: this.step2.social_services_involvement ? 'yes' : 'no',
           social_services_notes: this.step2.social_services_details.trim() || null,
-          social_worker_contact_details: this.step2.social_worker_contact.trim() || null,
+        social_worker_contact_details: this.serializeSocialWorkerJson(),
           concern_walking: this.step2.concern_walking ? 'yes' : 'no',
           concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
           concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
@@ -1520,7 +1526,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (profile.socialDevelopment) {
       this.step2.social_services_involvement = profile.socialDevelopment.socialServicesStatus === 'yes';
       this.step2.social_services_details = profile.socialDevelopment.socialServicesNotes ?? '';
-      this.step2.social_worker_contact = profile.socialDevelopment.socialWorkerContactDetails ?? '';
+      this.parseSocialWorkerJson(profile.socialDevelopment.socialWorkerContactDetails ?? '');
       this.step2.concern_walking = profile.socialDevelopment.concernWalking === 'yes';
       this.step2.concern_speech_language = profile.socialDevelopment.concernSpeechLanguage === 'yes';
       this.step2.concern_hearing = profile.socialDevelopment.concernHearing === 'yes';
@@ -1633,6 +1639,38 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (trimmed === 'no') return 'no';
     if (trimmed === 'unknown' || !trimmed) return null;
     return null;
+  }
+
+  private serializeSocialWorkerJson(): string | null {
+    const parts: string[] = [];
+    if (this.step2.social_worker_name.trim()) parts.push(this.step2.social_worker_name.trim());
+    if (this.step2.social_worker_phone.trim()) parts.push(this.step2.social_worker_phone.trim());
+    if (this.step2.social_worker_email.trim()) parts.push(this.step2.social_worker_email.trim());
+    if (parts.length === 0) return null;
+    return JSON.stringify({
+      name: parts[0] ?? '',
+      phone: parts[1] ?? '',
+      email: parts[2] ?? '',
+    });
+  }
+
+  private parseSocialWorkerJson(raw: string): void {
+    if (!raw) {
+      this.step2.social_worker_name = '';
+      this.step2.social_worker_phone = '';
+      this.step2.social_worker_email = '';
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      this.step2.social_worker_name = parsed.name ?? '';
+      this.step2.social_worker_phone = parsed.phone ?? '';
+      this.step2.social_worker_email = parsed.email ?? '';
+    } catch {
+      this.step2.social_worker_name = raw;
+      this.step2.social_worker_phone = '';
+      this.step2.social_worker_email = '';
+    }
   }
 
   private focusStepHeading(): void {
@@ -1756,7 +1794,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   private applyDraft(draft: Partial<RegistrationDraft>): void {
     if (draft.step1) this.step1 = { ...this.step1, ...draft.step1 };
-    if (draft.step2) this.step2 = { ...this.step2, ...draft.step2 };
+    if (draft.step2) {
+      this.step2 = { ...this.step2, ...draft.step2 };
+      this.parseSocialWorkerJson(this.step2.social_worker_contact);
+    }
     if (draft.step3) this.step3 = { ...this.step3, ...draft.step3 };
     if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
     if (draft.step4_gdpr) this.step4_gdpr = { ...this.step4_gdpr, ...draft.step4_gdpr };
@@ -1840,6 +1881,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       social_services_involvement: false,
       social_services_details: '',
       social_worker_contact: '',
+      social_worker_name: '',
+      social_worker_phone: '',
+      social_worker_email: '',
       concern_walking: false,
       concern_speech_language: false,
       concern_hearing: false,

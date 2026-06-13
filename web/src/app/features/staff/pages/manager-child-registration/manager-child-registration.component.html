@@ -249,9 +249,17 @@
             <app-input-field type="text" [(ngModel)]="socialDevDraft.socialServicesNotes" placeholder="Referral details, case number" />
           </app-form-field>
         </div>
-        <app-form-field className="mt-3" label="Social worker contact details">
-          <app-input-field type="text" [(ngModel)]="socialDevDraft.socialWorkerContactDetails" placeholder="Name, phone, email" />
-        </app-form-field>
+        <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <app-form-field label="Social worker name">
+            <app-input-field type="text" [(ngModel)]="socialWorkerName" placeholder="e.g. Jane Doe" />
+          </app-form-field>
+          <app-form-field label="Social worker phone">
+            <app-input-field type="tel" [(ngModel)]="socialWorkerPhone" placeholder="e.g. 020 1234 5678" />
+          </app-form-field>
+          <app-form-field label="Social worker email">
+            <app-input-field type="email" [(ngModel)]="socialWorkerEmail" placeholder="e.g. jane.doe@localauthority.gov.uk" />
+          </app-form-field>
+        </div>
         <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <app-form-field label="Walking concern">
             <app-select [(ngModel)]="socialDevDraft.concernWalking" [options]="yesNoUnknownOptions" placeholder="--" [placeholderDisabled]="false" />
