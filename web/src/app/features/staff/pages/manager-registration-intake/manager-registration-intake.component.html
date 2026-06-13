@@ -1326,21 +1326,75 @@
                   <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <app-checkbox
-                    name="safeguarding_reporting_acknowledgement"
-                    [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
-                    label="I/We understand safeguarding concerns will be reported to relevant authorities."
-                  />
-                  <app-checkbox
-                    name="urgent_medical_treatment"
-                    [(ngModel)]="step4.urgent_medical_treatment"
-                    label="Urgent medical treatment may be sought when required."
-                  />
-                  <app-checkbox
-                    name="plasters"
-                    [(ngModel)]="step4.plasters"
-                    label="Staff may use plasters as part of routine first aid."
-                  />
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.safeguarding_reporting_acknowledgement"
+                    [class.bg-brand-50]="step4.safeguarding_reporting_acknowledgement"
+                    [class.border-gray-200]="!step4.safeguarding_reporting_acknowledgement"
+                    [class.bg-white]="!step4.safeguarding_reporting_acknowledgement"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.safeguarding_reporting_acknowledgement,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.safeguarding_reporting_acknowledgement
+                    }"
+                    (click)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement"
+                    (keydown.enter)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement"
+                    (keydown.space)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement; $event.preventDefault()"
+                  >
+                    <app-checkbox
+                      name="safeguarding_reporting_acknowledgement"
+                      [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
+                      label="I/We understand safeguarding concerns will be reported to relevant authorities."
+                      className="pointer-events-none"
+                    />
+                  </div>
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.urgent_medical_treatment"
+                    [class.bg-brand-50]="step4.urgent_medical_treatment"
+                    [class.border-gray-200]="!step4.urgent_medical_treatment"
+                    [class.bg-white]="!step4.urgent_medical_treatment"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.urgent_medical_treatment,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.urgent_medical_treatment
+                    }"
+                    (click)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment"
+                    (keydown.enter)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment"
+                    (keydown.space)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment; $event.preventDefault()"
+                  >
+                    <app-checkbox
+                      name="urgent_medical_treatment"
+                      [(ngModel)]="step4.urgent_medical_treatment"
+                      label="Urgent medical treatment may be sought when required."
+                      className="pointer-events-none"
+                    />
+                  </div>
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.plasters"
+                    [class.bg-brand-50]="step4.plasters"
+                    [class.border-gray-200]="!step4.plasters"
+                    [class.bg-white]="!step4.plasters"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.plasters,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.plasters
+                    }"
+                    (click)="step4.plasters = !step4.plasters"
+                    (keydown.enter)="step4.plasters = !step4.plasters"
+                    (keydown.space)="step4.plasters = !step4.plasters; $event.preventDefault()"
+                  >
+                    <app-checkbox
+                      name="plasters"
+                      [(ngModel)]="step4.plasters"
+                      label="Staff may use plasters as part of routine first aid."
+                      className="pointer-events-none"
+                    />
+                  </div>
                   <app-form-field label="Urgent treatment exceptions">
                     <app-input-field
                       type="text"
@@ -1359,10 +1413,26 @@
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   @for (item of activityConsentItems; track item.key) {
-                    <div class="rounded-lg p-2 hover:bg-brand-50 dark:hover:bg-brand-500/10">
+                    <div
+                      role="button"
+                      tabindex="0"
+                      class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                      [class.border-brand-200]="consentValue(item.key)"
+                      [class.bg-brand-50]="consentValue(item.key)"
+                      [class.border-gray-200]="!consentValue(item.key)"
+                      [class.bg-white]="!consentValue(item.key)"
+                      [ngClass]="{
+                        'dark:border-brand-500/40 dark:bg-brand-500/10': consentValue(item.key),
+                        'dark:border-gray-800 dark:bg-gray-900/50': !consentValue(item.key)
+                      }"
+                      (click)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.enter)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.space)="setConsentValue(item.key, !consentValue(item.key)); $event.preventDefault()"
+                    >
                       <app-checkbox
                         [name]="'activity-consent-' + item.key"
                         [label]="item.label"
+                        className="pointer-events-none"
                         [ngModel]="consentValue(item.key)"
                         (ngModelChange)="setConsentValue(item.key, $event)"
                       />
@@ -1378,10 +1448,26 @@
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                   @for (item of photoConsentItems; track item.key) {
-                    <div class="rounded-lg border border-gray-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+                    <div
+                      role="button"
+                      tabindex="0"
+                      class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                      [class.border-brand-200]="consentValue(item.key)"
+                      [class.bg-brand-50]="consentValue(item.key)"
+                      [class.border-gray-200]="!consentValue(item.key)"
+                      [class.bg-white]="!consentValue(item.key)"
+                      [ngClass]="{
+                        'dark:border-brand-500/40 dark:bg-brand-500/10': consentValue(item.key),
+                        'dark:border-gray-800 dark:bg-gray-900/50': !consentValue(item.key)
+                      }"
+                      (click)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.enter)="setConsentValue(item.key, !consentValue(item.key))"
+                      (keydown.space)="setConsentValue(item.key, !consentValue(item.key)); $event.preventDefault()"
+                    >
                       <app-checkbox
                         [name]="'photo-consent-' + item.key"
                         [label]="item.label"
+                        className="pointer-events-none"
                         [ngModel]="consentValue(item.key)"
                         (ngModelChange)="setConsentValue(item.key, $event)"
                       />
