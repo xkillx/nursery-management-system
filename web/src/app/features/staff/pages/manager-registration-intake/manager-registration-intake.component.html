@@ -898,52 +898,78 @@
                 </div>
               }
 
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
+              <div class="flex items-center gap-3">
+                <ng-icon name="heroClipboardDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Funding & Eligibility</h2>
+              </div>
+            </div>
+            <div class="space-y-6 p-5 md:p-6">
               <div class="rounded-lg bg-brand-50 p-5 dark:bg-brand-500/10">
-                <h4 class="mb-4 text-sm font-bold uppercase text-brand-700 dark:text-brand-300">Funding & Eligibility</h4>
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                  <div class="space-y-3">
-                    <app-checkbox
-                      name="applying_for_funding"
-                      [(ngModel)]="step3.applying_for_funding"
-                      label="Applying for 15/30 Hours Funding?"
-                    />
-                    <app-checkbox
-                      name="early_years_pupil_premium"
-                      [(ngModel)]="step3.early_years_pupil_premium"
-                      label="Eligible for Early Years Pupil Premium (EYPP)?"
-                    />
+                <div class="space-y-5">
+                  <div>
+                    <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Core Funding</p>
+                    <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <app-checkbox
+                        name="applying_for_funding"
+                        [(ngModel)]="step3.applying_for_funding"
+                        label="Applying for 15/30 Hours Funding?"
+                      />
+                      <app-checkbox
+                        name="early_years_pupil_premium"
+                        [(ngModel)]="step3.early_years_pupil_premium"
+                        label="Eligible for Early Years Pupil Premium (EYPP)?"
+                      />
+                      <app-checkbox
+                        name="working_tax_credit"
+                        [(ngModel)]="step3.working_tax_credit"
+                        label="Working Tax Credit?"
+                      />
+                    </div>
                   </div>
-                  <div class="space-y-3">
-                    <app-checkbox
-                      name="working_tax_credit"
-                      [(ngModel)]="step3.working_tax_credit"
-                      label="Working Tax Credit?"
-                    />
-                    <app-checkbox
-                      name="college_uni_paid_to_parent"
-                      [(ngModel)]="step3.college_uni_paid_to_parent"
-                      label="College/Uni funding paid to parent?"
-                    />
-                    <app-checkbox
-                      name="college_uni_paid_to_nursery"
-                      [(ngModel)]="step3.college_uni_paid_to_nursery"
-                      label="College/Uni funding paid to nursery?"
-                    />
+
+                  <div aria-hidden="true" class="border-t border-brand-200/40 dark:border-gray-700"></div>
+
+                  <div>
+                    <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">College / University Funding</p>
+                    <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                      <app-checkbox
+                        name="college_uni_paid_to_parent"
+                        [(ngModel)]="step3.college_uni_paid_to_parent"
+                        label="College/Uni funding paid to parent?"
+                      />
+                      <app-checkbox
+                        name="college_uni_paid_to_nursery"
+                        [(ngModel)]="step3.college_uni_paid_to_nursery"
+                        label="College/Uni funding paid to nursery?"
+                      />
+                    </div>
                   </div>
-                  <div class="space-y-3">
-                    <app-checkbox
-                      name="funding_3yo_term_time"
-                      [(ngModel)]="step3.funding_3yo_term_time"
-                      label="3YO Term Time Only?"
-                    />
-                    <app-checkbox
-                      name="funding_2yo_term_time"
-                      [(ngModel)]="step3.funding_2yo_term_time"
-                      label="2YO Term Time Only?"
-                    />
+
+                  <div aria-hidden="true" class="border-t border-brand-200/40 dark:border-gray-700"></div>
+
+                  <div>
+                    <p class="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Term Time Only</p>
+                    <div class="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                      <app-checkbox
+                        name="funding_3yo_term_time"
+                        [(ngModel)]="step3.funding_3yo_term_time"
+                        label="3YO Term Time Only?"
+                      />
+                      <app-checkbox
+                        name="funding_2yo_term_time"
+                        [(ngModel)]="step3.funding_2yo_term_time"
+                        label="2YO Term Time Only?"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div class="mt-4">
+
+                <div class="mt-5">
                   <app-form-field label="National Insurance Number (for verification)">
                     <app-input-field
                       type="text"
