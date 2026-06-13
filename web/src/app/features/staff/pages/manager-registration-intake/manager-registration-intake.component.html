@@ -152,7 +152,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Record the child identity, home details, and proposed start date from the paper form.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Record the child identity, home details, and proposed start date from the paper form.</p>
                 </div>
                 <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
                   <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
@@ -443,7 +443,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Medical & Health Information</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Please provide detailed medical history to ensure the child's safety.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Record allergies, medical history, immunisations, and healthcare professional details from the paper form.</p>
                 </div>
                 <ng-icon name="heroHeart" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -774,7 +774,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Contacts & Security</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 3: Manage parent/carer details, emergency contacts, funding, and collection security.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 3: Record parent/carer details, emergency contacts, funding eligibility, and collection security preferences from the paper form.</p>
                 </div>
                 <ng-icon name="heroShieldCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -1150,325 +1150,320 @@
       }
 
       @if (currentStep === 'consents-evidence') {
-        <section class="space-y-6">
-          <div>
-            <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Permissions & Consents</h2>
-            <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 4: Confirm operational and safety permissions from the completed paper form.</p>
-          </div>
-
-          <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
-            <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
-            <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly. This screen records paper-form decisions only; no uploads or digital signature capture are part of this workflow.</p>
-          </div>
-
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <section>
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Professional Liaison</h3>
-              </div>
-            </div>
-            <div class="p-5 md:p-6 space-y-6">
-            <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
-            <div class="space-y-3">
-              @for (item of professionalConsentItems; track item.key) {
-                <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/50">
-                  <div class="min-w-0">
-                    <p class="font-bold">{{ item.label }}</p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
-                  </div>
-                  <app-checkbox
-                    class="shrink-0"
-                    [name]="'professional-consent-' + item.key"
-                    [ariaLabel]="'Allow ' + item.label"
-                    [ngModel]="consentValue(item.key)"
-                    (ngModelChange)="setConsentValue(item.key, $event)"
-                  />
-                </div>
-              }
-            </div>
-            </div>
-          </section>
-
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-error-500" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Child Protection & Medical Authority</h3>
-              </div>
-            </div>
-            <div class="p-5 md:p-6 space-y-6">
-            <div class="rounded-lg border border-error-200 bg-error-50 p-4 dark:border-error-500/30 dark:bg-error-500/10">
-              <p class="text-sm font-medium leading-6 text-error-700 dark:text-error-300">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
-            </div>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <app-checkbox
-                name="safeguarding_reporting_acknowledgement"
-                [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
-                label="I/We understand safeguarding concerns will be reported to relevant authorities."
-              />
-              <app-checkbox
-                name="urgent_medical_treatment"
-                [(ngModel)]="step4.urgent_medical_treatment"
-                label="Urgent medical treatment may be sought when required."
-              />
-              <app-checkbox
-                name="plasters"
-                [(ngModel)]="step4.plasters"
-                label="Staff may use plasters as part of routine first aid."
-              />
-              <app-form-field label="Urgent treatment exceptions">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="step4.urgent_medical_treatment_exceptions"
-                  
-                  placeholder="Urgent treatment exceptions, if any"
-                />
-              </app-form-field>
-            </div>
-            </div>
-          </section>
-
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroHeart" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Activities & Daily Care</h3>
-              </div>
-            </div>
-            <div class="p-5 md:p-6">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              @for (item of activityConsentItems; track item.key) {
-                <div class="rounded-lg p-2 hover:bg-brand-50 dark:hover:bg-brand-500/10">
-                  <app-checkbox
-                    [name]="'activity-consent-' + item.key"
-                    [label]="item.label"
-                    [ngModel]="consentValue(item.key)"
-                    (ngModelChange)="setConsentValue(item.key, $event)"
-                  />
-                </div>
-              }
-            </div>
-            </div>
-          </section>
-
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroCamera" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Photographs & Social Media</h3>
-              </div>
-            </div>
-            <div class="p-5 md:p-6 space-y-6">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-              @for (item of photoConsentItems; track item.key) {
-                <div class="rounded-lg border border-gray-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
-                  <app-checkbox
-                    [name]="'photo-consent-' + item.key"
-                    [label]="item.label"
-                    [ngModel]="consentValue(item.key)"
-                    (ngModelChange)="setConsentValue(item.key, $event)"
-                  />
-                </div>
-              }
-            </div>
-            <div class="rounded-lg border-2 border-dashed border-brand-200 p-5 dark:border-brand-500/30 dark:bg-gray-900/30">
-              <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
-                  <p class="font-bold">TikTok, Instagram & Facebook</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">Consent to appearing on official nursery social media accounts.</p>
+                  <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Permissions & Consents</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 4: Record consent decisions, evidence checks, and GDPR declarations from the completed paper form.</p>
                 </div>
-                <app-checkbox
-                  name="social_media"
-                  [(ngModel)]="step4.social_media"
-                  label="Allow"
-                />
+                <ng-icon name="heroClipboardDocumentCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
-              <app-form-field className="mt-4" label="Channel notes">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="step4.social_media_channel_notes"
-                  placeholder="Channel notes"
-                />
-              </app-form-field>
             </div>
-            </div>
-          </section>
 
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">Paper-Form Evidence & Confirmation</h3>
+            <div class="space-y-12 p-5 md:p-6">
+
+              <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
+                <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
+                <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly. This screen records paper-form decisions only; no uploads or digital signature capture are part of this workflow.</p>
               </div>
-            </div>
-            <div class="p-5 md:p-6 space-y-6">
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-              <app-form-field label="Parent/guardian name" [required]="true">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="step4.signer_name"
-                  autocomplete="name"
-                  
-                  placeholder="Enter full name from paper form"
-                />
-              </app-form-field>
-              <app-form-field label="Signed date" [required]="true">
-                <app-date-picker
-                  [(ngModel)]="step4.signed_date"
-                  
-                />
-              </app-form-field>
-            </div>
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <div class="rounded-lg bg-brand-50 p-4 dark:bg-brand-500/10">
-                <app-checkbox
-                  name="paper_form_on_file"
-                  [(ngModel)]="step4.paper_form_on_file"
-                  label="Signed paper form is on file"
-                />
-              </div>
-              <app-form-field label="Application date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.applicationDate"
-                  
-                />
-              </app-form-field>
-              <app-form-field label="Birth certificate/passport">
-                <app-select
-                  [(ngModel)]="officeEvidence.birthCertificatePassportStatus"
-                  [options]="evidenceStatusOptions"
-                  placeholder="Select status"
-                />
-              </app-form-field>
-            </div>
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <app-form-field label="Deposit status">
-                <app-select
-                  [(ngModel)]="officeEvidence.depositStatus"
-                  [options]="evidenceStatusOptions"
-                  placeholder="Select status"
-                />
-              </app-form-field>
-              @if (officeEvidence.depositStatus === 'complete') {
-                <app-form-field label="Deposit paid date">
-                  <app-date-picker
-                    [(ngModel)]="officeEvidence.depositPaidDate"
-                    
+
+              <section class="space-y-6" aria-labelledby="professional-liaison-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroUserGroup" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">Professional Liaison</h3>
+                </div>
+                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">We may occasionally need to consult external professionals regarding the child's development. We will always feedback any information to the parent/carer.</p>
+                <div class="space-y-3">
+                  @for (item of professionalConsentItems; track item.key) {
+                    <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/50">
+                      <div class="min-w-0">
+                        <p class="font-bold">{{ item.label }}</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
+                      </div>
+                      <app-checkbox
+                        class="shrink-0"
+                        [name]="'professional-consent-' + item.key"
+                        [ariaLabel]="'Allow ' + item.label"
+                        [ngModel]="consentValue(item.key)"
+                        (ngModelChange)="setConsentValue(item.key, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="child-protection-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-error-500" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">Child Protection & Medical Authority</h3>
+                </div>
+                <div class="rounded-lg border border-error-200 bg-error-50 p-4 dark:border-error-500/30 dark:bg-error-500/10">
+                  <p class="text-sm font-medium leading-6 text-error-700 dark:text-error-300">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <app-checkbox
+                    name="safeguarding_reporting_acknowledgement"
+                    [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
+                    label="I/We understand safeguarding concerns will be reported to relevant authorities."
+                  />
+                  <app-checkbox
+                    name="urgent_medical_treatment"
+                    [(ngModel)]="step4.urgent_medical_treatment"
+                    label="Urgent medical treatment may be sought when required."
+                  />
+                  <app-checkbox
+                    name="plasters"
+                    [(ngModel)]="step4.plasters"
+                    label="Staff may use plasters as part of routine first aid."
+                  />
+                  <app-form-field label="Urgent treatment exceptions">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step4.urgent_medical_treatment_exceptions"
+                      
+                      placeholder="Urgent treatment exceptions, if any"
+                    />
+                  </app-form-field>
+                </div>
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="activities-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroHeart" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">Activities & Daily Care</h3>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  @for (item of activityConsentItems; track item.key) {
+                    <div class="rounded-lg p-2 hover:bg-brand-50 dark:hover:bg-brand-500/10">
+                      <app-checkbox
+                        [name]="'activity-consent-' + item.key"
+                        [label]="item.label"
+                        [ngModel]="consentValue(item.key)"
+                        (ngModelChange)="setConsentValue(item.key, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="photos-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroCamera" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">Photographs & Social Media</h3>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  @for (item of photoConsentItems; track item.key) {
+                    <div class="rounded-lg border border-gray-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+                      <app-checkbox
+                        [name]="'photo-consent-' + item.key"
+                        [label]="item.label"
+                        [ngModel]="consentValue(item.key)"
+                        (ngModelChange)="setConsentValue(item.key, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+                <div
+                  class="rounded-lg border-2 cursor-pointer border-dashed border-brand-200 p-5 dark:border-brand-500/30 dark:bg-gray-900/30"
+                  [class.border-brand-500]="step4.social_media"
+                  [class.bg-brand-50]="step4.social_media"
+                  [class.dark:border-brand-400]="step4.social_media"
+                  [class.dark:bg-brand-500/10]="step4.social_media"
+                  role="button"
+                  tabindex="0"
+                  (click)="step4.social_media = !step4.social_media"
+                  (keydown.enter)="step4.social_media = !step4.social_media"
+                  (keydown.space)="step4.social_media = !step4.social_media; $event.preventDefault()"
+                >
+                  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div class="min-w-0">
+                      <p class="font-bold">TikTok, Instagram & Facebook</p>
+                      <p class="text-xs text-gray-600 dark:text-gray-400">Consent to appearing on official nursery social media accounts.</p>
+                    </div>
+                    <app-checkbox
+                      name="social_media"
+                      [(ngModel)]="step4.social_media"
+                      label="Allow"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="paper-evidence-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">Paper-Form Evidence & Confirmation</h3>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field label="Parent/guardian name" [required]="true">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step4.signer_name"
+                      autocomplete="name"
+                      
+                      placeholder="Enter full name from paper form"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Signed date" [required]="true">
+                    <app-date-picker
+                      [(ngModel)]="step4.signed_date"
+                      
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <div class="rounded-lg bg-brand-50 p-4 dark:bg-brand-500/10">
+                    <app-checkbox
+                      name="paper_form_on_file"
+                      [(ngModel)]="step4.paper_form_on_file"
+                      label="Signed paper form is on file"
+                    />
+                  </div>
+                  <app-form-field label="Application date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.applicationDate"
+                      
+                    />
+                  </app-form-field>
+                  <app-form-field label="Birth certificate/passport">
+                    <app-select
+                      [(ngModel)]="officeEvidence.birthCertificatePassportStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <app-form-field label="Deposit status">
+                    <app-select
+                      [(ngModel)]="officeEvidence.depositStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  @if (officeEvidence.depositStatus === 'complete') {
+                    <app-form-field label="Deposit paid date">
+                      <app-date-picker
+                        [(ngModel)]="officeEvidence.depositPaidDate"
+                        
+                      />
+                    </app-form-field>
+                  }
+                  <app-form-field label="Sessions/days requested">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="officeEvidence.sessionsDaysRequested"
+                      
+                      placeholder="e.g. Mon-Wed 8am-6pm"
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <app-form-field label="Term time only space">
+                    <app-select
+                      [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Contract date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.contractDate"
+                      
+                    />
+                  </app-form-field>
+                  <app-form-field label="Handbook date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.handbookDate"
+                      
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <app-form-field label="Red Book checked date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.redBookCheckedDate"
+                      
+                    />
+                  </app-form-field>
+                  <app-form-field label="Birth cert/passport checked date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.birthCertificatePassportCheckedDate"
+                      
+                    />
+                  </app-form-field>
+                  <app-form-field label="Proof of address checked date">
+                    <app-date-picker
+                      [(ngModel)]="officeEvidence.proofOfAddressCheckedDate"
+                      
+                    />
+                  </app-form-field>
+                </div>
+                <app-form-field label="Notes / exceptions">
+                  <app-text-area
+                    [(ngModel)]="step4.notes_exceptions"
+                    [rows]="3"
+                    placeholder="Optional paper-form exceptions or office-use notes"
                   />
                 </app-form-field>
-              }
-              <app-form-field label="Sessions/days requested">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="officeEvidence.sessionsDaysRequested"
-                  
-                  placeholder="e.g. Mon-Wed 8am-6pm"
-                />
-              </app-form-field>
-            </div>
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <app-form-field label="Term time only space">
-                <app-select
-                  [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
-                  [options]="evidenceStatusOptions"
-                  placeholder="Select status"
-                />
-              </app-form-field>
-              <app-form-field label="Contract date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.contractDate"
-                  
-                />
-              </app-form-field>
-              <app-form-field label="Handbook date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.handbookDate"
-                  
-                />
-              </app-form-field>
-            </div>
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <app-form-field label="Red Book checked date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.redBookCheckedDate"
-                  
-                />
-              </app-form-field>
-              <app-form-field label="Birth cert/passport checked date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.birthCertificatePassportCheckedDate"
-                  
-                />
-              </app-form-field>
-              <app-form-field label="Proof of address checked date">
-                <app-date-picker
-                  [(ngModel)]="officeEvidence.proofOfAddressCheckedDate"
-                  
-                />
-              </app-form-field>
-            </div>
-            <app-form-field label="Notes / exceptions">
-              <app-text-area
-                [(ngModel)]="step4.notes_exceptions"
-                [rows]="3"
-                placeholder="Optional paper-form exceptions or office-use notes"
-              />
-            </app-form-field>
-            </div>
-          </section>
+              </section>
 
-          <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
-              <div class="flex items-center gap-3">
-                <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                <h3 class="text-xl font-bold text-gray-950 dark:text-white/90">GDPR Declaration</h3>
-              </div>
-            </div>
-            <div class="p-5 md:p-6 space-y-6">
-              <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
-                The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
-              </p>
-              <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <app-form-field label="GDPR declared by (name)">
-                  <app-input-field
-                    type="text"
-                    [(ngModel)]="step4_gdpr.gdpr_declared_by_name"
-                    
-                    placeholder="Enter parent/carer full name"
-                  />
-                </app-form-field>
-                <app-form-field label="GDPR declaration date">
-                  <app-date-picker
-                    [(ngModel)]="step4_gdpr.gdpr_declaration_date"
-                    
-                  />
-                </app-form-field>
-              </div>
-            </div>
-          </section>
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="gdpr-heading">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
+                  <h3 class="text-lg font-bold">GDPR Declaration</h3>
+                </div>
+                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
+                  The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
+                </p>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field label="GDPR declared by (name)">
+                    <app-input-field
+                      type="text"
+                      [(ngModel)]="step4_gdpr.gdpr_declared_by_name"
+                      
+                      placeholder="Enter parent/carer full name"
+                    />
+                  </app-form-field>
+                  <app-form-field label="GDPR declaration date">
+                    <app-date-picker
+                      [(ngModel)]="step4_gdpr.gdpr_declaration_date"
+                      
+                    />
+                  </app-form-field>
+                </div>
+              </section>
 
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()">
-              <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
-              Back
-            </app-button>
-            @if (isNewRegistration) {
-              <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canSubmitLocally() || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
-                {{ isSaving ? 'Creating...' : 'Complete Registration' }}
-                <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
-              </app-button>
-            } @else {
-              <div class="flex flex-wrap gap-3">
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="saveConsentsEvidence()">
-                  {{ isSaving ? 'Saving...' : 'Save Changes' }}
+              <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()">
+                  <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
+                  Back
                 </app-button>
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canMarkComplete || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
-                  {{ isSaving ? 'Completing...' : 'Mark Reviewed/Complete' }}
-                  <ng-icon name="heroCheck" size="20" aria-hidden="true" />
-                </app-button>
+                @if (isNewRegistration) {
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canSubmitLocally() || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
+                    {{ isSaving ? 'Creating...' : 'Complete Registration' }}
+                    <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
+                  </app-button>
+                } @else {
+                  <div class="flex flex-wrap gap-3">
+                    <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="saveConsentsEvidence()">
+                      {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                    </app-button>
+                    <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canMarkComplete || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
+                      {{ isSaving ? 'Completing...' : 'Mark Reviewed/Complete' }}
+                      <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                    </app-button>
+                  </div>
+                }
               </div>
-            }
+            </div>
+          </div>
+
+          <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <ng-icon name="heroLockClosed" size="16" class="text-success-500" aria-hidden="true" />
+            Secure Data Encryption Active • GDPR Compliant Nursery Records
           </div>
         </section>
       }
