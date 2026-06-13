@@ -1304,13 +1304,14 @@
                         <p class="font-bold">{{ item.label }}</p>
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
-                      <app-checkbox
-                        class="shrink-0 pointer-events-none"
-                        [name]="'professional-consent-' + item.key"
-                        [ariaLabel]="'Allow ' + item.label"
-                        [ngModel]="consentValue(item.key)"
-                        (ngModelChange)="setConsentValue(item.key, $event)"
-                      />
+                      <div class="shrink-0 pointer-events-none">
+                        <app-checkbox
+                          [name]="'professional-consent-' + item.key"
+                          [ariaLabel]="'Allow ' + item.label"
+                          [ngModel]="consentValue(item.key)"
+                          (ngModelChange)="setConsentValue(item.key, $event)"
+                        />
+                      </div>
                     </div>
                   }
                 </div>
@@ -1342,12 +1343,13 @@
                     (keydown.enter)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement"
                     (keydown.space)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement; $event.preventDefault()"
                   >
-                    <app-checkbox
-                      name="safeguarding_reporting_acknowledgement"
-                      [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
-                      label="I understand that safeguarding concerns may be reported to relevant authorities."
-                      className="pointer-events-none"
-                    />
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="safeguarding_reporting_acknowledgement"
+                        [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
+                        label="I understand that safeguarding concerns may be reported to relevant authorities."
+                      />
+                    </div>
                   </div>
                   <div
                     role="button"
@@ -1365,12 +1367,13 @@
                     (keydown.enter)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment"
                     (keydown.space)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment; $event.preventDefault()"
                   >
-                    <app-checkbox
-                      name="urgent_medical_treatment"
-                      [(ngModel)]="step4.urgent_medical_treatment"
-                      label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
-                      className="pointer-events-none"
-                    />
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="urgent_medical_treatment"
+                        [(ngModel)]="step4.urgent_medical_treatment"
+                        label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
+                      />
+                    </div>
                   </div>
                   <div
                     role="button"
@@ -1388,12 +1391,13 @@
                     (keydown.enter)="step4.plasters = !step4.plasters"
                     (keydown.space)="step4.plasters = !step4.plasters; $event.preventDefault()"
                   >
-                    <app-checkbox
-                      name="plasters"
-                      [(ngModel)]="step4.plasters"
-                      label="I consent to trained staff administering routine first aid, including the use of plasters."
-                      className="pointer-events-none"
-                    />
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="plasters"
+                        [(ngModel)]="step4.plasters"
+                        label="I consent to trained staff administering routine first aid, including the use of plasters."
+                      />
+                    </div>
                   </div>
                   <div
                     role="button"
@@ -1411,12 +1415,13 @@
                     (keydown.enter)="step4.information_sharing_consent = !step4.information_sharing_consent"
                     (keydown.space)="step4.information_sharing_consent = !step4.information_sharing_consent; $event.preventDefault()"
                   >
-                    <app-checkbox
-                      name="information_sharing_consent"
-                      [(ngModel)]="step4.information_sharing_consent"
-                      label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
-                      className="pointer-events-none"
-                    />
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="information_sharing_consent"
+                        [(ngModel)]="step4.information_sharing_consent"
+                        label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
+                      />
+                    </div>
                   </div>
                 </div>
                 <app-form-field label="Urgent treatment exceptions" className="md:max-w-1/2">
@@ -1453,13 +1458,14 @@
                       (keydown.enter)="setConsentValue(item.key, !consentValue(item.key))"
                       (keydown.space)="setConsentValue(item.key, !consentValue(item.key)); $event.preventDefault()"
                     >
-                      <app-checkbox
-                        [name]="'activity-consent-' + item.key"
-                        [label]="item.label"
-                        className="pointer-events-none"
-                        [ngModel]="consentValue(item.key)"
-                        (ngModelChange)="setConsentValue(item.key, $event)"
-                      />
+                      <div class="pointer-events-none">
+                        <app-checkbox
+                          [name]="'activity-consent-' + item.key"
+                          [label]="item.label"
+                          [ngModel]="consentValue(item.key)"
+                          (ngModelChange)="setConsentValue(item.key, $event)"
+                        />
+                      </div>
                     </div>
                   }
                 </div>
@@ -1489,13 +1495,14 @@
                       (keydown.enter)="setConsentValue(item.key, !consentValue(item.key))"
                       (keydown.space)="setConsentValue(item.key, !consentValue(item.key)); $event.preventDefault()"
                     >
-                      <app-checkbox
-                        [name]="'photo-consent-' + item.key"
-                        [label]="item.label"
-                        className="pointer-events-none"
-                        [ngModel]="consentValue(item.key)"
-                        (ngModelChange)="setConsentValue(item.key, $event)"
-                      />
+                      <div class="pointer-events-none">
+                        <app-checkbox
+                          [name]="'photo-consent-' + item.key"
+                          [label]="item.label"
+                          [ngModel]="consentValue(item.key)"
+                          (ngModelChange)="setConsentValue(item.key, $event)"
+                        />
+                      </div>
                     </div>
                   }
                 </div>
@@ -1648,12 +1655,13 @@
                   (keydown.enter)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent"
                   (keydown.space)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent; $event.preventDefault()"
                 >
-                  <app-checkbox
-                    name="gdpr_data_processing_consent"
-                    [(ngModel)]="step4.gdpr_data_processing_consent"
-                    label="I confirm the parent/carer has read and understood the GDPR declaration above"
-                    className="pointer-events-none"
-                  />
+                  <div class="pointer-events-none">
+                    <app-checkbox
+                      name="gdpr_data_processing_consent"
+                      [(ngModel)]="step4.gdpr_data_processing_consent"
+                      label="I confirm the parent/carer has read and understood the GDPR declaration above"
+                    />
+                  </div>
                 </div>
               </section>
 
