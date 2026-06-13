@@ -16,6 +16,8 @@ import {
   heroCloudArrowUp,
   heroDocumentCheck,
   heroExclamationTriangle,
+  heroEye,
+  heroEyeSlash,
   heroHeart,
   heroIdentification,
   heroInformationCircle,
@@ -171,8 +173,8 @@ type RegistrationDraft = {
     second_parent_address: string;
     second_parent_work_address: string;
     second_parent_has_responsibility: boolean;
-    receives_benefits: string;
     other_benefits: string;
+    has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
   step4_gdpr: {
@@ -218,6 +220,8 @@ type RegistrationDraft = {
       heroCloudArrowUp,
       heroDocumentCheck,
       heroExclamationTriangle,
+      heroEye,
+      heroEyeSlash,
       heroHeart,
       heroIdentification,
       heroInformationCircle,
@@ -270,6 +274,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   readonly languageOptions = ['English', 'Polish', 'Punjabi', 'Arabic', 'Urdu', 'Spanish', 'Other'];
   readonly relationshipOptions = ['Mother', 'Father', 'Parent', 'Carer', 'Grandparent', 'Aunt', 'Uncle', 'Other'];
+  showCollectionPassword = false;
+
   readonly sexOptions: Option[] = [
     { value: 'male', label: 'Male' },
     { value: 'female', label: 'Female' },
@@ -480,8 +486,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     second_parent_address: '',
     second_parent_work_address: '',
     second_parent_has_responsibility: true,
-    receives_benefits: '',
     other_benefits: '',
+    has_funding_support: false,
   };
 
   step4: ConsentWritePayload = {
@@ -905,7 +911,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       authorised_collectors: authorisedCollectors,
       funding_support: {
         benefits_contribute_to_fees: this.step3.applying_for_funding ? 'yes' : 'unknown',
-        receives_benefits: this.step3.receives_benefits || 'unknown',
         working_tax_credit: this.step3.working_tax_credit ? 'yes' : 'unknown',
         college_uni_paid_to_parent: this.step3.college_uni_paid_to_parent ? 'yes' : 'unknown',
         college_uni_paid_to_nursery: this.step3.college_uni_paid_to_nursery ? 'yes' : 'unknown',
@@ -1568,6 +1573,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step3.college_uni_paid_to_nursery = profile.fundingSupport.collegeUniPaidToNursery === 'yes';
       this.step3.funding_3yo_term_time = profile.fundingSupport.funding3yoTermTime === 'yes';
       this.step3.funding_2yo_term_time = profile.fundingSupport.funding2yoTermTime === 'yes';
+      this.step3.has_funding_support = true;
     }
   }
 
@@ -1864,8 +1870,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       second_parent_address: '',
       second_parent_work_address: '',
       second_parent_has_responsibility: true,
-      receives_benefits: '',
       other_benefits: '',
+      has_funding_support: false,
     };
     this.step4 = {
       signer_name: '',
