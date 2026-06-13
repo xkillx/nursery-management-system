@@ -170,6 +170,7 @@ export interface ConsentWritePayload {
   plasters: boolean;
   safeguarding_reporting_acknowledgement: boolean;
   information_sharing_consent: boolean;
+  gdpr_data_processing_consent: boolean;
   area_senco_liaison: boolean;
   health_visitor_liaison: boolean;
   transition_documents: boolean;

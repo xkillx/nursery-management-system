@@ -3,7 +3,7 @@ import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { Subject, combineLatest, debounceTime, Observable, takeUntil } from 'rxjs';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import {
   heroAcademicCap,
   heroArrowLeft,
@@ -182,11 +182,7 @@ type RegistrationDraft = {
     has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
-  step4_gdpr: {
-    gdpr_declared_by_name: string;
-    gdpr_declaration_date: string;
-  };
-  officeEvidence: Partial<OfficeUseChecklist>;
+      officeEvidence: Partial<OfficeUseChecklist>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
@@ -511,6 +507,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     plasters: true,
     safeguarding_reporting_acknowledgement: true,
     information_sharing_consent: true,
+    gdpr_data_processing_consent: true,
     area_senco_liaison: true,
     health_visitor_liaison: true,
     transition_documents: true,
@@ -526,11 +523,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     social_media: true,
     urgent_medical_treatment_exceptions: null,
     notes_exceptions: null,
-  };
-
-  step4_gdpr = {
-    gdpr_declared_by_name: '',
-    gdpr_declaration_date: '',
   };
 
   officeEvidence: Partial<OfficeUseChecklist> = {
@@ -987,34 +979,14 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
     };
 
-    const gdprPayload = this.step4_gdpr.gdpr_declared_by_name.trim()
-      ? {
-          gdpr_declaration: {
-            gdpr_declared_by_name: this.step4_gdpr.gdpr_declared_by_name.trim(),
-            gdpr_declaration_date: this.step4_gdpr.gdpr_declaration_date || null,
-          },
-        }
-      : {};
-
     this.staffApi.createRegistrationConsent(this.childId!, consentPayload).subscribe({
       next: () => {
         const officePatch: Record<string, unknown> = {
           ...this.officeEvidence,
           applicationDate: this.officeEvidence.applicationDate || null,
         };
-        const gdprObservable = this.step4_gdpr.gdpr_declared_by_name.trim()
-          ? this.staffApi.patchRegistrationProfile(this.childId!, gdprPayload)
-          : undefined;
 
-        const requests: Observable<unknown>[] = [
-          this.staffApi.patchRegistrationOfficeUseChecklist(this.childId!, officePatch),
-        ];
-        if (gdprObservable) requests.push(gdprObservable);
-
-        (requests.length > 1
-          ? combineLatest(requests)
-          : requests[0]
-        ).subscribe({
+        this.staffApi.patchRegistrationOfficeUseChecklist(this.childId!, officePatch).subscribe({
           next: () => {
             this.isSaving = false;
             this.successMessage = 'Consents & evidence saved.';
@@ -1419,6 +1391,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         plasters: this.step4.plasters,
         safeguarding_reporting_acknowledgement: this.step4.safeguarding_reporting_acknowledgement,
         information_sharing_consent: this.step4.information_sharing_consent,
+        gdpr_data_processing_consent: this.step4.gdpr_data_processing_consent,
         area_senco_liaison: this.step4.area_senco_liaison,
         health_visitor_liaison: this.step4.health_visitor_liaison,
         transition_documents: this.step4.transition_documents,
@@ -1483,6 +1456,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       && this.step4.paper_form_on_file
       && this.step4.safeguarding_reporting_acknowledgement
       && this.step4.information_sharing_consent
+      && this.step4.gdpr_data_processing_consent
     );
   }
 
@@ -1880,7 +1854,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       step2: { ...this.step2 },
       step3: { ...this.step3 },
       step4: { ...this.step4 },
-      step4_gdpr: { ...this.step4_gdpr },
       officeEvidence: { ...this.officeEvidence },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -1931,7 +1904,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       }
     }
     if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
-    if (draft.step4_gdpr) this.step4_gdpr = { ...this.step4_gdpr, ...draft.step4_gdpr };
     if (draft.officeEvidence) this.officeEvidence = { ...this.officeEvidence, ...draft.officeEvidence };
     if (draft.parentCarersDraft?.length) {
       this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
@@ -2058,6 +2030,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       plasters: true,
       safeguarding_reporting_acknowledgement: true,
       information_sharing_consent: true,
+      gdpr_data_processing_consent: true,
       area_senco_liaison: true,
       health_visitor_liaison: true,
       transition_documents: true,
@@ -2073,10 +2046,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       social_media: true,
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
-    };
-    this.step4_gdpr = {
-      gdpr_declared_by_name: '',
-      gdpr_declaration_date: '',
     };
     this.officeEvidence = {
       applicationDateStatus: 'complete',

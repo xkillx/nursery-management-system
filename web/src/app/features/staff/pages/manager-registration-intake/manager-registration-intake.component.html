@@ -1624,26 +1624,36 @@
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="gdpr-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h3 class="text-lg font-bold">GDPR Declaration</h3>
+                  <h3 class="text-lg font-bold">GDPR Data Processing Consent</h3>
                 </div>
                 <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
-                  The nursery collects, stores, and processes personal information for the legal purpose of education provision and safeguarding. Information is stored securely and retained for 21 years in line with lawful requirements. Parents may request access to data via written request (14 working days).
+                  Confirm that the parent/carer has read and acknowledged the GDPR declaration below.
                 </p>
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <app-form-field label="GDPR declared by (name)">
-                    <app-input-field
-                      type="text"
-                      [(ngModel)]="step4_gdpr.gdpr_declared_by_name"
-                      
-                      placeholder="Enter parent/carer full name"
-                    />
-                  </app-form-field>
-                  <app-form-field label="GDPR declaration date">
-                    <app-date-picker
-                      [(ngModel)]="step4_gdpr.gdpr_declaration_date"
-                      
-                    />
-                  </app-form-field>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 text-sm leading-6 text-gray-700 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                  <p>I understand that Ilm Day Nursery collects, stores and processes the information about my child/ren and family. I understand that the information that is gathered for the legal use of offering education and for the safeguarding and wellbeing of my child/ren. I am aware that the information that is stored is accumulated securely onsite in locked areas and made available when it is needed. I understand that if I wish to see the information, I will need to give a written request which will be made available in 14 working days. I also understand that Ilm Day Nursery will preserve this information for a period of 21 years in line with lawful requirements. I confirm that all details, emergency contact information and permissions will be all up to date.</p>
+                </div>
+                <div
+                  role="button"
+                  tabindex="0"
+                  class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                  [class.border-brand-200]="step4.gdpr_data_processing_consent"
+                  [class.bg-brand-50]="step4.gdpr_data_processing_consent"
+                  [class.border-gray-200]="!step4.gdpr_data_processing_consent"
+                  [class.bg-white]="!step4.gdpr_data_processing_consent"
+                  [ngClass]="{
+                    'dark:border-brand-500/40 dark:bg-brand-500/10': step4.gdpr_data_processing_consent,
+                    'dark:border-gray-800 dark:bg-gray-900/50': !step4.gdpr_data_processing_consent
+                  }"
+                  (click)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent"
+                  (keydown.enter)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent"
+                  (keydown.space)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent; $event.preventDefault()"
+                >
+                  <app-checkbox
+                    name="gdpr_data_processing_consent"
+                    [(ngModel)]="step4.gdpr_data_processing_consent"
+                    label="I confirm — the parent/carer has read and understood the GDPR declaration above"
+                    className="pointer-events-none"
+                  />
                 </div>
               </section>
 
