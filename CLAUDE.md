@@ -30,9 +30,21 @@ cd web && npm test                     # karma tests
 
 # Seed (production: owner only; add -local + role emails for local testing)
 cd api && set -a && source .env && set +a && go run ./cmd/seed -email owner@example.com -password 'Pass123'
+
+# Full local startup (fresh)
+brew services start postgresql@18     # start PostgreSQL if not running
+make migrate-up                        # apply pending migrations
+make run-api                           # API server on :8080
+make run-web                           # Angular dev server on :4200
 ```
 
 Environment: copy `api/.env.example` to `api/.env`. Set `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PASSWORD_RESET_TOKEN_SECRET`. PostgreSQL 14+ required.
+
+### Startup Troubleshooting
+
+- **PostgreSQL fails**: `brew services start postgresql@18`. If stale PID: `kill -9 <pid> && rm -f /usr/local/var/postgresql@18/postmaster.pid && brew services start postgresql@18`.
+- **API fails to connect**: ensure PostgreSQL is accepting TCP on :5432 (`listen_addresses = 'localhost'` in postgresql.conf).
+- **Database missing**: `createdb -U mac nursery_management`.
 
 ## Project Overview
 

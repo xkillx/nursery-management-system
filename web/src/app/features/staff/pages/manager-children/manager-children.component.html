@@ -1,29 +1,79 @@
-<div class="space-y-5">
-  <app-page-header
-    title="Children"
-    description="Manage child enrollment basics with active-first listings."
-    [hasActions]="true"
-  >
-    <div class="flex items-center gap-3" actions>
-      <label class="text-sm text-gray-600 dark:text-gray-300">Status</label>
-      <app-select
-        [options]="statusSelectOptions"
-        [value]="status"
-        (valueChange)="onStatusChange($event)"
-        className="h-10"
-      />
-      <a
-        routerLink="/staff/manager/guardians"
-        class="inline-flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+<div class="space-y-6">
+  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="children-directory-title">
+    <div class="max-w-3xl">
+      <h1 id="children-directory-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        Children
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        Manage your active nursery directory, monitor enrollment progress, and track essential child records.
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <button
+        type="button"
+        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.05]"
+        (click)="exportChildren()"
       >
-        Guardians
-      </a>
+        <ng-icon name="heroArrowDownTray" size="18" aria-hidden="true" />
+        Export
+      </button>
       <a
         routerLink="/staff/manager/registrations/new"
-        class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
-      >New Registration</a>
+        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+        aria-label="Start a new child registration"
+      >
+        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+        New Registration
+      </a>
     </div>
-  </app-page-header>
+  </section>
+
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Children summary">
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroUserGroup" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-success-600 dark:text-success-400">{{ statusLabel(status) }}</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Children</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ children.length }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+          <ng-icon name="heroCheckCircle" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Live</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Active Records</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ activeCount }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300">
+          <ng-icon name="heroExclamationCircle" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-warning-700 dark:text-warning-300">Action Required</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Incomplete Records</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ incompleteCount }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-blue-light-50 text-blue-light-700 dark:bg-blue-light-500/15 dark:text-blue-light-300">
+          <ng-icon name="heroClock" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-brand-600 dark:text-brand-300">Current Page</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Pending Requirements</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ missingRequirementCount }}</p>
+    </article>
+  </section>
 
   @if (showForm) {
     <app-child-form
@@ -37,75 +87,211 @@
     />
   }
 
-  <app-table-shell>
-    @if (errorMessage && !showForm) {
-      <app-alert variant="error" [message]="errorMessage" class="mb-4"></app-alert>
-    }
+  @if (errorMessage && !showForm) {
+    <app-alert variant="error" [message]="errorMessage"></app-alert>
+  }
 
-    <table class="min-w-full text-left text-sm">
-      <thead>
-        <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          <th class="py-2 pr-3">Name</th>
-          <th class="py-2 pr-3">DOB</th>
-          <th class="py-2 pr-3">Start</th>
-          <th class="py-2 pr-3">Active</th>
-          <th class="py-2 pr-3">Enrollment</th>
-          <th class="py-2 pr-3">Missing requirements</th>
-          <th class="py-2 pr-3">Linked guardians</th>
-          <th class="py-2">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @if (isLoading) {
-          <app-loading-state variant="table-row" [colspan]="8" label="Loading children..."></app-loading-state>
-        } @else if (children.length === 0) {
-          <tr>
-            <td colspan="8">
-              <app-empty-state title="No children found" message="Adjust filters or register a new child."></app-empty-state>
-            </td>
-          </tr>
-        } @else {
-          @for (child of children; track child.id) {
-            <tr class="border-b border-gray-100 dark:border-gray-800/60">
-              <td class="py-3 pr-3 text-gray-800 dark:text-white/90">{{ child.fullName }}</td>
-              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.dateOfBirth }}</td>
-              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ child.startDate }}</td>
-              <td class="py-3 pr-3">
-                <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
-              </td>
-              <td class="py-3 pr-3">
-                <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
-              </td>
-              <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">
-                @if (child.missingRequirements.length > 0) {
-                  {{ child.missingRequirements.map(requirementLabel).join(', ') }}
-                } @else {
-                  -
-                }
-              </td>
-              <td class="py-3 pr-3 text-gray-400 dark:text-gray-500 text-xs">Manage on child detail</td>
-              <td class="py-3">
-                <div class="flex items-center gap-2">
-                  <a
-                    [routerLink]="['/staff/manager/children', child.id]"
-                    class="inline-flex h-7 items-center rounded-md border border-gray-300 px-2.5 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                  >View</a>
-                  <app-button variant="outline" size="xs" (btnClick)="openEdit(child)">Edit</app-button>
+  <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Child records">
+    <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
+      <div class="grid flex-1 gap-3 lg:max-w-4xl lg:grid-cols-[minmax(260px,1fr)_190px]">
+        <label for="children-search" class="sr-only">Filter by child name or record details</label>
+        <div class="relative">
+          <ng-icon
+            name="heroFunnel"
+            size="18"
+            class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+            aria-hidden="true"
+          />
+          <input
+            id="children-search"
+            type="search"
+            class="h-12 w-full rounded-lg border border-gray-300 bg-white py-3 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-400 dark:focus:border-brand-800"
+            placeholder="Filter by name or record details..."
+            [value]="searchTerm"
+            (input)="onSearchChange($event)"
+          />
+        </div>
+
+        <app-select
+          id="children-status-filter"
+          [options]="statusSelectOptions"
+          [value]="status"
+          (valueChange)="onStatusChange($event)"
+          className="h-12 rounded-lg"
+          aria-label="Filter child records by status"
+        />
+      </div>
+
+      <div class="flex items-center justify-between gap-3 lg:justify-end">
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+          Showing {{ visibleRangeStart }}-{{ visibleRangeEnd }} of {{ children.length }}
+        </span>
+        <div class="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            class="inline-flex size-11 items-center justify-center bg-gray-50 text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!canGoPrevious"
+            (click)="previousPage()"
+            aria-label="Previous children page"
+          >
+            <ng-icon name="heroChevronLeft" size="18" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="inline-flex size-11 items-center justify-center border-l border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!canGoNext"
+            (click)="nextPage()"
+            aria-label="Next children page"
+          >
+            <ng-icon name="heroChevronRight" size="18" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:hidden">
+      @if (isLoading) {
+        <app-loading-state label="Loading children..."></app-loading-state>
+      } @else if (filteredChildren.length === 0) {
+        <app-empty-state title="No children found" message="Adjust filters or register a new child."></app-empty-state>
+      } @else {
+        <div class="divide-y divide-gray-200 dark:divide-gray-800">
+          @for (child of filteredChildren; track child.id) {
+            <article class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+              <div class="flex items-start gap-3">
+                <app-avatar-text [name]="child.fullName" className="shrink-0 rounded-xl"></app-avatar-text>
+                <div class="min-w-0 flex-1">
+                  <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">ID: {{ child.id }}</p>
                 </div>
+                <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+              </div>
+
+              <dl class="mt-4 grid gap-3 text-sm xsm:grid-cols-2">
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Age / Start</dt>
+                  <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ formatAge(child.dateOfBirth) }} · {{ formatDate(child.startDate) }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Missing requirements</dt>
+                  <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ formatMissingRequirements(child) }}</dd>
+                </div>
+              </dl>
+
+              <div class="mt-4 flex gap-2">
+                <a
+                  [routerLink]="['/staff/manager/children', child.id]"
+                  class="inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                  [attr.aria-label]="'View child record for ' + child.fullName"
+                >
+                  View Record
+                </a>
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+                  (click)="openEdit(child)"
+                >
+                  Edit
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="hidden overflow-x-auto lg:block">
+      <table class="w-full min-w-[960px] border-collapse text-left">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+            <th class="px-6 py-4">Child Name</th>
+            <th class="px-6 py-4">Age / Start</th>
+            <th class="px-6 py-4">Primary Guardian</th>
+            <th class="px-6 py-4">Enrollment Status</th>
+            <th class="px-6 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+          @if (isLoading) {
+            <app-loading-state variant="table-row" [colspan]="5" label="Loading children..."></app-loading-state>
+          } @else if (filteredChildren.length === 0) {
+            <tr>
+              <td colspan="5">
+                <app-empty-state title="No children found" message="Adjust filters or register a new child."></app-empty-state>
               </td>
             </tr>
-          }
-        }
-      </tbody>
-    </table>
+          } @else {
+            @for (child of filteredChildren; track child.id) {
+              <tr class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-4">
+                    <app-avatar-text [name]="child.fullName" className="shrink-0 rounded-xl"></app-avatar-text>
+                    <div class="min-w-0">
+                      <p class="font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</p>
+                      <p class="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">ID: {{ child.id }}</p>
+                    </div>
+                  </div>
+                </td>
 
-    <app-table-pagination
-      [offset]="offset"
-      [limit]="limit"
-      [itemCount]="children.length"
-      [loading]="isLoading"
-      (previous)="previousPage()"
-      (next)="nextPage()"
-    />
-  </app-table-shell>
+                <td class="px-6 py-4">
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ formatAge(child.dateOfBirth) }}</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Starts {{ formatDate(child.startDate) }}</p>
+                </td>
+
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-7 items-center justify-center rounded-full bg-gray-100 text-gray-600 dark:bg-white/[0.08] dark:text-gray-300">
+                      <ng-icon name="heroUserGroup" size="16" aria-hidden="true" />
+                    </div>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Manage on child detail</span>
+                  </div>
+                </td>
+
+                <td class="px-6 py-4">
+                  <div class="flex flex-wrap gap-2">
+                    <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
+                    <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+                  </div>
+                  <p class="mt-2 max-w-72 text-xs text-gray-500 dark:text-gray-400">{{ formatMissingRequirements(child) }}</p>
+                </td>
+
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-end gap-2">
+                    <a
+                      [routerLink]="['/staff/manager/children', child.id]"
+                      class="inline-flex min-h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                      [attr.aria-label]="'View child record for ' + child.fullName"
+                    >
+                      View Record
+                    </a>
+                    <button
+                      type="button"
+                      class="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-200"
+                      (click)="openEdit(child)"
+                      [attr.aria-label]="'Edit child record for ' + child.fullName"
+                    >
+                      <ng-icon name="heroEllipsisVertical" size="20" aria-hidden="true" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!isLoading && filteredChildren.length > 0) {
+      <div class="border-t border-gray-200 bg-brand-25/50 px-4 py-4 text-center dark:border-gray-800 dark:bg-brand-500/[0.06]">
+        <button
+          type="button"
+          class="text-sm font-semibold text-brand-600 transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-45 dark:text-brand-300"
+          [disabled]="!canGoNext"
+          (click)="nextPage()"
+        >
+          Load {{ limit }} More Results
+        </button>
+      </div>
+    }
+  </section>
 </div>
