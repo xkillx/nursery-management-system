@@ -363,16 +363,22 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                  <app-form-field label="Disability" labelFor="child-disability-status">
-                    <app-select
-                      id="child-disability-status"
-                      name="disability_status"
-                      [(ngModel)]="step1.disability_status"
-                      [options]="yesNoOptions"
-                      placeholder="Select..."
-                      [placeholderDisabled]="false"
-                    />
-                  </app-form-field>
+                  <fieldset>
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Disability</legend>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      @for (option of yesNoOptions; track option.value) {
+                        <app-radio
+                          [id]="'child-disability-' + option.value"
+                          name="disability_status"
+                          [value]="option.value"
+                          [label]="option.label"
+                          [checked]="step1.disability_status === option.value"
+                          className="min-h-12 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                          (valueChange)="step1.disability_status = $event"
+                        />
+                      }
+                    </div>
+                  </fieldset>
 
                   @if (step1.disability_status === 'yes') {
                     <app-form-field label="Disability details" labelFor="child-disability-notes" className="md:col-span-2">
