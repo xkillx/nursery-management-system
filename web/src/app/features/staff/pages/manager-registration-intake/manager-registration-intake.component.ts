@@ -28,6 +28,7 @@ import {
   heroUserGroup,
 } from '@ng-icons/heroicons/outline';
 
+import { environment } from '../../../../../environments/environment';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -445,6 +446,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   draftRestoredAt: string | null = null;
   draftSavedAt: string | null = null;
   isDraftRestoredBannerVisible = false;
+
+  protected showDebugPanel = false;
+  protected readonly isProduction = environment.production;
 
   step1 = {
     first_name: '',
@@ -1135,6 +1139,25 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
       },
     });
+  }
+
+  protected toggleDebugPanel(): void {
+    this.showDebugPanel = !this.showDebugPanel;
+  }
+
+  protected get debugModels(): string {
+    return JSON.stringify({
+      step1: this.step1,
+      step2: this.step2,
+      step3: this.step3,
+      step4: this.step4,
+      consentsReviewed: this.consentsReviewed,
+      parentCarersDraft: this.parentCarersDraft,
+      emergencyContactsDraft: this.emergencyContactsDraft,
+      referralsDraft: this.referralsDraft,
+      child: this.child,
+      workflowStatus: this.workflowStatus,
+    }, null, 2);
   }
 
   protected issuesForStep(step: StepperStep): FinalCompletionIssue[] {
