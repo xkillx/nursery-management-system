@@ -33,7 +33,6 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
@@ -210,7 +209,6 @@ type RegistrationDraft = {
     FormsModule,
     NgIcon,
     AlertComponent,
-    BadgeComponent,
     ButtonComponent,
     CheckboxComponent,
     FormFieldComponent,
@@ -2177,8 +2175,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   private focusStepHeading(): void {
-    const heading = document.getElementById('step-heading');
-    heading?.focus();
+    const activeStep = this.host.nativeElement.querySelector('[aria-current="step"]') as HTMLElement | null;
+    activeStep?.focus();
   }
 
   private subscribeToDraftAutoSave(): void {

@@ -33,49 +33,7 @@
       }
 
       <section class="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="grid gap-6 border-b border-gray-200 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_320px] dark:border-gray-800">
-          <div class="min-w-0">
-            <div class="mb-4 flex flex-wrap items-center gap-2">
-              <app-badge color="primary" size="sm">Manager intake</app-badge>
-              @if (isNewRegistration) {
-                <app-badge color="info" size="sm">New registration</app-badge>
-              } @else {
-                <app-badge color="light" size="sm">Existing child</app-badge>
-              }
-            </div>
-            <h1 id="step-heading" tabindex="-1" class="text-2xl font-bold tracking-normal text-gray-950 md:text-3xl dark:text-white/90">
-              {{ steps[stepIndex].label }}
-            </h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600 md:text-base dark:text-gray-400">
-              {{ steps[stepIndex].description }} for {{ childFullNameDraft || child?.fullName || 'the child' }}. Work through each section in order so office evidence, consents, and review status stay audit-ready.
-            </p>
-          </div>
-          <aside class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Current record</p>
-            <p class="mt-2 truncate text-lg font-bold text-gray-950 dark:text-white/90">{{ childFullNameDraft || child?.fullName || 'Unnamed child' }}</p>
-            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Step</p>
-                <p class="font-semibold text-gray-900 dark:text-white/90">{{ stepIndex + 1 }} of {{ steps.length }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Start date</p>
-                <p class="font-semibold text-gray-900 dark:text-white/90">{{ step1.start_date || child?.startDate || '-' }}</p>
-              </div>
-            </div>
-            <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-              <div
-                class="h-full rounded-full bg-brand-500 transition-all"
-                [class.w-1/4]="stepIndex === 0"
-                [class.w-1/2]="stepIndex === 1"
-                [class.w-3/4]="stepIndex === 2"
-                [class.w-full]="stepIndex === 3"
-              ></div>
-            </div>
-          </aside>
-        </div>
-
-        <nav class="overflow-x-auto border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/30" aria-label="Registration progress">
+        <nav class="overflow-x-auto bg-white dark:bg-gray-950/30" aria-label="Registration progress">
           <ol class="flex min-w-max divide-x divide-gray-200 dark:divide-gray-800 md:min-w-0">
             @for (step of steps; track step.key; let i = $index) {
               <li class="min-w-[168px] flex-1 md:min-w-0">
