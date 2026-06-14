@@ -459,7 +459,6 @@ type ChildRegistrationProfile struct {
 	HealthVisitorPhone                      pgtype.Text
 	SocialServicesStatus                    RegistrationYesNoUnknown
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
 	ConcernWalking                          RegistrationYesNoUnknown
 	ConcernSpeechLanguage                   RegistrationYesNoUnknown
 	ConcernHearing                          RegistrationYesNoUnknown
@@ -494,6 +493,9 @@ type ChildRegistrationProfile struct {
 	RoutineCareReviewed                     bool
 	CreatedAt                               pgtype.Timestamptz
 	UpdatedAt                               pgtype.Timestamptz
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 }
 
 type FundingProfile struct {

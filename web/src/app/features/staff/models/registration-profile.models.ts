@@ -62,7 +62,9 @@ export interface RegistrationProfileHealthContacts {
 export interface RegistrationProfileSocialDevelopment {
   socialServicesStatus: string | null;
   socialServicesNotes: string | null;
-  socialWorkerContactDetails: string | null;
+  socialWorkerName: string | null;
+  socialWorkerPhone: string | null;
+  socialWorkerEmail: string | null;
   concernWalking: string | null;
   concernSpeechLanguage: string | null;
   concernHearing: string | null;

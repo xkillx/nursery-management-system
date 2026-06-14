@@ -73,7 +73,9 @@ type HealthContactsInput struct {
 type SocialDevelopmentInput struct {
 	SocialServicesStatus       *string
 	SocialServicesNotes        *string
-	SocialWorkerContactDetails *string
+	SocialWorkerName           *string
+	SocialWorkerPhone          *string
+	SocialWorkerEmail          *string
 	ConcernWalking             *string
 	ConcernSpeechLanguage      *string
 	ConcernHearing             *string
@@ -240,7 +242,9 @@ func (c *CompleteRegistrationInput) ToProfile(tenantID, branchID, childID uuid.U
 	if pi := c.Profile.SocialDevelopment; pi != nil {
 		p.SocialServicesStatus = parseYesNoUnknown(pi.SocialServicesStatus)
 		p.SocialServicesNotes = pi.SocialServicesNotes
-		p.SocialWorkerContactDetails = pi.SocialWorkerContactDetails
+		p.SocialWorkerName = pi.SocialWorkerName
+		p.SocialWorkerPhone = pi.SocialWorkerPhone
+		p.SocialWorkerEmail = pi.SocialWorkerEmail
 		p.ConcernWalking = parseYesNoUnknown(pi.ConcernWalking)
 		p.ConcernSpeechLanguage = parseYesNoUnknown(pi.ConcernSpeechLanguage)
 		p.ConcernHearing = parseYesNoUnknown(pi.ConcernHearing)

@@ -158,8 +158,11 @@ func computeSocialDevelopment(in completenessInput) CompletenessSection {
 		missing = append(missing, "social_services_status_unknown")
 	}
 	if in.profile.SocialServicesStatus == YesNoUnknownYes {
+		hasWorkerContact := (in.profile.SocialWorkerName != nil && *in.profile.SocialWorkerName != "") ||
+			(in.profile.SocialWorkerPhone != nil && *in.profile.SocialWorkerPhone != "") ||
+			(in.profile.SocialWorkerEmail != nil && *in.profile.SocialWorkerEmail != "")
 		if (in.profile.SocialServicesNotes == nil || *in.profile.SocialServicesNotes == "") &&
-			(in.profile.SocialWorkerContactDetails == nil || *in.profile.SocialWorkerContactDetails == "") {
+			!hasWorkerContact {
 			missing = append(missing, "social_services_notes_or_worker_required")
 		}
 	}

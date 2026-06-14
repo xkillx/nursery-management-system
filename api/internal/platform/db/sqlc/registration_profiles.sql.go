@@ -53,7 +53,8 @@ INSERT INTO child_registration_profiles (
     dietary_requirements_status, dietary_requirements_notes, dietary_side_effects,
     doctor_name, doctor_address, doctor_phone,
     health_visitor_name, health_visitor_address, health_visitor_phone,
-    social_services_status, social_services_notes, social_worker_contact_details,
+    social_services_status, social_services_notes,
+    social_worker_name, social_worker_phone, social_worker_email,
     concern_walking, concern_speech_language, concern_hearing, concern_sight,
     concern_emotional_wellbeing, concern_behaviour, professional_referrals,
     parental_responsibility_notes,
@@ -77,19 +78,20 @@ INSERT INTO child_registration_profiles (
     $23, $24, $25,
     $26, $27, $28,
     $29, $30, $31,
-    $32, $33, $34,
-    $35, $36, $37, $38,
-    $39, $40, $41,
-    $42,
-    $43,
-    $44, $45,
+    $32, $33,
+    $34, $35, $36,
+    $37, $38, $39, $40,
+    $41, $42, $43,
+    $44,
+    $45,
     $46, $47,
-    $48, $49, $50,
-    $51,
-    $52, $53, $54,
-    $55, $56, $57,
-    $58, $59,
-    $60, $61, $62
+    $48, $49,
+    $50, $51, $52,
+    $53,
+    $54, $55, $56,
+    $57, $58, $59,
+    $60, $61,
+    $62, $63, $64
 )
 RETURNING
     id, tenant_id, branch_id, child_id,
@@ -102,7 +104,8 @@ RETURNING
     dietary_requirements_status::text, dietary_requirements_notes, dietary_side_effects,
     doctor_name, doctor_address, doctor_phone,
     health_visitor_name, health_visitor_address, health_visitor_phone,
-    social_services_status::text, social_services_notes, social_worker_contact_details,
+    social_services_status::text, social_services_notes,
+    social_worker_name, social_worker_phone, social_worker_email,
     concern_walking::text, concern_speech_language::text, concern_hearing::text, concern_sight::text,
     concern_emotional_wellbeing::text, concern_behaviour::text, professional_referrals,
     parental_responsibility_notes,
@@ -156,7 +159,9 @@ type RegistrationProfileCreateParams struct {
 	HealthVisitorPhone           pgtype.Text
 	SocialServicesStatus         RegistrationYesNoUnknown
 	SocialServicesNotes          pgtype.Text
-	SocialWorkerContactDetails   pgtype.Text
+	SocialWorkerName             pgtype.Text
+	SocialWorkerPhone            pgtype.Text
+	SocialWorkerEmail            pgtype.Text
 	ConcernWalking               RegistrationYesNoUnknown
 	ConcernSpeechLanguage        RegistrationYesNoUnknown
 	ConcernHearing               RegistrationYesNoUnknown
@@ -221,7 +226,9 @@ type RegistrationProfileCreateRow struct {
 	HealthVisitorPhone                      pgtype.Text
 	SocialServicesStatus                    string
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 	ConcernWalking                          string
 	ConcernSpeechLanguage                   string
 	ConcernHearing                          string
@@ -293,7 +300,9 @@ func (q *Queries) RegistrationProfileCreate(ctx context.Context, arg Registratio
 		arg.HealthVisitorPhone,
 		arg.SocialServicesStatus,
 		arg.SocialServicesNotes,
-		arg.SocialWorkerContactDetails,
+		arg.SocialWorkerName,
+		arg.SocialWorkerPhone,
+		arg.SocialWorkerEmail,
 		arg.ConcernWalking,
 		arg.ConcernSpeechLanguage,
 		arg.ConcernHearing,
@@ -358,7 +367,9 @@ func (q *Queries) RegistrationProfileCreate(ctx context.Context, arg Registratio
 		&i.HealthVisitorPhone,
 		&i.SocialServicesStatus,
 		&i.SocialServicesNotes,
-		&i.SocialWorkerContactDetails,
+		&i.SocialWorkerName,
+		&i.SocialWorkerPhone,
+		&i.SocialWorkerEmail,
 		&i.ConcernWalking,
 		&i.ConcernSpeechLanguage,
 		&i.ConcernHearing,
@@ -551,7 +562,9 @@ SELECT
     crp.health_visitor_phone,
     crp.social_services_status::text,
     crp.social_services_notes,
-    crp.social_worker_contact_details,
+    crp.social_worker_name,
+    crp.social_worker_phone,
+    crp.social_worker_email,
     crp.concern_walking::text,
     crp.concern_speech_language::text,
     crp.concern_hearing::text,
@@ -635,7 +648,9 @@ type RegistrationProfileGetByChildRow struct {
 	HealthVisitorPhone                      pgtype.Text
 	CrpSocialServicesStatus                 string
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 	CrpConcernWalking                       string
 	CrpConcernSpeechLanguage                string
 	CrpConcernHearing                       string
@@ -711,7 +726,9 @@ func (q *Queries) RegistrationProfileGetByChild(ctx context.Context, arg Registr
 		&i.HealthVisitorPhone,
 		&i.CrpSocialServicesStatus,
 		&i.SocialServicesNotes,
-		&i.SocialWorkerContactDetails,
+		&i.SocialWorkerName,
+		&i.SocialWorkerPhone,
+		&i.SocialWorkerEmail,
 		&i.CrpConcernWalking,
 		&i.CrpConcernSpeechLanguage,
 		&i.CrpConcernHearing,
@@ -787,7 +804,9 @@ SELECT
     crp.health_visitor_phone,
     crp.social_services_status::text,
     crp.social_services_notes,
-    crp.social_worker_contact_details,
+    crp.social_worker_name,
+    crp.social_worker_phone,
+    crp.social_worker_email,
     crp.concern_walking::text,
     crp.concern_speech_language::text,
     crp.concern_hearing::text,
@@ -872,7 +891,9 @@ type RegistrationProfileGetForUpdateByChildRow struct {
 	HealthVisitorPhone                      pgtype.Text
 	CrpSocialServicesStatus                 string
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 	CrpConcernWalking                       string
 	CrpConcernSpeechLanguage                string
 	CrpConcernHearing                       string
@@ -948,7 +969,9 @@ func (q *Queries) RegistrationProfileGetForUpdateByChild(ctx context.Context, ar
 		&i.HealthVisitorPhone,
 		&i.CrpSocialServicesStatus,
 		&i.SocialServicesNotes,
-		&i.SocialWorkerContactDetails,
+		&i.SocialWorkerName,
+		&i.SocialWorkerPhone,
+		&i.SocialWorkerEmail,
 		&i.CrpConcernWalking,
 		&i.CrpConcernSpeechLanguage,
 		&i.CrpConcernHearing,
@@ -1096,7 +1119,8 @@ RETURNING
     dietary_requirements_status::text, dietary_requirements_notes, dietary_side_effects,
     doctor_name, doctor_address, doctor_phone,
     health_visitor_name, health_visitor_address, health_visitor_phone,
-    social_services_status::text, social_services_notes, social_worker_contact_details,
+    social_services_status::text, social_services_notes,
+    social_worker_name, social_worker_phone, social_worker_email,
     concern_walking::text, concern_speech_language::text, concern_hearing::text, concern_sight::text,
     concern_emotional_wellbeing::text, concern_behaviour::text, professional_referrals,
     parental_responsibility_notes,
@@ -1158,7 +1182,9 @@ type RegistrationProfileSetCollectionPasswordRow struct {
 	HealthVisitorPhone                      pgtype.Text
 	SocialServicesStatus                    string
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 	ConcernWalking                          string
 	ConcernSpeechLanguage                   string
 	ConcernHearing                          string
@@ -1240,7 +1266,9 @@ func (q *Queries) RegistrationProfileSetCollectionPassword(ctx context.Context, 
 		&i.HealthVisitorPhone,
 		&i.SocialServicesStatus,
 		&i.SocialServicesNotes,
-		&i.SocialWorkerContactDetails,
+		&i.SocialWorkerName,
+		&i.SocialWorkerPhone,
+		&i.SocialWorkerEmail,
 		&i.ConcernWalking,
 		&i.ConcernSpeechLanguage,
 		&i.ConcernHearing,
@@ -1311,35 +1339,37 @@ SET
     health_visitor_phone = $30,
     social_services_status = $31,
     social_services_notes = $32,
-    social_worker_contact_details = $33,
-    concern_walking = $34,
-    concern_speech_language = $35,
-    concern_hearing = $36,
-    concern_sight = $37,
-    concern_emotional_wellbeing = $38,
-    concern_behaviour = $39,
-    professional_referrals = $40,
-    parental_responsibility_notes = $41,
-    over18_collection_acknowledged = $42,
-    benefits_contribute_to_fees = $43,
-    working_tax_credit = $44,
-    college_uni_paid_to_parent = $45,
-    college_uni_paid_to_nursery = $46,
-    funding_3yo_term_time = $47,
-    funding_2yo_term_time = $48,
-    funding_support_notes = $49,
-    routine_care_notes = $50,
-    gdpr_declared_by_name = $51,
-    gdpr_declared_at = $52,
-    gdpr_declaration_date = $53,
-    demographics_home_reviewed = $54,
-    medical_dietary_reviewed = $55,
-    health_contacts_reviewed = $56,
-    social_development_reviewed = $57,
-    parent_responsibility_reviewed = $58,
-    emergency_collection_reviewed = $59,
-    funding_support_reviewed = $60,
-    routine_care_reviewed = $61,
+    social_worker_name = $33,
+    social_worker_phone = $34,
+    social_worker_email = $35,
+    concern_walking = $36,
+    concern_speech_language = $37,
+    concern_hearing = $38,
+    concern_sight = $39,
+    concern_emotional_wellbeing = $40,
+    concern_behaviour = $41,
+    professional_referrals = $42,
+    parental_responsibility_notes = $43,
+    over18_collection_acknowledged = $44,
+    benefits_contribute_to_fees = $45,
+    working_tax_credit = $46,
+    college_uni_paid_to_parent = $47,
+    college_uni_paid_to_nursery = $48,
+    funding_3yo_term_time = $49,
+    funding_2yo_term_time = $50,
+    funding_support_notes = $51,
+    routine_care_notes = $52,
+    gdpr_declared_by_name = $53,
+    gdpr_declared_at = $54,
+    gdpr_declaration_date = $55,
+    demographics_home_reviewed = $56,
+    medical_dietary_reviewed = $57,
+    health_contacts_reviewed = $58,
+    social_development_reviewed = $59,
+    parent_responsibility_reviewed = $60,
+    emergency_collection_reviewed = $61,
+    funding_support_reviewed = $62,
+    routine_care_reviewed = $63,
     updated_at = now()
 WHERE crp.tenant_id = $1
   AND crp.branch_id = $2
@@ -1355,7 +1385,8 @@ RETURNING
     dietary_requirements_status::text, dietary_requirements_notes, dietary_side_effects,
     doctor_name, doctor_address, doctor_phone,
     health_visitor_name, health_visitor_address, health_visitor_phone,
-    social_services_status::text, social_services_notes, social_worker_contact_details,
+    social_services_status::text, social_services_notes,
+    social_worker_name, social_worker_phone, social_worker_email,
     concern_walking::text, concern_speech_language::text, concern_hearing::text, concern_sight::text,
     concern_emotional_wellbeing::text, concern_behaviour::text, professional_referrals,
     parental_responsibility_notes,
@@ -1406,7 +1437,9 @@ type RegistrationProfileUpdateParams struct {
 	HealthVisitorPhone           pgtype.Text
 	SocialServicesStatus         RegistrationYesNoUnknown
 	SocialServicesNotes          pgtype.Text
-	SocialWorkerContactDetails   pgtype.Text
+	SocialWorkerName             pgtype.Text
+	SocialWorkerPhone            pgtype.Text
+	SocialWorkerEmail            pgtype.Text
 	ConcernWalking               RegistrationYesNoUnknown
 	ConcernSpeechLanguage        RegistrationYesNoUnknown
 	ConcernHearing               RegistrationYesNoUnknown
@@ -1471,7 +1504,9 @@ type RegistrationProfileUpdateRow struct {
 	HealthVisitorPhone                      pgtype.Text
 	SocialServicesStatus                    string
 	SocialServicesNotes                     pgtype.Text
-	SocialWorkerContactDetails              pgtype.Text
+	SocialWorkerName                        pgtype.Text
+	SocialWorkerPhone                       pgtype.Text
+	SocialWorkerEmail                       pgtype.Text
 	ConcernWalking                          string
 	ConcernSpeechLanguage                   string
 	ConcernHearing                          string
@@ -1542,7 +1577,9 @@ func (q *Queries) RegistrationProfileUpdate(ctx context.Context, arg Registratio
 		arg.HealthVisitorPhone,
 		arg.SocialServicesStatus,
 		arg.SocialServicesNotes,
-		arg.SocialWorkerContactDetails,
+		arg.SocialWorkerName,
+		arg.SocialWorkerPhone,
+		arg.SocialWorkerEmail,
 		arg.ConcernWalking,
 		arg.ConcernSpeechLanguage,
 		arg.ConcernHearing,
@@ -1607,7 +1644,9 @@ func (q *Queries) RegistrationProfileUpdate(ctx context.Context, arg Registratio
 		&i.HealthVisitorPhone,
 		&i.SocialServicesStatus,
 		&i.SocialServicesNotes,
-		&i.SocialWorkerContactDetails,
+		&i.SocialWorkerName,
+		&i.SocialWorkerPhone,
+		&i.SocialWorkerEmail,
 		&i.ConcernWalking,
 		&i.ConcernSpeechLanguage,
 		&i.ConcernHearing,

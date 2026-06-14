@@ -147,7 +147,9 @@ export class ManagerChildRegistrationComponent implements OnInit {
     this.medicalDietaryDraft = profile.medicalDietary ? { ...profile.medicalDietary } : null;
     this.healthContactsDraft = profile.healthContacts ? { ...profile.healthContacts } : null;
     this.socialDevDraft = profile.socialDevelopment ? { ...profile.socialDevelopment } : null;
-    this.parseSocialWorkerFromProfile();
+    this.socialWorkerName = profile.socialDevelopment?.socialWorkerName ?? '';
+    this.socialWorkerPhone = profile.socialDevelopment?.socialWorkerPhone ?? '';
+    this.socialWorkerEmail = profile.socialDevelopment?.socialWorkerEmail ?? '';
     this.parentCarersDraft = profile.parentCarers ? profile.parentCarers.map(c => ({ ...c })) : [];
     this.emergencyContactsDraft = profile.emergencyContacts ? profile.emergencyContacts.map(c => ({ ...c })) : [];
     this.authorisedCollectorsDraft = profile.authorisedCollectors ? profile.authorisedCollectors.map(c => ({ ...c })) : [];
@@ -439,7 +441,9 @@ export class ManagerChildRegistrationComponent implements OnInit {
       social_development: {
         social_services_status: this.toNullWhenEmpty(d.socialServicesStatus ?? ''),
         social_services_notes: this.toNullWhenEmpty(d.socialServicesNotes ?? ''),
-        social_worker_contact_details: this.serializeSocialWorkerJson(),
+        social_worker_name: this.toNullWhenEmpty(this.socialWorkerName),
+        social_worker_phone: this.toNullWhenEmpty(this.socialWorkerPhone),
+        social_worker_email: this.toNullWhenEmpty(this.socialWorkerEmail),
         concern_walking: this.toNullWhenEmpty(d.concernWalking ?? ''),
         concern_speech_language: this.toNullWhenEmpty(d.concernSpeechLanguage ?? ''),
         concern_hearing: this.toNullWhenEmpty(d.concernHearing ?? ''),
@@ -450,38 +454,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
         social_development_reviewed: d.socialDevelopmentReviewed,
       },
     };
-  }
-
-  private parseSocialWorkerFromProfile(): void {
-    if (!this.socialDevDraft?.socialWorkerContactDetails) {
-      this.socialWorkerName = '';
-      this.socialWorkerPhone = '';
-      this.socialWorkerEmail = '';
-      return;
-    }
-    try {
-      const parsed = JSON.parse(this.socialDevDraft.socialWorkerContactDetails);
-      this.socialWorkerName = parsed.name ?? '';
-      this.socialWorkerPhone = parsed.phone ?? '';
-      this.socialWorkerEmail = parsed.email ?? '';
-    } catch {
-      this.socialWorkerName = this.socialDevDraft.socialWorkerContactDetails;
-      this.socialWorkerPhone = '';
-      this.socialWorkerEmail = '';
-    }
-  }
-
-  private serializeSocialWorkerJson(): string | null {
-    const parts: string[] = [];
-    if (this.socialWorkerName.trim()) parts.push(this.socialWorkerName.trim());
-    if (this.socialWorkerPhone.trim()) parts.push(this.socialWorkerPhone.trim());
-    if (this.socialWorkerEmail.trim()) parts.push(this.socialWorkerEmail.trim());
-    if (parts.length === 0) return null;
-    return JSON.stringify({
-      name: parts[0] ?? '',
-      phone: parts[1] ?? '',
-      email: parts[2] ?? '',
-    });
   }
 
   protected buildCollectionPatch(): Record<string, unknown> {

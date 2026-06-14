@@ -115,7 +115,9 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 			psi.SocialDevelopment = &domain.SocialDevelopmentInput{
 				SocialServicesStatus:       rp.SocialServicesStatus,
 				SocialServicesNotes:        rp.SocialServicesNotes,
-				SocialWorkerContactDetails: rp.SocialWorkerContactDetails,
+				SocialWorkerName:           rp.SocialWorkerName,
+			SocialWorkerPhone:          rp.SocialWorkerPhone,
+			SocialWorkerEmail:          rp.SocialWorkerEmail,
 				ConcernWalking:             rp.ConcernWalking,
 				ConcernSpeechLanguage:      rp.ConcernSpeechLanguage,
 				ConcernHearing:             rp.ConcernHearing,

@@ -146,7 +146,7 @@ type RegistrationDraft = {
     illness_diagnosis_history: string;
     dietary_status: NoneDetailsUnknownStatus;
     special_dietary_requirements: string;
-    medication_side_effects: string;
+    dietary_side_effects: string;
     doctor_address: string;
     doctor_name: string;
     doctor_phone: string;
@@ -155,7 +155,6 @@ type RegistrationDraft = {
     health_visitor_phone: string;
     social_services_status: YesNoUnknownStatus;
     social_services_details: string;
-    social_worker_contact: string;
     social_worker_name: string;
     social_worker_phone: string;
     social_worker_email: string;
@@ -485,7 +484,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     illness_diagnosis_history: '',
     dietary_status: '' as NoneDetailsUnknownStatus,
     special_dietary_requirements: '',
-    medication_side_effects: '',
+    dietary_side_effects: '',
     doctor_address: '',
     doctor_name: '',
     doctor_phone: '',
@@ -494,7 +493,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     health_visitor_phone: '',
     social_services_status: '' as YesNoUnknownStatus,
     social_services_details: '',
-    social_worker_contact: '',
     social_worker_name: '',
     social_worker_phone: '',
     social_worker_email: '',
@@ -918,7 +916,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         medication_notes: medicationNotes || null,
         dietary_requirements_status: this.dietaryApiStatus(),
         dietary_requirements_notes: dietaryNotes || null,
-        dietary_side_effects: this.step2.medication_side_effects.trim() || null,
+        dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
         immunisation_status: this.step2.immunisation_status || null,
         immunisation_country: this.step2.immunisation_country.trim() || null,
         illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
@@ -936,7 +934,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       social_development: {
         social_services_status: this.step2.social_services_status || 'unknown',
         social_services_notes: this.step2.social_services_details.trim() || null,
-        social_worker_contact_details: this.serializeSocialWorkerJson(),
+        social_worker_name: this.step2.social_worker_name.trim() || null,
+        social_worker_phone: this.step2.social_worker_phone.trim() || null,
+        social_worker_email: this.step2.social_worker_email.trim() || null,
         concern_walking: this.step2.concern_walking ? 'yes' : 'no',
         concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
         concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
@@ -1568,7 +1568,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           medication_notes: medicationNotes || null,
           dietary_requirements_status: this.dietaryApiStatus(),
           dietary_requirements_notes: [this.step2.allergy_details.trim(), this.step2.special_dietary_requirements.trim()].filter(Boolean).join('; ') || null,
-          dietary_side_effects: this.step2.medication_side_effects.trim() || null,
+          dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
           immunisation_status: this.step2.immunisation_status || null,
           immunisation_country: this.step2.immunisation_country.trim() || null,
           illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
@@ -1586,7 +1586,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         social_development: {
           social_services_status: this.step2.social_services_status || 'unknown',
           social_services_notes: this.step2.social_services_details.trim() || null,
-        social_worker_contact_details: this.serializeSocialWorkerJson(),
+        social_worker_name: this.step2.social_worker_name.trim() || null,
+        social_worker_phone: this.step2.social_worker_phone.trim() || null,
+        social_worker_email: this.step2.social_worker_email.trim() || null,
           concern_walking: this.step2.concern_walking ? 'yes' : 'no',
           concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
           concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
@@ -2108,7 +2110,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.immunisation_status = profile.medicalDietary.immunisationStatus ?? '';
       this.step2.immunisation_country = profile.medicalDietary.immunisationCountry ?? '';
       this.step2.illness_diagnosis_history = profile.medicalDietary.illnessDiagnosisHistory ?? '';
-      this.step2.medication_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
+      this.step2.dietary_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
       this.step2.dietary_status = this.deriveDietaryStatusFromProfile(profile.medicalDietary.dietaryRequirementsStatus);
       this.step2.medical_history_status = this.deriveMedicalHistoryStatusFromProfile(
         profile.medicalDietary.illnessDiagnosisHistory ?? '',
@@ -2128,7 +2130,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (profile.socialDevelopment) {
       this.step2.social_services_status = this.coerceYesNoUnknown(profile.socialDevelopment.socialServicesStatus);
       this.step2.social_services_details = profile.socialDevelopment.socialServicesNotes ?? '';
-      this.parseSocialWorkerJson(profile.socialDevelopment.socialWorkerContactDetails ?? '');
+      this.step2.social_worker_name = profile.socialDevelopment.socialWorkerName ?? '';
+      this.step2.social_worker_phone = profile.socialDevelopment.socialWorkerPhone ?? '';
+      this.step2.social_worker_email = profile.socialDevelopment.socialWorkerEmail ?? '';
       this.step2.concern_walking = profile.socialDevelopment.concernWalking === 'yes';
       this.step2.concern_speech_language = profile.socialDevelopment.concernSpeechLanguage === 'yes';
       this.step2.concern_hearing = profile.socialDevelopment.concernHearing === 'yes';
@@ -2251,38 +2255,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private serializeSocialWorkerJson(): string | null {
-    const parts: string[] = [];
-    if (this.step2.social_worker_name.trim()) parts.push(this.step2.social_worker_name.trim());
-    if (this.step2.social_worker_phone.trim()) parts.push(this.step2.social_worker_phone.trim());
-    if (this.step2.social_worker_email.trim()) parts.push(this.step2.social_worker_email.trim());
-    if (parts.length === 0) return null;
-    return JSON.stringify({
-      name: parts[0] ?? '',
-      phone: parts[1] ?? '',
-      email: parts[2] ?? '',
-    });
-  }
-
-  private parseSocialWorkerJson(raw: string): void {
-    if (!raw) {
-      this.step2.social_worker_name = '';
-      this.step2.social_worker_phone = '';
-      this.step2.social_worker_email = '';
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      this.step2.social_worker_name = parsed.name ?? '';
-      this.step2.social_worker_phone = parsed.phone ?? '';
-      this.step2.social_worker_email = parsed.email ?? '';
-    } catch {
-      this.step2.social_worker_name = raw;
-      this.step2.social_worker_phone = '';
-      this.step2.social_worker_email = '';
-    }
-  }
-
   private focusStepHeading(): void {
     const heading = document.getElementById('step-heading');
     heading?.focus();
@@ -2395,7 +2367,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.allergy_status = this.step2.allergy_status || this.legacyBooleanToYesNoUnknown(legacy.has_allergies);
       this.step2.medication_status = this.step2.medication_status || this.legacyBooleanToYesNoUnknown(legacy.on_medication);
       this.step2.social_services_status = this.step2.social_services_status || this.legacyBooleanToYesNoUnknown(legacy.social_services_involvement);
-      this.parseSocialWorkerJson(this.step2.social_worker_contact);
+      this.step2.social_worker_name = this.step2.social_worker_name ?? '';
+      this.step2.social_worker_phone = this.step2.social_worker_phone ?? '';
+      this.step2.social_worker_email = this.step2.social_worker_email ?? '';
     }
     if (draft.step3) {
       this.step3 = { ...this.step3, ...draft.step3 };
@@ -2481,7 +2455,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       illness_diagnosis_history: '',
       dietary_status: '',
       special_dietary_requirements: '',
-      medication_side_effects: '',
+      dietary_side_effects: '',
       doctor_address: '',
       doctor_name: '',
       doctor_phone: '',
@@ -2490,7 +2464,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       health_visitor_phone: '',
       social_services_status: '',
       social_services_details: '',
-      social_worker_contact: '',
       social_worker_name: '',
       social_worker_phone: '',
       social_worker_email: '',

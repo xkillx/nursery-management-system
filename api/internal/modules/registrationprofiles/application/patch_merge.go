@@ -67,7 +67,9 @@ type HealthContactsPatch struct {
 type SocialDevelopmentPatch struct {
 	SocialServicesStatus       *string `json:"social_services_status,omitempty"`
 	SocialServicesNotes        *string `json:"social_services_notes,omitempty"`
-	SocialWorkerContactDetails *string `json:"social_worker_contact_details,omitempty"`
+	SocialWorkerName           *string `json:"social_worker_name,omitempty"`
+	SocialWorkerPhone          *string `json:"social_worker_phone,omitempty"`
+	SocialWorkerEmail          *string `json:"social_worker_email,omitempty"`
 	ConcernWalking             *string `json:"concern_walking,omitempty"`
 	ConcernSpeechLanguage      *string `json:"concern_speech_language,omitempty"`
 	ConcernHearing             *string `json:"concern_hearing,omitempty"`
@@ -308,9 +310,17 @@ func applySocialDevelopment(p *domain.Profile, patch SocialDevelopmentPatch) err
 		v := strings.TrimSpace(*patch.SocialServicesNotes)
 		if v == "" { p.SocialServicesNotes = nil } else { p.SocialServicesNotes = &v }
 	}
-	if patch.SocialWorkerContactDetails != nil {
-		v := strings.TrimSpace(*patch.SocialWorkerContactDetails)
-		if v == "" { p.SocialWorkerContactDetails = nil } else { p.SocialWorkerContactDetails = &v }
+	if patch.SocialWorkerName != nil {
+		v := strings.TrimSpace(*patch.SocialWorkerName)
+		if v == "" { p.SocialWorkerName = nil } else { p.SocialWorkerName = &v }
+	}
+	if patch.SocialWorkerPhone != nil {
+		v := strings.TrimSpace(*patch.SocialWorkerPhone)
+		if v == "" { p.SocialWorkerPhone = nil } else { p.SocialWorkerPhone = &v }
+	}
+	if patch.SocialWorkerEmail != nil {
+		v := strings.TrimSpace(*patch.SocialWorkerEmail)
+		if v == "" { p.SocialWorkerEmail = nil } else { p.SocialWorkerEmail = &v }
 	}
 	if patch.ConcernWalking != nil {
 		v, err := parseYesNoUnknown(*patch.ConcernWalking)

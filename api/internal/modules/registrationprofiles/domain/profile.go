@@ -79,7 +79,9 @@ type Profile struct {
 
 	SocialServicesStatus          YesNoUnknown
 	SocialServicesNotes           *string
-	SocialWorkerContactDetails    *string
+	SocialWorkerName              *string
+	SocialWorkerPhone             *string
+	SocialWorkerEmail             *string
 	ConcernWalking                YesNoUnknown
 	ConcernSpeechLanguage         YesNoUnknown
 	ConcernHearing                YesNoUnknown

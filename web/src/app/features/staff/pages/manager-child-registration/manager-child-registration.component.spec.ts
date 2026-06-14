@@ -38,7 +38,7 @@ describe('ManagerChildRegistrationComponent', () => {
     },
     socialDevelopment: {
       socialServicesStatus: 'unknown', socialServicesNotes: null,
-      socialWorkerContactDetails: null, concernWalking: 'unknown',
+      socialWorkerName: null, socialWorkerPhone: null, socialWorkerEmail: null, concernWalking: 'unknown',
       concernSpeechLanguage: 'unknown', concernHearing: 'unknown',
       concernSight: 'unknown', concernEmotionalWellbeing: 'unknown',
       concernBehaviour: 'unknown', professionalReferrals: [],

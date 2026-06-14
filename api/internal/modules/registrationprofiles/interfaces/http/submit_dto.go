@@ -71,7 +71,9 @@ type healthContactsPayload struct {
 type socialDevelopmentPayload struct {
 	SocialServicesStatus       *string                      `json:"social_services_status,omitempty"`
 	SocialServicesNotes        *string                      `json:"social_services_notes,omitempty"`
-	SocialWorkerContactDetails *string                      `json:"social_worker_contact_details,omitempty"`
+	SocialWorkerName           *string                      `json:"social_worker_name,omitempty"`
+	SocialWorkerPhone          *string                      `json:"social_worker_phone,omitempty"`
+	SocialWorkerEmail          *string                      `json:"social_worker_email,omitempty"`
 	ConcernWalking             *string                      `json:"concern_walking,omitempty"`
 	ConcernSpeechLanguage      *string                      `json:"concern_speech_language,omitempty"`
 	ConcernHearing             *string                      `json:"concern_hearing,omitempty"`

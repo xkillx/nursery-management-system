@@ -1008,6 +1008,47 @@ components:
               type: object
             social_development:
               type: object
+              properties:
+                social_services_status:
+                  type: string
+                  nullable: true
+                  enum: [unknown, yes, no]
+                social_services_notes:
+                  type: string
+                  nullable: true
+                social_worker_name:
+                  type: string
+                  nullable: true
+                social_worker_phone:
+                  type: string
+                  nullable: true
+                social_worker_email:
+                  type: string
+                  nullable: true
+                concern_walking:
+                  type: string
+                  nullable: true
+                concern_speech_language:
+                  type: string
+                  nullable: true
+                concern_hearing:
+                  type: string
+                  nullable: true
+                concern_sight:
+                  type: string
+                  nullable: true
+                concern_emotional_wellbeing:
+                  type: string
+                  nullable: true
+                concern_behaviour:
+                  type: string
+                  nullable: true
+                professional_referrals:
+                  type: array
+                  items:
+                    type: object
+                social_development_reviewed:
+                  type: boolean
             parent_carers:
               type: array
               items:
