@@ -248,11 +248,20 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <app-form-field label="Primary language spoken at home" labelFor="child-first-language">
+                  <app-form-field
+                    label="Primary language spoken at home"
+                    labelFor="child-first-language"
+                    [required]="true"
+                    errorId="child-first-language-error"
+                    [error]="step1VisibleError('first_language')"
+                  >
                     <app-select
                       id="child-first-language"
                       name="first_language"
                       [(ngModel)]="step1.first_language"
+                      (blurred)="markStep1Touched('first_language')"
+                      [error]="shouldShowStep1Error('first_language')"
+                      [describedBy]="shouldShowStep1Error('first_language') ? 'child-first-language-error' : undefined"
                       [options]="languageSelectOptions"
                       placeholder="Select a language..."
                       [placeholderDisabled]="false"
@@ -285,12 +294,21 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-8">
-                  <app-form-field label="Address line 1" labelFor="child-home-address">
+                  <app-form-field
+                    label="Address line 1"
+                    labelFor="child-home-address"
+                    [required]="true"
+                    errorId="child-home-address-error"
+                    [error]="step1VisibleError('home_address')"
+                  >
                     <app-input-field
                       id="child-home-address"
                       name="home_address"
                       type="text"
                       [(ngModel)]="step1.home_address"
+                      (blurred)="markStep1Touched('home_address')"
+                      [error]="shouldShowStep1Error('home_address')"
+                      [describedBy]="shouldShowStep1Error('home_address') ? 'child-home-address-error' : undefined"
                       autocomplete="street-address"
                       placeholder="e.g. 123 High Street"
                     />
@@ -375,7 +393,11 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <fieldset [attr.data-focus-target]="'child-disability-status-group'">
+                  <fieldset
+                    [attr.data-focus-target]="'child-disability-status-group'"
+                    [attr.aria-invalid]="shouldShowStep1Error('disability_status')"
+                    [attr.aria-describedby]="shouldShowStep1Error('disability_status') ? 'child-disability-status-error' : null"
+                  >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Disability / SEND / access needs
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -389,19 +411,30 @@
                           [label]="option.label"
                           [checked]="step1.disability_status === option.value"
                           className="min-h-12 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step1.disability_status = $event"
+                          (valueChange)="step1.disability_status = $event; markStep1Touched('disability_status')"
                         />
                       }
                     </div>
+                    @if (shouldShowStep1Error('disability_status')) {
+                      <p id="child-disability-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step1VisibleError('disability_status') }}</p>
+                    }
                   </fieldset>
 
                   @if (step1.disability_status === 'yes') {
-                    <app-form-field label="Disability details" labelFor="child-disability-notes">
+                    <app-form-field
+                      label="Disability details"
+                      labelFor="child-disability-notes"
+                      errorId="child-disability-notes-error"
+                      [error]="step1VisibleError('disability_notes')"
+                    >
                       <app-input-field
                         id="child-disability-notes"
                         name="disability_notes"
                         type="text"
                         [(ngModel)]="step1.disability_notes"
+                        (blurred)="markStep1Touched('disability_notes')"
+                        [error]="shouldShowStep1Error('disability_notes')"
+                        [describedBy]="shouldShowStep1Error('disability_notes') ? 'child-disability-notes-error' : undefined"
                         placeholder="Brief description of disability and any support needs"
                       />
                     </app-form-field>
@@ -465,8 +498,8 @@
                   <fieldset
                     [attr.data-focus-target]="'allergy-status-group'"
                     role="radiogroup"
-                    [attr.aria-invalid]="hasFieldIssue('allergy_status')"
-                    [attr.aria-describedby]="hasFieldIssue('allergy_status') ? 'allergy-status-error' : null"
+                    [attr.aria-invalid]="shouldShowStep2Error('allergy_status')"
+                    [attr.aria-describedby]="shouldShowStep2Error('allergy_status') ? 'allergy-status-error' : null"
                   >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Does the child have any known allergies?
@@ -481,12 +514,12 @@
                           [label]="option.label"
                           [checked]="step2.allergy_status === option.value"
                           className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.allergy_status = $any($event)"
+                          (valueChange)="step2.allergy_status = $any($event); markStep2Touched('allergy_status')"
                         />
                       }
                     </div>
-                    @if (hasFieldIssue('allergy_status')) {
-                      <p id="allergy-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('allergy_status') }}</p>
+                    @if (shouldShowStep2Error('allergy_status')) {
+                      <p id="allergy-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('allergy_status') }}</p>
                     }
                   </fieldset>
                   @if (step2.allergy_status === 'yes') {
@@ -513,8 +546,8 @@
                   <fieldset
                     [attr.data-focus-target]="'medication-status-group'"
                     role="radiogroup"
-                    [attr.aria-invalid]="hasFieldIssue('medication_status')"
-                    [attr.aria-describedby]="hasFieldIssue('medication_status') ? 'medication-status-error' : null"
+                    [attr.aria-invalid]="shouldShowStep2Error('medication_status')"
+                    [attr.aria-describedby]="shouldShowStep2Error('medication_status') ? 'medication-status-error' : null"
                   >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Is the child currently taking any regular medication?
@@ -529,12 +562,12 @@
                           [label]="option.label"
                           [checked]="step2.medication_status === option.value"
                           className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.medication_status = $any($event)"
+                          (valueChange)="step2.medication_status = $any($event); markStep2Touched('medication_status')"
                         />
                       }
                     </div>
-                    @if (hasFieldIssue('medication_status')) {
-                      <p id="medication-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('medication_status') }}</p>
+                    @if (shouldShowStep2Error('medication_status')) {
+                      <p id="medication-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('medication_status') }}</p>
                     }
                   </fieldset>
                   @if (step2.medication_status === 'yes') {
@@ -608,8 +641,8 @@
                 <fieldset
                   [attr.data-focus-target]="'medical-history-status-group'"
                   role="radiogroup"
-                  [attr.aria-invalid]="hasFieldIssue('medical_history_status')"
-                  [attr.aria-describedby]="hasFieldIssue('medical_history_status') ? 'medical-history-status-error' : null"
+                  [attr.aria-invalid]="shouldShowStep2Error('medical_history_status')"
+                  [attr.aria-describedby]="shouldShowStep2Error('medical_history_status') ? 'medical-history-status-error' : null"
                 >
                   <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Medical history (illness, diagnosis, or hospital stays)
@@ -624,12 +657,12 @@
                         [label]="option.label"
                         [checked]="step2.medical_history_status === option.value"
                         className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                        (valueChange)="step2.medical_history_status = $any($event)"
+                        (valueChange)="step2.medical_history_status = $any($event); markStep2Touched('medical_history_status')"
                       />
                     }
                   </div>
-                  @if (hasFieldIssue('medical_history_status')) {
-                    <p id="medical-history-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('medical_history_status') }}</p>
+                  @if (shouldShowStep2Error('medical_history_status')) {
+                    <p id="medical-history-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('medical_history_status') }}</p>
                   }
                 </fieldset>
                 @if (step2.medical_history_status === 'details') {
@@ -648,8 +681,8 @@
                   class="pt-4 border-t border-gray-200 dark:border-gray-800"
                   [attr.data-focus-target]="'dietary-status-group'"
                   role="radiogroup"
-                  [attr.aria-invalid]="hasFieldIssue('dietary_status')"
-                  [attr.aria-describedby]="hasFieldIssue('dietary_status') ? 'dietary-status-error' : null"
+                  [attr.aria-invalid]="shouldShowStep2Error('dietary_status')"
+                  [attr.aria-describedby]="shouldShowStep2Error('dietary_status') ? 'dietary-status-error' : null"
                 >
                   <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Dietary requirements
@@ -664,12 +697,12 @@
                         [label]="option.label"
                         [checked]="step2.dietary_status === option.value"
                         className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                        (valueChange)="step2.dietary_status = $any($event)"
+                        (valueChange)="step2.dietary_status = $any($event); markStep2Touched('dietary_status')"
                       />
                     }
                   </div>
-                  @if (hasFieldIssue('dietary_status')) {
-                    <p id="dietary-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('dietary_status') }}</p>
+                  @if (shouldShowStep2Error('dietary_status')) {
+                    <p id="dietary-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('dietary_status') }}</p>
                   }
                 </fieldset>
                 @if (step2.dietary_status === 'details') {
@@ -735,8 +768,8 @@
                   <fieldset
                     [attr.data-focus-target]="'social-services-status-group'"
                     role="radiogroup"
-                    [attr.aria-invalid]="hasFieldIssue('social_services_status')"
-                    [attr.aria-describedby]="hasFieldIssue('social_services_status') ? 'social-services-status-error' : null"
+                    [attr.aria-invalid]="shouldShowStep2Error('social_services_status')"
+                    [attr.aria-describedby]="shouldShowStep2Error('social_services_status') ? 'social-services-status-error' : null"
                   >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Has the child or anyone in the family been referred to or in contact with social services?
@@ -751,12 +784,12 @@
                           [label]="option.label"
                           [checked]="step2.social_services_status === option.value"
                           className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.social_services_status = $any($event)"
+                          (valueChange)="step2.social_services_status = $any($event); markStep2Touched('social_services_status')"
                         />
                       }
                     </div>
-                    @if (hasFieldIssue('social_services_status')) {
-                      <p id="social-services-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('social_services_status') }}</p>
+                    @if (shouldShowStep2Error('social_services_status')) {
+                      <p id="social-services-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('social_services_status') }}</p>
                     }
                   </fieldset>
                   @if (step2.social_services_status === 'yes') {

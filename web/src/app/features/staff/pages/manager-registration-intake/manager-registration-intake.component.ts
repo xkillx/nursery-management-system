@@ -97,7 +97,7 @@ type Step1Field =
   | 'disability_notes'
   | 'access_requirements';
 
-type Step1RequiredField = Extract<Step1Field, 'first_name' | 'surname' | 'date_of_birth' | 'start_date'>;
+type Step1RequiredField = Extract<Step1Field, 'first_name' | 'surname' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language'>;
 
 type ReferralEntry = {
   type: string;
@@ -365,6 +365,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     'surname',
     'date_of_birth',
     'start_date',
+    'home_address',
+    'first_language',
   ];
   readonly concernItems: { key: string; label: string }[] = [
     { key: 'concern_walking', label: 'Walking / Motor Skills' },
@@ -443,6 +445,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   successMessage: string | null = null;
   step1Submitted = false;
   step1Touched: Partial<Record<Step1Field, boolean>> = {};
+  step2Submitted = false;
+  step2Touched: Record<string, boolean> = {};
   fundingSubmitted = false;
   hasStoredDraft = false;
   draftRestoredAt: string | null = null;
@@ -748,6 +752,22 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (field === 'start_date' && !this.step1.start_date) {
       return 'Enter the proposed start date.';
     }
+    if (field === 'home_address' && !this.step1.home_address.trim()) {
+      return 'Enter the child\'s home address.';
+    }
+    if (field === 'first_language' && !this.step1.first_language.trim()) {
+      return 'Select the primary language spoken at home.';
+    }
+    if (field === 'disability_status') {
+      if (this.step1.disability_status !== 'yes' && this.step1.disability_status !== 'no') {
+        return 'Confirm whether the child has a disability or SEND/access needs.';
+      }
+    }
+    if (field === 'disability_notes') {
+      if (this.step1.disability_status === 'yes' && !this.step1.disability_notes.trim() && !this.step1.access_requirements.trim()) {
+        return 'Record disability or access details, or set disability to No.';
+      }
+    }
     return null;
   }
 
@@ -761,6 +781,37 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   markStep1Touched(field: Step1Field): void {
     this.step1Touched[field] = true;
+  }
+
+  protected markStep2Touched(field: string): void {
+    this.step2Touched[field] = true;
+  }
+
+  protected step2FieldError(field: string): string | null {
+    if (field === 'allergy_status' && !this.step2.allergy_status) {
+      return 'Confirm whether the child has any known allergies.';
+    }
+    if (field === 'medication_status' && !this.step2.medication_status) {
+      return 'Confirm whether the child takes regular medication.';
+    }
+    if (field === 'medical_history_status' && !this.step2.medical_history_status) {
+      return 'Confirm medical history.';
+    }
+    if (field === 'dietary_status' && !this.step2.dietary_status) {
+      return 'Confirm dietary requirements.';
+    }
+    if (field === 'social_services_status' && !this.step2.social_services_status) {
+      return 'Confirm social services involvement.';
+    }
+    return null;
+  }
+
+  protected shouldShowStep2Error(field: string): boolean {
+    return (this.step2Submitted || !!this.step2Touched[field]) && !!this.step2FieldError(field);
+  }
+
+  protected step2VisibleError(field: string): string {
+    return this.shouldShowStep2Error(field) ? this.step2FieldError(field) ?? '' : '';
   }
 
   saveChildBasics(advance = true): void {
@@ -819,6 +870,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   saveMedicalHealth(): void {
+    this.step2Submitted = true;
     if (!this.childId && !this.isNewRegistration) {
       this.errorMessage = 'Create the child record before saving medical information.';
       return;
@@ -2529,6 +2581,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.referralsDraft = [];
     this.step1Touched = {};
     this.step1Submitted = false;
+    this.step2Touched = {};
+    this.step2Submitted = false;
     this.consentsReviewed = {};
     this.fieldErrors = {};
     this.errorMessage = null;
