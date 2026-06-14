@@ -8,10 +8,12 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ConsentWritePayload, RegistrationContactEntry } from '../../models/registration-profile.models';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 describe('ManagerRegistrationIntakeComponent', () => {
   let fixture: ComponentFixture<ManagerRegistrationIntakeComponent>;
   let component: ManagerRegistrationIntakeComponent;
+  let toastErrorSpy: jasmine.Spy;
 
   beforeEach(async () => {
     localStorage.clear();
@@ -24,6 +26,7 @@ describe('ManagerRegistrationIntakeComponent', () => {
         StaffApiService,
         RegistrationDraftStorage,
         ApiErrorMapper,
+        ToastService,
       ],
     }).compileComponents();
 
@@ -31,6 +34,8 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component = fixture.componentInstance;
     component.isNewRegistration = true;
     fixture.detectChanges();
+    const toast = TestBed.inject(ToastService);
+    toastErrorSpy = spyOn(toast, 'error').and.callThrough();
   });
 
   function emptyContact(): RegistrationContactEntry {
@@ -123,17 +128,17 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.officeEvidence = {
       applicationDateStatus: 'complete',
       applicationDate: '2026-05-01',
-      birthCertificatePassportStatus: 'unknown',
-      proofOfAddressStatus: 'unknown',
-      redBookStatus: 'unknown',
-      handbookStatus: 'unknown',
-      contractStatus: 'unknown',
+      birthCertificatePassportStatus: 'complete',
+      proofOfAddressStatus: 'complete',
+      redBookStatus: 'complete',
+      handbookStatus: 'complete',
+      contractStatus: 'complete',
       notes: '',
-      depositStatus: 'unknown',
+      depositStatus: 'complete',
       depositPaidDate: '',
-      sessionsDaysRequestedStatus: 'unknown',
+      sessionsDaysRequestedStatus: 'complete',
       sessionsDaysRequested: '',
-      termTimeOnlySpaceStatus: 'unknown',
+      termTimeOnlySpaceStatus: 'complete',
       contractDate: '',
       handbookDate: '',
       redBookCheckedDate: '',
@@ -447,16 +452,16 @@ describe('ManagerRegistrationIntakeComponent', () => {
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when signed date missing', () => {
+    it('blocks when confirmation date missing', () => {
       fillRequiredForCompletion();
       component.step4.signed_date = '';
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when paper form on file not confirmed', () => {
+    it('does not block when legacy paper form flag is false', () => {
       fillRequiredForCompletion();
       component.step4.paper_form_on_file = false;
-      expect(component.canSubmitLocally()).toBe(false);
+      expect(component.canSubmitLocally()).toBe(true);
     });
 
     it('blocks when safeguarding acknowledgement off', () => {
@@ -516,16 +521,16 @@ describe('ManagerRegistrationIntakeComponent', () => {
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('unknown office statuses are allowed for follow-up', () => {
+    it('blocks when office statuses are legacy unknown', () => {
       fillRequiredForCompletion();
       component.officeEvidence.handbookStatus = 'unknown';
       component.officeEvidence.contractStatus = 'unknown';
-      expect(component.canSubmitLocally()).toBe(true);
+      expect(component.canSubmitLocally()).toBe(false);
     });
   });
 
   describe('submitRegistration', () => {
-    it('routes to first failing step and sets error message when issues exist', () => {
+    it('routes to first failing step and shows toast when issues exist', () => {
       fillRequiredForCompletion();
       component.step2.allergy_status = 'unknown';
       component.currentStep = 'consents-evidence';
@@ -533,8 +538,132 @@ describe('ManagerRegistrationIntakeComponent', () => {
       component.submitRegistration();
 
       expect(component.currentStep).toBe('medical-health');
-      expect(component.errorMessage).toContain('allergies');
+      expect(toastErrorSpy).toHaveBeenCalledWith(jasmine.any(String), { title: 'Check required details' });
       expect(component.finalCompletionIssues.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('step continuation — toast and focus', () => {
+    it('saveChildBasics blocks on missing first name and toasts', () => {
+      component.currentStep = 'child-basics';
+      component.step1.first_name = '';
+
+      component.saveChildBasics();
+
+      expect(component.currentStep).toBe('child-basics');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('saveMedicalHealth blocks on blank allergy and toasts', () => {
+      fillRequiredForCompletion();
+      component.step2.allergy_status = '';
+      component.currentStep = 'medical-health';
+
+      component.saveMedicalHealth();
+
+      expect(component.currentStep).toBe('medical-health');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('saveMedicalHealth blocks on legacy unknown medication', () => {
+      fillRequiredForCompletion();
+      component.step2.medication_status = 'unknown';
+      component.currentStep = 'medical-health';
+
+      component.saveMedicalHealth();
+
+      expect(component.currentStep).toBe('medical-health');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('saveContactsCollection blocks on missing primary phone', () => {
+      fillRequiredForCompletion();
+      component.parentCarersDraft[0].telephone = '';
+      component.currentStep = 'contacts-collection';
+
+      component.saveContactsCollection();
+
+      expect(component.currentStep).toBe('contacts-collection');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('saveConsentsEvidence blocks on missing signer name', () => {
+      fillRequiredForCompletion();
+      component.step4.signer_name = '';
+      component.currentStep = 'consents-evidence';
+
+      component.saveConsentsEvidence();
+
+      expect(component.currentStep).toBe('consents-evidence');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('step navigation lock', () => {
+    it('canOpenStep blocks forward jump when prior step incomplete', () => {
+      component.step1.first_name = '';
+
+      expect(component.canOpenStep('medical-health')).toBe(false);
+      expect(component.canOpenStep('contacts-collection')).toBe(false);
+    });
+
+    it('canOpenStep allows back navigation regardless of completion', () => {
+      component.currentStep = 'consents-evidence';
+
+      expect(component.canOpenStep('child-basics')).toBe(true);
+      expect(component.canOpenStep('medical-health')).toBe(true);
+    });
+
+    it('goToStep toasts and routes to first blocking prior issue', () => {
+      component.currentStep = 'child-basics';
+      component.step1.first_name = '';
+
+      component.goToStep('medical-health');
+
+      expect(component.currentStep).toBe('child-basics');
+      expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('stepIsComplete reflects validation state, not index alone', () => {
+      component.currentStep = 'medical-health';
+      component.step1.first_name = '';
+
+      expect(component.stepIsComplete('child-basics')).toBe(false);
+    });
+  });
+
+  describe('option arrays — no manager-facing Unknown', () => {
+    it('yesNoUnknownOptions drops unknown for required controls', () => {
+      const values = component.yesNoUnknownOptions.map(o => o.value);
+      expect(values).not.toContain('unknown');
+      expect(values).toContain('yes');
+      expect(values).toContain('no');
+    });
+
+    it('disabilityStatusOptions drops unknown', () => {
+      const values = component.disabilityStatusOptions.map(o => o.value);
+      expect(values).not.toContain('unknown');
+    });
+
+    it('noneDetailsUnknownOptions drops unknown', () => {
+      const values = component.noneDetailsUnknownOptions.map(o => o.value);
+      expect(values).not.toContain('unknown');
+    });
+
+    it('evidenceStatusOptions drops unknown', () => {
+      const values = component.evidenceStatusOptions.map(o => o.value);
+      expect(values).not.toContain('unknown');
+    });
+
+    it('waitingListOptions drops unknown', () => {
+      const values = component.waitingListOptions.map(o => o.value);
+      expect(values).not.toContain('unknown');
+    });
+
+    it('addReferralEntry default waiting list status is not unknown', () => {
+      component.referralsDraft = [];
+      component.addReferralEntry();
+      expect(component.referralsDraft[0].waitingListStatus).toBe('not_applicable');
     });
   });
 });

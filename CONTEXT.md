@@ -100,6 +100,10 @@ Managers may save registration/enrolment profile sections before the full profil
 
 For health, social-care, development, dietary, and medication topics, blank or missing information means unknown or incomplete. An explicit none or no answer means the family or manager has reviewed the topic and confirmed there is nothing to record.
 
+## Guided Registration Required Answer (Post-MVP)
+
+In the guided manager-assisted intake workflow, managers must record a definite answer before moving past required sections. Unknown remains a legacy or incomplete-data meaning, not a selectable completed answer in the guided intake path.
+
 ## Current Registration Profile (Post-MVP)
 
 The manager-facing registration/enrolment profile is the current editable profile for a child. API-PM-01 relies on audit records for update accountability and does not introduce manager-facing historical profile browsing.

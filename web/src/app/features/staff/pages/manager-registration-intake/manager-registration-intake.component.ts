@@ -43,6 +43,7 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
   ConsentRecord,
@@ -254,6 +255,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly draftStorage = inject(RegistrationDraftStorage);
+  private readonly toast = inject(ToastService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroy$ = new Subject<void>();
   private readonly draftChanges$ = new Subject<void>();
@@ -339,24 +341,20 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   readonly yesNoUnknownOptions: Option[] = [
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
-    { value: 'unknown', label: 'Unknown' },
   ];
   readonly disabilityStatusOptions: Option[] = [
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
-    { value: 'unknown', label: 'Unknown' },
   ];
   readonly noneDetailsUnknownOptions: Option[] = [
     { value: 'none', label: 'None' },
     { value: 'details', label: 'Details recorded' },
-    { value: 'unknown', label: 'Unknown' },
   ];
   readonly parentalResponsibilityOptions: Option[] = [
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
   ];
   readonly evidenceStatusOptions: Option[] = [
-    { value: 'unknown', label: 'Unknown' },
     { value: 'complete', label: 'Complete' },
     { value: 'missing', label: 'Still needed' },
     { value: 'not_applicable', label: 'Not applicable' },
@@ -565,17 +563,17 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   officeEvidence: Partial<OfficeUseChecklist> = {
     applicationDateStatus: 'complete',
     applicationDate: '',
-    birthCertificatePassportStatus: 'unknown',
-    proofOfAddressStatus: 'unknown',
-    redBookStatus: 'unknown',
-    handbookStatus: 'unknown',
-    contractStatus: 'unknown',
+    birthCertificatePassportStatus: '',
+    proofOfAddressStatus: '',
+    redBookStatus: '',
+    handbookStatus: '',
+    contractStatus: '',
     notes: '',
-    depositStatus: 'unknown',
+    depositStatus: '',
     depositPaidDate: '',
-    sessionsDaysRequestedStatus: 'unknown',
+    sessionsDaysRequestedStatus: '',
     sessionsDaysRequested: '',
-    termTimeOnlySpaceStatus: 'unknown',
+    termTimeOnlySpaceStatus: '',
     contractDate: '',
     handbookDate: '',
     redBookCheckedDate: '',
@@ -599,7 +597,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     { value: 'on_waiting_list', label: 'On waiting list' },
     { value: 'seen_completed', label: 'Seen / Completed' },
     { value: 'not_applicable', label: 'Not applicable' },
-    { value: 'unknown', label: 'Unknown' },
   ];
 
   ngOnInit(): void {
@@ -696,7 +693,15 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   goToStep(step: StepperStep): void {
     if (!this.canOpenStep(step)) {
-      this.errorMessage = 'Complete the current step before continuing.';
+      const requestedIdx = this.steps.findIndex(s => s.key === step);
+      for (let i = 0; i < requestedIdx; i++) {
+        const priorIssue = this.firstBlockingIssueForStep(this.steps[i].key);
+        if (priorIssue) {
+          this.handleValidationFailure(priorIssue);
+          return;
+        }
+      }
+      this.toast.error('Complete the current step before continuing.', { title: 'Check required details' });
       return;
     }
     this.currentStep = step;
@@ -708,14 +713,21 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   stepIsComplete(step: StepperStep): boolean {
-    return this.steps.findIndex(s => s.key === step) < this.stepIndex;
+    const idx = this.steps.findIndex(s => s.key === step);
+    if (idx >= this.stepIndex) return false;
+    return this.issuesForStep(step).length === 0;
   }
 
   canOpenStep(step: StepperStep): boolean {
-    if (this.isNewRegistration) {
-      return true;
+    const requestedIdx = this.steps.findIndex(s => s.key === step);
+    if (requestedIdx <= this.stepIndex) return true;
+    if (!this.isNewRegistration && step !== 'child-basics' && !this.childId) return false;
+    for (let i = 0; i < requestedIdx; i++) {
+      if (this.issuesForStep(this.steps[i].key).length > 0) {
+        return false;
+      }
     }
-    return step === 'child-basics' || !!this.childId;
+    return true;
   }
 
   step1FieldError(field: Step1Field): string | null {
@@ -753,6 +765,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   saveChildBasics(advance = true): void {
     this.step1Submitted = true;
+
+    const firstIssue = this.firstBlockingIssueForStep('child-basics');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
+      return;
+    }
 
     this.isSaving = true;
     this.errorMessage = null;
@@ -803,6 +821,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   saveMedicalHealth(): void {
     if (!this.childId && !this.isNewRegistration) {
       this.errorMessage = 'Create the child record before saving medical information.';
+      return;
+    }
+    const firstIssue = this.firstBlockingIssueForStep('medical-health');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
       return;
     }
     if (this.isNewRegistration) {
@@ -893,7 +916,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Create the child record before saving contacts.';
       return;
     }
-    if (!this.validateFundingSection()) {
+    this.fundingSubmitted = true;
+    const firstIssue = this.firstBlockingIssueForStep('contacts-collection');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
       return;
     }
     if (this.isNewRegistration) {
@@ -996,12 +1022,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Create the child record before saving consents.';
       return;
     }
-    if (!this.step4.signer_name.trim() || !this.step4.signed_date) {
-      this.errorMessage = 'Parent/guardian name and signed date are required.';
-      return;
-    }
-    if (!this.step4.paper_form_on_file || !this.step4.safeguarding_reporting_acknowledgement) {
-      this.errorMessage = 'Paper form evidence and safeguarding acknowledgement must be confirmed.';
+    const firstIssue = this.firstBlockingIssueForStep('consents-evidence');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
       return;
     }
     if (this.isNewRegistration) {
@@ -1016,6 +1039,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const consentPayload: ConsentWritePayload = {
       ...step4Base,
       signer_name: this.step4.signer_name.trim(),
+      paper_form_on_file: true,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
     };
@@ -1052,8 +1076,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const issues = this.collectFinalCompletionIssues();
     this.finalCompletionIssues = issues;
     if (issues.length > 0) {
-      this.routeToFirstIssue(issues);
-      this.errorMessage = issues[0].message;
+      this.handleValidationFailure(issues[0]);
       return;
     }
 
@@ -1103,10 +1126,98 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private routeToFirstIssue(issues: FinalCompletionIssue[]): void {
-    if (issues.length === 0) return;
-    this.currentStep = issues[0].stepKey;
-    setTimeout(() => this.focusStepHeading(), 50);
+  protected issuesForStep(step: StepperStep): FinalCompletionIssue[] {
+    return this.collectFinalCompletionIssues().filter(issue => issue.stepKey === step);
+  }
+
+  protected firstBlockingIssueForStep(step: StepperStep): FinalCompletionIssue | null {
+    const issues = this.issuesForStep(step);
+    return issues.length > 0 ? issues[0] : null;
+  }
+
+  protected hasFieldIssue(field: string): boolean {
+    return this.finalCompletionIssues.some(issue => issue.field === field);
+  }
+
+  protected fieldIssueMessage(field: string): string {
+    const issue = this.finalCompletionIssues.find(i => i.field === field);
+    return issue ? issue.message : '';
+  }
+
+  private handleValidationFailure(issue: FinalCompletionIssue): void {
+    this.finalCompletionIssues = this.collectFinalCompletionIssues();
+    if (this.currentStep !== issue.stepKey) {
+      this.currentStep = issue.stepKey;
+    }
+    this.toast.error(issue.message, { title: 'Check required details' });
+    this.focusIssueField(issue.field);
+  }
+
+  private fieldFocusTarget(field: string): string {
+    const map: Record<string, string> = {
+      first_name: 'child-first-name',
+      surname: 'child-surname',
+      date_of_birth: 'child-date-of-birth',
+      start_date: 'child-start-date',
+      home_address: 'child-home-address',
+      first_language: 'child-first-language',
+      disability_status: 'child-disability-status-group',
+      disability_notes: 'child-disability-notes',
+      access_requirements: 'child-access-requirements',
+      allergy_status: 'allergy-status-group',
+      allergy_details: 'allergy-details',
+      medication_status: 'medication-status-group',
+      medication_name: 'medication-name',
+      medication_dosage: 'medication-dosage',
+      dietary_status: 'dietary-status-group',
+      special_dietary_requirements: 'special-dietary-requirements',
+      medical_history_status: 'medical-history-status-group',
+      illness_diagnosis_history: 'illness-diagnosis-history',
+      social_services_status: 'social-services-status-group',
+      social_services_details: 'social-services-details',
+      primary_full_name: 'primary-full-name',
+      primary_relationship: 'primary-relationship',
+      primary_telephone: 'primary-telephone',
+      parent1_has_responsibility: 'parent1-responsibility-group',
+      emergency_contacts: 'emergency-contacts-group',
+      collection_password: 'collection-password',
+      funding_support_answer: 'funding-support-yes',
+      funding_options: 'funding-working-tax-credit',
+      other_benefits: 'otherFunding',
+      signer_name: 'signer-name',
+      signed_date: 'signed-date',
+      safeguarding_reporting_acknowledgement: 'safeguarding-reporting-consent',
+      information_sharing_consent: 'information-sharing-consent',
+      gdpr_data_processing_consent: 'gdpr-consent',
+      application_date_status: 'office-application-date-status',
+      deposit_status: 'office-deposit-status',
+      birth_certificate_passport_status: 'office-birth-certificate-status',
+      proof_of_address_status: 'office-proof-of-address-status',
+      red_book_status: 'office-red-book-status',
+      handbook_status: 'office-handbook-status',
+      contract_status: 'office-contract-status',
+      sessions_days_requested_status: 'office-sessions-days-status',
+      term_time_only_space_status: 'office-term-time-status',
+    };
+    return map[field] ?? field;
+  }
+
+  private focusIssueField(field: string): void {
+    const targetId = this.fieldFocusTarget(field);
+    setTimeout(() => {
+      const root = this.host.nativeElement as HTMLElement;
+      let el: HTMLElement | null = root.querySelector<HTMLElement>(`#${CSS.escape(targetId)}`);
+      if (!el) {
+        const wrapper = root.querySelector<HTMLElement>(`[data-focus-target="${targetId}"]`);
+        if (wrapper) {
+          el = wrapper.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]:not([tabindex="-1"])');
+        }
+      }
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 60);
   }
 
   navigateToChildDetail(): void {
@@ -1137,7 +1248,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       type: 'other',
       referredDate: '',
       referredBy: '',
-      waitingListStatus: 'unknown',
+      waitingListStatus: 'not_applicable',
       notes: '',
     });
     this.notifyDraftChanged();
@@ -1461,7 +1572,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       consents: {
         signer_name: this.step4.signer_name.trim(),
         signed_date: this.step4.signed_date,
-        paper_form_on_file: this.step4.paper_form_on_file,
+        paper_form_on_file: true,
         urgent_medical_treatment: this.step4.urgent_medical_treatment,
         urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
         plasters: this.step4.plasters,
@@ -1690,10 +1801,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       issues.push({ stepKey: 'consents-evidence', field: 'signer_name', message: 'Record the parent/guardian signer name.' });
     }
     if (!this.step4.signed_date) {
-      issues.push({ stepKey: 'consents-evidence', field: 'signed_date', message: 'Record the signed date from the paper form.' });
-    }
-    if (!this.step4.paper_form_on_file) {
-      issues.push({ stepKey: 'consents-evidence', field: 'paper_form_on_file', message: 'Confirm the signed paper form is on file.' });
+      issues.push({ stepKey: 'consents-evidence', field: 'signed_date', message: 'Record the parent/guardian confirmation date.' });
     }
     if (!this.step4.safeguarding_reporting_acknowledgement) {
       issues.push({ stepKey: 'consents-evidence', field: 'safeguarding_reporting_acknowledgement', message: 'Confirm the safeguarding reporting acknowledgement.' });
@@ -1735,6 +1843,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   private collectOfficeEvidenceIssues(issues: FinalCompletionIssue[]): void {
     const office = this.officeEvidence;
+    const acceptedStatuses = new Set(['complete', 'missing', 'not_applicable']);
     const required: Array<{ value: string | null | undefined; field: string; label: string }> = [
       { value: office.applicationDateStatus, field: 'application_date_status', label: 'Application date status' },
       { value: office.depositStatus, field: 'deposit_status', label: 'Deposit status' },
@@ -1747,8 +1856,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       { value: office.termTimeOnlySpaceStatus, field: 'term_time_only_space_status', label: 'Term-time-only space status' },
     ];
     for (const item of required) {
-      if (!item.value) {
-        issues.push({ stepKey: 'consents-evidence', field: item.field, message: `${item.label} is required.` });
+      if (!acceptedStatuses.has(item.value ?? '')) {
+        issues.push({ stepKey: 'consents-evidence', field: item.field, message: `${item.label} requires an explicit status.` });
       }
     }
   }
@@ -2127,25 +2236,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     heading?.focus();
   }
 
-  private focusFirstStep1Error(): void {
-    const fieldIds: Record<Step1RequiredField, string> = {
-      first_name: 'child-first-name',
-      surname: 'child-surname',
-      date_of_birth: 'child-date-of-birth',
-      start_date: 'child-start-date',
-    };
-    const firstInvalidField = this.step1MissingRequiredFields[0];
-    if (!firstInvalidField) return;
-
-    setTimeout(() => {
-      const nativeInput = document.querySelector<HTMLElement>(`input#${fieldIds[firstInvalidField]}`);
-      if (nativeInput) {
-        nativeInput.focus();
-        nativeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 50);
-  }
-
   private subscribeToDraftAutoSave(): void {
     this.draftChanges$
       .pipe(debounceTime(500), takeUntil(this.destroy$))
@@ -2415,17 +2505,17 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.officeEvidence = {
       applicationDateStatus: 'complete',
       applicationDate: '',
-      birthCertificatePassportStatus: 'unknown',
-      proofOfAddressStatus: 'unknown',
-      redBookStatus: 'unknown',
-      handbookStatus: 'unknown',
-      contractStatus: 'unknown',
+      birthCertificatePassportStatus: '',
+      proofOfAddressStatus: '',
+      redBookStatus: '',
+      handbookStatus: '',
+      contractStatus: '',
       notes: '',
-      depositStatus: 'unknown',
+      depositStatus: '',
       depositPaidDate: '',
-      sessionsDaysRequestedStatus: 'unknown',
+      sessionsDaysRequestedStatus: '',
       sessionsDaysRequested: '',
-      termTimeOnlySpaceStatus: 'unknown',
+      termTimeOnlySpaceStatus: '',
       contractDate: '',
       handbookDate: '',
       redBookCheckedDate: '',

@@ -82,9 +82,9 @@
                 <button
                   type="button"
                   (click)="goToStep(step.key)"
-                  [disabled]="!canOpenStep(step.key)"
-                  class="group flex min-h-[84px] w-full items-start gap-3 rounded-lg border bg-white p-3 text-left transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 disabled:cursor-not-allowed dark:border-gray-800 dark:bg-white/[0.02] dark:focus:ring-brand-400/15"
+                  class="group flex min-h-[84px] w-full items-start gap-3 rounded-lg border bg-white p-3 text-left transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.02] dark:focus:ring-brand-400/15"
                   [attr.aria-current]="stepIsActive(step.key) ? 'step' : null"
+                  [attr.aria-disabled]="!canOpenStep(step.key)"
                   [class.border-brand-300]="stepIsActive(step.key)"
                   [class.bg-brand-50]="stepIsActive(step.key)"
                   [class.border-success-200]="stepIsComplete(step.key)"
@@ -152,7 +152,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Record the child identity, home details, and proposed start date from the paper form.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Enter the child's identity, home details, and proposed start date with the parent/carer.</p>
                 </div>
                 <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
                   <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
@@ -325,7 +325,7 @@
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="additional-details-heading">
                 <div>
                   <h3 id="additional-details-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Additional Details</h3>
-                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Demographics and access information from the paper form.</p>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Demographics and access information confirmed with the parent/carer.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -363,7 +363,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                  <fieldset>
+                  <fieldset [attr.data-focus-target]="'child-disability-status-group'">
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Disability / SEND / access needs
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -447,7 +447,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Medical & Health Information</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Record allergies, medical history, immunisations, and healthcare professional details from the paper form.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 2: Enter allergies, medical history, immunisations, and healthcare professional details with the parent/carer.</p>
                 </div>
                 <ng-icon name="heroHeart" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -460,7 +460,12 @@
                   <h4 id="medical-allergies-heading" class="text-lg font-bold">Allergies & Dietary Needs</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-5 dark:border-warning-500/30 dark:bg-warning-500/10">
-                  <fieldset>
+                  <fieldset
+                    [attr.data-focus-target]="'allergy-status-group'"
+                    role="radiogroup"
+                    [attr.aria-invalid]="hasFieldIssue('allergy_status')"
+                    [attr.aria-describedby]="hasFieldIssue('allergy_status') ? 'allergy-status-error' : null"
+                  >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Does the child have any known allergies?
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -478,10 +483,15 @@
                         />
                       }
                     </div>
+                    @if (hasFieldIssue('allergy_status')) {
+                      <p id="allergy-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('allergy_status') }}</p>
+                    }
                   </fieldset>
                   @if (step2.allergy_status === 'yes') {
                     <app-form-field className="mt-4" label="Allergy details" [required]="true">
                       <app-text-area
+                        id="allergy-details"
+                        name="allergy_details"
                         className="border-error-200 bg-white dark:border-error-500/30 dark:bg-gray-900"
                         [(ngModel)]="step2.allergy_details"
                         [rows]="4"
@@ -498,7 +508,12 @@
                   <h4 id="medical-medications-heading" class="text-lg font-bold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
-                  <fieldset>
+                  <fieldset
+                    [attr.data-focus-target]="'medication-status-group'"
+                    role="radiogroup"
+                    [attr.aria-invalid]="hasFieldIssue('medication_status')"
+                    [attr.aria-describedby]="hasFieldIssue('medication_status') ? 'medication-status-error' : null"
+                  >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Is the child currently taking any regular medication?
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -516,11 +531,16 @@
                         />
                       }
                     </div>
+                    @if (hasFieldIssue('medication_status')) {
+                      <p id="medication-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('medication_status') }}</p>
+                    }
                   </fieldset>
                   @if (step2.medication_status === 'yes') {
                     <div class="mt-5 grid grid-cols-1 gap-8 md:grid-cols-2">
                       <app-form-field label="Medication name" [required]="true">
                         <app-input-field
+                          id="medication-name"
+                          name="medication_name"
                           type="text"
                           [(ngModel)]="step2.medication_name"
                           placeholder="e.g. Inhaler"
@@ -528,6 +548,8 @@
                       </app-form-field>
                       <app-form-field label="Dosage and frequency" [required]="true">
                         <app-input-field
+                          id="medication-dosage"
+                          name="medication_dosage"
                           type="text"
                           [(ngModel)]="step2.medication_dosage"
                           placeholder="e.g. 2 puffs when required"
@@ -581,7 +603,12 @@
                   </app-form-field>
                 }
 
-                <fieldset>
+                <fieldset
+                  [attr.data-focus-target]="'medical-history-status-group'"
+                  role="radiogroup"
+                  [attr.aria-invalid]="hasFieldIssue('medical_history_status')"
+                  [attr.aria-describedby]="hasFieldIssue('medical_history_status') ? 'medical-history-status-error' : null"
+                >
                   <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Medical history (illness, diagnosis, or hospital stays)
                     <span class="text-error-500" aria-hidden="true"> *</span>
@@ -599,10 +626,15 @@
                       />
                     }
                   </div>
+                  @if (hasFieldIssue('medical_history_status')) {
+                    <p id="medical-history-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('medical_history_status') }}</p>
+                  }
                 </fieldset>
                 @if (step2.medical_history_status === 'details') {
                   <app-form-field label="History of illness or diagnosis" [required]="true">
                     <app-text-area
+                      id="illness-diagnosis-history"
+                      name="illness_diagnosis_history"
                       [(ngModel)]="step2.illness_diagnosis_history"
                       [rows]="3"
                       placeholder="Record any known history of illness, diagnosis, or hospital stays"
@@ -610,7 +642,13 @@
                   </app-form-field>
                 }
 
-                <fieldset class="pt-4 border-t border-gray-200 dark:border-gray-800">
+                <fieldset
+                  class="pt-4 border-t border-gray-200 dark:border-gray-800"
+                  [attr.data-focus-target]="'dietary-status-group'"
+                  role="radiogroup"
+                  [attr.aria-invalid]="hasFieldIssue('dietary_status')"
+                  [attr.aria-describedby]="hasFieldIssue('dietary_status') ? 'dietary-status-error' : null"
+                >
                   <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Dietary requirements
                     <span class="text-error-500" aria-hidden="true"> *</span>
@@ -628,10 +666,15 @@
                       />
                     }
                   </div>
+                  @if (hasFieldIssue('dietary_status')) {
+                    <p id="dietary-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('dietary_status') }}</p>
+                  }
                 </fieldset>
                 @if (step2.dietary_status === 'details') {
                   <app-form-field label="Special dietary requirements" [required]="true">
                     <app-text-area
+                      id="special-dietary-requirements"
+                      name="special_dietary_requirements"
                       [(ngModel)]="step2.special_dietary_requirements"
                       [rows]="2"
                       placeholder="e.g. Vegetarian, halal, lactose-free diet"
@@ -687,7 +730,12 @@
                   <h4 id="medical-safeguarding-heading" class="text-lg font-bold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
-                  <fieldset>
+                  <fieldset
+                    [attr.data-focus-target]="'social-services-status-group'"
+                    role="radiogroup"
+                    [attr.aria-invalid]="hasFieldIssue('social_services_status')"
+                    [attr.aria-describedby]="hasFieldIssue('social_services_status') ? 'social-services-status-error' : null"
+                  >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Has the child or anyone in the family been referred to or in contact with social services?
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -705,11 +753,16 @@
                         />
                       }
                     </div>
+                    @if (hasFieldIssue('social_services_status')) {
+                      <p id="social-services-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('social_services_status') }}</p>
+                    }
                   </fieldset>
                   @if (step2.social_services_status === 'yes') {
                     <div class="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2">
                       <app-form-field label="Details of social services involvement" [required]="true">
                         <app-text-area
+                          id="social-services-details"
+                          name="social_services_details"
                           [(ngModel)]="step2.social_services_details"
                           [rows]="3"
                           placeholder="Provide details of the referral or contact"
@@ -879,7 +932,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Contacts & Security</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 3: Record parent/carer details, emergency contacts, funding eligibility, and collection security preferences from the paper form.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 3: Enter parent/carer details, emergency contacts, funding eligibility, and collection security preferences together.</p>
                 </div>
                 <ng-icon name="heroShieldCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -897,6 +950,8 @@
                   <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <app-form-field label="Primary parent/carer full name">
                       <app-input-field
+                        id="primary-full-name"
+                        name="primary_full_name"
                         type="text"
                         [(ngModel)]="parent.fullName"
                         autocomplete="name"
@@ -906,6 +961,8 @@
                     </app-form-field>
                     <app-form-field label="Relationship to child">
                       <app-select
+                        id="primary-relationship"
+                        name="primary_relationship"
                         [(ngModel)]="parent.relationshipToChild"
                         [options]="relationshipSelectOptions"
                         placeholder="Select relationship"
@@ -914,6 +971,8 @@
                     </app-form-field>
                     <app-form-field label="Contact number">
                       <app-input-field
+                        id="primary-telephone"
+                        name="primary_telephone"
                         type="tel"
                         [(ngModel)]="parent.telephone"
                         autocomplete="tel"
@@ -947,7 +1006,7 @@
                       />
                     </app-form-field>
                   </div>
-                  <fieldset class="mt-2">
+                  <fieldset class="mt-2" [attr.data-focus-target]="'parent1-responsibility-group'">
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Does the primary parent/carer hold parental responsibility?
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -1240,7 +1299,7 @@
                 </div>
               </section>
 
-              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="contacts-emergency-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="contacts-emergency-heading" [attr.data-focus-target]="'emergency-contacts-group'">
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-3">
                     <ng-icon name="heroIdentification" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
@@ -1312,6 +1371,8 @@
                   <app-form-field label="Set collection password">
                     <div class="relative">
                       <app-input-field
+                        id="collection-password"
+                        name="collection_password"
                         [type]="showCollectionPassword ? 'text' : 'password'"
                         [(ngModel)]="step3.collection_password"
                         autocomplete="new-password"
@@ -1374,7 +1435,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Permissions & Consents</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 4: Record consent decisions, evidence checks, and GDPR declarations from the completed paper form.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 4: Confirm consent decisions, evidence checks, and GDPR declarations with the parent/carer.</p>
                 </div>
                 <ng-icon name="heroClipboardDocumentCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -1384,7 +1445,7 @@
 
               <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
                 <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
-                <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly. This screen records paper-form decisions only; no uploads or digital signature capture are part of this workflow.</p>
+                <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly while the parent/carer and manager or staff member complete the registration together.</p>
               </div>
 
               <section class="space-y-6" aria-labelledby="professional-liaison-heading">
@@ -1398,6 +1459,7 @@
                     <div
                       role="button"
                       tabindex="0"
+                      [attr.data-focus-target]="item.key"
                       class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-4 transition dark:text-gray-300"
                       [class.border-brand-200]="consentValue(item.key)"
                       [class.bg-brand-50]="consentValue(item.key)"
@@ -1441,11 +1503,15 @@
                   <div
                     role="button"
                     tabindex="0"
+                    [attr.data-focus-target]="'safeguarding-reporting-consent'"
+                    [attr.aria-invalid]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
+                    [attr.aria-describedby]="hasFieldIssue('safeguarding_reporting_acknowledgement') ? 'safeguarding-consent-error' : null"
                     class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                     [class.border-brand-200]="step4.safeguarding_reporting_acknowledgement"
                     [class.bg-brand-50]="step4.safeguarding_reporting_acknowledgement"
                     [class.border-gray-200]="!step4.safeguarding_reporting_acknowledgement"
                     [class.bg-white]="!step4.safeguarding_reporting_acknowledgement"
+                    [class.border-error-400]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
                     [ngClass]="{
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.safeguarding_reporting_acknowledgement,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.safeguarding_reporting_acknowledgement
@@ -1463,9 +1529,13 @@
                       />
                     </div>
                   </div>
+                  @if (hasFieldIssue('safeguarding_reporting_acknowledgement')) {
+                    <p id="safeguarding-consent-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('safeguarding_reporting_acknowledgement') }}</p>
+                  }
                   <div
                     role="button"
                     tabindex="0"
+                    [attr.data-focus-target]="'urgent_medical_treatment'"
                     class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                     [class.border-brand-200]="step4.urgent_medical_treatment"
                     [class.bg-brand-50]="step4.urgent_medical_treatment"
@@ -1491,6 +1561,7 @@
                   <div
                     role="button"
                     tabindex="0"
+                    [attr.data-focus-target]="'plasters'"
                     class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                     [class.border-brand-200]="step4.plasters"
                     [class.bg-brand-50]="step4.plasters"
@@ -1516,11 +1587,15 @@
                   <div
                     role="button"
                     tabindex="0"
+                    [attr.data-focus-target]="'information-sharing-consent'"
+                    [attr.aria-invalid]="hasFieldIssue('information_sharing_consent')"
+                    [attr.aria-describedby]="hasFieldIssue('information_sharing_consent') ? 'information-sharing-error' : null"
                     class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                     [class.border-brand-200]="step4.information_sharing_consent"
                     [class.bg-brand-50]="step4.information_sharing_consent"
                     [class.border-gray-200]="!step4.information_sharing_consent"
                     [class.bg-white]="!step4.information_sharing_consent"
+                    [class.border-error-400]="hasFieldIssue('information_sharing_consent')"
                     [ngClass]="{
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.information_sharing_consent,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.information_sharing_consent
@@ -1538,6 +1613,9 @@
                       />
                     </div>
                   </div>
+                  @if (hasFieldIssue('information_sharing_consent')) {
+                    <p id="information-sharing-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('information_sharing_consent') }}</p>
+                  }
                 </div>
                 <app-form-field label="Urgent treatment exceptions" className="md:max-w-1/2">
                   <app-input-field
@@ -1554,12 +1632,13 @@
                   <ng-icon name="heroHeart" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h3 class="text-lg font-bold">Activities & Daily Care</h3>
                 </div>
-                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">Tick each box to confirm parent/carer permission for local outings, face painting, and application of parent-supplied sun cream and nappy cream, as recorded on the signed parental consent form.</p>
+                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">Tick each box to confirm parent/carer permission for local outings, face painting, and application of parent-supplied sun cream and nappy cream.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   @for (item of activityConsentItems; track item.key) {
                     <div
                       role="button"
                       tabindex="0"
+                      [attr.data-focus-target]="item.key"
                       class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                       [class.border-brand-200]="consentValue(item.key)"
                       [class.bg-brand-50]="consentValue(item.key)"
@@ -1591,12 +1670,13 @@
                   <ng-icon name="heroCamera" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h3 class="text-lg font-bold">Photographs & Social Media</h3>
                 </div>
-                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">Whilst your child is in nursery we will take photographs for a variety of purposes. Tick each box to confirm parent/carer consent for each use, as recorded on the signed parental consent form.</p>
+                <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">Whilst your child is in nursery we will take photographs for a variety of purposes. Tick each box to confirm parent/carer consent for each use.</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                   @for (item of photoConsentItems; track item.key) {
                     <div
                       role="button"
                       tabindex="0"
+                      [attr.data-focus-target]="item.key"
                       class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                       [class.border-brand-200]="consentValue(item.key)"
                       [class.bg-brand-50]="consentValue(item.key)"
@@ -1624,36 +1704,47 @@
 
               </section>
 
-              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="paper-evidence-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="digital-confirmation-heading">
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
-                  <h3 class="text-lg font-bold">Paper-Form Evidence & Confirmation</h3>
+                  <h3 class="text-lg font-bold">Parent Confirmation & Office Checks</h3>
                 </div>
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <app-form-field label="Parent/guardian name" [required]="true">
+                  <app-form-field
+                    label="Parent/guardian name"
+                    labelFor="signer-name"
+                    [required]="true"
+                    errorId="signer-name-error"
+                    [error]="fieldIssueMessage('signer_name')"
+                  >
                     <app-input-field
+                      id="signer-name"
+                      name="signer_name"
                       type="text"
                       [(ngModel)]="step4.signer_name"
                       autocomplete="name"
-
-                      placeholder="Enter full name from paper form"
+                      [error]="hasFieldIssue('signer_name')"
+                      [describedBy]="hasFieldIssue('signer_name') ? 'signer-name-error' : undefined"
+                      placeholder="Enter parent/guardian full name"
                     />
                   </app-form-field>
-                  <app-form-field label="Signed date" [required]="true">
+                  <app-form-field
+                    label="Confirmation date"
+                    labelFor="signed-date"
+                    [required]="true"
+                    errorId="signed-date-error"
+                    [error]="fieldIssueMessage('signed_date')"
+                  >
                     <app-date-picker
+                      id="signed-date"
+                      name="signed_date"
                       [(ngModel)]="step4.signed_date"
-
+                      [error]="hasFieldIssue('signed_date')"
+                      [describedBy]="hasFieldIssue('signed_date') ? 'signed-date-error' : undefined"
                     />
                   </app-form-field>
                 </div>
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                  <div class="rounded-lg bg-brand-50 p-4 dark:bg-brand-500/10">
-                    <app-checkbox
-                      name="paper_form_on_file"
-                      [(ngModel)]="step4.paper_form_on_file"
-                      label="Signed paper form is on file"
-                    />
-                  </div>
                   <app-form-field label="Application date">
                     <app-date-picker
                       [(ngModel)]="officeEvidence.applicationDate"
@@ -1662,6 +1753,9 @@
                   </app-form-field>
                   <app-form-field label="Birth certificate/passport">
                     <app-select
+                      id="office-birth-certificate-status"
+                      name="birth_certificate_passport_status"
+                      [attr.data-focus-target]="'birth_certificate_passport_status'"
                       [(ngModel)]="officeEvidence.birthCertificatePassportStatus"
                       [options]="evidenceStatusOptions"
                       placeholder="Select status"
@@ -1671,6 +1765,9 @@
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <app-form-field label="Deposit status">
                     <app-select
+                      id="office-deposit-status"
+                      name="deposit_status"
+                      [attr.data-focus-target]="'deposit_status'"
                       [(ngModel)]="officeEvidence.depositStatus"
                       [options]="evidenceStatusOptions"
                       placeholder="Select status"
@@ -1696,6 +1793,9 @@
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <app-form-field label="Term time only space">
                     <app-select
+                      id="office-term-time-status"
+                      name="term_time_only_space_status"
+                      [attr.data-focus-target]="'term_time_only_space_status'"
                       [(ngModel)]="officeEvidence.termTimeOnlySpaceStatus"
                       [options]="evidenceStatusOptions"
                       placeholder="Select status"
@@ -1711,6 +1811,70 @@
                     <app-date-picker
                       [(ngModel)]="officeEvidence.handbookDate"
 
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <app-form-field label="Application date status">
+                    <app-select
+                      id="office-application-date-status"
+                      name="application_date_status"
+                      [attr.data-focus-target]="'application_date_status'"
+                      [(ngModel)]="officeEvidence.applicationDateStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Proof of address status">
+                    <app-select
+                      id="office-proof-of-address-status"
+                      name="proof_of_address_status"
+                      [attr.data-focus-target]="'proof_of_address_status'"
+                      [(ngModel)]="officeEvidence.proofOfAddressStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Red Book status">
+                    <app-select
+                      id="office-red-book-status"
+                      name="red_book_status"
+                      [attr.data-focus-target]="'red_book_status'"
+                      [(ngModel)]="officeEvidence.redBookStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                </div>
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                  <app-form-field label="Handbook status">
+                    <app-select
+                      id="office-handbook-status"
+                      name="handbook_status"
+                      [attr.data-focus-target]="'handbook_status'"
+                      [(ngModel)]="officeEvidence.handbookStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Contract status">
+                    <app-select
+                      id="office-contract-status"
+                      name="contract_status"
+                      [attr.data-focus-target]="'contract_status'"
+                      [(ngModel)]="officeEvidence.contractStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
+                    />
+                  </app-form-field>
+                  <app-form-field label="Sessions/days requested status">
+                    <app-select
+                      id="office-sessions-days-status"
+                      name="sessions_days_requested_status"
+                      [attr.data-focus-target]="'sessions_days_requested_status'"
+                      [(ngModel)]="officeEvidence.sessionsDaysRequestedStatus"
+                      [options]="evidenceStatusOptions"
+                      placeholder="Select status"
                     />
                   </app-form-field>
                 </div>
@@ -1738,7 +1902,7 @@
                   <app-text-area
                     [(ngModel)]="step4.notes_exceptions"
                     [rows]="3"
-                    placeholder="Optional paper-form exceptions or office-use notes"
+                    placeholder="Optional confirmation exceptions or office-use notes"
                   />
                 </app-form-field>
               </section>
@@ -1757,11 +1921,15 @@
                 <div
                   role="button"
                   tabindex="0"
+                  [attr.data-focus-target]="'gdpr-consent'"
+                  [attr.aria-invalid]="hasFieldIssue('gdpr_data_processing_consent')"
+                  [attr.aria-describedby]="hasFieldIssue('gdpr_data_processing_consent') ? 'gdpr-consent-error' : null"
                   class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
                   [class.border-brand-200]="step4.gdpr_data_processing_consent"
                   [class.bg-brand-50]="step4.gdpr_data_processing_consent"
                   [class.border-gray-200]="!step4.gdpr_data_processing_consent"
                   [class.bg-white]="!step4.gdpr_data_processing_consent"
+                  [class.border-error-400]="hasFieldIssue('gdpr_data_processing_consent')"
                   [ngClass]="{
                     'dark:border-brand-500/40 dark:bg-brand-500/10': step4.gdpr_data_processing_consent,
                     'dark:border-gray-800 dark:bg-gray-900/50': !step4.gdpr_data_processing_consent
@@ -1779,6 +1947,9 @@
                     />
                   </div>
                 </div>
+                @if (hasFieldIssue('gdpr_data_processing_consent')) {
+                  <p id="gdpr-consent-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('gdpr_data_processing_consent') }}</p>
+                }
               </section>
 
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
@@ -1787,7 +1958,7 @@
                   Back
                 </app-button>
                 @if (isNewRegistration) {
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="!canSubmitLocally() || isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
                     {{ isSaving ? 'Creating...' : 'Complete Registration' }}
                     <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
                   </app-button>
