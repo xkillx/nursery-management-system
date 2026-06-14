@@ -328,7 +328,7 @@
                   <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Demographics and access information confirmed with the parent/carer.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Religion" labelFor="child-religion">
                     <app-select
                       id="child-religion"
@@ -350,7 +350,9 @@
                       [placeholderDisabled]="false"
                     />
                   </app-form-field>
+                </div>
 
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Other languages spoken" labelFor="child-other-languages">
                     <app-input-field
                       id="child-other-languages"
@@ -360,15 +362,25 @@
                       placeholder="e.g. Urdu, Polish"
                     />
                   </app-form-field>
+
+                  <app-form-field label="Access requirements" labelFor="child-access-requirements">
+                    <app-input-field
+                      id="child-access-requirements"
+                      name="access_requirements"
+                      type="text"
+                      [(ngModel)]="step1.access_requirements"
+                      placeholder="e.g. Wheelchair access, visual aids"
+                    />
+                  </app-form-field>
                 </div>
 
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <fieldset [attr.data-focus-target]="'child-disability-status-group'">
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Disability / SEND / access needs
                       <span class="text-error-500" aria-hidden="true"> *</span>
                     </legend>
-                    <div class="grid gap-3 sm:grid-cols-3">
+                    <div class="grid gap-3 sm:grid-cols-2">
                       @for (option of disabilityStatusOptions; track option.value) {
                         <app-radio
                           [id]="'child-disability-' + option.value"
@@ -384,7 +396,7 @@
                   </fieldset>
 
                   @if (step1.disability_status === 'yes') {
-                    <app-form-field label="Disability details" labelFor="child-disability-notes" className="md:col-span-2">
+                    <app-form-field label="Disability details" labelFor="child-disability-notes">
                       <app-input-field
                         id="child-disability-notes"
                         name="disability_notes"
@@ -394,16 +406,6 @@
                       />
                     </app-form-field>
                   }
-
-                  <app-form-field label="Access requirements" labelFor="child-access-requirements" className="md:col-span-2">
-                    <app-input-field
-                      id="child-access-requirements"
-                      name="access_requirements"
-                      type="text"
-                      [(ngModel)]="step1.access_requirements"
-                      placeholder="e.g. Wheelchair access, visual aids"
-                    />
-                  </app-form-field>
                 </div>
 
                 @if (!step1.disability_status) {
