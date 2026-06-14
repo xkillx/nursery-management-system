@@ -533,6 +533,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     urgent_medical_treatment: true,
     plasters: true,
     safeguarding_reporting_acknowledgement: true,
+    information_truthfulness_declaration: true,
     information_sharing_consent: true,
     gdpr_data_processing_consent: true,
     area_senco_liaison: true,
@@ -1197,6 +1198,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       safeguarding_reporting_acknowledgement: 'safeguarding-reporting-consent',
       information_sharing_consent: 'information-sharing-consent',
       gdpr_data_processing_consent: 'gdpr-consent',
+      information_truthfulness_declaration: 'truthfulness-declaration',
     };
     return map[field] ?? field;
   }
@@ -1573,6 +1575,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         plasters: this.step4.plasters,
         safeguarding_reporting_acknowledgement: this.step4.safeguarding_reporting_acknowledgement,
         information_sharing_consent: this.step4.information_sharing_consent,
+        information_truthfulness_declaration: this.step4.information_truthfulness_declaration,
         gdpr_data_processing_consent: this.step4.gdpr_data_processing_consent,
         area_senco_liaison: this.step4.area_senco_liaison,
         health_visitor_liaison: this.step4.health_visitor_liaison,
@@ -1780,6 +1783,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (!this.step4.gdpr_data_processing_consent) {
       issues.push({ stepKey: 'consents-evidence', field: 'gdpr_data_processing_consent', message: 'Confirm GDPR data processing consent.' });
     }
+    if (!this.step4.information_truthfulness_declaration) {
+      issues.push({ stepKey: 'consents-evidence', field: 'information_truthfulness_declaration', message: 'Confirm the truthfulness declaration.' });
+    }
 
     if (!this.isNewRegistration) {
       return;
@@ -1932,6 +1938,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       urgent_medical_treatment_exceptions: record.urgent_medical_treatment_exceptions,
       plasters: record.plasters,
       safeguarding_reporting_acknowledgement: record.safeguarding_reporting_acknowledgement,
+      information_truthfulness_declaration: record.information_truthfulness_declaration,
       area_senco_liaison: record.area_senco_liaison,
       health_visitor_liaison: record.health_visitor_liaison,
       transition_documents: record.transition_documents,
@@ -2397,6 +2404,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       urgent_medical_treatment: true,
       plasters: true,
       safeguarding_reporting_acknowledgement: true,
+      information_truthfulness_declaration: true,
       information_sharing_consent: true,
       gdpr_data_processing_consent: true,
       area_senco_liaison: true,
