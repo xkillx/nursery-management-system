@@ -96,17 +96,17 @@
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
                   <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Enter the child's identity, home details, and proposed start date with the parent/carer.</p>
                 </div>
-                <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
-                  <ng-icon name="heroDocumentCheck" size="16" aria-hidden="true" />
-                  Required details
-                </span>
+                <ng-icon name="heroDocumentCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
             </div>
 
             <form class="space-y-12 p-5 md:p-6" (ngSubmit)="saveChildBasics()" novalidate>
               <section class="space-y-6" aria-labelledby="child-identity-heading">
                 <div>
-                  <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Identity</h3>
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroUser" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Identity & Personal Info</h3>
+                  </div>
                   <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">First name, surname, date of birth, and start date are required.</p>
                 </div>
 
@@ -191,6 +191,35 @@
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field
+                    label="Proposed start date"
+                    labelFor="child-start-date"
+                    [required]="true"
+                    errorId="child-start-date-error"
+                    [error]="step1VisibleError('start_date')"
+                  >
+                    <app-date-picker
+                      id="child-start-date"
+                      name="start_date"
+                      [(ngModel)]="step1.start_date"
+                      (blurred)="markStep1Touched('start_date')"
+                      [error]="shouldShowStep1Error('start_date')"
+                      [describedBy]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : undefined"
+                    />
+                  </app-form-field>
+                </div>
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="background-culture-heading">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroLanguage" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="background-culture-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Background & Culture</h3>
+                  </div>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Language, religion, and ethnicity information confirmed with the parent/carer.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field
                     label="Primary language spoken at home"
                     labelFor="child-first-language"
                     [required]="true"
@@ -210,20 +239,37 @@
                     />
                   </app-form-field>
 
-                  <app-form-field
-                    label="Proposed start date"
-                    labelFor="child-start-date"
-                    [required]="true"
-                    errorId="child-start-date-error"
-                    [error]="step1VisibleError('start_date')"
-                  >
-                    <app-date-picker
-                      id="child-start-date"
-                      name="start_date"
-                      [(ngModel)]="step1.start_date"
-                      (blurred)="markStep1Touched('start_date')"
-                      [error]="shouldShowStep1Error('start_date')"
-                      [describedBy]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : undefined"
+                  <app-form-field label="Other languages spoken" labelFor="child-other-languages">
+                    <app-input-field
+                      id="child-other-languages"
+                      name="other_languages"
+                      type="text"
+                      [(ngModel)]="step1.other_languages"
+                      placeholder="e.g. Urdu, Polish"
+                    />
+                  </app-form-field>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field label="Religion" labelFor="child-religion">
+                    <app-select
+                      id="child-religion"
+                      name="religion"
+                      [(ngModel)]="step1.religion"
+                      [options]="religionOptions"
+                      placeholder="Select religion..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
+
+                  <app-form-field label="Ethnic origin" labelFor="child-ethnic-origin">
+                    <app-select
+                      id="child-ethnic-origin"
+                      name="ethnic_origin"
+                      [(ngModel)]="step1.ethnic_origin"
+                      [options]="ethnicOriginOptions"
+                      placeholder="Select ethnic origin..."
+                      [placeholderDisabled]="false"
                     />
                   </app-form-field>
                 </div>
@@ -231,7 +277,10 @@
 
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="home-address-heading">
                 <div>
-                  <h3 id="home-address-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Home address</h3>
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroHome" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="home-address-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Home Address</h3>
+                  </div>
                   <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Optional details can be completed now or updated later.</p>
                 </div>
 
@@ -282,56 +331,13 @@
                 </div>
               </section>
 
-              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="additional-details-heading">
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="send-access-heading">
                 <div>
-                  <h3 id="additional-details-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Additional Details</h3>
-                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Demographics and access information confirmed with the parent/carer.</p>
-                </div>
-
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <app-form-field label="Religion" labelFor="child-religion">
-                    <app-select
-                      id="child-religion"
-                      name="religion"
-                      [(ngModel)]="step1.religion"
-                      [options]="religionOptions"
-                      placeholder="Select religion..."
-                      [placeholderDisabled]="false"
-                    />
-                  </app-form-field>
-
-                  <app-form-field label="Ethnic origin" labelFor="child-ethnic-origin">
-                    <app-select
-                      id="child-ethnic-origin"
-                      name="ethnic_origin"
-                      [(ngModel)]="step1.ethnic_origin"
-                      [options]="ethnicOriginOptions"
-                      placeholder="Select ethnic origin..."
-                      [placeholderDisabled]="false"
-                    />
-                  </app-form-field>
-                </div>
-
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <app-form-field label="Other languages spoken" labelFor="child-other-languages">
-                    <app-input-field
-                      id="child-other-languages"
-                      name="other_languages"
-                      type="text"
-                      [(ngModel)]="step1.other_languages"
-                      placeholder="e.g. Urdu, Polish"
-                    />
-                  </app-form-field>
-
-                  <app-form-field label="Access requirements" labelFor="child-access-requirements">
-                    <app-input-field
-                      id="child-access-requirements"
-                      name="access_requirements"
-                      type="text"
-                      [(ngModel)]="step1.access_requirements"
-                      placeholder="e.g. Wheelchair access, visual aids"
-                    />
-                  </app-form-field>
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="send-access-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">SEND & Access Needs</h3>
+                  </div>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Disability, SEND, and access information confirmed with the parent/carer.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -383,6 +389,18 @@
                   }
                 </div>
 
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field label="Access requirements" labelFor="child-access-requirements">
+                    <app-input-field
+                      id="child-access-requirements"
+                      name="access_requirements"
+                      type="text"
+                      [(ngModel)]="step1.access_requirements"
+                      placeholder="e.g. Wheelchair access, visual aids"
+                    />
+                  </app-form-field>
+                </div>
+
                 @if (!step1.disability_status) {
                   <app-form-field label="Disability notes" labelFor="child-disability-notes-empty" className="hidden">
                     <app-input-field id="child-disability-notes-empty" type="hidden" />
@@ -391,6 +409,12 @@
               </section>
 
               <section class="border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="child-notes-heading">
+                <div class="mb-6">
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroDocumentText" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="child-notes-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Child Notes</h3>
+                  </div>
+                </div>
                 <app-form-field label="Child notes" labelFor="child-notes">
                   <app-text-area
                     id="child-notes"
@@ -402,7 +426,7 @@
                 </app-form-field>
                 <div class="mt-4 flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
                   <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
-                  <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">All information provided is stored securely in accordance with UK GDPR regulations. Paper-form evidence remains held by the nursery.</p>
+                  <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">All information provided is stored securely in accordance with UK GDPR regulations.</p>
                 </div>
               </section>
 
