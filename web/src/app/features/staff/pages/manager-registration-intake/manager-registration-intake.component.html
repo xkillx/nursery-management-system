@@ -563,6 +563,13 @@
                           placeholder="e.g. Refrigerator"
                         />
                       </app-form-field>
+                      <app-form-field label="What are the side effects?" className="md:col-span-2">
+                        <app-input-field
+                          type="text"
+                          [(ngModel)]="step2.medication_side_effects"
+                          placeholder="e.g. Drowsiness, loss of appetite"
+                        />
+                      </app-form-field>
                     </div>
                   }
                 </div>
@@ -682,14 +689,6 @@
                     />
                   </app-form-field>
                 }
-
-                <app-form-field label="What are the side effects?">
-                  <app-input-field
-                    type="text"
-                    [(ngModel)]="step2.medication_side_effects"
-                    placeholder="e.g. Drowsiness, loss of appetite"
-                  />
-                </app-form-field>
               </section>
 
               <section class="space-y-8 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="medical-professionals-heading">
