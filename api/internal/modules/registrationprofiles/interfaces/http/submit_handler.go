@@ -177,8 +177,6 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 
 	if req.Consents != nil {
 		input.Consents = domain.ConsentInput{
-			SignerName:       req.Consents.SignerName,
-			SignedDate:       req.Consents.SignedDate,
 			PaperFormOnFile:  req.Consents.PaperFormOnFile,
 
 			UrgentMedicalTreatment:         req.Consents.UrgentMedicalTreatment,
@@ -206,32 +204,6 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 
 	if req.CollectionPassword != nil {
 		input.CollectionPassword = *req.CollectionPassword
-	}
-
-	if req.OfficeChecklist != nil {
-		oc := req.OfficeChecklist
-		input.OfficeChecklist = domain.OfficeUseChecklistInput{
-			DepositStatus:       oc.DepositStatus,
-			DepositPaidDate:     oc.DepositPaidDate,
-			ApplicationDateStatus: oc.ApplicationDateStatus,
-			ApplicationDate:       oc.ApplicationDate,
-			StartDateStatus: oc.StartDateStatus,
-			DateLeft:        oc.DateLeft,
-			SessionsDaysRequestedStatus: oc.SessionsDaysRequestedStatus,
-			SessionsDaysRequested:       oc.SessionsDaysRequested,
-			TermTimeOnlySpaceStatus: oc.TermTimeOnlySpaceStatus,
-			ContractStatus: oc.ContractStatus,
-			ContractDate:   oc.ContractDate,
-			HandbookStatus: oc.HandbookStatus,
-			HandbookDate:   oc.HandbookDate,
-			RedBookStatus:          oc.RedBookStatus,
-			RedBookCheckedDate:     oc.RedBookCheckedDate,
-			BirthCertificatePassportStatus:      oc.BirthCertificatePassportStatus,
-			BirthCertificatePassportCheckedDate: oc.BirthCertificatePassportCheckedDate,
-			ProofOfAddressStatus:        oc.ProofOfAddressStatus,
-			ProofOfAddressCheckedDate:   oc.ProofOfAddressCheckedDate,
-			Notes: oc.Notes,
-		}
 	}
 
 	return input

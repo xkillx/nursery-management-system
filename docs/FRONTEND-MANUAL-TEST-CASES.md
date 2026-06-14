@@ -2162,13 +2162,13 @@ Steps:
 - Log in as a manager.
 - Navigate to a child detail page.
 - Click the Registration/Enrolment link.
-- If the profile or checklist shows as incomplete, a link to the registration editor is present.
+- If the profile shows as incomplete, a link to the registration editor is present.
 
 Expected result:
 
 - The registration editor opens at `/staff/manager/children/{childId}/registration`.
 - Child name and date of birth are displayed.
-- Registration profile and office-use checklist completion badges are visible.
+- Registration profile completion badges are visible.
 
 ### Test RE-02: Save demographics/home section
 
@@ -2306,20 +2306,6 @@ Expected result:
 - Declaration timestamp appears under the form.
 - Values persist after reload.
 
-### Test RE-13: Save office-use checklist
-
-Steps:
-
-- Set deposit status, application date status, start date status, sessions/days requested status, and contract status to "Complete" with appropriate dates.
-- Set term-time-only space to "No".
-- Set Red Book, birth certificate/passport, and proof of address to "Complete" with checked dates.
-- Click "Save checklist".
-
-Expected result:
-
-- Office-use checklist completion badge updates to "Complete".
-- Values persist after reload.
-
 ### Test RE-14: Verify registration profile completion on child detail
 
 Steps:
@@ -2331,29 +2317,7 @@ Expected result:
 
 - The registration profile completion badge shows "Complete" status.
 
-### Test RE-15: Verify office-use checklist completion on child detail
-
-Steps:
-
-- After completing the office-use checklist, navigate back to the child detail page.
-- Reload the page.
-
-Expected result:
-
-- The office-use checklist completion badge shows "Complete" status.
-
-### Test RE-16: Confirm no document upload control
-
-Steps:
-
-- Inspect the office-use checklist section.
-
-Expected result:
-
-- No file upload, document attachment, or "Upload" controls are present.
-- Checklist items are status/date fields only.
-
-### Test RE-17: API validation preserves draft values
+### Test RE-15: API validation preserves draft values
 
 Steps:
 
@@ -2431,7 +2395,7 @@ Precondition: All 4 data steps have been filled with valid data.
 
 Steps:
 - Navigate to Review step (step 5).
-- Verify all collected data is displayed correctly (child name, DOB, start date, medical info, contacts, consents, office checklist).
+- Verify all collected data is displayed correctly (child name, DOB, start date, medical info, contacts, consents).
 - Verify **Complete Registration** button is enabled (local completeness checks pass).
 - Click **Complete Registration**.
 
@@ -2481,7 +2445,7 @@ Expected result:
 
 ### FT-REG-02: Mark Registration Reviewed/Complete (Resume Flow)
 
-Precondition: Profile, office checklist, and consent completeness all report complete via backend.
+Precondition: Profile and consent completeness both report complete via backend.
 
 Steps:
 - Navigate to Review & Complete step via resume route.

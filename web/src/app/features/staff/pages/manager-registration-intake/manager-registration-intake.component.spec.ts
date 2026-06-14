@@ -117,34 +117,11 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.step3.other_benefits = '';
     component.step3.collection_password = '';
 
-    component.step4.signer_name = 'Sarah Johnson';
-    component.step4.signed_date = '2026-06-01';
     component.step4.paper_form_on_file = true;
     component.step4.safeguarding_reporting_acknowledgement = true;
     component.step4.information_sharing_consent = true;
     component.step4.gdpr_data_processing_consent = true;
     markAllConsentsReviewed();
-
-    component.officeEvidence = {
-      applicationDateStatus: 'complete',
-      applicationDate: '2026-05-01',
-      birthCertificatePassportStatus: 'complete',
-      proofOfAddressStatus: 'complete',
-      redBookStatus: 'complete',
-      handbookStatus: 'complete',
-      contractStatus: 'complete',
-      notes: '',
-      depositStatus: 'complete',
-      depositPaidDate: '',
-      sessionsDaysRequestedStatus: 'complete',
-      sessionsDaysRequested: '',
-      termTimeOnlySpaceStatus: 'complete',
-      contractDate: '',
-      handbookDate: '',
-      redBookCheckedDate: '',
-      birthCertificatePassportCheckedDate: '',
-      proofOfAddressCheckedDate: '',
-    };
   }
 
   describe('canSubmitLocally — happy path', () => {
@@ -446,18 +423,6 @@ describe('ManagerRegistrationIntakeComponent', () => {
   });
 
   describe('canSubmitLocally — consents', () => {
-    it('blocks when signer name missing', () => {
-      fillRequiredForCompletion();
-      component.step4.signer_name = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when confirmation date missing', () => {
-      fillRequiredForCompletion();
-      component.step4.signed_date = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
     it('does not block when legacy paper form flag is false', () => {
       fillRequiredForCompletion();
       component.step4.paper_form_on_file = false;
@@ -499,33 +464,6 @@ describe('ManagerRegistrationIntakeComponent', () => {
       component.consentsReviewed = {};
       component.isNewRegistration = false;
       expect(component.canSubmitLocally()).toBe(true);
-    });
-  });
-
-  describe('canSubmitLocally — office evidence', () => {
-    it('blocks when deposit status is blank', () => {
-      fillRequiredForCompletion();
-      component.officeEvidence.depositStatus = undefined;
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when sessions/days status is blank', () => {
-      fillRequiredForCompletion();
-      component.officeEvidence.sessionsDaysRequestedStatus = undefined;
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when term-time-only status is blank', () => {
-      fillRequiredForCompletion();
-      component.officeEvidence.termTimeOnlySpaceStatus = undefined;
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when office statuses are legacy unknown', () => {
-      fillRequiredForCompletion();
-      component.officeEvidence.handbookStatus = 'unknown';
-      component.officeEvidence.contractStatus = 'unknown';
-      expect(component.canSubmitLocally()).toBe(false);
     });
   });
 
@@ -587,9 +525,9 @@ describe('ManagerRegistrationIntakeComponent', () => {
       expect(toastErrorSpy).toHaveBeenCalled();
     });
 
-    it('saveConsentsEvidence blocks on missing signer name', () => {
+    it('saveConsentsEvidence blocks on missing safeguarding consent', () => {
       fillRequiredForCompletion();
-      component.step4.signer_name = '';
+      component.step4.safeguarding_reporting_acknowledgement = false;
       component.currentStep = 'consents-evidence';
 
       component.saveConsentsEvidence();
@@ -647,11 +585,6 @@ describe('ManagerRegistrationIntakeComponent', () => {
 
     it('noneDetailsUnknownOptions drops unknown', () => {
       const values = component.noneDetailsUnknownOptions.map(o => o.value);
-      expect(values).not.toContain('unknown');
-    });
-
-    it('evidenceStatusOptions drops unknown', () => {
-      const values = component.evidenceStatusOptions.map(o => o.value);
       expect(values).not.toContain('unknown');
     });
 

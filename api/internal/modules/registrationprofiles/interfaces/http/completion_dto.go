@@ -9,7 +9,6 @@ import (
 type workflowStatusResponse struct {
 	Child         childSummaryResponse           `json:"child"`
 	Profile       *completenessResponse           `json:"profile_completeness"`
-	Office        officeCompletenessResponse      `json:"office_completeness"`
 	Consent       consentCompletenessResponse     `json:"consent_completeness"`
 	CurrentConsent *consentRecordResponse          `json:"current_consent_record,omitempty"`
 	Attestation   *attestationResponse            `json:"latest_attestation,omitempty"`
@@ -36,7 +35,6 @@ func toWorkflowStatusResponse(status domain.WorkflowStatus) workflowStatusRespon
 			DateOfBirth: status.ChildSummary.DateOfBirth.Format("2006-01-02"),
 		},
 		Profile:           toCompletenessResponse(status.ProfileCompleteness),
-		Office:            toOfficeCompletenessResponse(status.OfficeCompleteness),
 		Consent:           toConsentCompletenessResponse(status.ConsentCompleteness),
 		CanMarkComplete:   status.CanMarkComplete,
 		IsReviewedComplete: status.IsReviewedComplete,

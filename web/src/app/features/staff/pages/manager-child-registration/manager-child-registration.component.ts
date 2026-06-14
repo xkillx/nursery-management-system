@@ -18,15 +18,13 @@ import { DatePickerComponent } from '../../../../shared/components/form/date-pic
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import {
-  RegistrationProfileResponse, RegistrationOfficeUseChecklistResponse,
-  OfficeUseChecklist, RegistrationContactEntry,
+  RegistrationProfileResponse, RegistrationContactEntry,
   RegistrationProfileDemographicsHome, RegistrationProfileMedicalDietary,
   RegistrationProfileHealthContacts, RegistrationProfileSocialDevelopment,
   RegistrationProfileFundingSupport, RegistrationProfileRoutineCare,
 } from '../../models/registration-profile.models';
 import {
   formatProfileSectionLabel, formatProfileMissingFieldLabel,
-  formatOfficeItemLabel, formatOfficeCheckStatusLabel,
   getCompletionBadgeClass, formatCompletionStatus,
 } from '../../utils/registration-profile-formatters';
 
@@ -53,7 +51,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
   errorMessage: string | null = null;
 
   profile: RegistrationProfileResponse | null = null;
-  checklist: RegistrationOfficeUseChecklistResponse | null = null;
 
   collectionPassword = '';
   collectionPasswordMessage: string | null = null;
@@ -78,7 +75,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
   routineCareDraft: RegistrationProfileRoutineCare | null = null;
   gdprName = '';
   gdprDate = '';
-  officeDraft: OfficeUseChecklist | null = null;
 
   readonly sexOptions: Option[] = [
     { value: 'male', label: 'Male' },
@@ -100,20 +96,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
     { value: 'not_recorded', label: 'Not recorded' },
   ];
 
-  readonly officeCheckStatusOptions: Option[] = [
-    { value: 'unknown', label: 'Unknown' },
-    { value: 'complete', label: 'Complete' },
-    { value: 'missing', label: 'Still needed' },
-    { value: 'not_applicable', label: 'Not applicable' },
-  ];
-
-  readonly termTimeOnlySpaceOptions: Option[] = [
-    { value: 'unknown', label: 'Unknown' },
-    { value: 'yes', label: 'Yes' },
-    { value: 'no', label: 'No' },
-    { value: 'not_applicable', label: 'Not applicable' },
-  ];
-
   ngOnInit(): void {
     this.childId = this.route.snapshot.paramMap.get('childId');
     if (!this.childId) {
@@ -132,7 +114,7 @@ export class ManagerChildRegistrationComponent implements OnInit {
       next: (profile) => {
         this.profile = profile;
         this.initDraftsFromProfile(profile);
-        this.loadChecklist();
+        this.isLoading = false;
       },
       error: (err) => {
         const mapped = this.errorMapper.mapAndHandle(err);
@@ -161,24 +143,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
     this.collectionEmergencyReviewed = profile.collection?.emergencyCollectionReviewed ?? false;
   }
 
-  private initDraftsFromChecklist(checklist: RegistrationOfficeUseChecklistResponse): void {
-    this.officeDraft = checklist.officeUseChecklist ? { ...checklist.officeUseChecklist } : null;
-  }
-
-  private loadChecklist(): void {
-    this.api.getRegistrationOfficeUseChecklist(this.childId!).subscribe({
-      next: (checklist) => {
-        this.checklist = checklist;
-        this.initDraftsFromChecklist(checklist);
-        this.isLoading = false;
-      },
-      error: () => {
-        this.checklist = null;
-        this.isLoading = false;
-      },
-    });
-  }
-
   get childName(): string {
     return this.profile?.child?.fullName ?? '';
   }
@@ -191,16 +155,8 @@ export class ManagerChildRegistrationComponent implements OnInit {
     return this.profile?.completeness ?? null;
   }
 
-  get officeCompleteness() {
-    return this.checklist?.completeness ?? null;
-  }
-
   get profileCompletionBadge(): string {
     return getCompletionBadgeClass(this.profileCompleteness?.isComplete ?? false);
-  }
-
-  get officeCompletionBadge(): string {
-    return getCompletionBadgeClass(this.officeCompleteness?.isComplete ?? false);
   }
 
   private patchProfile(sectionKey: string, patch: Record<string, unknown>): void {
@@ -268,35 +224,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
     this.patchProfile(contactType, { [contactType]: entries });
   }
 
-  protected saveOfficeChecklist(): void {
-    if (!this.childId) return;
-
-    this.isSavingSection = 'office_use_checklist';
-    this.sectionMessages['office_use_checklist'] = '';
-    this.sectionErrors['office_use_checklist'] = '';
-
-    const patch = this.buildOfficeChecklistPatch();
-    if (Object.keys(patch).length === 0) {
-      this.sectionErrors['office_use_checklist'] = 'Office-use checklist data not loaded.';
-      this.isSavingSection = null;
-      return;
-    }
-
-    this.api.patchRegistrationOfficeUseChecklist(this.childId, patch).subscribe({
-      next: (updated) => {
-        this.checklist = updated;
-        this.initDraftsFromChecklist(updated);
-        this.isSavingSection = null;
-        this.sectionMessages['office_use_checklist'] = 'Office-use checklist saved.';
-      },
-      error: (err) => {
-        const mapped = this.errorMapper.mapAndHandle(err);
-        this.sectionErrors['office_use_checklist'] = formatPresentedApiError(presentApiError(mapped, 'people.child'));
-        this.isSavingSection = null;
-      },
-    });
-  }
-
   protected setCollectionPassword(): void {
     if (!this.childId || !this.collectionPassword) return;
 
@@ -322,8 +249,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
 
   protected readonly formatProfileSectionLabel = formatProfileSectionLabel;
   protected readonly formatProfileMissingFieldLabel = formatProfileMissingFieldLabel;
-  protected readonly formatOfficeItemLabel = formatOfficeItemLabel;
-  protected readonly formatOfficeCheckStatusLabel = formatOfficeCheckStatusLabel;
   protected readonly formatCompletionStatus = formatCompletionStatus;
 
   /* Conversion helpers */
@@ -499,33 +424,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
         gdpr_declared_by_name: this.toNullWhenEmpty(this.gdprName),
         gdpr_declaration_date: this.toNullWhenEmpty(this.gdprDate),
       },
-    };
-  }
-
-  protected buildOfficeChecklistPatch(): Partial<OfficeUseChecklist> {
-    const d = this.officeDraft;
-    if (!d) return {};
-    return {
-      depositStatus: this.toNullWhenEmpty(d.depositStatus ?? ''),
-      depositPaidDate: this.toNullWhenEmpty(d.depositPaidDate ?? ''),
-      applicationDateStatus: this.toNullWhenEmpty(d.applicationDateStatus ?? ''),
-      applicationDate: this.toNullWhenEmpty(d.applicationDate ?? ''),
-      startDateStatus: this.toNullWhenEmpty(d.startDateStatus ?? ''),
-      dateLeft: this.toNullWhenEmpty(d.dateLeft ?? ''),
-      sessionsDaysRequestedStatus: this.toNullWhenEmpty(d.sessionsDaysRequestedStatus ?? ''),
-      sessionsDaysRequested: this.toNullWhenEmpty(d.sessionsDaysRequested ?? ''),
-      termTimeOnlySpaceStatus: this.toNullWhenEmpty(d.termTimeOnlySpaceStatus ?? ''),
-      contractStatus: this.toNullWhenEmpty(d.contractStatus ?? ''),
-      contractDate: this.toNullWhenEmpty(d.contractDate ?? ''),
-      handbookStatus: this.toNullWhenEmpty(d.handbookStatus ?? ''),
-      handbookDate: this.toNullWhenEmpty(d.handbookDate ?? ''),
-      redBookStatus: this.toNullWhenEmpty(d.redBookStatus ?? ''),
-      redBookCheckedDate: this.toNullWhenEmpty(d.redBookCheckedDate ?? ''),
-      birthCertificatePassportStatus: this.toNullWhenEmpty(d.birthCertificatePassportStatus ?? ''),
-      birthCertificatePassportCheckedDate: this.toNullWhenEmpty(d.birthCertificatePassportCheckedDate ?? ''),
-      proofOfAddressStatus: this.toNullWhenEmpty(d.proofOfAddressStatus ?? ''),
-      proofOfAddressCheckedDate: this.toNullWhenEmpty(d.proofOfAddressCheckedDate ?? ''),
-      notes: this.toNullWhenEmpty(d.notes ?? ''),
     };
   }
 

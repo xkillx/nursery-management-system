@@ -1,7 +1,7 @@
 -- name: AttestationGetLatestByChild :one
 SELECT
     id, tenant_id, branch_id, child_id,
-    consent_record_id, profile_updated_at, office_checklist_updated_at,
+    consent_record_id, profile_updated_at,
     attested_by_user_id, attested_by_membership_id, attested_at,
     request_id, created_at
 FROM child_registration_completion_attestations
@@ -12,14 +12,14 @@ LIMIT 1;
 -- name: AttestationCreate :exec
 INSERT INTO child_registration_completion_attestations (
     id, tenant_id, branch_id, child_id,
-    consent_record_id, profile_updated_at, office_checklist_updated_at,
+    consent_record_id, profile_updated_at,
     attested_by_user_id, attested_by_membership_id, attested_at,
     request_id
 ) VALUES (
     $1, $2, $3, $4,
-    $5, $6, $7,
-    $8, $9, $10,
-    $11
+    $5, $6,
+    $7, $8, $9,
+    $10
 );
 
 -- name: ProfileGetUpdatedAt :one
@@ -27,7 +27,4 @@ SELECT updated_at
 FROM child_registration_profiles
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
 
--- name: OfficeChecklistGetUpdatedAt :one
-SELECT updated_at
-FROM child_registration_office_checklists
-WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
+

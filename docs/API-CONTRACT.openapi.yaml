@@ -1071,13 +1071,8 @@ components:
               type: object
         consents:
           type: object
-          required: [signer_name, signed_date]
+          required: [paper_form_on_file]
           properties:
-            signer_name:
-              type: string
-            signed_date:
-              type: string
-              format: date
             paper_form_on_file:
               type: boolean
             urgent_medical_treatment:
@@ -1124,60 +1119,6 @@ components:
         collection_password:
           type: string
           description: Optional collection password to set
-        office_checklist:
-          type: object
-          description: Office-use checklist items
-          properties:
-            deposit_status:
-              type: string
-            deposit_paid_date:
-              type: string
-              nullable: true
-            application_date_status:
-              type: string
-            application_date:
-              type: string
-              nullable: true
-            start_date_status:
-              type: string
-            date_left:
-              type: string
-              nullable: true
-            sessions_days_requested_status:
-              type: string
-            sessions_days_requested:
-              type: string
-              nullable: true
-            term_time_only_space_status:
-              type: string
-            contract_status:
-              type: string
-            contract_date:
-              type: string
-              nullable: true
-            handbook_status:
-              type: string
-            handbook_date:
-              type: string
-              nullable: true
-            red_book_status:
-              type: string
-            red_book_checked_date:
-              type: string
-              nullable: true
-            birth_certificate_passport_status:
-              type: string
-            birth_certificate_passport_checked_date:
-              type: string
-              nullable: true
-            proof_of_address_status:
-              type: string
-            proof_of_address_checked_date:
-              type: string
-              nullable: true
-            notes:
-              type: string
-              nullable: true
 
     CompleteRegistrationResponse:
       type: object
@@ -2888,73 +2829,6 @@ components:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/children/{child_id}/registration-office-use-checklist:
-    get:
-      operationId: getChildRegistrationOfficeUseChecklist
-      summary: Get office-use checklist for a child
-      tags: [Registration Profiles]
-      x-implementation-status: new
-      x-roles: [manager]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: child_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: Office-use checklist response (defaults when no checklist exists)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationOfficeUseChecklistResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-    patch:
-      operationId: patchChildRegistrationOfficeUseChecklist
-      summary: Update office-use checklist metadata
-      tags: [Registration Profiles]
-      x-implementation-status: new
-      x-roles: [manager]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: child_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegistrationOfficeUseChecklistPatchRequest"
-      responses:
-        "200":
-          description: Current checklist after merge
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationOfficeUseChecklistResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /api/v1/children/{child_id}/registration-consents:
     get:
       operationId: getRegistrationConsents
@@ -3027,10 +2901,8 @@ components:
           application/json:
             schema:
               type: object
-              required: [signer_name, signed_date, paper_form_on_file]
+              required: [paper_form_on_file]
               properties:
-                signer_name: { type: string }
-                signed_date: { type: string, format: date }
                 paper_form_on_file: { type: boolean }
                 urgent_medical_treatment: { type: boolean }
                 plasters: { type: boolean }
@@ -3086,7 +2958,6 @@ components:
                 properties:
                   child: { type: object }
                   profile_completeness: { type: object }
-                  office_completeness: { type: object }
                   consent_completeness: { type: object }
                   current_consent_record:
                     type: object

@@ -3,8 +3,6 @@ package application
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -19,8 +17,6 @@ import (
 )
 
 type CreateConsentParams struct {
-	SignerName       string  `json:"signer_name"`
-	SignedDate       string  `json:"signed_date"`
 	PaperFormOnFile  bool    `json:"paper_form_on_file"`
 
 	UrgentMedicalTreatment         bool   `json:"urgent_medical_treatment"`
@@ -64,15 +60,6 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 		return domain.ConsentRecord{}, domainerrors.Validation("Invalid request payload.", "child_id")
 	}
 
-	if strings.TrimSpace(params.SignerName) == "" {
-		return domain.ConsentRecord{}, domainerrors.Validation("Invalid request payload.", "signer_name")
-	}
-
-	signedDate, err := time.Parse("2006-01-02", strings.TrimSpace(params.SignedDate))
-	if err != nil {
-		return domain.ConsentRecord{}, domainerrors.Validation("Invalid request payload.", "signed_date")
-	}
-
 	if !params.PaperFormOnFile {
 		return domain.ConsentRecord{}, domainerrors.Validation("Paper form must be marked as on file.", "paper_form_on_file")
 	}
@@ -87,8 +74,6 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 		BranchID: actor.BranchID,
 		ChildID:  cid,
 		Source:   domain.ConsentSourcePaperForm,
-		SignerName:       strings.TrimSpace(params.SignerName),
-		SignedDate:       signedDate,
 		PaperFormOnFile:  params.PaperFormOnFile,
 		UrgentMedicalTreatment:         params.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions: params.UrgentMedicalTreatmentExceptions,

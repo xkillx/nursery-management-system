@@ -7,7 +7,6 @@ type CompleteRegistrationInput struct {
 	Profile           ProfileSectionsInput
 	Consents          ConsentInput
 	CollectionPassword string
-	OfficeChecklist    OfficeUseChecklistInput
 }
 
 type ChildRegistrationInfo struct {
@@ -131,8 +130,6 @@ type GDPRDeclarationInput struct {
 }
 
 type ConsentInput struct {
-	SignerName       string
-	SignedDate       string
 	PaperFormOnFile  bool
 
 	UrgentMedicalTreatment         bool
@@ -157,39 +154,6 @@ type ConsentInput struct {
 	SocialMediaChannelNotes        *string
 
 	NotesExceptions *string
-}
-
-type OfficeUseChecklistInput struct {
-	DepositStatus       *string
-	DepositPaidDate     *string
-
-	ApplicationDateStatus *string
-	ApplicationDate       *string
-
-	StartDateStatus *string
-	DateLeft        *string
-
-	SessionsDaysRequestedStatus *string
-	SessionsDaysRequested       *string
-
-	TermTimeOnlySpaceStatus *string
-
-	ContractStatus *string
-	ContractDate   *string
-
-	HandbookStatus *string
-	HandbookDate   *string
-
-	RedBookStatus          *string
-	RedBookCheckedDate     *string
-
-	BirthCertificatePassportStatus      *string
-	BirthCertificatePassportCheckedDate *string
-
-	ProofOfAddressStatus        *string
-	ProofOfAddressCheckedDate   *string
-
-	Notes *string
 }
 
 func (c *CompleteRegistrationInput) ToProfile(tenantID, branchID, childID uuid.UUID) *Profile {

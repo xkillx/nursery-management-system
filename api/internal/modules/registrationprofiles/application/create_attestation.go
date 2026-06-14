@@ -63,18 +63,13 @@ func (uc *CreateAttestation) Execute(ctx context.Context, actor tenant.ActorCont
 		return nil, domainerrors.Internal(fmt.Errorf("get profile: %w", err))
 	}
 
-	officeChecklist, err := uc.profileRepo.GetOfficeChecklistByChild(ctx, actor.TenantID, actor.BranchID, childID)
-	if err != nil {
-		return nil, domainerrors.Internal(fmt.Errorf("get office checklist: %w", err))
-	}
-
 	currentConsent, err := uc.consentRepo.GetLatestByChild(ctx, actor.TenantID, actor.BranchID, childID)
 	if err != nil {
 		return nil, domainerrors.Internal(fmt.Errorf("get latest consent: %w", err))
 	}
 
-	if profile == nil || officeChecklist == nil || currentConsent == nil {
-		return nil, domainerrors.Validation("Cannot attest: profile, checklist, or consent record is missing.", "registration_status")
+	if profile == nil || currentConsent == nil {
+		return nil, domainerrors.Validation("Cannot attest: profile or consent record is missing.", "registration_status")
 	}
 
 	var consentRecordID *uuid.UUID
@@ -88,7 +83,6 @@ func (uc *CreateAttestation) Execute(ctx context.Context, actor tenant.ActorCont
 		ChildID:                childID,
 		ConsentRecordID:        consentRecordID,
 		ProfileUpdatedAt:       profile.UpdatedAt,
-		OfficeChecklistUpdatedAt: officeChecklist.UpdatedAt,
 		AttestedByUserID:       actor.UserID,
 		AttestedByMembershipID: actor.MembershipID,
 		RequestID:              nil,

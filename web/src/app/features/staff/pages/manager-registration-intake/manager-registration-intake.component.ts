@@ -48,7 +48,6 @@ import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
   ConsentRecord,
   ConsentWritePayload,
-  OfficeUseChecklist,
   RegistrationContactEntry,
   RegistrationProfileResponse,
   RegistrationWorkflowStatus,
@@ -140,6 +139,7 @@ type RegistrationDraft = {
     medication_name: string;
     medication_dosage: string;
     medication_storage: string;
+    medication_side_effects: string;
     immunisation_status: string;
     immunisation_country: string;
     medical_history_status: NoneDetailsUnknownStatus;
@@ -195,7 +195,6 @@ type RegistrationDraft = {
   };
   step4: ConsentWritePayload;
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
-  officeEvidence: Partial<OfficeUseChecklist>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
@@ -353,11 +352,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
   ];
-  readonly evidenceStatusOptions: Option[] = [
-    { value: 'complete', label: 'Complete' },
-    { value: 'missing', label: 'Still needed' },
-    { value: 'not_applicable', label: 'Not applicable' },
-  ];
   readonly todayIso = new Date().toISOString().slice(0, 10);
   readonly step1RequiredFields: Step1RequiredField[] = [
     'first_name',
@@ -478,6 +472,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     medication_name: '',
     medication_dosage: '',
     medication_storage: '',
+    medication_side_effects: '',
     immunisation_status: '',
     immunisation_country: '',
     medical_history_status: '' as NoneDetailsUnknownStatus,
@@ -534,8 +529,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   };
 
   step4: ConsentWritePayload = {
-    signer_name: '',
-    signed_date: '',
     paper_form_on_file: true,
     urgent_medical_treatment: true,
     plasters: true,
@@ -561,27 +554,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
   finalCompletionIssues: FinalCompletionIssue[] = [];
-
-  officeEvidence: Partial<OfficeUseChecklist> = {
-    applicationDateStatus: 'complete',
-    applicationDate: '',
-    birthCertificatePassportStatus: '',
-    proofOfAddressStatus: '',
-    redBookStatus: '',
-    handbookStatus: '',
-    contractStatus: '',
-    notes: '',
-    depositStatus: '',
-    depositPaidDate: '',
-    sessionsDaysRequestedStatus: '',
-    sessionsDaysRequested: '',
-    termTimeOnlySpaceStatus: '',
-    contractDate: '',
-    handbookDate: '',
-    redBookCheckedDate: '',
-    birthCertificatePassportCheckedDate: '',
-    proofOfAddressCheckedDate: '',
-  };
 
   parentCarersDraft: RegistrationContactEntry[] = [this.emptyContact('Mother')];
   emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
@@ -1090,7 +1062,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const { social_media_channel_notes: _, ...step4Base } = this.step4;
     const consentPayload: ConsentWritePayload = {
       ...step4Base,
-      signer_name: this.step4.signer_name.trim(),
       paper_form_on_file: true,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
@@ -1098,22 +1069,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
     this.staffApi.createRegistrationConsent(this.childId!, consentPayload).subscribe({
       next: () => {
-        const officePatch: Record<string, unknown> = {
-          ...this.officeEvidence,
-          applicationDate: this.officeEvidence.applicationDate || null,
-        };
-
-        this.staffApi.patchRegistrationOfficeUseChecklist(this.childId!, officePatch).subscribe({
-          next: () => {
-            this.isSaving = false;
-            this.successMessage = 'Consents & evidence saved.';
-            this.loadStatus();
-          },
-          error: () => {
-            this.isSaving = false;
-            this.loadStatus();
-          },
-        });
+        this.isSaving = false;
+        this.successMessage = 'Consents & evidence saved.';
+        this.loadStatus();
       },
       error: (error) => {
         this.isSaving = false;
@@ -1236,20 +1194,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       funding_support_answer: 'funding-support-yes',
       funding_options: 'funding-working-tax-credit',
       other_benefits: 'otherFunding',
-      signer_name: 'signer-name',
-      signed_date: 'signed-date',
       safeguarding_reporting_acknowledgement: 'safeguarding-reporting-consent',
       information_sharing_consent: 'information-sharing-consent',
       gdpr_data_processing_consent: 'gdpr-consent',
-      application_date_status: 'office-application-date-status',
-      deposit_status: 'office-deposit-status',
-      birth_certificate_passport_status: 'office-birth-certificate-status',
-      proof_of_address_status: 'office-proof-of-address-status',
-      red_book_status: 'office-red-book-status',
-      handbook_status: 'office-handbook-status',
-      contract_status: 'office-contract-status',
-      sessions_days_requested_status: 'office-sessions-days-status',
-      term_time_only_space_status: 'office-term-time-status',
     };
     return map[field] ?? field;
   }
@@ -1409,10 +1356,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   protected consentCompleteLabel(): string {
     return this.workflowStatus?.consent_completeness?.is_complete ? 'Complete' : 'Incomplete';
-  }
-
-  protected officeCompleteLabel(): string {
-    return this.workflowStatus?.office_completeness?.is_complete ? 'Complete' : 'Incomplete';
   }
 
   private validateFundingSection(): boolean {
@@ -1624,8 +1567,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         },
       },
       consents: {
-        signer_name: this.step4.signer_name.trim(),
-        signed_date: this.step4.signed_date,
         paper_form_on_file: true,
         urgent_medical_treatment: this.step4.urgent_medical_treatment,
         urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
@@ -1647,26 +1588,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         staff_student_coursework: this.step4.staff_student_coursework,
         social_media: this.step4.social_media,
         notes_exceptions: this.step4.notes_exceptions?.trim() || null,
-      },
-      office_checklist: {
-        application_date_status: this.officeEvidence.applicationDateStatus || 'unknown',
-        application_date: this.officeEvidence.applicationDate || null,
-        deposit_status: this.officeEvidence.depositStatus || 'unknown',
-        deposit_paid_date: this.officeEvidence.depositPaidDate || null,
-        birth_certificate_passport_status: this.officeEvidence.birthCertificatePassportStatus || 'unknown',
-        birth_certificate_passport_checked_date: this.officeEvidence.birthCertificatePassportCheckedDate || null,
-        proof_of_address_status: this.officeEvidence.proofOfAddressStatus || 'unknown',
-        proof_of_address_checked_date: this.officeEvidence.proofOfAddressCheckedDate || null,
-        red_book_status: this.officeEvidence.redBookStatus || 'unknown',
-        red_book_checked_date: this.officeEvidence.redBookCheckedDate || null,
-        handbook_status: this.officeEvidence.handbookStatus || 'unknown',
-        handbook_date: this.officeEvidence.handbookDate || null,
-        contract_status: this.officeEvidence.contractStatus || 'unknown',
-        contract_date: this.officeEvidence.contractDate || null,
-        sessions_days_requested_status: this.officeEvidence.sessionsDaysRequestedStatus || 'unknown',
-        sessions_days_requested: this.officeEvidence.sessionsDaysRequested || null,
-        term_time_only_space_status: this.officeEvidence.termTimeOnlySpaceStatus || 'unknown',
-        notes: this.officeEvidence.notes || null,
       },
     };
 
@@ -1713,7 +1634,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.collectContactsIssues(issues);
     this.collectFundingIssues(issues);
     this.collectConsentsIssues(issues);
-    this.collectOfficeEvidenceIssues(issues);
 
     return issues;
   }
@@ -1851,12 +1771,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   private collectConsentsIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.step4.signer_name.trim()) {
-      issues.push({ stepKey: 'consents-evidence', field: 'signer_name', message: 'Record the parent/guardian signer name.' });
-    }
-    if (!this.step4.signed_date) {
-      issues.push({ stepKey: 'consents-evidence', field: 'signed_date', message: 'Record the parent/guardian confirmation date.' });
-    }
     if (!this.step4.safeguarding_reporting_acknowledgement) {
       issues.push({ stepKey: 'consents-evidence', field: 'safeguarding_reporting_acknowledgement', message: 'Confirm the safeguarding reporting acknowledgement.' });
     }
@@ -1891,27 +1805,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     for (const item of optionalConsents) {
       if (!this.consentsReviewed[item.key]) {
         issues.push({ stepKey: 'consents-evidence', field: item.key, message: `Record an explicit Yes or No decision for ${item.label}.` });
-      }
-    }
-  }
-
-  private collectOfficeEvidenceIssues(issues: FinalCompletionIssue[]): void {
-    const office = this.officeEvidence;
-    const acceptedStatuses = new Set(['complete', 'missing', 'not_applicable']);
-    const required: Array<{ value: string | null | undefined; field: string; label: string }> = [
-      { value: office.applicationDateStatus, field: 'application_date_status', label: 'Application date status' },
-      { value: office.depositStatus, field: 'deposit_status', label: 'Deposit status' },
-      { value: office.birthCertificatePassportStatus, field: 'birth_certificate_passport_status', label: 'Birth certificate/passport status' },
-      { value: office.proofOfAddressStatus, field: 'proof_of_address_status', label: 'Proof of address status' },
-      { value: office.redBookStatus, field: 'red_book_status', label: 'Red Book status' },
-      { value: office.handbookStatus, field: 'handbook_status', label: 'Handbook status' },
-      { value: office.contractStatus, field: 'contract_status', label: 'Contract status' },
-      { value: office.sessionsDaysRequestedStatus, field: 'sessions_days_requested_status', label: 'Sessions/days requested status' },
-      { value: office.termTimeOnlySpaceStatus, field: 'term_time_only_space_status', label: 'Term-time-only space status' },
-    ];
-    for (const item of required) {
-      if (!acceptedStatuses.has(item.value ?? '')) {
-        issues.push({ stepKey: 'consents-evidence', field: item.field, message: `${item.label} requires an explicit status.` });
       }
     }
   }
@@ -2034,8 +1927,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private populateStep4FromConsent(record: ConsentRecord): void {
     this.step4 = {
       ...this.step4,
-      signer_name: record.signer_name ?? '',
-      signed_date: record.signed_date ?? '',
       paper_form_on_file: record.paper_form_on_file,
       urgent_medical_treatment: record.urgent_medical_treatment,
       urgent_medical_treatment_exceptions: record.urgent_medical_treatment_exceptions,
@@ -2322,7 +2213,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       step3: { ...this.step3 },
       step4: { ...this.step4 },
       consentsReviewed: { ...this.consentsReviewed },
-      officeEvidence: { ...this.officeEvidence },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
       emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
@@ -2383,7 +2273,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
     if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
     if (draft.consentsReviewed) this.consentsReviewed = { ...draft.consentsReviewed };
-    if (draft.officeEvidence) this.officeEvidence = { ...this.officeEvidence, ...draft.officeEvidence };
     if (draft.parentCarersDraft?.length) {
       this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
     }
@@ -2449,6 +2338,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       medication_name: '',
       medication_dosage: '',
       medication_storage: '',
+      medication_side_effects: '',
       immunisation_status: '',
       immunisation_country: '',
       medical_history_status: '',
@@ -2503,8 +2393,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       has_funding_support: false,
     };
     this.step4 = {
-      signer_name: '',
-      signed_date: '',
       paper_form_on_file: true,
       urgent_medical_treatment: true,
       plasters: true,
@@ -2526,26 +2414,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       social_media: true,
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
-    };
-    this.officeEvidence = {
-      applicationDateStatus: 'complete',
-      applicationDate: '',
-      birthCertificatePassportStatus: '',
-      proofOfAddressStatus: '',
-      redBookStatus: '',
-      handbookStatus: '',
-      contractStatus: '',
-      notes: '',
-      depositStatus: '',
-      depositPaidDate: '',
-      sessionsDaysRequestedStatus: '',
-      sessionsDaysRequested: '',
-      termTimeOnlySpaceStatus: '',
-      contractDate: '',
-      handbookDate: '',
-      redBookCheckedDate: '',
-      birthCertificatePassportCheckedDate: '',
-      proofOfAddressCheckedDate: '',
     };
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];

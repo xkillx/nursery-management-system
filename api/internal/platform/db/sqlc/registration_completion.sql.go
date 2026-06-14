@@ -14,29 +14,28 @@ import (
 const attestationCreate = `-- name: AttestationCreate :exec
 INSERT INTO child_registration_completion_attestations (
     id, tenant_id, branch_id, child_id,
-    consent_record_id, profile_updated_at, office_checklist_updated_at,
+    consent_record_id, profile_updated_at,
     attested_by_user_id, attested_by_membership_id, attested_at,
     request_id
 ) VALUES (
     $1, $2, $3, $4,
-    $5, $6, $7,
-    $8, $9, $10,
-    $11
+    $5, $6,
+    $7, $8, $9,
+    $10
 )
 `
 
 type AttestationCreateParams struct {
-	ID                       pgtype.UUID
-	TenantID                 pgtype.UUID
-	BranchID                 pgtype.UUID
-	ChildID                  pgtype.UUID
-	ConsentRecordID          pgtype.UUID
-	ProfileUpdatedAt         pgtype.Timestamptz
-	OfficeChecklistUpdatedAt pgtype.Timestamptz
-	AttestedByUserID         pgtype.UUID
-	AttestedByMembershipID   pgtype.UUID
-	AttestedAt               pgtype.Timestamptz
-	RequestID                pgtype.Text
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	ChildID                pgtype.UUID
+	ConsentRecordID        pgtype.UUID
+	ProfileUpdatedAt       pgtype.Timestamptz
+	AttestedByUserID       pgtype.UUID
+	AttestedByMembershipID pgtype.UUID
+	AttestedAt             pgtype.Timestamptz
+	RequestID              pgtype.Text
 }
 
 func (q *Queries) AttestationCreate(ctx context.Context, arg AttestationCreateParams) error {
@@ -47,7 +46,6 @@ func (q *Queries) AttestationCreate(ctx context.Context, arg AttestationCreatePa
 		arg.ChildID,
 		arg.ConsentRecordID,
 		arg.ProfileUpdatedAt,
-		arg.OfficeChecklistUpdatedAt,
 		arg.AttestedByUserID,
 		arg.AttestedByMembershipID,
 		arg.AttestedAt,
@@ -59,7 +57,7 @@ func (q *Queries) AttestationCreate(ctx context.Context, arg AttestationCreatePa
 const attestationGetLatestByChild = `-- name: AttestationGetLatestByChild :one
 SELECT
     id, tenant_id, branch_id, child_id,
-    consent_record_id, profile_updated_at, office_checklist_updated_at,
+    consent_record_id, profile_updated_at,
     attested_by_user_id, attested_by_membership_id, attested_at,
     request_id, created_at
 FROM child_registration_completion_attestations
@@ -84,7 +82,6 @@ func (q *Queries) AttestationGetLatestByChild(ctx context.Context, arg Attestati
 		&i.ChildID,
 		&i.ConsentRecordID,
 		&i.ProfileUpdatedAt,
-		&i.OfficeChecklistUpdatedAt,
 		&i.AttestedByUserID,
 		&i.AttestedByMembershipID,
 		&i.AttestedAt,
@@ -92,25 +89,6 @@ func (q *Queries) AttestationGetLatestByChild(ctx context.Context, arg Attestati
 		&i.CreatedAt,
 	)
 	return i, err
-}
-
-const officeChecklistGetUpdatedAt = `-- name: OfficeChecklistGetUpdatedAt :one
-SELECT updated_at
-FROM child_registration_office_checklists
-WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
-`
-
-type OfficeChecklistGetUpdatedAtParams struct {
-	TenantID pgtype.UUID
-	BranchID pgtype.UUID
-	ChildID  pgtype.UUID
-}
-
-func (q *Queries) OfficeChecklistGetUpdatedAt(ctx context.Context, arg OfficeChecklistGetUpdatedAtParams) (pgtype.Timestamptz, error) {
-	row := q.db.QueryRow(ctx, officeChecklistGetUpdatedAt, arg.TenantID, arg.BranchID, arg.ChildID)
-	var updated_at pgtype.Timestamptz
-	err := row.Scan(&updated_at)
-	return updated_at, err
 }
 
 const profileGetUpdatedAt = `-- name: ProfileGetUpdatedAt :one

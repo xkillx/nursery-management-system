@@ -104,20 +104,6 @@ describe('ManagerChildDetailComponent', () => {
     completeness: { isComplete: false, missingSections: ['child_demographics_home'], sections: [] },
   };
 
-  const mockOfficeChecklist = {
-    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15', startDate: '2023-01-10', endDate: null },
-    checklistExists: false,
-    checklist: null,
-    officeUseChecklist: {
-      depositStatus: null, depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
-      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
-      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
-      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
-      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
-    },
-    completeness: { isComplete: false, missingFields: ['deposit'], items: [] },
-  };
-
   function fundingNotFound404(): HttpErrorResponse {
     return new HttpErrorResponse({
       status: 404,
@@ -129,7 +115,7 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock = jasmine.createSpyObj('StaffApiService', [
       'getChild', 'listChildGuardianLinks', 'listGuardians', 'updateChild',
       'createGuardianChildLink', 'getFundingProfile', 'upsertFundingProfile',
-      'getRegistrationProfile', 'getRegistrationOfficeUseChecklist',
+      'getRegistrationProfile',
       'getRegistrationWorkflowStatus',
     ]);
 
@@ -141,11 +127,9 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.getFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.upsertFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockRegistrationProfile));
-    staffApiMock.getRegistrationOfficeUseChecklist.and.returnValue(of(mockOfficeChecklist));
     staffApiMock.getRegistrationWorkflowStatus.and.returnValue(of({
       child: { id: 'child-1', full_name: 'Ada', date_of_birth: '2022-01-15' },
       profile_completeness: { is_complete: false, missing_sections: [] },
-      office_completeness: { is_complete: false, missing_fields: [] },
       consent_completeness: { is_complete: false, missing_decisions: [] },
       can_mark_complete: false,
       is_reviewed_complete: false,

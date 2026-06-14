@@ -24,12 +24,6 @@
             {{ formatCompletionStatus(profileCompleteness?.isComplete ?? false) }}
           </span>
         </div>
-        <div class="text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Office-use checklist</p>
-          <span class="{{ officeCompletionBadge }} mt-1 inline-block rounded-full px-3 py-1 text-xs font-medium">
-            {{ formatCompletionStatus(officeCompleteness?.isComplete ?? false) }}
-          </span>
-        </div>
       </div>
     </div>
   </div>
@@ -578,99 +572,5 @@
       </div>
     </div>
 
-    <!-- Office-use checklist -->
-    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Office-use checklist</h3>
-      @if (sectionMessages['office_use_checklist']) {
-        <app-alert variant="success">{{ sectionMessages['office_use_checklist'] }}</app-alert>
-      }
-      @if (sectionErrors['office_use_checklist']) {
-        <app-alert variant="error">{{ sectionErrors['office_use_checklist'] }}</app-alert>
-      }
-      @if (checklist?.child) {
-        <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-          Child start date: {{ checklist!.child.startDate ?? 'Not set' }}
-          &middot; End date: {{ checklist!.child.endDate ?? 'Not set' }}
-        </p>
-      }
-      @if (officeCompleteness && !officeCompleteness.isComplete) {
-        <div class="mb-4">
-          <ul class="list-inside list-disc space-y-1 text-sm text-yellow-600 dark:text-yellow-400">
-            @for (item of officeCompleteness.items; track item.code) {
-              @if (item.status === 'incomplete') {
-                <li>{{ formatOfficeItemLabel(item.code) }} — {{ item.missingFields.join(', ') }}</li>
-              }
-            }
-          </ul>
-        </div>
-      }
-      @if (officeDraft) {
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <app-form-field label="Deposit status">
-            <app-select [(ngModel)]="officeDraft.depositStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Deposit paid date">
-            <app-date-picker [(ngModel)]="officeDraft.depositPaidDate" />
-          </app-form-field>
-          <app-form-field label="Application date status">
-            <app-select [(ngModel)]="officeDraft.applicationDateStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Application date">
-            <app-date-picker [(ngModel)]="officeDraft.applicationDate" />
-          </app-form-field>
-          <app-form-field label="Start date status">
-            <app-select [(ngModel)]="officeDraft.startDateStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Date left">
-            <app-date-picker [(ngModel)]="officeDraft.dateLeft" />
-          </app-form-field>
-          <app-form-field label="Sessions/days requested status">
-            <app-select [(ngModel)]="officeDraft.sessionsDaysRequestedStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Sessions/days requested">
-            <app-input-field type="text" [(ngModel)]="officeDraft.sessionsDaysRequested" placeholder="e.g. Mon-Wed, 9am-3pm" />
-          </app-form-field>
-          <app-form-field label="Term-time-only space status">
-            <app-select [(ngModel)]="officeDraft.termTimeOnlySpaceStatus" [options]="termTimeOnlySpaceOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Contract status">
-            <app-select [(ngModel)]="officeDraft.contractStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Contract/signature date">
-            <app-date-picker [(ngModel)]="officeDraft.contractDate" />
-          </app-form-field>
-          <app-form-field label="Handbook status">
-            <app-select [(ngModel)]="officeDraft.handbookStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Handbook date">
-            <app-date-picker [(ngModel)]="officeDraft.handbookDate" />
-          </app-form-field>
-          <app-form-field label="Red Book status">
-            <app-select [(ngModel)]="officeDraft.redBookStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Red Book checked date">
-            <app-date-picker [(ngModel)]="officeDraft.redBookCheckedDate" />
-          </app-form-field>
-          <app-form-field label="Birth certificate/passport status">
-            <app-select [(ngModel)]="officeDraft.birthCertificatePassportStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Birth certificate/passport checked date">
-            <app-date-picker [(ngModel)]="officeDraft.birthCertificatePassportCheckedDate" />
-          </app-form-field>
-          <app-form-field label="Proof of address status">
-            <app-select [(ngModel)]="officeDraft.proofOfAddressStatus" [options]="officeCheckStatusOptions" placeholder="--" [placeholderDisabled]="false" />
-          </app-form-field>
-          <app-form-field label="Proof of address checked date">
-            <app-date-picker [(ngModel)]="officeDraft.proofOfAddressCheckedDate" />
-          </app-form-field>
-        </div>
-        <app-form-field className="mt-3" label="Checklist notes">
-          <app-text-area [(ngModel)]="officeDraft.notes" [rows]="2" placeholder="Internal notes" />
-        </app-form-field>
-      }
-      <div class="mt-4">
-        <app-button variant="primary" [loading]="isSavingSection === 'office_use_checklist'" (btnClick)="saveOfficeChecklist()">Save checklist</app-button>
-      </div>
-    </div>
   </div>
 }

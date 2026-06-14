@@ -11,7 +11,7 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
-import { RegistrationProfileCompleteness, OfficeUseCompleteness, RegistrationWorkflowStatus } from '../../models/registration-profile.models';
+import { RegistrationProfileCompleteness, RegistrationWorkflowStatus } from '../../models/registration-profile.models';
 import { formatSiteRate, formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { formatCompletionStatus, getCompletionBadgeClass } from '../../utils/registration-profile-formatters';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
@@ -60,7 +60,6 @@ export class ManagerChildDetailComponent implements OnInit {
   isSaving = false;
   isLinking = false;
   profileCompleteness: RegistrationProfileCompleteness | null = null;
-  officeCompleteness: OfficeUseCompleteness | null = null;
   workflowStatus: RegistrationWorkflowStatus | null = null;
   isLoadingRegistration = false;
   registrationLoadError: string | null = null;
@@ -322,14 +321,12 @@ export class ManagerChildDetailComponent implements OnInit {
       next: (status) => {
         this.workflowStatus = status;
         this.profileCompleteness = status.profile_completeness as unknown as RegistrationProfileCompleteness;
-        this.officeCompleteness = status.office_completeness as unknown as OfficeUseCompleteness;
         this.isLoadingRegistration = false;
       },
       error: (err) => {
         this.isLoadingRegistration = false;
         this.registrationLoadError = 'Could not load registration summary.';
         this.profileCompleteness = null;
-        this.officeCompleteness = null;
         this.workflowStatus = null;
       },
     });

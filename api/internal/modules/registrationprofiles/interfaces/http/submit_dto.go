@@ -5,7 +5,6 @@ type submitCompleteRegistrationRequest struct {
 	RegistrationProfile *registrationProfilePayload  `json:"registration_profile,omitempty"`
 	Consents          *consentPayload                `json:"consents,omitempty"`
 	CollectionPassword *string                       `json:"collection_password,omitempty"`
-	OfficeChecklist   *officeChecklistPayload        `json:"office_checklist,omitempty"`
 }
 
 type childWritePayload struct {
@@ -120,8 +119,6 @@ type gdprDeclarationPayload struct {
 }
 
 type consentPayload struct {
-	SignerName       string  `json:"signer_name"`
-	SignedDate       string  `json:"signed_date"`
 	PaperFormOnFile  bool    `json:"paper_form_on_file"`
 
 	UrgentMedicalTreatment         bool    `json:"urgent_medical_treatment"`
@@ -145,39 +142,6 @@ type consentPayload struct {
 	SocialMediaChannelNotes        *string `json:"social_media_channel_notes,omitempty"`
 
 	NotesExceptions *string `json:"notes_exceptions,omitempty"`
-}
-
-type officeChecklistPayload struct {
-	DepositStatus       *string `json:"deposit_status,omitempty"`
-	DepositPaidDate     *string `json:"deposit_paid_date,omitempty"`
-
-	ApplicationDateStatus *string `json:"application_date_status,omitempty"`
-	ApplicationDate       *string `json:"application_date,omitempty"`
-
-	StartDateStatus *string `json:"start_date_status,omitempty"`
-	DateLeft        *string `json:"date_left,omitempty"`
-
-	SessionsDaysRequestedStatus *string `json:"sessions_days_requested_status,omitempty"`
-	SessionsDaysRequested       *string `json:"sessions_days_requested,omitempty"`
-
-	TermTimeOnlySpaceStatus *string `json:"term_time_only_space_status,omitempty"`
-
-	ContractStatus *string `json:"contract_status,omitempty"`
-	ContractDate   *string `json:"contract_date,omitempty"`
-
-	HandbookStatus *string `json:"handbook_status,omitempty"`
-	HandbookDate   *string `json:"handbook_date,omitempty"`
-
-	RedBookStatus          *string `json:"red_book_status,omitempty"`
-	RedBookCheckedDate     *string `json:"red_book_checked_date,omitempty"`
-
-	BirthCertificatePassportStatus      *string `json:"birth_certificate_passport_status,omitempty"`
-	BirthCertificatePassportCheckedDate *string `json:"birth_certificate_passport_checked_date,omitempty"`
-
-	ProofOfAddressStatus        *string `json:"proof_of_address_status,omitempty"`
-	ProofOfAddressCheckedDate   *string `json:"proof_of_address_checked_date,omitempty"`
-
-	Notes *string `json:"notes,omitempty"`
 }
 
 type childRecordResponse struct {

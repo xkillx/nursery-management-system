@@ -14,7 +14,7 @@ import (
 const consentCreate = `-- name: ConsentCreate :exec
 INSERT INTO child_registration_consent_records (
     id, tenant_id, branch_id, child_id, version, source,
-    signer_name, signed_date, paper_form_on_file,
+    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -29,19 +29,19 @@ INSERT INTO child_registration_consent_records (
     gdpr_data_processing_consent
 ) VALUES (
     $1, $2, $3, $4, $5, $6,
-    $7, $8, $9,
+    $7,
+    $8, $9,
     $10, $11,
     $12, $13,
-    $14, $15,
-    $16, $17, $18,
+    $14, $15, $16,
+    $17, $18,
     $19, $20,
     $21, $22,
-    $23, $24,
-    $25, $26, $27,
-    $28,
-    $29, $30,
-    $31,
-    $32
+    $23, $24, $25,
+    $26,
+    $27, $28,
+    $29,
+    $30
 )
 `
 
@@ -52,8 +52,6 @@ type ConsentCreateParams struct {
 	ChildID                              pgtype.UUID
 	Version                              int32
 	Source                               string
-	SignerName                           string
-	SignedDate                           pgtype.Date
 	PaperFormOnFile                      bool
 	UrgentMedicalTreatment               bool
 	UrgentMedicalTreatmentExceptions     pgtype.Text
@@ -88,8 +86,6 @@ func (q *Queries) ConsentCreate(ctx context.Context, arg ConsentCreateParams) er
 		arg.ChildID,
 		arg.Version,
 		arg.Source,
-		arg.SignerName,
-		arg.SignedDate,
 		arg.PaperFormOnFile,
 		arg.UrgentMedicalTreatment,
 		arg.UrgentMedicalTreatmentExceptions,
@@ -140,7 +136,7 @@ func (q *Queries) ConsentGetCurrentVersion(ctx context.Context, arg ConsentGetCu
 const consentGetLatestByChild = `-- name: ConsentGetLatestByChild :one
 SELECT
     id, tenant_id, branch_id, child_id, version, source,
-    signer_name, signed_date, paper_form_on_file,
+    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -176,8 +172,6 @@ func (q *Queries) ConsentGetLatestByChild(ctx context.Context, arg ConsentGetLat
 		&i.ChildID,
 		&i.Version,
 		&i.Source,
-		&i.SignerName,
-		&i.SignedDate,
 		&i.PaperFormOnFile,
 		&i.UrgentMedicalTreatment,
 		&i.UrgentMedicalTreatmentExceptions,
@@ -210,7 +204,7 @@ func (q *Queries) ConsentGetLatestByChild(ctx context.Context, arg ConsentGetLat
 const consentListByChild = `-- name: ConsentListByChild :many
 SELECT
     id, tenant_id, branch_id, child_id, version, source,
-    signer_name, signed_date, paper_form_on_file,
+    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -251,8 +245,6 @@ func (q *Queries) ConsentListByChild(ctx context.Context, arg ConsentListByChild
 			&i.ChildID,
 			&i.Version,
 			&i.Source,
-			&i.SignerName,
-			&i.SignedDate,
 			&i.PaperFormOnFile,
 			&i.UrgentMedicalTreatment,
 			&i.UrgentMedicalTreatmentExceptions,

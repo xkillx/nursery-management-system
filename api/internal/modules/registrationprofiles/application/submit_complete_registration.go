@@ -108,11 +108,6 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 			return fmt.Errorf("create consent: %w", err)
 		}
 
-		officeChecklist := buildOfficeChecklist(child.ID, input.OfficeChecklist, actor)
-		if _, err := uc.profileRepo.CreateOfficeChecklist(ctx, tx, officeChecklist); err != nil {
-			return fmt.Errorf("create office checklist: %w", err)
-		}
-
 		if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
 			ActionType: "child_created",
 			EntityType: "child",
@@ -162,12 +157,6 @@ func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistr
 	if strings.TrimSpace(input.Child.StartDate) == "" {
 		missing = append(missing, "start_date")
 	}
-	if strings.TrimSpace(input.Consents.SignerName) == "" {
-		missing = append(missing, "consents.signer_name")
-	}
-	if strings.TrimSpace(input.Consents.SignedDate) == "" {
-		missing = append(missing, "consents.signed_date")
-	}
 	if !input.Consents.PaperFormOnFile {
 		missing = append(missing, "consents.paper_form_on_file")
 	}
@@ -193,8 +182,6 @@ func mustParseDate(s string) time.Time {
 }
 
 func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, actor tenant.ActorContext) *domain.ConsentRecord {
-	signedDate, _ := time.Parse("2006-01-02", ci.SignedDate)
-
 	return &domain.ConsentRecord{
 		ID:      uid.NewUUID(),
 		TenantID: actor.TenantID,
@@ -203,8 +190,6 @@ func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, 
 		Version:  version + 1,
 		Source:   domain.ConsentSourcePaperForm,
 
-		SignerName:       ci.SignerName,
-		SignedDate:       signedDate,
 		PaperFormOnFile:  ci.PaperFormOnFile,
 
 		UrgentMedicalTreatment:         ci.UrgentMedicalTreatment,
@@ -232,36 +217,6 @@ func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, 
 
 		EnteredByUserID:       actor.UserID,
 		EnteredByMembershipID: actor.MembershipID,
-	}
-}
-
-func buildOfficeChecklist(childID uuid.UUID, oi domain.OfficeUseChecklistInput, actor tenant.ActorContext) *domain.OfficeUseChecklist {
-	return &domain.OfficeUseChecklist{
-		ID:                                uid.NewUUID(),
-		TenantID:                          actor.TenantID,
-		BranchID:                          actor.BranchID,
-		ChildID:                           childID,
-
-		DepositStatus:                     domain.OfficeCheckStatus(optStr(oi.DepositStatus, "unknown")),
-		DepositPaidDate:                   parseOptDate(oi.DepositPaidDate),
-		ApplicationDateStatus:             domain.OfficeCheckStatus(optStr(oi.ApplicationDateStatus, "unknown")),
-		ApplicationDate:                   parseOptDate(oi.ApplicationDate),
-		StartDateStatus:                   domain.OfficeCheckStatus(optStr(oi.StartDateStatus, "unknown")),
-		DateLeft:                          parseOptDate(oi.DateLeft),
-		SessionsDaysRequestedStatus:       domain.OfficeCheckStatus(optStr(oi.SessionsDaysRequestedStatus, "unknown")),
-		SessionsDaysRequested:             oi.SessionsDaysRequested,
-		TermTimeOnlySpaceStatus:           domain.TermTimeOnlyStatus(optStr(oi.TermTimeOnlySpaceStatus, "unknown")),
-		ContractStatus:                    domain.OfficeCheckStatus(optStr(oi.ContractStatus, "unknown")),
-		ContractDate:                      parseOptDate(oi.ContractDate),
-		HandbookStatus:                    domain.OfficeCheckStatus(optStr(oi.HandbookStatus, "unknown")),
-		HandbookDate:                      parseOptDate(oi.HandbookDate),
-		RedBookStatus:                     domain.OfficeCheckStatus(optStr(oi.RedBookStatus, "unknown")),
-		RedBookCheckedDate:                parseOptDate(oi.RedBookCheckedDate),
-		BirthCertificatePassportStatus:    domain.OfficeCheckStatus(optStr(oi.BirthCertificatePassportStatus, "unknown")),
-		BirthCertificatePassportCheckedDate: parseOptDate(oi.BirthCertificatePassportCheckedDate),
-		ProofOfAddressStatus:              domain.OfficeCheckStatus(optStr(oi.ProofOfAddressStatus, "unknown")),
-		ProofOfAddressCheckedDate:         parseOptDate(oi.ProofOfAddressCheckedDate),
-		Notes:                             oi.Notes,
 	}
 }
 
@@ -313,20 +268,4 @@ func makeContactEntry(profileID, childID uuid.UUID, contactType domain.ContactTy
 	return e
 }
 
-func optStr(s *string, fallback string) string {
-	if s != nil && *s != "" {
-		return *s
-	}
-	return fallback
-}
 
-func parseOptDate(s *string) *time.Time {
-	if s == nil || *s == "" {
-		return nil
-	}
-	t, err := time.Parse("2006-01-02", *s)
-	if err != nil {
-		return nil
-	}
-	return &t
-}

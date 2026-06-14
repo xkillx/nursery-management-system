@@ -10,7 +10,6 @@ import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 import {
   RegistrationProfileResponse, CollectionPasswordPayload,
-  RegistrationOfficeUseChecklistResponse, OfficeUseChecklist,
   ConsentRecord, ConsentWithCompletenessResponse, ConsentWritePayload, RegistrationWorkflowStatus,
   CompleteRegistrationPayload, CompleteRegistrationResponse,
 } from '../models/registration-profile.models';
@@ -155,24 +154,6 @@ interface RegistrationProfileApiModel {
     is_complete: boolean;
     missing_sections: string[];
     sections: { code: string; status: string; missing_fields: string[] }[];
-  };
-}
-
-interface RegistrationOfficeUseChecklistApiModel {
-  child: {
-    id: string;
-    full_name: string;
-    date_of_birth: string;
-    start_date: string | null;
-    end_date: string | null;
-  };
-  checklist_exists: boolean;
-  checklist: { id: string; created_at: string; updated_at: string } | null;
-  office_use_checklist: Record<string, unknown>;
-  completeness: {
-    is_complete: boolean;
-    missing_fields: string[];
-    items: { code: string; status: string; label: string; missing_fields: string[] }[];
   };
 }
 
@@ -431,18 +412,6 @@ export class StaffApiService {
       apiUrl(`/children/${childId}/registration-profile/collection-password`),
       { password } as CollectionPasswordPayload,
     ).pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
-  }
-
-  getRegistrationOfficeUseChecklist(childId: string): Observable<RegistrationOfficeUseChecklistResponse> {
-    return this.http.get<RegistrationOfficeUseChecklistApiModel>(
-      apiUrl(`/children/${childId}/registration-office-use-checklist`),
-    ).pipe(map((checklist) => this.toOfficeChecklistRecord(checklist)));
-  }
-
-  patchRegistrationOfficeUseChecklist(childId: string, patch: Partial<OfficeUseChecklist>): Observable<RegistrationOfficeUseChecklistResponse> {
-    return this.http.patch<RegistrationOfficeUseChecklistApiModel>(
-      apiUrl(`/children/${childId}/registration-office-use-checklist`), patch,
-    ).pipe(map((checklist) => this.toOfficeChecklistRecord(checklist)));
   }
 
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
@@ -714,54 +683,4 @@ export class StaffApiService {
     return this.http.post<CompleteRegistrationResponse>(apiUrl('/children/with-registration'), payload);
   }
 
-  private toOfficeChecklistRecord(checklist: RegistrationOfficeUseChecklistApiModel): RegistrationOfficeUseChecklistResponse {
-    const ocr = checklist.office_use_checklist as Record<string, unknown>;
-    return {
-      child: {
-        id: checklist.child.id,
-        fullName: checklist.child.full_name,
-        dateOfBirth: checklist.child.date_of_birth,
-        startDate: checklist.child.start_date ?? null,
-        endDate: checklist.child.end_date ?? null,
-      },
-      checklistExists: checklist.checklist_exists,
-      checklist: checklist.checklist ? {
-        id: checklist.checklist.id,
-        createdAt: checklist.checklist.created_at,
-        updatedAt: checklist.checklist.updated_at,
-      } : null,
-      officeUseChecklist: {
-        depositStatus: ocr['deposit_status'] as string | null ?? null,
-        depositPaidDate: ocr['deposit_paid_date'] as string | null ?? null,
-        applicationDateStatus: ocr['application_date_status'] as string | null ?? null,
-        applicationDate: ocr['application_date'] as string | null ?? null,
-        startDateStatus: ocr['start_date_status'] as string | null ?? null,
-        dateLeft: ocr['date_left'] as string | null ?? null,
-        sessionsDaysRequestedStatus: ocr['sessions_days_requested_status'] as string | null ?? null,
-        sessionsDaysRequested: ocr['sessions_days_requested'] as string | null ?? null,
-        termTimeOnlySpaceStatus: ocr['term_time_only_space_status'] as string | null ?? null,
-        contractStatus: ocr['contract_status'] as string | null ?? null,
-        contractDate: ocr['contract_date'] as string | null ?? null,
-        handbookStatus: ocr['handbook_status'] as string | null ?? null,
-        handbookDate: ocr['handbook_date'] as string | null ?? null,
-        redBookStatus: ocr['red_book_status'] as string | null ?? null,
-        redBookCheckedDate: ocr['red_book_checked_date'] as string | null ?? null,
-        birthCertificatePassportStatus: ocr['birth_certificate_passport_status'] as string | null ?? null,
-        birthCertificatePassportCheckedDate: ocr['birth_certificate_passport_checked_date'] as string | null ?? null,
-        proofOfAddressStatus: ocr['proof_of_address_status'] as string | null ?? null,
-        proofOfAddressCheckedDate: ocr['proof_of_address_checked_date'] as string | null ?? null,
-        notes: ocr['notes'] as string | null ?? null,
-      },
-      completeness: {
-        isComplete: checklist.completeness.is_complete,
-        missingFields: checklist.completeness.missing_fields,
-        items: checklist.completeness.items.map((item) => ({
-          code: item.code,
-          status: item.status as 'complete' | 'incomplete',
-          label: item.label,
-          missingFields: item.missing_fields,
-        })),
-      },
-    };
-  }
 }

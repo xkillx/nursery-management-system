@@ -12,9 +12,8 @@ type CompletionAttestation struct {
 	BranchID      uuid.UUID
 	ChildID       uuid.UUID
 
-	ConsentRecordID        *uuid.UUID
-	ProfileUpdatedAt       time.Time
-	OfficeChecklistUpdatedAt time.Time
+	ConsentRecordID  *uuid.UUID
+	ProfileUpdatedAt time.Time
 
 	AttestedByUserID       uuid.UUID
 	AttestedByMembershipID uuid.UUID
@@ -29,7 +28,6 @@ type WorkflowStatus struct {
 	ChildSummary   ChildSummary `json:"child_summary"`
 
 	ProfileCompleteness    Completeness         `json:"profile_completeness"`
-	OfficeCompleteness     OfficeUseCompleteness `json:"office_completeness"`
 	ConsentCompleteness    ConsentCompleteness   `json:"consent_completeness"`
 
 	CurrentConsentRecord *ConsentRecord        `json:"current_consent_record"`
@@ -45,17 +43,14 @@ type WorkflowStatus struct {
 func ComputeWorkflowStatus(
 	child ChildSummary,
 	profileCompleteness Completeness,
-	officeCompleteness OfficeUseCompleteness,
 	consentCompleteness ConsentCompleteness,
 	currentConsent *ConsentRecord,
 	latestAttestation *CompletionAttestation,
 	profileUpdatedAt *time.Time,
-	officeUpdatedAt *time.Time,
 ) WorkflowStatus {
 	status := WorkflowStatus{
 		ChildSummary:        child,
 		ProfileCompleteness:  profileCompleteness,
-		OfficeCompleteness:   officeCompleteness,
 		ConsentCompleteness:  consentCompleteness,
 		CurrentConsentRecord: currentConsent,
 		LatestAttestation:    latestAttestation,
@@ -64,9 +59,6 @@ func ComputeWorkflowStatus(
 	missing := make([]string, 0)
 	if !profileCompleteness.IsComplete {
 		missing = append(missing, "registration_profile")
-	}
-	if !officeCompleteness.IsComplete {
-		missing = append(missing, "office_use_checklist")
 	}
 	if !consentCompleteness.IsComplete {
 		missing = append(missing, "consent_records")
@@ -78,8 +70,7 @@ func ComputeWorkflowStatus(
 	if status.CanMarkComplete && latestAttestation != nil && currentConsent != nil {
 		snapshotsMatch := latestAttestation.ConsentRecordID != nil &&
 			*latestAttestation.ConsentRecordID == currentConsent.ID &&
-			profileUpdatedAt != nil && latestAttestation.ProfileUpdatedAt.Equal(*profileUpdatedAt) &&
-			officeUpdatedAt != nil && latestAttestation.OfficeChecklistUpdatedAt.Equal(*officeUpdatedAt)
+			profileUpdatedAt != nil && latestAttestation.ProfileUpdatedAt.Equal(*profileUpdatedAt)
 
 		status.IsReviewedComplete = snapshotsMatch
 	}

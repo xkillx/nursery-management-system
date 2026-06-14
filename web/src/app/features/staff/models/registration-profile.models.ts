@@ -126,18 +126,11 @@ export interface RegistrationProfileCompleteness {
   sections?: { code: string; status: string; missingFields: string[] }[];
 }
 
-export interface OfficeUseCompleteness {
-  isComplete: boolean;
-  missingFields: string[];
-}
-
 export interface ConsentRecord {
   id: string;
   child_id: string;
   version: number;
   source: string;
-  signer_name: string;
-  signed_date: string;
   paper_form_on_file: boolean;
   urgent_medical_treatment: boolean;
   urgent_medical_treatment_exceptions: string | null;
@@ -164,8 +157,6 @@ export interface ConsentRecord {
 }
 
 export interface ConsentWritePayload {
-  signer_name: string;
-  signed_date: string;
   paper_form_on_file: boolean;
   urgent_medical_treatment: boolean;
   urgent_medical_treatment_exceptions?: string | null;
@@ -203,11 +194,6 @@ export interface RegistrationWorkflowStatus {
     is_complete: boolean;
     missing_sections: string[];
     sections?: { code: string; status: string; missing_fields: string[] }[];
-  };
-  office_completeness: {
-    is_complete: boolean;
-    missing_fields: string[];
-    items?: { code: string; status: string; label: string; missing_fields: string[] }[];
   };
   consent_completeness: { is_complete: boolean; missing_decisions: string[] };
   current_consent_record?: ConsentRecord | null;
@@ -254,7 +240,6 @@ export interface CompleteRegistrationPayload {
   registration_profile?: Record<string, unknown>;
   consents?: ConsentWritePayload;
   collection_password?: string;
-  office_checklist?: Record<string, unknown>;
 }
 
 export interface CompleteRegistrationResponse {
@@ -265,62 +250,4 @@ export interface CompleteRegistrationResponse {
 
 export interface CollectionPasswordPayload {
   password: string;
-}
-
-export interface OfficeChildSummary {
-  id: string;
-  fullName: string;
-  dateOfBirth: string;
-  startDate: string | null;
-  endDate: string | null;
-}
-
-export interface OfficeChecklistMetadata {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface OfficeUseChecklist {
-  depositStatus: string | null;
-  depositPaidDate: string | null;
-  applicationDateStatus: string | null;
-  applicationDate: string | null;
-  startDateStatus: string | null;
-  dateLeft: string | null;
-  sessionsDaysRequestedStatus: string | null;
-  sessionsDaysRequested: string | null;
-  termTimeOnlySpaceStatus: string | null;
-  contractStatus: string | null;
-  contractDate: string | null;
-  handbookStatus: string | null;
-  handbookDate: string | null;
-  redBookStatus: string | null;
-  redBookCheckedDate: string | null;
-  birthCertificatePassportStatus: string | null;
-  birthCertificatePassportCheckedDate: string | null;
-  proofOfAddressStatus: string | null;
-  proofOfAddressCheckedDate: string | null;
-  notes: string | null;
-}
-
-export interface OfficeCompletenessItem {
-  code: string;
-  status: 'complete' | 'incomplete';
-  label: string;
-  missingFields: string[];
-}
-
-export interface OfficeUseCompleteness {
-  isComplete: boolean;
-  missingFields: string[];
-  items: OfficeCompletenessItem[];
-}
-
-export interface RegistrationOfficeUseChecklistResponse {
-  child: OfficeChildSummary;
-  checklistExists: boolean;
-  checklist: OfficeChecklistMetadata | null;
-  officeUseChecklist: OfficeUseChecklist;
-  completeness: OfficeUseCompleteness;
 }

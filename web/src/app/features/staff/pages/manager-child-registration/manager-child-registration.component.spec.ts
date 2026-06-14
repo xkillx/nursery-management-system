@@ -6,7 +6,7 @@ import { of, throwError } from 'rxjs';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ManagerChildRegistrationComponent } from './manager-child-registration.component';
-import { RegistrationProfileResponse, RegistrationOfficeUseChecklistResponse } from '../../models/registration-profile.models';
+import { RegistrationProfileResponse } from '../../models/registration-profile.models';
 
 describe('ManagerChildRegistrationComponent', () => {
   let fixture: ComponentFixture<ManagerChildRegistrationComponent>;
@@ -59,31 +59,14 @@ describe('ManagerChildRegistrationComponent', () => {
     completeness: { isComplete: false, missingSections: ['child_demographics_home'], sections: [{ code: 'child_demographics_home', status: 'incomplete', missingFields: ['review_required'] }] },
   };
 
-  const mockChecklist: RegistrationOfficeUseChecklistResponse = {
-    child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15', startDate: '2023-01-10', endDate: null },
-    checklistExists: false,
-    checklist: null,
-    officeUseChecklist: {
-      depositStatus: null, depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
-      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
-      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
-      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
-      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
-    },
-    completeness: { isComplete: false, missingFields: ['deposit'], items: [{ code: 'deposit', status: 'incomplete', label: 'Deposit', missingFields: ['deposit_unknown'] }] },
-  };
-
   beforeEach(async () => {
     staffApiMock = jasmine.createSpyObj('StaffApiService', [
       'getRegistrationProfile', 'patchRegistrationProfile',
       'setRegistrationCollectionPassword',
-      'getRegistrationOfficeUseChecklist', 'patchRegistrationOfficeUseChecklist',
     ]);
 
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockProfile));
-    staffApiMock.getRegistrationOfficeUseChecklist.and.returnValue(of(mockChecklist));
     staffApiMock.patchRegistrationProfile.and.returnValue(of(mockProfile));
-    staffApiMock.patchRegistrationOfficeUseChecklist.and.returnValue(of(mockChecklist));
     staffApiMock.setRegistrationCollectionPassword.and.returnValue(of(mockProfile));
 
     await TestBed.configureTestingModule({
@@ -109,10 +92,6 @@ describe('ManagerChildRegistrationComponent', () => {
     expect(component.childName).toBe('Emma Thompson');
   });
 
-  it('loads office-use checklist on init', () => {
-    expect(staffApiMock.getRegistrationOfficeUseChecklist).toHaveBeenCalledWith('child-1');
-  });
-
   it('initializes section drafts from profile', () => {
     expect(component.demoHomeDraft).toBeTruthy();
     expect(component.demoHomeDraft?.sex).toBe('female');
@@ -130,18 +109,9 @@ describe('ManagerChildRegistrationComponent', () => {
     expect(component.authorisedCollectorsDraft).toEqual([]);
   });
 
-  it('initializes office checklist draft', () => {
-    expect(component.officeDraft).toBeTruthy();
-  });
-
   it('renders profile completion badge', () => {
     const rendered = fixture.nativeElement as HTMLElement;
     expect(rendered.textContent).toContain('Registration profile');
-  });
-
-  it('renders office-use checklist completion badge', () => {
-    const rendered = fixture.nativeElement as HTMLElement;
-    expect(rendered.textContent).toContain('Office-use checklist');
   });
 
   it('shows missing registration sections when incomplete', () => {
@@ -256,20 +226,6 @@ describe('ManagerChildRegistrationComponent', () => {
     }));
   });
 
-  it('saves office-use checklist', () => {
-    component.officeDraft = {
-      depositStatus: 'complete', depositPaidDate: null, applicationDateStatus: null, applicationDate: null,
-      startDateStatus: null, dateLeft: null, sessionsDaysRequestedStatus: null, sessionsDaysRequested: null,
-      termTimeOnlySpaceStatus: null, contractStatus: null, contractDate: null, handbookStatus: null,
-      handbookDate: null, redBookStatus: null, redBookCheckedDate: null, birthCertificatePassportStatus: null,
-      birthCertificatePassportCheckedDate: null, proofOfAddressStatus: null, proofOfAddressCheckedDate: null, notes: null,
-    };
-    c().saveOfficeChecklist();
-    expect(staffApiMock.patchRegistrationOfficeUseChecklist).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-      depositStatus: 'complete',
-    }));
-  });
-
   it('adds a contact row to parent carers', () => {
     c().addContactRow(component.parentCarersDraft);
     expect(component.parentCarersDraft.length).toBe(1);
@@ -298,11 +254,6 @@ describe('ManagerChildRegistrationComponent', () => {
     c().saveDemographicsHome();
     expect(component.sectionMessages['demographics_home']).toBe('Section saved.');
     expect(component.demoHomeDraft?.sex).toBe('female');
-  });
-
-  it('shows missing office-use checklist items', () => {
-    const rendered = fixture.nativeElement as HTMLElement;
-    expect(rendered.textContent).toContain('Deposit');
   });
 
   it('adds emergency contact row', () => {

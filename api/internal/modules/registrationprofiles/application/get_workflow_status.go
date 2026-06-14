@@ -64,25 +64,6 @@ func (uc *GetWorkflowStatus) Execute(ctx context.Context, actor tenant.ActorCont
 		}
 	}
 
-	officeChecklist, err := uc.profileRepo.GetOfficeChecklistByChild(ctx, actor.TenantID, actor.BranchID, childID)
-	if err != nil {
-		return domain.WorkflowStatus{}, domainerrors.Internal(err)
-	}
-
-	var officeCompleteness domain.OfficeUseCompleteness
-	var officeUpdatedAt *time.Time
-
-	if officeChecklist != nil {
-		officeCompleteness = domain.ComputeOfficeUseCompleteness(officeChecklist)
-		officeUpdatedAt = &officeChecklist.UpdatedAt
-	} else {
-		officeCompleteness = domain.OfficeUseCompleteness{
-			IsComplete:    false,
-			MissingFields: []domain.OfficeChecklistItemCode{},
-			Items:         []domain.OfficeUseCompletenessItem{},
-		}
-	}
-
 	currentConsent, err := uc.consentRepo.GetLatestByChild(ctx, actor.TenantID, actor.BranchID, childID)
 	if err != nil {
 		return domain.WorkflowStatus{}, domainerrors.Internal(err)
@@ -95,5 +76,5 @@ func (uc *GetWorkflowStatus) Execute(ctx context.Context, actor tenant.ActorCont
 		return domain.WorkflowStatus{}, domainerrors.Internal(err)
 	}
 
-	return domain.ComputeWorkflowStatus(child, profileCompleteness, officeCompleteness, consentCompleteness, currentConsent, latestAttestation, profileUpdatedAt, officeUpdatedAt), nil
+	return domain.ComputeWorkflowStatus(child, profileCompleteness, consentCompleteness, currentConsent, latestAttestation, profileUpdatedAt), nil
 }

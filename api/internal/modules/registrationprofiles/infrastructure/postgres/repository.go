@@ -576,230 +576,6 @@ func mapContactRow(row sqlc.RegistrationProfileListContactsRow) domain.ContactEn
 	return e
 }
 
-func (r *Repository) GetOfficeChildSummary(ctx context.Context, tenantID, branchID, childID uuid.UUID) (domain.OfficeChildSummary, bool, error) {
-	q := sqlc.New(r.pool)
-	row, err := q.RegistrationOfficeChecklistChildGet(ctx, sqlc.RegistrationOfficeChecklistChildGetParams{
-		TenantID: uuidToPgtype(tenantID),
-		BranchID: uuidToPgtype(branchID),
-		ID:       uuidToPgtype(childID),
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.OfficeChildSummary{}, false, nil
-	}
-	if err != nil {
-		return domain.OfficeChildSummary{}, false, fmt.Errorf("get child summary: %w", err)
-	}
-	return domain.OfficeChildSummary{
-		ID:          childID,
-		FullName:    row.FullName,
-		DateOfBirth: pgtypeDateToTime(row.DateOfBirth),
-		StartDate:   pgtypeDateToPtr(row.StartDate),
-		EndDate:     pgtypeDateToPtr(row.EndDate),
-	}, true, nil
-}
-
-func (r *Repository) GetOfficeChecklistByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.OfficeUseChecklist, error) {
-	q := sqlc.New(r.pool)
-	row, err := q.RegistrationOfficeChecklistGetByChild(ctx, sqlc.RegistrationOfficeChecklistGetByChildParams{
-		TenantID: uuidToPgtype(tenantID),
-		BranchID: uuidToPgtype(branchID),
-		ChildID:  uuidToPgtype(childID),
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("get checklist by child: %w", err)
-	}
-	return mapOfficeChecklistRow(row.ID, row.TenantID, row.BranchID, row.ChildID,
-		row.CrocDepositStatus, row.DepositPaidDate,
-		row.CrocApplicationDateStatus, row.ApplicationDate,
-		row.CrocStartDateStatus, row.DateLeft,
-		row.CrocSessionsDaysRequestedStatus, row.SessionsDaysRequested,
-		row.CrocTermTimeOnlySpaceStatus,
-		row.CrocContractStatus, row.ContractDate,
-		row.CrocHandbookStatus, row.HandbookDate,
-		row.CrocRedBookStatus, row.RedBookCheckedDate,
-		row.CrocBirthCertificatePassportStatus, row.BirthCertificatePassportCheckedDate,
-		row.CrocProofOfAddressStatus, row.ProofOfAddressCheckedDate,
-		row.Notes,
-		row.CreatedAt, row.UpdatedAt), nil
-}
-
-func (r *Repository) GetOfficeChecklistForUpdateByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.OfficeUseChecklist, error) {
-	q := sqlc.New(tx)
-	row, err := q.RegistrationOfficeChecklistGetForUpdateByChild(ctx, sqlc.RegistrationOfficeChecklistGetForUpdateByChildParams{
-		TenantID: uuidToPgtype(tenantID),
-		BranchID: uuidToPgtype(branchID),
-		ChildID:  uuidToPgtype(childID),
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("get checklist for update: %w", err)
-	}
-	return mapOfficeChecklistRow(row.ID, row.TenantID, row.BranchID, row.ChildID,
-		row.CrocDepositStatus, row.DepositPaidDate,
-		row.CrocApplicationDateStatus, row.ApplicationDate,
-		row.CrocStartDateStatus, row.DateLeft,
-		row.CrocSessionsDaysRequestedStatus, row.SessionsDaysRequested,
-		row.CrocTermTimeOnlySpaceStatus,
-		row.CrocContractStatus, row.ContractDate,
-		row.CrocHandbookStatus, row.HandbookDate,
-		row.CrocRedBookStatus, row.RedBookCheckedDate,
-		row.CrocBirthCertificatePassportStatus, row.BirthCertificatePassportCheckedDate,
-		row.CrocProofOfAddressStatus, row.ProofOfAddressCheckedDate,
-		row.Notes,
-		row.CreatedAt, row.UpdatedAt), nil
-}
-
-func (r *Repository) CreateOfficeChecklist(ctx context.Context, tx domain.Tx, checklist *domain.OfficeUseChecklist) (*domain.OfficeUseChecklist, error) {
-	q := sqlc.New(tx)
-	row, err := q.RegistrationOfficeChecklistCreate(ctx, sqlc.RegistrationOfficeChecklistCreateParams{
-		ID:                              uuidToPgtype(checklist.ID),
-		TenantID:                        uuidToPgtype(checklist.TenantID),
-		BranchID:                        uuidToPgtype(checklist.BranchID),
-		ChildID:                         uuidToPgtype(checklist.ChildID),
-		DepositStatus:                   sqlc.RegistrationOfficeCheckStatus(checklist.DepositStatus),
-		DepositPaidDate:                 dateToPgtype(checklist.DepositPaidDate),
-		ApplicationDateStatus:           sqlc.RegistrationOfficeCheckStatus(checklist.ApplicationDateStatus),
-		ApplicationDate:                 dateToPgtype(checklist.ApplicationDate),
-		StartDateStatus:                 sqlc.RegistrationOfficeCheckStatus(checklist.StartDateStatus),
-		DateLeft:                        dateToPgtype(checklist.DateLeft),
-		SessionsDaysRequestedStatus:     sqlc.RegistrationOfficeCheckStatus(checklist.SessionsDaysRequestedStatus),
-		SessionsDaysRequested:           textToPgtype(checklist.SessionsDaysRequested),
-		TermTimeOnlySpaceStatus:         sqlc.RegistrationTermTimeOnlyStatus(checklist.TermTimeOnlySpaceStatus),
-		ContractStatus:                  sqlc.RegistrationOfficeCheckStatus(checklist.ContractStatus),
-		ContractDate:                    dateToPgtype(checklist.ContractDate),
-		HandbookStatus:                  sqlc.RegistrationOfficeCheckStatus(checklist.HandbookStatus),
-		HandbookDate:                    dateToPgtype(checklist.HandbookDate),
-		RedBookStatus:                   sqlc.RegistrationOfficeCheckStatus(checklist.RedBookStatus),
-		RedBookCheckedDate:              dateToPgtype(checklist.RedBookCheckedDate),
-		BirthCertificatePassportStatus:  sqlc.RegistrationOfficeCheckStatus(checklist.BirthCertificatePassportStatus),
-		BirthCertificatePassportCheckedDate: dateToPgtype(checklist.BirthCertificatePassportCheckedDate),
-		ProofOfAddressStatus:            sqlc.RegistrationOfficeCheckStatus(checklist.ProofOfAddressStatus),
-		ProofOfAddressCheckedDate:       dateToPgtype(checklist.ProofOfAddressCheckedDate),
-		Notes:                           textToPgtype(checklist.Notes),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create checklist: %w", err)
-	}
-	return mapOfficeChecklistCreateRow(row), nil
-}
-
-func (r *Repository) UpdateOfficeChecklist(ctx context.Context, tx domain.Tx, checklist *domain.OfficeUseChecklist) (*domain.OfficeUseChecklist, error) {
-	q := sqlc.New(tx)
-	row, err := q.RegistrationOfficeChecklistUpdate(ctx, sqlc.RegistrationOfficeChecklistUpdateParams{
-		TenantID:                        uuidToPgtype(checklist.TenantID),
-		BranchID:                        uuidToPgtype(checklist.BranchID),
-		ChildID:                         uuidToPgtype(checklist.ChildID),
-		DepositStatus:                   sqlc.RegistrationOfficeCheckStatus(checklist.DepositStatus),
-		DepositPaidDate:                 dateToPgtype(checklist.DepositPaidDate),
-		ApplicationDateStatus:           sqlc.RegistrationOfficeCheckStatus(checklist.ApplicationDateStatus),
-		ApplicationDate:                 dateToPgtype(checklist.ApplicationDate),
-		StartDateStatus:                 sqlc.RegistrationOfficeCheckStatus(checklist.StartDateStatus),
-		DateLeft:                        dateToPgtype(checklist.DateLeft),
-		SessionsDaysRequestedStatus:     sqlc.RegistrationOfficeCheckStatus(checklist.SessionsDaysRequestedStatus),
-		SessionsDaysRequested:           textToPgtype(checklist.SessionsDaysRequested),
-		TermTimeOnlySpaceStatus:         sqlc.RegistrationTermTimeOnlyStatus(checklist.TermTimeOnlySpaceStatus),
-		ContractStatus:                  sqlc.RegistrationOfficeCheckStatus(checklist.ContractStatus),
-		ContractDate:                    dateToPgtype(checklist.ContractDate),
-		HandbookStatus:                  sqlc.RegistrationOfficeCheckStatus(checklist.HandbookStatus),
-		HandbookDate:                    dateToPgtype(checklist.HandbookDate),
-		RedBookStatus:                   sqlc.RegistrationOfficeCheckStatus(checklist.RedBookStatus),
-		RedBookCheckedDate:              dateToPgtype(checklist.RedBookCheckedDate),
-		BirthCertificatePassportStatus:  sqlc.RegistrationOfficeCheckStatus(checklist.BirthCertificatePassportStatus),
-		BirthCertificatePassportCheckedDate: dateToPgtype(checklist.BirthCertificatePassportCheckedDate),
-		ProofOfAddressStatus:            sqlc.RegistrationOfficeCheckStatus(checklist.ProofOfAddressStatus),
-		ProofOfAddressCheckedDate:       dateToPgtype(checklist.ProofOfAddressCheckedDate),
-		Notes:                           textToPgtype(checklist.Notes),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("update checklist: %w", err)
-	}
-	return mapOfficeChecklistUpdateRow(row), nil
-}
-
-func mapOfficeChecklistRow(
-	id, tenantID, branchID, childID pgtype.UUID,
-	depositStatus string, depositPaidDate pgtype.Date,
-	applicationDateStatus string, applicationDate pgtype.Date,
-	startDateStatus string, dateLeft pgtype.Date,
-	sessionsDaysRequestedStatus string, sessionsDaysRequested pgtype.Text,
-	termTimeOnlySpaceStatus string,
-	contractStatus string, contractDate pgtype.Date,
-	handbookStatus string, handbookDate pgtype.Date,
-	redBookStatus string, redBookCheckedDate pgtype.Date,
-	birthCertPassportStatus string, birthCertPassportCheckedDate pgtype.Date,
-	proofOfAddressStatus string, proofOfAddressCheckedDate pgtype.Date,
-	notes pgtype.Text,
-	createdAt, updatedAt pgtype.Timestamptz,
-) *domain.OfficeUseChecklist {
-	return &domain.OfficeUseChecklist{
-		ID:                                pgtypeUUIDToUUID(id),
-		TenantID:                          pgtypeUUIDToUUID(tenantID),
-		BranchID:                          pgtypeUUIDToUUID(branchID),
-		ChildID:                           pgtypeUUIDToUUID(childID),
-		DepositStatus:                     domain.OfficeCheckStatus(depositStatus),
-		DepositPaidDate:                   pgtypeDateToPtr(depositPaidDate),
-		ApplicationDateStatus:             domain.OfficeCheckStatus(applicationDateStatus),
-		ApplicationDate:                   pgtypeDateToPtr(applicationDate),
-		StartDateStatus:                   domain.OfficeCheckStatus(startDateStatus),
-		DateLeft:                          pgtypeDateToPtr(dateLeft),
-		SessionsDaysRequestedStatus:       domain.OfficeCheckStatus(sessionsDaysRequestedStatus),
-		SessionsDaysRequested:             pgtypeTextToPtr(sessionsDaysRequested),
-		TermTimeOnlySpaceStatus:           domain.TermTimeOnlyStatus(termTimeOnlySpaceStatus),
-		ContractStatus:                    domain.OfficeCheckStatus(contractStatus),
-		ContractDate:                      pgtypeDateToPtr(contractDate),
-		HandbookStatus:                    domain.OfficeCheckStatus(handbookStatus),
-		HandbookDate:                      pgtypeDateToPtr(handbookDate),
-		RedBookStatus:                     domain.OfficeCheckStatus(redBookStatus),
-		RedBookCheckedDate:                pgtypeDateToPtr(redBookCheckedDate),
-		BirthCertificatePassportStatus:    domain.OfficeCheckStatus(birthCertPassportStatus),
-		BirthCertificatePassportCheckedDate: pgtypeDateToPtr(birthCertPassportCheckedDate),
-		ProofOfAddressStatus:              domain.OfficeCheckStatus(proofOfAddressStatus),
-		ProofOfAddressCheckedDate:         pgtypeDateToPtr(proofOfAddressCheckedDate),
-		Notes:                             pgtypeTextToPtr(notes),
-		CreatedAt:                         pgtypeTimestamptzToTime(createdAt),
-		UpdatedAt:                         pgtypeTimestamptzToTime(updatedAt),
-	}
-}
-
-func mapOfficeChecklistCreateRow(row sqlc.RegistrationOfficeChecklistCreateRow) *domain.OfficeUseChecklist {
-	return mapOfficeChecklistRow(
-		row.ID, row.TenantID, row.BranchID, row.ChildID,
-		row.DepositStatus, row.DepositPaidDate,
-		row.ApplicationDateStatus, row.ApplicationDate,
-		row.StartDateStatus, row.DateLeft,
-		row.SessionsDaysRequestedStatus, row.SessionsDaysRequested,
-		row.TermTimeOnlySpaceStatus,
-		row.ContractStatus, row.ContractDate,
-		row.HandbookStatus, row.HandbookDate,
-		row.RedBookStatus, row.RedBookCheckedDate,
-		row.BirthCertificatePassportStatus, row.BirthCertificatePassportCheckedDate,
-		row.ProofOfAddressStatus, row.ProofOfAddressCheckedDate,
-		row.Notes,
-		row.CreatedAt, row.UpdatedAt)
-}
-
-func mapOfficeChecklistUpdateRow(row sqlc.RegistrationOfficeChecklistUpdateRow) *domain.OfficeUseChecklist {
-	return mapOfficeChecklistRow(
-		row.ID, row.TenantID, row.BranchID, row.ChildID,
-		row.DepositStatus, row.DepositPaidDate,
-		row.ApplicationDateStatus, row.ApplicationDate,
-		row.StartDateStatus, row.DateLeft,
-		row.SessionsDaysRequestedStatus, row.SessionsDaysRequested,
-		row.TermTimeOnlySpaceStatus,
-		row.ContractStatus, row.ContractDate,
-		row.HandbookStatus, row.HandbookDate,
-		row.RedBookStatus, row.RedBookCheckedDate,
-		row.BirthCertificatePassportStatus, row.BirthCertificatePassportCheckedDate,
-		row.ProofOfAddressStatus, row.ProofOfAddressCheckedDate,
-		row.Notes,
-		row.CreatedAt, row.UpdatedAt)
-}
-
 func uuidToPgtype(u uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: [16]byte(u), Valid: true}
 }
@@ -933,8 +709,6 @@ func (r *Repository) CreateConsentRecord(ctx context.Context, tx domain.Tx, reco
 		ChildID:                          uuidToPgtype(record.ChildID),
 		Version:                          int32(record.Version),
 		Source:                           string(record.Source),
-		SignerName:                       record.SignerName,
-		SignedDate:                       pgtype.Date{Time: record.SignedDate, Valid: true},
 		PaperFormOnFile:                  record.PaperFormOnFile,
 		UrgentMedicalTreatment:           record.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions: textToPgtype(record.UrgentMedicalTreatmentExceptions),
@@ -970,8 +744,6 @@ func mapConsentRow(row sqlc.ChildRegistrationConsentRecord) *domain.ConsentRecor
 		ChildID:  pgtypeUUIDToUUID(row.ChildID),
 		Version:  int(row.Version),
 		Source:   domain.ConsentSource(row.Source),
-		SignerName:       row.SignerName,
-		SignedDate:       pgtypeDateToTime(row.SignedDate),
 		PaperFormOnFile:  row.PaperFormOnFile,
 		UrgentMedicalTreatment:         row.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions: pgtypeTextToPtr(row.UrgentMedicalTreatmentExceptions),
@@ -1027,7 +799,6 @@ func (r *Repository) CreateAttestation(ctx context.Context, tx domain.Tx, a *dom
 		ChildID:                  uuidToPgtype(a.ChildID),
 		ConsentRecordID:          uuidToPgtypePtr(a.ConsentRecordID),
 		ProfileUpdatedAt:         pgtype.Timestamptz{Time: a.ProfileUpdatedAt, Valid: true},
-		OfficeChecklistUpdatedAt: pgtype.Timestamptz{Time: a.OfficeChecklistUpdatedAt, Valid: true},
 		AttestedByUserID:         uuidToPgtype(a.AttestedByUserID),
 		AttestedByMembershipID:   uuidToPgtype(a.AttestedByMembershipID),
 		AttestedAt:               pgtype.Timestamptz{Time: a.AttestedAt, Valid: true},
@@ -1043,7 +814,6 @@ func mapAttestationRow(row sqlc.ChildRegistrationCompletionAttestation) *domain.
 		ChildID:                pgtypeUUIDToUUID(row.ChildID),
 		ConsentRecordID:        pgtypeUUIDToUUIDPtr(row.ConsentRecordID),
 		ProfileUpdatedAt:       pgtypeTimestamptzToTime(row.ProfileUpdatedAt),
-		OfficeChecklistUpdatedAt: pgtypeTimestamptzToTime(row.OfficeChecklistUpdatedAt),
 		AttestedByUserID:       pgtypeUUIDToUUID(row.AttestedByUserID),
 		AttestedByMembershipID: pgtypeUUIDToUUID(row.AttestedByMembershipID),
 		AttestedAt:             pgtypeTimestamptzToTime(row.AttestedAt),

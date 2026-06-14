@@ -20,8 +20,6 @@ type ConsentRecord struct {
 	Version  int
 	Source   ConsentSource
 
-	SignerName       string
-	SignedDate       time.Time
 	PaperFormOnFile  bool
 
 	UrgentMedicalTreatment         bool
@@ -81,10 +79,6 @@ func ComputeConsentCompleteness(record *ConsentRecord) ConsentCompleteness {
 		if !record.GDPRDataProcessingConsent {
 			missing = append(missing, "gdpr_data_processing_consent")
 		}
-
-		if record.SignerName == "" {
-		missing = append(missing, "signer_name")
-	}
 
 	return ConsentCompleteness{
 		IsComplete:      len(missing) == 0,
