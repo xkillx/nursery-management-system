@@ -45,6 +45,7 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
+  ConsentRecord,
   ConsentWritePayload,
   OfficeUseChecklist,
   RegistrationContactEntry,
@@ -60,6 +61,15 @@ type StepperStep =
   | 'consents-evidence';
 
 type StoredStepperStep = StepperStep | 'review-complete';
+
+type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
+type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
+
+type FinalCompletionIssue = {
+  stepKey: StepperStep;
+  field: string;
+  message: string;
+};
 
 type IntakeStep = {
   key: StepperStep;
@@ -123,15 +133,17 @@ type RegistrationDraft = {
     access_requirements: string;
   };
   step2: {
-    has_allergies: boolean;
+    allergy_status: YesNoUnknownStatus;
     allergy_details: string;
-    on_medication: boolean;
+    medication_status: YesNoUnknownStatus;
     medication_name: string;
     medication_dosage: string;
     medication_storage: string;
     immunisation_status: string;
     immunisation_country: string;
+    medical_history_status: NoneDetailsUnknownStatus;
     illness_diagnosis_history: string;
+    dietary_status: NoneDetailsUnknownStatus;
     special_dietary_requirements: string;
     medication_side_effects: string;
     doctor_address: string;
@@ -140,7 +152,7 @@ type RegistrationDraft = {
     health_visitor_name: string;
     health_visitor_clinic: string;
     health_visitor_phone: string;
-    social_services_involvement: boolean;
+    social_services_status: YesNoUnknownStatus;
     social_services_details: string;
     social_worker_contact: string;
     social_worker_name: string;
@@ -168,7 +180,7 @@ type RegistrationDraft = {
     funding_2yo_term_time: boolean;
     parent1_address: string;
     parent1_work_address: string;
-    parent1_has_responsibility: boolean;
+    parent1_has_responsibility: boolean | null;
     show_second_parent: boolean;
     second_parent_name: string;
     second_parent_relationship: string;
@@ -176,13 +188,14 @@ type RegistrationDraft = {
     second_parent_email: string;
     second_parent_address: string;
     second_parent_work_address: string;
-    second_parent_has_responsibility: boolean;
+    second_parent_has_responsibility: boolean | null;
     other_benefits: string;
     other_funding_selected: boolean;
     has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
-      officeEvidence: Partial<OfficeUseChecklist>;
+  consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
+  officeEvidence: Partial<OfficeUseChecklist>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
@@ -323,6 +336,25 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
   ];
+  readonly yesNoUnknownOptions: Option[] = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'unknown', label: 'Unknown' },
+  ];
+  readonly disabilityStatusOptions: Option[] = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'unknown', label: 'Unknown' },
+  ];
+  readonly noneDetailsUnknownOptions: Option[] = [
+    { value: 'none', label: 'None' },
+    { value: 'details', label: 'Details recorded' },
+    { value: 'unknown', label: 'Unknown' },
+  ];
+  readonly parentalResponsibilityOptions: Option[] = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+  ];
   readonly evidenceStatusOptions: Option[] = [
     { value: 'unknown', label: 'Unknown' },
     { value: 'complete', label: 'Complete' },
@@ -439,15 +471,17 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   };
 
   step2 = {
-    has_allergies: false,
+    allergy_status: '' as YesNoUnknownStatus,
     allergy_details: '',
-    on_medication: false,
+    medication_status: '' as YesNoUnknownStatus,
     medication_name: '',
     medication_dosage: '',
     medication_storage: '',
     immunisation_status: '',
     immunisation_country: '',
+    medical_history_status: '' as NoneDetailsUnknownStatus,
     illness_diagnosis_history: '',
+    dietary_status: '' as NoneDetailsUnknownStatus,
     special_dietary_requirements: '',
     medication_side_effects: '',
     doctor_address: '',
@@ -456,19 +490,19 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     health_visitor_name: '',
     health_visitor_clinic: '',
     health_visitor_phone: '',
-      social_services_involvement: false,
-      social_services_details: '',
-      social_worker_contact: '',
-      social_worker_name: '',
-      social_worker_phone: '',
-      social_worker_email: '',
-      concern_walking: false,
-      concern_speech_language: false,
-      concern_hearing: false,
-      concern_sight: false,
-      concern_emotional_wellbeing: false,
-      concern_behaviour: false,
-      routine_care_notes: '',
+    social_services_status: '' as YesNoUnknownStatus,
+    social_services_details: '',
+    social_worker_contact: '',
+    social_worker_name: '',
+    social_worker_phone: '',
+    social_worker_email: '',
+    concern_walking: false,
+    concern_speech_language: false,
+    concern_hearing: false,
+    concern_sight: false,
+    concern_emotional_wellbeing: false,
+    concern_behaviour: false,
+    routine_care_notes: '',
   };
 
   step3 = {
@@ -485,7 +519,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     funding_2yo_term_time: false,
     parent1_address: '',
     parent1_work_address: '',
-    parent1_has_responsibility: true,
+    parent1_has_responsibility: null as boolean | null,
     show_second_parent: false,
     second_parent_name: '',
     second_parent_relationship: '',
@@ -493,7 +527,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     second_parent_email: '',
     second_parent_address: '',
     second_parent_work_address: '',
-    second_parent_has_responsibility: true,
+    second_parent_has_responsibility: null as boolean | null,
     other_benefits: '',
     other_funding_selected: false,
     has_funding_support: false,
@@ -524,6 +558,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     urgent_medical_treatment_exceptions: null,
     notes_exceptions: null,
   };
+
+  consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
+  finalCompletionIssues: FinalCompletionIssue[] = [];
 
   officeEvidence: Partial<OfficeUseChecklist> = {
     applicationDateStatus: 'complete',
@@ -570,6 +607,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (childIdParam) {
       this.isNewRegistration = false;
       this.childId = childIdParam;
+      this.markAllConsentsReviewed();
       this.loadChildAndStatus();
       return;
     }
@@ -632,7 +670,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
 
   get allergyStatusLabel(): string {
-    return this.step2.has_allergies ? 'Recorded' : 'No known allergies recorded';
+    if (this.step2.allergy_status === 'yes') return 'Recorded';
+    if (this.step2.allergy_status === 'no') return 'No known allergies';
+    if (this.step2.allergy_status === 'unknown') return 'Unknown — follow-up required';
+    return 'No known allergies recorded';
   }
 
   nextStep(): void {
@@ -796,11 +837,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
     this.staffApi.patchRegistrationProfile(this.childId!, {
       medical_dietary: {
-        medical_conditions_status: this.step2.has_allergies ? 'yes' : 'no',
+        medical_conditions_status: this.step2.allergy_status || 'unknown',
         medical_conditions_notes: this.step2.allergy_details.trim() || null,
-        prescribed_medication_status: this.step2.on_medication ? 'yes' : 'no',
+        prescribed_medication_status: this.step2.medication_status || 'unknown',
         medication_notes: medicationNotes || null,
-        dietary_requirements_status: this.step2.has_allergies || this.step2.special_dietary_requirements.trim() ? 'yes' : 'no',
+        dietary_requirements_status: this.dietaryApiStatus(),
         dietary_requirements_notes: dietaryNotes || null,
         dietary_side_effects: this.step2.medication_side_effects.trim() || null,
         immunisation_status: this.step2.immunisation_status || null,
@@ -818,7 +859,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         health_contacts_reviewed: true,
       },
       social_development: {
-        social_services_status: this.step2.social_services_involvement ? 'yes' : 'no',
+        social_services_status: this.step2.social_services_status || 'unknown',
         social_services_notes: this.step2.social_services_details.trim() || null,
         social_worker_contact_details: this.serializeSocialWorkerJson(),
         concern_walking: this.step2.concern_walking ? 'yes' : 'no',
@@ -1008,6 +1049,14 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   submitRegistration(): void {
+    const issues = this.collectFinalCompletionIssues();
+    this.finalCompletionIssues = issues;
+    if (issues.length > 0) {
+      this.routeToFirstIssue(issues);
+      this.errorMessage = issues[0].message;
+      return;
+    }
+
     if (this.isNewRegistration) {
       if (!this.validateFundingSection()) {
         return;
@@ -1052,6 +1101,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
       },
     });
+  }
+
+  private routeToFirstIssue(issues: FinalCompletionIssue[]): void {
+    if (issues.length === 0) return;
+    this.currentStep = issues[0].stepKey;
+    setTimeout(() => this.focusStepHeading(), 50);
   }
 
   navigateToChildDetail(): void {
@@ -1110,9 +1165,30 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     return this.step4[key] === true;
   }
 
-  protected setConsentValue(key: keyof ConsentWritePayload, checked: boolean): void {
+  protected consentReviewed(key: keyof ConsentWritePayload): boolean {
+    return this.consentsReviewed[key] === true;
+  }
+
+  setConsentValue(key: keyof ConsentWritePayload, checked: boolean): void {
     (this.step4[key] as boolean) = checked;
+    this.consentsReviewed[key] = true;
     this.notifyDraftChanged();
+  }
+
+  toggleConsent(key: keyof ConsentWritePayload): void {
+    const next = !this.consentValue(key);
+    (this.step4[key] as boolean) = next;
+    this.consentsReviewed[key] = true;
+    this.notifyDraftChanged();
+  }
+
+  private markAllConsentsReviewed(): void {
+    const keys = Object.keys(this.step4) as (keyof ConsentWritePayload)[];
+    for (const key of keys) {
+      if (typeof this.step4[key] === 'boolean') {
+        this.consentsReviewed[key] = true;
+      }
+    }
   }
 
   protected setFundingSupportAnswer(answer: 'yes' | 'no'): void {
@@ -1323,11 +1399,11 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           demographics_home_reviewed: true,
         },
         medical_dietary: {
-          medical_conditions_status: this.step2.has_allergies ? 'yes' : 'no',
+          medical_conditions_status: this.step2.allergy_status || 'unknown',
           medical_conditions_notes: this.step2.allergy_details.trim() || null,
-          prescribed_medication_status: this.step2.on_medication ? 'yes' : 'no',
+          prescribed_medication_status: this.step2.medication_status || 'unknown',
           medication_notes: medicationNotes || null,
-          dietary_requirements_status: this.step2.has_allergies || this.step2.special_dietary_requirements.trim() ? 'yes' : 'no',
+          dietary_requirements_status: this.dietaryApiStatus(),
           dietary_requirements_notes: [this.step2.allergy_details.trim(), this.step2.special_dietary_requirements.trim()].filter(Boolean).join('; ') || null,
           dietary_side_effects: this.step2.medication_side_effects.trim() || null,
           immunisation_status: this.step2.immunisation_status || null,
@@ -1345,7 +1421,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           health_contacts_reviewed: true,
         },
         social_development: {
-          social_services_status: this.step2.social_services_involvement ? 'yes' : 'no',
+          social_services_status: this.step2.social_services_status || 'unknown',
           social_services_notes: this.step2.social_services_details.trim() || null,
         social_worker_contact_details: this.serializeSocialWorkerJson(),
           concern_walking: this.step2.concern_walking ? 'yes' : 'no',
@@ -1436,42 +1512,245 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     return payload;
   }
 
-  protected canSubmitLocally(): boolean {
-    return this.isProfileCompleteLocally() && this.isConsentsCompleteLocally() && this.isOfficeCompleteLocally();
+  canSubmitLocally(): boolean {
+    return this.collectFinalCompletionIssues().length === 0;
   }
 
-  protected isProfileCompleteLocally(): boolean {
-    return (
-      !!this.step1.first_name.trim()
-      && !!this.step1.surname.trim()
-      && !!this.step1.date_of_birth
-      && !!this.step1.start_date
+  collectFinalCompletionIssues(): FinalCompletionIssue[] {
+    const issues: FinalCompletionIssue[] = [];
+
+    if (!this.step1.first_name.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'first_name', message: 'Enter the child\'s first name.' });
+    }
+    if (!this.step1.surname.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'surname', message: 'Enter the child\'s surname.' });
+    }
+    if (!this.step1.date_of_birth) {
+      issues.push({ stepKey: 'child-basics', field: 'date_of_birth', message: 'Enter the child\'s date of birth.' });
+    }
+    if (!this.step1.start_date) {
+      issues.push({ stepKey: 'child-basics', field: 'start_date', message: 'Enter the proposed start date.' });
+    }
+    if (!this.step1.home_address.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'home_address', message: 'Enter the child\'s home address.' });
+    }
+    if (!this.step1.first_language.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'first_language', message: 'Select the primary language spoken at home.' });
+    }
+
+    if (this.step1.disability_status !== 'yes' && this.step1.disability_status !== 'no') {
+      issues.push({ stepKey: 'child-basics', field: 'disability_status', message: 'Confirm whether the child has a disability or SEND/access needs.' });
+    } else if (this.step1.disability_status === 'yes' && !this.step1.disability_notes.trim() && !this.step1.access_requirements.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'disability_notes', message: 'Record disability or access details, or set disability to No.' });
+    }
+
+    this.collectMedicalSafetyIssues(issues);
+    this.collectContactsIssues(issues);
+    this.collectFundingIssues(issues);
+    this.collectConsentsIssues(issues);
+    this.collectOfficeEvidenceIssues(issues);
+
+    return issues;
+  }
+
+  private collectMedicalSafetyIssues(issues: FinalCompletionIssue[]): void {
+    const pushSafetyIssue = (
+      status: YesNoUnknownStatus,
+      field: string,
+      label: string,
+      detailsValue: string,
+      detailsMissingMsg: string,
+    ): void => {
+      if (status === '') {
+        issues.push({ stepKey: 'medical-health', field, message: `Confirm ${label}.` });
+      } else if (status === 'unknown') {
+        issues.push({ stepKey: 'medical-health', field, message: `${label[0].toUpperCase()}${label.slice(1)} cannot be marked Unknown for final completion — follow up before completing.` });
+      } else if (status === 'yes' && !detailsValue && detailsMissingMsg) {
+        issues.push({ stepKey: 'medical-health', field, message: detailsMissingMsg });
+      }
+    };
+
+    pushSafetyIssue(
+      this.step2.allergy_status,
+      'allergy_status',
+      'whether the child has any known allergies',
+      this.step2.allergy_details.trim(),
+      'Record allergy details, or set allergies to No known allergies.',
+    );
+
+    pushSafetyIssue(
+      this.step2.medication_status,
+      'medication_status',
+      'whether the child takes regular medication',
+      '',
+      '',
+    );
+    if (this.step2.medication_status === 'yes') {
+      if (!this.step2.medication_name.trim()) {
+        issues.push({ stepKey: 'medical-health', field: 'medication_name', message: 'Record medication name, or set medication to No regular medication.' });
+      }
+      if (!this.step2.medication_dosage.trim()) {
+        issues.push({ stepKey: 'medical-health', field: 'medication_dosage', message: 'Record medication dosage and frequency, or set medication to No regular medication.' });
+      }
+    }
+
+    this.collectNoneDetailsIssue(
+      issues,
+      this.step2.dietary_status,
+      this.step2.special_dietary_requirements.trim(),
+      'dietary_status',
+      'dietary requirements',
+      'special_dietary_requirements',
+      'Record dietary details, or set dietary requirements to None.',
+    );
+    this.collectNoneDetailsIssue(
+      issues,
+      this.step2.medical_history_status,
+      this.step2.illness_diagnosis_history.trim(),
+      'medical_history_status',
+      'medical history',
+      'illness_diagnosis_history',
+      'Record medical history details, or set medical history to None.',
+    );
+
+    pushSafetyIssue(
+      this.step2.social_services_status,
+      'social_services_status',
+      'social services involvement',
+      this.step2.social_services_details.trim(),
+      'Record social services details, or set involvement to No.',
     );
   }
 
-  protected isConsentsCompleteLocally(): boolean {
-    return (
-      !!this.step4.signer_name.trim()
-      && !!this.step4.signed_date
-      && this.step4.paper_form_on_file
-      && this.step4.safeguarding_reporting_acknowledgement
-      && this.step4.information_sharing_consent
-      && this.step4.gdpr_data_processing_consent
-    );
+  private collectNoneDetailsIssue(
+    issues: FinalCompletionIssue[],
+    status: NoneDetailsUnknownStatus,
+    detailsValue: string,
+    statusField: string,
+    label: string,
+    detailsField: string,
+    detailsMissingMsg: string,
+  ): void {
+    if (status === '') {
+      issues.push({ stepKey: 'medical-health', field: statusField, message: `Confirm ${label}.` });
+    } else if (status === 'unknown') {
+      issues.push({ stepKey: 'medical-health', field: statusField, message: `${label[0].toUpperCase()}${label.slice(1)} cannot be marked Unknown for final completion — follow up before completing.` });
+    } else if (status === 'details' && !detailsValue) {
+      issues.push({ stepKey: 'medical-health', field: detailsField, message: detailsMissingMsg });
+    }
   }
 
-  protected isOfficeCompleteLocally(): boolean {
-    const checklist = this.officeEvidence;
-    const requiredAnswered = [
-      checklist.depositStatus,
-      checklist.applicationDateStatus,
-      checklist.birthCertificatePassportStatus,
-      checklist.proofOfAddressStatus,
-      checklist.redBookStatus,
-      checklist.handbookStatus,
-      checklist.contractStatus,
-    ].every(s => s === 'complete' || s === 'not_applicable' || s === 'unknown');
-    return requiredAnswered;
+  private collectContactsIssues(issues: FinalCompletionIssue[]): void {
+    const primary = this.parentCarersDraft[0];
+    if (!primary?.fullName?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'primary_full_name', message: 'Record the primary parent/carer full name.' });
+    }
+    if (!primary?.relationshipToChild?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'primary_relationship', message: 'Record the primary parent/carer relationship to the child.' });
+    }
+    if (!primary?.telephone?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'primary_telephone', message: 'Record the primary parent/carer phone number.' });
+    }
+    if (this.step3.parent1_has_responsibility === null) {
+      issues.push({ stepKey: 'contacts-collection', field: 'parent1_has_responsibility', message: 'Confirm whether the primary parent/carer holds parental responsibility.' });
+    }
+
+    const validEmergency = this.emergencyContactsDraft.filter(contact =>
+      contact.fullName.trim() && contact.relationshipToChild?.trim() && contact.telephone?.trim(),
+    );
+    if (validEmergency.length === 0) {
+      issues.push({ stepKey: 'contacts-collection', field: 'emergency_contacts', message: 'Add at least one emergency contact with name, relationship, and phone number.' });
+    }
+
+    const hasAuthorisedNonParent = this.emergencyContactsDraft.some((contact, index) =>
+      this.emergencyAuthorisedFlags[index] && contact.fullName.trim(),
+    );
+    if (hasAuthorisedNonParent && !this.step3.collection_password.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'collection_password', message: 'Set an authorised collection password before completing.' });
+    }
+  }
+
+  private collectFundingIssues(issues: FinalCompletionIssue[]): void {
+    if (!this.step3.funding_support_answer) {
+      issues.push({ stepKey: 'contacts-collection', field: 'funding_support_answer', message: 'Select Yes or No for funding/benefits support.' });
+      return;
+    }
+    if (this.step3.funding_support_answer === 'yes') {
+      if (!this.hasSelectedFundingOption()) {
+        issues.push({ stepKey: 'contacts-collection', field: 'funding_options', message: 'Select at least one funding or benefit option.' });
+      }
+      if (this.step3.other_funding_selected && !this.step3.other_benefits.trim()) {
+        issues.push({ stepKey: 'contacts-collection', field: 'other_benefits', message: 'Enter the funding or benefit details.' });
+      }
+    }
+  }
+
+  private collectConsentsIssues(issues: FinalCompletionIssue[]): void {
+    if (!this.step4.signer_name.trim()) {
+      issues.push({ stepKey: 'consents-evidence', field: 'signer_name', message: 'Record the parent/guardian signer name.' });
+    }
+    if (!this.step4.signed_date) {
+      issues.push({ stepKey: 'consents-evidence', field: 'signed_date', message: 'Record the signed date from the paper form.' });
+    }
+    if (!this.step4.paper_form_on_file) {
+      issues.push({ stepKey: 'consents-evidence', field: 'paper_form_on_file', message: 'Confirm the signed paper form is on file.' });
+    }
+    if (!this.step4.safeguarding_reporting_acknowledgement) {
+      issues.push({ stepKey: 'consents-evidence', field: 'safeguarding_reporting_acknowledgement', message: 'Confirm the safeguarding reporting acknowledgement.' });
+    }
+    if (!this.step4.information_sharing_consent) {
+      issues.push({ stepKey: 'consents-evidence', field: 'information_sharing_consent', message: 'Confirm information sharing consent.' });
+    }
+    if (!this.step4.gdpr_data_processing_consent) {
+      issues.push({ stepKey: 'consents-evidence', field: 'gdpr_data_processing_consent', message: 'Confirm GDPR data processing consent.' });
+    }
+
+    if (!this.isNewRegistration) {
+      return;
+    }
+
+    const optionalConsents: Array<{ key: keyof ConsentWritePayload; label: string }> = [
+      { key: 'urgent_medical_treatment', label: 'urgent medical treatment' },
+      { key: 'plasters', label: 'first aid/plasters' },
+      { key: 'area_senco_liaison', label: 'Area SENCO liaison' },
+      { key: 'health_visitor_liaison', label: 'Health Visitor liaison' },
+      { key: 'transition_documents', label: 'transition documents' },
+      { key: 'local_outings', label: 'local outings' },
+      { key: 'face_painting', label: 'face painting' },
+      { key: 'parent_supplied_sun_cream', label: 'parent-supplied sun cream' },
+      { key: 'parent_supplied_nappy_cream', label: 'parent-supplied nappy cream' },
+      { key: 'development_profile_photos', label: 'development profile photos' },
+      { key: 'nursery_display_boards', label: 'nursery display boards' },
+      { key: 'promotional_literature', label: 'promotional literature' },
+      { key: 'nursery_website', label: 'nursery website' },
+      { key: 'staff_student_coursework', label: 'staff/student coursework' },
+      { key: 'social_media', label: 'social media' },
+    ];
+    for (const item of optionalConsents) {
+      if (!this.consentsReviewed[item.key]) {
+        issues.push({ stepKey: 'consents-evidence', field: item.key, message: `Record an explicit Yes or No decision for ${item.label}.` });
+      }
+    }
+  }
+
+  private collectOfficeEvidenceIssues(issues: FinalCompletionIssue[]): void {
+    const office = this.officeEvidence;
+    const required: Array<{ value: string | null | undefined; field: string; label: string }> = [
+      { value: office.applicationDateStatus, field: 'application_date_status', label: 'Application date status' },
+      { value: office.depositStatus, field: 'deposit_status', label: 'Deposit status' },
+      { value: office.birthCertificatePassportStatus, field: 'birth_certificate_passport_status', label: 'Birth certificate/passport status' },
+      { value: office.proofOfAddressStatus, field: 'proof_of_address_status', label: 'Proof of address status' },
+      { value: office.redBookStatus, field: 'red_book_status', label: 'Red Book status' },
+      { value: office.handbookStatus, field: 'handbook_status', label: 'Handbook status' },
+      { value: office.contractStatus, field: 'contract_status', label: 'Contract status' },
+      { value: office.sessionsDaysRequestedStatus, field: 'sessions_days_requested_status', label: 'Sessions/days requested status' },
+      { value: office.termTimeOnlySpaceStatus, field: 'term_time_only_space_status', label: 'Term-time-only space status' },
+    ];
+    for (const item of required) {
+      if (!item.value) {
+        issues.push({ stepKey: 'consents-evidence', field: item.field, message: `${item.label} is required.` });
+      }
+    }
   }
 
   private parseYesNoUnknownFromStr(value: string): string | null {
@@ -1479,6 +1758,34 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (trimmed === 'yes') return 'yes';
     if (trimmed === 'no') return 'no';
     return null;
+  }
+
+  private dietaryApiStatus(): string {
+    if (this.step2.dietary_status === 'details') return 'yes';
+    if (this.step2.dietary_status === 'none') return 'no';
+    return 'unknown';
+  }
+
+  private coerceYesNoUnknown(value: string | null | undefined): YesNoUnknownStatus {
+    if (value === 'yes' || value === 'no' || value === 'unknown') return value;
+    return '';
+  }
+
+  private legacyBooleanToYesNoUnknown(value: boolean | undefined): YesNoUnknownStatus {
+    return value === true ? 'yes' : '';
+  }
+
+  private deriveDietaryStatusFromProfile(value: string | null | undefined): NoneDetailsUnknownStatus {
+    if (value === 'yes') return 'details';
+    if (value === 'no') return 'none';
+    if (value === 'unknown') return 'unknown';
+    return '';
+  }
+
+  private deriveMedicalHistoryStatusFromProfile(notes: string, reviewed: boolean): NoneDetailsUnknownStatus {
+    if (notes.trim()) return 'details';
+    if (reviewed) return 'none';
+    return '';
   }
 
   private saveStep1Profile(childId: string, advance: boolean): void {
@@ -1538,12 +1845,55 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.staffApi.getRegistrationProfile(this.childId).subscribe({
       next: (profile) => {
         this.populateDraftsFromProfile(profile);
+        this.loadRegistrationConsents();
         this.loadStatus();
       },
       error: () => {
         this.loadStatus();
       },
     });
+  }
+
+  private loadRegistrationConsents(): void {
+    if (!this.childId) return;
+    this.staffApi.getRegistrationConsents(this.childId).subscribe({
+      next: (response) => {
+        if (response.current) {
+          this.populateStep4FromConsent(response.current);
+        }
+      },
+      error: () => {
+        // Consents not yet recorded for this child; defaults remain.
+      },
+    });
+  }
+
+  private populateStep4FromConsent(record: ConsentRecord): void {
+    this.step4 = {
+      ...this.step4,
+      signer_name: record.signer_name ?? '',
+      signed_date: record.signed_date ?? '',
+      paper_form_on_file: record.paper_form_on_file,
+      urgent_medical_treatment: record.urgent_medical_treatment,
+      urgent_medical_treatment_exceptions: record.urgent_medical_treatment_exceptions,
+      plasters: record.plasters,
+      safeguarding_reporting_acknowledgement: record.safeguarding_reporting_acknowledgement,
+      area_senco_liaison: record.area_senco_liaison,
+      health_visitor_liaison: record.health_visitor_liaison,
+      transition_documents: record.transition_documents,
+      local_outings: record.local_outings,
+      face_painting: record.face_painting,
+      parent_supplied_sun_cream: record.parent_supplied_sun_cream,
+      parent_supplied_nappy_cream: record.parent_supplied_nappy_cream,
+      development_profile_photos: record.development_profile_photos,
+      nursery_display_boards: record.nursery_display_boards,
+      promotional_literature: record.promotional_literature,
+      nursery_website: record.nursery_website,
+      staff_student_coursework: record.staff_student_coursework,
+      social_media: record.social_media,
+      notes_exceptions: record.notes_exceptions,
+    };
+    this.markAllConsentsReviewed();
   }
 
   private loadStatus(): void {
@@ -1585,21 +1935,24 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
 
     if (profile.medicalDietary) {
-      this.step2.has_allergies =
-        profile.medicalDietary.dietaryRequirementsStatus === 'yes'
-        || profile.medicalDietary.medicalConditionsStatus === 'yes';
+      this.step2.allergy_status = this.coerceYesNoUnknown(profile.medicalDietary.medicalConditionsStatus);
       const notes = profile.medicalDietary.dietaryRequirementsNotes
         ?? profile.medicalDietary.medicalConditionsNotes
         ?? '';
       const parts = notes.split('; ').filter(Boolean);
       this.step2.allergy_details = parts[0] ?? '';
       this.step2.special_dietary_requirements = parts[1] ?? '';
-      this.step2.on_medication = profile.medicalDietary.prescribedMedicationStatus === 'yes';
+      this.step2.medication_status = this.coerceYesNoUnknown(profile.medicalDietary.prescribedMedicationStatus);
       this.step2.medication_name = profile.medicalDietary.medicationNotes ?? '';
       this.step2.immunisation_status = profile.medicalDietary.immunisationStatus ?? '';
       this.step2.immunisation_country = profile.medicalDietary.immunisationCountry ?? '';
       this.step2.illness_diagnosis_history = profile.medicalDietary.illnessDiagnosisHistory ?? '';
       this.step2.medication_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
+      this.step2.dietary_status = this.deriveDietaryStatusFromProfile(profile.medicalDietary.dietaryRequirementsStatus);
+      this.step2.medical_history_status = this.deriveMedicalHistoryStatusFromProfile(
+        profile.medicalDietary.illnessDiagnosisHistory ?? '',
+        profile.medicalDietary.medicalDietaryReviewed,
+      );
     }
 
     if (profile.healthContacts) {
@@ -1612,7 +1965,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     }
 
     if (profile.socialDevelopment) {
-      this.step2.social_services_involvement = profile.socialDevelopment.socialServicesStatus === 'yes';
+      this.step2.social_services_status = this.coerceYesNoUnknown(profile.socialDevelopment.socialServicesStatus);
       this.step2.social_services_details = profile.socialDevelopment.socialServicesNotes ?? '';
       this.parseSocialWorkerJson(profile.socialDevelopment.socialWorkerContactDetails ?? '');
       this.step2.concern_walking = profile.socialDevelopment.concernWalking === 'yes';
@@ -1646,9 +1999,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step3.second_parent_telephone = profile.parentCarers[1].telephone ?? '';
       this.step3.second_parent_email = profile.parentCarers[1].email ?? '';
       this.step3.second_parent_address = this.addressToString(profile.parentCarers[1].address);
-      this.step3.second_parent_has_responsibility = profile.parentCarers[1].hasParentalResponsibility ?? true;
+      this.step3.second_parent_has_responsibility = profile.parentCarers[1].hasParentalResponsibility ?? null;
     }
-    this.step3.parent1_has_responsibility = profile.parentCarers[0]?.hasParentalResponsibility ?? true;
+    this.step3.parent1_has_responsibility = profile.parentCarers[0]?.hasParentalResponsibility ?? null;
 
     this.emergencyContactsDraft = profile.emergencyContacts.length
       ? profile.emergencyContacts.map(contact => ({ ...contact }))
@@ -1854,6 +2207,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       step2: { ...this.step2 },
       step3: { ...this.step3 },
       step4: { ...this.step4 },
+      consentsReviewed: { ...this.consentsReviewed },
       officeEvidence: { ...this.officeEvidence },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -1890,7 +2244,15 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private applyDraft(draft: Partial<RegistrationDraft>): void {
     if (draft.step1) this.step1 = { ...this.step1, ...draft.step1 };
     if (draft.step2) {
+      const legacy = draft.step2 as Partial<typeof draft.step2> & {
+        has_allergies?: boolean;
+        on_medication?: boolean;
+        social_services_involvement?: boolean;
+      };
       this.step2 = { ...this.step2, ...draft.step2 };
+      this.step2.allergy_status = this.step2.allergy_status || this.legacyBooleanToYesNoUnknown(legacy.has_allergies);
+      this.step2.medication_status = this.step2.medication_status || this.legacyBooleanToYesNoUnknown(legacy.on_medication);
+      this.step2.social_services_status = this.step2.social_services_status || this.legacyBooleanToYesNoUnknown(legacy.social_services_involvement);
       this.parseSocialWorkerJson(this.step2.social_worker_contact);
     }
     if (draft.step3) {
@@ -1904,6 +2266,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       }
     }
     if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
+    if (draft.consentsReviewed) this.consentsReviewed = { ...draft.consentsReviewed };
     if (draft.officeEvidence) this.officeEvidence = { ...this.officeEvidence, ...draft.officeEvidence };
     if (draft.parentCarersDraft?.length) {
       this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
@@ -1964,15 +2327,17 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       access_requirements: '',
     };
     this.step2 = {
-      has_allergies: false,
+      allergy_status: '',
       allergy_details: '',
-      on_medication: false,
+      medication_status: '',
       medication_name: '',
       medication_dosage: '',
       medication_storage: '',
       immunisation_status: '',
       immunisation_country: '',
+      medical_history_status: '',
       illness_diagnosis_history: '',
+      dietary_status: '',
       special_dietary_requirements: '',
       medication_side_effects: '',
       doctor_address: '',
@@ -1981,7 +2346,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       health_visitor_name: '',
       health_visitor_clinic: '',
       health_visitor_phone: '',
-      social_services_involvement: false,
+      social_services_status: '',
       social_services_details: '',
       social_worker_contact: '',
       social_worker_name: '',
@@ -2009,7 +2374,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       funding_2yo_term_time: false,
       parent1_address: '',
       parent1_work_address: '',
-      parent1_has_responsibility: true,
+      parent1_has_responsibility: null,
       show_second_parent: false,
       second_parent_name: '',
       second_parent_relationship: '',
@@ -2017,7 +2382,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       second_parent_email: '',
       second_parent_address: '',
       second_parent_work_address: '',
-      second_parent_has_responsibility: true,
+      second_parent_has_responsibility: null,
       other_benefits: '',
       other_funding_selected: false,
       has_funding_support: false,
@@ -2074,6 +2439,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.referralsDraft = [];
     this.step1Touched = {};
     this.step1Submitted = false;
+    this.consentsReviewed = {};
     this.fieldErrors = {};
     this.errorMessage = null;
   }

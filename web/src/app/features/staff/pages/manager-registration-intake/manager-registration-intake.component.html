@@ -364,9 +364,12 @@
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <fieldset>
-                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Disability</legend>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      @for (option of yesNoOptions; track option.value) {
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Disability / SEND / access needs
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                      @for (option of disabilityStatusOptions; track option.value) {
                         <app-radio
                           [id]="'child-disability-' + option.value"
                           name="disability_status"
@@ -457,14 +460,27 @@
                   <h4 id="medical-allergies-heading" class="text-lg font-bold">Allergies & Dietary Needs</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-5 dark:border-warning-500/30 dark:bg-warning-500/10">
-                  <app-checkbox
-                    name="has_allergies"
-                    [(ngModel)]="step2.has_allergies"
-                    label="Does the child have any known allergies?"
-                    className="checked:bg-error-500"
-                  />
-                  @if (step2.has_allergies) {
-                    <app-form-field className="mt-4" label="Allergy details">
+                  <fieldset>
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Does the child have any known allergies?
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                      @for (option of yesNoUnknownOptions; track option.value) {
+                        <app-radio
+                          [id]="'allergy-status-' + option.value"
+                          name="allergy_status"
+                          [value]="option.value"
+                          [label]="option.label"
+                          [checked]="step2.allergy_status === option.value"
+                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                          (valueChange)="step2.allergy_status = $any($event)"
+                        />
+                      }
+                    </div>
+                  </fieldset>
+                  @if (step2.allergy_status === 'yes') {
+                    <app-form-field className="mt-4" label="Allergy details" [required]="true">
                       <app-text-area
                         className="border-error-200 bg-white dark:border-error-500/30 dark:bg-gray-900"
                         [(ngModel)]="step2.allergy_details"
@@ -482,21 +498,35 @@
                   <h4 id="medical-medications-heading" class="text-lg font-bold">Routine Medications</h4>
                 </div>
                 <div class="rounded-lg border border-blue-light-200 bg-blue-light-50 p-5 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
-                  <app-checkbox
-                    name="on_medication"
-                    [(ngModel)]="step2.on_medication"
-                    label="Is the child currently taking any regular medication?"
-                  />
-                  @if (step2.on_medication) {
+                  <fieldset>
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Is the child currently taking any regular medication?
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                      @for (option of yesNoUnknownOptions; track option.value) {
+                        <app-radio
+                          [id]="'medication-status-' + option.value"
+                          name="medication_status"
+                          [value]="option.value"
+                          [label]="option.label"
+                          [checked]="step2.medication_status === option.value"
+                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                          (valueChange)="step2.medication_status = $any($event)"
+                        />
+                      }
+                    </div>
+                  </fieldset>
+                  @if (step2.medication_status === 'yes') {
                     <div class="mt-5 grid grid-cols-1 gap-8 md:grid-cols-2">
-                      <app-form-field label="Medication name">
+                      <app-form-field label="Medication name" [required]="true">
                         <app-input-field
                           type="text"
                           [(ngModel)]="step2.medication_name"
                           placeholder="e.g. Inhaler"
                         />
                       </app-form-field>
-                      <app-form-field label="Dosage and frequency">
+                      <app-form-field label="Dosage and frequency" [required]="true">
                         <app-input-field
                           type="text"
                           [(ngModel)]="step2.medication_dosage"
@@ -550,20 +580,65 @@
                     />
                   </app-form-field>
                 }
-                <app-form-field label="History of illness or diagnosis">
-                  <app-text-area
-                    [(ngModel)]="step2.illness_diagnosis_history"
-                    [rows]="3"
-                    placeholder="Record any known history of illness, diagnosis, or hospital stays"
-                  />
-                </app-form-field>
-                <app-form-field label="Special dietary requirements">
-                  <app-text-area
-                    [(ngModel)]="step2.special_dietary_requirements"
-                    [rows]="2"
-                    placeholder="e.g. Vegetarian, halal, lactose-free diet"
-                  />
-                </app-form-field>
+
+                <fieldset>
+                  <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Medical history (illness, diagnosis, or hospital stays)
+                    <span class="text-error-500" aria-hidden="true"> *</span>
+                  </legend>
+                  <div class="grid gap-3 sm:grid-cols-3">
+                    @for (option of noneDetailsUnknownOptions; track option.value) {
+                      <app-radio
+                        [id]="'medical-history-' + option.value"
+                        name="medical_history_status"
+                        [value]="option.value"
+                        [label]="option.label"
+                        [checked]="step2.medical_history_status === option.value"
+                        className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                        (valueChange)="step2.medical_history_status = $any($event)"
+                      />
+                    }
+                  </div>
+                </fieldset>
+                @if (step2.medical_history_status === 'details') {
+                  <app-form-field label="History of illness or diagnosis" [required]="true">
+                    <app-text-area
+                      [(ngModel)]="step2.illness_diagnosis_history"
+                      [rows]="3"
+                      placeholder="Record any known history of illness, diagnosis, or hospital stays"
+                    />
+                  </app-form-field>
+                }
+
+                <fieldset class="pt-4 border-t border-gray-200 dark:border-gray-800">
+                  <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Dietary requirements
+                    <span class="text-error-500" aria-hidden="true"> *</span>
+                  </legend>
+                  <div class="grid gap-3 sm:grid-cols-3">
+                    @for (option of noneDetailsUnknownOptions; track option.value) {
+                      <app-radio
+                        [id]="'dietary-status-' + option.value"
+                        name="dietary_status"
+                        [value]="option.value"
+                        [label]="option.label"
+                        [checked]="step2.dietary_status === option.value"
+                        className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                        (valueChange)="step2.dietary_status = $any($event)"
+                      />
+                    }
+                  </div>
+                </fieldset>
+                @if (step2.dietary_status === 'details') {
+                  <app-form-field label="Special dietary requirements" [required]="true">
+                    <app-text-area
+                      [(ngModel)]="step2.special_dietary_requirements"
+                      [rows]="2"
+                      placeholder="e.g. Vegetarian, halal, lactose-free diet"
+                    />
+                  </app-form-field>
+                }
+
                 <app-form-field label="What are the side effects?">
                   <app-input-field
                     type="text"
@@ -612,15 +687,28 @@
                   <h4 id="medical-safeguarding-heading" class="text-lg font-bold">Social Services & Safeguarding</h4>
                 </div>
                 <div class="rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
-                  <app-checkbox
-                    name="social_services_involvement"
-                    [(ngModel)]="step2.social_services_involvement"
-                    label="Has the child or anyone in the family been referred to or in contact with social services?"
-                    className="checked:bg-warning-500"
-                  />
-                  @if (step2.social_services_involvement) {
+                  <fieldset>
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Has the child or anyone in the family been referred to or in contact with social services?
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                      @for (option of yesNoUnknownOptions; track option.value) {
+                        <app-radio
+                          [id]="'social-services-' + option.value"
+                          name="social_services_status"
+                          [value]="option.value"
+                          [label]="option.label"
+                          [checked]="step2.social_services_status === option.value"
+                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                          (valueChange)="step2.social_services_status = $any($event)"
+                        />
+                      }
+                    </div>
+                  </fieldset>
+                  @if (step2.social_services_status === 'yes') {
                     <div class="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2">
-                      <app-form-field label="Details of social services involvement">
+                      <app-form-field label="Details of social services involvement" [required]="true">
                         <app-text-area
                           [(ngModel)]="step2.social_services_details"
                           [rows]="3"
@@ -859,13 +947,25 @@
                       />
                     </app-form-field>
                   </div>
-                  <div class="flex items-center gap-4">
-                    <app-checkbox
-                      name="parent1_has_responsibility"
-                      [(ngModel)]="step3.parent1_has_responsibility"
-                      label="Holds parental responsibility"
-                    />
-                  </div>
+                  <fieldset class="mt-2">
+                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Does the primary parent/carer hold parental responsibility?
+                      <span class="text-error-500" aria-hidden="true"> *</span>
+                    </legend>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      @for (option of parentalResponsibilityOptions; track option.value) {
+                        <app-radio
+                          [id]="'parent1-responsibility-' + option.value"
+                          name="parent1_has_responsibility"
+                          [value]="option.value"
+                          [label]="option.label"
+                          [checked]="step3.parent1_has_responsibility === (option.value === 'yes')"
+                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                          (valueChange)="step3.parent1_has_responsibility = $event === 'yes'"
+                        />
+                      }
+                    </div>
+                  </fieldset>
                 }
 
                 @if (step3.show_second_parent) {
@@ -924,13 +1024,24 @@
                         />
                       </app-form-field>
                     </div>
-                    <div class="mt-4 flex items-center gap-4">
-                      <app-checkbox
-                        name="second_parent_has_responsibility"
-                        [(ngModel)]="step3.second_parent_has_responsibility"
-                        label="Holds parental responsibility"
-                      />
-                    </div>
+                    <fieldset class="mt-4">
+                      <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Does the second parent/carer hold parental responsibility?
+                      </legend>
+                      <div class="grid gap-3 sm:grid-cols-2">
+                        @for (option of parentalResponsibilityOptions; track option.value) {
+                          <app-radio
+                            [id]="'second-parent-responsibility-' + option.value"
+                            name="second_parent_has_responsibility"
+                            [value]="option.value"
+                            [label]="option.label"
+                            [checked]="step3.second_parent_has_responsibility === (option.value === 'yes')"
+                            className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                            (valueChange)="step3.second_parent_has_responsibility = $event === 'yes'"
+                          />
+                        }
+                      </div>
+                    </fieldset>
                   </div>
                 } @else {
                   <div>
@@ -1339,14 +1450,15 @@
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.safeguarding_reporting_acknowledgement,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.safeguarding_reporting_acknowledgement
                     }"
-                    (click)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement"
-                    (keydown.enter)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement"
-                    (keydown.space)="step4.safeguarding_reporting_acknowledgement = !step4.safeguarding_reporting_acknowledgement; $event.preventDefault()"
+                    (click)="toggleConsent('safeguarding_reporting_acknowledgement')"
+                    (keydown.enter)="toggleConsent('safeguarding_reporting_acknowledgement')"
+                    (keydown.space)="toggleConsent('safeguarding_reporting_acknowledgement'); $event.preventDefault()"
                   >
                     <div class="pointer-events-none">
                       <app-checkbox
                         name="safeguarding_reporting_acknowledgement"
-                        [(ngModel)]="step4.safeguarding_reporting_acknowledgement"
+                        [ngModel]="step4.safeguarding_reporting_acknowledgement"
+                        (ngModelChange)="setConsentValue('safeguarding_reporting_acknowledgement', $event)"
                         label="I understand that safeguarding concerns may be reported to relevant authorities."
                       />
                     </div>
@@ -1363,14 +1475,15 @@
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.urgent_medical_treatment,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.urgent_medical_treatment
                     }"
-                    (click)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment"
-                    (keydown.enter)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment"
-                    (keydown.space)="step4.urgent_medical_treatment = !step4.urgent_medical_treatment; $event.preventDefault()"
+                    (click)="toggleConsent('urgent_medical_treatment')"
+                    (keydown.enter)="toggleConsent('urgent_medical_treatment')"
+                    (keydown.space)="toggleConsent('urgent_medical_treatment'); $event.preventDefault()"
                   >
                     <div class="pointer-events-none">
                       <app-checkbox
                         name="urgent_medical_treatment"
-                        [(ngModel)]="step4.urgent_medical_treatment"
+                        [ngModel]="step4.urgent_medical_treatment"
+                        (ngModelChange)="setConsentValue('urgent_medical_treatment', $event)"
                         label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
                       />
                     </div>
@@ -1387,14 +1500,15 @@
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.plasters,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.plasters
                     }"
-                    (click)="step4.plasters = !step4.plasters"
-                    (keydown.enter)="step4.plasters = !step4.plasters"
-                    (keydown.space)="step4.plasters = !step4.plasters; $event.preventDefault()"
+                    (click)="toggleConsent('plasters')"
+                    (keydown.enter)="toggleConsent('plasters')"
+                    (keydown.space)="toggleConsent('plasters'); $event.preventDefault()"
                   >
                     <div class="pointer-events-none">
                       <app-checkbox
                         name="plasters"
-                        [(ngModel)]="step4.plasters"
+                        [ngModel]="step4.plasters"
+                        (ngModelChange)="setConsentValue('plasters', $event)"
                         label="I consent to trained staff administering routine first aid, including the use of plasters."
                       />
                     </div>
@@ -1411,14 +1525,15 @@
                       'dark:border-brand-500/40 dark:bg-brand-500/10': step4.information_sharing_consent,
                       'dark:border-gray-800 dark:bg-gray-900/50': !step4.information_sharing_consent
                     }"
-                    (click)="step4.information_sharing_consent = !step4.information_sharing_consent"
-                    (keydown.enter)="step4.information_sharing_consent = !step4.information_sharing_consent"
-                    (keydown.space)="step4.information_sharing_consent = !step4.information_sharing_consent; $event.preventDefault()"
+                    (click)="toggleConsent('information_sharing_consent')"
+                    (keydown.enter)="toggleConsent('information_sharing_consent')"
+                    (keydown.space)="toggleConsent('information_sharing_consent'); $event.preventDefault()"
                   >
                     <div class="pointer-events-none">
                       <app-checkbox
                         name="information_sharing_consent"
-                        [(ngModel)]="step4.information_sharing_consent"
+                        [ngModel]="step4.information_sharing_consent"
+                        (ngModelChange)="setConsentValue('information_sharing_consent', $event)"
                         label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
                       />
                     </div>
@@ -1651,14 +1766,15 @@
                     'dark:border-brand-500/40 dark:bg-brand-500/10': step4.gdpr_data_processing_consent,
                     'dark:border-gray-800 dark:bg-gray-900/50': !step4.gdpr_data_processing_consent
                   }"
-                  (click)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent"
-                  (keydown.enter)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent"
-                  (keydown.space)="step4.gdpr_data_processing_consent = !step4.gdpr_data_processing_consent; $event.preventDefault()"
+                  (click)="toggleConsent('gdpr_data_processing_consent')"
+                  (keydown.enter)="toggleConsent('gdpr_data_processing_consent')"
+                  (keydown.space)="toggleConsent('gdpr_data_processing_consent'); $event.preventDefault()"
                 >
                   <div class="pointer-events-none">
                     <app-checkbox
                       name="gdpr_data_processing_consent"
-                      [(ngModel)]="step4.gdpr_data_processing_consent"
+                      [ngModel]="step4.gdpr_data_processing_consent"
+                      (ngModelChange)="setConsentValue('gdpr_data_processing_consent', $event)"
                       label="I confirm the parent/carer has read and understood the GDPR declaration above"
                     />
                   </div>
