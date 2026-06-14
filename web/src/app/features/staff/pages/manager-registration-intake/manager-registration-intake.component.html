@@ -75,68 +75,52 @@
           </aside>
         </div>
 
-        <nav class="p-4 md:p-5" aria-label="Registration progress">
-          <ol class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <nav class="overflow-x-auto border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/30" aria-label="Registration progress">
+          <ol class="flex min-w-max divide-x divide-gray-200 dark:divide-gray-800 md:min-w-0">
             @for (step of steps; track step.key; let i = $index) {
-              <li>
+              <li class="min-w-[168px] flex-1 md:min-w-0">
                 <button
                   type="button"
                   (click)="goToStep(step.key)"
-                  class="group flex min-h-[84px] w-full items-start gap-3 rounded-lg border bg-white p-3 text-left transition focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.02] dark:focus:ring-brand-400/15"
+                  class="group relative flex min-h-16 w-full items-center gap-2 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:outline-hidden focus:ring-4 focus:ring-inset focus:ring-brand-500/10 dark:bg-gray-950/20 dark:hover:bg-gray-900/70 dark:focus:ring-brand-400/15"
                   [attr.aria-current]="stepIsActive(step.key) ? 'step' : null"
                   [attr.aria-disabled]="!canOpenStep(step.key)"
-                  [class.border-brand-300]="stepIsActive(step.key)"
-                  [class.bg-brand-50]="stepIsActive(step.key)"
-                  [class.border-success-200]="stepIsComplete(step.key)"
-                  [class.border-gray-200]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
                   [class.opacity-65]="!canOpenStep(step.key)"
                   [ngClass]="{
-                    'dark:border-brand-500/50 dark:bg-brand-500/10': stepIsActive(step.key),
-                    'dark:border-success-500/40 dark:bg-success-500/10': stepIsComplete(step.key) && !stepIsActive(step.key),
-                    'dark:border-gray-800 dark:bg-white/[0.02]': !stepIsActive(step.key) && !stepIsComplete(step.key)
+                    '!bg-brand-50 dark:!bg-brand-500/15': stepIsActive(step.key),
+                    '!bg-success-50 dark:!bg-success-500/10': stepIsComplete(step.key) && !stepIsActive(step.key)
                   }"
                 >
                   <span
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-sm font-bold transition"
-                    [class.border-brand-500]="stepIsActive(step.key)"
-                    [class.bg-brand-600]="stepIsActive(step.key)"
-                    [class.text-white]="stepIsActive(step.key)"
-                    [class.border-success-500]="stepIsComplete(step.key)"
-                    [class.bg-success-500]="stepIsComplete(step.key)"
-                    [class.border-gray-200]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
-                    [class.bg-gray-50]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
-                    [class.text-gray-500]="!stepIsActive(step.key) && !stepIsComplete(step.key)"
+                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold text-white transition"
                     [ngClass]="{
-                      'dark:border-brand-400 dark:bg-brand-500 dark:text-white': stepIsActive(step.key),
-                      'dark:border-success-400 dark:bg-success-500 dark:text-gray-950': stepIsComplete(step.key) && !stepIsActive(step.key),
-                      'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400': !stepIsActive(step.key) && !stepIsComplete(step.key)
+                      '!border-brand-500 !bg-brand-600 dark:!border-brand-400 dark:!bg-brand-500': stepIsActive(step.key),
+                      '!border-success-500 !bg-success-500 dark:!border-success-400 dark:!bg-success-500': stepIsComplete(step.key) && !stepIsActive(step.key),
+                      '!border-gray-500 !bg-gray-500 dark:!border-gray-500 dark:!bg-gray-700': !stepIsActive(step.key) && !stepIsComplete(step.key)
                     }"
                   >
                     @if (stepIsComplete(step.key)) {
-                      <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                      <ng-icon name="heroCheck" size="16" aria-hidden="true" />
                     } @else if (!canOpenStep(step.key)) {
-                      <ng-icon name="heroLockClosed" size="20" aria-hidden="true" />
+                      <ng-icon name="heroLockClosed" size="15" aria-hidden="true" />
                     } @else {
                       {{ i + 1 }}
                     }
                   </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block text-sm font-bold dark:text-white/90" [class.text-brand-700]="stepIsActive(step.key)" [class.text-gray-900]="!stepIsActive(step.key)" [ngClass]="{ 'dark:!text-brand-300': stepIsActive(step.key) }">
-                      {{ step.shortLabel }}
-                    </span>
-                    <span class="mt-0.5 block text-xs leading-5 text-gray-500 dark:text-gray-400">{{ step.description }}</span>
-                    <span class="mt-2 block text-xs font-semibold" [class.text-success-600]="stepIsComplete(step.key)" [class.text-brand-600]="stepIsActive(step.key)" [class.text-gray-400]="!stepIsActive(step.key) && !stepIsComplete(step.key)" [ngClass]="{ 'dark:!text-success-400': stepIsComplete(step.key), 'dark:!text-brand-300': stepIsActive(step.key) }">
-                      @if (stepIsComplete(step.key)) {
-                        Complete
-                      } @else if (stepIsActive(step.key)) {
-                        In progress
-                      } @else if (!canOpenStep(step.key)) {
-                        Locked
-                      } @else {
-                        Available
-                      }
-                    </span>
+                  <span
+                    class="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                    [class.text-brand-700]="stepIsActive(step.key)"
+                    [class.text-success-700]="stepIsComplete(step.key) && !stepIsActive(step.key)"
+                    [ngClass]="{
+                      'dark:!text-brand-300': stepIsActive(step.key),
+                      'dark:!text-success-300': stepIsComplete(step.key) && !stepIsActive(step.key)
+                    }"
+                  >
+                    {{ step.shortLabel }}
                   </span>
+                  @if (stepIsActive(step.key)) {
+                    <span class="absolute inset-x-0 bottom-0 h-0.5 bg-brand-500 dark:bg-brand-400" aria-hidden="true"></span>
+                  }
                 </button>
               </li>
             }

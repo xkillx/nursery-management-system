@@ -265,7 +265,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     {
       key: 'child-basics',
       label: 'Child Details',
-      shortLabel: 'Details',
+      shortLabel: 'Child Info',
       description: 'Basic information',
     },
     {
