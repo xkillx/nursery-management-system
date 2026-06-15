@@ -11,6 +11,7 @@ import {
   heroCamera,
   heroChartBarSquare,
   heroCheck,
+  heroClipboardDocument,
   heroClipboardDocumentCheck,
   heroClipboardDocumentList,
   heroCloudArrowUp,
@@ -30,6 +31,7 @@ import {
   heroShieldCheck,
   heroUser,
   heroUserGroup,
+  heroXMark,
 } from '@ng-icons/heroicons/outline';
 
 import { environment } from '../../../../../environments/environment';
@@ -231,6 +233,7 @@ type RegistrationDraft = {
       heroCamera,
       heroChartBarSquare,
       heroCheck,
+      heroClipboardDocument,
       heroClipboardDocumentCheck,
       heroClipboardDocumentList,
       heroCloudArrowUp,
@@ -250,6 +253,7 @@ type RegistrationDraft = {
       heroShieldCheck,
       heroUser,
       heroUserGroup,
+      heroXMark,
     }),
   ],
   templateUrl: './manager-registration-intake.component.html',
@@ -454,6 +458,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   isDraftRestoredBannerVisible = false;
 
   protected showDebugPanel = false;
+  protected copiedDebug = false;
   protected readonly isProduction = environment.production;
 
   step1 = {
@@ -1149,6 +1154,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   protected toggleDebugPanel(): void {
     this.showDebugPanel = !this.showDebugPanel;
+  }
+
+  protected copyDebugModels(): void {
+    navigator.clipboard.writeText(this.debugModels);
+    this.copiedDebug = true;
+    setTimeout(() => (this.copiedDebug = false), 2000);
   }
 
   protected get debugModels(): string {
