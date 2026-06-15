@@ -281,9 +281,9 @@ func (r *Repository) SetCollectionPassword(ctx context.Context, tx domain.Tx, te
 func (r *Repository) ReplaceContactsForTypes(ctx context.Context, tx domain.Tx, profileID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ContactEntry) error {
 	q := sqlc.New(tx)
 
-	sqlcTypes := make([]sqlc.RegistrationContactType, len(contactTypes))
+	sqlcTypes := make([]string, len(contactTypes))
 	for i, ct := range contactTypes {
-		sqlcTypes[i] = sqlc.RegistrationContactType(ct)
+		sqlcTypes[i] = string(ct)
 	}
 
 	if len(entries) > 0 {
@@ -842,5 +842,4 @@ func pgtypeUUIDToUUIDPtr(u pgtype.UUID) *uuid.UUID {
 	id := uuid.UUID(u.Bytes)
 	return &id
 }
-
 

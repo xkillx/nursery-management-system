@@ -417,7 +417,7 @@ DELETE FROM child_registration_contacts
 WHERE tenant_id = $1
   AND branch_id = $2
   AND profile_id = $3
-  AND contact_type = ANY(sqlc.arg('contact_types')::registration_contact_type[]);
+  AND contact_type::text = ANY(sqlc.arg('contact_types')::text[]);
 
 -- name: RegistrationProfileCreateContact :one
 INSERT INTO child_registration_contacts (

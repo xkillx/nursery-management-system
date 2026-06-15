@@ -505,14 +505,14 @@ DELETE FROM child_registration_contacts
 WHERE tenant_id = $1
   AND branch_id = $2
   AND profile_id = $3
-  AND contact_type = ANY($4::registration_contact_type[])
+  AND contact_type::text = ANY($4::text[])
 `
 
 type RegistrationProfileDeleteContactsByTypesParams struct {
 	TenantID     pgtype.UUID
 	BranchID     pgtype.UUID
 	ProfileID    pgtype.UUID
-	ContactTypes []RegistrationContactType
+	ContactTypes []string
 }
 
 func (q *Queries) RegistrationProfileDeleteContactsByTypes(ctx context.Context, arg RegistrationProfileDeleteContactsByTypesParams) error {
