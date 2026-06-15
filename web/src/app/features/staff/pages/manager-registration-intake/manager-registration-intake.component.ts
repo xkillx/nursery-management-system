@@ -86,7 +86,8 @@ type IntakeStep = {
 
 type Step1Field =
   | 'first_name'
-  | 'surname'
+  | 'middle_name'
+  | 'last_name'
   | 'date_of_birth'
   | 'start_date'
   | 'sex'
@@ -102,7 +103,7 @@ type Step1Field =
   | 'disability_notes'
   | 'access_requirements';
 
-type Step1RequiredField = Extract<Step1Field, 'first_name' | 'surname' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language'>;
+type Step1RequiredField = Extract<Step1Field, 'first_name' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language'>;
 
 type ReferralEntry = {
   type: string;
@@ -122,7 +123,8 @@ type RegistrationDraft = {
   currentStep: StoredStepperStep;
   step1: {
     first_name: string;
-    surname: string;
+    middle_name: string;
+    last_name: string;
     date_of_birth: string;
     start_date: string;
     sex: string;
@@ -377,7 +379,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   readonly todayIso = new Date().toISOString().slice(0, 10);
   readonly step1RequiredFields: Step1RequiredField[] = [
     'first_name',
-    'surname',
     'date_of_birth',
     'start_date',
     'home_address',
@@ -474,7 +475,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   step1 = {
     first_name: '',
-    surname: '',
+    middle_name: '',
+    last_name: '',
     date_of_birth: '',
     start_date: '',
     sex: '',
@@ -654,7 +656,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   get childFullNameDraft(): string {
-    return [this.step1.first_name.trim(), this.step1.surname.trim()].filter(Boolean).join(' ');
+    return [this.step1.first_name.trim(), this.step1.middle_name.trim(), this.step1.last_name.trim()].filter(Boolean).join(' ');
   }
 
   get currentStepNumber(): number {
@@ -734,9 +736,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   step1FieldError(field: Step1Field): string | null {
     if (field === 'first_name' && !this.step1.first_name.trim()) {
       return 'Enter the child\'s first name.';
-    }
-    if (field === 'surname' && !this.step1.surname.trim()) {
-      return 'Enter the child\'s surname.';
     }
     if (field === 'date_of_birth') {
       if (!this.step1.date_of_birth) {
@@ -827,7 +826,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
     const payload: ChildWritePayload = {
       first_name: this.step1.first_name.trim(),
-      last_name: this.step1.surname.trim() || null,
+      middle_name: this.step1.middle_name.trim() || null,
+      last_name: this.step1.last_name.trim() || null,
       date_of_birth: this.step1.date_of_birth,
       start_date: this.step1.start_date,
       notes: this.step1.notes.trim() || undefined,
@@ -1219,7 +1219,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private fieldFocusTarget(field: string): string {
     const map: Record<string, string> = {
       first_name: 'child-first-name',
-      surname: 'child-surname',
+      middle_name: 'child-middle-name',
+      last_name: 'child-last-name',
       date_of_birth: 'child-date-of-birth',
       start_date: 'child-start-date',
       home_address: 'child-home-address',
@@ -1537,7 +1538,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const payload: CompleteRegistrationPayload = {
       child: {
         first_name: this.step1.first_name.trim(),
-        last_name: this.step1.surname.trim() || null,
+        middle_name: this.step1.middle_name.trim() || null,
+        last_name: this.step1.last_name.trim() || null,
         date_of_birth: this.step1.date_of_birth,
         start_date: this.step1.start_date,
         notes: this.step1.notes.trim() || undefined,
@@ -1661,9 +1663,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
     if (!this.step1.first_name.trim()) {
       issues.push({ stepKey: 'child-basics', field: 'first_name', message: 'Enter the child\'s first name.' });
-    }
-    if (!this.step1.surname.trim()) {
-      issues.push({ stepKey: 'child-basics', field: 'surname', message: 'Enter the child\'s surname.' });
     }
     if (!this.step1.date_of_birth) {
       issues.push({ stepKey: 'child-basics', field: 'date_of_birth', message: 'Enter the child\'s date of birth.' });
@@ -2023,9 +2022,9 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   private populateStep1FromChild(child: ChildRecord): void {
-    const parts = child.fullName.trim().split(/\s+/);
-    this.step1.first_name = parts.slice(0, -1).join(' ') || child.fullName;
-    this.step1.surname = parts.length > 1 ? parts[parts.length - 1] : '';
+    this.step1.first_name = child.firstName ?? '';
+    this.step1.middle_name = child.middleName ?? '';
+    this.step1.last_name = child.lastName ?? '';
     this.step1.date_of_birth = child.dateOfBirth;
     this.step1.start_date = child.startDate;
     this.step1.notes = child.notes ?? '';
@@ -2374,7 +2373,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private resetDrafts(): void {
     this.step1 = {
       first_name: '',
-      surname: '',
+      middle_name: '',
+      last_name: '',
       date_of_birth: '',
       start_date: '',
       sex: '',

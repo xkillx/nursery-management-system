@@ -61,7 +61,7 @@ describe('ManagerRegistrationIntakeComponent', () => {
 
   function fillRequiredForCompletion(): void {
     component.step1.first_name = 'James';
-    component.step1.surname = 'Smith';
+    component.step1.last_name = 'Smith';
     component.step1.date_of_birth = '2022-01-01';
     component.step1.start_date = '2026-09-01';
     component.step1.home_address = '123 High Street';
@@ -139,10 +139,10 @@ describe('ManagerRegistrationIntakeComponent', () => {
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when surname missing', () => {
+    it('does not block when last name is missing — optional field', () => {
       fillRequiredForCompletion();
-      component.step1.surname = '';
-      expect(component.canSubmitLocally()).toBe(false);
+      component.step1.last_name = '';
+      expect(component.canSubmitLocally()).toBe(true);
     });
 
     it('blocks when date of birth missing', () => {

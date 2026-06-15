@@ -107,12 +107,12 @@
                     <ng-icon name="heroUser" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                     <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Identity & Personal Info</h3>
                   </div>
-                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">First name, surname, date of birth, and start date are required.</p>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">First name, date of birth, and proposed start date are required.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <app-form-field
-                    label="First name(s)"
+                    label="First name"
                     labelFor="child-first-name"
                     [required]="true"
                     errorId="child-first-name-error"
@@ -127,25 +127,43 @@
                       [error]="shouldShowStep1Error('first_name')"
                       [describedBy]="shouldShowStep1Error('first_name') ? 'child-first-name-error' : undefined"
                       autocomplete="given-name"
-                      placeholder="e.g. James Arthur"
+                      placeholder="e.g. James"
                     />
                   </app-form-field>
 
                   <app-form-field
-                    label="Surname"
-                    labelFor="child-surname"
-                    [required]="true"
-                    errorId="child-surname-error"
-                    [error]="step1VisibleError('surname')"
+                    label="Middle name"
+                    labelFor="child-middle-name"
+                    errorId="child-middle-name-error"
+                    [error]="step1VisibleError('middle_name')"
                   >
                     <app-input-field
-                      id="child-surname"
-                      name="surname"
+                      id="child-middle-name"
+                      name="middle_name"
                       type="text"
-                      [(ngModel)]="step1.surname"
-                      (blurred)="markStep1Touched('surname')"
-                      [error]="shouldShowStep1Error('surname')"
-                      [describedBy]="shouldShowStep1Error('surname') ? 'child-surname-error' : undefined"
+                      [(ngModel)]="step1.middle_name"
+                      (blurred)="markStep1Touched('middle_name')"
+                      [error]="shouldShowStep1Error('middle_name')"
+                      [describedBy]="shouldShowStep1Error('middle_name') ? 'child-middle-name-error' : undefined"
+                      autocomplete="additional-name"
+                      placeholder="e.g. Arthur"
+                    />
+                  </app-form-field>
+
+                  <app-form-field
+                    label="Last name"
+                    labelFor="child-last-name"
+                    errorId="child-last-name-error"
+                    [error]="step1VisibleError('last_name')"
+                  >
+                    <app-input-field
+                      id="child-last-name"
+                      name="last_name"
+                      type="text"
+                      [(ngModel)]="step1.last_name"
+                      (blurred)="markStep1Touched('last_name')"
+                      [error]="shouldShowStep1Error('last_name')"
+                      [describedBy]="shouldShowStep1Error('last_name') ? 'child-last-name-error' : undefined"
                       autocomplete="family-name"
                       placeholder="e.g. Smith"
                     />
