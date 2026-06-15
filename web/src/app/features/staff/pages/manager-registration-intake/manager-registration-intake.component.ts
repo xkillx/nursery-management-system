@@ -545,25 +545,25 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
   step4: ConsentWritePayload = {
     paper_form_on_file: true,
-    urgent_medical_treatment: true,
-    plasters: true,
-    safeguarding_reporting_acknowledgement: true,
-    information_truthfulness_declaration: true,
-    information_sharing_consent: true,
-    gdpr_data_processing_consent: true,
-    area_senco_liaison: true,
-    health_visitor_liaison: true,
-    transition_documents: true,
-    local_outings: true,
-    face_painting: true,
-    parent_supplied_sun_cream: true,
-    parent_supplied_nappy_cream: true,
-    development_profile_photos: true,
-    nursery_display_boards: true,
-    promotional_literature: true,
-    nursery_website: true,
-    staff_student_coursework: true,
-    social_media: true,
+    urgent_medical_treatment: false,
+    plasters: false,
+    safeguarding_reporting_acknowledgement: false,
+    information_truthfulness_declaration: false,
+    information_sharing_consent: false,
+    gdpr_data_processing_consent: false,
+    area_senco_liaison: false,
+    health_visitor_liaison: false,
+    transition_documents: false,
+    local_outings: false,
+    face_painting: false,
+    parent_supplied_sun_cream: false,
+    parent_supplied_nappy_cream: false,
+    development_profile_photos: false,
+    nursery_display_boards: false,
+    promotional_literature: false,
+    nursery_website: false,
+    staff_student_coursework: false,
+    social_media: false,
     urgent_medical_treatment_exceptions: null,
     notes_exceptions: null,
   };
@@ -2318,8 +2318,15 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         this.clearFundingOptions();
       }
     }
-    if (draft.step4) this.step4 = { ...this.step4, ...draft.step4 };
-    if (draft.consentsReviewed) this.consentsReviewed = { ...draft.consentsReviewed };
+    if (draft.step4) {
+      this.step4 = { ...this.step4, ...draft.step4 };
+      for (const key of Object.keys(this.step4) as (keyof ConsentWritePayload)[]) {
+        if (typeof this.step4[key] === 'boolean' && this.step4[key] === true) {
+          this.consentsReviewed[key] = true;
+        }
+      }
+    }
+    if (draft.consentsReviewed) this.consentsReviewed = { ...this.consentsReviewed, ...draft.consentsReviewed };
     if (draft.parentCarersDraft?.length) {
       this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
     }
@@ -2441,25 +2448,25 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     };
     this.step4 = {
       paper_form_on_file: true,
-      urgent_medical_treatment: true,
-      plasters: true,
-      safeguarding_reporting_acknowledgement: true,
-      information_truthfulness_declaration: true,
-      information_sharing_consent: true,
-      gdpr_data_processing_consent: true,
-      area_senco_liaison: true,
-      health_visitor_liaison: true,
-      transition_documents: true,
-      local_outings: true,
-      face_painting: true,
-      parent_supplied_sun_cream: true,
-      parent_supplied_nappy_cream: true,
-      development_profile_photos: true,
-      nursery_display_boards: true,
-      promotional_literature: true,
-      nursery_website: true,
-      staff_student_coursework: true,
-      social_media: true,
+      urgent_medical_treatment: false,
+      plasters: false,
+      safeguarding_reporting_acknowledgement: false,
+      information_truthfulness_declaration: false,
+      information_sharing_consent: false,
+      gdpr_data_processing_consent: false,
+      area_senco_liaison: false,
+      health_visitor_liaison: false,
+      transition_documents: false,
+      local_outings: false,
+      face_painting: false,
+      parent_supplied_sun_cream: false,
+      parent_supplied_nappy_cream: false,
+      development_profile_photos: false,
+      nursery_display_boards: false,
+      promotional_literature: false,
+      nursery_website: false,
+      staff_student_coursework: false,
+      social_media: false,
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
     };
