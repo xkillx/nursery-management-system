@@ -19,7 +19,7 @@ describe('ManagerChildRegistrationComponent', () => {
     profile: { id: 'rp-1', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
     demographicsHome: {
       sex: 'female', religion: null, ethnicOrigin: null, firstLanguage: 'English',
-      otherLanguages: [], homeAddress: null, homePostcode: null, homeTelephone: null,
+      otherLanguages: null, homeAddress: null, homePostcode: null, homeTelephone: null,
       disabilityStatus: 'no', disabilityNotes: null, accessRequirements: null,
       demographicsHomeReviewed: false,
     },

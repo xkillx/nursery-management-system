@@ -82,6 +82,19 @@ export class ManagerChildRegistrationComponent implements OnInit {
     { value: 'other', label: 'Other' },
   ];
 
+  readonly languageOptions: Option[] = [
+    { value: 'English', label: 'English' },
+    { value: 'Mandarin Chinese', label: 'Mandarin Chinese' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'French', label: 'French' },
+    { value: 'Modern Standard Arabic', label: 'Modern Standard Arabic' },
+    { value: 'Bengali', label: 'Bengali' },
+    { value: 'Portuguese', label: 'Portuguese' },
+    { value: 'Russian', label: 'Russian' },
+    { value: 'Urdu', label: 'Urdu' },
+  ];
+
   readonly yesNoUnknownOptions: Option[] = [
     { value: 'unknown', label: 'Unknown' },
     { value: 'yes', label: 'Yes' },
@@ -273,17 +286,6 @@ export class ManagerChildRegistrationComponent implements OnInit {
     return t ? { text: t } : null;
   }
 
-  protected languagesToString(langs: string[] | null | undefined): string {
-    if (!langs || langs.length === 0) return '';
-    return langs.join(', ');
-  }
-
-  protected stringToLanguages(s: string): string[] {
-    const t = s.trim();
-    if (!t) return [];
-    return t.split(',').map(l => l.trim()).filter(l => l.length > 0);
-  }
-
   protected addContactRow(arr: RegistrationContactEntry[]): void {
     arr.push({ fullName: '', relationshipToChild: null, address: null, telephone: null, email: null, workAddress: null, hasParentalResponsibility: null });
   }
@@ -311,7 +313,7 @@ export class ManagerChildRegistrationComponent implements OnInit {
         religion: this.toNullWhenEmpty(d.religion ?? ''),
         ethnic_origin: this.toNullWhenEmpty(d.ethnicOrigin ?? ''),
         first_language: this.toNullWhenEmpty(d.firstLanguage ?? ''),
-        other_languages: d.otherLanguages && d.otherLanguages.length > 0 ? d.otherLanguages : null,
+        other_languages: this.toNullWhenEmpty(d.otherLanguages ?? ''),
         home_address: this.stringToAddress(d.homeAddress ? this.addressToString(d.homeAddress) : ''),
         home_postcode: this.toNullWhenEmpty(d.homePostcode ?? ''),
         home_telephone: this.toNullWhenEmpty(d.homeTelephone ?? ''),

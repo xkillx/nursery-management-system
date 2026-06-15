@@ -44,7 +44,6 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { RadioComponent } from '../../../../shared/components/form/input/radio.component';
-import { MultiSelectComponent } from '../../../../shared/components/form/multi-select/multi-select.component';
 import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
@@ -221,7 +220,6 @@ type RegistrationDraft = {
     FormFieldComponent,
     InputFieldComponent,
     LoadingStateComponent,
-    MultiSelectComponent,
     RadioComponent,
     SelectComponent,
     TextAreaComponent,
@@ -300,7 +298,18 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     },
   ];
 
-  readonly languageOptions = ['English', 'Polish', 'Punjabi', 'Arabic', 'Urdu', 'Spanish', 'Other'];
+  readonly languageOptions = [
+    'English',
+    'Mandarin Chinese',
+    'Hindi',
+    'Spanish',
+    'French',
+    'Modern Standard Arabic',
+    'Bengali',
+    'Portuguese',
+    'Russian',
+    'Urdu',
+  ];
   readonly relationshipOptions = ['Mother', 'Father', 'Parent', 'Carer', 'Grandparent', 'Aunt', 'Uncle', 'Other'];
   showCollectionPassword = false;
 
@@ -312,10 +321,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   readonly languageSelectOptions: Option[] = this.languageOptions.map((language) => ({
     value: language,
     label: language,
-  }));
-  readonly languageMultiSelectOptions = this.languageOptions.map((language) => ({
-    value: language,
-    text: language,
   }));
   readonly relationshipSelectOptions: Option[] = this.relationshipOptions.map((relationship) => ({
     value: relationship,
@@ -1544,9 +1549,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
           home_telephone: this.step1.home_telephone.trim() || null,
           religion: this.step1.religion.trim() || null,
           ethnic_origin: this.step1.ethnic_origin.trim() || null,
-          other_languages: this.step1.other_languages
-            ? this.step1.other_languages.split(',').map(s => s.trim()).filter(Boolean)
-            : [],
+          other_languages: this.step1.other_languages || null,
           disability_status: this.parseYesNoUnknownFromStr(this.step1.disability_status),
           disability_notes: this.step1.disability_notes.trim() || null,
           access_requirements: this.step1.access_requirements.trim() || null,
@@ -1906,7 +1909,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         home_telephone: this.step1.home_telephone.trim() || null,
         religion: this.step1.religion.trim() || null,
         ethnic_origin: this.step1.ethnic_origin.trim() || null,
-        other_languages: this.parseOtherLanguages(this.step1.other_languages),
+        other_languages: this.step1.other_languages || null,
         disability_status: this.parseYesNoUnknown(this.step1.disability_status),
         disability_notes: this.step1.disability_notes.trim() || null,
         access_requirements: this.step1.access_requirements.trim() || null,
@@ -2035,7 +2038,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step1.home_telephone = profile.demographicsHome.homeTelephone ?? '';
       this.step1.religion = profile.demographicsHome.religion ?? '';
       this.step1.ethnic_origin = profile.demographicsHome.ethnicOrigin ?? '';
-      this.step1.other_languages = (profile.demographicsHome.otherLanguages ?? []).join(', ');
+      this.step1.other_languages = profile.demographicsHome.otherLanguages ?? '';
       this.step1.disability_status = profile.demographicsHome.disabilityStatus ?? '';
       this.step1.disability_notes = profile.demographicsHome.disabilityNotes ?? '';
       this.step1.access_requirements = profile.demographicsHome.accessRequirements ?? '';
@@ -2185,12 +2188,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     return trimmed ? { text: trimmed } : null;
   }
 
-  private parseOtherLanguages(value: string): string[] | null {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    return trimmed.split(',').map(s => s.trim()).filter(Boolean);
-  }
-
   private parseYesNoUnknown(value: string): string | null {
     const trimmed = value.trim().toLowerCase();
     if (trimmed === 'yes') return 'yes';
@@ -2215,15 +2212,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       return;
     }
     this.draftChanges$.next();
-  }
-
-  selectedOtherLanguageOptions(): string[] {
-    return this.parseOtherLanguages(this.step1.other_languages) ?? [];
-  }
-
-  setOtherLanguages(selectedLanguages: string[]): void {
-    this.step1.other_languages = selectedLanguages.join(', ');
-    this.notifyDraftChanged();
   }
 
   protected discardDraft(): void {

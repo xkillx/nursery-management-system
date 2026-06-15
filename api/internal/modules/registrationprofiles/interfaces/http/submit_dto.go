@@ -1,10 +1,10 @@
 package httpregistrationprofile
 
 type submitCompleteRegistrationRequest struct {
-	Child             childWritePayload              `json:"child"`
-	RegistrationProfile *registrationProfilePayload  `json:"registration_profile,omitempty"`
-	Consents          *consentPayload                `json:"consents,omitempty"`
-	CollectionPassword *string                       `json:"collection_password,omitempty"`
+	Child               childWritePayload           `json:"child"`
+	RegistrationProfile *registrationProfilePayload `json:"registration_profile,omitempty"`
+	Consents            *consentPayload             `json:"consents,omitempty"`
+	CollectionPassword  *string                     `json:"collection_password,omitempty"`
 }
 
 type childWritePayload struct {
@@ -15,32 +15,32 @@ type childWritePayload struct {
 }
 
 type registrationProfilePayload struct {
-	DemographicsHome      *demographicsHomePayload      `json:"demographics_home,omitempty"`
-	MedicalDietary        *medicalDietaryPayload        `json:"medical_dietary,omitempty"`
-	HealthContacts        *healthContactsPayload        `json:"health_contacts,omitempty"`
-	SocialDevelopment     *socialDevelopmentPayload     `json:"social_development,omitempty"`
-	ParentCarers          []contactEntryPayload         `json:"parent_carers,omitempty"`
-	EmergencyContacts     []contactEntryPayload         `json:"emergency_contacts,omitempty"`
-	AuthorisedCollectors  []contactEntryPayload         `json:"authorised_collectors,omitempty"`
-	Collection            *collectionPayload            `json:"collection,omitempty"`
-	FundingSupport        *fundingSupportPayload        `json:"funding_support,omitempty"`
-	RoutineCare           *routineCarePayload           `json:"routine_care,omitempty"`
-	GDPRDeclaration       *gdprDeclarationPayload       `json:"gdpr_declaration,omitempty"`
+	DemographicsHome     *demographicsHomePayload  `json:"demographics_home,omitempty"`
+	MedicalDietary       *medicalDietaryPayload    `json:"medical_dietary,omitempty"`
+	HealthContacts       *healthContactsPayload    `json:"health_contacts,omitempty"`
+	SocialDevelopment    *socialDevelopmentPayload `json:"social_development,omitempty"`
+	ParentCarers         []contactEntryPayload     `json:"parent_carers,omitempty"`
+	EmergencyContacts    []contactEntryPayload     `json:"emergency_contacts,omitempty"`
+	AuthorisedCollectors []contactEntryPayload     `json:"authorised_collectors,omitempty"`
+	Collection           *collectionPayload        `json:"collection,omitempty"`
+	FundingSupport       *fundingSupportPayload    `json:"funding_support,omitempty"`
+	RoutineCare          *routineCarePayload       `json:"routine_care,omitempty"`
+	GDPRDeclaration      *gdprDeclarationPayload   `json:"gdpr_declaration,omitempty"`
 }
 
 type demographicsHomePayload struct {
-	Sex                       *string  `json:"sex,omitempty"`
-	Religion                  *string  `json:"religion,omitempty"`
-	EthnicOrigin              *string  `json:"ethnic_origin,omitempty"`
-	FirstLanguage             *string  `json:"first_language,omitempty"`
-	OtherLanguages            []string `json:"other_languages,omitempty"`
-	HomeAddress               any      `json:"home_address,omitempty"`
-	HomePostcode              *string  `json:"home_postcode,omitempty"`
-	HomeTelephone             *string  `json:"home_telephone,omitempty"`
-	DisabilityStatus          *string  `json:"disability_status,omitempty"`
-	DisabilityNotes           *string  `json:"disability_notes,omitempty"`
-	AccessRequirements        *string  `json:"access_requirements,omitempty"`
-	DemographicsHomeReviewed  bool     `json:"demographics_home_reviewed"`
+	Sex                      *string `json:"sex,omitempty"`
+	Religion                 *string `json:"religion,omitempty"`
+	EthnicOrigin             *string `json:"ethnic_origin,omitempty"`
+	FirstLanguage            *string `json:"first_language,omitempty"`
+	OtherLanguages           *string `json:"other_languages,omitempty"`
+	HomeAddress              any     `json:"home_address,omitempty"`
+	HomePostcode             *string `json:"home_postcode,omitempty"`
+	HomeTelephone            *string `json:"home_telephone,omitempty"`
+	DisabilityStatus         *string `json:"disability_status,omitempty"`
+	DisabilityNotes          *string `json:"disability_notes,omitempty"`
+	AccessRequirements       *string `json:"access_requirements,omitempty"`
+	DemographicsHomeReviewed bool    `json:"demographics_home_reviewed"`
 }
 
 type medicalDietaryPayload struct {
@@ -68,44 +68,44 @@ type healthContactsPayload struct {
 }
 
 type socialDevelopmentPayload struct {
-	SocialServicesStatus       *string                      `json:"social_services_status,omitempty"`
-	SocialServicesNotes        *string                      `json:"social_services_notes,omitempty"`
-	SocialWorkerName           *string                      `json:"social_worker_name,omitempty"`
-	SocialWorkerPhone          *string                      `json:"social_worker_phone,omitempty"`
-	SocialWorkerEmail          *string                      `json:"social_worker_email,omitempty"`
-	ConcernWalking             *string                      `json:"concern_walking,omitempty"`
-	ConcernSpeechLanguage      *string                      `json:"concern_speech_language,omitempty"`
-	ConcernHearing             *string                      `json:"concern_hearing,omitempty"`
-	ConcernSight               *string                      `json:"concern_sight,omitempty"`
-	ConcernEmotionalWellbeing  *string                      `json:"concern_emotional_wellbeing,omitempty"`
-	ConcernBehaviour           *string                      `json:"concern_behaviour,omitempty"`
-	SocialDevelopmentReviewed  bool                         `json:"social_development_reviewed"`
+	SocialServicesStatus      *string `json:"social_services_status,omitempty"`
+	SocialServicesNotes       *string `json:"social_services_notes,omitempty"`
+	SocialWorkerName          *string `json:"social_worker_name,omitempty"`
+	SocialWorkerPhone         *string `json:"social_worker_phone,omitempty"`
+	SocialWorkerEmail         *string `json:"social_worker_email,omitempty"`
+	ConcernWalking            *string `json:"concern_walking,omitempty"`
+	ConcernSpeechLanguage     *string `json:"concern_speech_language,omitempty"`
+	ConcernHearing            *string `json:"concern_hearing,omitempty"`
+	ConcernSight              *string `json:"concern_sight,omitempty"`
+	ConcernEmotionalWellbeing *string `json:"concern_emotional_wellbeing,omitempty"`
+	ConcernBehaviour          *string `json:"concern_behaviour,omitempty"`
+	SocialDevelopmentReviewed bool    `json:"social_development_reviewed"`
 }
 
 type contactEntryPayload struct {
-	FullName                 string  `json:"full_name"`
-	RelationshipToChild      *string `json:"relationship_to_child,omitempty"`
-	Address                  any     `json:"address,omitempty"`
-	Telephone                *string `json:"telephone,omitempty"`
-	Email                    *string `json:"email,omitempty"`
-	WorkAddress              any     `json:"work_address,omitempty"`
-	HasParentalResponsibility *bool  `json:"has_parental_responsibility,omitempty"`
+	FullName                  string  `json:"full_name"`
+	RelationshipToChild       *string `json:"relationship_to_child,omitempty"`
+	Address                   any     `json:"address,omitempty"`
+	Telephone                 *string `json:"telephone,omitempty"`
+	Email                     *string `json:"email,omitempty"`
+	WorkAddress               any     `json:"work_address,omitempty"`
+	HasParentalResponsibility *bool   `json:"has_parental_responsibility,omitempty"`
 }
 
 type collectionPayload struct {
-	Over18CollectionAcknowledged  bool `json:"over18_collection_acknowledged"`
-	EmergencyCollectionReviewed   bool `json:"emergency_collection_reviewed"`
+	Over18CollectionAcknowledged bool `json:"over18_collection_acknowledged"`
+	EmergencyCollectionReviewed  bool `json:"emergency_collection_reviewed"`
 }
 
 type fundingSupportPayload struct {
-	BenefitsContributeToFees   *string `json:"benefits_contribute_to_fees,omitempty"`
-	WorkingTaxCredit           *string `json:"working_tax_credit,omitempty"`
-	CollegeUniPaidToParent     *string `json:"college_uni_paid_to_parent,omitempty"`
-	CollegeUniPaidToNursery    *string `json:"college_uni_paid_to_nursery,omitempty"`
-	Funding3yoTermTime         *string `json:"funding_3yo_term_time,omitempty"`
-	Funding2yoTermTime         *string `json:"funding_2yo_term_time,omitempty"`
-	FundingSupportNotes        *string `json:"funding_support_notes,omitempty"`
-	FundingSupportReviewed     bool    `json:"funding_support_reviewed"`
+	BenefitsContributeToFees *string `json:"benefits_contribute_to_fees,omitempty"`
+	WorkingTaxCredit         *string `json:"working_tax_credit,omitempty"`
+	CollegeUniPaidToParent   *string `json:"college_uni_paid_to_parent,omitempty"`
+	CollegeUniPaidToNursery  *string `json:"college_uni_paid_to_nursery,omitempty"`
+	Funding3yoTermTime       *string `json:"funding_3yo_term_time,omitempty"`
+	Funding2yoTermTime       *string `json:"funding_2yo_term_time,omitempty"`
+	FundingSupportNotes      *string `json:"funding_support_notes,omitempty"`
+	FundingSupportReviewed   bool    `json:"funding_support_reviewed"`
 }
 
 type routineCarePayload struct {
@@ -119,28 +119,28 @@ type gdprDeclarationPayload struct {
 }
 
 type consentPayload struct {
-	PaperFormOnFile  bool    `json:"paper_form_on_file"`
+	PaperFormOnFile bool `json:"paper_form_on_file"`
 
-	UrgentMedicalTreatment         bool    `json:"urgent_medical_treatment"`
-	UrgentMedicalTreatmentExceptions *string `json:"urgent_medical_treatment_exceptions,omitempty"`
-	Plasters                       bool    `json:"plasters"`
-	SafeguardingReportingAcknowledgement bool `json:"safeguarding_reporting_acknowledgement"`
-	InformationSharingConsent      bool    `json:"information_sharing_consent"`
-	GDPRDataProcessingConsent      bool    `json:"gdpr_data_processing_consent"`
-	AreaSENCOLiaison               bool    `json:"area_senco_liaison"`
-	HealthVisitorLiaison           bool    `json:"health_visitor_liaison"`
-	TransitionDocuments            bool    `json:"transition_documents"`
-	LocalOutings                   bool    `json:"local_outings"`
-	FacePainting                   bool    `json:"face_painting"`
-	ParentSuppliedSunCream         bool    `json:"parent_supplied_sun_cream"`
-	ParentSuppliedNappyCream       bool    `json:"parent_supplied_nappy_cream"`
-	DevelopmentProfilePhotos       bool    `json:"development_profile_photos"`
-	NurseryDisplayBoards           bool    `json:"nursery_display_boards"`
-	PromotionalLiterature          bool    `json:"promotional_literature"`
-	NurseryWebsite                 bool    `json:"nursery_website"`
-	StaffStudentCoursework         bool    `json:"staff_student_coursework"`
-	SocialMedia                    bool    `json:"social_media"`
-	SocialMediaChannelNotes        *string `json:"social_media_channel_notes,omitempty"`
+	UrgentMedicalTreatment               bool    `json:"urgent_medical_treatment"`
+	UrgentMedicalTreatmentExceptions     *string `json:"urgent_medical_treatment_exceptions,omitempty"`
+	Plasters                             bool    `json:"plasters"`
+	SafeguardingReportingAcknowledgement bool    `json:"safeguarding_reporting_acknowledgement"`
+	InformationSharingConsent            bool    `json:"information_sharing_consent"`
+	GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
+	AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
+	HealthVisitorLiaison                 bool    `json:"health_visitor_liaison"`
+	TransitionDocuments                  bool    `json:"transition_documents"`
+	LocalOutings                         bool    `json:"local_outings"`
+	FacePainting                         bool    `json:"face_painting"`
+	ParentSuppliedSunCream               bool    `json:"parent_supplied_sun_cream"`
+	ParentSuppliedNappyCream             bool    `json:"parent_supplied_nappy_cream"`
+	DevelopmentProfilePhotos             bool    `json:"development_profile_photos"`
+	NurseryDisplayBoards                 bool    `json:"nursery_display_boards"`
+	PromotionalLiterature                bool    `json:"promotional_literature"`
+	NurseryWebsite                       bool    `json:"nursery_website"`
+	StaffStudentCoursework               bool    `json:"staff_student_coursework"`
+	SocialMedia                          bool    `json:"social_media"`
+	SocialMediaChannelNotes              *string `json:"social_media_channel_notes,omitempty"`
 
 	NotesExceptions *string `json:"notes_exceptions,omitempty"`
 }

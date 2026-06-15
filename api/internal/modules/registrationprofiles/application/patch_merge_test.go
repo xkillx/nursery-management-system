@@ -16,28 +16,27 @@ func boolPtr(b bool) *bool { return &b }
 func newProfile() *domain.Profile {
 	id := uuid.Nil
 	return &domain.Profile{
-		ID:                           id,
-		OtherLanguages:               []string{},
-		HomeAddress:                  map[string]any{},
-		DisabilityStatus:             domain.YesNoUnknownUnknown,
-		MedicalConditionsStatus:      domain.YesNoUnknownUnknown,
-		PrescribedMedicationStatus:   domain.YesNoUnknownUnknown,
-		ImmunisationStatus:           domain.ImmunisationUnknown,
-		DietaryRequirementsStatus:    domain.YesNoUnknownUnknown,
-		SocialServicesStatus:         domain.YesNoUnknownUnknown,
-		ConcernWalking:               domain.YesNoUnknownUnknown,
-		ConcernSpeechLanguage:        domain.YesNoUnknownUnknown,
-		ConcernHearing:               domain.YesNoUnknownUnknown,
-		ConcernSight:                 domain.YesNoUnknownUnknown,
-		ConcernEmotionalWellbeing:    domain.YesNoUnknownUnknown,
-		ConcernBehaviour:             domain.YesNoUnknownUnknown,
-		ProfessionalReferrals:        []domain.ProfessionalReferral{},
-		BenefitsContributeToFees:     domain.YesNoUnknownUnknown,
-		WorkingTaxCredit:             domain.YesNoUnknownUnknown,
-		CollegeUniPaidToParent:       domain.YesNoUnknownUnknown,
-		CollegeUniPaidToNursery:      domain.YesNoUnknownUnknown,
-		Funding3yoTermTime:           domain.YesNoUnknownUnknown,
-		Funding2yoTermTime:           domain.YesNoUnknownUnknown,
+		ID:                         id,
+		HomeAddress:                map[string]any{},
+		DisabilityStatus:           domain.YesNoUnknownUnknown,
+		MedicalConditionsStatus:    domain.YesNoUnknownUnknown,
+		PrescribedMedicationStatus: domain.YesNoUnknownUnknown,
+		ImmunisationStatus:         domain.ImmunisationUnknown,
+		DietaryRequirementsStatus:  domain.YesNoUnknownUnknown,
+		SocialServicesStatus:       domain.YesNoUnknownUnknown,
+		ConcernWalking:             domain.YesNoUnknownUnknown,
+		ConcernSpeechLanguage:      domain.YesNoUnknownUnknown,
+		ConcernHearing:             domain.YesNoUnknownUnknown,
+		ConcernSight:               domain.YesNoUnknownUnknown,
+		ConcernEmotionalWellbeing:  domain.YesNoUnknownUnknown,
+		ConcernBehaviour:           domain.YesNoUnknownUnknown,
+		ProfessionalReferrals:      []domain.ProfessionalReferral{},
+		BenefitsContributeToFees:   domain.YesNoUnknownUnknown,
+		WorkingTaxCredit:           domain.YesNoUnknownUnknown,
+		CollegeUniPaidToParent:     domain.YesNoUnknownUnknown,
+		CollegeUniPaidToNursery:    domain.YesNoUnknownUnknown,
+		Funding3yoTermTime:         domain.YesNoUnknownUnknown,
+		Funding2yoTermTime:         domain.YesNoUnknownUnknown,
 	}
 }
 
@@ -51,7 +50,7 @@ func TestMergePatch_DemographicsHomeWithDisabilityAccess(t *testing.T) {
 			Religion:                 yes("Christian"),
 			EthnicOrigin:             yes("White British"),
 			FirstLanguage:            yes("English"),
-			OtherLanguages:           &[]string{"French", "Spanish"},
+			OtherLanguages:           yes("French"),
 			HomeAddress:              &homeAddr,
 			HomePostcode:             yes("SW1A 1AA"),
 			HomeTelephone:            yes("020 1234 5678"),
@@ -132,11 +131,11 @@ func TestMergePatch_MedicalDietaryEnums(t *testing.T) {
 
 	_, err := MergePatch(p, PatchSection{
 		MedicalDietary: &MedicalDietaryPatch{
-			MedicalConditionsStatus:     yes("yes"),
-			PrescribedMedicationStatus:  yes("no"),
-			DietaryRequirementsStatus:   yes("unknown"),
-			ImmunisationStatus:          yes("up_to_date"),
-			MedicalDietaryReviewed:      boolPtr(true),
+			MedicalConditionsStatus:    yes("yes"),
+			PrescribedMedicationStatus: yes("no"),
+			DietaryRequirementsStatus:  yes("unknown"),
+			ImmunisationStatus:         yes("up_to_date"),
+			MedicalDietaryReviewed:     boolPtr(true),
 		},
 	})
 	if err != nil {
@@ -220,13 +219,13 @@ func TestMergePatch_MultipleSections(t *testing.T) {
 
 	changed, err := MergePatch(p, PatchSection{
 		DemographicsHome: &DemographicsHomePatch{
-			Sex: yes("male"),
-			DisabilityStatus: yes("no"),
+			Sex:                      yes("male"),
+			DisabilityStatus:         yes("no"),
 			DemographicsHomeReviewed: boolPtr(true),
 		},
 		MedicalDietary: &MedicalDietaryPatch{
 			MedicalConditionsStatus: yes("no"),
-			MedicalDietaryReviewed: boolPtr(true),
+			MedicalDietaryReviewed:  boolPtr(true),
 		},
 	})
 	if err != nil {

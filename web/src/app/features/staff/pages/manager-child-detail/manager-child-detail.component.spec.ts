@@ -95,7 +95,7 @@ describe('ManagerChildDetailComponent', () => {
       religion: null,
       ethnicOrigin: null,
       firstLanguage: 'English',
-      otherLanguages: [],
+      otherLanguages: null,
       homeAddress: { line1: '10 High Street', town: 'Leeds', postcode: 'LS1 1AA' },
       homePostcode: 'LS1 1AA',
       homeTelephone: '0113 123 4567',

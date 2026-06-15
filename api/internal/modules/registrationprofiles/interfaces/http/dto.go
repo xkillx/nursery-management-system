@@ -19,106 +19,106 @@ type profileResponse struct {
 }
 
 type registrationProfileResponse struct {
-	Child          childSummaryResponse          `json:"child"`
-	ProfileExists  bool                          `json:"profile_exists"`
-	Profile        *profileResponse              `json:"profile,omitempty"`
-	DemographicsHome       *demographicsHomeResponse       `json:"demographics_home,omitempty"`
-	MedicalDietary         *medicalDietaryResponse         `json:"medical_dietary,omitempty"`
-	HealthContacts         *healthContactsResponse         `json:"health_contacts,omitempty"`
-	SocialDevelopment      *socialDevelopmentResponse      `json:"social_development,omitempty"`
-	ParentCarers           []contactEntryResponse          `json:"parent_carers,omitempty"`
-	EmergencyContacts      []contactEntryResponse          `json:"emergency_contacts,omitempty"`
-	AuthorisedCollectors    []contactEntryResponse          `json:"authorised_collectors,omitempty"`
-	Collection             *collectionResponse             `json:"collection,omitempty"`
-	FundingSupport         *fundingSupportResponse         `json:"funding_support,omitempty"`
-	RoutineCare            *routineCareResponse            `json:"routine_care,omitempty"`
-	GDPRDeclaration        *gdprDeclarationResponse        `json:"gdpr_declaration,omitempty"`
-	Completeness           *completenessResponse           `json:"completeness"`
+	Child                childSummaryResponse       `json:"child"`
+	ProfileExists        bool                       `json:"profile_exists"`
+	Profile              *profileResponse           `json:"profile,omitempty"`
+	DemographicsHome     *demographicsHomeResponse  `json:"demographics_home,omitempty"`
+	MedicalDietary       *medicalDietaryResponse    `json:"medical_dietary,omitempty"`
+	HealthContacts       *healthContactsResponse    `json:"health_contacts,omitempty"`
+	SocialDevelopment    *socialDevelopmentResponse `json:"social_development,omitempty"`
+	ParentCarers         []contactEntryResponse     `json:"parent_carers,omitempty"`
+	EmergencyContacts    []contactEntryResponse     `json:"emergency_contacts,omitempty"`
+	AuthorisedCollectors []contactEntryResponse     `json:"authorised_collectors,omitempty"`
+	Collection           *collectionResponse        `json:"collection,omitempty"`
+	FundingSupport       *fundingSupportResponse    `json:"funding_support,omitempty"`
+	RoutineCare          *routineCareResponse       `json:"routine_care,omitempty"`
+	GDPRDeclaration      *gdprDeclarationResponse   `json:"gdpr_declaration,omitempty"`
+	Completeness         *completenessResponse      `json:"completeness"`
 }
 
 type demographicsHomeResponse struct {
-	Sex                       *string  `json:"sex,omitempty"`
-	Religion                  *string  `json:"religion,omitempty"`
-	EthnicOrigin              *string  `json:"ethnic_origin,omitempty"`
-	FirstLanguage             *string  `json:"first_language,omitempty"`
-	OtherLanguages            []string `json:"other_languages,omitempty"`
-	HomeAddress               any      `json:"home_address,omitempty"`
-	HomePostcode              *string  `json:"home_postcode,omitempty"`
-	HomeTelephone             *string  `json:"home_telephone,omitempty"`
-	DisabilityStatus          *string  `json:"disability_status,omitempty"`
-	DisabilityNotes           *string  `json:"disability_notes,omitempty"`
-	AccessRequirements        *string  `json:"access_requirements,omitempty"`
-	DemographicsHomeReviewed  bool     `json:"demographics_home_reviewed"`
+	Sex                      *string `json:"sex,omitempty"`
+	Religion                 *string `json:"religion,omitempty"`
+	EthnicOrigin             *string `json:"ethnic_origin,omitempty"`
+	FirstLanguage            *string `json:"first_language,omitempty"`
+	OtherLanguages           *string `json:"other_languages,omitempty"`
+	HomeAddress              any     `json:"home_address,omitempty"`
+	HomePostcode             *string `json:"home_postcode,omitempty"`
+	HomeTelephone            *string `json:"home_telephone,omitempty"`
+	DisabilityStatus         *string `json:"disability_status,omitempty"`
+	DisabilityNotes          *string `json:"disability_notes,omitempty"`
+	AccessRequirements       *string `json:"access_requirements,omitempty"`
+	DemographicsHomeReviewed bool    `json:"demographics_home_reviewed"`
 }
 
 type medicalDietaryResponse struct {
-	MedicalConditionsStatus       *string `json:"medical_conditions_status,omitempty"`
-	MedicalConditionsNotes        *string `json:"medical_conditions_notes,omitempty"`
-	PrescribedMedicationStatus    *string `json:"prescribed_medication_status,omitempty"`
-	MedicationNotes               *string `json:"medication_notes,omitempty"`
-	ImmunisationStatus            *string `json:"immunisation_status,omitempty"`
-	ImmunisationCountry           *string `json:"immunisation_country,omitempty"`
-	IllnessDiagnosisHistory       *string `json:"illness_diagnosis_history,omitempty"`
-	DietaryRequirementsStatus     *string `json:"dietary_requirements_status,omitempty"`
-	DietaryRequirementsNotes      *string `json:"dietary_requirements_notes,omitempty"`
-	DietarySideEffects            *string `json:"dietary_side_effects,omitempty"`
-	MedicalDietaryReviewed        bool    `json:"medical_dietary_reviewed"`
+	MedicalConditionsStatus    *string `json:"medical_conditions_status,omitempty"`
+	MedicalConditionsNotes     *string `json:"medical_conditions_notes,omitempty"`
+	PrescribedMedicationStatus *string `json:"prescribed_medication_status,omitempty"`
+	MedicationNotes            *string `json:"medication_notes,omitempty"`
+	ImmunisationStatus         *string `json:"immunisation_status,omitempty"`
+	ImmunisationCountry        *string `json:"immunisation_country,omitempty"`
+	IllnessDiagnosisHistory    *string `json:"illness_diagnosis_history,omitempty"`
+	DietaryRequirementsStatus  *string `json:"dietary_requirements_status,omitempty"`
+	DietaryRequirementsNotes   *string `json:"dietary_requirements_notes,omitempty"`
+	DietarySideEffects         *string `json:"dietary_side_effects,omitempty"`
+	MedicalDietaryReviewed     bool    `json:"medical_dietary_reviewed"`
 }
 
 type healthContactsResponse struct {
-	DoctorName            *string `json:"doctor_name,omitempty"`
-	DoctorAddress         *string `json:"doctor_address,omitempty"`
-	DoctorPhone           *string `json:"doctor_phone,omitempty"`
-	HealthVisitorName     *string `json:"health_visitor_name,omitempty"`
-	HealthVisitorAddress  *string `json:"health_visitor_address,omitempty"`
-	HealthVisitorPhone    *string `json:"health_visitor_phone,omitempty"`
-	HealthContactsReviewed bool   `json:"health_contacts_reviewed"`
+	DoctorName             *string `json:"doctor_name,omitempty"`
+	DoctorAddress          *string `json:"doctor_address,omitempty"`
+	DoctorPhone            *string `json:"doctor_phone,omitempty"`
+	HealthVisitorName      *string `json:"health_visitor_name,omitempty"`
+	HealthVisitorAddress   *string `json:"health_visitor_address,omitempty"`
+	HealthVisitorPhone     *string `json:"health_visitor_phone,omitempty"`
+	HealthContactsReviewed bool    `json:"health_contacts_reviewed"`
 }
 
 type socialDevelopmentResponse struct {
-	SocialServicesStatus       *string                       `json:"social_services_status,omitempty"`
-	SocialServicesNotes        *string                       `json:"social_services_notes,omitempty"`
-	SocialWorkerName           *string                       `json:"social_worker_name,omitempty"`
-	SocialWorkerPhone          *string                       `json:"social_worker_phone,omitempty"`
-	SocialWorkerEmail          *string                       `json:"social_worker_email,omitempty"`
-	ConcernWalking             *string                       `json:"concern_walking,omitempty"`
-	ConcernSpeechLanguage      *string                       `json:"concern_speech_language,omitempty"`
-	ConcernHearing             *string                       `json:"concern_hearing,omitempty"`
-	ConcernSight               *string                       `json:"concern_sight,omitempty"`
-	ConcernEmotionalWellbeing  *string                       `json:"concern_emotional_wellbeing,omitempty"`
-	ConcernBehaviour           *string                       `json:"concern_behaviour,omitempty"`
-	ProfessionalReferrals      []domain.ProfessionalReferral `json:"professional_referrals,omitempty"`
-	SocialDevelopmentReviewed  bool                          `json:"social_development_reviewed"`
+	SocialServicesStatus      *string                       `json:"social_services_status,omitempty"`
+	SocialServicesNotes       *string                       `json:"social_services_notes,omitempty"`
+	SocialWorkerName          *string                       `json:"social_worker_name,omitempty"`
+	SocialWorkerPhone         *string                       `json:"social_worker_phone,omitempty"`
+	SocialWorkerEmail         *string                       `json:"social_worker_email,omitempty"`
+	ConcernWalking            *string                       `json:"concern_walking,omitempty"`
+	ConcernSpeechLanguage     *string                       `json:"concern_speech_language,omitempty"`
+	ConcernHearing            *string                       `json:"concern_hearing,omitempty"`
+	ConcernSight              *string                       `json:"concern_sight,omitempty"`
+	ConcernEmotionalWellbeing *string                       `json:"concern_emotional_wellbeing,omitempty"`
+	ConcernBehaviour          *string                       `json:"concern_behaviour,omitempty"`
+	ProfessionalReferrals     []domain.ProfessionalReferral `json:"professional_referrals,omitempty"`
+	SocialDevelopmentReviewed bool                          `json:"social_development_reviewed"`
 }
 
 type contactEntryResponse struct {
-	FullName                 string  `json:"full_name"`
-	RelationshipToChild      *string `json:"relationship_to_child,omitempty"`
-	Address                  any     `json:"address,omitempty"`
-	Telephone                *string `json:"telephone,omitempty"`
-	Email                    *string `json:"email,omitempty"`
-	WorkAddress              any     `json:"work_address,omitempty"`
-	HasParentalResponsibility *bool  `json:"has_parental_responsibility,omitempty"`
+	FullName                  string  `json:"full_name"`
+	RelationshipToChild       *string `json:"relationship_to_child,omitempty"`
+	Address                   any     `json:"address,omitempty"`
+	Telephone                 *string `json:"telephone,omitempty"`
+	Email                     *string `json:"email,omitempty"`
+	WorkAddress               any     `json:"work_address,omitempty"`
+	HasParentalResponsibility *bool   `json:"has_parental_responsibility,omitempty"`
 }
 
 type collectionResponse struct {
-	IsSet                           bool    `json:"is_set"`
-	UpdatedAt                       *string `json:"last_updated_at,omitempty"`
-	UpdatedByUserID                 *string `json:"last_updated_by_user_id,omitempty"`
-	UpdatedByMembershipID           *string `json:"last_updated_by_membership_id,omitempty"`
-	Over18CollectionAcknowledged    bool    `json:"over18_collection_acknowledged"`
-	EmergencyCollectionReviewed     bool    `json:"emergency_collection_reviewed"`
+	IsSet                        bool    `json:"is_set"`
+	UpdatedAt                    *string `json:"last_updated_at,omitempty"`
+	UpdatedByUserID              *string `json:"last_updated_by_user_id,omitempty"`
+	UpdatedByMembershipID        *string `json:"last_updated_by_membership_id,omitempty"`
+	Over18CollectionAcknowledged bool    `json:"over18_collection_acknowledged"`
+	EmergencyCollectionReviewed  bool    `json:"emergency_collection_reviewed"`
 }
 
 type fundingSupportResponse struct {
-	BenefitsContributeToFees   *string `json:"benefits_contribute_to_fees,omitempty"`
-	WorkingTaxCredit           *string `json:"working_tax_credit,omitempty"`
-	CollegeUniPaidToParent     *string `json:"college_uni_paid_to_parent,omitempty"`
-	CollegeUniPaidToNursery    *string `json:"college_uni_paid_to_nursery,omitempty"`
-	Funding3yoTermTime         *string `json:"funding_3yo_term_time,omitempty"`
-	Funding2yoTermTime         *string `json:"funding_2yo_term_time,omitempty"`
-	FundingSupportNotes        *string `json:"funding_support_notes,omitempty"`
-	FundingSupportReviewed     bool    `json:"funding_support_reviewed"`
+	BenefitsContributeToFees *string `json:"benefits_contribute_to_fees,omitempty"`
+	WorkingTaxCredit         *string `json:"working_tax_credit,omitempty"`
+	CollegeUniPaidToParent   *string `json:"college_uni_paid_to_parent,omitempty"`
+	CollegeUniPaidToNursery  *string `json:"college_uni_paid_to_nursery,omitempty"`
+	Funding3yoTermTime       *string `json:"funding_3yo_term_time,omitempty"`
+	Funding2yoTermTime       *string `json:"funding_2yo_term_time,omitempty"`
+	FundingSupportNotes      *string `json:"funding_support_notes,omitempty"`
+	FundingSupportReviewed   bool    `json:"funding_support_reviewed"`
 }
 
 type routineCareResponse struct {
@@ -133,8 +133,8 @@ type gdprDeclarationResponse struct {
 }
 
 type completenessResponse struct {
-	IsComplete      bool                        `json:"is_complete"`
-	MissingSections []domain.SectionCode        `json:"missing_sections,omitempty"`
+	IsComplete      bool                          `json:"is_complete"`
+	MissingSections []domain.SectionCode          `json:"missing_sections,omitempty"`
 	Sections        []completenessSectionResponse `json:"sections"`
 }
 
@@ -186,17 +186,17 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 	}
 
 	resp.MedicalDietary = &medicalDietaryResponse{
-		MedicalConditionsStatus:     statusPtr(string(p.MedicalConditionsStatus)),
-		MedicalConditionsNotes:      p.MedicalConditionsNotes,
-		PrescribedMedicationStatus:  statusPtr(string(p.PrescribedMedicationStatus)),
-		MedicationNotes:             p.MedicationNotes,
-		ImmunisationStatus:          statusPtr(string(p.ImmunisationStatus)),
-		ImmunisationCountry:         p.ImmunisationCountry,
-		IllnessDiagnosisHistory:     p.IllnessDiagnosisHistory,
-		DietaryRequirementsStatus:   statusPtr(string(p.DietaryRequirementsStatus)),
-		DietaryRequirementsNotes:    p.DietaryRequirementsNotes,
-		DietarySideEffects:          p.DietarySideEffects,
-		MedicalDietaryReviewed:      p.MedicalDietaryReviewed,
+		MedicalConditionsStatus:    statusPtr(string(p.MedicalConditionsStatus)),
+		MedicalConditionsNotes:     p.MedicalConditionsNotes,
+		PrescribedMedicationStatus: statusPtr(string(p.PrescribedMedicationStatus)),
+		MedicationNotes:            p.MedicationNotes,
+		ImmunisationStatus:         statusPtr(string(p.ImmunisationStatus)),
+		ImmunisationCountry:        p.ImmunisationCountry,
+		IllnessDiagnosisHistory:    p.IllnessDiagnosisHistory,
+		DietaryRequirementsStatus:  statusPtr(string(p.DietaryRequirementsStatus)),
+		DietaryRequirementsNotes:   p.DietaryRequirementsNotes,
+		DietarySideEffects:         p.DietarySideEffects,
+		MedicalDietaryReviewed:     p.MedicalDietaryReviewed,
 	}
 
 	resp.HealthContacts = &healthContactsResponse{
@@ -210,29 +210,29 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 	}
 
 	resp.SocialDevelopment = &socialDevelopmentResponse{
-		SocialServicesStatus:       statusPtr(string(p.SocialServicesStatus)),
-		SocialServicesNotes:        p.SocialServicesNotes,
-		SocialWorkerName:           p.SocialWorkerName,
-		SocialWorkerPhone:          p.SocialWorkerPhone,
-		SocialWorkerEmail:          p.SocialWorkerEmail,
-		ConcernWalking:             statusPtr(string(p.ConcernWalking)),
-		ConcernSpeechLanguage:      statusPtr(string(p.ConcernSpeechLanguage)),
-		ConcernHearing:             statusPtr(string(p.ConcernHearing)),
-		ConcernSight:               statusPtr(string(p.ConcernSight)),
-		ConcernEmotionalWellbeing:  statusPtr(string(p.ConcernEmotionalWellbeing)),
-		ConcernBehaviour:           statusPtr(string(p.ConcernBehaviour)),
-		ProfessionalReferrals:      p.ProfessionalReferrals,
-		SocialDevelopmentReviewed:  p.SocialDevelopmentReviewed,
+		SocialServicesStatus:      statusPtr(string(p.SocialServicesStatus)),
+		SocialServicesNotes:       p.SocialServicesNotes,
+		SocialWorkerName:          p.SocialWorkerName,
+		SocialWorkerPhone:         p.SocialWorkerPhone,
+		SocialWorkerEmail:         p.SocialWorkerEmail,
+		ConcernWalking:            statusPtr(string(p.ConcernWalking)),
+		ConcernSpeechLanguage:     statusPtr(string(p.ConcernSpeechLanguage)),
+		ConcernHearing:            statusPtr(string(p.ConcernHearing)),
+		ConcernSight:              statusPtr(string(p.ConcernSight)),
+		ConcernEmotionalWellbeing: statusPtr(string(p.ConcernEmotionalWellbeing)),
+		ConcernBehaviour:          statusPtr(string(p.ConcernBehaviour)),
+		ProfessionalReferrals:     p.ProfessionalReferrals,
+		SocialDevelopmentReviewed: p.SocialDevelopmentReviewed,
 	}
 
 	for _, c := range pwc.Contacts {
 		entry := contactEntryResponse{
-			FullName:                 c.FullName,
-			RelationshipToChild:      c.RelationshipToChild,
-			Address:                  c.Address,
-			Telephone:                c.Telephone,
-			Email:                    c.Email,
-			WorkAddress:              c.WorkAddress,
+			FullName:                  c.FullName,
+			RelationshipToChild:       c.RelationshipToChild,
+			Address:                   c.Address,
+			Telephone:                 c.Telephone,
+			Email:                     c.Email,
+			WorkAddress:               c.WorkAddress,
 			HasParentalResponsibility: c.HasParentalResponsibility,
 		}
 		switch c.ContactType {
@@ -262,23 +262,23 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 	}
 
 	resp.Collection = &collectionResponse{
-		IsSet:                           p.CollectionPasswordHash != nil,
-		UpdatedAt:                       updatedAtStr,
-		UpdatedByUserID:                 updatedByUserIDStr,
-		UpdatedByMembershipID:           updatedByMembershipIDStr,
-		Over18CollectionAcknowledged:    p.Over18CollectionAcknowledged,
-		EmergencyCollectionReviewed:     p.EmergencyCollectionReviewed,
+		IsSet:                        p.CollectionPasswordHash != nil,
+		UpdatedAt:                    updatedAtStr,
+		UpdatedByUserID:              updatedByUserIDStr,
+		UpdatedByMembershipID:        updatedByMembershipIDStr,
+		Over18CollectionAcknowledged: p.Over18CollectionAcknowledged,
+		EmergencyCollectionReviewed:  p.EmergencyCollectionReviewed,
 	}
 
 	resp.FundingSupport = &fundingSupportResponse{
-		BenefitsContributeToFees:   statusPtr(string(p.BenefitsContributeToFees)),
-		WorkingTaxCredit:           statusPtr(string(p.WorkingTaxCredit)),
-		CollegeUniPaidToParent:     statusPtr(string(p.CollegeUniPaidToParent)),
-		CollegeUniPaidToNursery:    statusPtr(string(p.CollegeUniPaidToNursery)),
-		Funding3yoTermTime:         statusPtr(string(p.Funding3yoTermTime)),
-		Funding2yoTermTime:         statusPtr(string(p.Funding2yoTermTime)),
-		FundingSupportNotes:        p.FundingSupportNotes,
-		FundingSupportReviewed:     p.FundingSupportReviewed,
+		BenefitsContributeToFees: statusPtr(string(p.BenefitsContributeToFees)),
+		WorkingTaxCredit:         statusPtr(string(p.WorkingTaxCredit)),
+		CollegeUniPaidToParent:   statusPtr(string(p.CollegeUniPaidToParent)),
+		CollegeUniPaidToNursery:  statusPtr(string(p.CollegeUniPaidToNursery)),
+		Funding3yoTermTime:       statusPtr(string(p.Funding3yoTermTime)),
+		Funding2yoTermTime:       statusPtr(string(p.Funding2yoTermTime)),
+		FundingSupportNotes:      p.FundingSupportNotes,
+		FundingSupportReviewed:   p.FundingSupportReviewed,
 	}
 
 	resp.RoutineCare = &routineCareResponse{

@@ -74,14 +74,19 @@
             <app-input-field type="text" [(ngModel)]="demoHomeDraft.ethnicOrigin" placeholder="e.g. White British, Asian" />
           </app-form-field>
           <app-form-field label="First language">
-            <app-input-field type="text" [(ngModel)]="demoHomeDraft.firstLanguage" placeholder="e.g. English, Urdu" />
+            <app-select
+              [(ngModel)]="demoHomeDraft.firstLanguage"
+              [options]="languageOptions"
+              placeholder="--"
+              [placeholderDisabled]="false"
+            />
           </app-form-field>
           <app-form-field label="Other languages">
-            <app-input-field
-              type="text"
-              [ngModel]="languagesToString(demoHomeDraft.otherLanguages)"
-              (ngModelChange)="demoHomeDraft.otherLanguages = stringToLanguages($event)"
-              placeholder="Comma separated"
+            <app-select
+              [(ngModel)]="demoHomeDraft.otherLanguages"
+              [options]="languageOptions"
+              placeholder="--"
+              [placeholderDisabled]="false"
             />
           </app-form-field>
           <app-form-field label="Home post code">

@@ -239,12 +239,16 @@
                     />
                   </app-form-field>
 
-                  <app-multi-select
-                    label="Other languages spoken"
-                    [options]="languageMultiSelectOptions"
-                    [defaultSelected]="selectedOtherLanguageOptions()"
-                    (selectionChange)="setOtherLanguages($event)"
-                  />
+                  <app-form-field label="Other languages spoken" labelFor="child-other-languages">
+                    <app-select
+                      id="child-other-languages"
+                      name="other_languages"
+                      [(ngModel)]="step1.other_languages"
+                      [options]="languageSelectOptions"
+                      placeholder="Select a language..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">

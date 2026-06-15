@@ -134,7 +134,7 @@ type RegistrationProfileCreateParams struct {
 	Religion                     pgtype.Text
 	EthnicOrigin                 pgtype.Text
 	FirstLanguage                pgtype.Text
-	OtherLanguages               []string
+	OtherLanguages               pgtype.Text
 	HomeAddress                  []byte
 	HomePostcode                 pgtype.Text
 	HomeTelephone                pgtype.Text
@@ -201,7 +201,7 @@ type RegistrationProfileCreateRow struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text
@@ -623,7 +623,7 @@ type RegistrationProfileGetByChildRow struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text
@@ -866,7 +866,7 @@ type RegistrationProfileGetForUpdateByChildRow struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text
@@ -1157,7 +1157,7 @@ type RegistrationProfileSetCollectionPasswordRow struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text
@@ -1412,7 +1412,7 @@ type RegistrationProfileUpdateParams struct {
 	Religion                     pgtype.Text
 	EthnicOrigin                 pgtype.Text
 	FirstLanguage                pgtype.Text
-	OtherLanguages               []string
+	OtherLanguages               pgtype.Text
 	HomeAddress                  []byte
 	HomePostcode                 pgtype.Text
 	HomeTelephone                pgtype.Text
@@ -1479,7 +1479,7 @@ type RegistrationProfileUpdateRow struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text

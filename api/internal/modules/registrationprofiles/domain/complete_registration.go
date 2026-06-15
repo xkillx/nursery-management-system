@@ -3,9 +3,9 @@ package domain
 import "github.com/google/uuid"
 
 type CompleteRegistrationInput struct {
-	Child             ChildRegistrationInfo
-	Profile           ProfileSectionsInput
-	Consents          ConsentInput
+	Child              ChildRegistrationInfo
+	Profile            ProfileSectionsInput
+	Consents           ConsentInput
 	CollectionPassword string
 }
 
@@ -17,31 +17,31 @@ type ChildRegistrationInfo struct {
 }
 
 type ProfileSectionsInput struct {
-	DemographicsHome      *DemographicsHomeInput
-	MedicalDietary        *MedicalDietaryInput
-	HealthContacts        *HealthContactsInput
-	SocialDevelopment     *SocialDevelopmentInput
-	ParentCarers          []ContactEntryInput
-	EmergencyContacts     []ContactEntryInput
-	AuthorisedCollectors  []ContactEntryInput
-	Collection            *CollectionInput
-	FundingSupport        *FundingSupportInput
-	RoutineCare           *RoutineCareInput
-	GDPRDeclaration       *GDPRDeclarationInput
+	DemographicsHome     *DemographicsHomeInput
+	MedicalDietary       *MedicalDietaryInput
+	HealthContacts       *HealthContactsInput
+	SocialDevelopment    *SocialDevelopmentInput
+	ParentCarers         []ContactEntryInput
+	EmergencyContacts    []ContactEntryInput
+	AuthorisedCollectors []ContactEntryInput
+	Collection           *CollectionInput
+	FundingSupport       *FundingSupportInput
+	RoutineCare          *RoutineCareInput
+	GDPRDeclaration      *GDPRDeclarationInput
 }
 
 type DemographicsHomeInput struct {
-	Sex                 *string
-	Religion            *string
-	EthnicOrigin        *string
-	FirstLanguage       *string
-	OtherLanguages      []string
-	HomeAddress         map[string]any
-	HomePostcode        *string
-	HomeTelephone       *string
-	DisabilityStatus    *string
-	DisabilityNotes     *string
-	AccessRequirements  *string
+	Sex                      *string
+	Religion                 *string
+	EthnicOrigin             *string
+	FirstLanguage            *string
+	OtherLanguages           *string
+	HomeAddress              map[string]any
+	HomePostcode             *string
+	HomeTelephone            *string
+	DisabilityStatus         *string
+	DisabilityNotes          *string
+	AccessRequirements       *string
 	DemographicsHomeReviewed bool
 }
 
@@ -60,29 +60,29 @@ type MedicalDietaryInput struct {
 }
 
 type HealthContactsInput struct {
-	DoctorName            *string
-	DoctorAddress         *string
-	DoctorPhone           *string
-	HealthVisitorName     *string
-	HealthVisitorAddress  *string
-	HealthVisitorPhone    *string
+	DoctorName             *string
+	DoctorAddress          *string
+	DoctorPhone            *string
+	HealthVisitorName      *string
+	HealthVisitorAddress   *string
+	HealthVisitorPhone     *string
 	HealthContactsReviewed bool
 }
 
 type SocialDevelopmentInput struct {
-	SocialServicesStatus       *string
-	SocialServicesNotes        *string
-	SocialWorkerName           *string
-	SocialWorkerPhone          *string
-	SocialWorkerEmail          *string
-	ConcernWalking             *string
-	ConcernSpeechLanguage      *string
-	ConcernHearing             *string
-	ConcernSight               *string
-	ConcernEmotionalWellbeing  *string
-	ConcernBehaviour           *string
-	ProfessionalReferrals      []ProfessionalReferralInput
-	SocialDevelopmentReviewed  bool
+	SocialServicesStatus      *string
+	SocialServicesNotes       *string
+	SocialWorkerName          *string
+	SocialWorkerPhone         *string
+	SocialWorkerEmail         *string
+	ConcernWalking            *string
+	ConcernSpeechLanguage     *string
+	ConcernHearing            *string
+	ConcernSight              *string
+	ConcernEmotionalWellbeing *string
+	ConcernBehaviour          *string
+	ProfessionalReferrals     []ProfessionalReferralInput
+	SocialDevelopmentReviewed bool
 }
 
 type ProfessionalReferralInput struct {
@@ -94,29 +94,29 @@ type ProfessionalReferralInput struct {
 }
 
 type ContactEntryInput struct {
-	FullName                 string
-	RelationshipToChild      *string
-	Address                  map[string]any
-	Telephone                *string
-	Email                    *string
-	WorkAddress              map[string]any
+	FullName                  string
+	RelationshipToChild       *string
+	Address                   map[string]any
+	Telephone                 *string
+	Email                     *string
+	WorkAddress               map[string]any
 	HasParentalResponsibility *bool
 }
 
 type CollectionInput struct {
-	Over18CollectionAcknowledged  bool
-	EmergencyCollectionReviewed   bool
+	Over18CollectionAcknowledged bool
+	EmergencyCollectionReviewed  bool
 }
 
 type FundingSupportInput struct {
-	BenefitsContributeToFees   *string
-	WorkingTaxCredit           *string
-	CollegeUniPaidToParent     *string
-	CollegeUniPaidToNursery    *string
-	Funding3yoTermTime         *string
-	Funding2yoTermTime         *string
-	FundingSupportNotes        *string
-	FundingSupportReviewed     bool
+	BenefitsContributeToFees *string
+	WorkingTaxCredit         *string
+	CollegeUniPaidToParent   *string
+	CollegeUniPaidToNursery  *string
+	Funding3yoTermTime       *string
+	Funding2yoTermTime       *string
+	FundingSupportNotes      *string
+	FundingSupportReviewed   bool
 }
 
 type RoutineCareInput struct {
@@ -130,28 +130,28 @@ type GDPRDeclarationInput struct {
 }
 
 type ConsentInput struct {
-	PaperFormOnFile  bool
+	PaperFormOnFile bool
 
-	UrgentMedicalTreatment         bool
-	UrgentMedicalTreatmentExceptions *string
-	Plasters                       bool
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     *string
+	Plasters                             bool
 	SafeguardingReportingAcknowledgement bool
-	InformationSharingConsent      bool
-	GDPRDataProcessingConsent      bool
-	AreaSENCOLiaison               bool
-	HealthVisitorLiaison           bool
-	TransitionDocuments            bool
-	LocalOutings                   bool
-	FacePainting                   bool
-	ParentSuppliedSunCream         bool
-	ParentSuppliedNappyCream       bool
-	DevelopmentProfilePhotos       bool
-	NurseryDisplayBoards           bool
-	PromotionalLiterature          bool
-	NurseryWebsite                 bool
-	StaffStudentCoursework         bool
-	SocialMedia                    bool
-	SocialMediaChannelNotes        *string
+	InformationSharingConsent            bool
+	GDPRDataProcessingConsent            bool
+	AreaSENCOLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              *string
 
 	NotesExceptions *string
 }

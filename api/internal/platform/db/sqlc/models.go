@@ -358,7 +358,7 @@ type ChildRegistrationProfile struct {
 	Religion                                pgtype.Text
 	EthnicOrigin                            pgtype.Text
 	FirstLanguage                           pgtype.Text
-	OtherLanguages                          []string
+	OtherLanguages                          pgtype.Text
 	HomeAddress                             []byte
 	HomePostcode                            pgtype.Text
 	HomeTelephone                           pgtype.Text

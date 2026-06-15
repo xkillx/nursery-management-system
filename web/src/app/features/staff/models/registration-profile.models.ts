@@ -25,7 +25,7 @@ export interface RegistrationProfileDemographicsHome {
   religion: string | null;
   ethnicOrigin: string | null;
   firstLanguage: string | null;
-  otherLanguages: string[];
+  otherLanguages: string | null;
   homeAddress: Record<string, unknown> | null;
   homePostcode: string | null;
   homeTelephone: string | null;
