@@ -11,11 +11,18 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
-import { RegistrationProfileCompleteness, RegistrationWorkflowStatus } from '../../models/registration-profile.models';
+import {
+  ConsentRecord,
+  ConsentWithCompletenessResponse,
+  RegistrationContactEntry,
+  RegistrationProfileCompleteness,
+  RegistrationProfileResponse,
+  RegistrationWorkflowStatus,
+} from '../../models/registration-profile.models';
 import { formatSiteRate, formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { formatCompletionStatus, getCompletionBadgeClass } from '../../utils/registration-profile-formatters';
+import { mockChildDetailProfile } from './manager-child-detail.mock';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
@@ -29,7 +36,6 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
     FormsModule,
     RouterLink,
     ChildFormComponent,
-    PageHeaderComponent,
     SelectComponent,
     ButtonComponent,
     AlertComponent,
@@ -61,8 +67,14 @@ export class ManagerChildDetailComponent implements OnInit {
   isLinking = false;
   profileCompleteness: RegistrationProfileCompleteness | null = null;
   workflowStatus: RegistrationWorkflowStatus | null = null;
+  registrationProfile: RegistrationProfileResponse | null = null;
+  consentSummary: ConsentWithCompletenessResponse | null = null;
   isLoadingRegistration = false;
   registrationLoadError: string | null = null;
+  isLoadingProfile = false;
+  profileLoadError: string | null = null;
+  isLoadingConsents = false;
+  consentsLoadError: string | null = null;
 
   showEditForm = false;
   errorMessage: string | null = null;
@@ -79,6 +91,9 @@ export class ManagerChildDetailComponent implements OnInit {
   fundingStatusMessage: string | null = null;
   fundingErrorMessage: string | null = null;
   fundingFieldErrors: Record<string, string> = {};
+
+  // Temporary design-only fields. Replace with API-backed values before release.
+  readonly mockProfile = mockChildDetailProfile;
 
   ngOnInit(): void {
     const queryMonth = this.route.snapshot.queryParamMap.get('billing_month');
@@ -197,6 +212,133 @@ export class ManagerChildDetailComponent implements OnInit {
     return !this.isLoadingFunding && this.fundingProfile === null && !this.fundingErrorMessage;
   }
 
+  get initials(): string {
+    const name = this.child?.fullName ?? '';
+    const initials = name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('');
+    return initials || 'CH';
+  }
+
+  get childAgeLabel(): string {
+    if (!this.child?.dateOfBirth) return 'Age not recorded';
+    const dob = new Date(`${this.child.dateOfBirth}T00:00:00`);
+    if (Number.isNaN(dob.getTime())) return 'Age not recorded';
+    const today = new Date();
+    let months = (today.getFullYear() - dob.getFullYear()) * 12 + today.getMonth() - dob.getMonth();
+    if (today.getDate() < dob.getDate()) months -= 1;
+    if (months < 0) return 'Age not recorded';
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    if (years === 0) return `${remainingMonths}m`;
+    if (remainingMonths === 0) return `${years}y`;
+    return `${years}y ${remainingMonths}m`;
+  }
+
+  get registrationEditLink(): string[] {
+    return ['/staff/manager/children', this.childId, 'registration'];
+  }
+
+  get intakeLink(): string[] {
+    return ['/staff/manager/registrations', this.childId, 'intake'];
+  }
+
+  get medicalDietaryAlerts(): string[] {
+    const alerts: string[] = [];
+    const medical = this.registrationProfile?.medicalDietary;
+    if (medical) {
+      if (this.isAffirmative(medical.medicalConditionsStatus) && medical.medicalConditionsNotes) {
+        alerts.push(`Medical: ${medical.medicalConditionsNotes}`);
+      }
+      if (this.isAffirmative(medical.prescribedMedicationStatus) && medical.medicationNotes) {
+        alerts.push(`Medication: ${medical.medicationNotes}`);
+      }
+      if (this.isAffirmative(medical.dietaryRequirementsStatus) && medical.dietaryRequirementsNotes) {
+        alerts.push(`Dietary: ${medical.dietaryRequirementsNotes}`);
+      }
+      if (medical.dietarySideEffects) {
+        alerts.push(`Dietary side effects: ${medical.dietarySideEffects}`);
+      }
+    }
+    return alerts.length > 0 ? alerts : this.mockProfile.alertChips;
+  }
+
+  get primaryContacts(): RegistrationContactEntry[] {
+    return this.registrationProfile?.parentCarers?.length
+      ? this.registrationProfile.parentCarers
+      : this.linkedGuardians.map((link) => ({
+          fullName: link.guardian.fullName,
+          relationshipToChild: null,
+          address: null,
+          telephone: link.guardian.phone,
+          email: link.guardian.email,
+          workAddress: null,
+          hasParentalResponsibility: null,
+        }));
+  }
+
+  get emergencyContacts(): RegistrationContactEntry[] {
+    return this.registrationProfile?.emergencyContacts ?? [];
+  }
+
+  get authorisedCollectors(): RegistrationContactEntry[] {
+    return this.registrationProfile?.authorisedCollectors ?? [];
+  }
+
+  get currentConsent(): ConsentRecord | null {
+    return this.consentSummary?.current ?? this.workflowStatus?.current_consent_record ?? null;
+  }
+
+  get keyConsentRows(): { label: string; granted: boolean | null }[] {
+    const consent = this.currentConsent;
+    return [
+      { label: 'Safeguarding acknowledgement', granted: consent?.safeguarding_reporting_acknowledgement ?? null },
+      { label: 'Urgent medical treatment', granted: consent?.urgent_medical_treatment ?? null },
+      { label: 'Local outings', granted: consent?.local_outings ?? null },
+      { label: 'Development photos', granted: consent?.development_profile_photos ?? null },
+      { label: 'Social media', granted: consent?.social_media ?? null },
+    ];
+  }
+
+  get collectionPasswordStatus(): string {
+    return this.registrationProfile?.collection?.isSet ? 'Set' : 'Not set';
+  }
+
+  consentLabel(granted: boolean | null): string {
+    if (granted === true) return 'Granted';
+    if (granted === false) return 'Declined';
+    return 'Not recorded';
+  }
+
+  booleanLabel(value: boolean | null | undefined): string {
+    if (value === true) return 'Yes';
+    if (value === false) return 'No';
+    return 'Not recorded';
+  }
+
+  valueOrDash(value: string | number | null | undefined): string {
+    if (value === null || value === undefined || value === '') return '-';
+    return String(value);
+  }
+
+  formatAddress(address: Record<string, unknown> | null | undefined): string {
+    if (!address) return '-';
+    const values = Object.values(address)
+      .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+    return values.length ? values.join(', ') : '-';
+  }
+
+  consentBadgeClass(granted: boolean | null): string {
+    if (granted === true) return 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400';
+    if (granted === false) return 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400';
+    return 'bg-gray-100 text-gray-600 dark:bg-white/[0.05] dark:text-gray-400';
+  }
+
   private clearFundingStatus(): void {
     this.fundingStatusMessage = null;
     this.fundingErrorMessage = null;
@@ -279,6 +421,8 @@ export class ManagerChildDetailComponent implements OnInit {
         this.loadAllGuardians();
         this.loadFundingProfile();
         this.loadRegistrationSummary();
+        this.loadRegistrationProfile();
+        this.loadRegistrationConsents();
       },
       error: (error) => {
         this.isLoadingChild = false;
@@ -332,6 +476,42 @@ export class ManagerChildDetailComponent implements OnInit {
     });
   }
 
+  private loadRegistrationProfile(): void {
+    if (!this.childId) return;
+    this.isLoadingProfile = true;
+    this.profileLoadError = null;
+
+    this.staffApi.getRegistrationProfile(this.childId).subscribe({
+      next: (profile) => {
+        this.registrationProfile = profile;
+        this.isLoadingProfile = false;
+      },
+      error: () => {
+        this.registrationProfile = null;
+        this.profileLoadError = 'Could not load registration profile.';
+        this.isLoadingProfile = false;
+      },
+    });
+  }
+
+  private loadRegistrationConsents(): void {
+    if (!this.childId) return;
+    this.isLoadingConsents = true;
+    this.consentsLoadError = null;
+
+    this.staffApi.getRegistrationConsents(this.childId).subscribe({
+      next: (summary) => {
+        this.consentSummary = summary;
+        this.isLoadingConsents = false;
+      },
+      error: () => {
+        this.consentSummary = null;
+        this.consentsLoadError = 'Could not load consent record.';
+        this.isLoadingConsents = false;
+      },
+    });
+  }
+
   private loadLinkedGuardians(): void {
     this.isLoadingLinks = true;
     this.staffApi.listChildGuardianLinks(this.childId).subscribe({
@@ -360,6 +540,10 @@ export class ManagerChildDetailComponent implements OnInit {
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     return `${year}-${month}`;
+  }
+
+  private isAffirmative(value: string | null | undefined): boolean {
+    return ['yes', 'details'].includes((value ?? '').toLowerCase());
   }
 
 }

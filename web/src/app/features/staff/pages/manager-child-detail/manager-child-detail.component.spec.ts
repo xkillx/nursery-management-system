@@ -90,18 +90,110 @@ describe('ManagerChildDetailComponent', () => {
     child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15' },
     profileExists: true,
     profile: { id: 'rp-1', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
-    demographicsHome: null,
-    medicalDietary: null,
+    demographicsHome: {
+      sex: 'female',
+      religion: null,
+      ethnicOrigin: null,
+      firstLanguage: 'English',
+      otherLanguages: [],
+      homeAddress: { line1: '10 High Street', town: 'Leeds', postcode: 'LS1 1AA' },
+      homePostcode: 'LS1 1AA',
+      homeTelephone: '0113 123 4567',
+      disabilityStatus: null,
+      disabilityNotes: null,
+      accessRequirements: null,
+      demographicsHomeReviewed: true,
+    },
+    medicalDietary: {
+      medicalConditionsStatus: 'yes',
+      medicalConditionsNotes: 'Asthma',
+      prescribedMedicationStatus: 'yes',
+      medicationNotes: 'Blue inhaler',
+      immunisationStatus: 'up_to_date',
+      immunisationCountry: 'United Kingdom',
+      illnessDiagnosisHistory: null,
+      dietaryRequirementsStatus: 'yes',
+      dietaryRequirementsNotes: 'No gelatine',
+      dietarySideEffects: null,
+      medicalDietaryReviewed: true,
+    },
     healthContacts: null,
     socialDevelopment: null,
-    parentCarers: [],
-    emergencyContacts: [],
-    authorisedCollectors: [],
-    collection: null,
+    parentCarers: [{
+      fullName: 'Sarah Thompson',
+      relationshipToChild: 'Mother',
+      address: null,
+      telephone: '+44 7700 900001',
+      email: 'sarah@example.com',
+      workAddress: null,
+      hasParentalResponsibility: true,
+    }],
+    emergencyContacts: [{
+      fullName: 'Nina Patel',
+      relationshipToChild: 'Aunt',
+      address: null,
+      telephone: '+44 7700 900002',
+      email: null,
+      workAddress: null,
+      hasParentalResponsibility: null,
+    }],
+    authorisedCollectors: [{
+      fullName: 'Omar Khan',
+      relationshipToChild: 'Family friend',
+      address: null,
+      telephone: '+44 7700 900003',
+      email: null,
+      workAddress: null,
+      hasParentalResponsibility: null,
+    }],
+    collection: {
+      isSet: true,
+      lastUpdatedAt: '2026-01-01T00:00:00Z',
+      lastUpdatedByUserId: 'user-1',
+      lastUpdatedByMembershipId: 'membership-1',
+      over18CollectionAcknowledged: true,
+      emergencyCollectionReviewed: true,
+    },
     fundingSupport: null,
     routineCare: null,
     gdprDeclaration: null,
     completeness: { isComplete: false, missingSections: ['child_demographics_home'], sections: [] },
+  };
+
+  const mockConsents = {
+    child: { id: 'child-1', full_name: 'Emma Thompson', date_of_birth: '2022-03-15' },
+    current: {
+      id: 'consent-1',
+      child_id: 'child-1',
+      version: 1,
+      source: 'staff',
+      paper_form_on_file: true,
+      urgent_medical_treatment: true,
+      urgent_medical_treatment_exceptions: null,
+      plasters: true,
+      safeguarding_reporting_acknowledgement: true,
+      information_truthfulness_declaration: true,
+      area_senco_liaison: false,
+      health_visitor_liaison: true,
+      transition_documents: true,
+      local_outings: false,
+      face_painting: true,
+      parent_supplied_sun_cream: true,
+      parent_supplied_nappy_cream: true,
+      development_profile_photos: true,
+      nursery_display_boards: true,
+      promotional_literature: false,
+      nursery_website: false,
+      staff_student_coursework: true,
+      social_media: false,
+      social_media_channel_notes: null,
+      notes_exceptions: null,
+      entered_by_user_id: 'user-1',
+      entered_by_membership_id: 'membership-1',
+      created_at: '2026-01-01T00:00:00Z',
+    },
+    history: [],
+    completeness: { is_complete: true, missing_decisions: [] },
   };
 
   function fundingNotFound404(): HttpErrorResponse {
@@ -117,6 +209,7 @@ describe('ManagerChildDetailComponent', () => {
       'createGuardianChildLink', 'getFundingProfile', 'upsertFundingProfile',
       'getRegistrationProfile',
       'getRegistrationWorkflowStatus',
+      'getRegistrationConsents',
     ]);
 
     staffApiMock.getChild.and.returnValue(of(mockChild));
@@ -127,6 +220,7 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.getFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.upsertFundingProfile.and.returnValue(of(mockFundingProfile));
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockRegistrationProfile));
+    staffApiMock.getRegistrationConsents.and.returnValue(of(mockConsents));
     staffApiMock.getRegistrationWorkflowStatus.and.returnValue(of({
       child: { id: 'child-1', full_name: 'Ada', date_of_birth: '2022-01-15' },
       profile_completeness: { is_complete: false, missing_sections: [] },
@@ -160,6 +254,13 @@ describe('ManagerChildDetailComponent', () => {
     expect(component.child?.fullName).toBe('Emma Thompson');
   });
 
+  it('loads registration profile and consents on init', () => {
+    expect(staffApiMock.getRegistrationProfile).toHaveBeenCalledWith('child-1');
+    expect(staffApiMock.getRegistrationConsents).toHaveBeenCalledWith('child-1');
+    expect(component.registrationProfile?.demographicsHome?.firstLanguage).toBe('English');
+    expect(component.currentConsent?.urgent_medical_treatment).toBeTrue();
+  });
+
   it('loads linked guardians', () => {
     expect(staffApiMock.listChildGuardianLinks).toHaveBeenCalledWith('child-1');
     expect(component.linkedGuardians.length).toBe(1);
@@ -177,6 +278,45 @@ describe('ManagerChildDetailComponent', () => {
 
   it('shows missing enrollment requirements', () => {
     expect(component.child?.missingRequirements).toContain('guardian_link');
+  });
+
+  it('renders real medical and dietary alerts when present', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Medical: Asthma');
+    expect(text).toContain('Medication: Blue inhaler');
+    expect(text).toContain('Dietary: No gelatine');
+  });
+
+  it('falls back to mock alerts and documents when real data is missing', () => {
+    component.registrationProfile = { ...mockRegistrationProfile, medicalDietary: null };
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(component.medicalDietaryAlerts).toContain('Peanut allergy - severe');
+    expect(text).toContain('Registration Form.pdf');
+    expect(text).toContain('Unavailable');
+  });
+
+  it('shows collection password status but never the password value', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Collection password');
+    expect(text).toContain('Set');
+    expect(text).not.toContain('mysecret');
+  });
+
+  it('keeps child page usable when profile and consent loads fail', () => {
+    staffApiMock.getRegistrationProfile.and.returnValue(throwError(() => new Error('profile failed')));
+    staffApiMock.getRegistrationConsents.and.returnValue(throwError(() => new Error('consent failed')));
+
+    component.ngOnInit();
+
+    expect(component.child?.fullName).toBe('Emma Thompson');
+    expect(component.profileLoadError).toContain('Could not load');
+    expect(component.consentsLoadError).toContain('Could not load');
   });
 
   it('shows site core hourly rate formatted as GBP per hour', () => {
