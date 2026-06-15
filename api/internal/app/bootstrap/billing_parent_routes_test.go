@@ -278,8 +278,8 @@ func TestParentInvoiceListReturnsOnlyIssuedForLinkedChildren(t *testing.T) {
 	if resp.Items[0].Status != "issued" {
 		t.Fatalf("expected status issued, got %s", resp.Items[0].Status)
 	}
-	if resp.Items[0].ChildName != "Linked Child" {
-		t.Fatalf("expected child_name 'Linked Child', got %s", resp.Items[0].ChildName)
+	if resp.Items[0].ChildFirstName != "Linked Child" {
+		t.Fatalf("expected child_first_name 'Linked Child', got %s", resp.Items[0].ChildFirstName)
 	}
 	if resp.Items[0].ChildID != childID.String() {
 		t.Fatalf("expected child_id %s, got %s", childID, resp.Items[0].ChildID)
@@ -619,8 +619,8 @@ func TestParentInvoiceDetailLinkedIssued(t *testing.T) {
 	if resp.Status != "issued" {
 		t.Fatalf("expected status issued, got %s", resp.Status)
 	}
-	if resp.ChildName != "Detail Child" {
-		t.Fatalf("expected child_name 'Detail Child', got %s", resp.ChildName)
+	if resp.ChildFirstName != "Detail Child" {
+		t.Fatalf("expected child_first_name 'Detail Child', got %s", resp.ChildFirstName)
 	}
 	if resp.CurrencyCode != "GBP" {
 		t.Fatalf("expected currency_code GBP, got %s", resp.CurrencyCode)
@@ -864,8 +864,8 @@ func TestParentInvoiceListInactiveChildWithActiveChain(t *testing.T) {
 	if resp.Items[0].InvoiceID != invoiceID.String() {
 		t.Fatalf("expected invoice %s, got %s", invoiceID, resp.Items[0].InvoiceID)
 	}
-	if resp.Items[0].ChildName != "Inactive Visible Child" {
-		t.Fatalf("expected child_name 'Inactive Visible Child', got %s", resp.Items[0].ChildName)
+	if resp.Items[0].ChildFirstName != "Inactive Visible Child" {
+		t.Fatalf("expected child_first_name 'Inactive Visible Child', got %s", resp.Items[0].ChildFirstName)
 	}
 }
 
@@ -957,7 +957,7 @@ type parentInvoiceListItemResponseTest struct {
 	InvoiceNumber          *string `json:"invoice_number"`
 	InvoiceNumberDisplay   string  `json:"invoice_number_display"`
 	ChildID                string  `json:"child_id"`
-	ChildName              string  `json:"child_name"`
+	ChildFirstName         string  `json:"child_first_name"`
 	BillingMonth           string  `json:"billing_month"`
 	Status                 string  `json:"status"`
 	DueStatus              string  `json:"due_status"`
@@ -979,7 +979,7 @@ type parentInvoiceDetailResponseTest struct {
 	InvoiceNumber          *string                              `json:"invoice_number"`
 	InvoiceNumberDisplay   string                               `json:"invoice_number_display"`
 	ChildID                string                               `json:"child_id"`
-	ChildName              string                               `json:"child_name"`
+	ChildFirstName         string                               `json:"child_first_name"`
 	BillingMonth           string                               `json:"billing_month"`
 	Status                 string                               `json:"status"`
 	DueStatus              string                               `json:"due_status"`

@@ -73,7 +73,9 @@ WHERE tenant_id = $2 AND branch_id = $3 AND id = $4;
 
 -- name: AttendanceListIncompleteSessionsForPeriod :many
 SELECT s.child_id,
-       c.full_name AS child_name,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
        s.id AS session_id,
        s.check_in_at,
        s.check_in_local_date
@@ -87,7 +89,7 @@ WHERE s.tenant_id = $1
   AND s.status = 'open'
   AND s.check_in_local_date >= $3
   AND s.check_in_local_date < $4
-ORDER BY s.check_in_local_date ASC, c.full_name ASC, s.check_in_at ASC;
+ORDER BY s.check_in_local_date ASC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC, s.check_in_at ASC;
 
 -- name: AttendanceListSessionsForCorrection :many
 SELECT s.id, s.child_id, s.status, s.check_in_at, s.check_out_at,

@@ -826,7 +826,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     this.successMessage = null;
 
     const payload: ChildWritePayload = {
-      full_name: this.childFullNameDraft,
+      first_name: this.step1.first_name.trim(),
+      last_name: this.step1.surname.trim() || null,
       date_of_birth: this.step1.date_of_birth,
       start_date: this.step1.start_date,
       notes: this.step1.notes.trim() || undefined,
@@ -1535,7 +1536,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
 
     const payload: CompleteRegistrationPayload = {
       child: {
-        full_name: this.childFullNameDraft,
+        first_name: this.step1.first_name.trim(),
+        last_name: this.step1.surname.trim() || null,
         date_of_birth: this.step1.date_of_birth,
         start_date: this.step1.start_date,
         notes: this.step1.notes.trim() || undefined,

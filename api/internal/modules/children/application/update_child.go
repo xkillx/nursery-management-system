@@ -16,7 +16,9 @@ import (
 )
 
 type UpdateChildParams struct {
-	FullName    string
+	FirstName   string
+	MiddleName  *string
+	LastName    *string
 	DateOfBirth string
 	StartDate   string
 	EndDate     string
@@ -41,12 +43,20 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 
 	fields := make(map[string]any)
 
-	if params.FullName != "" {
-		fullName := strings.TrimSpace(params.FullName)
-		if fullName == "" {
-			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "full_name")
+	if params.FirstName != "" {
+		firstName := strings.TrimSpace(params.FirstName)
+		if firstName == "" {
+			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "first_name")
 		}
-		fields["full_name"] = fullName
+		fields["first_name"] = firstName
+	}
+
+	if params.MiddleName != nil {
+		fields["middle_name"] = strings.TrimSpace(*params.MiddleName)
+	}
+
+	if params.LastName != nil {
+		fields["last_name"] = strings.TrimSpace(*params.LastName)
 	}
 
 	if params.DateOfBirth != "" {
@@ -130,7 +140,7 @@ func buildUpdateSetClause(fields map[string]any, argPos int) (string, []any) {
 
 // orderedFieldColumns returns column names in a deterministic order.
 func orderedFieldColumns(fields map[string]any) []string {
-	order := []string{"full_name", "date_of_birth", "start_date", "end_date", "notes"}
+	order := []string{"first_name", "middle_name", "last_name", "date_of_birth", "start_date", "end_date", "notes"}
 	result := make([]string, 0, len(fields))
 	for _, col := range order {
 		if _, ok := fields[col]; ok {

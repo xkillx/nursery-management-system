@@ -93,9 +93,11 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 
 		if len(readiness.Blockers) > 0 {
 			result.BlockedChildren = append(result.BlockedChildren, domain.BlockedChild{
-				ChildID:   child.ChildID,
-				ChildName: child.FullName,
-				Blockers:  readiness.Blockers,
+				ChildID:         child.ChildID,
+				ChildFirstName:  child.FirstName,
+				ChildMiddleName: child.MiddleName,
+				ChildLastName:   child.LastName,
+				Blockers:        readiness.Blockers,
 			})
 			for _, b := range readiness.Blockers {
 				if blockerChildSet[b.Code] == nil {
@@ -116,7 +118,9 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 
 		eligible := domain.EligibleChild{
 			ChildID:                child.ChildID,
-			ChildName:              child.FullName,
+			ChildFirstName:         child.FirstName,
+			ChildMiddleName:        child.MiddleName,
+			ChildLastName:          child.LastName,
 			CoreHourlyRateMinor:    *child.CoreHourlyRateMinor,
 			FundingProfileID:       child.FundingProfileID,
 			FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,

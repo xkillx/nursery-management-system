@@ -18,8 +18,8 @@ type MarkInactiveParams struct {
 }
 
 type MarkInactive struct {
-	repo domain.Repository
-	txm  *transaction.Manager
+	repo  domain.Repository
+	txm   *transaction.Manager
 	audit *audit.Writer
 }
 

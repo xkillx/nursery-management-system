@@ -30,32 +30,34 @@ type IssuedInvoiceWarning struct {
 }
 
 type CorrectionSessionContext struct {
-	ChildID            uuid.UUID
-	SelectedLocalDate  time.Time
-	InvoiceWarning     *IssuedInvoiceWarning
-	Sessions           []Session
+	ChildID           uuid.UUID
+	SelectedLocalDate time.Time
+	InvoiceWarning    *IssuedInvoiceWarning
+	Sessions          []Session
 }
 
 type CorrectionHistoryEvent struct {
-	ID                    uuid.UUID
-	EventType             EventType
-	OccurredAt            time.Time
-	LocalDate             time.Time
-	RecordedByUserID      uuid.UUID
+	ID                     uuid.UUID
+	EventType              EventType
+	OccurredAt             time.Time
+	LocalDate              time.Time
+	RecordedByUserID       uuid.UUID
 	RecordedByMembershipID uuid.UUID
-	RecordedByLabel       *string
-	ReasonCode            *string
-	ReasonNote            *string
-	PreviousCheckInAt     *time.Time
-	PreviousCheckOutAt    *time.Time
-	CorrectedCheckInAt    *time.Time
-	CorrectedCheckOutAt   *time.Time
-	CreatedByCorrection   bool
+	RecordedByLabel        *string
+	ReasonCode             *string
+	ReasonNote             *string
+	PreviousCheckInAt      *time.Time
+	PreviousCheckOutAt     *time.Time
+	CorrectedCheckInAt     *time.Time
+	CorrectedCheckOutAt    *time.Time
+	CreatedByCorrection    bool
 }
 
 type IncompleteSessionBlocker struct {
 	ChildID          uuid.UUID
-	ChildName        string
+	ChildFirstName   string
+	ChildMiddleName  *string
+	ChildLastName    *string
 	SessionID        uuid.UUID
 	CheckInAt        time.Time
 	CheckInLocalDate time.Time

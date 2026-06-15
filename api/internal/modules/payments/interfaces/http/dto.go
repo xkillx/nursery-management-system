@@ -16,7 +16,9 @@ type managerPaymentStatusResponse struct {
 	InvoiceNumber           string                       `json:"invoice_number"`
 	InvoiceNumberDisplay    string                       `json:"invoice_number_display"`
 	ChildID                 string                       `json:"child_id"`
-	ChildName               string                       `json:"child_name"`
+	ChildFirstName          string                       `json:"child_first_name"`
+	ChildMiddleName         *string                      `json:"child_middle_name"`
+	ChildLastName           *string                      `json:"child_last_name"`
 	BillingMonth            string                       `json:"billing_month"`
 	Status                  string                       `json:"status"`
 	DueStatus               string                       `json:"due_status"`

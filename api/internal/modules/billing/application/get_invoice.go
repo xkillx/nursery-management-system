@@ -94,9 +94,11 @@ func parseCalculationDetails(raw json.RawMessage) (domain.InvoiceReviewCalculati
 // runDetailsShape matches the relevant part of invoice_runs.details JSON.
 type runDetailsShape struct {
 	BlockedChildren []struct {
-		ChildID      string   `json:"child_id"`
-		ChildName    string   `json:"child_name"`
-		BlockerCodes []string `json:"blocker_codes"`
+		ChildID         string   `json:"child_id"`
+		ChildFirstName  string   `json:"child_first_name"`
+		ChildMiddleName *string  `json:"child_middle_name"`
+		ChildLastName   *string  `json:"child_last_name"`
+		BlockerCodes    []string `json:"blocker_codes"`
 	} `json:"blocked_children"`
 }
 
@@ -117,9 +119,11 @@ func parseRunExceptions(raw json.RawMessage) ([]domain.InvoiceRunExceptionRefere
 			codes = []string{}
 		}
 		exceptions = append(exceptions, domain.InvoiceRunExceptionReference{
-			ChildID:      bc.ChildID,
-			ChildName:    bc.ChildName,
-			BlockerCodes: codes,
+			ChildID:         bc.ChildID,
+			ChildFirstName:  bc.ChildFirstName,
+			ChildMiddleName: bc.ChildMiddleName,
+			ChildLastName:   bc.ChildLastName,
+			BlockerCodes:    codes,
 		})
 	}
 

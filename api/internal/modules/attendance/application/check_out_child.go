@@ -28,10 +28,10 @@ func NewCheckOutChild(
 	clock *AttendanceClock,
 ) *CheckOutChild {
 	return &CheckOutChild{
-		repo:   repo,
-		txMgr:  txMgr,
-		audit:  auditWriter,
-		clock:  clock,
+		repo:  repo,
+		txMgr: txMgr,
+		audit: auditWriter,
+		clock: clock,
 	}
 }
 

@@ -2,6 +2,9 @@ export type StatusFilter = 'active' | 'inactive' | 'all';
 
 export interface ChildRecord {
   id: string;
+  firstName?: string;
+  middleName?: string | null;
+  lastName?: string | null;
   fullName: string;
   dateOfBirth: string;
   startDate: string;
@@ -20,7 +23,9 @@ export interface ChildRecord {
 }
 
 export interface ChildWritePayload {
-  full_name: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name?: string | null;
   date_of_birth: string;
   start_date: string;
   end_date?: string;

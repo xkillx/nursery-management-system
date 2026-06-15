@@ -19,15 +19,15 @@ import (
 )
 
 type options struct {
-	DatabaseURL    string
-	TenantName     string
-	BranchName     string
-	Email          string
-	Password       string
-	Local          bool
-	ManagerEmail   string
-	StaffEmail     string
-	ParentEmail    string
+	DatabaseURL  string
+	TenantName   string
+	BranchName   string
+	Email        string
+	Password     string
+	Local        bool
+	ManagerEmail string
+	StaffEmail   string
+	ParentEmail  string
 }
 
 func main() {

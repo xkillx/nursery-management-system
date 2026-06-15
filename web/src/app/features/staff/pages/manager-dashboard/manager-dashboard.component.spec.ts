@@ -52,16 +52,16 @@ describe('ManagerDashboardComponent', () => {
     expect(rows.length).toBeGreaterThanOrEqual(2);
 
     const firstDate = rows[0].querySelectorAll('td')[1]?.textContent?.trim();
-    expect(firstDate).toBe('Today');
+    expect(firstDate).toContain('Today');
   });
 
   it('renders invoice run status with billing month and counts', () => {
     const text = native.textContent!;
     expect(text).toContain('June 2026');
-    expect(text).toContain('Eligible children');
-    expect(text).toContain('Blocked children');
-    expect(text).toContain('Draft invoices');
-    expect(text).toContain('Issued invoices');
+    expect(text).toContain('Eligible');
+    expect(text).toContain('Blocked');
+    expect(text).toContain('Drafts');
+    expect(text).toContain('Issued');
     expect(text).toContain('Last run');
   });
 

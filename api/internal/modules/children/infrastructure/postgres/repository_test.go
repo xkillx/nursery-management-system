@@ -75,8 +75,8 @@ func TestChildGetByID_Success(t *testing.T) {
 	if !found {
 		t.Fatal("found = false")
 	}
-	if child.FullName != "Alice" {
-		t.Errorf("FullName = %s, want Alice", child.FullName)
+	if child.FirstName != "Alice" {
+		t.Errorf("FirstName = %s, want Alice", child.FirstName)
 	}
 	if !child.IsActive {
 		t.Error("IsActive = false, want true")
@@ -96,7 +96,7 @@ func TestChildList_FilterActive(t *testing.T) {
 		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
 
 	_, err := pool.Exec(ctx,
-		"INSERT INTO children (id, tenant_id, branch_id, full_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
+		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
 		inactiveID, childTenantID, childBranchID, "Inactive Child",
 		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), 500)
 	if err != nil {
@@ -110,8 +110,8 @@ func TestChildList_FilterActive(t *testing.T) {
 	if len(children) != 1 {
 		t.Fatalf("expected 1 active child, got %d", len(children))
 	}
-	if children[0].FullName != "Active Child" {
-		t.Errorf("FullName = %s, want Active Child", children[0].FullName)
+	if children[0].FirstName != "Active Child" {
+		t.Errorf("FirstName = %s, want Active Child", children[0].FirstName)
 	}
 }
 
@@ -124,7 +124,7 @@ func TestChildList_FilterInactive(t *testing.T) {
 	dbtest.InsertChild(t, pool, activeID, childTenantID, childBranchID, "Active",
 		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
 	_, err := pool.Exec(ctx,
-		"INSERT INTO children (id, tenant_id, branch_id, full_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
+		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
 		inactiveID, childTenantID, childBranchID, "Inactive",
 		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), 500)
 	if err != nil {
@@ -138,8 +138,8 @@ func TestChildList_FilterInactive(t *testing.T) {
 	if len(children) != 1 {
 		t.Fatalf("expected 1 inactive, got %d", len(children))
 	}
-	if children[0].FullName != "Inactive" {
-		t.Errorf("FullName = %s, want Inactive", children[0].FullName)
+	if children[0].FirstName != "Inactive" {
+		t.Errorf("FirstName = %s, want Inactive", children[0].FirstName)
 	}
 }
 
@@ -177,7 +177,7 @@ func TestChildCreate_NullNotes(t *testing.T) {
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	child := childdomain.Child{
 		ID:          childID,
-		FullName:    "NoNotes",
+		FirstName:   "NoNotes",
 		DateOfBirth: dbtest.DateAt(2022, 6, 10),
 		StartDate:   dbtest.DateAt(2024, 9, 1),
 	}
@@ -208,7 +208,7 @@ func TestChildCreate_WithEndDate(t *testing.T) {
 	endDate := dbtest.DateAt(2025, 7, 31)
 	child := childdomain.Child{
 		ID:          childID,
-		FullName:    "WithEnd",
+		FirstName:   "WithEnd",
 		DateOfBirth: dbtest.DateAt(2022, 6, 10),
 		StartDate:   dbtest.DateAt(2024, 9, 1),
 		EndDate:     &endDate,
@@ -239,7 +239,9 @@ func TestChildUpdate_SelectiveFields(t *testing.T) {
 		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
 
 	ct, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
-		"full_name": "Updated",
+		"first_name":  "Updated",
+		"middle_name": "",
+		"last_name":   "",
 	})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
@@ -249,8 +251,14 @@ func TestChildUpdate_SelectiveFields(t *testing.T) {
 	}
 
 	got, _, _ := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if got.FullName != "Updated" {
-		t.Errorf("FullName = %s, want Updated", got.FullName)
+	if got.FirstName != "Updated" {
+		t.Errorf("FirstName = %s, want Updated", got.FirstName)
+	}
+	if got.MiddleName != nil {
+		t.Errorf("MiddleName = %v, want nil", got.MiddleName)
+	}
+	if got.LastName != nil {
+		t.Errorf("LastName = %v, want nil", got.LastName)
 	}
 	if got.CoreHourlyRateMinor == nil || *got.CoreHourlyRateMinor != 500 {
 		t.Errorf("CoreHourlyRateMinor = %v, want 500 (unchanged)", got.CoreHourlyRateMinor)
@@ -261,7 +269,7 @@ func TestChildUpdate_WrongScope(t *testing.T) {
 	repo, _ := setupChildRepo(t)
 
 	ct, err := repo.Update(context.Background(), uuid.New(), childBranchID, uuid.New(), map[string]any{
-		"full_name": "X",
+		"first_name": "X",
 	})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
@@ -445,8 +453,8 @@ func TestChildListAttendance(t *testing.T) {
 		t.Fatalf("expected 1 child, got %d", len(children))
 	}
 	c := children[0]
-	if c.FullName != "Alice" {
-		t.Errorf("FullName = %s, want Alice", c.FullName)
+	if c.FirstName != "Alice" {
+		t.Errorf("FirstName = %s, want Alice", c.FirstName)
 	}
 	if c.AttendanceState != "not_checked_in" {
 		t.Errorf("AttendanceState = %s, want not_checked_in", c.AttendanceState)

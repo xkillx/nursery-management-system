@@ -14,7 +14,9 @@ import (
 const registrationProfileChildGet = `-- name: RegistrationProfileChildGet :one
 SELECT
     c.id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth
 FROM children c
 WHERE c.tenant_id = $1
@@ -30,14 +32,22 @@ type RegistrationProfileChildGetParams struct {
 
 type RegistrationProfileChildGetRow struct {
 	ID          pgtype.UUID
-	FullName    string
+	FirstName   string
+	MiddleName  pgtype.Text
+	LastName    pgtype.Text
 	DateOfBirth pgtype.Date
 }
 
 func (q *Queries) RegistrationProfileChildGet(ctx context.Context, arg RegistrationProfileChildGetParams) (RegistrationProfileChildGetRow, error) {
 	row := q.db.QueryRow(ctx, registrationProfileChildGet, arg.TenantID, arg.BranchID, arg.ID)
 	var i RegistrationProfileChildGetRow
-	err := row.Scan(&i.ID, &i.FullName, &i.DateOfBirth)
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.MiddleName,
+		&i.LastName,
+		&i.DateOfBirth,
+	)
 	return i, err
 }
 
@@ -531,7 +541,9 @@ SELECT
     crp.tenant_id,
     crp.branch_id,
     crp.child_id,
-    c.full_name AS child_full_name,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     c.date_of_birth AS child_date_of_birth,
     crp.sex,
     crp.religion,
@@ -617,7 +629,9 @@ type RegistrationProfileGetByChildRow struct {
 	TenantID                                pgtype.UUID
 	BranchID                                pgtype.UUID
 	ChildID                                 pgtype.UUID
-	ChildFullName                           string
+	ChildFirstName                          string
+	ChildMiddleName                         pgtype.Text
+	ChildLastName                           pgtype.Text
 	ChildDateOfBirth                        pgtype.Date
 	Sex                                     pgtype.Text
 	Religion                                pgtype.Text
@@ -695,7 +709,9 @@ func (q *Queries) RegistrationProfileGetByChild(ctx context.Context, arg Registr
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.ChildFullName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.ChildDateOfBirth,
 		&i.Sex,
 		&i.Religion,
@@ -773,7 +789,9 @@ SELECT
     crp.tenant_id,
     crp.branch_id,
     crp.child_id,
-    c.full_name AS child_full_name,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     c.date_of_birth AS child_date_of_birth,
     crp.sex,
     crp.religion,
@@ -860,7 +878,9 @@ type RegistrationProfileGetForUpdateByChildRow struct {
 	TenantID                                pgtype.UUID
 	BranchID                                pgtype.UUID
 	ChildID                                 pgtype.UUID
-	ChildFullName                           string
+	ChildFirstName                          string
+	ChildMiddleName                         pgtype.Text
+	ChildLastName                           pgtype.Text
 	ChildDateOfBirth                        pgtype.Date
 	Sex                                     pgtype.Text
 	Religion                                pgtype.Text
@@ -938,7 +958,9 @@ func (q *Queries) RegistrationProfileGetForUpdateByChild(ctx context.Context, ar
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.ChildFullName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.ChildDateOfBirth,
 		&i.Sex,
 		&i.Religion,

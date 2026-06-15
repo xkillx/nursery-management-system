@@ -7,9 +7,11 @@ import (
 )
 
 type childSummaryResponse struct {
-	ID          string `json:"id"`
-	FullName    string `json:"full_name"`
-	DateOfBirth string `json:"date_of_birth"`
+	ID          string  `json:"id"`
+	FirstName   string  `json:"first_name"`
+	MiddleName  *string `json:"middle_name"`
+	LastName    *string `json:"last_name"`
+	DateOfBirth string  `json:"date_of_birth"`
 }
 
 type profileResponse struct {
@@ -152,7 +154,9 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 	resp := &registrationProfileResponse{
 		Child: childSummaryResponse{
 			ID:          pwc.Child.ID.String(),
-			FullName:    pwc.Child.FullName,
+			FirstName:   pwc.Child.FirstName,
+			MiddleName:  pwc.Child.MiddleName,
+			LastName:    pwc.Child.LastName,
 			DateOfBirth: pwc.Child.DateOfBirth.Format("2006-01-02"),
 		},
 		ProfileExists: pwc.ProfileExists,

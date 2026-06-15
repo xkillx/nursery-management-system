@@ -11,7 +11,9 @@ type ManagerInvoicePaymentStatus struct {
 	InvoiceNumber          string
 	InvoiceNumberDisplay   string
 	ChildID                string
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        *string
+	ChildLastName          *string
 	BillingMonth           string
 	Status                 string
 	DueStatus              string

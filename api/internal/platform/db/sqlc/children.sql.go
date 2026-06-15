@@ -13,22 +13,24 @@ import (
 
 const childrenCreate = `-- name: ChildrenCreate :exec
 INSERT INTO children (
-    id, tenant_id, branch_id, full_name, date_of_birth, start_date, end_date,
+    id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date,
     core_hourly_rate_minor, notes, is_active
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), true)
+VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true)
 `
 
 type ChildrenCreateParams struct {
 	ID                  pgtype.UUID
 	TenantID            pgtype.UUID
 	BranchID            pgtype.UUID
-	FullName            string
+	FirstName           string
+	Column5             interface{}
+	Column6             interface{}
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
 	CoreHourlyRateMinor pgtype.Int4
-	Column9             interface{}
+	Column11            interface{}
 }
 
 func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) error {
@@ -36,12 +38,14 @@ func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) 
 		arg.ID,
 		arg.TenantID,
 		arg.BranchID,
-		arg.FullName,
+		arg.FirstName,
+		arg.Column5,
+		arg.Column6,
 		arg.DateOfBirth,
 		arg.StartDate,
 		arg.EndDate,
 		arg.CoreHourlyRateMinor,
-		arg.Column9,
+		arg.Column11,
 	)
 	return err
 }
@@ -67,7 +71,9 @@ func (q *Queries) ChildrenExistsInScope(ctx context.Context, arg ChildrenExistsI
 
 const childrenGetByID = `-- name: ChildrenGetByID :one
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -103,7 +109,9 @@ type ChildrenGetByIDParams struct {
 
 type ChildrenGetByIDRow struct {
 	ID                      pgtype.UUID
-	FullName                string
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
@@ -124,7 +132,9 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 	var i ChildrenGetByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.FullName,
+		&i.FirstName,
+		&i.MiddleName,
+		&i.LastName,
 		&i.DateOfBirth,
 		&i.StartDate,
 		&i.EndDate,
@@ -144,7 +154,9 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 
 const childrenGetByIDForUpdate = `-- name: ChildrenGetByIDForUpdate :one
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -181,7 +193,9 @@ type ChildrenGetByIDForUpdateParams struct {
 
 type ChildrenGetByIDForUpdateRow struct {
 	ID                      pgtype.UUID
-	FullName                string
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
@@ -202,7 +216,9 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 	var i ChildrenGetByIDForUpdateRow
 	err := row.Scan(
 		&i.ID,
-		&i.FullName,
+		&i.FirstName,
+		&i.MiddleName,
+		&i.LastName,
 		&i.DateOfBirth,
 		&i.StartDate,
 		&i.EndDate,
@@ -249,7 +265,9 @@ func (q *Queries) ChildrenGetForCorrection(ctx context.Context, arg ChildrenGetF
 
 const childrenList = `-- name: ChildrenList :many
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -293,7 +311,9 @@ type ChildrenListParams struct {
 
 type ChildrenListRow struct {
 	ID                      pgtype.UUID
-	FullName                string
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
@@ -326,7 +346,9 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 		var i ChildrenListRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.FullName,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
 			&i.DateOfBirth,
 			&i.StartDate,
 			&i.EndDate,
@@ -353,8 +375,10 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 
 const childrenListAttendance = `-- name: ChildrenListAttendance :many
 SELECT c.id,
-       c.full_name,
-       (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       (c.first_name IS NOT NULL AND btrim(c.first_name) <> ''
         AND c.date_of_birth IS NOT NULL
         AND c.start_date IS NOT NULL
         AND EXISTS (
@@ -393,7 +417,7 @@ WHERE c.tenant_id = $1
       (c.is_active = true AND c.start_date <= $3 AND (c.end_date IS NULL OR c.end_date >= $3))
       OR s.id IS NOT NULL
   )
-ORDER BY c.full_name ASC
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 `
 
 type ChildrenListAttendanceParams struct {
@@ -404,7 +428,9 @@ type ChildrenListAttendanceParams struct {
 
 type ChildrenListAttendanceRow struct {
 	ID                   pgtype.UUID
-	FullName             string
+	FirstName            string
+	MiddleName           pgtype.Text
+	LastName             pgtype.Text
 	EnrollmentComplete   pgtype.Bool
 	AttendanceState      string
 	OpenSessionID        pgtype.UUID
@@ -425,7 +451,9 @@ func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAt
 		var i ChildrenListAttendanceRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.FullName,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
 			&i.EnrollmentComplete,
 			&i.AttendanceState,
 			&i.OpenSessionID,
@@ -476,19 +504,25 @@ func (q *Queries) ChildrenMarkInactive(ctx context.Context, arg ChildrenMarkInac
 const childrenUpdate = `-- name: ChildrenUpdate :execrows
 UPDATE children
 SET
-    full_name = CASE WHEN $1 = 1 THEN $2 ELSE full_name END,
-    date_of_birth = CASE WHEN $3 = 1 THEN $4 ELSE date_of_birth END,
-    start_date = CASE WHEN $5 = 1 THEN $6 ELSE start_date END,
-    end_date = CASE WHEN $7 = 1 THEN $8 ELSE end_date END,
-    core_hourly_rate_minor = CASE WHEN $9 = 1 THEN $10 ELSE core_hourly_rate_minor END,
-    notes = CASE WHEN $11 = 1 THEN NULLIF($12, '') ELSE notes END,
+    first_name = CASE WHEN $1 = 1 THEN $2 ELSE first_name END,
+    middle_name = CASE WHEN $3 = 1 THEN NULLIF($4, '') ELSE middle_name END,
+    last_name = CASE WHEN $5 = 1 THEN NULLIF($6, '') ELSE last_name END,
+    date_of_birth = CASE WHEN $7 = 1 THEN $8 ELSE date_of_birth END,
+    start_date = CASE WHEN $9 = 1 THEN $10 ELSE start_date END,
+    end_date = CASE WHEN $11 = 1 THEN $12 ELSE end_date END,
+    core_hourly_rate_minor = CASE WHEN $13 = 1 THEN $14 ELSE core_hourly_rate_minor END,
+    notes = CASE WHEN $15 = 1 THEN NULLIF($16, '') ELSE notes END,
     updated_at = now()
-WHERE tenant_id = $13 AND branch_id = $14 AND id = $15
+WHERE tenant_id = $17 AND branch_id = $18 AND id = $19
 `
 
 type ChildrenUpdateParams struct {
-	SetFullName            interface{}
-	FullName               string
+	SetFirstName           interface{}
+	FirstName              string
+	SetMiddleName          interface{}
+	MiddleName             interface{}
+	SetLastName            interface{}
+	LastName               interface{}
 	SetDateOfBirth         interface{}
 	DateOfBirth            pgtype.Date
 	SetStartDate           interface{}
@@ -506,8 +540,12 @@ type ChildrenUpdateParams struct {
 
 func (q *Queries) ChildrenUpdate(ctx context.Context, arg ChildrenUpdateParams) (int64, error) {
 	result, err := q.db.Exec(ctx, childrenUpdate,
-		arg.SetFullName,
-		arg.FullName,
+		arg.SetFirstName,
+		arg.FirstName,
+		arg.SetMiddleName,
+		arg.MiddleName,
+		arg.SetLastName,
+		arg.LastName,
 		arg.SetDateOfBirth,
 		arg.DateOfBirth,
 		arg.SetStartDate,

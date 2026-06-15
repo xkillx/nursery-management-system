@@ -47,32 +47,32 @@ type invoiceWarningResponse struct {
 }
 
 type correctionSessionContextResponse struct {
-	ChildID           string                `json:"child_id"`
-	SelectedLocalDate string                `json:"selected_local_date"`
+	ChildID           string                  `json:"child_id"`
+	SelectedLocalDate string                  `json:"selected_local_date"`
 	InvoiceWarning    *invoiceWarningResponse `json:"invoice_warning"`
-	Items             []sessionResponse     `json:"items"`
+	Items             []sessionResponse       `json:"items"`
 }
 
 type correctionHistoryResponse struct {
-	Session sessionResponse               `json:"session"`
+	Session sessionResponse                  `json:"session"`
 	Items   []correctionHistoryEventResponse `json:"items"`
 }
 
 type correctionHistoryEventResponse struct {
-	ID                    string  `json:"id"`
-	EventType             string  `json:"event_type"`
-	OccurredAt            string  `json:"occurred_at"`
-	LocalDate             string  `json:"local_date"`
-	RecordedByUserID      string  `json:"recorded_by_user_id"`
+	ID                     string  `json:"id"`
+	EventType              string  `json:"event_type"`
+	OccurredAt             string  `json:"occurred_at"`
+	LocalDate              string  `json:"local_date"`
+	RecordedByUserID       string  `json:"recorded_by_user_id"`
 	RecordedByMembershipID string  `json:"recorded_by_membership_id"`
-	RecordedByLabel       *string `json:"recorded_by_label"`
-	ReasonCode            *string `json:"reason_code"`
-	ReasonNote            *string `json:"reason_note"`
-	PreviousCheckInAt     *string `json:"previous_check_in_at"`
-	PreviousCheckOutAt    *string `json:"previous_check_out_at"`
-	CorrectedCheckInAt    *string `json:"corrected_check_in_at"`
-	CorrectedCheckOutAt   *string `json:"corrected_check_out_at"`
-	CreatedByCorrection   bool    `json:"created_by_correction"`
+	RecordedByLabel        *string `json:"recorded_by_label"`
+	ReasonCode             *string `json:"reason_code"`
+	ReasonNote             *string `json:"reason_note"`
+	PreviousCheckInAt      *string `json:"previous_check_in_at"`
+	PreviousCheckOutAt     *string `json:"previous_check_out_at"`
+	CorrectedCheckInAt     *string `json:"corrected_check_in_at"`
+	CorrectedCheckOutAt    *string `json:"corrected_check_out_at"`
+	CreatedByCorrection    bool    `json:"created_by_correction"`
 }
 
 func toSessionResponse(s domain.Session) sessionResponse {

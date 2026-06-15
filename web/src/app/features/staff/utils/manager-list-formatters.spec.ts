@@ -91,8 +91,8 @@ describe('manager-list-formatters', () => {
       expect(missingRequirementLabel('guardian_link')).toBe('Linked guardian');
     });
 
-    it('maps full_name to Full name', () => {
-      expect(missingRequirementLabel('full_name')).toBe('Full name');
+    it('maps first_name to First name', () => {
+      expect(missingRequirementLabel('first_name')).toBe('First name');
     });
 
     it('maps date_of_birth to Date of birth', () => {

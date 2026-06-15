@@ -39,7 +39,9 @@ func (r *Repository) GetChildSummary(ctx context.Context, tenantID, branchID, ch
 	}
 	return domain.ChildSummary{
 		ID:          childID,
-		FullName:    row.FullName,
+		FirstName:   row.FirstName,
+		MiddleName:  pgtypeTextToPtr(row.MiddleName),
+		LastName:    pgtypeTextToPtr(row.LastName),
 		DateOfBirth: pgtypeDateToTime(row.DateOfBirth),
 	}, true, nil
 }

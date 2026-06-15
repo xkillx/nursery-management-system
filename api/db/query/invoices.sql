@@ -37,7 +37,9 @@ FOR UPDATE;
 -- name: PreflightListChildren :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -71,7 +73,7 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < $4
   AND (c.end_date IS NULL OR c.end_date >= $3)
-ORDER BY c.full_name, c.id;
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC;
 
 -- name: PreflightListAttendanceSessions :many
 SELECT
@@ -93,7 +95,9 @@ ORDER BY child_id, check_in_local_date, check_in_at, id;
 -- name: ListCandidateChildrenForUpdate :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -127,13 +131,15 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < $4
   AND (c.end_date IS NULL OR c.end_date >= $3)
-ORDER BY c.full_name, c.id
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 FOR UPDATE OF c;
 
 -- name: ListSelectedChildrenForUpdate :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -164,7 +170,7 @@ LEFT JOIN invoices i
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = ANY($3::uuid[])
-ORDER BY c.full_name, c.id
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 FOR UPDATE OF c;
 
 -- name: ListAttendanceSessionsForGeneration :many
@@ -266,7 +272,10 @@ INSERT INTO invoice_lines (
 -- name: InvoiceListForManagerReview :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -289,13 +298,16 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
-ORDER BY i.billing_month DESC, c.full_name ASC, i.created_at DESC, i.id ASC
+ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
 -- name: InvoiceGetForManagerReview :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -340,7 +352,11 @@ DO UPDATE SET
 RETURNING next_sequence - 1 AS issued_sequence;
 
 -- name: GetInvoiceForIssueForUpdate :one
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
@@ -348,7 +364,11 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2 AND i.id = $3
 FOR UPDATE OF i;
 
 -- name: ListDraftInvoicesForIssueForUpdate :many
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
@@ -357,18 +377,22 @@ WHERE i.tenant_id = $1
   AND i.billing_month = $3
   AND i.invoice_kind = 'monthly'
   AND i.status = 'draft'
-ORDER BY c.full_name ASC, i.id ASC
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.id ASC
 FOR UPDATE OF i;
 
 -- name: ListSelectedInvoicesForIssueForUpdate :many
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.id = ANY($3::uuid[])
-ORDER BY c.full_name ASC, i.id ASC
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.id ASC
 FOR UPDATE OF i;
 
 -- name: MarkInvoiceIssued :execrows
@@ -404,7 +428,10 @@ RETURNING id, tenant_id, branch_id;
 -- name: InvoiceListForParent :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -449,14 +476,19 @@ ORDER BY
   END,
   i.due_at ASC NULLS LAST,
   i.billing_month DESC,
-  c.full_name ASC,
+  c.first_name ASC,
+  c.middle_name ASC NULLS FIRST,
+  c.last_name ASC NULLS FIRST,
   i.id ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
 -- name: InvoiceGetForParent :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,

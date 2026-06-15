@@ -13,6 +13,7 @@ import {
   ConsentRecord, ConsentWithCompletenessResponse, ConsentWritePayload, RegistrationWorkflowStatus,
   CompleteRegistrationPayload, CompleteRegistrationResponse,
 } from '../models/registration-profile.models';
+import { formatChildName } from '../utils/manager-list-formatters';
 
 interface StaffListResponse<T> {
   items: T[];
@@ -20,7 +21,9 @@ interface StaffListResponse<T> {
 
 interface ChildApiModel {
   id: string;
-  full_name: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name?: string | null;
   date_of_birth: string;
   start_date: string;
   end_date?: string;
@@ -63,7 +66,9 @@ interface AbsenceMarkerApiModel {
 
 interface AttendanceChildApiModel {
   id: string;
-  full_name: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name?: string | null;
   enrollment_complete: boolean;
   attendance_state: string;
   open_session_id?: string;
@@ -134,7 +139,9 @@ interface FundingProfileApiModel {
 interface RegistrationProfileApiModel {
   child: {
     id: string;
-    full_name: string;
+    first_name: string;
+    middle_name?: string | null;
+    last_name?: string | null;
     date_of_birth: string;
   };
   profile_exists: boolean;
@@ -172,7 +179,9 @@ interface FundingOverviewApiModel {
 
 interface FundingOverviewItemApiModel {
   child_id: string;
-  child_name: string;
+  child_first_name: string;
+  child_middle_name?: string | null;
+  child_last_name?: string | null;
   is_active: boolean;
   start_date: string;
   end_date?: string | null;
@@ -280,7 +289,10 @@ export class StaffApiService {
         map((response) =>
           response.items.map((child) => ({
             id: child.id,
-            fullName: child.full_name,
+            firstName: child.first_name,
+            middleName: child.middle_name ?? null,
+            lastName: child.last_name ?? null,
+            fullName: this.childDisplayName(child),
             enrollmentComplete: child.enrollment_complete,
             attendanceState: child.attendance_state as AttendanceState,
             openSessionId: child.open_session_id ?? null,
@@ -442,7 +454,10 @@ export class StaffApiService {
   private toChildRecord(child: ChildApiModel): ChildRecord {
     return {
       id: child.id,
-      fullName: child.full_name,
+      firstName: child.first_name,
+      middleName: child.middle_name ?? null,
+      lastName: child.last_name ?? null,
+      fullName: this.childDisplayName(child),
       dateOfBirth: child.date_of_birth,
       startDate: child.start_date,
       endDate: child.end_date ?? null,
@@ -581,7 +596,11 @@ export class StaffApiService {
   private toFundingOverviewItem(item: FundingOverviewItemApiModel): FundingOverviewItem {
     return {
       childId: item.child_id,
-      childName: item.child_name,
+      childName: formatChildName({
+        firstName: item.child_first_name,
+        middleName: item.child_middle_name,
+        lastName: item.child_last_name,
+      }),
       isActive: item.is_active,
       startDate: item.start_date,
       endDate: item.end_date ?? null,
@@ -607,7 +626,11 @@ export class StaffApiService {
     return {
       child: {
         id: profile.child.id,
-        fullName: profile.child.full_name,
+        fullName: formatChildName({
+          firstName: profile.child.first_name,
+          middleName: profile.child.middle_name,
+          lastName: profile.child.last_name,
+        }),
         dateOfBirth: profile.child.date_of_birth,
       },
       profileExists: profile.profile_exists,
@@ -661,6 +684,14 @@ export class StaffApiService {
         })),
       },
     };
+  }
+
+  private childDisplayName(child: { first_name: string; middle_name?: string | null; last_name?: string | null }): string {
+    return formatChildName({
+      firstName: child.first_name,
+      middleName: child.middle_name,
+      lastName: child.last_name,
+    });
   }
 
   getRegistrationWorkflowStatus(childId: string): Observable<RegistrationWorkflowStatus> {

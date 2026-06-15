@@ -37,7 +37,7 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 	}
 	out := make([]domain.Child, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+		out = append(out, mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 			row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 			row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 			row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt))
@@ -58,7 +58,7 @@ func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uu
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("query child by id: %w", err)
 	}
-	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
@@ -70,12 +70,14 @@ func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes 
 		ID:                  uuidToPgtype(child.ID),
 		TenantID:            uuidToPgtype(tenantID),
 		BranchID:            uuidToPgtype(branchID),
-		FullName:            child.FullName,
+		FirstName:           child.FirstName,
+		Column5:             stringPtrToInterface(child.MiddleName),
+		Column6:             stringPtrToInterface(child.LastName),
 		DateOfBirth:         timeToPgtypeDate(child.DateOfBirth),
 		StartDate:           timeToPgtypeDate(child.StartDate),
 		EndDate:             timeToPgtypeDatePtr(child.EndDate),
 		CoreHourlyRateMinor: pgtype.Int4{},
-		Column9:             notes,
+		Column11:            notes,
 	})
 }
 
@@ -90,9 +92,17 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 		ID:       uuidToPgtype(id),
 	}
 
-	if v, ok := fields["full_name"]; ok {
-		params.SetFullName = int32(1)
-		params.FullName = v.(string)
+	if v, ok := fields["first_name"]; ok {
+		params.SetFirstName = int32(1)
+		params.FirstName = v.(string)
+	}
+	if v, ok := fields["middle_name"]; ok {
+		params.SetMiddleName = int32(1)
+		params.MiddleName = v.(string)
+	}
+	if v, ok := fields["last_name"]; ok {
+		params.SetLastName = int32(1)
+		params.LastName = v.(string)
 	}
 	if v, ok := fields["date_of_birth"]; ok {
 		params.SetDateOfBirth = int32(1)
@@ -145,7 +155,7 @@ func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenan
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("query child for update: %w", err)
 	}
-	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
@@ -182,7 +192,9 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 		}
 		out = append(out, domain.AttendanceChild{
 			ID:                   pgtypeUUIDToUUID(row.ID),
-			FullName:             row.FullName,
+			FirstName:            row.FirstName,
+			MiddleName:           pgtypeTextToStringPtr(row.MiddleName),
+			LastName:             pgtypeTextToStringPtr(row.LastName),
 			EnrollmentComplete:   row.EnrollmentComplete.Bool,
 			AttendanceState:      row.AttendanceState,
 			OpenSessionID:        pgtypeUUIDToUUIDPtr(row.OpenSessionID),
@@ -208,7 +220,7 @@ func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, 
 	if err != nil {
 		return domain.Child{}, false, fmt.Errorf("get child for attendance check: %w", err)
 	}
-	return mapChildRow(row.ID, row.FullName, row.DateOfBirth, row.StartDate, row.EndDate,
+	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
 		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
@@ -235,7 +247,7 @@ func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, 
 }
 
 func mapChildRow(
-	id pgtype.UUID, fullName string, dateOfBirth, startDate, endDate pgtype.Date,
+	id pgtype.UUID, firstName string, middleName, lastName pgtype.Text, dateOfBirth, startDate, endDate pgtype.Date,
 	coreHourlyRateMinor pgtype.Int4, siteCoreHourlyRateMinor pgtype.Int4,
 	notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
 	leftReasonCode interface{}, leftReasonNote pgtype.Text, hasGuardianLink bool,
@@ -243,7 +255,9 @@ func mapChildRow(
 ) domain.Child {
 	return domain.Child{
 		ID:                      pgtypeUUIDToUUID(id),
-		FullName:                fullName,
+		FirstName:               firstName,
+		MiddleName:              pgtypeTextToStringPtr(middleName),
+		LastName:                pgtypeTextToStringPtr(lastName),
 		DateOfBirth:             pgtypeDateToTime(dateOfBirth),
 		StartDate:               pgtypeDateToTime(startDate),
 		EndDate:                 pgtypeDateToTimePtr(endDate),
@@ -258,6 +272,13 @@ func mapChildRow(
 		CreatedAt:               pgtypeTimestamptzToTime(createdAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(updatedAt),
 	}
+}
+
+func stringPtrToInterface(s *string) interface{} {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func ifaceToStringPtr(v interface{}) *string {

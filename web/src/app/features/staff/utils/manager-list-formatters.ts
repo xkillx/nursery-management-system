@@ -24,7 +24,20 @@ export function minorToPounds(minorUnits: number | null): number | null {
 }
 
 export function poundsToMinor(pounds: number | string): number {
-  return Math.round(Number(pounds) * 100);
+	return Math.round(Number(pounds) * 100);
+}
+
+export interface ChildNameParts {
+	firstName?: string | null;
+	middleName?: string | null;
+	lastName?: string | null;
+}
+
+export function formatChildName(name: ChildNameParts): string {
+	return [name.firstName, name.middleName, name.lastName]
+		.map((part) => part?.trim() ?? '')
+		.filter(Boolean)
+		.join(' ');
 }
 
 export function statusFilterLabel(status: StatusFilter): string {
@@ -37,8 +50,8 @@ export function statusFilterLabel(status: StatusFilter): string {
 }
 
 const REQUIREMENT_LABELS: Record<string, string> = {
-  full_name: 'Full name',
-  date_of_birth: 'Date of birth',
+	first_name: 'First name',
+	date_of_birth: 'Date of birth',
   start_date: 'Start date',
   guardian_link: 'Linked guardian',
 };

@@ -12,7 +12,9 @@ import (
 // ChildReadinessResult holds the per-child blockers and calculation output.
 type ChildReadinessResult struct {
 	ChildID                uuid.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        *string
+	ChildLastName          *string
 	CoreHourlyRateMinor    *int
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes int
@@ -43,7 +45,9 @@ func EvaluateChildReadiness(
 ) (ChildReadinessResult, error) {
 	result := ChildReadinessResult{
 		ChildID:               child.ChildID,
-		ChildName:             child.FullName,
+		ChildFirstName:        child.FirstName,
+		ChildMiddleName:       child.MiddleName,
+		ChildLastName:         child.LastName,
 		CoreHourlyRateMinor:   child.CoreHourlyRateMinor,
 		FundingProfileID:      child.FundingProfileID,
 		HasGuardianLink:       child.HasGuardianLink,
@@ -53,10 +57,10 @@ func EvaluateChildReadiness(
 
 	var blockers []domain.PreflightBlocker
 
-	if child.FullName == "" {
+	if child.FirstName == "" {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code:    domain.BlockerMissingChildName,
-			Message: "Child full name is missing.",
+			Message: "Child first name is missing.",
 		})
 	}
 	if child.DateOfBirth.IsZero() {

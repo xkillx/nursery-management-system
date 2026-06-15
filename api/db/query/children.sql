@@ -1,6 +1,8 @@
 -- name: ChildrenList :many
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -35,7 +37,9 @@ LIMIT $3 OFFSET $4;
 
 -- name: ChildrenGetByID :one
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -64,15 +68,17 @@ WHERE c.tenant_id = $1
 
 -- name: ChildrenCreate :exec
 INSERT INTO children (
-    id, tenant_id, branch_id, full_name, date_of_birth, start_date, end_date,
+    id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date,
     core_hourly_rate_minor, notes, is_active
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), true);
+VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true);
 
 -- name: ChildrenUpdate :execrows
 UPDATE children
 SET
-    full_name = CASE WHEN @set_full_name = 1 THEN @full_name ELSE full_name END,
+    first_name = CASE WHEN @set_first_name = 1 THEN @first_name ELSE first_name END,
+    middle_name = CASE WHEN @set_middle_name = 1 THEN NULLIF(@middle_name, '') ELSE middle_name END,
+    last_name = CASE WHEN @set_last_name = 1 THEN NULLIF(@last_name, '') ELSE last_name END,
     date_of_birth = CASE WHEN @set_date_of_birth = 1 THEN @date_of_birth ELSE date_of_birth END,
     start_date = CASE WHEN @set_start_date = 1 THEN @start_date ELSE start_date END,
     end_date = CASE WHEN @set_end_date = 1 THEN sqlc.narg('end_date') ELSE end_date END,
@@ -92,7 +98,9 @@ WHERE tenant_id = $3 AND branch_id = $4 AND id = $5;
 
 -- name: ChildrenGetByIDForUpdate :one
 SELECT c.id,
-       c.full_name,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
        c.date_of_birth,
        c.start_date,
        c.end_date,
@@ -127,8 +135,10 @@ SELECT EXISTS (
 
 -- name: ChildrenListAttendance :many
 SELECT c.id,
-       c.full_name,
-       (c.full_name IS NOT NULL AND btrim(c.full_name) <> ''
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       (c.first_name IS NOT NULL AND btrim(c.first_name) <> ''
         AND c.date_of_birth IS NOT NULL
         AND c.start_date IS NOT NULL
         AND EXISTS (
@@ -167,7 +177,7 @@ WHERE c.tenant_id = $1
       (c.is_active = true AND c.start_date <= $3 AND (c.end_date IS NULL OR c.end_date >= $3))
       OR s.id IS NOT NULL
   )
-ORDER BY c.full_name ASC;
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC;
 
 -- name: ChildrenGetForCorrection :one
 SELECT c.id, c.start_date, c.end_date

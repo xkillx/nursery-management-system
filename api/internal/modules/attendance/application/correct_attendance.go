@@ -21,11 +21,11 @@ type CorrectionResult struct {
 }
 
 type CorrectAttendance struct {
-	repo          domain.Repository
-	childChecker  domain.ChildCorrectionChecker
-	txMgr         *transaction.Manager
-	audit         *audit.Writer
-	clock         *AttendanceClock
+	repo         domain.Repository
+	childChecker domain.ChildCorrectionChecker
+	txMgr        *transaction.Manager
+	audit        *audit.Writer
+	clock        *AttendanceClock
 }
 
 func NewCorrectAttendance(
@@ -172,14 +172,14 @@ func (uc *CorrectAttendance) writeAudit(
 	now time.Time, checkInLocalDate, checkOutLocalDate time.Time, created bool,
 ) error {
 	details := map[string]any{
-		"child_id":             session.ChildID.String(),
-		"session_id":           session.ID.String(),
-		"event_type":           "correction",
-		"reason_code":          params.ReasonCode,
-		"corrected_check_in":   params.CheckInAt.Format(time.RFC3339),
-		"corrected_check_out":  params.CheckOutAt.Format(time.RFC3339),
-		"check_in_local_date":  checkInLocalDate.Format("2006-01-02"),
-		"check_out_local_date": checkOutLocalDate.Format("2006-01-02"),
+		"child_id":              session.ChildID.String(),
+		"session_id":            session.ID.String(),
+		"event_type":            "correction",
+		"reason_code":           params.ReasonCode,
+		"corrected_check_in":    params.CheckInAt.Format(time.RFC3339),
+		"corrected_check_out":   params.CheckOutAt.Format(time.RFC3339),
+		"check_in_local_date":   checkInLocalDate.Format("2006-01-02"),
+		"check_out_local_date":  checkOutLocalDate.Format("2006-01-02"),
 		"created_by_correction": created,
 	}
 	if params.ReasonNote != "" {

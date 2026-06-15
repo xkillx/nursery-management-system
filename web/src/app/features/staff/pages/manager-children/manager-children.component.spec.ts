@@ -11,8 +11,9 @@ describe('ManagerChildrenComponent', () => {
   let httpMock: HttpTestingController;
 
   const childApi = {
-    id: 'child-1',
-    full_name: 'Ada Lovelace',
+    id: 'child-1',first_name: 'Ada',
+middle_name: null,
+last_name: 'Lovelace',
     date_of_birth: '2022-01-15',
     start_date: '2024-09-01',
     end_date: null,
@@ -31,8 +32,9 @@ describe('ManagerChildrenComponent', () => {
 
   const completeChildApi = {
     ...childApi,
-    id: 'child-2',
-    full_name: 'Grace Hopper',
+    id: 'child-2',first_name: 'Grace',
+middle_name: null,
+last_name: 'Hopper',
     enrollment_complete: true,
     missing_requirements: [],
   };

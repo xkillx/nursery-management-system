@@ -16,6 +16,13 @@ import {
   IssueResultSummary,
   IssuedInvoiceResult,
 } from '../models/invoice-run.models';
+import { formatChildName } from '../utils/manager-list-formatters';
+
+interface ChildNameApi {
+  child_first_name: string;
+  child_middle_name?: string | null;
+  child_last_name?: string | null;
+}
 
 interface PreflightSummaryApi {
   total_children_count: number;
@@ -27,9 +34,8 @@ interface PreflightSummaryApi {
   total_due_minor: number;
 }
 
-interface PreflightEligibleChildApi {
+interface PreflightEligibleChildApi extends ChildNameApi {
   child_id: string;
-  child_name: string;
   rounded_attended_minutes: number;
   funded_deduction_minor: number;
   total_due_minor: number;
@@ -40,9 +46,8 @@ interface PreflightBlockerApi {
   message: string;
 }
 
-interface PreflightBlockedChildApi {
+interface PreflightBlockedChildApi extends ChildNameApi {
   child_id: string;
-  child_name: string;
   blockers: PreflightBlockerApi[];
 }
 
@@ -60,16 +65,14 @@ interface DraftGenerationSummaryApi {
   total_due_minor: number;
 }
 
-interface DraftGenerationItemApi {
+interface DraftGenerationItemApi extends ChildNameApi {
   child_id: string;
-  child_name: string;
   action: 'created' | 'updated';
   invoice_id: string;
 }
 
-interface DraftGenerationBlockedApi {
+interface DraftGenerationBlockedApi extends ChildNameApi {
   child_id: string;
-  child_name: string;
   blockers: PreflightBlockerApi[];
 }
 
@@ -82,10 +85,9 @@ interface DraftGenerationResponseApi {
   blocked: DraftGenerationBlockedApi[];
 }
 
-interface InvoiceListItemApi {
+interface InvoiceListItemApi extends ChildNameApi {
   invoice_id: string;
   child_id: string;
-  child_name: string;
   billing_month: string;
   status: string;
   subtotal_minor: number;
@@ -117,10 +119,9 @@ interface InvoiceCalculationApi {
   extras_total_minor: number;
 }
 
-interface InvoiceDetailApi {
+interface InvoiceDetailApi extends ChildNameApi {
   invoice_id: string;
   child_id: string;
-  child_name: string;
   billing_month: string;
   status: string;
   subtotal_minor: number;
@@ -139,19 +140,17 @@ interface SingleIssueResponseApi {
   total_due_minor: number;
 }
 
-interface BulkIssueIssuedApi {
+interface BulkIssueIssuedApi extends ChildNameApi {
   invoice_id: string;
   invoice_number: string;
   child_id: string;
-  child_name: string;
   issued_at: string;
   total_due_minor: number;
 }
 
-interface BulkIssueBlockedApi {
+interface BulkIssueBlockedApi extends ChildNameApi {
   invoice_id: string;
   child_id: string;
-  child_name: string;
   blockers: PreflightBlockerApi[];
 }
 
@@ -262,7 +261,7 @@ export class InvoiceRunApiService {
   private toEligibleChild(c: PreflightEligibleChildApi): InvoiceRunEligibleChild {
     return {
       childId: c.child_id,
-      childName: c.child_name,
+      childName: this.childName(c),
       attendedMinutes: c.rounded_attended_minutes,
       fundedDeductionMinor: c.funded_deduction_minor,
       totalDueMinor: c.total_due_minor,
@@ -272,7 +271,7 @@ export class InvoiceRunApiService {
   private toException(c: PreflightBlockedChildApi): InvoiceRunException {
     return {
       childId: c.child_id,
-      childName: c.child_name,
+      childName: this.childName(c),
       blockers: c.blockers.map((b) => this.toBlocker(b)),
     };
   }
@@ -305,7 +304,7 @@ export class InvoiceRunApiService {
     return {
       invoiceId: detail.invoice_id,
       childId: detail.child_id,
-      childName: detail.child_name,
+      childName: this.childName(detail),
       billingMonth: detail.billing_month,
       status: detail.status as InvoiceDraftReviewItem['status'],
       attendedMinutes: detail.calculation?.rounded_attended_minutes ?? 0,
@@ -346,7 +345,7 @@ export class InvoiceRunApiService {
     return {
       invoiceId: i.invoice_id,
       childId: i.child_id,
-      childName: i.child_name,
+      childName: this.childName(i),
       invoiceNumber: i.invoice_number,
       issuedAt: i.issued_at,
       totalMinor: i.total_due_minor,
@@ -356,7 +355,7 @@ export class InvoiceRunApiService {
   private toIssueException(b: BulkIssueBlockedApi): IssueException {
     return {
       invoiceId: b.invoice_id,
-      childName: b.child_name,
+      childName: this.childName(b),
       reason: b.blockers.map((bl) => bl.message).join('; ') || 'Blocked',
     };
   }
@@ -370,7 +369,7 @@ export class InvoiceRunApiService {
         {
           invoiceId: detail.invoice_id,
           childId: detail.child_id,
-          childName: detail.child_name,
+          childName: this.childName(detail),
           invoiceNumber: issueRes.invoice_number,
           issuedAt: issueRes.issued_at,
           totalMinor: issueRes.total_due_minor,
@@ -378,5 +377,13 @@ export class InvoiceRunApiService {
       ],
       skipped: [],
     };
+  }
+
+  private childName(child: ChildNameApi): string {
+    return formatChildName({
+      firstName: child.child_first_name,
+      middleName: child.child_middle_name,
+      lastName: child.child_last_name,
+    });
   }
 }

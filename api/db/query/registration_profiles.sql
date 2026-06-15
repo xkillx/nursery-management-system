@@ -4,7 +4,9 @@ SELECT
     crp.tenant_id,
     crp.branch_id,
     crp.child_id,
-    c.full_name AS child_full_name,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     c.date_of_birth AS child_date_of_birth,
     crp.sex,
     crp.religion,
@@ -105,7 +107,9 @@ ORDER BY crc.contact_type, crc.sort_order;
 -- name: RegistrationProfileChildGet :one
 SELECT
     c.id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth
 FROM children c
 WHERE c.tenant_id = $1
@@ -118,7 +122,9 @@ SELECT
     crp.tenant_id,
     crp.branch_id,
     crp.child_id,
-    c.full_name AS child_full_name,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     c.date_of_birth AS child_date_of_birth,
     crp.sex,
     crp.religion,

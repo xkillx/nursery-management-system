@@ -278,7 +278,9 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 		}
 		eligible = append(eligible, eligibleChildResponse{
 			ChildID:                ec.ChildID.String(),
-			ChildName:              ec.ChildName,
+			ChildFirstName:         ec.ChildFirstName,
+			ChildMiddleName:        ec.ChildMiddleName,
+			ChildLastName:          ec.ChildLastName,
 			CoreHourlyRateMinor:    ec.CoreHourlyRateMinor,
 			FundingProfileID:       fundingProfileID,
 			FundedAllowanceMinutes: ec.FundedAllowanceMinutes,
@@ -323,9 +325,11 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 			blockers = append(blockers, br)
 		}
 		blocked = append(blocked, blockedChildResponse{
-			ChildID:   bc.ChildID.String(),
-			ChildName: bc.ChildName,
-			Blockers:  blockers,
+			ChildID:         bc.ChildID.String(),
+			ChildFirstName:  bc.ChildFirstName,
+			ChildMiddleName: bc.ChildMiddleName,
+			ChildLastName:   bc.ChildLastName,
+			Blockers:        blockers,
 		})
 	}
 
@@ -370,7 +374,9 @@ func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResp
 	for _, g := range r.Generated {
 		generated = append(generated, generatedDraftResponse{
 			ChildID:              g.ChildID.String(),
-			ChildName:            g.ChildName,
+			ChildFirstName:       g.ChildFirstName,
+			ChildMiddleName:      g.ChildMiddleName,
+			ChildLastName:        g.ChildLastName,
 			Action:               string(g.Action),
 			InvoiceID:            g.InvoiceID.String(),
 			SubtotalMinor:        g.SubtotalMinor,
@@ -389,9 +395,11 @@ func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResp
 			})
 		}
 		blocked = append(blocked, generateBlockedChildResponse{
-			ChildID:   b.ChildID.String(),
-			ChildName: b.ChildName,
-			Blockers:  blockers,
+			ChildID:         b.ChildID.String(),
+			ChildFirstName:  b.ChildFirstName,
+			ChildMiddleName: b.ChildMiddleName,
+			ChildLastName:   b.ChildLastName,
+			Blockers:        blockers,
 		})
 	}
 
@@ -477,7 +485,9 @@ func toInvoiceListResponse(r application.ListInvoicesResult) invoiceListResponse
 			InvoiceNumber:              inv.InvoiceNumber,
 			InvoiceNumberDisplay:       invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
 			ChildID:                    inv.ChildID.String(),
-			ChildName:                  inv.ChildName,
+			ChildFirstName:             inv.ChildFirstName,
+			ChildMiddleName:            inv.ChildMiddleName,
+			ChildLastName:              inv.ChildLastName,
 			BillingMonth:               formatBillingMonth(inv.BillingMonth),
 			Status:                     inv.Status,
 			DueStatus:                  dueStatus(inv.Status),
@@ -518,7 +528,9 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 		InvoiceNumber:              inv.InvoiceNumber,
 		InvoiceNumberDisplay:       invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
 		ChildID:                    inv.ChildID.String(),
-		ChildName:                  inv.ChildName,
+		ChildFirstName:             inv.ChildFirstName,
+		ChildMiddleName:            inv.ChildMiddleName,
+		ChildLastName:              inv.ChildLastName,
 		BillingMonth:               formatBillingMonth(inv.BillingMonth),
 		Status:                     inv.Status,
 		DueStatus:                  dueStatus(inv.Status),
@@ -551,9 +563,11 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 	resp.GeneratedRunExceptions = make([]invoiceRunExceptionResponse, 0, len(r.GeneratedRunExceptions))
 	for _, ex := range r.GeneratedRunExceptions {
 		resp.GeneratedRunExceptions = append(resp.GeneratedRunExceptions, invoiceRunExceptionResponse{
-			ChildID:      ex.ChildID,
-			ChildName:    ex.ChildName,
-			BlockerCodes: ex.BlockerCodes,
+			ChildID:         ex.ChildID,
+			ChildFirstName:  ex.ChildFirstName,
+			ChildMiddleName: ex.ChildMiddleName,
+			ChildLastName:   ex.ChildLastName,
+			BlockerCodes:    ex.BlockerCodes,
 		})
 	}
 
@@ -624,13 +638,15 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 	issued := make([]issuedInvoiceResponse, 0, len(r.Issued))
 	for _, inv := range r.Issued {
 		issued = append(issued, issuedInvoiceResponse{
-			InvoiceID:     inv.InvoiceID.String(),
-			ChildID:       inv.ChildID.String(),
-			ChildName:     inv.ChildName,
-			InvoiceNumber: inv.InvoiceNumber,
-			IssuedAt:      formatTime(inv.IssuedAt),
-			DueAt:         formatTime(inv.DueAt),
-			TotalDueMinor: inv.TotalDueMinor,
+			InvoiceID:       inv.InvoiceID.String(),
+			ChildID:         inv.ChildID.String(),
+			ChildFirstName:  inv.ChildFirstName,
+			ChildMiddleName: inv.ChildMiddleName,
+			ChildLastName:   inv.ChildLastName,
+			InvoiceNumber:   inv.InvoiceNumber,
+			IssuedAt:        formatTime(inv.IssuedAt),
+			DueAt:           formatTime(inv.DueAt),
+			TotalDueMinor:   inv.TotalDueMinor,
 		})
 	}
 
@@ -649,7 +665,9 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 		}
 		if b.ChildID != nil {
 			resp.ChildID = strPtr(b.ChildID.String())
-			resp.ChildName = b.ChildName
+			resp.ChildFirstName = b.ChildFirstName
+			resp.ChildMiddleName = b.ChildMiddleName
+			resp.ChildLastName = b.ChildLastName
 		}
 		blocked = append(blocked, resp)
 	}
@@ -678,7 +696,9 @@ func toParentInvoiceListResponse(r application.ListParentInvoicesResult) parentI
 			InvoiceNumber:          inv.InvoiceNumber,
 			InvoiceNumberDisplay:   invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
 			ChildID:                inv.ChildID.String(),
-			ChildName:              inv.ChildName,
+			ChildFirstName:         inv.ChildFirstName,
+			ChildMiddleName:        inv.ChildMiddleName,
+			ChildLastName:          inv.ChildLastName,
 			BillingMonth:           formatBillingMonth(inv.BillingMonth),
 			Status:                 inv.Status,
 			DueStatus:              dueStatus(inv.Status),
@@ -712,7 +732,9 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 		InvoiceNumber:          inv.InvoiceNumber,
 		InvoiceNumberDisplay:   invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
 		ChildID:                inv.ChildID.String(),
-		ChildName:              inv.ChildName,
+		ChildFirstName:         inv.ChildFirstName,
+		ChildMiddleName:        inv.ChildMiddleName,
+		ChildLastName:          inv.ChildLastName,
 		BillingMonth:           formatBillingMonth(inv.BillingMonth),
 		Status:                 inv.Status,
 		DueStatus:              dueStatus(inv.Status),

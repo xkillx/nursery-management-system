@@ -174,6 +174,7 @@ describe('ManagerInvitesComponent', () => {
   it('resend no-ops for non-pending rows', () => {
     component.resend(acceptedInviteRecord);
     httpMock.expectNone('/api/v1/invites/invite-2/resend');
+    expect(component.pendingInviteIds.has(acceptedInviteRecord.id)).toBe(false);
   });
 
   it('revoke opens confirmation and calls service after confirm', () => {

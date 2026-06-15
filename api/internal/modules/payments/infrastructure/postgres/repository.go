@@ -158,6 +158,13 @@ func pgtypeTextToStr(t pgtype.Text) string {
 	return t.String
 }
 
+func pgtypeTextToStringPtr(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
+}
+
 func strToPgtypeText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: s != ""}
 }
@@ -360,7 +367,9 @@ func (m *managerQueries) GetManagerInvoicePaymentStatus(ctx context.Context, ten
 		InvoiceNumber:        pgtypeTextToStr(row.InvoiceNumber),
 		InvoiceNumberDisplay: row.InvoiceNumberDisplay,
 		ChildID:              pgtypeUUIDToStr(row.ChildID),
-		ChildName:            row.ChildName,
+		ChildFirstName:       row.ChildFirstName,
+		ChildMiddleName:      pgtypeTextToStringPtr(row.ChildMiddleName),
+		ChildLastName:        pgtypeTextToStringPtr(row.ChildLastName),
 		BillingMonth:         pgtypeDateToStr(row.BillingMonth),
 		Status:               row.Status,
 		CurrencyCode:         row.CurrencyCode,

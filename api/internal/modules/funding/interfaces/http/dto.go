@@ -23,17 +23,19 @@ type overviewResponse struct {
 }
 
 type overviewSummaryResponse struct {
-	IncludedChildCount int `json:"included_child_count"`
-	FlaggedChildCount  int `json:"flagged_child_count"`
-	MissingProfileCount    int `json:"missing_profile_count"`
-	ExplicitZeroCount      int `json:"explicit_zero_count"`
-	UnderOneHourCount      int `json:"under_one_hour_count"`
-	Above160HoursCount     int `json:"above_160_hours_count"`
+	IncludedChildCount  int `json:"included_child_count"`
+	FlaggedChildCount   int `json:"flagged_child_count"`
+	MissingProfileCount int `json:"missing_profile_count"`
+	ExplicitZeroCount   int `json:"explicit_zero_count"`
+	UnderOneHourCount   int `json:"under_one_hour_count"`
+	Above160HoursCount  int `json:"above_160_hours_count"`
 }
 
 type overviewItemResponse struct {
 	ChildID                string     `json:"child_id"`
-	ChildName              string     `json:"child_name"`
+	ChildFirstName         string     `json:"child_first_name"`
+	ChildMiddleName        *string    `json:"child_middle_name"`
+	ChildLastName          *string    `json:"child_last_name"`
 	IsActive               bool       `json:"is_active"`
 	StartDate              time.Time  `json:"start_date"`
 	EndDate                *time.Time `json:"end_date,omitempty"`

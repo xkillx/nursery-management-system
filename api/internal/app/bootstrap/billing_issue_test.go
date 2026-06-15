@@ -405,14 +405,14 @@ func TestBulkIssueAllDrafts(t *testing.T) {
 	if len(resp.Issued) != 2 {
 		t.Fatalf("issued = %d, want 2", len(resp.Issued))
 	}
-	if resp.Issued[0].ChildName != "Alpha Child" {
-		t.Fatalf("first issued = %s, want Alpha Child", resp.Issued[0].ChildName)
+	if resp.Issued[0].ChildFirstName != "Alpha Child" {
+		t.Fatalf("first issued = %s, want Alpha Child", resp.Issued[0].ChildFirstName)
 	}
 	if resp.Issued[0].InvoiceNumber != "INV-202605-0001" {
 		t.Fatalf("first number = %s, want INV-202605-0001", resp.Issued[0].InvoiceNumber)
 	}
-	if resp.Issued[1].ChildName != "Beta Child" {
-		t.Fatalf("second issued = %s, want Beta Child", resp.Issued[1].ChildName)
+	if resp.Issued[1].ChildFirstName != "Beta Child" {
+		t.Fatalf("second issued = %s, want Beta Child", resp.Issued[1].ChildFirstName)
 	}
 	if resp.Issued[1].InvoiceNumber != "INV-202605-0002" {
 		t.Fatalf("second number = %s, want INV-202605-0002", resp.Issued[1].InvoiceNumber)
@@ -790,20 +790,20 @@ type bulkIssueSummaryTest struct {
 }
 
 type issuedInvoiceResponseTest struct {
-	InvoiceID     string `json:"invoice_id"`
-	ChildID       string `json:"child_id"`
-	ChildName     string `json:"child_name"`
-	InvoiceNumber string `json:"invoice_number"`
-	IssuedAt      string `json:"issued_at"`
-	DueAt         string `json:"due_at"`
-	TotalDueMinor int    `json:"total_due_minor"`
+	InvoiceID      string `json:"invoice_id"`
+	ChildID        string `json:"child_id"`
+	ChildFirstName string `json:"child_first_name"`
+	InvoiceNumber  string `json:"invoice_number"`
+	IssuedAt       string `json:"issued_at"`
+	DueAt          string `json:"due_at"`
+	TotalDueMinor  int    `json:"total_due_minor"`
 }
 
 type blockedInvoiceTest struct {
-	InvoiceID string             `json:"invoice_id"`
-	ChildID   *string            `json:"child_id,omitempty"`
-	ChildName string             `json:"child_name,omitempty"`
-	Blockers  []issueBlockerTest `json:"blockers"`
+	InvoiceID      string             `json:"invoice_id"`
+	ChildID        *string            `json:"child_id,omitempty"`
+	ChildFirstName string             `json:"child_first_name,omitempty"`
+	Blockers       []issueBlockerTest `json:"blockers"`
 }
 
 type issueBlockerTest struct {

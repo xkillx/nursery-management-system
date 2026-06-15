@@ -18,14 +18,20 @@ import {
   ManagerPaymentStatus,
   PaginatedPaymentEvents,
 } from '../models/manager-invoices.models';
+import { formatChildName } from '../utils/manager-list-formatters';
 
-interface InvoiceListItemApi {
+interface ChildNameApi {
+  child_first_name: string;
+  child_middle_name?: string | null;
+  child_last_name?: string | null;
+}
+
+interface InvoiceListItemApi extends ChildNameApi {
   invoice_id: string;
   invoice_kind: string;
   invoice_number: string | null;
   invoice_number_display?: string;
   child_id: string;
-  child_name: string;
   billing_month: string;
   period?: { start_date: string; end_date: string } | null;
   status: string;
@@ -83,19 +89,17 @@ interface InvoiceCalculationApi {
   extras_total_minor?: number | null;
 }
 
-interface GeneratedRunExceptionApi {
+interface GeneratedRunExceptionApi extends ChildNameApi {
   child_id: string;
-  child_name: string;
   blocker_codes: string[];
 }
 
-interface InvoiceDetailApi {
+interface InvoiceDetailApi extends ChildNameApi {
   invoice_id: string;
   invoice_kind?: string;
   invoice_number: string | null;
   invoice_number_display?: string;
   child_id: string;
-  child_name: string;
   billing_month: string;
   period?: { start_date: string; end_date: string } | null;
   status: string;
@@ -247,7 +251,7 @@ export class ManagerInvoicesApiService {
       invoiceNumber: i.invoice_number,
       invoiceNumberDisplay: i.invoice_number_display ?? '',
       childId: i.child_id,
-      childName: i.child_name,
+      childName: this.childName(i),
       billingMonth: i.billing_month,
       period: i.period ? this.toPeriod(i.period) : null,
       status: i.status as ManagerInvoiceStatus,
@@ -279,7 +283,7 @@ export class ManagerInvoicesApiService {
       invoiceNumber: d.invoice_number,
       invoiceNumberDisplay: d.invoice_number_display ?? '',
       childId: d.child_id,
-      childName: d.child_name,
+      childName: this.childName(d),
       billingMonth: d.billing_month,
       period: d.period ? this.toPeriod(d.period) : null,
       status: d.status as ManagerInvoiceStatus,
@@ -320,9 +324,17 @@ export class ManagerInvoicesApiService {
   private toException(e: GeneratedRunExceptionApi): ManagerInvoiceGeneratedRunException {
     return {
       childId: e.child_id,
-      childName: e.child_name,
+      childName: this.childName(e),
       blockerCodes: e.blocker_codes,
     };
+  }
+
+  private childName(child: ChildNameApi): string {
+    return formatChildName({
+      firstName: child.child_first_name,
+      middleName: child.child_middle_name,
+      lastName: child.child_last_name,
+    });
   }
 
   private toCalculation(c: InvoiceCalculationApi): ManagerInvoiceCalculation {

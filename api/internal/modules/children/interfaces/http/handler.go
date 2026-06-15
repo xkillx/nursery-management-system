@@ -147,7 +147,9 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 	}
 
 	params := application.CreateChildParams{
-		FullName:    req.FullName,
+		FirstName:   req.FirstName,
+		MiddleName:  stringValue(req.MiddleName),
+		LastName:    stringValue(req.LastName),
 		DateOfBirth: req.DateOfBirth,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
@@ -184,7 +186,9 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 	}
 
 	params := application.UpdateChildParams{
-		FullName:    req.FullName,
+		FirstName:   req.FirstName,
+		MiddleName:  req.MiddleName,
+		LastName:    req.LastName,
 		DateOfBirth: req.DateOfBirth,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
@@ -253,12 +257,14 @@ func (h *Handler) listAttendanceHandler(c *gin.Context) {
 // Request/response types
 
 type childWriteRequest struct {
-	FullName            string `json:"full_name"`
-	DateOfBirth         string `json:"date_of_birth"`
-	StartDate           string `json:"start_date"`
-	EndDate             string `json:"end_date"`
-	CoreHourlyRateMinor *int   `json:"core_hourly_rate_minor"`
-	Notes               string `json:"notes"`
+	FirstName           string  `json:"first_name"`
+	MiddleName          *string `json:"middle_name"`
+	LastName            *string `json:"last_name"`
+	DateOfBirth         string  `json:"date_of_birth"`
+	StartDate           string  `json:"start_date"`
+	EndDate             string  `json:"end_date"`
+	CoreHourlyRateMinor *int    `json:"core_hourly_rate_minor"`
+	Notes               string  `json:"notes"`
 }
 
 type reasonRequest struct {
@@ -287,6 +293,13 @@ func writeError(c *gin.Context, status int, code, message string) {
 		Message:   message,
 		RequestID: requestID,
 	})
+}
+
+func stringValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 // requireRoles checks that the authenticated user has one of the allowed roles.

@@ -26,7 +26,7 @@ VALUES
 ON CONFLICT (tenant_id, branch_id, user_id) DO UPDATE SET role = EXCLUDED.role, is_active = true, ended_at = NULL, updated_at = now();
 
 -- Scenario: child with two guardians, one parent mapping
-INSERT INTO children (id, tenant_id, branch_id, full_name, date_of_birth, start_date, core_hourly_rate_minor, is_active)
+INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active)
 VALUES ('99999999-9999-9999-9999-999999999999', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Seed Child', '2021-01-01', '2024-01-01', 1200, true)
 ON CONFLICT (id) DO NOTHING;
 

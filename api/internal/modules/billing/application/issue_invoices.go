@@ -106,12 +106,12 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 			EntityType: domain.AuditEntityInvoice,
 			EntityID:   invoiceID,
 			Details: map[string]any{
-				"invoice_number": invoiceNumber,
-				"billing_month":  candidate.BillingMonth.Format("2006-01"),
-				"issued_run_id":  runID.String(),
-				"issue_mode":     "single",
+				"invoice_number":  invoiceNumber,
+				"billing_month":   candidate.BillingMonth.Format("2006-01"),
+				"issued_run_id":   runID.String(),
+				"issue_mode":      "single",
 				"total_due_minor": candidate.TotalDueMinor,
-				"due_at":         issueTime.Format(time.RFC3339),
+				"due_at":          issueTime.Format(time.RFC3339),
 			},
 		}); auditErr != nil {
 			return fmt.Errorf("write audit: %w", auditErr)
@@ -245,9 +245,11 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 					}
 					if row.BillingMonth.Format("2006-01") != billingMonthStr {
 						blocked = append(blocked, domain.InvoiceIssueBlocked{
-							InvoiceID: id,
-							ChildID:   &row.ChildID,
-							ChildName: row.ChildName,
+							InvoiceID:       id,
+							ChildID:         &row.ChildID,
+							ChildFirstName:  row.ChildFirstName,
+							ChildMiddleName: row.ChildMiddleName,
+							ChildLastName:   row.ChildLastName,
 							Blockers: []domain.InvoiceIssueBlocker{
 								{Code: domain.IssueBlockerInvoiceNotInBillingMonth, Message: "Invoice does not match the requested billing month."},
 							},
@@ -256,9 +258,11 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 					}
 					if row.InvoiceKind != domain.InvoiceKindMonthly {
 						blocked = append(blocked, domain.InvoiceIssueBlocked{
-							InvoiceID: id,
-							ChildID:   &row.ChildID,
-							ChildName: row.ChildName,
+							InvoiceID:       id,
+							ChildID:         &row.ChildID,
+							ChildFirstName:  row.ChildFirstName,
+							ChildMiddleName: row.ChildMiddleName,
+							ChildLastName:   row.ChildLastName,
 							Blockers: []domain.InvoiceIssueBlocker{
 								{Code: domain.IssueBlockerInvoiceNotMonthly, Message: "Invoice is not a monthly invoice."},
 							},
@@ -267,9 +271,11 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 					}
 					if row.Status != domain.InvoiceStatusDraft {
 						blocked = append(blocked, domain.InvoiceIssueBlocked{
-							InvoiceID: id,
-							ChildID:   &row.ChildID,
-							ChildName: row.ChildName,
+							InvoiceID:       id,
+							ChildID:         &row.ChildID,
+							ChildFirstName:  row.ChildFirstName,
+							ChildMiddleName: row.ChildMiddleName,
+							ChildLastName:   row.ChildLastName,
 							Blockers: []domain.InvoiceIssueBlocker{
 								{Code: domain.IssueBlockerInvoiceNotDraft, Message: "Invoice is not a draft."},
 							},
@@ -281,10 +287,16 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 			}
 		}
 
-		// Sort eligible by child name then invoice ID.
+		// Sort eligible by structured child name then invoice ID.
 		sort.Slice(eligible, func(i, j int) bool {
-			if eligible[i].ChildName != eligible[j].ChildName {
-				return eligible[i].ChildName < eligible[j].ChildName
+			if eligible[i].ChildFirstName != eligible[j].ChildFirstName {
+				return eligible[i].ChildFirstName < eligible[j].ChildFirstName
+			}
+			if stringPtrValue(eligible[i].ChildMiddleName) != stringPtrValue(eligible[j].ChildMiddleName) {
+				return stringPtrValue(eligible[i].ChildMiddleName) < stringPtrValue(eligible[j].ChildMiddleName)
+			}
+			if stringPtrValue(eligible[i].ChildLastName) != stringPtrValue(eligible[j].ChildLastName) {
+				return stringPtrValue(eligible[i].ChildLastName) < stringPtrValue(eligible[j].ChildLastName)
 			}
 			return eligible[i].ID.String() < eligible[j].ID.String()
 		})
@@ -335,13 +347,15 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 			}
 
 			issued = append(issued, domain.IssuedInvoiceResult{
-				InvoiceID:     inv.ID,
-				ChildID:       inv.ChildID,
-				ChildName:     inv.ChildName,
-				InvoiceNumber: invoiceNumber,
-				IssuedAt:      issueTime,
-				DueAt:         issueTime,
-				TotalDueMinor: inv.TotalDueMinor,
+				InvoiceID:       inv.ID,
+				ChildID:         inv.ChildID,
+				ChildFirstName:  inv.ChildFirstName,
+				ChildMiddleName: inv.ChildMiddleName,
+				ChildLastName:   inv.ChildLastName,
+				InvoiceNumber:   invoiceNumber,
+				IssuedAt:        issueTime,
+				DueAt:           issueTime,
+				TotalDueMinor:   inv.TotalDueMinor,
 			})
 			totalDueSum += inv.TotalDueMinor
 		}
@@ -374,7 +388,9 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 				}
 				if b.ChildID != nil {
 					entry["child_id"] = b.ChildID.String()
-					entry["child_name"] = b.ChildName
+					entry["child_first_name"] = b.ChildFirstName
+					entry["child_middle_name"] = b.ChildMiddleName
+					entry["child_last_name"] = b.ChildLastName
 				}
 				blockedDetails = append(blockedDetails, entry)
 			}
@@ -441,4 +457,11 @@ func parseAndDedupeInvoiceIDs(raw []string) ([]uuid.UUID, error) {
 		result = append(result, id)
 	}
 	return result, nil
+}
+
+func stringPtrValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }

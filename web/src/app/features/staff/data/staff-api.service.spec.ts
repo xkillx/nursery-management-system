@@ -15,8 +15,9 @@ describe('StaffApiService — Attendance', () => {
   const attendanceApiResponse = {
     items: [
       {
-        id: 'child-1',
-        full_name: 'Ada Lovelace',
+        id: 'child-1',first_name: 'Ada',
+middle_name: null,
+last_name: 'Lovelace',
         enrollment_complete: true,
         attendance_state: 'not_checked_in',
         open_session_id: null,
@@ -26,8 +27,9 @@ describe('StaffApiService — Attendance', () => {
         absence_marked_at: null,
       },
       {
-        id: 'child-2',
-        full_name: 'Grace Hopper',
+        id: 'child-2',first_name: 'Grace',
+middle_name: null,
+last_name: 'Hopper',
         enrollment_complete: false,
         attendance_state: 'checked_in',
         open_session_id: 'session-1',
@@ -71,6 +73,9 @@ describe('StaffApiService — Attendance', () => {
 
       expect(children[0]).toEqual({
         id: 'child-1',
+        firstName: 'Ada',
+        middleName: null,
+        lastName: 'Lovelace',
         fullName: 'Ada Lovelace',
         enrollmentComplete: true,
         attendanceState: 'not_checked_in',
@@ -83,6 +88,9 @@ describe('StaffApiService — Attendance', () => {
 
       expect(children[1]).toEqual({
         id: 'child-2',
+        firstName: 'Grace',
+        middleName: null,
+        lastName: 'Hopper',
         fullName: 'Grace Hopper',
         enrollmentComplete: false,
         attendanceState: 'checked_in',
@@ -103,8 +111,9 @@ describe('StaffApiService — Attendance', () => {
     const absentResponse = {
       items: [
         {
-          id: 'child-3',
-          full_name: 'Margaret Hamilton',
+          id: 'child-3',first_name: 'Margaret',
+middle_name: null,
+last_name: 'Hamilton',
           enrollment_complete: true,
           attendance_state: 'absent',
           open_session_id: null,
@@ -119,6 +128,9 @@ describe('StaffApiService — Attendance', () => {
     service.listAttendanceChildren().subscribe((children) => {
       expect(children[0]).toEqual({
         id: 'child-3',
+        firstName: 'Margaret',
+        middleName: null,
+        lastName: 'Hamilton',
         fullName: 'Margaret Hamilton',
         enrollmentComplete: true,
         attendanceState: 'absent',
@@ -138,8 +150,9 @@ describe('StaffApiService — Attendance', () => {
     const noAbsenceResponse = {
       items: [
         {
-          id: 'child-4',
-          full_name: 'No Absence',
+          id: 'child-4',first_name: 'No',
+middle_name: null,
+last_name: 'Absence',
           enrollment_complete: true,
           attendance_state: 'not_checked_in',
           open_session_id: null,
@@ -369,8 +382,9 @@ describe('StaffApiService — Children', () => {
   let httpMock: HttpTestingController;
 
   const childApiModel = {
-    id: 'child-1',
-    full_name: 'Ada Lovelace',
+    id: 'child-1',first_name: 'Ada',
+middle_name: null,
+last_name: 'Lovelace',
     date_of_birth: '2022-01-15',
     start_date: '2024-09-01',
     end_date: null,
@@ -416,6 +430,9 @@ describe('StaffApiService — Children', () => {
       expect(children.length).toBe(1);
       expect(children[0]).toEqual({
         id: 'child-1',
+        firstName: 'Ada',
+        middleName: null,
+        lastName: 'Lovelace',
         fullName: 'Ada Lovelace',
         dateOfBirth: '2022-01-15',
         startDate: '2024-09-01',
@@ -614,16 +631,18 @@ describe('StaffApiService — Funding', () => {
       },
       items: [
         {
-          child_id: 'child-1',
-          child_name: 'Alice',
+          child_id: 'child-1',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,
           flags: ['missing_profile'],
         },
         {
-          child_id: 'child-2',
-          child_name: 'Bob',
+          child_id: 'child-2',child_first_name: 'Bob',
+child_middle_name: null,
+child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,

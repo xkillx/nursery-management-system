@@ -44,6 +44,7 @@
         <label for="invite-role" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
         <app-select
           id="invite-role"
+          name="role"
           [options]="roleOptions"
           [(ngModel)]="role"
           [error]="!!fieldErrors['role']"

@@ -161,7 +161,7 @@ describe('ManagerChildDetailComponent', () => {
   };
 
   const mockConsents = {
-    child: { id: 'child-1', full_name: 'Emma Thompson', date_of_birth: '2022-03-15' },
+    child: { id: 'child-1', first_name: 'Emma', middle_name: null, last_name: 'Thompson', date_of_birth: '2022-03-15' },
     current: {
       id: 'consent-1',
       child_id: 'child-1',
@@ -222,7 +222,7 @@ describe('ManagerChildDetailComponent', () => {
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockRegistrationProfile));
     staffApiMock.getRegistrationConsents.and.returnValue(of(mockConsents));
     staffApiMock.getRegistrationWorkflowStatus.and.returnValue(of({
-      child: { id: 'child-1', full_name: 'Ada', date_of_birth: '2022-01-15' },
+      child: { id: 'child-1', first_name: 'Ada', middle_name: null, last_name: null, date_of_birth: '2022-01-15' },
       profile_completeness: { is_complete: false, missing_sections: [] },
       consent_completeness: { is_complete: false, missing_decisions: [] },
       can_mark_complete: false,
@@ -339,13 +339,16 @@ describe('ManagerChildDetailComponent', () => {
     component.childId = 'child-1';
     component.onEditChild();
     component.saveChild({
-      full_name: 'Emma Thompson',
+      first_name: 'Emma',
+      middle_name: null,
+      last_name: 'Thompson',
       date_of_birth: '2022-03-15',
       start_date: '2023-01-10',
     });
 
     expect(staffApiMock.updateChild).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-      full_name: 'Emma Thompson',
+      first_name: 'Emma',
+      last_name: 'Thompson',
     }));
   });
 

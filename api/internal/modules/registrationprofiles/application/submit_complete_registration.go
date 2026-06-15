@@ -19,8 +19,8 @@ import (
 )
 
 type SubmitCompleteRegistration struct {
-	profileRepo domain.Repository
-	consentRepo domain.ConsentRepository
+	profileRepo  domain.Repository
+	consentRepo  domain.ConsentRepository
 	childCreator domain.ChildCreator
 	audit        *audit.Writer
 	txMgr        *transaction.Manager
@@ -43,9 +43,11 @@ func NewSubmitCompleteRegistration(
 }
 
 type SubmitCompleteRegistrationResult struct {
-	ChildID   uuid.UUID
-	FullName  string
-	StartDate string
+	ChildID    uuid.UUID
+	FirstName  string
+	MiddleName *string
+	LastName   *string
+	StartDate  string
 }
 
 func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.ActorContext, input domain.CompleteRegistrationInput) (*SubmitCompleteRegistrationResult, error) {
@@ -57,7 +59,9 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		childInfo := domain.ChildInfo{
-			FullName:    input.Child.FullName,
+			FirstName:   strings.TrimSpace(input.Child.FirstName),
+			MiddleName:  strings.TrimSpace(input.Child.MiddleName),
+			LastName:    strings.TrimSpace(input.Child.LastName),
 			DateOfBirth: mustParseDate(input.Child.DateOfBirth),
 			StartDate:   mustParseDate(input.Child.StartDate),
 			Notes:       input.Child.Notes,
@@ -113,7 +117,9 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 			EntityType: "child",
 			EntityID:   child.ID,
 			Details: map[string]any{
-				"full_name": child.FullName,
+				"first_name":  child.FirstName,
+				"middle_name": child.MiddleName,
+				"last_name":   child.LastName,
 			},
 		}); err != nil {
 			return fmt.Errorf("registration.submit.audit_child_creation: %w", err)
@@ -132,9 +138,11 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 		}
 
 		result = &SubmitCompleteRegistrationResult{
-			ChildID:   child.ID,
-			FullName:  child.FullName,
-			StartDate: child.StartDate.Format("2006-01-02"),
+			ChildID:    child.ID,
+			FirstName:  child.FirstName,
+			MiddleName: child.MiddleName,
+			LastName:   child.LastName,
+			StartDate:  child.StartDate.Format("2006-01-02"),
 		}
 		return nil
 	})
@@ -148,8 +156,8 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistrationInput) error {
 	var missing []string
 
-	if strings.TrimSpace(input.Child.FullName) == "" {
-		missing = append(missing, "full_name")
+	if strings.TrimSpace(input.Child.FirstName) == "" {
+		missing = append(missing, "first_name")
 	}
 	if strings.TrimSpace(input.Child.DateOfBirth) == "" {
 		missing = append(missing, "date_of_birth")
@@ -183,35 +191,35 @@ func mustParseDate(s string) time.Time {
 
 func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, actor tenant.ActorContext) *domain.ConsentRecord {
 	return &domain.ConsentRecord{
-		ID:      uid.NewUUID(),
+		ID:       uid.NewUUID(),
 		TenantID: actor.TenantID,
 		BranchID: actor.BranchID,
 		ChildID:  childID,
 		Version:  version + 1,
 		Source:   domain.ConsentSourcePaperForm,
 
-		PaperFormOnFile:  ci.PaperFormOnFile,
+		PaperFormOnFile: ci.PaperFormOnFile,
 
-		UrgentMedicalTreatment:         ci.UrgentMedicalTreatment,
-		UrgentMedicalTreatmentExceptions: ci.UrgentMedicalTreatmentExceptions,
-		Plasters:                       ci.Plasters,
-			SafeguardingReportingAcknowledgement: ci.SafeguardingReportingAcknowledgement,
-			InformationSharingConsent:      ci.InformationSharingConsent,
-			GDPRDataProcessingConsent:      ci.GDPRDataProcessingConsent,
-		AreaSENCOLiaison:               ci.AreaSENCOLiaison,
-		HealthVisitorLiaison:           ci.HealthVisitorLiaison,
-		TransitionDocuments:            ci.TransitionDocuments,
-		LocalOutings:                   ci.LocalOutings,
-		FacePainting:                   ci.FacePainting,
-		ParentSuppliedSunCream:         ci.ParentSuppliedSunCream,
-		ParentSuppliedNappyCream:       ci.ParentSuppliedNappyCream,
-		DevelopmentProfilePhotos:       ci.DevelopmentProfilePhotos,
-		NurseryDisplayBoards:           ci.NurseryDisplayBoards,
-		PromotionalLiterature:          ci.PromotionalLiterature,
-		NurseryWebsite:                 ci.NurseryWebsite,
-		StaffStudentCoursework:         ci.StaffStudentCoursework,
-		SocialMedia:                    ci.SocialMedia,
-		SocialMediaChannelNotes:        ci.SocialMediaChannelNotes,
+		UrgentMedicalTreatment:               ci.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions:     ci.UrgentMedicalTreatmentExceptions,
+		Plasters:                             ci.Plasters,
+		SafeguardingReportingAcknowledgement: ci.SafeguardingReportingAcknowledgement,
+		InformationSharingConsent:            ci.InformationSharingConsent,
+		GDPRDataProcessingConsent:            ci.GDPRDataProcessingConsent,
+		AreaSENCOLiaison:                     ci.AreaSENCOLiaison,
+		HealthVisitorLiaison:                 ci.HealthVisitorLiaison,
+		TransitionDocuments:                  ci.TransitionDocuments,
+		LocalOutings:                         ci.LocalOutings,
+		FacePainting:                         ci.FacePainting,
+		ParentSuppliedSunCream:               ci.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:             ci.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:             ci.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:                 ci.NurseryDisplayBoards,
+		PromotionalLiterature:                ci.PromotionalLiterature,
+		NurseryWebsite:                       ci.NurseryWebsite,
+		StaffStudentCoursework:               ci.StaffStudentCoursework,
+		SocialMedia:                          ci.SocialMedia,
+		SocialMediaChannelNotes:              ci.SocialMediaChannelNotes,
 
 		NotesExceptions: ci.NotesExceptions,
 
@@ -242,17 +250,17 @@ func buildContactEntries(profileID, childID uuid.UUID, psi domain.ProfileSection
 
 func makeContactEntry(profileID, childID uuid.UUID, contactType domain.ContactType, order int, src domain.ContactEntryInput, actor tenant.ActorContext) domain.ContactEntry {
 	e := domain.ContactEntry{
-		ID:                       uid.NewUUID(),
-		TenantID:                 actor.TenantID,
-		BranchID:                 actor.BranchID,
-		ProfileID:                profileID,
-		ChildID:                  childID,
-		ContactType:              contactType,
-		SortOrder:                order,
-		FullName:                 src.FullName,
-		RelationshipToChild:      src.RelationshipToChild,
-		Telephone:                src.Telephone,
-		Email:                    src.Email,
+		ID:                        uid.NewUUID(),
+		TenantID:                  actor.TenantID,
+		BranchID:                  actor.BranchID,
+		ProfileID:                 profileID,
+		ChildID:                   childID,
+		ContactType:               contactType,
+		SortOrder:                 order,
+		FullName:                  src.FullName,
+		RelationshipToChild:       src.RelationshipToChild,
+		Telephone:                 src.Telephone,
+		Email:                     src.Email,
 		HasParentalResponsibility: src.HasParentalResponsibility,
 	}
 	if src.Address != nil {
@@ -267,5 +275,3 @@ func makeContactEntry(profileID, childID uuid.UUID, contactType domain.ContactTy
 	}
 	return e
 }
-
-

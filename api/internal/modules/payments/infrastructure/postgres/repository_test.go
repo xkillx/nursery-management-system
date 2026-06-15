@@ -511,8 +511,8 @@ func TestRepository_ManagerPaymentStatus_ReturnsInvoice(t *testing.T) {
 	if status.TotalDueMinor != 5000 {
 		t.Errorf("expected 5000, got %d", status.TotalDueMinor)
 	}
-	if status.ChildName == "" {
-		t.Error("expected non-empty child_name")
+	if status.ChildFirstName == "" {
+		t.Error("expected non-empty child_first_name")
 	}
 }
 

@@ -9,16 +9,20 @@ import (
 )
 
 type ChildInfo struct {
-	FullName    string
+	FirstName   string
+	MiddleName  string
+	LastName    string
 	DateOfBirth time.Time
 	StartDate   time.Time
 	Notes       string
 }
 
 type ChildCreationResult struct {
-	ID        uuid.UUID
-	FullName  string
-	StartDate time.Time
+	ID         uuid.UUID
+	FirstName  string
+	MiddleName *string
+	LastName   *string
+	StartDate  time.Time
 }
 
 type ChildCreator interface {

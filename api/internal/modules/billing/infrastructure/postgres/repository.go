@@ -39,7 +39,9 @@ func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branch
 	for _, row := range rows {
 		result = append(result, domain.PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FullName:               row.FullName,
+			FirstName:              row.FirstName,
+			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
+			LastName:               pgtypeTextToStrPtr(row.LastName),
 			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
 			StartDate:              pgtypeDateToTime(row.StartDate),
 			EndDate:                pgtypeDateToTimePtr(row.EndDate),
@@ -358,7 +360,9 @@ func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.Invoice
 		InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
 		Status:                  row.Status,
 		ChildID:                 pgtypeUUIDToUUID(row.ChildID),
-		ChildName:               row.ChildName,
+		ChildFirstName:          row.ChildFirstName,
+		ChildMiddleName:         pgtypeTextToStrPtr(row.ChildMiddleName),
+		ChildLastName:           pgtypeTextToStrPtr(row.ChildLastName),
 		BillingMonth:            pgtypeDateToTime(row.BillingMonth),
 		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
 		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
@@ -394,7 +398,9 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
 		Status:                  row.Status,
 		ChildID:                 pgtypeUUIDToUUID(row.ChildID),
-		ChildName:               row.ChildName,
+		ChildFirstName:          row.ChildFirstName,
+		ChildMiddleName:         pgtypeTextToStrPtr(row.ChildMiddleName),
+		ChildLastName:           pgtypeTextToStrPtr(row.ChildLastName),
 		BillingMonth:            pgtypeDateToTime(row.BillingMonth),
 		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
 		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
@@ -443,7 +449,7 @@ func (r *Repository) ListInvoicesForParent(ctx context.Context, tenantID, branch
 
 	result := make([]domain.ParentInvoiceRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails))
+		result = append(result, mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildFirstName, row.ChildMiddleName, row.ChildLastName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails))
 	}
 	return result, nil
 }
@@ -462,7 +468,7 @@ func (r *Repository) GetInvoiceForParent(ctx context.Context, tenantID, branchID
 		}
 		return domain.ParentInvoiceRow{}, false, err
 	}
-	return mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails), true, nil
+	return mapParentInvoiceRow(row.ID, row.InvoiceKind, row.InvoiceNumber, row.Status, row.ChildID, row.ChildFirstName, row.ChildMiddleName, row.ChildLastName, row.BillingMonth, row.PeriodStartDate, row.PeriodEndDate, row.CurrencyCode, row.SubtotalMinor, row.FundedDeductionMinor, row.TotalDueMinor, row.AmountPaidMinor, row.DueAt, row.IssuedAt, row.PaidAt, row.PaymentFailedAt, row.PaymentStatusUpdatedAt, row.CalculationDetails), true, nil
 }
 
 func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) ([]domain.ParentInvoiceLineRow, error) {
@@ -491,14 +497,16 @@ func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, br
 	return result, nil
 }
 
-func mapParentInvoiceRow(id pgtype.UUID, invoiceKind string, invoiceNumber pgtype.Text, status string, childID pgtype.UUID, childName string, billingMonth pgtype.Date, periodStartDate pgtype.Date, periodEndDate pgtype.Date, currencyCode string, subtotalMinor int32, fundedDeductionMinor int32, totalDueMinor int32, amountPaidMinor int32, dueAt pgtype.Timestamptz, issuedAt pgtype.Timestamptz, paidAt pgtype.Timestamptz, paymentFailedAt pgtype.Timestamptz, paymentStatusUpdatedAt pgtype.Timestamptz, calculationDetails []byte) domain.ParentInvoiceRow {
+func mapParentInvoiceRow(id pgtype.UUID, invoiceKind string, invoiceNumber pgtype.Text, status string, childID pgtype.UUID, childFirstName string, childMiddleName pgtype.Text, childLastName pgtype.Text, billingMonth pgtype.Date, periodStartDate pgtype.Date, periodEndDate pgtype.Date, currencyCode string, subtotalMinor int32, fundedDeductionMinor int32, totalDueMinor int32, amountPaidMinor int32, dueAt pgtype.Timestamptz, issuedAt pgtype.Timestamptz, paidAt pgtype.Timestamptz, paymentFailedAt pgtype.Timestamptz, paymentStatusUpdatedAt pgtype.Timestamptz, calculationDetails []byte) domain.ParentInvoiceRow {
 	return domain.ParentInvoiceRow{
 		ID:                     pgtypeUUIDToUUID(id),
 		InvoiceKind:            invoiceKind,
 		InvoiceNumber:          pgtypeTextToStrPtr(invoiceNumber),
 		Status:                 status,
 		ChildID:                pgtypeUUIDToUUID(childID),
-		ChildName:              childName,
+		ChildFirstName:         childFirstName,
+		ChildMiddleName:        pgtypeTextToStrPtr(childMiddleName),
+		ChildLastName:          pgtypeTextToStrPtr(childLastName),
 		BillingMonth:           pgtypeDateToTime(billingMonth),
 		PeriodStartDate:        pgtypeDateToTime(periodStartDate),
 		PeriodEndDate:          pgtypeDateToTime(periodEndDate),
@@ -620,13 +628,15 @@ func (r *Repository) MarkIssuedInvoicesOverdue(ctx context.Context, tx domain.Tx
 
 func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {
 	return domain.InvoiceIssueCandidateRow{
-		ID:            pgtypeUUIDToUUID(row.ID),
-		ChildID:       pgtypeUUIDToUUID(row.ChildID),
-		ChildName:     row.ChildName,
-		BillingMonth:  pgtypeDateToTime(row.BillingMonth),
-		InvoiceKind:   row.InvoiceKind,
-		Status:        row.Status,
-		TotalDueMinor: int(row.TotalDueMinor),
+		ID:              pgtypeUUIDToUUID(row.ID),
+		ChildID:         pgtypeUUIDToUUID(row.ChildID),
+		ChildFirstName:  row.ChildFirstName,
+		ChildMiddleName: pgtypeTextToStrPtr(row.ChildMiddleName),
+		ChildLastName:   pgtypeTextToStrPtr(row.ChildLastName),
+		BillingMonth:    pgtypeDateToTime(row.BillingMonth),
+		InvoiceKind:     row.InvoiceKind,
+		Status:          row.Status,
+		TotalDueMinor:   int(row.TotalDueMinor),
 	}
 }
 
@@ -634,13 +644,15 @@ func mapIssueCandidateRows(rows []sqlc.ListDraftInvoicesForIssueForUpdateRow) []
 	result := make([]domain.InvoiceIssueCandidateRow, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, domain.InvoiceIssueCandidateRow{
-			ID:            pgtypeUUIDToUUID(row.ID),
-			ChildID:       pgtypeUUIDToUUID(row.ChildID),
-			ChildName:     row.ChildName,
-			BillingMonth:  pgtypeDateToTime(row.BillingMonth),
-			InvoiceKind:   row.InvoiceKind,
-			Status:        row.Status,
-			TotalDueMinor: int(row.TotalDueMinor),
+			ID:              pgtypeUUIDToUUID(row.ID),
+			ChildID:         pgtypeUUIDToUUID(row.ChildID),
+			ChildFirstName:  row.ChildFirstName,
+			ChildMiddleName: pgtypeTextToStrPtr(row.ChildMiddleName),
+			ChildLastName:   pgtypeTextToStrPtr(row.ChildLastName),
+			BillingMonth:    pgtypeDateToTime(row.BillingMonth),
+			InvoiceKind:     row.InvoiceKind,
+			Status:          row.Status,
+			TotalDueMinor:   int(row.TotalDueMinor),
 		})
 	}
 	return result
@@ -650,13 +662,15 @@ func mapSelectedIssueCandidateRows(rows []sqlc.ListSelectedInvoicesForIssueForUp
 	result := make([]domain.InvoiceIssueCandidateRow, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, domain.InvoiceIssueCandidateRow{
-			ID:            pgtypeUUIDToUUID(row.ID),
-			ChildID:       pgtypeUUIDToUUID(row.ChildID),
-			ChildName:     row.ChildName,
-			BillingMonth:  pgtypeDateToTime(row.BillingMonth),
-			InvoiceKind:   row.InvoiceKind,
-			Status:        row.Status,
-			TotalDueMinor: int(row.TotalDueMinor),
+			ID:              pgtypeUUIDToUUID(row.ID),
+			ChildID:         pgtypeUUIDToUUID(row.ChildID),
+			ChildFirstName:  row.ChildFirstName,
+			ChildMiddleName: pgtypeTextToStrPtr(row.ChildMiddleName),
+			ChildLastName:   pgtypeTextToStrPtr(row.ChildLastName),
+			BillingMonth:    pgtypeDateToTime(row.BillingMonth),
+			InvoiceKind:     row.InvoiceKind,
+			Status:          row.Status,
+			TotalDueMinor:   int(row.TotalDueMinor),
 		})
 	}
 	return result
@@ -669,7 +683,9 @@ func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []domain.Pr
 	for _, row := range rows {
 		result = append(result, domain.PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FullName:               row.FullName,
+			FirstName:              row.FirstName,
+			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
+			LastName:               pgtypeTextToStrPtr(row.LastName),
 			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
 			StartDate:              pgtypeDateToTime(row.StartDate),
 			EndDate:                pgtypeDateToTimePtr(row.EndDate),
@@ -689,7 +705,9 @@ func mapSelectedRows(rows []sqlc.ListSelectedChildrenForUpdateRow) []domain.Pref
 	for _, row := range rows {
 		result = append(result, domain.PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FullName:               row.FullName,
+			FirstName:              row.FirstName,
+			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
+			LastName:               pgtypeTextToStrPtr(row.LastName),
 			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
 			StartDate:              pgtypeDateToTime(row.StartDate),
 			EndDate:                pgtypeDateToTimePtr(row.EndDate),

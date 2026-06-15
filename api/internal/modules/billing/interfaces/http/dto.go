@@ -33,7 +33,9 @@ type summaryResponse struct {
 
 type eligibleChildResponse struct {
 	ChildID                string              `json:"child_id"`
-	ChildName              string              `json:"child_name"`
+	ChildFirstName         string              `json:"child_first_name"`
+	ChildMiddleName        *string             `json:"child_middle_name"`
+	ChildLastName          *string             `json:"child_last_name"`
 	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
 	FundingProfileID       *string             `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
@@ -54,9 +56,11 @@ type existingInvoiceRef struct {
 }
 
 type blockedChildResponse struct {
-	ChildID   string            `json:"child_id"`
-	ChildName string            `json:"child_name"`
-	Blockers  []blockerResponse `json:"blockers"`
+	ChildID         string            `json:"child_id"`
+	ChildFirstName  string            `json:"child_first_name"`
+	ChildMiddleName *string           `json:"child_middle_name"`
+	ChildLastName   *string           `json:"child_last_name"`
+	Blockers        []blockerResponse `json:"blockers"`
 }
 
 type blockerResponse struct {
@@ -99,19 +103,23 @@ type generateDraftsSummary struct {
 }
 
 type generatedDraftResponse struct {
-	ChildID              string `json:"child_id"`
-	ChildName            string `json:"child_name"`
-	Action               string `json:"action"`
-	InvoiceID            string `json:"invoice_id"`
-	SubtotalMinor        int    `json:"subtotal_minor"`
-	FundedDeductionMinor int    `json:"funded_deduction_minor"`
-	TotalDueMinor        int    `json:"total_due_minor"`
+	ChildID              string  `json:"child_id"`
+	ChildFirstName       string  `json:"child_first_name"`
+	ChildMiddleName      *string `json:"child_middle_name"`
+	ChildLastName        *string `json:"child_last_name"`
+	Action               string  `json:"action"`
+	InvoiceID            string  `json:"invoice_id"`
+	SubtotalMinor        int     `json:"subtotal_minor"`
+	FundedDeductionMinor int     `json:"funded_deduction_minor"`
+	TotalDueMinor        int     `json:"total_due_minor"`
 }
 
 type generateBlockedChildResponse struct {
-	ChildID   string                    `json:"child_id"`
-	ChildName string                    `json:"child_name,omitempty"`
-	Blockers  []generateBlockerResponse `json:"blockers"`
+	ChildID         string                    `json:"child_id"`
+	ChildFirstName  string                    `json:"child_first_name,omitempty"`
+	ChildMiddleName *string                   `json:"child_middle_name"`
+	ChildLastName   *string                   `json:"child_last_name"`
+	Blockers        []generateBlockerResponse `json:"blockers"`
 }
 
 type generateBlockerResponse struct {
@@ -133,7 +141,9 @@ type invoiceListItemResponse struct {
 	InvoiceNumber        *string `json:"invoice_number"`
 	InvoiceNumberDisplay string  `json:"invoice_number_display"`
 	ChildID              string  `json:"child_id"`
-	ChildName            string  `json:"child_name"`
+	ChildFirstName       string  `json:"child_first_name"`
+	ChildMiddleName      *string `json:"child_middle_name"`
+	ChildLastName        *string `json:"child_last_name"`
 	BillingMonth         string  `json:"billing_month"`
 	Period               struct {
 		StartDate string `json:"start_date"`
@@ -166,7 +176,9 @@ type invoiceDetailResponse struct {
 	InvoiceNumber        *string `json:"invoice_number"`
 	InvoiceNumberDisplay string  `json:"invoice_number_display"`
 	ChildID              string  `json:"child_id"`
-	ChildName            string  `json:"child_name"`
+	ChildFirstName       string  `json:"child_first_name"`
+	ChildMiddleName      *string `json:"child_middle_name"`
+	ChildLastName        *string `json:"child_last_name"`
 	BillingMonth         string  `json:"billing_month"`
 	Period               struct {
 		StartDate string `json:"start_date"`
@@ -239,9 +251,11 @@ type sourceSessionResponse struct {
 }
 
 type invoiceRunExceptionResponse struct {
-	ChildID      string   `json:"child_id"`
-	ChildName    string   `json:"child_name"`
-	BlockerCodes []string `json:"blocker_codes"`
+	ChildID         string   `json:"child_id"`
+	ChildFirstName  string   `json:"child_first_name"`
+	ChildMiddleName *string  `json:"child_middle_name"`
+	ChildLastName   *string  `json:"child_last_name"`
+	BlockerCodes    []string `json:"blocker_codes"`
 }
 
 // --- Invoice Issue DTOs (API-19) ---
@@ -284,20 +298,24 @@ type bulkIssueSummary struct {
 }
 
 type issuedInvoiceResponse struct {
-	InvoiceID     string `json:"invoice_id"`
-	ChildID       string `json:"child_id"`
-	ChildName     string `json:"child_name"`
-	InvoiceNumber string `json:"invoice_number"`
-	IssuedAt      string `json:"issued_at"`
-	DueAt         string `json:"due_at"`
-	TotalDueMinor int    `json:"total_due_minor"`
+	InvoiceID       string  `json:"invoice_id"`
+	ChildID         string  `json:"child_id"`
+	ChildFirstName  string  `json:"child_first_name"`
+	ChildMiddleName *string `json:"child_middle_name"`
+	ChildLastName   *string `json:"child_last_name"`
+	InvoiceNumber   string  `json:"invoice_number"`
+	IssuedAt        string  `json:"issued_at"`
+	DueAt           string  `json:"due_at"`
+	TotalDueMinor   int     `json:"total_due_minor"`
 }
 
 type blockedInvoiceResponse struct {
-	InvoiceID string                 `json:"invoice_id"`
-	ChildID   *string                `json:"child_id,omitempty"`
-	ChildName string                 `json:"child_name,omitempty"`
-	Blockers  []issueBlockerResponse `json:"blockers"`
+	InvoiceID       string                 `json:"invoice_id"`
+	ChildID         *string                `json:"child_id,omitempty"`
+	ChildFirstName  string                 `json:"child_first_name,omitempty"`
+	ChildMiddleName *string                `json:"child_middle_name"`
+	ChildLastName   *string                `json:"child_last_name"`
+	Blockers        []issueBlockerResponse `json:"blockers"`
 }
 
 type issueBlockerResponse struct {
@@ -319,7 +337,9 @@ type parentInvoiceListItemResponse struct {
 	InvoiceNumber        *string `json:"invoice_number"`
 	InvoiceNumberDisplay string  `json:"invoice_number_display"`
 	ChildID              string  `json:"child_id"`
-	ChildName            string  `json:"child_name"`
+	ChildFirstName       string  `json:"child_first_name"`
+	ChildMiddleName      *string `json:"child_middle_name"`
+	ChildLastName        *string `json:"child_last_name"`
 	BillingMonth         string  `json:"billing_month"`
 	Period               struct {
 		StartDate string `json:"start_date"`
@@ -345,7 +365,9 @@ type parentInvoiceDetailResponse struct {
 	InvoiceNumber        *string `json:"invoice_number"`
 	InvoiceNumberDisplay string  `json:"invoice_number_display"`
 	ChildID              string  `json:"child_id"`
-	ChildName            string  `json:"child_name"`
+	ChildFirstName       string  `json:"child_first_name"`
+	ChildMiddleName      *string `json:"child_middle_name"`
+	ChildLastName        *string `json:"child_last_name"`
 	BillingMonth         string  `json:"billing_month"`
 	Period               struct {
 		StartDate string `json:"start_date"`

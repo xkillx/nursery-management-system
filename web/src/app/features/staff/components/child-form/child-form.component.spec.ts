@@ -9,6 +9,9 @@ describe('ChildFormComponent', () => {
 
   const childRecord: ChildRecord = {
     id: 'child-1',
+    firstName: 'Ada',
+    middleName: null,
+    lastName: 'Lovelace',
     fullName: 'Ada Lovelace',
     dateOfBirth: '2022-01-15',
     startDate: '2024-09-01',
@@ -36,14 +39,18 @@ describe('ChildFormComponent', () => {
   });
 
   it('creates with empty form', () => {
-    expect(component.form.full_name).toBe('');
+    expect(component.form.first_name).toBe('');
+    expect(component.form.middle_name).toBe('');
+    expect(component.form.last_name).toBe('');
   });
 
   it('populates form with child data in edit mode', () => {
     component.selectedChild = childRecord;
     component.ngOnChanges({ selectedChild: { currentValue: childRecord, previousValue: null, firstChange: true, isFirstChange: () => true } });
 
-    expect(component.form.full_name).toBe('Ada Lovelace');
+    expect(component.form.first_name).toBe('Ada');
+    expect(component.form.middle_name).toBe('');
+    expect(component.form.last_name).toBe('Lovelace');
     expect(component.form.date_of_birth).toBe('2022-01-15');
     expect(component.form.start_date).toBe('2024-09-01');
   });
@@ -51,7 +58,9 @@ describe('ChildFormComponent', () => {
   it('emits payload without core_hourly_rate_minor', () => {
     const savedSpy = spyOn(component.saved, 'emit');
 
-    component.form.full_name = 'Ada Lovelace';
+    component.form.first_name = 'Ada';
+    component.form.middle_name = '';
+    component.form.last_name = 'Lovelace';
     component.form.date_of_birth = '2022-01-15';
     component.form.start_date = '2024-09-01';
     component.form.end_date = '';
@@ -60,7 +69,9 @@ describe('ChildFormComponent', () => {
     component.submit();
 
     expect(savedSpy).toHaveBeenCalledWith({
-      full_name: 'Ada Lovelace',
+      first_name: 'Ada',
+      middle_name: null,
+      last_name: 'Lovelace',
       date_of_birth: '2022-01-15',
       start_date: '2024-09-01',
       end_date: '',
@@ -72,10 +83,12 @@ describe('ChildFormComponent', () => {
   it('resets form when selectedChild changes to null', () => {
     component.selectedChild = childRecord;
     component.ngOnChanges({ selectedChild: { currentValue: childRecord, previousValue: null, firstChange: true, isFirstChange: () => true } });
-    expect(component.form.full_name).toBe('Ada Lovelace');
+    expect(component.form.first_name).toBe('Ada');
 
     component.selectedChild = null;
     component.ngOnChanges({ selectedChild: { currentValue: null, previousValue: childRecord, firstChange: false, isFirstChange: () => false } });
-    expect(component.form.full_name).toBe('');
+    expect(component.form.first_name).toBe('');
+    expect(component.form.middle_name).toBe('');
+    expect(component.form.last_name).toBe('');
   });
 });

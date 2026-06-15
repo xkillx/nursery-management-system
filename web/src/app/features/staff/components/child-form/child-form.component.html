@@ -8,12 +8,28 @@
   }
 
   <form class="grid grid-cols-1 gap-4 md:grid-cols-2" (ngSubmit)="submit()">
-    <app-form-field label="Full name" [required]="true" [error]="fieldErrors['full_name'] || ''">
+    <app-form-field label="First name" [required]="true" [error]="fieldErrors['first_name'] || ''">
       <input
-        name="full_name"
-        [(ngModel)]="form.full_name"
+        name="first_name"
+        [(ngModel)]="form.first_name"
         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
         required
+      />
+    </app-form-field>
+
+    <app-form-field label="Middle name" [error]="fieldErrors['middle_name'] || ''">
+      <input
+        name="middle_name"
+        [(ngModel)]="form.middle_name"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+      />
+    </app-form-field>
+
+    <app-form-field label="Last name" [error]="fieldErrors['last_name'] || ''">
+      <input
+        name="last_name"
+        [(ngModel)]="form.last_name"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
       />
     </app-form-field>
 

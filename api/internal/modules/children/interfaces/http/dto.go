@@ -8,7 +8,9 @@ import (
 
 type childResponse struct {
 	ID                      string   `json:"id"`
-	FullName                string   `json:"full_name"`
+	FirstName               string   `json:"first_name"`
+	MiddleName              *string  `json:"middle_name"`
+	LastName                *string  `json:"last_name"`
 	DateOfBirth             string   `json:"date_of_birth"`
 	StartDate               string   `json:"start_date"`
 	EndDate                 *string  `json:"end_date,omitempty"`
@@ -27,7 +29,9 @@ type childResponse struct {
 
 type attendanceChildResponse struct {
 	ID                   string  `json:"id"`
-	FullName             string  `json:"full_name"`
+	FirstName            string  `json:"first_name"`
+	MiddleName           *string `json:"middle_name"`
+	LastName             *string `json:"last_name"`
 	EnrollmentComplete   bool    `json:"enrollment_complete"`
 	AttendanceState      string  `json:"attendance_state"`
 	OpenSessionID        *string `json:"open_session_id,omitempty"`
@@ -40,7 +44,9 @@ type attendanceChildResponse struct {
 func toChildResponse(child domain.Child) childResponse {
 	resp := childResponse{
 		ID:                      child.ID.String(),
-		FullName:                child.FullName,
+		FirstName:               child.FirstName,
+		MiddleName:              child.MiddleName,
+		LastName:                child.LastName,
 		DateOfBirth:             child.DateOfBirth.Format("2006-01-02"),
 		StartDate:               child.StartDate.Format("2006-01-02"),
 		CoreHourlyRateMinor:     child.CoreHourlyRateMinor,
@@ -70,7 +76,9 @@ func toChildResponse(child domain.Child) childResponse {
 func toAttendanceResponse(child domain.AttendanceChild) attendanceChildResponse {
 	resp := attendanceChildResponse{
 		ID:                   child.ID.String(),
-		FullName:             child.FullName,
+		FirstName:            child.FirstName,
+		MiddleName:           child.MiddleName,
+		LastName:             child.LastName,
 		EnrollmentComplete:   child.EnrollmentComplete,
 		AttendanceState:      child.AttendanceState,
 		HasIncompleteSession: child.HasIncompleteSession,

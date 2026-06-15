@@ -445,6 +445,13 @@ func stringToPgtypeText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: true}
 }
 
+func pgtypeTextToStringPtr(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
+}
+
 func (r *AttendanceRepository) ListIncompleteSessionsForPeriod(
 	ctx context.Context,
 	tenantID, branchID uuid.UUID,
@@ -452,9 +459,9 @@ func (r *AttendanceRepository) ListIncompleteSessionsForPeriod(
 ) ([]domain.IncompleteSessionBlocker, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.AttendanceListIncompleteSessionsForPeriod(ctx, sqlc.AttendanceListIncompleteSessionsForPeriodParams{
-		TenantID:         uuidToPgtype(tenantID),
-		BranchID:         uuidToPgtype(branchID),
-		CheckInLocalDate: timeToPgtypeDate(periodStartLocalDate),
+		TenantID:           uuidToPgtype(tenantID),
+		BranchID:           uuidToPgtype(branchID),
+		CheckInLocalDate:   timeToPgtypeDate(periodStartLocalDate),
 		CheckInLocalDate_2: timeToPgtypeDate(periodEndExclusiveLocalDate),
 	})
 	if err != nil {
@@ -464,7 +471,9 @@ func (r *AttendanceRepository) ListIncompleteSessionsForPeriod(
 	for i, row := range rows {
 		result[i] = domain.IncompleteSessionBlocker{
 			ChildID:          pgtypeUUIDToUUID(row.ChildID),
-			ChildName:        row.ChildName,
+			ChildFirstName:   row.ChildFirstName,
+			ChildMiddleName:  pgtypeTextToStringPtr(row.ChildMiddleName),
+			ChildLastName:    pgtypeTextToStringPtr(row.ChildLastName),
 			SessionID:        pgtypeUUIDToUUID(row.SessionID),
 			CheckInAt:        pgtypeTimestamptzToTime(row.CheckInAt),
 			CheckInLocalDate: pgtypeDateToTime(row.CheckInLocalDate),

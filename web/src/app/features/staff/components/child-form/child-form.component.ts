@@ -9,7 +9,9 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 
 type ChildFormValue = {
-  full_name: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
   date_of_birth: string;
   start_date: string;
   end_date: string;
@@ -48,7 +50,9 @@ export class ChildFormComponent {
 
   submit(): void {
     const payload: ChildWritePayload = {
-      full_name: this.form.full_name.trim(),
+      first_name: this.form.first_name.trim(),
+      middle_name: this.form.middle_name.trim() || null,
+      last_name: this.form.last_name.trim() || null,
       date_of_birth: this.form.date_of_birth,
       start_date: this.form.start_date,
       end_date: this.form.end_date.trim(),
@@ -60,7 +64,9 @@ export class ChildFormComponent {
 
   private fromChild(child: ChildRecord): ChildFormValue {
     return {
-      full_name: child.fullName,
+      first_name: child.firstName ?? child.fullName,
+      middle_name: child.middleName ?? '',
+      last_name: child.lastName ?? '',
       date_of_birth: child.dateOfBirth,
       start_date: child.startDate,
       end_date: child.endDate ?? '',
@@ -70,7 +76,9 @@ export class ChildFormComponent {
 
   private emptyForm(): ChildFormValue {
     return {
-      full_name: '',
+      first_name: '',
+      middle_name: '',
+      last_name: '',
       date_of_birth: '',
       start_date: '',
       end_date: '',

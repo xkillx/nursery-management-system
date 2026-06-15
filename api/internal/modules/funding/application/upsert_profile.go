@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/modules/funding/domain"
 	"nursery-management-system/api/internal/platform/audit"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/transaction"
 	"nursery-management-system/api/internal/platform/uid"
@@ -29,9 +29,9 @@ type UpsertResult struct {
 }
 
 type UpsertProfile struct {
-	repo   domain.Repository
-	txm    *transaction.Manager
-	audit  AuditWriter
+	repo  domain.Repository
+	txm   *transaction.Manager
+	audit AuditWriter
 }
 
 func NewUpsertProfile(repo domain.Repository, txm *transaction.Manager, auditWriter AuditWriter) *UpsertProfile {
@@ -92,8 +92,8 @@ func (uc *UpsertProfile) Execute(ctx context.Context, actor tenant.ActorContext,
 				EntityType: "funding_profile",
 				EntityID:   created.ID,
 				Details: map[string]any{
-					"child_id":           childID.String(),
-					"billing_month":      billingMonth.Format("2006-01"),
+					"child_id":                     childID.String(),
+					"billing_month":                billingMonth.Format("2006-01"),
 					"new_funded_allowance_minutes": params.FundedAllowanceMinutes,
 				},
 			}); auditErr != nil {
@@ -120,8 +120,8 @@ func (uc *UpsertProfile) Execute(ctx context.Context, actor tenant.ActorContext,
 			EntityType: "funding_profile",
 			EntityID:   updated.ID,
 			Details: map[string]any{
-				"child_id":           childID.String(),
-				"billing_month":      billingMonth.Format("2006-01"),
+				"child_id":                          childID.String(),
+				"billing_month":                     billingMonth.Format("2006-01"),
 				"previous_funded_allowance_minutes": previous,
 				"new_funded_allowance_minutes":      params.FundedAllowanceMinutes,
 			},

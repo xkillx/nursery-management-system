@@ -26,15 +26,17 @@ type ChildEnrollment struct {
 type OverviewFlag string
 
 const (
-	FlagMissingProfile      OverviewFlag = "missing_profile"
-	FlagExplicitZero        OverviewFlag = "explicit_zero_allowance"
-	FlagUnderOneHour        OverviewFlag = "under_one_hour_allowance"
-	FlagAbove160Hours       OverviewFlag = "above_160_hours_allowance"
+	FlagMissingProfile OverviewFlag = "missing_profile"
+	FlagExplicitZero   OverviewFlag = "explicit_zero_allowance"
+	FlagUnderOneHour   OverviewFlag = "under_one_hour_allowance"
+	FlagAbove160Hours  OverviewFlag = "above_160_hours_allowance"
 )
 
 type OverviewRow struct {
 	ChildID                uuid.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        *string
+	ChildLastName          *string
 	IsActive               bool
 	StartDate              time.Time
 	EndDate                *time.Time
@@ -44,12 +46,12 @@ type OverviewRow struct {
 }
 
 type OverviewSummary struct {
-	IncludedChildCount int
-	FlaggedChildCount  int
-	MissingProfileCount    int
-	ExplicitZeroCount      int
-	UnderOneHourCount      int
-	Above160HoursCount     int
+	IncludedChildCount  int
+	FlaggedChildCount   int
+	MissingProfileCount int
+	ExplicitZeroCount   int
+	UnderOneHourCount   int
+	Above160HoursCount  int
 }
 
 type OverviewResult struct {

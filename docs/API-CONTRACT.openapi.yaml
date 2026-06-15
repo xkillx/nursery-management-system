@@ -340,8 +340,14 @@ components:
         id:
           type: string
           format: uuid
-        full_name:
+        first_name:
           type: string
+        middle_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
         date_of_birth:
           type: string
           format: date
@@ -642,8 +648,14 @@ components:
         id:
           type: string
           format: uuid
-        full_name:
+        first_name:
           type: string
+        middle_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
         enrollment_complete:
           type: boolean
         attendance_state:
@@ -795,8 +807,14 @@ components:
         child_id:
           type: string
           format: uuid
-        child_name:
+        child_first_name:
           type: string
+        child_middle_name:
+          type: string
+          nullable: true
+        child_last_name:
+          type: string
+          nullable: true
         billing_month:
           type: string
         period:
@@ -880,8 +898,14 @@ components:
         child_id:
           type: string
           format: uuid
-        child_name:
+        child_first_name:
           type: string
+        child_middle_name:
+          type: string
+          nullable: true
+        child_last_name:
+          type: string
+          nullable: true
         billing_month:
           type: string
         period:
@@ -961,8 +985,14 @@ components:
             properties:
               child_id:
                 type: string
-              child_name:
+              child_first_name:
                 type: string
+              child_middle_name:
+                type: string
+                nullable: true
+              child_last_name:
+                type: string
+                nullable: true
               blocker_codes:
                 type: array
                 items:
@@ -984,10 +1014,16 @@ components:
       properties:
         child:
           type: object
-          required: [full_name, date_of_birth, start_date]
+          required: [first_name, date_of_birth, start_date]
           properties:
-            full_name:
+            first_name:
               type: string
+            middle_name:
+              type: string
+              nullable: true
+            last_name:
+              type: string
+              nullable: true
             date_of_birth:
               type: string
               format: date
@@ -1126,8 +1162,14 @@ components:
         id:
           type: string
           format: uuid
-        full_name:
+        first_name:
           type: string
+        middle_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
         start_date:
           type: string
           format: date
@@ -1169,10 +1211,16 @@ components:
           application/json:
             schema:
               type: object
-              required: [full_name, date_of_birth, start_date]
+              required: [first_name, date_of_birth, start_date]
               properties:
-                full_name:
+                first_name:
                   type: string
+                middle_name:
+                  type: string
+                  nullable: true
+                last_name:
+                  type: string
+                  nullable: true
                 date_of_birth:
                   type: string
                   format: date
@@ -2857,7 +2905,9 @@ components:
                     type: object
                     properties:
                       id: { type: string }
-                      full_name: { type: string }
+                      first_name: { type: string }
+                      middle_name: { type: string, nullable: true }
+                      last_name: { type: string, nullable: true }
                       date_of_birth: { type: string }
                   current:
                     type: object

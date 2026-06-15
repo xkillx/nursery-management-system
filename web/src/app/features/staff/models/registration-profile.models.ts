@@ -184,14 +184,14 @@ export interface ConsentWritePayload {
 }
 
 export interface ConsentWithCompletenessResponse {
-  child: { id: string; full_name: string; date_of_birth: string };
+  child: { id: string; first_name: string; middle_name?: string | null; last_name?: string | null; date_of_birth: string };
   current: ConsentRecord | null;
   history: ConsentRecord[];
   completeness: { is_complete: boolean; missing_decisions: string[] };
 }
 
 export interface RegistrationWorkflowStatus {
-  child: { id: string; full_name: string; date_of_birth: string };
+  child: { id: string; first_name: string; middle_name?: string | null; last_name?: string | null; date_of_birth: string };
   profile_completeness: {
     is_complete: boolean;
     missing_sections: string[];
@@ -231,7 +231,9 @@ export interface RegistrationProfileResponse {
 }
 
 export interface CompleteRegistrationChildPayload {
-  full_name: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name?: string | null;
   date_of_birth: string;
   start_date: string;
   notes?: string;
@@ -246,7 +248,9 @@ export interface CompleteRegistrationPayload {
 
 export interface CompleteRegistrationResponse {
   id: string;
-  full_name: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name?: string | null;
   start_date: string;
 }
 

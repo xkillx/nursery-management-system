@@ -7,10 +7,10 @@ import (
 )
 
 type CompletionAttestation struct {
-	ID            uuid.UUID
-	TenantID      uuid.UUID
-	BranchID      uuid.UUID
-	ChildID       uuid.UUID
+	ID       uuid.UUID
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	ChildID  uuid.UUID
 
 	ConsentRecordID  *uuid.UUID
 	ProfileUpdatedAt time.Time
@@ -25,17 +25,17 @@ type CompletionAttestation struct {
 }
 
 type WorkflowStatus struct {
-	ChildSummary   ChildSummary `json:"child_summary"`
+	ChildSummary ChildSummary `json:"child_summary"`
 
-	ProfileCompleteness    Completeness         `json:"profile_completeness"`
-	ConsentCompleteness    ConsentCompleteness   `json:"consent_completeness"`
+	ProfileCompleteness Completeness        `json:"profile_completeness"`
+	ConsentCompleteness ConsentCompleteness `json:"consent_completeness"`
 
-	CurrentConsentRecord *ConsentRecord        `json:"current_consent_record"`
+	CurrentConsentRecord *ConsentRecord         `json:"current_consent_record"`
 	LatestAttestation    *CompletionAttestation `json:"latest_attestation"`
 
-	CanMarkComplete   bool `json:"can_mark_complete"`
+	CanMarkComplete    bool `json:"can_mark_complete"`
 	IsReviewedComplete bool `json:"is_reviewed_complete"`
-	NeedsReview       bool `json:"needs_review"`
+	NeedsReview        bool `json:"needs_review"`
 
 	MissingGroups []string `json:"missing_groups,omitempty"`
 }
@@ -49,7 +49,7 @@ func ComputeWorkflowStatus(
 	profileUpdatedAt *time.Time,
 ) WorkflowStatus {
 	status := WorkflowStatus{
-		ChildSummary:        child,
+		ChildSummary:         child,
 		ProfileCompleteness:  profileCompleteness,
 		ConsentCompleteness:  consentCompleteness,
 		CurrentConsentRecord: currentConsent,

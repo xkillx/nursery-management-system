@@ -12,11 +12,11 @@ import (
 )
 
 type mockRepo struct {
-	profile   domain.FundingProfile
-	found     bool
-	err       error
+	profile    domain.FundingProfile
+	found      bool
+	err        error
 	enrollment domain.ChildEnrollment
-	enrFound  bool
+	enrFound   bool
 }
 
 func (m *mockRepo) Get(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (domain.FundingProfile, bool, error) {
@@ -120,10 +120,10 @@ func TestGetProfile_Success(t *testing.T) {
 
 func TestValidateMonthOverlap(t *testing.T) {
 	tests := []struct {
-		name      string
-		month     time.Time
+		name       string
+		month      time.Time
 		enrollment domain.ChildEnrollment
-		want      bool
+		want       bool
 	}{
 		{
 			"partial start overlap",

@@ -11,8 +11,8 @@ import (
 )
 
 type ListAttendance struct {
-	repo   domain.Repository
-	clock  func() time.Time
+	repo  domain.Repository
+	clock func() time.Time
 }
 
 func NewListAttendance(repo domain.Repository, clock func() time.Time) *ListAttendance {

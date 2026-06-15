@@ -28,25 +28,25 @@ type CompletenessSection struct {
 }
 
 type Completeness struct {
-	IsComplete     bool                 `json:"is_complete"`
-	MissingSections []SectionCode       `json:"missing_sections,omitempty"`
-	Sections       []CompletenessSection `json:"sections"`
+	IsComplete      bool                  `json:"is_complete"`
+	MissingSections []SectionCode         `json:"missing_sections,omitempty"`
+	Sections        []CompletenessSection `json:"sections"`
 }
 
 type completenessInput struct {
-	profile           *Profile
-	contacts          []ContactEntry
-	parentCarers      int
-	emergencyContacts int
+	profile              *Profile
+	contacts             []ContactEntry
+	parentCarers         int
+	emergencyContacts    int
 	authorisedCollectors int
-	passwordIsSet     bool
+	passwordIsSet        bool
 }
 
 func ComputeCompleteness(p *Profile, contacts []ContactEntry, passwordIsSet bool) Completeness {
 	in := completenessInput{
-		profile:             p,
-		contacts:            contacts,
-		passwordIsSet:       passwordIsSet,
+		profile:       p,
+		contacts:      contacts,
+		passwordIsSet: passwordIsSet,
 	}
 
 	for _, c := range contacts {

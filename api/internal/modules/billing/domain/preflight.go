@@ -8,7 +8,9 @@ import (
 
 type PreflightChildRow struct {
 	ChildID                uuid.UUID
-	FullName               string
+	FirstName              string
+	MiddleName             *string
+	LastName               *string
 	DateOfBirth            time.Time
 	StartDate              time.Time
 	EndDate                *time.Time
@@ -72,7 +74,9 @@ type ExistingInvoiceRef struct {
 
 type EligibleChild struct {
 	ChildID                uuid.UUID           `json:"child_id"`
-	ChildName              string              `json:"child_name"`
+	ChildFirstName         string              `json:"child_first_name"`
+	ChildMiddleName        *string             `json:"child_middle_name"`
+	ChildLastName          *string             `json:"child_last_name"`
 	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
 	FundingProfileID       *uuid.UUID          `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
@@ -88,9 +92,11 @@ type EligibleChild struct {
 }
 
 type BlockedChild struct {
-	ChildID   uuid.UUID          `json:"child_id"`
-	ChildName string             `json:"child_name"`
-	Blockers  []PreflightBlocker `json:"blockers"`
+	ChildID         uuid.UUID          `json:"child_id"`
+	ChildFirstName  string             `json:"child_first_name"`
+	ChildMiddleName *string            `json:"child_middle_name"`
+	ChildLastName   *string            `json:"child_last_name"`
+	Blockers        []PreflightBlocker `json:"blockers"`
 }
 
 type BlockerCount struct {

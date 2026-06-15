@@ -164,7 +164,9 @@ SELECT
     i.invoice_number,
     COALESCE(i.invoice_number, '') AS invoice_number_display,
     i.child_id,
-    c.full_name AS child_name,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.status,
     i.currency_code,
@@ -196,7 +198,9 @@ type GetManagerInvoicePaymentStatusRow struct {
 	InvoiceNumber          pgtype.Text
 	InvoiceNumberDisplay   string
 	ChildID                pgtype.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        pgtype.Text
+	ChildLastName          pgtype.Text
 	BillingMonth           pgtype.Date
 	Status                 string
 	CurrencyCode           string
@@ -220,7 +224,9 @@ func (q *Queries) GetManagerInvoicePaymentStatus(ctx context.Context, arg GetMan
 		&i.InvoiceNumber,
 		&i.InvoiceNumberDisplay,
 		&i.ChildID,
-		&i.ChildName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.BillingMonth,
 		&i.Status,
 		&i.CurrencyCode,

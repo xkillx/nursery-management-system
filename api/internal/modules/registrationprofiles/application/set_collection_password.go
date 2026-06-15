@@ -97,8 +97,8 @@ func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.Actor
 			EntityType: "child_registration_profile",
 			EntityID:   profile.ID,
 			Details: map[string]any{
-				"child_id":                  childID.String(),
-				"profile_id":                profile.ID.String(),
+				"child_id":                    childID.String(),
+				"profile_id":                  profile.ID.String(),
 				"password_was_previously_set": wasPreviouslySet,
 			},
 		}); auditErr != nil {

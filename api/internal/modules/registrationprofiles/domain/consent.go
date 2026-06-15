@@ -13,35 +13,35 @@ const (
 )
 
 type ConsentRecord struct {
-	ID      uuid.UUID
+	ID       uuid.UUID
 	TenantID uuid.UUID
 	BranchID uuid.UUID
 	ChildID  uuid.UUID
 	Version  int
 	Source   ConsentSource
 
-	PaperFormOnFile  bool
+	PaperFormOnFile bool
 
-	UrgentMedicalTreatment         bool
-	UrgentMedicalTreatmentExceptions *string
-	Plasters                       bool
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     *string
+	Plasters                             bool
 	SafeguardingReportingAcknowledgement bool
-	InformationSharingConsent      bool
-	GDPRDataProcessingConsent      bool
-	AreaSENCOLiaison               bool
-	HealthVisitorLiaison           bool
-	TransitionDocuments            bool
-	LocalOutings                   bool
-	FacePainting                   bool
-	ParentSuppliedSunCream         bool
-	ParentSuppliedNappyCream       bool
-	DevelopmentProfilePhotos       bool
-	NurseryDisplayBoards           bool
-	PromotionalLiterature          bool
-	NurseryWebsite                 bool
-	StaffStudentCoursework         bool
-	SocialMedia                    bool
-	SocialMediaChannelNotes        *string
+	InformationSharingConsent            bool
+	GDPRDataProcessingConsent            bool
+	AreaSENCOLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              *string
 
 	NotesExceptions *string
 
@@ -52,13 +52,13 @@ type ConsentRecord struct {
 }
 
 type ConsentWithCompleteness struct {
-	Current      *ConsentRecord   `json:"current"`
-	History      []ConsentRecord  `json:"history"`
+	Current      *ConsentRecord      `json:"current"`
+	History      []ConsentRecord     `json:"history"`
 	Completeness ConsentCompleteness `json:"completeness"`
 }
 
 type ConsentCompleteness struct {
-	IsComplete      bool     `json:"is_complete"`
+	IsComplete       bool     `json:"is_complete"`
 	MissingDecisions []string `json:"missing_decisions,omitempty"`
 }
 
@@ -73,15 +73,15 @@ func ComputeConsentCompleteness(record *ConsentRecord) ConsentCompleteness {
 	}
 
 	if !record.InformationSharingConsent {
-			missing = append(missing, "information_sharing_consent")
-		}
+		missing = append(missing, "information_sharing_consent")
+	}
 
-		if !record.GDPRDataProcessingConsent {
-			missing = append(missing, "gdpr_data_processing_consent")
-		}
+	if !record.GDPRDataProcessingConsent {
+		missing = append(missing, "gdpr_data_processing_consent")
+	}
 
 	return ConsentCompleteness{
-		IsComplete:      len(missing) == 0,
+		IsComplete:       len(missing) == 0,
 		MissingDecisions: missing,
 	}
 }

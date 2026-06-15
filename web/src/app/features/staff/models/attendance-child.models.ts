@@ -12,6 +12,9 @@ export interface AbsenceMarkerRecord {
 
 export interface AttendanceChildRecord {
   id: string;
+  firstName?: string;
+  middleName?: string | null;
+  lastName?: string | null;
   fullName: string;
   enrollmentComplete: boolean;
   attendanceState: AttendanceState;

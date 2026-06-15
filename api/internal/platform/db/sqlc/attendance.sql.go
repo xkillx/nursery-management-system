@@ -452,7 +452,9 @@ func (q *Queries) AttendanceInsertOpenSession(ctx context.Context, arg Attendanc
 
 const attendanceListIncompleteSessionsForPeriod = `-- name: AttendanceListIncompleteSessionsForPeriod :many
 SELECT s.child_id,
-       c.full_name AS child_name,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
        s.id AS session_id,
        s.check_in_at,
        s.check_in_local_date
@@ -466,7 +468,7 @@ WHERE s.tenant_id = $1
   AND s.status = 'open'
   AND s.check_in_local_date >= $3
   AND s.check_in_local_date < $4
-ORDER BY s.check_in_local_date ASC, c.full_name ASC, s.check_in_at ASC
+ORDER BY s.check_in_local_date ASC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC, s.check_in_at ASC
 `
 
 type AttendanceListIncompleteSessionsForPeriodParams struct {
@@ -478,7 +480,9 @@ type AttendanceListIncompleteSessionsForPeriodParams struct {
 
 type AttendanceListIncompleteSessionsForPeriodRow struct {
 	ChildID          pgtype.UUID
-	ChildName        string
+	ChildFirstName   string
+	ChildMiddleName  pgtype.Text
+	ChildLastName    pgtype.Text
 	SessionID        pgtype.UUID
 	CheckInAt        pgtype.Timestamptz
 	CheckInLocalDate pgtype.Date
@@ -500,7 +504,9 @@ func (q *Queries) AttendanceListIncompleteSessionsForPeriod(ctx context.Context,
 		var i AttendanceListIncompleteSessionsForPeriodRow
 		if err := rows.Scan(
 			&i.ChildID,
-			&i.ChildName,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
 			&i.SessionID,
 			&i.CheckInAt,
 			&i.CheckInLocalDate,

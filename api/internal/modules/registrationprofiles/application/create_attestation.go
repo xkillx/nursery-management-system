@@ -17,12 +17,12 @@ import (
 )
 
 type CreateAttestation struct {
-	profileRepo    domain.Repository
-	consentRepo    domain.ConsentRepository
-	attestRepo     domain.AttestationRepository
-	getWorkflow    *GetWorkflowStatus
-	audit          *audit.Writer
-	txMgr          *transaction.Manager
+	profileRepo domain.Repository
+	consentRepo domain.ConsentRepository
+	attestRepo  domain.AttestationRepository
+	getWorkflow *GetWorkflowStatus
+	audit       *audit.Writer
+	txMgr       *transaction.Manager
 }
 
 func NewCreateAttestation(

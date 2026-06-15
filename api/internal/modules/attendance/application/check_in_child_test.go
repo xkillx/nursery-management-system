@@ -73,14 +73,14 @@ func (f *fakeRepository) ListCorrectionHistory(ctx context.Context, tenantID, br
 
 type captureRepo struct {
 	createOpenSession struct {
-		called             bool
-		occurredAt         time.Time
-		localDate          time.Time
+		called     bool
+		occurredAt time.Time
+		localDate  time.Time
 	}
 	completeSession struct {
-		called             bool
-		occurredAt         time.Time
-		localDate          time.Time
+		called     bool
+		occurredAt time.Time
+		localDate  time.Time
 	}
 	createCorrectedSession struct {
 		called             bool

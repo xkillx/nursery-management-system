@@ -13,9 +13,9 @@ import (
 )
 
 type GetWorkflowStatus struct {
-	profileRepo  domain.Repository
-	consentRepo  domain.ConsentRepository
-	attestRepo   domain.AttestationRepository
+	profileRepo domain.Repository
+	consentRepo domain.ConsentRepository
+	attestRepo  domain.AttestationRepository
 }
 
 func NewGetWorkflowStatus(profileRepo domain.Repository, consentRepo domain.ConsentRepository, attestRepo domain.AttestationRepository) *GetWorkflowStatus {
@@ -58,9 +58,9 @@ func (uc *GetWorkflowStatus) Execute(ctx context.Context, actor tenant.ActorCont
 		profileUpdatedAt = &profile.UpdatedAt
 	} else {
 		profileCompleteness = domain.Completeness{
-			IsComplete:     false,
+			IsComplete:      false,
 			MissingSections: []domain.SectionCode{domain.SectionDemographicsHome},
-			Sections:       []domain.CompletenessSection{},
+			Sections:        []domain.CompletenessSection{},
 		}
 	}
 

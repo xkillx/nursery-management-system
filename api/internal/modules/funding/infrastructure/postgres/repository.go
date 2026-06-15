@@ -144,6 +144,13 @@ func pgtypeDateToTimePtr(d pgtype.Date) *time.Time {
 	return &d.Time
 }
 
+func pgtypeTextToStringPtr(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
+}
+
 func pgtypeTimestamptzToTime(t pgtype.Timestamptz) time.Time {
 	return t.Time
 }
@@ -187,7 +194,9 @@ func mapOverviewRow(row sqlc.FundingOverviewListRow) domain.OverviewRow {
 
 	return domain.OverviewRow{
 		ChildID:                pgtypeUUIDToUUID(row.ChildID),
-		ChildName:              row.ChildName,
+		ChildFirstName:         row.ChildFirstName,
+		ChildMiddleName:        pgtypeTextToStringPtr(row.ChildMiddleName),
+		ChildLastName:          pgtypeTextToStringPtr(row.ChildLastName),
 		IsActive:               row.IsActive,
 		StartDate:              row.StartDate.Time,
 		EndDate:                pgtypeDateToTimePtr(row.EndDate),

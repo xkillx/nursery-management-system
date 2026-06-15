@@ -131,12 +131,12 @@ func toOverviewResponse(r domain.OverviewResult) overviewResponse {
 	return overviewResponse{
 		BillingMonth: r.BillingMonth.Format("2006-01"),
 		Summary: overviewSummaryResponse{
-			IncludedChildCount: r.Summary.IncludedChildCount,
-			FlaggedChildCount:  r.Summary.FlaggedChildCount,
-			MissingProfileCount:    r.Summary.MissingProfileCount,
-			ExplicitZeroCount:      r.Summary.ExplicitZeroCount,
-			UnderOneHourCount:      r.Summary.UnderOneHourCount,
-			Above160HoursCount:     r.Summary.Above160HoursCount,
+			IncludedChildCount:  r.Summary.IncludedChildCount,
+			FlaggedChildCount:   r.Summary.FlaggedChildCount,
+			MissingProfileCount: r.Summary.MissingProfileCount,
+			ExplicitZeroCount:   r.Summary.ExplicitZeroCount,
+			UnderOneHourCount:   r.Summary.UnderOneHourCount,
+			Above160HoursCount:  r.Summary.Above160HoursCount,
 		},
 		Items: items,
 	}
@@ -150,11 +150,13 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 	}
 
 	resp := overviewItemResponse{
-		ChildID:   row.ChildID.String(),
-		ChildName: row.ChildName,
-		IsActive:  row.IsActive,
-		StartDate: row.StartDate,
-		Flags:     flags,
+		ChildID:         row.ChildID.String(),
+		ChildFirstName:  row.ChildFirstName,
+		ChildMiddleName: row.ChildMiddleName,
+		ChildLastName:   row.ChildLastName,
+		IsActive:        row.IsActive,
+		StartDate:       row.StartDate,
+		Flags:           flags,
 	}
 	if row.EndDate != nil {
 		resp.EndDate = row.EndDate

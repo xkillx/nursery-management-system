@@ -24,7 +24,9 @@ type ParentInvoiceRow struct {
 	InvoiceNumber          *string
 	Status                 string
 	ChildID                uuid.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        *string
+	ChildLastName          *string
 	BillingMonth           time.Time
 	PeriodStartDate        time.Time
 	PeriodEndDate          time.Time

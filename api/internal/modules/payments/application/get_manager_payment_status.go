@@ -35,7 +35,9 @@ type ManagerPaymentStatusResult struct {
 	InvoiceNumber           string
 	InvoiceNumberDisplay    string
 	ChildID                 string
-	ChildName               string
+	ChildFirstName          string
+	ChildMiddleName         *string
+	ChildLastName           *string
 	BillingMonth            string
 	Status                  string
 	DueStatus               string
@@ -121,7 +123,9 @@ func (uc *GetManagerPaymentStatus) Execute(ctx context.Context, actor tenant.Act
 		InvoiceNumber:           invoice.InvoiceNumber,
 		InvoiceNumberDisplay:    invoice.InvoiceNumberDisplay,
 		ChildID:                 invoice.ChildID,
-		ChildName:               invoice.ChildName,
+		ChildFirstName:          invoice.ChildFirstName,
+		ChildMiddleName:         invoice.ChildMiddleName,
+		ChildLastName:           invoice.ChildLastName,
 		BillingMonth:            invoice.BillingMonth,
 		Status:                  invoice.Status,
 		DueStatus:               computeDueStatus(invoice.Status),

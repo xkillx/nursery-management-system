@@ -18,7 +18,9 @@ import (
 )
 
 type CreateChildParams struct {
-	FullName    string
+	FirstName   string
+	MiddleName  string
+	LastName    string
 	DateOfBirth string
 	StartDate   string
 	EndDate     string
@@ -36,10 +38,12 @@ func NewCreateChild(repo domain.Repository, auditWriter *audit.Writer, pool *pgx
 }
 
 func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, params CreateChildParams) (domain.Child, error) {
-	fullName := strings.TrimSpace(params.FullName)
-	if fullName == "" {
-		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "full_name")
+	firstName := strings.TrimSpace(params.FirstName)
+	if firstName == "" {
+		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "first_name")
 	}
+	middleName := strings.TrimSpace(params.MiddleName)
+	lastName := strings.TrimSpace(params.LastName)
 
 	dob, err := parseDate(params.DateOfBirth)
 	if err != nil {
@@ -67,11 +71,17 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 
 	child := domain.Child{
 		ID:          uid.NewUUID(),
-		FullName:    fullName,
+		FirstName:   firstName,
 		DateOfBirth: dob,
 		StartDate:   startDate,
 		EndDate:     endDate,
 		IsActive:    true,
+	}
+	if middleName != "" {
+		child.MiddleName = &middleName
+	}
+	if lastName != "" {
+		child.LastName = &lastName
 	}
 
 	if err := uc.repo.Create(ctx, child, notes, actor.TenantID, actor.BranchID); err != nil {

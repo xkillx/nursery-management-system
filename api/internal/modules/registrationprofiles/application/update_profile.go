@@ -163,12 +163,12 @@ func (uc *UpdateProfile) Execute(ctx context.Context, actor tenant.ActorContext,
 		}
 
 		auditDetails := map[string]any{
-			"child_id":             childID.String(),
-			"profile_id":           profile.ID.String(),
-			"changed_sections":     sectionCodesToStrings(changedSections),
-			"profile_created":      created,
-			"completeness_before":  completenessToStrings(completenessBefore),
-			"completeness_after":   completenessToStrings(completenessAfter),
+			"child_id":            childID.String(),
+			"profile_id":          profile.ID.String(),
+			"changed_sections":    sectionCodesToStrings(changedSections),
+			"profile_created":     created,
+			"completeness_before": completenessToStrings(completenessBefore),
+			"completeness_after":  completenessToStrings(completenessAfter),
 		}
 
 		if auditErr := uc.auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{

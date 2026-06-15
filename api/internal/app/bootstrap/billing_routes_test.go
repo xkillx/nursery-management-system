@@ -365,16 +365,16 @@ func TestBillingPreflightMixed(t *testing.T) {
 	if len(resp.EligibleChildren) != 3 {
 		t.Fatalf("eligible children = %d, want 3", len(resp.EligibleChildren))
 	}
-	if resp.EligibleChildren[0].ChildName != "Alice Eligible" {
-		t.Fatalf("first eligible = %s, want Alice Eligible", resp.EligibleChildren[0].ChildName)
+	if resp.EligibleChildren[0].ChildFirstName != "Alice Eligible" {
+		t.Fatalf("first eligible = %s, want Alice Eligible", resp.EligibleChildren[0].ChildFirstName)
 	}
 	if resp.EligibleChildren[0].RawAttendedMinutes != 480 {
 		t.Fatalf("alice raw = %d, want 480", resp.EligibleChildren[0].RawAttendedMinutes)
 	}
 
 	// Bob: zero attendance
-	if resp.EligibleChildren[1].ChildName != "Bob Zero Attendance" {
-		t.Fatalf("second eligible = %s, want Bob Zero Attendance", resp.EligibleChildren[1].ChildName)
+	if resp.EligibleChildren[1].ChildFirstName != "Bob Zero Attendance" {
+		t.Fatalf("second eligible = %s, want Bob Zero Attendance", resp.EligibleChildren[1].ChildFirstName)
 	}
 	if resp.EligibleChildren[1].RawAttendedMinutes != 0 {
 		t.Fatalf("bob raw = %d, want 0", resp.EligibleChildren[1].RawAttendedMinutes)
@@ -387,8 +387,8 @@ func TestBillingPreflightMixed(t *testing.T) {
 	}
 
 	// Frank: has existing draft invoice
-	if resp.EligibleChildren[2].ChildName != "Frank Draft Invoice" {
-		t.Fatalf("third eligible = %s, want Frank Draft Invoice", resp.EligibleChildren[2].ChildName)
+	if resp.EligibleChildren[2].ChildFirstName != "Frank Draft Invoice" {
+		t.Fatalf("third eligible = %s, want Frank Draft Invoice", resp.EligibleChildren[2].ChildFirstName)
 	}
 	if resp.EligibleChildren[2].ExistingInvoice == nil {
 		t.Fatal("frank should have existing_invoice")
@@ -401,22 +401,22 @@ func TestBillingPreflightMixed(t *testing.T) {
 	if len(resp.BlockedChildren) != 4 {
 		t.Fatalf("blocked children = %d, want 4", len(resp.BlockedChildren))
 	}
-	if resp.BlockedChildren[0].ChildName != "Charlie No Funding" {
-		t.Fatalf("first blocked = %s, want Charlie No Funding", resp.BlockedChildren[0].ChildName)
+	if resp.BlockedChildren[0].ChildFirstName != "Charlie No Funding" {
+		t.Fatalf("first blocked = %s, want Charlie No Funding", resp.BlockedChildren[0].ChildFirstName)
 	}
 	if resp.BlockedChildren[0].Blockers[0].Code != "missing_funding_profile" {
 		t.Fatalf("charlie blocker = %s, want missing_funding_profile", resp.BlockedChildren[0].Blockers[0].Code)
 	}
 
-	if resp.BlockedChildren[1].ChildName != "Diana No Guardian" {
-		t.Fatalf("second blocked = %s, want Diana No Guardian", resp.BlockedChildren[1].ChildName)
+	if resp.BlockedChildren[1].ChildFirstName != "Diana No Guardian" {
+		t.Fatalf("second blocked = %s, want Diana No Guardian", resp.BlockedChildren[1].ChildFirstName)
 	}
 	if resp.BlockedChildren[1].Blockers[0].Code != "missing_guardian_link" {
 		t.Fatalf("diana blocker = %s, want missing_guardian_link", resp.BlockedChildren[1].Blockers[0].Code)
 	}
 
-	if resp.BlockedChildren[2].ChildName != "Eve Open Session" {
-		t.Fatalf("third blocked = %s, want Eve Open Session", resp.BlockedChildren[2].ChildName)
+	if resp.BlockedChildren[2].ChildFirstName != "Eve Open Session" {
+		t.Fatalf("third blocked = %s, want Eve Open Session", resp.BlockedChildren[2].ChildFirstName)
 	}
 	if resp.BlockedChildren[2].Blockers[0].Code != "incomplete_attendance" {
 		t.Fatalf("eve blocker = %s, want incomplete_attendance", resp.BlockedChildren[2].Blockers[0].Code)
@@ -425,8 +425,8 @@ func TestBillingPreflightMixed(t *testing.T) {
 		t.Fatal("eve blocker should have session_id")
 	}
 
-	if resp.BlockedChildren[3].ChildName != "Grace Issued Invoice" {
-		t.Fatalf("fourth blocked = %s, want Grace Issued Invoice", resp.BlockedChildren[3].ChildName)
+	if resp.BlockedChildren[3].ChildFirstName != "Grace Issued Invoice" {
+		t.Fatalf("fourth blocked = %s, want Grace Issued Invoice", resp.BlockedChildren[3].ChildFirstName)
 	}
 	if resp.BlockedChildren[3].Blockers[0].Code != "invoice_already_issued" {
 		t.Fatalf("grace blocker = %s, want invoice_already_issued", resp.BlockedChildren[3].Blockers[0].Code)
@@ -662,8 +662,8 @@ func TestBillingGenerationFullMonthCreatesDrafts(t *testing.T) {
 	if resp.Generated[0].Action != "created" {
 		t.Fatalf("action = %s, want created", resp.Generated[0].Action)
 	}
-	if resp.Generated[0].ChildName != "Alice Eligible" {
-		t.Fatalf("child_name = %s, want Alice Eligible", resp.Generated[0].ChildName)
+	if resp.Generated[0].ChildFirstName != "Alice Eligible" {
+		t.Fatalf("child_first_name = %s, want Alice Eligible", resp.Generated[0].ChildFirstName)
 	}
 
 	// Verify DB state: 1 run, 1 invoice, 2 lines, 1 audit
@@ -1122,7 +1122,7 @@ type summaryResponse struct {
 
 type eligibleChildResponse struct {
 	ChildID                string              `json:"child_id"`
-	ChildName              string              `json:"child_name"`
+	ChildFirstName         string              `json:"child_first_name"`
 	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
 	FundingProfileID       *string             `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
@@ -1143,9 +1143,9 @@ type existingInvoiceRef struct {
 }
 
 type blockedChildResponse struct {
-	ChildID   string            `json:"child_id"`
-	ChildName string            `json:"child_name"`
-	Blockers  []blockerResponse `json:"blockers"`
+	ChildID        string            `json:"child_id"`
+	ChildFirstName string            `json:"child_first_name"`
+	Blockers       []blockerResponse `json:"blockers"`
 }
 
 type blockerResponse struct {
@@ -1183,7 +1183,7 @@ type genDraftsSummary struct {
 
 type genDraftChildResponse struct {
 	ChildID              string `json:"child_id"`
-	ChildName            string `json:"child_name"`
+	ChildFirstName       string `json:"child_first_name"`
 	Action               string `json:"action"`
 	InvoiceID            string `json:"invoice_id"`
 	SubtotalMinor        int    `json:"subtotal_minor"`
@@ -1192,9 +1192,9 @@ type genDraftChildResponse struct {
 }
 
 type genBlockedChildResponse struct {
-	ChildID   string               `json:"child_id"`
-	ChildName string               `json:"child_name,omitempty"`
-	Blockers  []genBlockerResponse `json:"blockers"`
+	ChildID        string               `json:"child_id"`
+	ChildFirstName string               `json:"child_first_name,omitempty"`
+	Blockers       []genBlockerResponse `json:"blockers"`
 }
 
 type genBlockerResponse struct {
@@ -1620,7 +1620,7 @@ func TestInvoiceListDraftInvoice(t *testing.T) {
 		runID, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1),
 		uuid.MustParse("b3000000-0000-0000-0000-000000000001"),
 		uuid.MustParse("b4000000-0000-0000-0000-000000000001"),
-		`{"blocked_children":[{"child_id":"b5000000-0000-0000-0000-000000000099","child_name":"Blocked Kid","blocker_codes":["missing_funding_profile"]}]}`)
+		`{"blocked_children":[{"child_id":"b5000000-0000-0000-0000-000000000099","child_first_name":"Blocked Kid","blocker_codes":["missing_funding_profile"]}]}`)
 	if err != nil {
 		t.Fatalf("insert run: %v", err)
 	}
@@ -1667,8 +1667,8 @@ func TestInvoiceListDraftInvoice(t *testing.T) {
 	if item.GeneratedRunID == nil || *item.GeneratedRunID != runID.String() {
 		t.Fatalf("expected generated_run_id %s", runID.String())
 	}
-	if item.ChildName != "Draft Child" {
-		t.Fatalf("expected child_name 'Draft Child', got %s", item.ChildName)
+	if item.ChildFirstName != "Draft Child" {
+		t.Fatalf("expected child_first_name 'Draft Child', got %s", item.ChildFirstName)
 	}
 }
 
@@ -1757,7 +1757,7 @@ func TestInvoiceDetailDraft(t *testing.T) {
 		runID, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1),
 		uuid.MustParse("b3000000-0000-0000-0000-000000000001"),
 		uuid.MustParse("b4000000-0000-0000-0000-000000000001"),
-		`{"blocked_children":[{"child_id":"`+childID.String()+`","child_name":"Detail Child","blocker_codes":["missing_funding_profile"]}]}`)
+		`{"blocked_children":[{"child_id":"`+childID.String()+`","child_first_name":"Detail Child","blocker_codes":["missing_funding_profile"]}]}`)
 	if err != nil {
 		t.Fatalf("insert run: %v", err)
 	}
@@ -1976,7 +1976,7 @@ type invoiceListItemResponseTest struct {
 	InvoiceNumber              *string `json:"invoice_number"`
 	InvoiceNumberDisplay       string  `json:"invoice_number_display"`
 	ChildID                    string  `json:"child_id"`
-	ChildName                  string  `json:"child_name"`
+	ChildFirstName             string  `json:"child_first_name"`
 	BillingMonth               string  `json:"billing_month"`
 	Status                     string  `json:"status"`
 	DueStatus                  string  `json:"due_status"`
@@ -2005,7 +2005,7 @@ type invoiceDetailResponseTest struct {
 	InvoiceNumber              *string                           `json:"invoice_number"`
 	InvoiceNumberDisplay       string                            `json:"invoice_number_display"`
 	ChildID                    string                            `json:"child_id"`
-	ChildName                  string                            `json:"child_name"`
+	ChildFirstName             string                            `json:"child_first_name"`
 	BillingMonth               string                            `json:"billing_month"`
 	Status                     string                            `json:"status"`
 	DueStatus                  string                            `json:"due_status"`
@@ -2046,7 +2046,7 @@ type sourceSessionResponseTest struct {
 }
 
 type invoiceRunExceptionResponseTest struct {
-	ChildID      string   `json:"child_id"`
-	ChildName    string   `json:"child_name"`
-	BlockerCodes []string `json:"blocker_codes"`
+	ChildID        string   `json:"child_id"`
+	ChildFirstName string   `json:"child_first_name"`
+	BlockerCodes   []string `json:"blocker_codes"`
 }

@@ -268,7 +268,6 @@ type Child struct {
 	ID                  pgtype.UUID
 	TenantID            pgtype.UUID
 	BranchID            pgtype.UUID
-	FullName            string
 	DateOfBirth         pgtype.Date
 	StartDate           pgtype.Date
 	EndDate             pgtype.Date
@@ -280,6 +279,9 @@ type Child struct {
 	UpdatedAt           pgtype.Timestamptz
 	LeftReasonCode      interface{}
 	LeftReasonNote      pgtype.Text
+	FirstName           string
+	MiddleName          pgtype.Text
+	LastName            pgtype.Text
 }
 
 type ChildRegistrationCompletionAttestation struct {

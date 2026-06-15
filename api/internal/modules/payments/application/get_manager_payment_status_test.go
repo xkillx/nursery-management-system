@@ -52,7 +52,7 @@ func payableInvoice() domain.ManagerInvoicePaymentStatus {
 		InvoiceKind:     "monthly",
 		InvoiceNumber:   "INV-202605-0001",
 		ChildID:         uuid.New().String(),
-		ChildName:       "Alex Child",
+		ChildFirstName:  "Alex Child",
 		BillingMonth:    "2026-05",
 		Status:          "issued",
 		CurrencyCode:    "GBP",

@@ -34,12 +34,15 @@ describe('InvoiceRunApiService', () => {
           total_due_minor: 42000,
         },
         eligible_children: [
-          { child_id: 'c1', child_name: 'Ben', rounded_attended_minutes: 1320, funded_deduction_minor: 4500, total_due_minor: 21000 },
+          { child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, rounded_attended_minutes: 1320, funded_deduction_minor: 4500, total_due_minor: 21000 },
         ],
         blocked_children: [
           {
-            child_id: 'c2',
-            child_name: 'Alice',
+            child_id: 'c2',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null,
             blockers: [{ code: 'incomplete_attendance', message: '3 sessions missing check-out' }],
           },
         ],
@@ -70,13 +73,18 @@ describe('InvoiceRunApiService', () => {
         status: 'completed_with_exceptions',
         summary: { eligible_count: 3, success_count: 2, blocked_count: 1, total_due_minor: 42000 },
         generated: [
-          { child_id: 'c1', child_name: 'Ben', action: 'created', invoice_id: 'inv-1' },
-          { child_id: 'c3', child_name: 'Chloe', action: 'updated', invoice_id: 'inv-3' },
+          { child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, action: 'created', invoice_id: 'inv-1' },
+          { child_id: 'c3',child_first_name: 'Chloe',
+child_middle_name: null,
+child_last_name: null, action: 'updated', invoice_id: 'inv-3' },
         ],
         blocked: [
           {
-            child_id: 'c2',
-            child_name: 'Alice',
+            child_id: 'c2',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null,
             blockers: [{ code: 'incomplete_attendance', message: 'Missing sessions' }],
           },
         ],
@@ -113,7 +121,9 @@ describe('InvoiceRunApiService', () => {
     it('performs list then detail calls and maps lines/calculation', () => {
       const listResponse = {
         items: [
-          { invoice_id: 'inv-1', child_id: 'c1', child_name: 'Ben', billing_month: '2026-05', status: 'draft', subtotal_minor: 33000, funded_deduction_minor: 9000, total_due_minor: 24000, invoice_number: null, issued_at: null },
+          { invoice_id: 'inv-1', child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, billing_month: '2026-05', status: 'draft', subtotal_minor: 33000, funded_deduction_minor: 9000, total_due_minor: 24000, invoice_number: null, issued_at: null },
         ],
         limit: 200,
         offset: 0,
@@ -121,8 +131,9 @@ describe('InvoiceRunApiService', () => {
 
       const detailResponse = {
         invoice_id: 'inv-1',
-        child_id: 'c1',
-        child_name: 'Ben',
+        child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null,
         billing_month: '2026-05',
         status: 'draft',
         subtotal_minor: 33000,
@@ -175,8 +186,12 @@ describe('InvoiceRunApiService', () => {
         status: 'completed',
         summary: { issued_count: 2, blocked_count: 0, total_due_minor: 48000 },
         issued: [
-          { invoice_id: 'inv-1', invoice_number: 'INV-202605-0001', child_id: 'c1', child_name: 'Ben', issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
-          { invoice_id: 'inv-2', invoice_number: 'INV-202605-0002', child_id: 'c3', child_name: 'Chloe', issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
+          { invoice_id: 'inv-1', invoice_number: 'INV-202605-0001', child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
+          { invoice_id: 'inv-2', invoice_number: 'INV-202605-0002', child_id: 'c3',child_first_name: 'Chloe',
+child_middle_name: null,
+child_last_name: null, issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
         ],
         blocked: [],
       };
@@ -205,10 +220,14 @@ describe('InvoiceRunApiService', () => {
         status: 'completed_with_exceptions',
         summary: { issued_count: 1, blocked_count: 1, total_due_minor: 24000 },
         issued: [
-          { invoice_id: 'inv-1', invoice_number: 'INV-202605-0001', child_id: 'c1', child_name: 'Ben', issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
+          { invoice_id: 'inv-1', invoice_number: 'INV-202605-0001', child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
         ],
         blocked: [
-          { invoice_id: 'inv-2', child_id: 'c2', child_name: 'Alice', blockers: [{ code: 'invoice_not_draft', message: 'Invoice is not in draft status' }] },
+          { invoice_id: 'inv-2', child_id: 'c2',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null, blockers: [{ code: 'invoice_not_draft', message: 'Invoice is not in draft status' }] },
         ],
       };
 
@@ -240,8 +259,9 @@ describe('InvoiceRunApiService', () => {
         eligible_children: [],
         blocked_children: [
           {
-            child_id: 'c2',
-            child_name: 'Alice',
+            child_id: 'c2',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null,
             blockers: [
               { code: 'incomplete_attendance', message: '3 sessions missing check-out' },
               { code: 'missing_funding_profile', message: 'No funding profile configured' },
@@ -275,10 +295,18 @@ describe('InvoiceRunApiService', () => {
         status: 'completed',
         summary: { eligible_count: 4, success_count: 4, blocked_count: 0, total_due_minor: 96000 },
         generated: [
-          { child_id: 'c1', child_name: 'Ben', action: 'created', invoice_id: 'inv-1' },
-          { child_id: 'c3', child_name: 'Chloe', action: 'updated', invoice_id: 'inv-3' },
-          { child_id: 'c4', child_name: 'Dan', action: 'created', invoice_id: 'inv-4' },
-          { child_id: 'c5', child_name: 'Eve', action: 'updated', invoice_id: 'inv-5' },
+          { child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, action: 'created', invoice_id: 'inv-1' },
+          { child_id: 'c3',child_first_name: 'Chloe',
+child_middle_name: null,
+child_last_name: null, action: 'updated', invoice_id: 'inv-3' },
+          { child_id: 'c4',child_first_name: 'Dan',
+child_middle_name: null,
+child_last_name: null, action: 'created', invoice_id: 'inv-4' },
+          { child_id: 'c5',child_first_name: 'Eve',
+child_middle_name: null,
+child_last_name: null, action: 'updated', invoice_id: 'inv-5' },
         ],
         blocked: [],
       };
@@ -303,10 +331,14 @@ describe('InvoiceRunApiService', () => {
         status: 'completed_with_exceptions',
         summary: { issued_count: 1, blocked_count: 1, total_due_minor: 24000 },
         issued: [
-          { invoice_id: 'inv-1', invoice_number: 'INV-001', child_id: 'c1', child_name: 'Ben', issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
+          { invoice_id: 'inv-1', invoice_number: 'INV-001', child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null, issued_at: '2026-06-09T12:00:00Z', total_due_minor: 24000 },
         ],
         blocked: [
-          { invoice_id: 'inv-2', child_id: 'c2', child_name: 'Alice', blockers: [] },
+          { invoice_id: 'inv-2', child_id: 'c2',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null, blockers: [] },
         ],
       };
 
@@ -334,8 +366,9 @@ describe('InvoiceRunApiService', () => {
 
       const detailResponse = {
         invoice_id: 'inv-1',
-        child_id: 'c1',
-        child_name: 'Ben',
+        child_id: 'c1',child_first_name: 'Ben',
+child_middle_name: null,
+child_last_name: null,
         billing_month: '2026-05',
         status: 'issued',
         subtotal_minor: 33000,

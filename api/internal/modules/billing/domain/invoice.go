@@ -38,7 +38,7 @@ const (
 // Invoice run type constants.
 const (
 	InvoiceRunTypeDraftGeneration = "draft_generation"
-	InvoiceRunTypeIssue            = "issue"
+	InvoiceRunTypeIssue           = "issue"
 )
 
 // Generation-selected child blocker codes (added by API-17).
@@ -65,7 +65,9 @@ type GenerateDraftInvoicesParams struct {
 // DraftGenerationChildResult is the per-child outcome of draft generation.
 type DraftGenerationChildResult struct {
 	ChildID              uuid.UUID
-	ChildName            string
+	ChildFirstName       string
+	ChildMiddleName      *string
+	ChildLastName        *string
 	Action               DraftInvoiceAction
 	InvoiceID            uuid.UUID
 	SubtotalMinor        int
@@ -75,9 +77,11 @@ type DraftGenerationChildResult struct {
 
 // DraftGenerationBlockedChild represents a child-month that could not be generated.
 type DraftGenerationBlockedChild struct {
-	ChildID   uuid.UUID
-	ChildName string
-	Blockers  []PreflightBlocker
+	ChildID         uuid.UUID
+	ChildFirstName  string
+	ChildMiddleName *string
+	ChildLastName   *string
+	Blockers        []PreflightBlocker
 }
 
 // DraftGenerationResult is the application-level result of a generation run.
@@ -178,21 +182,25 @@ type IssueInvoiceResult struct {
 
 // IssuedInvoiceResult is the per-invoice outcome of a bulk issue.
 type IssuedInvoiceResult struct {
-	InvoiceID     uuid.UUID
-	ChildID       uuid.UUID
-	ChildName     string
-	InvoiceNumber string
-	IssuedAt      time.Time
-	DueAt         time.Time
-	TotalDueMinor int
+	InvoiceID       uuid.UUID
+	ChildID         uuid.UUID
+	ChildFirstName  string
+	ChildMiddleName *string
+	ChildLastName   *string
+	InvoiceNumber   string
+	IssuedAt        time.Time
+	DueAt           time.Time
+	TotalDueMinor   int
 }
 
 // InvoiceIssueBlocked represents an invoice that could not be issued.
 type InvoiceIssueBlocked struct {
-	InvoiceID uuid.UUID
-	ChildID   *uuid.UUID
-	ChildName string
-	Blockers  []InvoiceIssueBlocker
+	InvoiceID       uuid.UUID
+	ChildID         *uuid.UUID
+	ChildFirstName  string
+	ChildMiddleName *string
+	ChildLastName   *string
+	Blockers        []InvoiceIssueBlocker
 }
 
 // InvoiceIssueBlocker is a single blocker reason for an invoice issue.
@@ -203,12 +211,12 @@ type InvoiceIssueBlocker struct {
 
 // BulkIssueInvoicesResult is the application-level result of a bulk issue run.
 type BulkIssueInvoicesResult struct {
-	RunID         uuid.UUID
-	BillingMonth  string
-	Status        string
-	Summary       InvoiceIssueSummary
-	Issued        []IssuedInvoiceResult
-	Blocked       []InvoiceIssueBlocked
+	RunID        uuid.UUID
+	BillingMonth string
+	Status       string
+	Summary      InvoiceIssueSummary
+	Issued       []IssuedInvoiceResult
+	Blocked      []InvoiceIssueBlocked
 }
 
 // InvoiceIssueSummary holds aggregate counts and totals for an issue run.
@@ -221,26 +229,28 @@ type InvoiceIssueSummary struct {
 
 // InvoiceIssueCandidateRow maps a row from the invoices table for issue.
 type InvoiceIssueCandidateRow struct {
-	ID            uuid.UUID
-	ChildID       uuid.UUID
-	ChildName     string
-	BillingMonth  time.Time
-	InvoiceKind   string
-	Status        string
-	TotalDueMinor int
+	ID              uuid.UUID
+	ChildID         uuid.UUID
+	ChildFirstName  string
+	ChildMiddleName *string
+	ChildLastName   *string
+	BillingMonth    time.Time
+	InvoiceKind     string
+	Status          string
+	TotalDueMinor   int
 }
 
 // IssueInvoiceUpdateParams holds fields needed to mark an invoice as issued.
 type IssueInvoiceUpdateParams struct {
-	ID                    uuid.UUID
-	TenantID              uuid.UUID
-	BranchID              uuid.UUID
-	InvoiceNumber         string
-	IssuedSequence        int
-	IssuedRunID           uuid.UUID
-	IssuedAt              time.Time
-	IssuedByUserID        uuid.UUID
-	IssuedByMembershipID  uuid.UUID
+	ID                   uuid.UUID
+	TenantID             uuid.UUID
+	BranchID             uuid.UUID
+	InvoiceNumber        string
+	IssuedSequence       int
+	IssuedRunID          uuid.UUID
+	IssuedAt             time.Time
+	IssuedByUserID       uuid.UUID
+	IssuedByMembershipID uuid.UUID
 }
 
 // InvoiceRunCreateParams holds fields needed to create an invoice_runs row.
@@ -333,7 +343,7 @@ type OverdueTransitionedInvoice struct {
 
 // OverdueTransitionResult is the result of an overdue transition job run.
 type OverdueTransitionResult struct {
-	LockAcquired     bool
+	LockAcquired      bool
 	CurrentLondonDate time.Time
 	CutoffUTC         time.Time
 	Transitioned      []OverdueTransitionedInvoice

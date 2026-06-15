@@ -118,16 +118,18 @@ describe('ManagerFundingOverviewComponent', () => {
       },
       items: [
         {
-          child_id: 'child-1',
-          child_name: 'Alice',
+          child_id: 'child-1',child_first_name: 'Alice',
+child_middle_name: null,
+child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,
           flags: ['missing_profile'],
         },
         {
-          child_id: 'child-2',
-          child_name: 'Bob',
+          child_id: 'child-2',child_first_name: 'Bob',
+child_middle_name: null,
+child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,

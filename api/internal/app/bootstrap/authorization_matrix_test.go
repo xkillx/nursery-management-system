@@ -16,8 +16,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
 	authdomain "nursery-management-system/api/internal/modules/authentication/domain"
+	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
 	"nursery-management-system/api/internal/modules/payments/domain"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/dbtest"
@@ -29,19 +29,19 @@ import (
 // ---------------------------------------------------------------------------
 
 type authzHarness struct {
-	router  *gin.Engine
-	pool    *pgxpool.Pool
-	tokens  *authtokens.TokenManager
-	logger  *slog.Logger
-	cfg     config.Config
+	router *gin.Engine
+	pool   *pgxpool.Pool
+	tokens *authtokens.TokenManager
+	logger *slog.Logger
+	cfg    config.Config
 
 	// Scope A
 	tenantA uuid.UUID
 	branchA uuid.UUID
 
-	managerAUID    uuid.UUID
-	managerAMID    uuid.UUID
-	managerAToken  string
+	managerAUID   uuid.UUID
+	managerAMID   uuid.UUID
+	managerAToken string
 
 	practitionerAUID   uuid.UUID
 	practitionerAMID   uuid.UUID
@@ -68,17 +68,17 @@ type authzHarness struct {
 	parentBToken string
 
 	// Seeded scope A entities
-	childA       uuid.UUID
+	childA         uuid.UUID
 	inactiveChildA uuid.UUID
-	guardianA    uuid.UUID
-	linkA        uuid.UUID
-	mappingA     uuid.UUID
-	inviteA      uuid.UUID
-	absenceA     uuid.UUID
-	childAFunding uuid.UUID
-	invoiceARun  uuid.UUID
-	invoiceA     uuid.UUID
-	draftInvoiceA uuid.UUID
+	guardianA      uuid.UUID
+	linkA          uuid.UUID
+	mappingA       uuid.UUID
+	inviteA        uuid.UUID
+	absenceA       uuid.UUID
+	childAFunding  uuid.UUID
+	invoiceARun    uuid.UUID
+	invoiceA       uuid.UUID
+	draftInvoiceA  uuid.UUID
 
 	// Seeded scope B entities
 	childB    uuid.UUID
@@ -104,14 +104,14 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 		tenantA: uuid.MustParse("a1000000-0000-0000-0000-000000000001"),
 		branchA: uuid.MustParse("a1000000-0000-0000-0000-000000000002"),
 
-		managerAUID:    uuid.MustParse("a1000000-0000-0000-0000-000000000010"),
-		managerAMID:    uuid.MustParse("a1000000-0000-0000-0000-000000000011"),
+		managerAUID: uuid.MustParse("a1000000-0000-0000-0000-000000000010"),
+		managerAMID: uuid.MustParse("a1000000-0000-0000-0000-000000000011"),
 
-		practitionerAUID:   uuid.MustParse("a1000000-0000-0000-0000-000000000020"),
-		practitionerAMID:   uuid.MustParse("a1000000-0000-0000-0000-000000000021"),
+		practitionerAUID: uuid.MustParse("a1000000-0000-0000-0000-000000000020"),
+		practitionerAMID: uuid.MustParse("a1000000-0000-0000-0000-000000000021"),
 
-		parentAUID:   uuid.MustParse("a1000000-0000-0000-0000-000000000030"),
-		parentAMID:   uuid.MustParse("a1000000-0000-0000-0000-000000000031"),
+		parentAUID: uuid.MustParse("a1000000-0000-0000-0000-000000000030"),
+		parentAMID: uuid.MustParse("a1000000-0000-0000-0000-000000000031"),
 
 		ownerAUID: uuid.MustParse("a1000000-0000-0000-0000-000000000040"),
 		ownerAMID: uuid.MustParse("a1000000-0000-0000-0000-000000000041"),
@@ -403,14 +403,14 @@ func containsString(ss []string, s string) bool {
 type routeClass string
 
 const (
-	classPublic             routeClass = "public"
-	classProtectedBusiness  routeClass = "protected_business"
+	classPublic            routeClass = "public"
+	classProtectedBusiness routeClass = "protected_business"
 )
 
 type routeEntry struct {
-	Method      string
-	Path        string // exact Gin path pattern
-	Class       routeClass
+	Method       string
+	Path         string // exact Gin path pattern
+	Class        routeClass
 	AllowedRoles []string // empty = public
 }
 
@@ -622,8 +622,8 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		// Children
 		{"list children", "GET", "/api/v1/children", ""},
 		{"get child", "GET", "/api/v1/children/" + h.childA.String(), ""},
-		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
-		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"full_name":"Y"}`},
+		{"create child", "POST", "/api/v1/children", `{"first_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
+		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"first_name":"Y"}`},
 		{"mark inactive", "POST", "/api/v1/children/" + h.childA.String() + "/actions/mark-inactive", `{"reason_code":"other"}`},
 
 		// Children attendance list
@@ -707,8 +707,8 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 	}{
 		{"list children", "GET", "/api/v1/children", ""},
 		{"get child", "GET", "/api/v1/children/" + h.childA.String(), ""},
-		{"create child", "POST", "/api/v1/children", `{"full_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
-		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"full_name":"Y"}`},
+		{"create child", "POST", "/api/v1/children", `{"first_name":"X","date_of_birth":"2021-01-01","start_date":"2026-01-01"}`},
+		{"update child", "PATCH", "/api/v1/children/" + h.childA.String(), `{"first_name":"Y"}`},
 		{"mark inactive", "POST", "/api/v1/children/" + h.childA.String() + "/actions/mark-inactive", `{"reason_code":"other"}`},
 
 		{"list guardians", "GET", "/api/v1/guardians", ""},
@@ -746,7 +746,6 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		{"get registration profile", "GET", "/api/v1/children/" + h.childA.String() + "/registration-profile", ""},
 		{"patch registration profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/registration-profile", `{"demographics_home":{"sex":"female"}}`},
 		{"set collection password", "PUT", "/api/v1/children/" + h.childA.String() + "/registration-profile/collection-password", `{"password":"test1234"}`},
-
 	}
 
 	for _, tc := range managerOnlyRoutes {
@@ -809,10 +808,10 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		t.Run(tc.name+"_practitioner_forbidden", func(t *testing.T) {
 			w := h.doReq(t, tc.method, tc.path, h.practitionerAToken, tc.body)
 			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
-		t.Run(tc.name+"_owner_forbidden", func(t *testing.T) {
-			w := h.doReq(t, tc.method, tc.path, h.ownerAToken, tc.body)
-			assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
-		})
+			t.Run(tc.name+"_owner_forbidden", func(t *testing.T) {
+				w := h.doReq(t, tc.method, tc.path, h.ownerAToken, tc.body)
+				assertStatusAndCode(t, w, http.StatusForbidden, "forbidden_role")
+			})
 		})
 	}
 
@@ -945,7 +944,6 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 		}
 	})
 
-
 	// Parent invoice routes with scope B invoice
 	t.Run("parent invoice detail scope B not found", func(t *testing.T) {
 		w := h.get(t, "/api/v1/parent/invoices/"+h.invoiceB.String(), h.parentAToken)
@@ -1016,124 +1014,124 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 		endedLinkID, h.tenantA, h.branchA, endedLinkGuardian, endedLinkChild, endedAt)
 	if err != nil {
 		t.Fatalf("insert ended link: %v", err)
-	dbtest.InsertParentMapping(t, h.pool, endedLinkMapping, h.tenantA, h.branchA, h.parentAMID, endedLinkGuardian)
-	_, err = h.pool.Exec(ctx, `INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
+		dbtest.InsertParentMapping(t, h.pool, endedLinkMapping, h.tenantA, h.branchA, h.parentAMID, endedLinkGuardian)
+		_, err = h.pool.Exec(ctx, `INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
 		invoice_number, issued_sequence, generated_run_id, issued_run_id,
 		issued_at, issued_by_user_id, issued_by_membership_id, locked_at, due_at,
 		currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, amount_paid_minor,
 		period_start_date, period_end_date, calculation_details)
 		VALUES ($1,$2,$3,$4,$5,'monthly','issued','INV-EL-001',1,$6,$6,now(),$7,$8,now(),now() + interval '7 days',
 		'GBP',5000,0,5000,0,$9,$10,'{}')`,
-		endedLinkInvoice, h.tenantA, h.branchA, endedLinkChild, dbtest.DateAt(2026, 5, 1),
-		runID, h.managerAUID, h.managerAMID,
-		dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31))
-	if err != nil {
-		t.Fatalf("insert ended link invoice: %v", err)
-	}
+			endedLinkInvoice, h.tenantA, h.branchA, endedLinkChild, dbtest.DateAt(2026, 5, 1),
+			runID, h.managerAUID, h.managerAMID,
+			dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31))
+		if err != nil {
+			t.Fatalf("insert ended link invoice: %v", err)
+		}
 
-	// Ended mapping child
-	dbtest.InsertChild(t, h.pool, endedMappingChild, h.tenantA, h.branchA, "Ended Mapping Child",
-		dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), 500, true)
-	dbtest.InsertGuardian(t, h.pool, endedMappingGuardian, h.tenantA, h.branchA, "Ended Mapping Guardian", true)
-	dbtest.InsertGuardianLink(t, h.pool, endedMappingLink, h.tenantA, h.branchA, endedMappingGuardian, endedMappingChild)
-	_, err = h.pool.Exec(ctx, `INSERT INTO parent_membership_guardians (id, tenant_id, branch_id, membership_id, guardian_id, ended_at, ended_reason_code)
+		// Ended mapping child
+		dbtest.InsertChild(t, h.pool, endedMappingChild, h.tenantA, h.branchA, "Ended Mapping Child",
+			dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), 500, true)
+		dbtest.InsertGuardian(t, h.pool, endedMappingGuardian, h.tenantA, h.branchA, "Ended Mapping Guardian", true)
+		dbtest.InsertGuardianLink(t, h.pool, endedMappingLink, h.tenantA, h.branchA, endedMappingGuardian, endedMappingChild)
+		_, err = h.pool.Exec(ctx, `INSERT INTO parent_membership_guardians (id, tenant_id, branch_id, membership_id, guardian_id, ended_at, ended_reason_code)
 		VALUES ($1, $2, $3, $4, $5, $6, 'duplicate_record')`,
-		endedMappingID, h.tenantA, h.branchA, h.parentAMID, endedMappingGuardian, endedAt)
-	if err != nil {
-		t.Fatalf("insert ended mapping: %v", err)
-	}
-	_, err = h.pool.Exec(ctx, `INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
+			endedMappingID, h.tenantA, h.branchA, h.parentAMID, endedMappingGuardian, endedAt)
+		if err != nil {
+			t.Fatalf("insert ended mapping: %v", err)
+		}
+		_, err = h.pool.Exec(ctx, `INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
 		invoice_number, issued_sequence, generated_run_id, issued_run_id,
 		issued_at, issued_by_user_id, issued_by_membership_id, locked_at, due_at,
 		currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, amount_paid_minor,
 		period_start_date, period_end_date, calculation_details)
 		VALUES ($1,$2,$3,$4,$5,'monthly','issued','INV-EM-001',1,$6,$6,now(),$7,$8,now(),now() + interval '7 days',
 		'GBP',5000,0,5000,0,$9,$10,'{}')`,
-		endedMappingInvoice, h.tenantA, h.branchA, endedMappingChild, dbtest.DateAt(2026, 5, 1),
-		runID, h.managerAUID, h.managerAMID,
-		dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31))
-	if err != nil {
-		t.Fatalf("insert ended mapping invoice: %v", err)
+			endedMappingInvoice, h.tenantA, h.branchA, endedMappingChild, dbtest.DateAt(2026, 5, 1),
+			runID, h.managerAUID, h.managerAMID,
+			dbtest.DateAt(2026, 5, 1), dbtest.DateAt(2026, 5, 31))
+		if err != nil {
+			t.Fatalf("insert ended mapping invoice: %v", err)
+		}
+
+		// --- Assertions ---
+
+		t.Run("parent list includes linked issued invoice", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+			ids := extractIDs(t, w)
+			if !containsString(ids, h.invoiceA.String()) {
+				t.Fatal("linked issued invoice should appear in parent list")
+			}
+		})
+
+		t.Run("parent list excludes unlinked invoice", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+			ids := extractIDs(t, w)
+			if containsString(ids, unlinkedInvoice.String()) {
+				t.Fatal("unlinked invoice should not appear in parent list")
+			}
+		})
+
+		t.Run("parent list excludes ended-link invoice", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+			ids := extractIDs(t, w)
+			if containsString(ids, endedLinkInvoice.String()) {
+				t.Fatal("ended-link invoice should not appear in parent list")
+			}
+		})
+
+		t.Run("parent list excludes ended-mapping invoice", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+			ids := extractIDs(t, w)
+			if containsString(ids, endedMappingInvoice.String()) {
+				t.Fatal("ended-mapping invoice should not appear in parent list")
+			}
+		})
+
+		t.Run("parent list excludes draft invoice", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+			ids := extractIDs(t, w)
+			if containsString(ids, h.draftInvoiceA.String()) {
+				t.Fatal("draft invoice should not appear in parent list")
+			}
+		})
+
+		t.Run("parent detail unlinked returns 404", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices/"+unlinkedInvoice.String(), h.parentAToken)
+			assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
+		})
+
+		t.Run("parent detail ended-link returns 404", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices/"+endedLinkInvoice.String(), h.parentAToken)
+			assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
+		})
+
+		t.Run("parent detail ended-mapping returns 404", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices/"+endedMappingInvoice.String(), h.parentAToken)
+			assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
+		})
+
+		t.Run("parent detail linked returns 200", func(t *testing.T) {
+			w := h.get(t, "/api/v1/parent/invoices/"+h.invoiceA.String(), h.parentAToken)
+			assertStatus(t, w, http.StatusOK)
+		})
+
+		t.Run("parent checkout unlinked returns 404", func(t *testing.T) {
+			w := h.post(t, "/api/v1/parent/invoices/"+unlinkedInvoice.String()+"/checkout-sessions", h.parentAToken, "")
+			assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
+		})
+
+		t.Run("parent checkout linked returns 201", func(t *testing.T) {
+			w := h.post(t, "/api/v1/parent/invoices/"+h.invoiceA.String()+"/checkout-sessions", h.parentAToken, "")
+			assertStatus(t, w, http.StatusCreated)
+		})
+
 	}
-
-	// --- Assertions ---
-
-	t.Run("parent list includes linked issued invoice", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-		ids := extractIDs(t, w)
-		if !containsString(ids, h.invoiceA.String()) {
-			t.Fatal("linked issued invoice should appear in parent list")
-		}
-	})
-
-	t.Run("parent list excludes unlinked invoice", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-		ids := extractIDs(t, w)
-		if containsString(ids, unlinkedInvoice.String()) {
-			t.Fatal("unlinked invoice should not appear in parent list")
-		}
-	})
-
-	t.Run("parent list excludes ended-link invoice", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-		ids := extractIDs(t, w)
-		if containsString(ids, endedLinkInvoice.String()) {
-			t.Fatal("ended-link invoice should not appear in parent list")
-		}
-	})
-
-	t.Run("parent list excludes ended-mapping invoice", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-		ids := extractIDs(t, w)
-		if containsString(ids, endedMappingInvoice.String()) {
-			t.Fatal("ended-mapping invoice should not appear in parent list")
-		}
-	})
-
-	t.Run("parent list excludes draft invoice", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices", h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-		ids := extractIDs(t, w)
-		if containsString(ids, h.draftInvoiceA.String()) {
-			t.Fatal("draft invoice should not appear in parent list")
-		}
-	})
-
-	t.Run("parent detail unlinked returns 404", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices/"+unlinkedInvoice.String(), h.parentAToken)
-		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
-	})
-
-	t.Run("parent detail ended-link returns 404", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices/"+endedLinkInvoice.String(), h.parentAToken)
-		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
-	})
-
-	t.Run("parent detail ended-mapping returns 404", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices/"+endedMappingInvoice.String(), h.parentAToken)
-		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
-	})
-
-	t.Run("parent detail linked returns 200", func(t *testing.T) {
-		w := h.get(t, "/api/v1/parent/invoices/"+h.invoiceA.String(), h.parentAToken)
-		assertStatus(t, w, http.StatusOK)
-	})
-
-	t.Run("parent checkout unlinked returns 404", func(t *testing.T) {
-		w := h.post(t, "/api/v1/parent/invoices/"+unlinkedInvoice.String()+"/checkout-sessions", h.parentAToken, "")
-		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
-	})
-
-	t.Run("parent checkout linked returns 201", func(t *testing.T) {
-		w := h.post(t, "/api/v1/parent/invoices/"+h.invoiceA.String()+"/checkout-sessions", h.parentAToken, "")
-		assertStatus(t, w, http.StatusCreated)
-	})
-
-}
 }
 
 // ---------------------------------------------------------------------------

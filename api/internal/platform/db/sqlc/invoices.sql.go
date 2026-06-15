@@ -190,7 +190,11 @@ func (q *Queries) DeleteDraftSystemInvoiceLines(ctx context.Context, arg DeleteD
 }
 
 const getInvoiceForIssueForUpdate = `-- name: GetInvoiceForIssueForUpdate :one
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
@@ -205,13 +209,15 @@ type GetInvoiceForIssueForUpdateParams struct {
 }
 
 type GetInvoiceForIssueForUpdateRow struct {
-	ID            pgtype.UUID
-	ChildID       pgtype.UUID
-	ChildName     string
-	BillingMonth  pgtype.Date
-	InvoiceKind   string
-	Status        string
-	TotalDueMinor int32
+	ID              pgtype.UUID
+	ChildID         pgtype.UUID
+	ChildFirstName  string
+	ChildMiddleName pgtype.Text
+	ChildLastName   pgtype.Text
+	BillingMonth    pgtype.Date
+	InvoiceKind     string
+	Status          string
+	TotalDueMinor   int32
 }
 
 func (q *Queries) GetInvoiceForIssueForUpdate(ctx context.Context, arg GetInvoiceForIssueForUpdateParams) (GetInvoiceForIssueForUpdateRow, error) {
@@ -220,7 +226,9 @@ func (q *Queries) GetInvoiceForIssueForUpdate(ctx context.Context, arg GetInvoic
 	err := row.Scan(
 		&i.ID,
 		&i.ChildID,
-		&i.ChildName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.BillingMonth,
 		&i.InvoiceKind,
 		&i.Status,
@@ -396,7 +404,10 @@ func (q *Queries) InvoiceGet(ctx context.Context, arg InvoiceGetParams) (Invoice
 const invoiceGetForManagerReview = `-- name: InvoiceGetForManagerReview :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -430,7 +441,9 @@ type InvoiceGetForManagerReviewRow struct {
 	InvoiceNumber           pgtype.Text
 	Status                  string
 	ChildID                 pgtype.UUID
-	ChildName               string
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
 	BillingMonth            pgtype.Date
 	PeriodStartDate         pgtype.Date
 	PeriodEndDate           pgtype.Date
@@ -467,7 +480,9 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 		&i.InvoiceNumber,
 		&i.Status,
 		&i.ChildID,
-		&i.ChildName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.BillingMonth,
 		&i.PeriodStartDate,
 		&i.PeriodEndDate,
@@ -500,7 +515,10 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 const invoiceGetForParent = `-- name: InvoiceGetForParent :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -548,7 +566,9 @@ type InvoiceGetForParentRow struct {
 	InvoiceNumber          pgtype.Text
 	Status                 string
 	ChildID                pgtype.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        pgtype.Text
+	ChildLastName          pgtype.Text
 	BillingMonth           pgtype.Date
 	PeriodStartDate        pgtype.Date
 	PeriodEndDate          pgtype.Date
@@ -579,7 +599,9 @@ func (q *Queries) InvoiceGetForParent(ctx context.Context, arg InvoiceGetForPare
 		&i.InvoiceNumber,
 		&i.Status,
 		&i.ChildID,
-		&i.ChildName,
+		&i.ChildFirstName,
+		&i.ChildMiddleName,
+		&i.ChildLastName,
 		&i.BillingMonth,
 		&i.PeriodStartDate,
 		&i.PeriodEndDate,
@@ -805,7 +827,10 @@ func (q *Queries) InvoiceLinesForParent(ctx context.Context, arg InvoiceLinesFor
 const invoiceListForManagerReview = `-- name: InvoiceListForManagerReview :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -828,7 +853,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($3::date IS NULL OR i.billing_month = $3::date)
   AND ($4::text IS NULL OR i.status = $4::text)
   AND ($5::uuid IS NULL OR i.child_id = $5::uuid)
-ORDER BY i.billing_month DESC, c.full_name ASC, i.created_at DESC, i.id ASC
+ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
 LIMIT $7 OFFSET $6
 `
 
@@ -848,7 +873,9 @@ type InvoiceListForManagerReviewRow struct {
 	InvoiceNumber           pgtype.Text
 	Status                  string
 	ChildID                 pgtype.UUID
-	ChildName               string
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
 	BillingMonth            pgtype.Date
 	PeriodStartDate         pgtype.Date
 	PeriodEndDate           pgtype.Date
@@ -899,7 +926,9 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 			&i.InvoiceNumber,
 			&i.Status,
 			&i.ChildID,
-			&i.ChildName,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
 			&i.BillingMonth,
 			&i.PeriodStartDate,
 			&i.PeriodEndDate,
@@ -939,7 +968,10 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 const invoiceListForParent = `-- name: InvoiceListForParent :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,
-    i.child_id, c.full_name AS child_name,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
     i.billing_month,
     i.period_start_date, i.period_end_date,
     i.currency_code,
@@ -984,7 +1016,9 @@ ORDER BY
   END,
   i.due_at ASC NULLS LAST,
   i.billing_month DESC,
-  c.full_name ASC,
+  c.first_name ASC,
+  c.middle_name ASC NULLS FIRST,
+  c.last_name ASC NULLS FIRST,
   i.id ASC
 LIMIT $8 OFFSET $7
 `
@@ -1006,7 +1040,9 @@ type InvoiceListForParentRow struct {
 	InvoiceNumber          pgtype.Text
 	Status                 string
 	ChildID                pgtype.UUID
-	ChildName              string
+	ChildFirstName         string
+	ChildMiddleName        pgtype.Text
+	ChildLastName          pgtype.Text
 	BillingMonth           pgtype.Date
 	PeriodStartDate        pgtype.Date
 	PeriodEndDate          pgtype.Date
@@ -1047,7 +1083,9 @@ func (q *Queries) InvoiceListForParent(ctx context.Context, arg InvoiceListForPa
 			&i.InvoiceNumber,
 			&i.Status,
 			&i.ChildID,
-			&i.ChildName,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
 			&i.BillingMonth,
 			&i.PeriodStartDate,
 			&i.PeriodEndDate,
@@ -1219,7 +1257,9 @@ func (q *Queries) ListAttendanceSessionsForGeneration(ctx context.Context, arg L
 const listCandidateChildrenForUpdate = `-- name: ListCandidateChildrenForUpdate :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -1253,7 +1293,7 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < $4
   AND (c.end_date IS NULL OR c.end_date >= $3)
-ORDER BY c.full_name, c.id
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 FOR UPDATE OF c
 `
 
@@ -1266,7 +1306,9 @@ type ListCandidateChildrenForUpdateParams struct {
 
 type ListCandidateChildrenForUpdateRow struct {
 	ChildID                pgtype.UUID
-	FullName               string
+	FirstName              string
+	MiddleName             pgtype.Text
+	LastName               pgtype.Text
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
@@ -1294,7 +1336,9 @@ func (q *Queries) ListCandidateChildrenForUpdate(ctx context.Context, arg ListCa
 		var i ListCandidateChildrenForUpdateRow
 		if err := rows.Scan(
 			&i.ChildID,
-			&i.FullName,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
 			&i.DateOfBirth,
 			&i.StartDate,
 			&i.EndDate,
@@ -1364,7 +1408,11 @@ func (q *Queries) ListDraftExtraLines(ctx context.Context, arg ListDraftExtraLin
 }
 
 const listDraftInvoicesForIssueForUpdate = `-- name: ListDraftInvoicesForIssueForUpdate :many
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
@@ -1373,7 +1421,7 @@ WHERE i.tenant_id = $1
   AND i.billing_month = $3
   AND i.invoice_kind = 'monthly'
   AND i.status = 'draft'
-ORDER BY c.full_name ASC, i.id ASC
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.id ASC
 FOR UPDATE OF i
 `
 
@@ -1384,13 +1432,15 @@ type ListDraftInvoicesForIssueForUpdateParams struct {
 }
 
 type ListDraftInvoicesForIssueForUpdateRow struct {
-	ID            pgtype.UUID
-	ChildID       pgtype.UUID
-	ChildName     string
-	BillingMonth  pgtype.Date
-	InvoiceKind   string
-	Status        string
-	TotalDueMinor int32
+	ID              pgtype.UUID
+	ChildID         pgtype.UUID
+	ChildFirstName  string
+	ChildMiddleName pgtype.Text
+	ChildLastName   pgtype.Text
+	BillingMonth    pgtype.Date
+	InvoiceKind     string
+	Status          string
+	TotalDueMinor   int32
 }
 
 func (q *Queries) ListDraftInvoicesForIssueForUpdate(ctx context.Context, arg ListDraftInvoicesForIssueForUpdateParams) ([]ListDraftInvoicesForIssueForUpdateRow, error) {
@@ -1405,7 +1455,9 @@ func (q *Queries) ListDraftInvoicesForIssueForUpdate(ctx context.Context, arg Li
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChildID,
-			&i.ChildName,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
 			&i.BillingMonth,
 			&i.InvoiceKind,
 			&i.Status,
@@ -1424,7 +1476,9 @@ func (q *Queries) ListDraftInvoicesForIssueForUpdate(ctx context.Context, arg Li
 const listSelectedChildrenForUpdate = `-- name: ListSelectedChildrenForUpdate :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -1455,7 +1509,7 @@ LEFT JOIN invoices i
 WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.id = ANY($3::uuid[])
-ORDER BY c.full_name, c.id
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 FOR UPDATE OF c
 `
 
@@ -1467,7 +1521,9 @@ type ListSelectedChildrenForUpdateParams struct {
 
 type ListSelectedChildrenForUpdateRow struct {
 	ChildID                pgtype.UUID
-	FullName               string
+	FirstName              string
+	MiddleName             pgtype.Text
+	LastName               pgtype.Text
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
@@ -1490,7 +1546,9 @@ func (q *Queries) ListSelectedChildrenForUpdate(ctx context.Context, arg ListSel
 		var i ListSelectedChildrenForUpdateRow
 		if err := rows.Scan(
 			&i.ChildID,
-			&i.FullName,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
 			&i.DateOfBirth,
 			&i.StartDate,
 			&i.EndDate,
@@ -1512,14 +1570,18 @@ func (q *Queries) ListSelectedChildrenForUpdate(ctx context.Context, arg ListSel
 }
 
 const listSelectedInvoicesForIssueForUpdate = `-- name: ListSelectedInvoicesForIssueForUpdate :many
-SELECT i.id, i.child_id, c.full_name AS child_name, i.billing_month,
+SELECT i.id, i.child_id,
+       c.first_name AS child_first_name,
+       c.middle_name AS child_middle_name,
+       c.last_name AS child_last_name,
+       i.billing_month,
        i.invoice_kind, i.status, i.total_due_minor
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.id = ANY($3::uuid[])
-ORDER BY c.full_name ASC, i.id ASC
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.id ASC
 FOR UPDATE OF i
 `
 
@@ -1530,13 +1592,15 @@ type ListSelectedInvoicesForIssueForUpdateParams struct {
 }
 
 type ListSelectedInvoicesForIssueForUpdateRow struct {
-	ID            pgtype.UUID
-	ChildID       pgtype.UUID
-	ChildName     string
-	BillingMonth  pgtype.Date
-	InvoiceKind   string
-	Status        string
-	TotalDueMinor int32
+	ID              pgtype.UUID
+	ChildID         pgtype.UUID
+	ChildFirstName  string
+	ChildMiddleName pgtype.Text
+	ChildLastName   pgtype.Text
+	BillingMonth    pgtype.Date
+	InvoiceKind     string
+	Status          string
+	TotalDueMinor   int32
 }
 
 func (q *Queries) ListSelectedInvoicesForIssueForUpdate(ctx context.Context, arg ListSelectedInvoicesForIssueForUpdateParams) ([]ListSelectedInvoicesForIssueForUpdateRow, error) {
@@ -1551,7 +1615,9 @@ func (q *Queries) ListSelectedInvoicesForIssueForUpdate(ctx context.Context, arg
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChildID,
-			&i.ChildName,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
 			&i.BillingMonth,
 			&i.InvoiceKind,
 			&i.Status,
@@ -1723,7 +1789,9 @@ func (q *Queries) PreflightListAttendanceSessions(ctx context.Context, arg Prefl
 const preflightListChildren = `-- name: PreflightListChildren :many
 SELECT
     c.id AS child_id,
-    c.full_name,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
     c.date_of_birth,
     c.start_date,
     c.end_date,
@@ -1757,7 +1825,7 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < $4
   AND (c.end_date IS NULL OR c.end_date >= $3)
-ORDER BY c.full_name, c.id
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
 `
 
 type PreflightListChildrenParams struct {
@@ -1769,7 +1837,9 @@ type PreflightListChildrenParams struct {
 
 type PreflightListChildrenRow struct {
 	ChildID                pgtype.UUID
-	FullName               string
+	FirstName              string
+	MiddleName             pgtype.Text
+	LastName               pgtype.Text
 	DateOfBirth            pgtype.Date
 	StartDate              pgtype.Date
 	EndDate                pgtype.Date
@@ -1797,7 +1867,9 @@ func (q *Queries) PreflightListChildren(ctx context.Context, arg PreflightListCh
 		var i PreflightListChildrenRow
 		if err := rows.Scan(
 			&i.ChildID,
-			&i.FullName,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
 			&i.DateOfBirth,
 			&i.StartDate,
 			&i.EndDate,

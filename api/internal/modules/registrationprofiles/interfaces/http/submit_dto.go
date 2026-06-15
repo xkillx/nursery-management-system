@@ -8,10 +8,12 @@ type submitCompleteRegistrationRequest struct {
 }
 
 type childWritePayload struct {
-	FullName    string `json:"full_name"`
-	DateOfBirth string `json:"date_of_birth"`
-	StartDate   string `json:"start_date"`
-	Notes       string `json:"notes,omitempty"`
+	FirstName   string  `json:"first_name"`
+	MiddleName  *string `json:"middle_name"`
+	LastName    *string `json:"last_name"`
+	DateOfBirth string  `json:"date_of_birth"`
+	StartDate   string  `json:"start_date"`
+	Notes       string  `json:"notes,omitempty"`
 }
 
 type registrationProfilePayload struct {
@@ -146,7 +148,9 @@ type consentPayload struct {
 }
 
 type childRecordResponse struct {
-	ID        string `json:"id"`
-	FullName  string `json:"full_name"`
-	StartDate string `json:"start_date"`
+	ID         string  `json:"id"`
+	FirstName  string  `json:"first_name"`
+	MiddleName *string `json:"middle_name"`
+	LastName   *string `json:"last_name"`
+	StartDate  string  `json:"start_date"`
 }

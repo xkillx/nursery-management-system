@@ -154,21 +154,32 @@ func (a *childCreatorAdapter) CreateChild(ctx context.Context, tx pgx.Tx, child 
 		ID:                  pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
 		TenantID:            pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
 		BranchID:            pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
-		FullName:            child.FullName,
+		FirstName:           child.FirstName,
+		Column5:             child.MiddleName,
+		Column6:             child.LastName,
 		DateOfBirth:         pgtype.Date{Time: child.DateOfBirth, Valid: true},
 		StartDate:           pgtype.Date{Time: child.StartDate, Valid: true},
 		CoreHourlyRateMinor: pgtype.Int4{Valid: false},
-		Column9:             child.Notes,
+		Column11:            child.Notes,
 	})
 	if err != nil {
 		return regprofiledomain.ChildCreationResult{}, fmt.Errorf("create child: %w", err)
 	}
 
 	return regprofiledomain.ChildCreationResult{
-		ID:        childID,
-		FullName:  child.FullName,
-		StartDate: child.StartDate,
+		ID:         childID,
+		FirstName:  child.FirstName,
+		MiddleName: stringPtrFromBlank(child.MiddleName),
+		LastName:   stringPtrFromBlank(child.LastName),
+		StartDate:  child.StartDate,
 	}, nil
+}
+
+func stringPtrFromBlank(v string) *string {
+	if v == "" {
+		return nil
+	}
+	return &v
 }
 
 var (

@@ -29,7 +29,9 @@ FOR UPDATE;
 -- name: FundingOverviewList :many
 SELECT
   c.id AS child_id,
-  c.full_name AS child_name,
+  c.first_name AS child_first_name,
+  c.middle_name AS child_middle_name,
+  c.last_name AS child_last_name,
   c.is_active,
   c.start_date,
   c.end_date,
@@ -46,4 +48,4 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < ($3 + INTERVAL '1 month')::date
   AND (c.end_date IS NULL OR c.end_date >= $3)
-ORDER BY child_name;
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC;

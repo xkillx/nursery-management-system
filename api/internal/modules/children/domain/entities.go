@@ -9,7 +9,9 @@ import (
 
 type Child struct {
 	ID                      uuid.UUID
-	FullName                string
+	FirstName               string
+	MiddleName              *string
+	LastName                *string
 	DateOfBirth             time.Time
 	StartDate               time.Time
 	EndDate                 *time.Time
@@ -49,8 +51,8 @@ var ValidReasonCodes = map[ReasonCode]struct{}{
 
 func (c Child) MissingRequirements() []string {
 	missing := make([]string, 0)
-	if strings.TrimSpace(c.FullName) == "" {
-		missing = append(missing, "full_name")
+	if strings.TrimSpace(c.FirstName) == "" {
+		missing = append(missing, "first_name")
 	}
 	if c.DateOfBirth.IsZero() {
 		missing = append(missing, "date_of_birth")
@@ -70,7 +72,9 @@ func (c Child) EnrollmentComplete() bool {
 
 type AttendanceChild struct {
 	ID                   uuid.UUID
-	FullName             string
+	FirstName            string
+	MiddleName           *string
+	LastName             *string
 	EnrollmentComplete   bool
 	AttendanceState      string
 	OpenSessionID        *uuid.UUID

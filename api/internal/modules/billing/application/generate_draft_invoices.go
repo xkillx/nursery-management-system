@@ -122,8 +122,7 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 					// Since ListSelectedChildrenForUpdate already scopes to tenant/branch,
 					// not found means either child doesn't exist or wrong scope.
 					blocked = append(blocked, domain.DraftGenerationBlockedChild{
-						ChildID:   id,
-						ChildName: "",
+						ChildID: id,
 						Blockers: []domain.PreflightBlocker{
 							{Code: domain.BlockerChildNotFound, Message: "Child not found or not in scope."},
 						},
@@ -133,8 +132,10 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				// Check if child overlaps billing month.
 				if !childInBillingMonth(child, billingMonth, nextBillingMonth) {
 					blocked = append(blocked, domain.DraftGenerationBlockedChild{
-						ChildID:   child.ChildID,
-						ChildName: child.FullName,
+						ChildID:         child.ChildID,
+						ChildFirstName:  child.FirstName,
+						ChildMiddleName: child.MiddleName,
+						ChildLastName:   child.LastName,
 						Blockers: []domain.PreflightBlocker{
 							{Code: domain.BlockerChildNotInBillingMonth, Message: "Child is not active during this billing month."},
 						},
@@ -177,9 +178,11 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 			if len(readiness.Blockers) > 0 {
 				// If there's an existing draft, and the child is now blocked, leave it in place.
 				blocked = append(blocked, domain.DraftGenerationBlockedChild{
-					ChildID:   child.ChildID,
-					ChildName: child.FullName,
-					Blockers:  readiness.Blockers,
+					ChildID:         child.ChildID,
+					ChildFirstName:  child.FirstName,
+					ChildMiddleName: child.MiddleName,
+					ChildLastName:   child.LastName,
+					Blockers:        readiness.Blockers,
 				})
 				continue
 			}
@@ -193,8 +196,10 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 			if invoiceFound && existingInvoice.Status != domain.InvoiceStatusDraft {
 				// Non-draft invoice exists — block.
 				blocked = append(blocked, domain.DraftGenerationBlockedChild{
-					ChildID:   child.ChildID,
-					ChildName: child.FullName,
+					ChildID:         child.ChildID,
+					ChildFirstName:  child.FirstName,
+					ChildMiddleName: child.MiddleName,
+					ChildLastName:   child.LastName,
 					Blockers: []domain.PreflightBlocker{
 						{
 							Code:    domain.BlockerInvoiceAlreadyIssued,
@@ -372,7 +377,9 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 
 			generated = append(generated, domain.DraftGenerationChildResult{
 				ChildID:              child.ChildID,
-				ChildName:            child.FullName,
+				ChildFirstName:       child.FirstName,
+				ChildMiddleName:      child.MiddleName,
+				ChildLastName:        child.LastName,
 				Action:               action,
 				InvoiceID:            invoiceID,
 				SubtotalMinor:        subtotalMinor,
@@ -406,9 +413,11 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 					codes = append(codes, string(bl.Code))
 				}
 				blockedDetails = append(blockedDetails, map[string]any{
-					"child_id":   b.ChildID.String(),
-					"child_name": b.ChildName,
-					"blockers":   codes,
+					"child_id":          b.ChildID.String(),
+					"child_first_name":  b.ChildFirstName,
+					"child_middle_name": b.ChildMiddleName,
+					"child_last_name":   b.ChildLastName,
+					"blockers":          codes,
 				})
 			}
 			runDetails["blocked_children"] = blockedDetails

@@ -146,7 +146,9 @@ type ContactEntry struct {
 
 type ChildSummary struct {
 	ID          uuid.UUID
-	FullName    string
+	FirstName   string
+	MiddleName  *string
+	LastName    *string
 	DateOfBirth time.Time
 }
 

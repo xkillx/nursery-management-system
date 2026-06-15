@@ -42,14 +42,14 @@ func testActor() tenant.ActorContext {
 	}
 }
 
-func ptrInt(v int) *int          { return &v }
+func ptrInt(v int) *int                 { return &v }
 func ptrTimeVal(v time.Time) *time.Time { return &v }
-func ptrUUID(v uuid.UUID) *uuid.UUID { return &v }
+func ptrUUID(v uuid.UUID) *uuid.UUID    { return &v }
 
 func makeRow(name string, profileID *uuid.UUID, allowance *int) domain.OverviewRow {
 	return domain.OverviewRow{
 		ChildID:                uuid.New(),
-		ChildName:              name,
+		ChildFirstName:         name,
 		IsActive:               true,
 		StartDate:              time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndDate:                nil,

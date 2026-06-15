@@ -17,37 +17,37 @@ import (
 )
 
 type CreateConsentParams struct {
-	PaperFormOnFile  bool    `json:"paper_form_on_file"`
+	PaperFormOnFile bool `json:"paper_form_on_file"`
 
-	UrgentMedicalTreatment         bool   `json:"urgent_medical_treatment"`
-	UrgentMedicalTreatmentExceptions *string `json:"urgent_medical_treatment_exceptions,omitempty"`
-	Plasters                       bool   `json:"plasters"`
-	SafeguardingReportingAcknowledgement bool `json:"safeguarding_reporting_acknowledgement"`
-	InformationSharingConsent      bool   `json:"information_sharing_consent"`
-	GDPRDataProcessingConsent      bool   `json:"gdpr_data_processing_consent"`
-	AreaSENCOLiaison               bool   `json:"area_senco_liaison"`
-	HealthVisitorLiaison           bool   `json:"health_visitor_liaison"`
-	TransitionDocuments            bool   `json:"transition_documents"`
-	LocalOutings                   bool   `json:"local_outings"`
-	FacePainting                   bool   `json:"face_painting"`
-	ParentSuppliedSunCream         bool   `json:"parent_supplied_sun_cream"`
-	ParentSuppliedNappyCream       bool   `json:"parent_supplied_nappy_cream"`
-	DevelopmentProfilePhotos       bool   `json:"development_profile_photos"`
-	NurseryDisplayBoards           bool   `json:"nursery_display_boards"`
-	PromotionalLiterature          bool   `json:"promotional_literature"`
-	NurseryWebsite                 bool   `json:"nursery_website"`
-	StaffStudentCoursework         bool   `json:"staff_student_coursework"`
-	SocialMedia                    bool   `json:"social_media"`
-	SocialMediaChannelNotes        *string `json:"social_media_channel_notes,omitempty"`
+	UrgentMedicalTreatment               bool    `json:"urgent_medical_treatment"`
+	UrgentMedicalTreatmentExceptions     *string `json:"urgent_medical_treatment_exceptions,omitempty"`
+	Plasters                             bool    `json:"plasters"`
+	SafeguardingReportingAcknowledgement bool    `json:"safeguarding_reporting_acknowledgement"`
+	InformationSharingConsent            bool    `json:"information_sharing_consent"`
+	GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
+	AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
+	HealthVisitorLiaison                 bool    `json:"health_visitor_liaison"`
+	TransitionDocuments                  bool    `json:"transition_documents"`
+	LocalOutings                         bool    `json:"local_outings"`
+	FacePainting                         bool    `json:"face_painting"`
+	ParentSuppliedSunCream               bool    `json:"parent_supplied_sun_cream"`
+	ParentSuppliedNappyCream             bool    `json:"parent_supplied_nappy_cream"`
+	DevelopmentProfilePhotos             bool    `json:"development_profile_photos"`
+	NurseryDisplayBoards                 bool    `json:"nursery_display_boards"`
+	PromotionalLiterature                bool    `json:"promotional_literature"`
+	NurseryWebsite                       bool    `json:"nursery_website"`
+	StaffStudentCoursework               bool    `json:"staff_student_coursework"`
+	SocialMedia                          bool    `json:"social_media"`
+	SocialMediaChannelNotes              *string `json:"social_media_channel_notes,omitempty"`
 
 	NotesExceptions *string `json:"notes_exceptions,omitempty"`
 }
 
 type CreateConsent struct {
-	repo    domain.ConsentRepository
-	audit   *audit.Writer
-	pool    *pgxpool.Pool
-	txMgr   *transaction.Manager
+	repo  domain.ConsentRepository
+	audit *audit.Writer
+	pool  *pgxpool.Pool
+	txMgr *transaction.Manager
 }
 
 func NewCreateConsent(repo domain.ConsentRepository, auditWriter *audit.Writer, txMgr *transaction.Manager) *CreateConsent {
@@ -69,35 +69,35 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 	}
 
 	record := domain.ConsentRecord{
-		ID:      uid.NewUUID(),
-		TenantID: actor.TenantID,
-		BranchID: actor.BranchID,
-		ChildID:  cid,
-		Source:   domain.ConsentSourcePaperForm,
-		PaperFormOnFile:  params.PaperFormOnFile,
-		UrgentMedicalTreatment:         params.UrgentMedicalTreatment,
-		UrgentMedicalTreatmentExceptions: params.UrgentMedicalTreatmentExceptions,
-		Plasters:                       params.Plasters,
+		ID:                                   uid.NewUUID(),
+		TenantID:                             actor.TenantID,
+		BranchID:                             actor.BranchID,
+		ChildID:                              cid,
+		Source:                               domain.ConsentSourcePaperForm,
+		PaperFormOnFile:                      params.PaperFormOnFile,
+		UrgentMedicalTreatment:               params.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions:     params.UrgentMedicalTreatmentExceptions,
+		Plasters:                             params.Plasters,
 		SafeguardingReportingAcknowledgement: params.SafeguardingReportingAcknowledgement,
-			InformationSharingConsent:      params.InformationSharingConsent,
-			GDPRDataProcessingConsent:      params.GDPRDataProcessingConsent,
-		AreaSENCOLiaison:               params.AreaSENCOLiaison,
-		HealthVisitorLiaison:           params.HealthVisitorLiaison,
-		TransitionDocuments:            params.TransitionDocuments,
-		LocalOutings:                   params.LocalOutings,
-		FacePainting:                   params.FacePainting,
-		ParentSuppliedSunCream:         params.ParentSuppliedSunCream,
-		ParentSuppliedNappyCream:       params.ParentSuppliedNappyCream,
-		DevelopmentProfilePhotos:       params.DevelopmentProfilePhotos,
-		NurseryDisplayBoards:           params.NurseryDisplayBoards,
-		PromotionalLiterature:          params.PromotionalLiterature,
-		NurseryWebsite:                 params.NurseryWebsite,
-		StaffStudentCoursework:         params.StaffStudentCoursework,
-		SocialMedia:                    params.SocialMedia,
-		SocialMediaChannelNotes:        params.SocialMediaChannelNotes,
-		NotesExceptions:                params.NotesExceptions,
-		EnteredByUserID:       actor.UserID,
-		EnteredByMembershipID: actor.MembershipID,
+		InformationSharingConsent:            params.InformationSharingConsent,
+		GDPRDataProcessingConsent:            params.GDPRDataProcessingConsent,
+		AreaSENCOLiaison:                     params.AreaSENCOLiaison,
+		HealthVisitorLiaison:                 params.HealthVisitorLiaison,
+		TransitionDocuments:                  params.TransitionDocuments,
+		LocalOutings:                         params.LocalOutings,
+		FacePainting:                         params.FacePainting,
+		ParentSuppliedSunCream:               params.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:             params.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:             params.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:                 params.NurseryDisplayBoards,
+		PromotionalLiterature:                params.PromotionalLiterature,
+		NurseryWebsite:                       params.NurseryWebsite,
+		StaffStudentCoursework:               params.StaffStudentCoursework,
+		SocialMedia:                          params.SocialMedia,
+		SocialMediaChannelNotes:              params.SocialMediaChannelNotes,
+		NotesExceptions:                      params.NotesExceptions,
+		EnteredByUserID:                      actor.UserID,
+		EnteredByMembershipID:                actor.MembershipID,
 	}
 
 	err = uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {

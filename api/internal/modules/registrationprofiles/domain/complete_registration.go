@@ -10,7 +10,9 @@ type CompleteRegistrationInput struct {
 }
 
 type ChildRegistrationInfo struct {
-	FullName    string
+	FirstName   string
+	MiddleName  string
+	LastName    string
 	DateOfBirth string
 	StartDate   string
 	Notes       string

@@ -13,10 +13,10 @@ import (
 // --- Stubs ---
 
 type stubBillingRepo struct {
-	lockAcquired bool
-	lockErr      error
+	lockAcquired    bool
+	lockErr         error
 	overdueInvoices []domain.OverdueTransitionedInvoice
-	overdueErr   error
+	overdueErr      error
 }
 
 func (s *stubBillingRepo) TryAcquireOverdueTransitionJobLock(ctx context.Context, tx domain.Tx) (bool, error) {

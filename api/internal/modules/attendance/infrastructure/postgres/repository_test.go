@@ -852,8 +852,8 @@ func TestAttListIncompleteSessionsForPeriod_ReturnsOpenInPeriod(t *testing.T) {
 	if results[0].SessionID != sessionID {
 		t.Errorf("SessionID = %s, want %s", results[0].SessionID, sessionID)
 	}
-	if results[0].ChildName != "Att Child" {
-		t.Errorf("ChildName = %s, want Att Child", results[0].ChildName)
+	if results[0].ChildFirstName != "Att Child" {
+		t.Errorf("ChildFirstName = %s, want Att Child", results[0].ChildFirstName)
 	}
 }
 
@@ -944,8 +944,8 @@ func TestAttListIncompleteSessionsForPeriod_IncludesInactiveChild(t *testing.T) 
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result for inactive child open session, got %d", len(results))
 	}
-	if results[0].ChildName != "Inactive Child" {
-		t.Errorf("ChildName = %s, want Inactive Child", results[0].ChildName)
+	if results[0].ChildFirstName != "Inactive Child" {
+		t.Errorf("ChildFirstName = %s, want Inactive Child", results[0].ChildFirstName)
 	}
 }
 
@@ -982,11 +982,11 @@ func TestAttListIncompleteSessionsForPeriod_SortsStably(t *testing.T) {
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
-	if results[0].ChildName != "Alpha Child" {
-		t.Errorf("first result ChildName = %s, want Alpha Child (earlier date)", results[0].ChildName)
+	if results[0].ChildFirstName != "Alpha Child" {
+		t.Errorf("first result ChildFirstName = %s, want Alpha Child (earlier date)", results[0].ChildFirstName)
 	}
-	if results[1].ChildName != "Beta Child" {
-		t.Errorf("second result ChildName = %s, want Beta Child (later date)", results[1].ChildName)
+	if results[1].ChildFirstName != "Beta Child" {
+		t.Errorf("second result ChildFirstName = %s, want Beta Child (later date)", results[1].ChildFirstName)
 	}
 }
 

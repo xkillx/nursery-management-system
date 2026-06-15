@@ -57,16 +57,20 @@ func (h *SubmitHandler) handleSubmit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, childRecordResponse{
-		ID:        result.ChildID.String(),
-		FullName:  result.FullName,
-		StartDate: result.StartDate,
+		ID:         result.ChildID.String(),
+		FirstName:  result.FirstName,
+		MiddleName: result.MiddleName,
+		LastName:   result.LastName,
+		StartDate:  result.StartDate,
 	})
 }
 
 func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegistrationInput {
 	input := domain.CompleteRegistrationInput{
 		Child: domain.ChildRegistrationInfo{
-			FullName:    req.Child.FullName,
+			FirstName:   req.Child.FirstName,
+			MiddleName:  stringValue(req.Child.MiddleName),
+			LastName:    stringValue(req.Child.LastName),
 			DateOfBirth: req.Child.DateOfBirth,
 			StartDate:   req.Child.StartDate,
 			Notes:       req.Child.Notes,
@@ -123,18 +127,18 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 
 		if rp := req.RegistrationProfile.SocialDevelopment; rp != nil {
 			psi.SocialDevelopment = &domain.SocialDevelopmentInput{
-				SocialServicesStatus:       rp.SocialServicesStatus,
-				SocialServicesNotes:        rp.SocialServicesNotes,
-				SocialWorkerName:           rp.SocialWorkerName,
-			SocialWorkerPhone:          rp.SocialWorkerPhone,
-			SocialWorkerEmail:          rp.SocialWorkerEmail,
-				ConcernWalking:             rp.ConcernWalking,
-				ConcernSpeechLanguage:      rp.ConcernSpeechLanguage,
-				ConcernHearing:             rp.ConcernHearing,
-				ConcernSight:               rp.ConcernSight,
-				ConcernEmotionalWellbeing:  rp.ConcernEmotionalWellbeing,
-				ConcernBehaviour:           rp.ConcernBehaviour,
-				SocialDevelopmentReviewed:  rp.SocialDevelopmentReviewed,
+				SocialServicesStatus:      rp.SocialServicesStatus,
+				SocialServicesNotes:       rp.SocialServicesNotes,
+				SocialWorkerName:          rp.SocialWorkerName,
+				SocialWorkerPhone:         rp.SocialWorkerPhone,
+				SocialWorkerEmail:         rp.SocialWorkerEmail,
+				ConcernWalking:            rp.ConcernWalking,
+				ConcernSpeechLanguage:     rp.ConcernSpeechLanguage,
+				ConcernHearing:            rp.ConcernHearing,
+				ConcernSight:              rp.ConcernSight,
+				ConcernEmotionalWellbeing: rp.ConcernEmotionalWellbeing,
+				ConcernBehaviour:          rp.ConcernBehaviour,
+				SocialDevelopmentReviewed: rp.SocialDevelopmentReviewed,
 			}
 		}
 
@@ -187,29 +191,29 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 
 	if req.Consents != nil {
 		input.Consents = domain.ConsentInput{
-			PaperFormOnFile:  req.Consents.PaperFormOnFile,
+			PaperFormOnFile: req.Consents.PaperFormOnFile,
 
-			UrgentMedicalTreatment:         req.Consents.UrgentMedicalTreatment,
-			UrgentMedicalTreatmentExceptions: req.Consents.UrgentMedicalTreatmentExceptions,
-			Plasters:                       req.Consents.Plasters,
+			UrgentMedicalTreatment:               req.Consents.UrgentMedicalTreatment,
+			UrgentMedicalTreatmentExceptions:     req.Consents.UrgentMedicalTreatmentExceptions,
+			Plasters:                             req.Consents.Plasters,
 			SafeguardingReportingAcknowledgement: req.Consents.SafeguardingReportingAcknowledgement,
-			InformationSharingConsent:      req.Consents.InformationSharingConsent,
-			GDPRDataProcessingConsent:      req.Consents.GDPRDataProcessingConsent,
-			AreaSENCOLiaison:               req.Consents.AreaSENCOLiaison,
-			HealthVisitorLiaison:           req.Consents.HealthVisitorLiaison,
-			TransitionDocuments:            req.Consents.TransitionDocuments,
-			LocalOutings:                   req.Consents.LocalOutings,
-			FacePainting:                   req.Consents.FacePainting,
-			ParentSuppliedSunCream:         req.Consents.ParentSuppliedSunCream,
-			ParentSuppliedNappyCream:       req.Consents.ParentSuppliedNappyCream,
-			DevelopmentProfilePhotos:       req.Consents.DevelopmentProfilePhotos,
-			NurseryDisplayBoards:           req.Consents.NurseryDisplayBoards,
-			PromotionalLiterature:          req.Consents.PromotionalLiterature,
-			NurseryWebsite:                 req.Consents.NurseryWebsite,
-			StaffStudentCoursework:         req.Consents.StaffStudentCoursework,
-			SocialMedia:                    req.Consents.SocialMedia,
-			SocialMediaChannelNotes:        req.Consents.SocialMediaChannelNotes,
-			NotesExceptions:                req.Consents.NotesExceptions,
+			InformationSharingConsent:            req.Consents.InformationSharingConsent,
+			GDPRDataProcessingConsent:            req.Consents.GDPRDataProcessingConsent,
+			AreaSENCOLiaison:                     req.Consents.AreaSENCOLiaison,
+			HealthVisitorLiaison:                 req.Consents.HealthVisitorLiaison,
+			TransitionDocuments:                  req.Consents.TransitionDocuments,
+			LocalOutings:                         req.Consents.LocalOutings,
+			FacePainting:                         req.Consents.FacePainting,
+			ParentSuppliedSunCream:               req.Consents.ParentSuppliedSunCream,
+			ParentSuppliedNappyCream:             req.Consents.ParentSuppliedNappyCream,
+			DevelopmentProfilePhotos:             req.Consents.DevelopmentProfilePhotos,
+			NurseryDisplayBoards:                 req.Consents.NurseryDisplayBoards,
+			PromotionalLiterature:                req.Consents.PromotionalLiterature,
+			NurseryWebsite:                       req.Consents.NurseryWebsite,
+			StaffStudentCoursework:               req.Consents.StaffStudentCoursework,
+			SocialMedia:                          req.Consents.SocialMedia,
+			SocialMediaChannelNotes:              req.Consents.SocialMediaChannelNotes,
+			NotesExceptions:                      req.Consents.NotesExceptions,
 		}
 	}
 
@@ -222,12 +226,12 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 
 func mapContactEntryInput(src contactEntryPayload) domain.ContactEntryInput {
 	return domain.ContactEntryInput{
-		FullName:                 src.FullName,
-		RelationshipToChild:      src.RelationshipToChild,
-		Address:                  toStringMap(src.Address),
-		Telephone:                src.Telephone,
-		Email:                    src.Email,
-		WorkAddress:              toStringMap(src.WorkAddress),
+		FullName:                  src.FullName,
+		RelationshipToChild:       src.RelationshipToChild,
+		Address:                   toStringMap(src.Address),
+		Telephone:                 src.Telephone,
+		Email:                     src.Email,
+		WorkAddress:               toStringMap(src.WorkAddress),
 		HasParentalResponsibility: src.HasParentalResponsibility,
 	}
 }
@@ -240,4 +244,11 @@ func toStringMap(v any) map[string]any {
 		return m
 	}
 	return nil
+}
+
+func stringValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }

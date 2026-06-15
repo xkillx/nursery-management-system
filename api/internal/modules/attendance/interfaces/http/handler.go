@@ -15,12 +15,12 @@ import (
 )
 
 type Handler struct {
-	logger           *slog.Logger
-	checkIn          *application.CheckInChild
-	checkOut         *application.CheckOutChild
-	correct          *application.CorrectAttendance
-	listSessions     *application.ListCorrectionSessions
-	listHistory      *application.ListCorrectionHistory
+	logger       *slog.Logger
+	checkIn      *application.CheckInChild
+	checkOut     *application.CheckOutChild
+	correct      *application.CorrectAttendance
+	listSessions *application.ListCorrectionSessions
+	listHistory  *application.ListCorrectionHistory
 }
 
 func NewHandler(

@@ -14,14 +14,14 @@ import (
 )
 
 type Handler struct {
-	getProfile             *application.GetProfile
-	updateProfile          *application.UpdateProfile
-	setCollectionPassword  *application.SetCollectionPassword
-	getConsents            *application.GetConsents
-	createConsent          *application.CreateConsent
-	getWorkflowStatus      *application.GetWorkflowStatus
-	createAttestation      *application.CreateAttestation
-	logger                 *slog.Logger
+	getProfile            *application.GetProfile
+	updateProfile         *application.UpdateProfile
+	setCollectionPassword *application.SetCollectionPassword
+	getConsents           *application.GetConsents
+	createConsent         *application.CreateConsent
+	getWorkflowStatus     *application.GetWorkflowStatus
+	createAttestation     *application.CreateAttestation
+	logger                *slog.Logger
 }
 
 func NewHandler(
@@ -46,14 +46,14 @@ func NewHandler(
 
 func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 	return &Handler{
-		getProfile:             h.getProfile,
-		updateProfile:          h.updateProfile,
-		setCollectionPassword:  h.setCollectionPassword,
-		getConsents:            h.getConsents,
-		createConsent:          h.createConsent,
-		getWorkflowStatus:      h.getWorkflowStatus,
-		createAttestation:      h.createAttestation,
-		logger:                 logger,
+		getProfile:            h.getProfile,
+		updateProfile:         h.updateProfile,
+		setCollectionPassword: h.setCollectionPassword,
+		getConsents:           h.getConsents,
+		createConsent:         h.createConsent,
+		getWorkflowStatus:     h.getWorkflowStatus,
+		createAttestation:     h.createAttestation,
+		logger:                logger,
 	}
 }
 
@@ -330,5 +330,3 @@ func parsePatch(raw map[string]json.RawMessage) (application.PatchSection, error
 
 	return patch, nil
 }
-
-
