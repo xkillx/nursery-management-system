@@ -44,6 +44,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { RadioComponent } from '../../../../shared/components/form/input/radio.component';
+import { MultiSelectComponent } from '../../../../shared/components/form/multi-select/multi-select.component';
 import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
@@ -220,6 +221,7 @@ type RegistrationDraft = {
     FormFieldComponent,
     InputFieldComponent,
     LoadingStateComponent,
+    MultiSelectComponent,
     RadioComponent,
     SelectComponent,
     TextAreaComponent,
@@ -310,6 +312,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   readonly languageSelectOptions: Option[] = this.languageOptions.map((language) => ({
     value: language,
     label: language,
+  }));
+  readonly languageMultiSelectOptions = this.languageOptions.map((language) => ({
+    value: language,
+    text: language,
   }));
   readonly relationshipSelectOptions: Option[] = this.relationshipOptions.map((relationship) => ({
     value: relationship,
@@ -2209,6 +2215,15 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       return;
     }
     this.draftChanges$.next();
+  }
+
+  selectedOtherLanguageOptions(): string[] {
+    return this.parseOtherLanguages(this.step1.other_languages) ?? [];
+  }
+
+  setOtherLanguages(selectedLanguages: string[]): void {
+    this.step1.other_languages = selectedLanguages.join(', ');
+    this.notifyDraftChanged();
   }
 
   protected discardDraft(): void {

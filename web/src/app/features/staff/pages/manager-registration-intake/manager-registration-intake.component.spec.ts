@@ -120,6 +120,7 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.step4.paper_form_on_file = true;
     component.step4.safeguarding_reporting_acknowledgement = true;
     component.step4.information_sharing_consent = true;
+    component.step4.information_truthfulness_declaration = true;
     component.step4.gdpr_data_processing_consent = true;
     markAllConsentsReviewed();
   }
