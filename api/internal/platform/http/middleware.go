@@ -133,7 +133,34 @@ func statusClass(code int) string {
 
 func recoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		logger.Error("panic recovered", "recovered", recovered, "request_id", requestIDFromContext(c))
+		route := c.FullPath()
+		if route == "" {
+			route = "unmatched"
+		}
+
+		args := []any{
+			"recovered", recovered,
+			"method", c.Request.Method,
+			"route", route,
+			"request_id", requestIDFromContext(c),
+			"correlation_id", CorrelationIDFromContext(c),
+		}
+
+		if traceID := TraceIDFromContext(c); traceID != "" {
+			args = append(args, "trace_id", traceID)
+		}
+
+		if authCtx, ok := AuthContextFromContext(c); ok {
+			args = append(args,
+				"user_id", authCtx.UserID,
+				"membership_id", authCtx.MembershipID,
+				"tenant_id", authCtx.TenantID,
+				"branch_id", authCtx.BranchID,
+				"role", authCtx.Role,
+			)
+		}
+
+		logger.Error("panic recovered", args...)
 		writeInternalError(c)
 	})
 }

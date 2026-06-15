@@ -2,6 +2,7 @@ package httplink
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -15,13 +16,23 @@ import (
 )
 
 type Handler struct {
-	createLink    *app.CreateLinkUseCase
-	endLink       *app.EndLinkUseCase
-	listChildLinks *app.ListChildLinksUseCase
+	createLink      *app.CreateLinkUseCase
+	endLink         *app.EndLinkUseCase
+	listChildLinks  *app.ListChildLinksUseCase
+	logger          *slog.Logger
 }
 
 func NewHandler(createLink *app.CreateLinkUseCase, endLink *app.EndLinkUseCase, listChildLinks *app.ListChildLinksUseCase) *Handler {
 	return &Handler{createLink: createLink, endLink: endLink, listChildLinks: listChildLinks}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		createLink:      h.createLink,
+		endLink:         h.endLink,
+		listChildLinks:  h.listChildLinks,
+		logger:          logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
@@ -64,7 +75,7 @@ func (h *Handler) createLinkHandler(c *gin.Context) {
 		ChildID:    childID,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -90,7 +101,7 @@ func (h *Handler) endLinkHandler(c *gin.Context) {
 
 	result, err := h.endLink.Execute(c.Request.Context(), toActor(actor), linkID, reasonCode, reasonNote)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -115,7 +126,7 @@ func (h *Handler) listChildLinksHandler(c *gin.Context) {
 		ChildID:  childID,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -132,7 +143,7 @@ func toActor(a tenant.ActorContext) app.ActorContext {
 	}
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
 
@@ -153,6 +164,7 @@ func handleError(c *gin.Context, err error) {
 		return
 	}
 
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

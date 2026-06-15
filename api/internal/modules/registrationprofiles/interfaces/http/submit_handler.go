@@ -1,6 +1,7 @@
 package httpregistrationprofile
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,10 +14,18 @@ import (
 
 type SubmitHandler struct {
 	submitUC *app.SubmitCompleteRegistration
+	logger   *slog.Logger
 }
 
 func NewSubmitHandler(submitUC *app.SubmitCompleteRegistration) *SubmitHandler {
 	return &SubmitHandler{submitUC: submitUC}
+}
+
+func (h *SubmitHandler) WithObservability(logger *slog.Logger) *SubmitHandler {
+	return &SubmitHandler{
+		submitUC: h.submitUC,
+		logger:   logger,
+	}
 }
 
 func (h *SubmitHandler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -42,6 +51,7 @@ func (h *SubmitHandler) handleSubmit(c *gin.Context) {
 	if err != nil {
 		requestID := httpserver.RequestIDFromContext(c)
 		status, resp := httpserver.MapDomainError(err, requestID)
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}

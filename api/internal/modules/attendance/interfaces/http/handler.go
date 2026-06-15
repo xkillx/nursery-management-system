@@ -1,6 +1,7 @@
 package httpattendance
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 )
 
 type Handler struct {
+	logger           *slog.Logger
 	checkIn          *application.CheckInChild
 	checkOut         *application.CheckOutChild
 	correct          *application.CorrectAttendance
@@ -29,6 +31,17 @@ func NewHandler(
 	listHistory *application.ListCorrectionHistory,
 ) *Handler {
 	return &Handler{checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		checkIn:      h.checkIn,
+		checkOut:     h.checkOut,
+		correct:      h.correct,
+		listSessions: h.listSessions,
+		listHistory:  h.listHistory,
+		logger:       logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -65,7 +78,7 @@ func (h *Handler) checkInHandler(c *gin.Context) {
 
 	session, err := h.checkIn.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -93,7 +106,7 @@ func (h *Handler) checkOutHandler(c *gin.Context) {
 
 	session, err := h.checkOut.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -121,7 +134,7 @@ func (h *Handler) correctionHandler(c *gin.Context) {
 
 	result, err := h.correct.Execute(c.Request.Context(), actor, params)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -163,7 +176,7 @@ func (h *Handler) listSessionsHandler(c *gin.Context) {
 
 	ctx, err := h.listSessions.Execute(c.Request.Context(), actor, childID, localDate)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -185,16 +198,17 @@ func (h *Handler) listHistoryHandler(c *gin.Context) {
 
 	result, err := h.listHistory.Execute(c.Request.Context(), actor, sessionID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, toCorrectionHistoryResponse(result))
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

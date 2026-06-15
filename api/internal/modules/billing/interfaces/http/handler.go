@@ -2,6 +2,7 @@ package httpbilling
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 )
 
 type Handler struct {
+	logger             *slog.Logger
 	preflight          *application.PreflightDraftInvoices
 	generation         *application.GenerateDraftInvoices
 	listInvoices       *application.ListInvoices
@@ -28,6 +30,20 @@ type Handler struct {
 
 func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices, listParentInvoices *application.ListParentInvoices, getParentInvoice *application.GetParentInvoice) *Handler {
 	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices, listParentInvoices: listParentInvoices, getParentInvoice: getParentInvoice}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		preflight:          h.preflight,
+		generation:         h.generation,
+		listInvoices:       h.listInvoices,
+		getInvoice:         h.getInvoice,
+		issueInvoice:       h.issueInvoice,
+		bulkIssueInvoices:  h.bulkIssueInvoices,
+		listParentInvoices: h.listParentInvoices,
+		getParentInvoice:   h.getParentInvoice,
+		logger:             logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -59,7 +75,7 @@ func (h *Handler) preflightHandler(c *gin.Context) {
 
 	result, err := h.preflight.Execute(c.Request.Context(), actor, billingMonth)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -87,7 +103,7 @@ func (h *Handler) generateDraftsHandler(c *gin.Context) {
 
 	result, err := h.generation.Execute(c.Request.Context(), actor, req.BillingMonth, req.ChildIDs)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -109,7 +125,7 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		Offset:       queryParamPtr(c, "offset"),
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -125,7 +141,7 @@ func (h *Handler) getInvoiceHandler(c *gin.Context) {
 
 	result, err := h.getInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -147,7 +163,7 @@ func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 
 	result, err := h.issueInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"), req.Confirm)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -176,7 +192,7 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 
 	result, err := h.bulkIssueInvoices.Execute(c.Request.Context(), actor, req.BillingMonth, rawIDs, invoiceIDsProvided, req.Confirm)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -198,7 +214,7 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 		Offset:       queryParamPtr(c, "offset"),
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -214,7 +230,7 @@ func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
 
 	result, err := h.getParentInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -229,9 +245,10 @@ func queryParamPtr(c *gin.Context, key string) *string {
 	return &v
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

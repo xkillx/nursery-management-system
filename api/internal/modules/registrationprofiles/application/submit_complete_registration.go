@@ -65,7 +65,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 		child, err := uc.childCreator.CreateChild(ctx, tx, childInfo, actor.TenantID, actor.BranchID)
 		if err != nil {
-			return fmt.Errorf("create child: %w", err)
+			return fmt.Errorf("registration.submit.create_child: %w", err)
 		}
 
 		profile := input.ToProfile(actor.TenantID, actor.BranchID, child.ID)
@@ -73,7 +73,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 		createdProfile, err := uc.profileRepo.Create(ctx, tx, profile)
 		if err != nil {
-			return fmt.Errorf("create profile: %w", err)
+			return fmt.Errorf("registration.submit.create_profile: %w", err)
 		}
 
 		contacts := buildContactEntries(createdProfile.ID, child.ID, input.Profile, actor)
@@ -84,17 +84,17 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 				domain.ContactTypeAuthorisedCollector,
 			}
 			if err := uc.profileRepo.ReplaceContactsForTypes(ctx, tx, createdProfile.ID, contactTypes, contacts); err != nil {
-				return fmt.Errorf("replace contacts: %w", err)
+				return fmt.Errorf("registration.submit.replace_contacts: %w", err)
 			}
 		}
 
 		if input.CollectionPassword != "" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(input.CollectionPassword), bcrypt.DefaultCost)
 			if err != nil {
-				return fmt.Errorf("hash password: %w", err)
+				return fmt.Errorf("registration.submit.hash_password: %w", err)
 			}
 			if err := uc.profileRepo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, child.ID, string(hash), time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
-				return fmt.Errorf("set collection password: %w", err)
+				return fmt.Errorf("registration.submit.set_collection_password: %w", err)
 			}
 		}
 
@@ -105,7 +105,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 		consentRecord := buildConsentRecord(child.ID, input.Consents, version, actor)
 		if err := uc.consentRepo.CreateConsentRecord(ctx, tx, consentRecord); err != nil {
-			return fmt.Errorf("create consent: %w", err)
+			return fmt.Errorf("registration.submit.create_consent: %w", err)
 		}
 
 		if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
@@ -116,7 +116,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 				"full_name": child.FullName,
 			},
 		}); err != nil {
-			return fmt.Errorf("audit child creation: %w", err)
+			return fmt.Errorf("registration.submit.audit_child_creation: %w", err)
 		}
 
 		if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
@@ -128,7 +128,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 				"completeness_state": "complete",
 			},
 		}); err != nil {
-			return fmt.Errorf("audit attestation: %w", err)
+			return fmt.Errorf("registration.submit.audit_attestation: %w", err)
 		}
 
 		result = &SubmitCompleteRegistrationResult{

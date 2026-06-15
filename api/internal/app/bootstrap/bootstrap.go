@@ -167,7 +167,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewUpdateChild(childRepo, auditWriter, pool),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
-	)
+	).WithObservability(logger)
 
 	// Guardians module
 	guardianRepo := guardianpostgres.NewGuardianRepository(pool)
@@ -188,7 +188,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		linkapp.NewCreateLinkUseCase(linkRepo, auditWriter, txManager, guardianChecker, childChecker),
 		linkapp.NewEndLinkUseCase(linkRepo, auditWriter, txManager),
 		linkapp.NewListChildLinksUseCase(linkRepo, txManager, childChecker),
-	)
+	).WithObservability(logger)
 
 	// Parent Mappings module
 	mappingRepo := mappingpostgres.NewParentMappingRepository(pool)
@@ -196,7 +196,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	mappingsHandler := mappinghandler.NewHandler(
 		mappingapp.NewCreateMappingUseCase(mappingRepo, auditWriter, txManager, membershipChecker, guardianChecker),
 		mappingapp.NewEndMappingUseCase(mappingRepo, auditWriter, txManager),
-	)
+	).WithObservability(logger)
 
 	// Attendance module
 	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
@@ -217,9 +217,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewListCorrectionSessions(attendanceRepo),
 		attendanceapp.NewListCorrectionHistory(attendanceRepo),
-	)
+	).WithObservability(logger)
 
-	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC)
+	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC).WithObservability(logger)
 
 	// Register people routes
 	childrenHandler.RegisterRoutes(protected)
@@ -245,13 +245,13 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	regProfileCreateConsentUC := regprofileapp.NewCreateConsent(regProfileRepo, auditWriter, txManager)
 	regProfileGetWorkflowStatusUC := regprofileapp.NewGetWorkflowStatus(regProfileRepo, regProfileRepo, regProfileRepo)
 	regProfileCreateAttestationUC := regprofileapp.NewCreateAttestation(regProfileRepo, regProfileRepo, regProfileRepo, regProfileGetWorkflowStatusUC, auditWriter, txManager)
-	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC, regProfileGetConsentsUC, regProfileCreateConsentUC, regProfileGetWorkflowStatusUC, regProfileCreateAttestationUC)
+	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC, regProfileGetConsentsUC, regProfileCreateConsentUC, regProfileGetWorkflowStatusUC, regProfileCreateAttestationUC).WithObservability(logger)
 	regProfileHandler.RegisterRoutes(manager)
 
 	// Registration submit (atomic create)
 	childCreatorAdapter := &childCreatorAdapter{repo: childRepo}
 	submitUC := regprofileapp.NewSubmitCompleteRegistration(regProfileRepo, regProfileRepo, childCreatorAdapter, auditWriter, txManager)
-	submitHandler := regprofilehandler.NewSubmitHandler(submitUC)
+	submitHandler := regprofilehandler.NewSubmitHandler(submitUC).WithObservability(logger)
 	submitHandler.RegisterRoutes(manager)
 
 	// Funding module
@@ -260,7 +260,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		fundingapp.NewGetProfile(fundingRepo),
 		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter),
 		fundingapp.NewListOverview(fundingRepo),
-	)
+	).WithObservability(logger)
 	fundingHandler.RegisterRoutes(manager)
 
 	// Billing module
@@ -274,7 +274,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
 		billingapp.NewListParentInvoices(billingRepo),
 		billingapp.NewGetParentInvoice(billingRepo),
-	)
+	).WithObservability(logger)
 	billingHandler.RegisterRoutes(manager)
 
 	// Parent route group
@@ -333,7 +333,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	revokeInviteUC := inviteapp.NewRevokeInviteUseCase(inviteRepo, logger)
 	acceptInviteUC := inviteapp.NewAcceptInviteUseCase(inviteRepo, logger)
 	inviteIPLimiter := ratelimit.NewFixedWindowLimiter(10, 15*time.Minute)
-	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter)
+	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter).WithObservability(logger)
 	inviteHandler.RegisterPublicRoutes(api)
 	inviteHandler.RegisterManagerRoutes(manager)
 

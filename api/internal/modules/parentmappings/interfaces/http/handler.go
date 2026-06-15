@@ -2,6 +2,7 @@ package httpmapping
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -17,10 +18,19 @@ import (
 type Handler struct {
 	createMapping *app.CreateMappingUseCase
 	endMapping    *app.EndMappingUseCase
+	logger        *slog.Logger
 }
 
 func NewHandler(createMapping *app.CreateMappingUseCase, endMapping *app.EndMappingUseCase) *Handler {
 	return &Handler{createMapping: createMapping, endMapping: endMapping}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		createMapping: h.createMapping,
+		endMapping:    h.endMapping,
+		logger:        logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
@@ -62,7 +72,7 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 		GuardianID:   guardianID,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -88,7 +98,7 @@ func (h *Handler) endMappingHandler(c *gin.Context) {
 
 	result, err := h.endMapping.Execute(c.Request.Context(), toActor(actor), mappingID, reasonCode, reasonNote)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -105,7 +115,7 @@ func toActor(a tenant.ActorContext) app.ActorContext {
 	}
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 
 	if errors.Is(err, app.ErrMembershipNotFound) {
@@ -138,6 +148,7 @@ func handleError(c *gin.Context, err error) {
 	}
 
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

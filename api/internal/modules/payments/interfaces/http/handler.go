@@ -110,7 +110,7 @@ func (h *Handler) managerPaymentStatusHandler(c *gin.Context) {
 
 	result, err := h.getManagerStatus.Execute(c.Request.Context(), actor, invoiceIDRaw)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -135,7 +135,7 @@ func (h *Handler) managerPaymentEventsHandler(c *gin.Context) {
 
 	result, err := h.listManagerEvents.Execute(c.Request.Context(), actor, invoiceIDRaw, limitRaw, offsetRaw)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -165,7 +165,7 @@ func (h *Handler) createCheckoutSessionHandler(c *gin.Context) {
 		actor.RequestID,
 	)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -190,6 +190,7 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 			domainErrorPaymentProviderUnconfigured(),
 			requestID,
 		)
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, nil)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}
@@ -210,16 +211,17 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 			eventType := "unknown"
 			h.recordWebhookOutcome("stripe", eventType, "invalid_signature", "payment_webhook_invalid_signature")
 		}
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, webhookResponse{Status: result.Status})
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

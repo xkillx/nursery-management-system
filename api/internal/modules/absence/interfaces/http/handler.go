@@ -1,6 +1,7 @@
 package httpabsence
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,12 +13,21 @@ import (
 )
 
 type Handler struct {
+	logger      *slog.Logger
 	markAbsent  *application.MarkAbsent
 	clearMarker *application.ClearMarker
 }
 
 func NewHandler(markAbsent *application.MarkAbsent, clearMarker *application.ClearMarker) *Handler {
 	return &Handler{markAbsent: markAbsent, clearMarker: clearMarker}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		markAbsent:  h.markAbsent,
+		clearMarker: h.clearMarker,
+		logger:      logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -42,7 +52,7 @@ func (h *Handler) markAbsentHandler(c *gin.Context) {
 
 	result, err := h.markAbsent.Execute(c.Request.Context(), actor, req.ChildID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -68,16 +78,17 @@ func (h *Handler) clearMarkerHandler(c *gin.Context) {
 
 	marker, err := h.clearMarker.Execute(c.Request.Context(), actor, markerID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, toMarkerResponse(marker))
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

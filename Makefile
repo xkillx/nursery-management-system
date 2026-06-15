@@ -8,6 +8,15 @@ MIGRATIONS_DIR := $(API_DIR)/db/migrations
 run-api:
 	@if [ -f "$(API_ENV)" ]; then set -a; . "$(API_ENV)"; set +a; fi; cd "$(API_DIR)" && go run ./cmd/server
 
+.PHONY: debug-api
+debug-api:
+	@if [ -f "$(API_ENV)" ]; then set -a; . "$(API_ENV)"; set +a; fi; LOG_LEVEL=debug cd "$(API_DIR)" && go run ./cmd/server
+	@echo ""
+	@echo "Tip: pipe output to a log file:"
+	@echo "  make debug-api 2>&1 | tee tmp/api.log"
+	@echo "Then search with:"
+	@echo "  rg '<request_id>' tmp/api.log"
+
 run-web:
 	@cd "$(WEB_DIR)" && npm start
 

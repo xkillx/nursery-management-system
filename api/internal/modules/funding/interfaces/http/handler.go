@@ -1,6 +1,7 @@
 package httpfunding
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 )
 
 type Handler struct {
+	logger   *slog.Logger
 	get      *application.GetProfile
 	upsert   *application.UpsertProfile
 	overview *application.ListOverview
@@ -19,6 +21,15 @@ type Handler struct {
 
 func NewHandler(get *application.GetProfile, upsert *application.UpsertProfile, overview *application.ListOverview) *Handler {
 	return &Handler{get: get, upsert: upsert, overview: overview}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		get:      h.get,
+		upsert:   h.upsert,
+		overview: h.overview,
+		logger:   logger,
+	}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -43,7 +54,7 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 
 	result, err := h.overview.Execute(c.Request.Context(), actor, billingMonth)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -65,7 +76,7 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 
 	profile, err := h.get.Execute(c.Request.Context(), actor, c.Param("child_id"), billingMonth)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -90,7 +101,7 @@ func (h *Handler) upsertProfileHandler(c *gin.Context) {
 		FundedAllowanceMinutes: req.FundedAllowanceMinutes,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -160,9 +171,10 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 	return resp
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

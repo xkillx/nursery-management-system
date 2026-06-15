@@ -2,6 +2,7 @@ package httpregistrationprofile
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ type Handler struct {
 	createConsent          *application.CreateConsent
 	getWorkflowStatus      *application.GetWorkflowStatus
 	createAttestation      *application.CreateAttestation
+	logger                 *slog.Logger
 }
 
 func NewHandler(
@@ -39,6 +41,19 @@ func NewHandler(
 		createConsent:         createConsent,
 		getWorkflowStatus:     getWorkflowStatus,
 		createAttestation:     createAttestation,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		getProfile:             h.getProfile,
+		updateProfile:          h.updateProfile,
+		setCollectionPassword:  h.setCollectionPassword,
+		getConsents:            h.getConsents,
+		createConsent:          h.createConsent,
+		getWorkflowStatus:      h.getWorkflowStatus,
+		createAttestation:      h.createAttestation,
+		logger:                 logger,
 	}
 }
 
@@ -63,7 +78,7 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 
 	pwc, err := h.getProfile.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -100,7 +115,7 @@ func (h *Handler) updateProfileHandler(c *gin.Context) {
 
 	result, err := h.updateProfile.Execute(c.Request.Context(), actor, childID, patch)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -124,7 +139,7 @@ func (h *Handler) setCollectionPasswordHandler(c *gin.Context) {
 
 	result, err := h.setCollectionPassword.Execute(c.Request.Context(), actor, childID, req.Password)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -142,13 +157,13 @@ func (h *Handler) getConsentsHandler(c *gin.Context) {
 
 	cwc, err := h.getConsents.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	childSummary, err := h.getProfile.ExecuteGetChildSummary(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -166,7 +181,7 @@ func (h *Handler) getWorkflowStatusHandler(c *gin.Context) {
 
 	status, err := h.getWorkflowStatus.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -184,7 +199,7 @@ func (h *Handler) createCompletionAttestationHandler(c *gin.Context) {
 
 	attestation, err := h.createAttestation.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -208,16 +223,17 @@ func (h *Handler) createConsentHandler(c *gin.Context) {
 
 	record, err := h.createConsent.Execute(c.Request.Context(), actor, childID, req)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, toConsentRecordResponse(record))
 }
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

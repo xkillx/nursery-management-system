@@ -1,6 +1,7 @@
 package httpchild
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 )
 
 type Handler struct {
+	logger         *slog.Logger
 	listChildren   *application.ListChildren
 	getChild       *application.GetChild
 	createChild    *application.CreateChild
@@ -37,6 +39,18 @@ func NewHandler(
 		updateChild:    updateChild,
 		markInactive:   markInactive,
 		listAttendance: listAttendance,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		listChildren:   h.listChildren,
+		getChild:       h.getChild,
+		createChild:    h.createChild,
+		updateChild:    h.updateChild,
+		markInactive:   h.markInactive,
+		listAttendance: h.listAttendance,
+		logger:         logger,
 	}
 }
 
@@ -84,7 +98,7 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 
 	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, limit, offset)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -107,7 +121,7 @@ func (h *Handler) getChildHandler(c *gin.Context) {
 
 	child, err := h.getChild.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -142,7 +156,7 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 
 	child, err := h.createChild.Execute(c.Request.Context(), actor, params)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -179,7 +193,7 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 
 	child, err := h.updateChild.Execute(c.Request.Context(), actor, childID, params)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -208,7 +222,7 @@ func (h *Handler) markInactiveHandler(c *gin.Context) {
 
 	child, err := h.markInactive.Execute(c.Request.Context(), actor, childID, params)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -224,7 +238,7 @@ func (h *Handler) listAttendanceHandler(c *gin.Context) {
 
 	children, err := h.listAttendance.Execute(c.Request.Context(), actor)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -259,9 +273,10 @@ const (
 	maxListLimit     = 200
 )
 
-func handleError(c *gin.Context, err error) {
+func (h *Handler) handleError(c *gin.Context, err error) {
 	requestID := httpserver.RequestIDFromContext(c)
 	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
 

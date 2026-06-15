@@ -1,6 +1,7 @@
 package httpinvite
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ type Handler struct {
 	accept     *application.AcceptInviteUseCase
 	tokenMgr   *tokens.Manager
 	ipLimiter  *ratelimit.FixedWindowLimiter
+	logger     *slog.Logger
 }
 
 func NewHandler(
@@ -43,6 +45,19 @@ func NewHandler(
 		accept:    accept,
 		tokenMgr:  tokenMgr,
 		ipLimiter: ipLimiter,
+	}
+}
+
+func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
+	return &Handler{
+		create:    h.create,
+		list:      h.list,
+		resend:    h.resend,
+		revoke:    h.revoke,
+		accept:    h.accept,
+		tokenMgr:  h.tokenMgr,
+		ipLimiter: h.ipLimiter,
+		logger:    logger,
 	}
 }
 
@@ -78,6 +93,7 @@ func (h *Handler) createHandler(c *gin.Context) {
 	result, err := h.create.Execute(c.Request.Context(), actor, req.Email, req.Role)
 	if err != nil {
 		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}
@@ -128,6 +144,7 @@ func (h *Handler) resendHandler(c *gin.Context) {
 	result, err := h.resend.Execute(c.Request.Context(), actor, inviteID)
 	if err != nil {
 		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}
@@ -151,6 +168,7 @@ func (h *Handler) revokeHandler(c *gin.Context) {
 	result, err := h.revoke.Execute(c.Request.Context(), actor, inviteID)
 	if err != nil {
 		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}
@@ -181,6 +199,7 @@ func (h *Handler) acceptHandler(c *gin.Context) {
 	_, err := h.accept.Execute(c.Request.Context(), tokenHash, req.NewPassword)
 	if err != nil {
 		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
+		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 		c.AbortWithStatusJSON(status, resp)
 		return
 	}
