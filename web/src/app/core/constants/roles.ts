@@ -10,6 +10,9 @@ export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 export const ROLE_ROUTES = {
   ownerHome: '/owner',
   ownerManagerAccess: '/owner/manager-access',
+  ownerRooms: '/owner/rooms',
+  managerRooms: '/staff/manager/rooms',
+  practitionerRooms: '/staff/practitioner/rooms',
   managerDashboard: '/staff/manager/dashboard',
   managerChildren: '/staff/manager/children',
   managerGuardians: '/staff/manager/guardians',

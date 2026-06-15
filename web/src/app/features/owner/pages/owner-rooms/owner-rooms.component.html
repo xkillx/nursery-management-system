@@ -1,0 +1,192 @@
+<app-page-header
+  title="Room management"
+  description="{{ isOwner ? 'Manage rooms across all sites.' : 'Manage rooms for your site.' }}"
+/>
+
+@if (pageError) {
+  <app-alert variant="error" title="Error" [message]="pageError" />
+}
+@if (successMessage) {
+  <app-alert variant="success" title="Success" [message]="successMessage" class="mt-2" />
+}
+
+@if (isOwner && loadingSites) {
+  <app-loading-state label="Loading sites..." class="mt-6" />
+} @else if (isOwner && !selectedSiteId) {
+  <div class="mt-6">
+    <label for="site-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Select a site</label>
+    <app-select
+      id="site-select"
+      [options]="siteOptions"
+      [ngModel]="selectedSiteId ?? ''"
+      (ngModelChange)="onSiteValueChange($event)"
+    />
+  </div>
+} @else if (!selectedSiteId && !isOwner) {
+  <app-loading-state label="Loading your site..." class="mt-6" />
+} @else {
+  <div class="mt-6">
+    @if (isOwner) {
+      <div class="mb-4">
+        <label for="site-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
+        <app-select
+          id="site-select"
+          [options]="siteOptions"
+          [ngModel]="selectedSiteId ?? ''"
+          (ngModelChange)="onSiteValueChange($event)"
+        />
+      </div>
+    }
+
+    @if (canWrite) {
+      <div class="mb-4 flex items-center justify-between">
+        <button
+          (click)="startCreate()"
+          class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+        >
+          Add room
+        </button>
+        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" [ngModel]="showArchived" (ngModelChange)="toggleShowArchived()" class="rounded border-gray-300" />
+          Show archived rooms
+        </label>
+      </div>
+    }
+
+    @if (isEditing) {
+      <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
+          {{ editingRoomId ? 'Edit room' : 'Add room' }}
+        </h3>
+
+        @if (formError) {
+          <app-alert variant="error" title="Error" [message]="formError" class="mb-4" />
+        }
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="room-name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+            <input
+              id="room-name"
+              type="text"
+              [(ngModel)]="formName"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              placeholder="e.g. Baby Room"
+            />
+          </div>
+          <div>
+            <label for="room-age-group" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Age group *</label>
+            <app-select
+              id="room-age-group"
+              [options]="ageGroupOptions"
+              [ngModel]="formAgeGroup"
+              (ngModelChange)="formAgeGroup = $event"
+            />
+          </div>
+          <div>
+            <label for="room-capacity" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Capacity *</label>
+            <input
+              id="room-capacity"
+              type="number"
+              min="1"
+              [(ngModel)]="formCapacity"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              placeholder="e.g. 12"
+            />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="room-description" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+            <textarea
+              id="room-description"
+              [(ngModel)]="formDescription"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              rows="2"
+              placeholder="Optional description"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <button
+            (click)="onSubmitForm()"
+            [disabled]="formSubmitting"
+            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+          >
+            {{ formSubmitting ? 'Saving...' : editingRoomId ? 'Update' : 'Create' }}
+          </button>
+          <button
+            (click)="cancelForm()"
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (loadingRooms) {
+      <app-loading-state label="Loading rooms..." />
+    } @else if (filteredRooms.length === 0) {
+      <app-empty-state title="No rooms" message="No rooms have been added for this site yet." class="mt-4" />
+    } @else {
+      <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
+            <tr>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Name</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Age group</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Capacity</th>
+              <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
+              @if (canWrite) {
+                <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (room of filteredRooms; track room.id) {
+              <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ room.name }}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-400 capitalize">{{ room.ageGroup }}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ room.capacity }}</td>
+                <td class="px-4 py-3">
+                  @if (room.isActive) {
+                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-500/20 dark:text-green-300">Active</span>
+                  } @else {
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-500/20 dark:text-gray-400">Archived</span>
+                  }
+                </td>
+                @if (canWrite) {
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      @if (room.isActive) {
+                        <button
+                          (click)="startEdit(room)"
+                          class="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          (click)="onArchive(room)"
+                          class="text-sm text-red-600 hover:underline dark:text-red-400"
+                        >
+                          Archive
+                        </button>
+                      } @else {
+                        <button
+                          (click)="onReactivate(room)"
+                          class="text-sm text-green-600 hover:underline dark:text-green-400"
+                        >
+                          Reactivate
+                        </button>
+                      }
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

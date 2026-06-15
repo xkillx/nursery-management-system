@@ -91,3 +91,43 @@ export interface OwnerGrantManagerAccessResult {
   membershipId: string | null;
   invite: OwnerGrantInviteDetails | null;
 }
+
+export interface Room {
+  id: string;
+  name: string;
+  description: string | null;
+  ageGroup: string;
+  capacity: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiRoom {
+  id: string;
+  name: string;
+  description: string | null;
+  age_group: string;
+  capacity: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiRoomListResponse {
+  rooms: ApiRoom[];
+}
+
+export interface ApiCreateRoomRequest {
+  name: string;
+  age_group: string;
+  capacity: number;
+  description?: string;
+}
+
+export interface ApiUpdateRoomRequest {
+  name?: string;
+  age_group?: string;
+  capacity?: number;
+  description?: string;
+}

@@ -7,6 +7,11 @@ import {
   OwnerGrantManagerAccessResult,
   OwnerManagerAccessRecord,
   OwnerSiteSummariesResponse,
+  Room,
+  ApiRoom,
+  ApiRoomListResponse,
+  ApiCreateRoomRequest,
+  ApiUpdateRoomRequest,
 } from '../models/owner.models';
 
 interface ApiSiteSummariesResponse {
@@ -222,6 +227,57 @@ export class OwnerApiService {
       outcome: r.outcome as OwnerGrantManagerAccessResult['outcome'],
       membershipId: r.membership_id,
       invite: r.invite ? { email: r.invite.email, expiresAt: r.invite.expires_at } : null,
+    };
+  }
+
+  listRooms(siteId: string, includeArchived?: boolean): Observable<Room[]> {
+    let params = new HttpParams();
+    if (includeArchived) {
+      params = params.set('include_archived', 'true');
+    }
+    return this.http
+      .get<ApiRoomListResponse>(apiUrl(`/sites/${siteId}/rooms`), { params })
+      .pipe(map((response) => response.rooms.map((r) => this.mapRoom(r))));
+  }
+
+  getRoom(siteId: string, roomId: string): Observable<Room> {
+    return this.http
+      .get<ApiRoom>(apiUrl(`/sites/${siteId}/rooms/${roomId}`))
+      .pipe(map((r) => this.mapRoom(r)));
+  }
+
+  createRoom(siteId: string, data: ApiCreateRoomRequest): Observable<Room> {
+    return this.http
+      .post<ApiRoom>(apiUrl(`/sites/${siteId}/rooms`), data)
+      .pipe(map((r) => this.mapRoom(r)));
+  }
+
+  updateRoom(siteId: string, roomId: string, data: ApiUpdateRoomRequest): Observable<Room> {
+    return this.http
+      .patch<ApiRoom>(apiUrl(`/sites/${siteId}/rooms/${roomId}`), data)
+      .pipe(map((r) => this.mapRoom(r)));
+  }
+
+  archiveRoom(siteId: string, roomId: string): Observable<void> {
+    return this.http.post<void>(apiUrl(`/sites/${siteId}/rooms/${roomId}/actions/archive`), {});
+  }
+
+  reactivateRoom(siteId: string, roomId: string): Observable<Room> {
+    return this.http
+      .post<ApiRoom>(apiUrl(`/sites/${siteId}/rooms/${roomId}/actions/activate`), {})
+      .pipe(map((r) => this.mapRoom(r)));
+  }
+
+  private mapRoom(r: ApiRoom): Room {
+    return {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      ageGroup: r.age_group,
+      capacity: r.capacity,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
     };
   }
 }

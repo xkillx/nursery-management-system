@@ -1436,6 +1436,26 @@ Authorization denials emit metrics tagged by stable denial reason code to suppor
 
 Non-immediate external operations such as email sending and retry handling run through background jobs; user-triggered Stripe checkout session creation remains synchronous.
 
+## Nursery Room (Post-MVP)
+
+An operational room within a nursery site that houses children of a specific age group. A room belongs to exactly one site, and a site may have many rooms. The same room name (e.g. "Baby Room") may exist in different sites within the same tenant, but must be unique among active rooms within a single site. Rooms are archived (is_active = false) rather than hard-deleted because future attendance, child assignment, ratio, and reporting features may reference them.
+
+## Room Age Group (Post-MVP)
+
+A classification for a nursery room: baby, toddler, preschool, or mixed. "Mixed" means the room intentionally serves children across multiple age bands. Age group is a constrained value rather than free text.
+
+## Room Capacity (Post-MVP)
+
+The maximum number of children a room is licensed or configured to hold. Capacity is a positive integer and may be changed over time as room configuration or Ofsted registration changes.
+
+## Room Archive (Post-MVP)
+
+Setting a room to inactive (is_active = false). Archiving is blocked while active children remain assigned to the room. Archived rooms may be reactivated later. This follows the same no-hard-delete policy as other core records.
+
+## Room Reactivation (Post-MVP)
+
+Restoring an archived room to active status. Reactivation does not restore any previous child assignments or alter the room's name, capacity, or age group.
+
 ## Retention Policy Scope (MVP)
 
 Configurable retention/deletion policy automation is deferred; pilot records are retained with core no-hard-delete rules.

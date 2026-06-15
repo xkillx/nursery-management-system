@@ -253,4 +253,89 @@ describe('OwnerApiService', () => {
       req.flush(null, { status: 204, statusText: 'No Content' });
     });
   });
+
+  describe('rooms', () => {
+    const roomApiResponse = {
+      id: 'room-1',
+      name: 'Baby Room',
+      description: null,
+      age_group: 'baby',
+      capacity: 12,
+      is_active: true,
+      created_at: '2026-06-15T10:00:00Z',
+      updated_at: '2026-06-15T10:00:00Z',
+    };
+
+    it('listRooms calls GET with site ID', () => {
+      service.listRooms('site-1').subscribe((rooms) => {
+        expect(rooms.length).toBe(1);
+        expect(rooms[0].name).toBe('Baby Room');
+        expect(rooms[0].ageGroup).toBe('baby');
+        expect(rooms[0].capacity).toBe(12);
+        expect(rooms[0].isActive).toBeTrue();
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms');
+      expect(req.request.method).toBe('GET');
+      req.flush({ rooms: [roomApiResponse] });
+    });
+
+    it('listRooms with include_archived sends query param', () => {
+      service.listRooms('site-1', true).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms');
+      expect(req.request.params.get('include_archived')).toBe('true');
+      req.flush({ rooms: [] });
+    });
+
+    it('getRoom calls GET with site and room IDs', () => {
+      service.getRoom('site-1', 'room-1').subscribe((room) => {
+        expect(room.name).toBe('Baby Room');
+      });
+
+      const req = httpMock.expectOne('/api/v1/sites/site-1/rooms/room-1');
+      expect(req.request.method).toBe('GET');
+      req.flush(roomApiResponse);
+    });
+
+    it('createRoom calls POST with body', () => {
+      service.createRoom('site-1', { name: 'Baby Room', age_group: 'baby', capacity: 12 }).subscribe((room) => {
+        expect(room.name).toBe('Baby Room');
+      });
+
+      const req = httpMock.expectOne('/api/v1/sites/site-1/rooms');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ name: 'Baby Room', age_group: 'baby', capacity: 12 });
+      req.flush(roomApiResponse);
+    });
+
+    it('updateRoom calls PATCH with partial body', () => {
+      service.updateRoom('site-1', 'room-1', { capacity: 15 }).subscribe((room) => {
+        expect(room.capacity).toBe(12);
+      });
+
+      const req = httpMock.expectOne('/api/v1/sites/site-1/rooms/room-1');
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ capacity: 15 });
+      req.flush(roomApiResponse);
+    });
+
+    it('archiveRoom calls POST action endpoint', () => {
+      service.archiveRoom('site-1', 'room-1').subscribe();
+
+      const req = httpMock.expectOne('/api/v1/sites/site-1/rooms/room-1/actions/archive');
+      expect(req.request.method).toBe('POST');
+      req.flush({});
+    });
+
+    it('reactivateRoom calls POST action endpoint', () => {
+      service.reactivateRoom('site-1', 'room-1').subscribe((room) => {
+        expect(room.isActive).toBeTrue();
+      });
+
+      const req = httpMock.expectOne('/api/v1/sites/site-1/rooms/room-1/actions/activate');
+      expect(req.request.method).toBe('POST');
+      req.flush(roomApiResponse);
+    });
+  });
 });

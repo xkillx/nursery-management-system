@@ -1,0 +1,23 @@
+package domain
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+)
+
+type Tx = pgx.Tx
+
+type Repository interface {
+	ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]Room, error)
+	GetByID(ctx context.Context, tenantID, branchID, roomID uuid.UUID) (Room, error)
+	Create(ctx context.Context, room Room) error
+	Update(ctx context.Context, tenantID, branchID, roomID uuid.UUID, fields map[string]any) (int64, error)
+	Archive(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) error
+	Reactivate(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) error
+	ActiveNameExists(ctx context.Context, tenantID, branchID uuid.UUID, name string, excludeRoomID *uuid.UUID) (bool, error)
+	CountActiveChildren(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (int, error)
+	Exists(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (bool, error)
+	GetByIDForUpdate(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (Room, error)
+}

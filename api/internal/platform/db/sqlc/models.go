@@ -672,6 +672,19 @@ type RefreshToken struct {
 	RememberMe   bool
 }
 
+type Room struct {
+	ID          pgtype.UUID
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	Name        string
+	Description pgtype.Text
+	AgeGroup    string
+	Capacity    int32
+	IsActive    bool
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
 type StripeWebhookEvent struct {
 	ID                pgtype.UUID
 	StripeEventID     string

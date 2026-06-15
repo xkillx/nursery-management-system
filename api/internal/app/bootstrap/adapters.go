@@ -17,6 +17,7 @@ import (
 	postgresguardian "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
+	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
 	regprofiledomain "nursery-management-system/api/internal/modules/registrationprofiles/domain"
@@ -180,6 +181,23 @@ func stringPtrFromBlank(v string) *string {
 		return nil
 	}
 	return &v
+}
+
+// ── Rooms adapters ──────────────────────────────────────────────────────────
+
+type siteExistsCheckerAdapter struct {
+	repo *ownerpostgres.OwnerRepository
+}
+
+func (a *siteExistsCheckerAdapter) SiteExists(ctx context.Context, tenantID, siteID uuid.UUID) (bool, error) {
+	_, err := a.repo.GetActiveSite(ctx, tenantID, siteID)
+	if err != nil {
+		if err == ownerdomain.ErrSiteNotFound {
+			return false, nil
+		}
+		return false, fmt.Errorf("check site exists: %w", err)
+	}
+	return true, nil
 }
 
 var (

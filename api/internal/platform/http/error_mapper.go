@@ -34,12 +34,14 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 	switch domainErr.Code {
 	case "unauthorized":
 		status = http.StatusUnauthorized
-	case "forbidden_scope_selection", "forbidden_role", "forbidden_role_unknown", "forbidden_scope":
+	case "forbidden_scope_selection", "forbidden_role", "forbidden_role_unknown", "forbidden_scope",
+		"forbidden_site_scope":
 		status = http.StatusForbidden
 	case "validation_error", "child_lifecycle_reason_required", "guardian_deactivation_reason_required",
 		"relationship_reason_required", "lifecycle_reason_invalid", "reason_note_required_for_other",
 		"guardian_not_active", "membership_not_parent", "membership_not_active",
 			"attendance_correction_reason_required", "attendance_correction_reason_invalid",
+			"invalid_age_group",
 			"password_reset_token_invalid", "password_reset_token_expired", "password_reset_token_used",
 			"invite_token_invalid", "invite_token_expired", "invite_token_revoked", "invite_token_accepted",
 			"invite_role_not_allowed",
@@ -54,7 +56,8 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 			"invoice_not_draft", "invoice_not_monthly",
 			"invoice_not_payable",
 			"invite_email_already_registered", "invite_scope_conflict",
-			"invite_not_pending", "invite_already_accepted":
+			"invite_not_pending", "invite_already_accepted",
+			"room_name_duplicate", "room_has_children", "room_not_active":
 		status = http.StatusConflict
 	case "payment_provider_unconfigured":
 		status = http.StatusServiceUnavailable

@@ -81,6 +81,10 @@ import (
 	regprofileapp "nursery-management-system/api/internal/modules/registrationprofiles/application"
 	regprofilepostgres "nursery-management-system/api/internal/modules/registrationprofiles/infrastructure/postgres"
 	regprofilehandler "nursery-management-system/api/internal/modules/registrationprofiles/interfaces/http"
+
+	roomsapp "nursery-management-system/api/internal/modules/rooms/application"
+	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
+	roomshttphandler "nursery-management-system/api/internal/modules/rooms/interfaces/http"
 )
 
 type BootstrapOptions struct {
@@ -353,6 +357,18 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	owner := protected.Group("/owner")
 	owner.Use(httpserver.RequireRolesWithObservability(logger, recorder, "owner"))
 	ownerHandler.RegisterRoutes(owner)
+
+	// Rooms module
+	roomsSiteChecker := &siteExistsCheckerAdapter{repo: ownerRepo}
+	roomsRepo := roomspostgres.NewRepository(pool)
+	roomsCreateUC := roomsapp.NewCreateRoom(roomsRepo, roomsSiteChecker)
+	roomsUpdateUC := roomsapp.NewUpdateRoom(roomsRepo, roomsSiteChecker)
+	roomsListUC := roomsapp.NewListRooms(roomsRepo)
+	roomsGetUC := roomsapp.NewGetRoom(roomsRepo)
+	roomsArchiveUC := roomsapp.NewArchiveRoom(roomsRepo, txManager, auditWriter, pool)
+	roomsReactivateUC := roomsapp.NewReactivateRoom(roomsRepo, txManager, auditWriter, pool)
+	roomsHandler := roomshttphandler.NewHandler(roomsCreateUC, roomsUpdateUC, roomsListUC, roomsGetUC, roomsArchiveUC, roomsReactivateUC).WithObservability(logger)
+	roomsHandler.RegisterRoutes(protected)
 
 	return router
 }

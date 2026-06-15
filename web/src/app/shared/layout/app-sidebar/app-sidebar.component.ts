@@ -17,6 +17,7 @@ import {
   heroBanknotes,
   heroDocumentPlus,
   heroDocumentText,
+  heroHomeModern,
 } from '@ng-icons/heroicons/outline';
 
 export type SidebarIcon =
@@ -28,7 +29,8 @@ export type SidebarIcon =
   | 'attendance-corrections'
   | 'funding'
   | 'invoice-run'
-  | 'invoices';
+  | 'invoices'
+  | 'rooms';
 
 export type SidebarNavItem = {
   label: string;
@@ -61,6 +63,7 @@ export type SidebarNavGroup = {
       heroBanknotes,
       heroDocumentPlus,
       heroDocumentText,
+      heroHomeModern,
     }),
   ],
   templateUrl: './app-sidebar.component.html',
@@ -81,6 +84,7 @@ export class AppSidebarComponent {
     funding: 'heroBanknotes',
     'invoice-run': 'heroDocumentPlus',
     invoices: 'heroDocumentText',
+    rooms: 'heroHomeModern',
   };
 
   private subscription: Subscription = new Subscription();
@@ -151,6 +155,12 @@ export class AppSidebarComponent {
           ],
         },
         {
+          label: 'Setup',
+          items: [
+            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms' },
+          ],
+        },
+        {
           label: 'People',
           items: [
             { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/staff/manager/children/'] },
@@ -184,6 +194,12 @@ export class AppSidebarComponent {
             { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance', icon: 'attendance' },
           ],
         },
+        {
+          label: 'Setup',
+          items: [
+            { label: 'Rooms', path: ROLE_ROUTES.practitionerRooms, testId: 'staff-link-practitioner-rooms', icon: 'rooms' },
+          ],
+        },
       ];
     }
 
@@ -193,6 +209,12 @@ export class AppSidebarComponent {
           label: 'Overview',
           items: [
             { label: 'Overview', path: ROLE_ROUTES.ownerHome, testId: 'owner-link-overview', icon: 'dashboard' },
+          ],
+        },
+        {
+          label: 'Setup',
+          items: [
+            { label: 'Rooms', path: ROLE_ROUTES.ownerRooms, testId: 'owner-link-rooms', icon: 'rooms' },
           ],
         },
         {
