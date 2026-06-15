@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="mx-auto max-w-[1440px] space-y-6">
   @if (isLoadingChild) {
     <app-loading-state variant="block" label="Loading child details..."></app-loading-state>
   } @else if (errorMessage && !child) {
@@ -16,40 +16,56 @@
       <app-alert variant="warning" [message]="consentsLoadError"></app-alert>
     }
 
-    <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-center">
-        <div class="flex size-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-brand-50 text-2xl font-semibold text-brand-600 shadow-theme-sm dark:border-gray-900 dark:bg-brand-500/15 dark:text-brand-300 sm:size-28">
-          {{ initials }}
+    <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] lg:p-8">
+      <div class="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div class="relative flex size-28 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-brand-50 text-3xl font-semibold text-brand-600 shadow-theme-sm dark:border-gray-800 dark:bg-brand-500/15 dark:text-brand-300 sm:size-32">
+            {{ initials }}
+            <span class="absolute -bottom-1 -right-1 size-6 rounded-full border-4 border-white bg-success-500 dark:border-gray-950" aria-hidden="true"></span>
+          </div>
+
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-3">
+              <h1 class="text-title-sm font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h1>
+              <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
+              <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <span class="inline-flex items-center gap-2">
+                <ng-icon name="heroCalendarDays" size="18" aria-hidden="true" />
+                {{ childAgeLabel }} (DOB: {{ child.dateOfBirth }})
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <ng-icon name="heroHome" size="18" aria-hidden="true" />
+                {{ mockProfile.roomName }}
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <ng-icon name="heroIdentification" size="18" aria-hidden="true" />
+                ID: {{ mockProfile.childReference }}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div class="min-w-0 flex-1">
-          <div class="flex flex-wrap items-center gap-3">
-            <h1 class="text-title-md font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h1>
-            <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
-            <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
-          </div>
-          <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>{{ childAgeLabel }} (DOB: {{ child.dateOfBirth }})</span>
-            <span>{{ mockProfile.roomName }}</span>
-            <span>ID: {{ mockProfile.childReference }}</span>
-            <span>Start: {{ child.startDate }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row lg:justify-end">
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
           <a
             routerLink="/staff/manager/children"
-            class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]"
           >
-            Back to children
+            <ng-icon name="heroArrowLeft" size="18" aria-hidden="true" />
+            Back
           </a>
+          <app-button variant="primary" size="sm" className="min-h-11 gap-2 px-4" (btnClick)="onEditChild()">
+            <ng-icon name="heroPencilSquare" size="18" aria-hidden="true" />
+            Edit profile
+          </app-button>
           <a
             routerLink="/staff/practitioner/attendance"
-            class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand-500 px-4 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-600"
           >
-            Attendance
+            <ng-icon name="heroClipboardDocumentCheck" size="18" aria-hidden="true" />
+            Log attendance
           </a>
-          <app-button variant="primary" size="sm" (btnClick)="onEditChild()">Edit child basics</app-button>
         </div>
       </div>
     </section>
@@ -66,14 +82,16 @@
       />
     }
 
-    <section class="rounded-xl border-2 border-error-200 bg-error-50 p-4 dark:border-error-500/20 dark:bg-error-500/10">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white text-error-600 dark:bg-white/[0.06] dark:text-error-400">!</div>
-        <div class="min-w-0">
-          <h2 class="text-xs font-bold uppercase tracking-wide text-error-700 dark:text-error-400">Medical & dietary alerts</h2>
+    <section class="rounded-lg border-2 border-error-200 bg-error-50 p-5 dark:border-error-500/25 dark:bg-error-500/10">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div class="flex size-11 shrink-0 items-center justify-center rounded-md bg-white text-error-600 dark:bg-white/[0.06] dark:text-error-400">
+          <ng-icon name="heroExclamationTriangle" size="26" aria-hidden="true" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 class="text-sm font-bold uppercase text-error-700 dark:text-error-300">Medical & dietary alerts</h2>
           <div class="mt-3 flex flex-wrap gap-2">
             @for (alert of medicalDietaryAlerts; track $index) {
-              <span class="rounded-full border border-error-200 bg-white/80 px-3 py-1 text-xs font-semibold text-error-700 dark:border-error-500/20 dark:bg-white/[0.06] dark:text-error-300">
+              <span class="rounded-full border border-error-200 bg-white px-3 py-1 text-xs font-semibold text-error-700 dark:border-error-500/25 dark:bg-white/[0.06] dark:text-error-300">
                 {{ alert }}
               </span>
             }
@@ -82,120 +100,146 @@
       </div>
     </section>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <div class="space-y-6 xl:col-span-2">
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div class="space-y-6">
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Core details</h2>
-            <a [routerLink]="registrationEditLink" class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Edit registration</a>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Core Details</h2>
+            <a [routerLink]="registrationEditLink" class="inline-flex min-h-10 items-center gap-2 rounded-md px-2 text-sm font-medium text-brand-600 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-brand-400 dark:hover:bg-brand-500/10">
+              <ng-icon name="heroEllipsisHorizontal" size="22" aria-hidden="true" />
+              <span class="sr-only">Edit registration</span>
+            </a>
           </div>
-          <dl class="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
+          <dl class="grid grid-cols-1 gap-x-10 gap-y-6 p-5 sm:grid-cols-2">
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Full name</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ child.fullName }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Full name</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ child.fullName }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Date of birth</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ child.dateOfBirth }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Home address</dt>
+              <dd class="mt-2 text-sm leading-6 text-gray-900 dark:text-white/90">{{ formatAddress(registrationProfile?.demographicsHome?.homeAddress) }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">First language</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ valueOrDash(registrationProfile?.demographicsHome?.firstLanguage) }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Gender</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ sexLabel }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Home telephone</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ valueOrDash(registrationProfile?.demographicsHome?.homeTelephone) }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Home telephone</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ valueOrDash(registrationProfile?.demographicsHome?.homeTelephone) }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Start date</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ child.startDate }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Primary language</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ valueOrDash(registrationProfile?.demographicsHome?.firstLanguage) }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">End date</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ child.endDate ?? '-' }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Site core hourly rate</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ formatSiteRate(child.siteCoreHourlyRateMinor) }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Site core hourly rate</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ formatSiteRate(child.siteCoreHourlyRateMinor) }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Start date</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ child.startDate }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Home address</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ formatAddress(registrationProfile?.demographicsHome?.homeAddress) }}</dd>
+              <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">End date</dt>
+              <dd class="mt-2 text-sm text-gray-900 dark:text-white/90">{{ child.endDate ?? '-' }}</dd>
             </div>
             @if (child.notes || registrationProfile?.routineCare?.routineCareNotes) {
               <div class="sm:col-span-2">
-                <dt class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Notes</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ child.notes || registrationProfile?.routineCare?.routineCareNotes }}</dd>
+                <dt class="text-xs font-bold uppercase text-gray-700 dark:text-gray-300">Notes</dt>
+                <dd class="mt-2 text-sm leading-6 text-gray-900 dark:text-white/90">{{ child.notes || registrationProfile?.routineCare?.routineCareNotes }}</dd>
               </div>
             }
           </dl>
         </section>
 
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Primary guardians</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Primary Guardians</h2>
           </div>
-          <div class="space-y-3 p-5">
+          <div class="space-y-5 p-5">
             @if (isLoadingLinks || isLoadingProfile) {
               <app-loading-state variant="inline" label="Loading guardians..."></app-loading-state>
             } @else if (primaryContacts.length === 0) {
               <app-empty-state title="No guardians recorded" message="Link a guardian or complete parent/carer registration details."></app-empty-state>
             } @else {
-              @for (contact of primaryContacts; track contact.fullName) {
-                <article class="rounded-lg border border-gray-100 p-4 dark:border-gray-800">
-                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ contact.fullName }}</h3>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ valueOrDash(contact.relationshipToChild) }}</p>
+              <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                @for (contact of primaryContacts; track contact.fullName) {
+                  <article class="rounded-lg border border-brand-100 bg-brand-25 p-4 dark:border-brand-500/20 dark:bg-brand-500/10">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex min-w-0 gap-3">
+                        <div class="flex size-11 shrink-0 items-center justify-center rounded-md bg-white text-sm font-semibold text-brand-700 shadow-theme-xs dark:bg-white/[0.08] dark:text-brand-300">
+                          {{ contactInitials(contact) }}
+                        </div>
+                        <div class="min-w-0">
+                          <h3 class="truncate text-sm font-semibold text-gray-900 dark:text-white/90">{{ contact.fullName }}</h3>
+                          <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ valueOrDash(contact.relationshipToChild) }}</p>
+                        </div>
+                      </div>
+                      <span class="rounded-sm bg-brand-100 px-2.5 py-1 text-[11px] font-bold uppercase text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                        Resp. party
+                      </span>
                     </div>
-                    <span class="rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
-                      Responsibility: {{ booleanLabel(contact.hasParentalResponsibility) }}
-                    </span>
-                  </div>
-                  <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-2">
-                    <span>{{ valueOrDash(contact.telephone) }}</span>
-                    <span>{{ valueOrDash(contact.email) }}</span>
-                  </div>
-                </article>
-              }
+                    <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                      <p class="flex items-center gap-2">
+                        <ng-icon name="heroPhone" size="16" aria-hidden="true" />
+                        {{ valueOrDash(contact.telephone) }}
+                      </p>
+                      <p class="flex items-center gap-2">
+                        <ng-icon name="heroEnvelope" size="16" aria-hidden="true" />
+                        {{ valueOrDash(contact.email) }}
+                      </p>
+                    </div>
+                  </article>
+                }
+              </div>
             }
 
             <div class="flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-gray-800 sm:flex-row sm:items-end">
               <div class="flex-1">
-                <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Link an active guardian</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Link an active guardian</label>
                 <app-select [options]="guardianOptions" [(ngModel)]="selectedGuardianId" />
               </div>
-              <app-button variant="primary" size="sm" [disabled]="!selectedGuardianId || isLinking" (btnClick)="linkGuardian()">Link guardian</app-button>
+              <app-button variant="primary" size="sm" className="min-h-11" [disabled]="!selectedGuardianId || isLinking" (btnClick)="linkGuardian()">Link guardian</app-button>
             </div>
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Emergency & collection</h2>
-            <a [routerLink]="registrationEditLink" class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Manage</a>
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="border-b border-brand-100 bg-brand-50 px-5 py-4 dark:border-brand-500/20 dark:bg-brand-500/10">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Emergency & Collection</h2>
           </div>
-          <div class="grid grid-cols-1 gap-5 p-5 lg:grid-cols-2">
-            <div class="rounded-lg bg-gray-50 p-4 dark:bg-white/[0.03]">
-              <p class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Collection password</p>
-              <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white/90">{{ collectionPasswordStatus }}</p>
-              <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Password value is never displayed on this page.</p>
-              <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                <p>Over-18 collection: {{ booleanLabel(registrationProfile?.collection?.over18CollectionAcknowledged) }}</p>
-                <p>Emergency collection reviewed: {{ booleanLabel(registrationProfile?.collection?.emergencyCollectionReviewed) }}</p>
+          <div class="space-y-5 p-5">
+            <div class="border-l-4 border-warning-500 bg-warning-25 p-4 dark:bg-warning-500/10">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <ng-icon name="heroKey" size="22" class="text-warning-600 dark:text-warning-400" aria-hidden="true" />
+                  <div>
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Collection password</p>
+                    <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white/90">{{ collectionPasswordStatus }}</p>
+                  </div>
+                </div>
+                <a [routerLink]="registrationEditLink" class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Manage</a>
               </div>
+              <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">Password value is never displayed on this page.</p>
             </div>
-            <div class="space-y-4">
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white/90">Emergency contacts</h3>
                 @if (emergencyContacts.length === 0) {
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No emergency contacts recorded.</p>
+                  <p class="mt-3 rounded-md border border-gray-100 px-3 py-3 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">No emergency contacts recorded.</p>
                 } @else {
-                  <ul class="mt-2 space-y-2">
+                  <ul class="mt-3 space-y-2">
                     @for (contact of emergencyContacts; track contact.fullName) {
-                      <li class="rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
-                        <span class="font-medium text-gray-900 dark:text-white/90">{{ contact.fullName }}</span>
-                        <span class="ml-2 text-gray-500 dark:text-gray-400">{{ valueOrDash(contact.telephone) }}</span>
+                      <li class="flex min-h-14 items-center justify-between gap-3 rounded-md border border-gray-200 px-4 py-3 text-sm dark:border-gray-800">
+                        <span>
+                          <span class="block font-medium text-gray-900 dark:text-white/90">{{ contact.fullName }}</span>
+                          <span class="block text-xs text-gray-500 dark:text-gray-400">{{ valueOrDash(contact.relationshipToChild) }}</span>
+                        </span>
+                        <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <ng-icon name="heroPhone" size="18" aria-hidden="true" />
+                          {{ valueOrDash(contact.telephone) }}
+                        </span>
                       </li>
                     }
                   </ul>
@@ -204,13 +248,19 @@
               <div>
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white/90">Authorised collectors</h3>
                 @if (authorisedCollectors.length === 0) {
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No authorised collectors recorded.</p>
+                  <p class="mt-3 rounded-md border border-gray-100 px-3 py-3 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">No authorised collectors recorded.</p>
                 } @else {
-                  <ul class="mt-2 space-y-2">
+                  <ul class="mt-3 space-y-2">
                     @for (contact of authorisedCollectors; track contact.fullName) {
-                      <li class="rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
-                        <span class="font-medium text-gray-900 dark:text-white/90">{{ contact.fullName }}</span>
-                        <span class="ml-2 text-gray-500 dark:text-gray-400">{{ valueOrDash(contact.telephone) }}</span>
+                      <li class="flex min-h-14 items-center justify-between gap-3 rounded-md border border-gray-200 px-4 py-3 text-sm dark:border-gray-800">
+                        <span>
+                          <span class="block font-medium text-gray-900 dark:text-white/90">{{ contact.fullName }}</span>
+                          <span class="block text-xs text-gray-500 dark:text-gray-400">{{ valueOrDash(contact.relationshipToChild) }}</span>
+                        </span>
+                        <span class="flex items-center gap-2 text-success-600 dark:text-success-400">
+                          <ng-icon name="heroShieldCheck" size="20" aria-hidden="true" />
+                          Cleared
+                        </span>
                       </li>
                     }
                   </ul>
@@ -222,25 +272,35 @@
       </div>
 
       <aside class="space-y-6">
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Enrollment</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Enrollment</h2>
           </div>
           <div class="space-y-4 p-5">
             <div class="flex items-center justify-between gap-3">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Enrollment status</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">Start Date</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white/90">{{ child.startDate }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Status</span>
               <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
             </div>
-            @if (child.missingRequirements.length > 0) {
-              <div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Funding</span>
+              <span class="rounded-sm bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">{{ fundingAllowanceLabel }}</span>
+            </div>
+            <div class="border-t border-gray-200 pt-4 dark:border-gray-800">
+              @if (child.missingRequirements.length > 0) {
                 <p class="text-sm font-medium text-gray-900 dark:text-white/90">Missing requirements</p>
                 <ul class="mt-2 space-y-1 text-sm text-error-600 dark:text-error-400">
                   @for (req of child.missingRequirements; track req) {
                     <li>{{ requirementLabel(req) }}</li>
                   }
                 </ul>
-              </div>
-            }
+              } @else {
+                <p class="text-sm text-success-700 dark:text-success-400">No missing requirements recorded.</p>
+              }
+            </div>
 
             @if (registrationLoadError) {
               <p class="text-sm text-warning-600 dark:text-warning-400">{{ registrationLoadError }}</p>
@@ -248,16 +308,16 @@
               <app-loading-state variant="inline" label="Loading registration status..."></app-loading-state>
             } @else {
               <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-500 dark:text-gray-400">Registration profile</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">Registration profile</span>
                 <span class="{{ getCompletionBadgeClass(profileCompleteness?.isComplete ?? false) }} rounded-full px-3 py-1 text-xs font-medium">
                   {{ formatCompletionStatus(profileCompleteness?.isComplete ?? false) }}
                 </span>
               </div>
-              <div class="flex gap-2">
-                <a [routerLink]="intakeLink" class="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.03]">
+              <div class="grid grid-cols-2 gap-2">
+                <a [routerLink]="intakeLink" class="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.03]">
                   @if (workflowStatus?.is_reviewed_complete) { View intake } @else { Continue intake }
                 </a>
-                <a [routerLink]="registrationEditLink" class="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.03]">
+                <a [routerLink]="registrationEditLink" class="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.03]">
                   Editor
                 </a>
               </div>
@@ -265,19 +325,19 @@
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Monthly funded-hours allowance</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Monthly funded-hours allowance</h2>
           </div>
           <div class="space-y-3 p-5">
             <div>
-              <label for="billingMonth" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Billing month</label>
+              <label for="billingMonth" class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Billing month</label>
               <input
                 id="billingMonth"
                 type="month"
                 [(ngModel)]="selectedBillingMonth"
                 (ngModelChange)="onBillingMonthChange()"
-                class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90"
+                class="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 shadow-theme-xs outline-none transition-colors focus:border-brand-500 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               />
             </div>
 
@@ -286,15 +346,15 @@
             } @else {
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label for="fundedHours" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Hours</label>
-                  <input id="fundedHours" type="number" min="0" [(ngModel)]="fundedHoursInput" class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90" placeholder="0" />
+                  <label for="fundedHours" class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Hours</label>
+                  <input id="fundedHours" type="number" min="0" [(ngModel)]="fundedHoursInput" class="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 shadow-theme-xs outline-none transition-colors focus:border-brand-500 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" placeholder="0" />
                 </div>
                 <div>
-                  <label for="fundedMinutes" class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Minutes</label>
-                  <input id="fundedMinutes" type="number" min="0" max="59" [(ngModel)]="fundedMinutesInput" class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:text-white/90" placeholder="0" />
+                  <label for="fundedMinutes" class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Minutes</label>
+                  <input id="fundedMinutes" type="number" min="0" max="59" [(ngModel)]="fundedMinutesInput" class="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 shadow-theme-xs outline-none transition-colors focus:border-brand-500 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" placeholder="0" />
                 </div>
               </div>
-              <app-button variant="primary" size="sm" className="w-full" [disabled]="isLoadingFunding || isSavingFunding" (btnClick)="saveFundingAllowance()">
+              <app-button variant="primary" size="sm" className="w-full min-h-11" [disabled]="isLoadingFunding || isSavingFunding" (btnClick)="saveFundingAllowance()">
                 {{ isSavingFunding ? 'Saving...' : 'Save allowance' }}
               </app-button>
 
@@ -314,46 +374,63 @@
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Safeguarding & consents</h2>
-            <a [routerLink]="intakeLink" class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Review</a>
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white/90">Safeguarding</h2>
           </div>
           <div class="space-y-3 p-5">
             @if (isLoadingConsents) {
               <app-loading-state variant="inline" label="Loading consents..."></app-loading-state>
             } @else {
               @for (row of keyConsentRows; track row.label) {
-                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">{{ row.label }}</span>
+                <div class="flex min-h-12 items-center justify-between gap-3 rounded-sm px-3 py-2 {{ row.granted === false ? 'bg-error-25 dark:bg-error-500/10' : 'bg-success-25 dark:bg-success-500/10' }}">
+                  <span class="flex items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <ng-icon [name]="row.granted === false ? 'heroXMark' : 'heroCheck'" size="18" [class]="row.granted === false ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'" aria-hidden="true" />
+                    {{ row.label }}
+                  </span>
                   <span class="{{ consentBadgeClass(row.granted) }} rounded-full px-3 py-1 text-xs font-medium">{{ consentLabel(row.granted) }}</span>
                 </div>
               }
             }
+            <a [routerLink]="intakeLink" class="inline-flex min-h-10 w-full items-center justify-center rounded-md text-sm font-medium text-brand-600 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-brand-400 dark:hover:bg-brand-500/10">View all documents</a>
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Quick documents</h2>
+            <h2 class="text-sm font-semibold uppercase text-gray-900 dark:text-white/90">Quick documents</h2>
           </div>
-          <div class="space-y-3 p-5">
+          <div class="space-y-4 p-5">
             @for (document of mockProfile.documents; track document.name) {
               <button
                 type="button"
                 disabled
-                class="flex w-full cursor-not-allowed items-center justify-between rounded-lg border border-gray-100 px-3 py-3 text-left opacity-70 dark:border-gray-800"
+                class="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-md px-2 py-2 text-left opacity-70"
               >
-                <span>
-                  <span class="block text-sm font-medium text-gray-900 dark:text-white/90">{{ document.name }}</span>
-                  <span class="block text-xs text-gray-500 dark:text-gray-400">{{ document.meta }}</span>
+                <span class="flex min-w-0 items-center gap-3">
+                  <ng-icon name="heroDocumentText" size="24" class="shrink-0 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-medium text-gray-900 dark:text-white/90">{{ document.name }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{ document.meta }}</span>
+                  </span>
                 </span>
-                <span class="text-xs text-gray-400">Unavailable</span>
+                <span class="shrink-0 text-xs text-gray-400">Unavailable</span>
               </button>
             }
           </div>
         </section>
       </aside>
     </div>
+
+    <footer class="flex flex-col gap-3 border-t border-gray-200 py-6 text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-wrap gap-x-6 gap-y-2">
+        <span>Last updated: {{ child.updatedAt | date:'mediumDate' }}</span>
+        <span>Safeguarding Level: {{ safeguardingLevel }}</span>
+      </div>
+      <div class="flex gap-2">
+        <a [routerLink]="registrationEditLink" class="inline-flex min-h-10 items-center justify-center rounded-md border border-error-200 bg-white px-4 text-sm font-medium text-error-600 hover:bg-error-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-500 dark:border-error-500/30 dark:bg-transparent dark:text-error-400 dark:hover:bg-error-500/10">Flag for Review</a>
+        <button type="button" disabled class="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-500 opacity-70 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">Print Summary</button>
+      </div>
+    </footer>
   }
 </div>

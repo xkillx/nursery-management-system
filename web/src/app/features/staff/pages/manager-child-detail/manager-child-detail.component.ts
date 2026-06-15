@@ -2,6 +2,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroArrowLeft,
+  heroCalendarDays,
+  heroCheck,
+  heroClipboardDocumentCheck,
+  heroDocumentText,
+  heroEllipsisHorizontal,
+  heroEnvelope,
+  heroExclamationTriangle,
+  heroHome,
+  heroIdentification,
+  heroKey,
+  heroPencilSquare,
+  heroPhone,
+  heroShieldCheck,
+  heroUserGroup,
+  heroXMark,
+} from '@ng-icons/heroicons/outline';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
@@ -36,12 +55,33 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
     FormsModule,
     RouterLink,
     ChildFormComponent,
+    NgIcon,
     SelectComponent,
     ButtonComponent,
     AlertComponent,
     StatusBadgeComponent,
     EmptyStateComponent,
     LoadingStateComponent,
+  ],
+  providers: [
+    provideIcons({
+      heroArrowLeft,
+      heroCalendarDays,
+      heroCheck,
+      heroClipboardDocumentCheck,
+      heroDocumentText,
+      heroEllipsisHorizontal,
+      heroEnvelope,
+      heroExclamationTriangle,
+      heroHome,
+      heroIdentification,
+      heroKey,
+      heroPencilSquare,
+      heroPhone,
+      heroShieldCheck,
+      heroUserGroup,
+      heroXMark,
+    }),
   ],
   templateUrl: './manager-child-detail.component.html',
 })
@@ -305,6 +345,37 @@ export class ManagerChildDetailComponent implements OnInit {
 
   get collectionPasswordStatus(): string {
     return this.registrationProfile?.collection?.isSet ? 'Set' : 'Not set';
+  }
+
+  get sexLabel(): string {
+    const sex = this.registrationProfile?.demographicsHome?.sex;
+    if (!sex) return '-';
+    return sex.charAt(0).toUpperCase() + sex.slice(1);
+  }
+
+  get fundingAllowanceLabel(): string {
+    if (this.isLoadingFunding) return 'Loading';
+    if (!this.fundingProfile) return 'Not set';
+    const totalMinutes = this.fundingProfile.fundedAllowanceMinutes;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (minutes === 0) return `${hours}h`;
+    return `${hours}h ${minutes}m`;
+  }
+
+  get safeguardingLevel(): string {
+    if (this.medicalDietaryAlerts.length > 0) return 'Enhanced';
+    if (this.currentConsent === null) return 'Pending review';
+    return 'Standard';
+  }
+
+  contactInitials(contact: RegistrationContactEntry): string {
+    return contact.fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || 'GC';
   }
 
   consentLabel(granted: boolean | null): string {
