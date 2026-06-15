@@ -126,6 +126,7 @@ type consentPayload struct {
 	Plasters                       bool    `json:"plasters"`
 	SafeguardingReportingAcknowledgement bool `json:"safeguarding_reporting_acknowledgement"`
 	InformationSharingConsent      bool    `json:"information_sharing_consent"`
+	GDPRDataProcessingConsent      bool    `json:"gdpr_data_processing_consent"`
 	AreaSENCOLiaison               bool    `json:"area_senco_liaison"`
 	HealthVisitorLiaison           bool    `json:"health_visitor_liaison"`
 	TransitionDocuments            bool    `json:"transition_documents"`

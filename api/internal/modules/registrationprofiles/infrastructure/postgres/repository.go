@@ -105,7 +105,10 @@ func (r *Repository) GetForUpdateByChild(ctx context.Context, tx domain.Tx, tena
 func (r *Repository) Create(ctx context.Context, tx domain.Tx, profile *domain.Profile) (*domain.Profile, error) {
 	q := sqlc.New(tx)
 	homeAddr, _ := json.Marshal(profile.HomeAddress)
-	referrals, _ := json.Marshal(profile.ProfessionalReferrals)
+	referrals := []byte("[]")
+	if profile.ProfessionalReferrals != nil {
+		referrals, _ = json.Marshal(profile.ProfessionalReferrals)
+	}
 
 	row, err := q.RegistrationProfileCreate(ctx, sqlc.RegistrationProfileCreateParams{
 		ID:                            uuidToPgtype(profile.ID),
@@ -182,7 +185,10 @@ func (r *Repository) Create(ctx context.Context, tx domain.Tx, profile *domain.P
 func (r *Repository) Update(ctx context.Context, tx domain.Tx, profile *domain.Profile) (*domain.Profile, error) {
 	q := sqlc.New(tx)
 	homeAddr, _ := json.Marshal(profile.HomeAddress)
-	referrals, _ := json.Marshal(profile.ProfessionalReferrals)
+	referrals := []byte("[]")
+	if profile.ProfessionalReferrals != nil {
+		referrals, _ = json.Marshal(profile.ProfessionalReferrals)
+	}
 
 	row, err := q.RegistrationProfileUpdate(ctx, sqlc.RegistrationProfileUpdateParams{
 		TenantID:                      uuidToPgtype(profile.TenantID),

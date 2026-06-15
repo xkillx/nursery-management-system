@@ -184,6 +184,7 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 			Plasters:                       req.Consents.Plasters,
 			SafeguardingReportingAcknowledgement: req.Consents.SafeguardingReportingAcknowledgement,
 			InformationSharingConsent:      req.Consents.InformationSharingConsent,
+			GDPRDataProcessingConsent:      req.Consents.GDPRDataProcessingConsent,
 			AreaSENCOLiaison:               req.Consents.AreaSENCOLiaison,
 			HealthVisitorLiaison:           req.Consents.HealthVisitorLiaison,
 			TransitionDocuments:            req.Consents.TransitionDocuments,
