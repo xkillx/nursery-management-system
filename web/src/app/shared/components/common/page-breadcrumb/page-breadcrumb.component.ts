@@ -11,7 +11,7 @@ import {
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Observable, of } from 'rxjs';
 import { startWith } from 'rxjs/operators';
-import { NgIcon } from '@ng-icons/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroHome } from '@ng-icons/heroicons/outline';
 
 import { AuthService } from '../../../../core/services/auth.service';
@@ -47,6 +47,7 @@ interface CollectedCrumb {
 @Component({
   selector: 'app-page-breadcrumb',
   imports: [CommonModule, RouterModule, NgIcon],
+  providers: [provideIcons({ heroHome })],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './page-breadcrumb.component.html',
