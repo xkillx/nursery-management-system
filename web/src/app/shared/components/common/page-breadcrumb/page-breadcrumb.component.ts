@@ -117,11 +117,29 @@ export class PageBreadcrumbComponent implements OnInit {
     const data = snapshot.data ?? {};
     const crumb = data[BREADCRUMB_DATA_KEY] as Crumb | undefined;
     if (crumb && typeof crumb === 'object' && typeof crumb.label === 'string') {
-      out.push({ crumb, snapshot });
+      const last = out[out.length - 1];
+      if (!last || !this.isSameCrumb(last.crumb, crumb)) {
+        out.push({ crumb, snapshot });
+      }
     }
     if (snapshot.firstChild) {
       this.collectCrumbs(snapshot.firstChild, out);
     }
+  }
+
+  private isSameCrumb(a: Crumb, b: Crumb): boolean {
+    if (a.label !== b.label) return false;
+    return this.isSameLink(a.link, b.link);
+  }
+
+  private isSameLink(a: string[] | undefined, b: string[] | undefined): boolean {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
   }
 
   private wrapResolver(crumb: Crumb, snapshot: ActivatedRouteSnapshot): Observable<string> {

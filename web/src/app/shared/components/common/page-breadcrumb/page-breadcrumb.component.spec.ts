@@ -379,5 +379,30 @@ describe('PageBreadcrumbComponent', () => {
       expect(labels.some((t) => t.includes('Rooms'))).toBeTrue();
       expect(labels.some((t) => t.includes('New room'))).toBeTrue();
     });
+
+    it('does not duplicate a parent breadcrumb that is inherited by a path:"" child', async () => {
+      const { fixture, runNavigation } = await setupWithRole(ROLES.manager);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        {
+          path: 'rooms',
+          data: { breadcrumb: { label: 'Rooms', link: ['/rooms'] } },
+          children: [
+            {
+              path: '',
+              component: HostComponent,
+            },
+          ],
+        },
+      ]);
+      await runNavigation(['/rooms']);
+      fixture.detectChanges();
+
+      const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
+      expect(nav).not.toBeNull();
+      const liTexts = Array.from(nav!.querySelectorAll('li')).map((li) => (li.textContent ?? '').trim());
+      const roomsOccurrences = liTexts.filter((t) => t === 'Rooms').length;
+      expect(roomsOccurrences).toBe(1);
+    });
   });
 });
