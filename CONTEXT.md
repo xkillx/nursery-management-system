@@ -146,13 +146,15 @@ A consent ledger entry recorded by a manager from a signed physical form. The ap
 
 ## Paper-Form Consent Completeness (Post-MVP)
 
-Every consent and acknowledgement item on the physical form needs an explicit recorded decision before registration can be marked reviewed or complete. Optional permissions may be yes or no, but they should not remain blank; mandatory acknowledgements, signer name, signed date, and paper-form-on-file evidence must be present.
+Every consent and acknowledgement item on the physical form needs an explicit recorded decision before registration can be marked reviewed or complete. Optional permissions may be yes or no, but they should not remain blank; mandatory acknowledgements, signer name, and signed date must be present.
 
 ## Paper Evidence Metadata (Post-MVP)
 
-Registration evidence tracking records whether required physical forms and documents are on file or have been checked. It does not include upload, scanning, preview, or digital storage of the physical evidence in this tranche.
+Registration evidence tracking records whether required physical forms and documents are on file or have been checked. It does not include upload, scanning, preview, or digital storage of the physical evidence in this tranche. The registration date the parent/carer provided is captured as registration profile metadata at intake; see Registration Date (Post-MVP).
 
-The parent/carer paper-form completion date is captured as registration profile metadata at intake (`child_registration_profiles.paper_form_completed_date`) and is read-only thereafter — the form was signed on a specific date in the past and the system does not support re-issuing that date.
+## Registration Date (Post-MVP)
+
+The day the parent/carer provided the registration information to the nursery. It is captured as registration profile metadata at intake (`child_registration_profiles.registration_date`), defaults to today, is editable on the guided intake Step 1, is validated as not-in-future, and is required to proceed. After intake it is read-only in the section editor: the registration is a historical record of when the family registered, and the system does not support re-issuing that date. _Avoid_: paper form completion date, signed date, application date.
 
 ## Office-Use Enrolment Checklist (Post-MVP)
 
