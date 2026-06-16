@@ -79,7 +79,7 @@ export class ManagerChildrenComponent {
   children: ChildRecord[] = [];
   status: StatusFilter = 'active';
   searchTerm = '';
-  limit = 10;
+  limit = 25;
   offset = 0;
   isLoading = false;
   isSaving = false;
@@ -135,6 +135,10 @@ export class ManagerChildrenComponent {
 
   get canGoPrevious(): boolean {
     return this.offset > 0 && !this.isLoading;
+  }
+
+  get hasMultiplePages(): boolean {
+    return this.children.length >= this.limit || this.offset > 0;
   }
 
   ngOnInit(): void {

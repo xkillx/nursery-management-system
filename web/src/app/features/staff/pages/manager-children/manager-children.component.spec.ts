@@ -127,4 +127,25 @@ last_name: 'Hopper',
     const labels = child.missingRequirements.map(component.requirementLabel);
     expect(labels).toEqual(['Linked guardian']);
   });
+
+  it('hides pagination controls when all results fit on one page', () => {
+    fixture.detectChanges();
+    flushChildren([childApi]);
+    fixture.detectChanges();
+
+    expect(component.children.length).toBe(1);
+    expect(component.hasMultiplePages).toBe(false);
+  });
+
+  it('shows pagination controls when more pages may exist', () => {
+    fixture.detectChanges();
+    const fullPage = Array.from({ length: 25 }, (_, i) => ({
+      ...childApi,
+      id: `child-${i}`,
+    }));
+    flushChildren(fullPage);
+    fixture.detectChanges();
+
+    expect(component.hasMultiplePages).toBe(true);
+  });
 });
