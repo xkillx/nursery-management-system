@@ -168,7 +168,6 @@ describe('ManagerChildDetailComponent', () => {
       child_id: 'child-1',
       version: 1,
       source: 'staff',
-      paper_form_on_file: true,
       urgent_medical_treatment: true,
       urgent_medical_treatment_exceptions: null,
       plasters: true,

@@ -311,14 +311,14 @@ describe('ManagerChildRegistrationComponent', () => {
     expect(component.primaryRoomId).toBe('room-1');
   });
 
-  it('shows paper-form completion date from the loaded profile', () => {
-    component.profile = { ...mockProfile, paperFormCompletedDate: '2026-05-01' };
-    expect(component.paperFormCompletedDateDisplay).toBe('2026-05-01');
+  it('shows registration date from the loaded profile', () => {
+    component.profile = { ...mockProfile, registrationDate: '2026-05-01' };
+    expect(component.registrationDateDisplay).toBe('2026-05-01');
   });
 
-  it('shows em-dash when paper-form completion date is missing', () => {
-    component.profile = { ...mockProfile, paperFormCompletedDate: null };
-    expect(component.paperFormCompletedDateDisplay).toBe('—');
+  it('shows em-dash when registration date is missing', () => {
+    component.profile = { ...mockProfile, registrationDate: null };
+    expect(component.registrationDateDisplay).toBe('—');
   });
 
   it('saves primary room via updateChild', () => {

@@ -202,9 +202,9 @@ export class ManagerChildRegistrationComponent implements OnInit {
     });
   }
 
-  get paperFormCompletedDateDisplay(): string {
-    if (!this.profile?.paperFormCompletedDate) return '—';
-    return this.profile.paperFormCompletedDate;
+  get registrationDateDisplay(): string {
+    if (!this.profile?.registrationDate) return '—';
+    return this.profile.registrationDate;
   }
 
   private initDraftsFromProfile(profile: RegistrationProfileResponse): void {
