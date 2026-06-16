@@ -152,4 +152,55 @@ describe('OwnerRoomsComponent', () => {
     archiveReq.flush({});
     httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms').flush(roomsResponse);
   });
+
+  it('filters rows by name or description via the search term', () => {
+    fixture.detectChanges();
+    httpMock.expectOne((req) => req.url === '/api/v1/owner/site-summaries').flush(summariesResponse);
+    httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms').flush(roomsResponse);
+    fixture.detectChanges();
+
+    component.searchTerm = 'sensory';
+    expect(component.filteredRows.length).toBe(1);
+    expect(component.filteredRows[0].room.name).toBe('Sensory Hub');
+
+    component.searchTerm = 'calm';
+    expect(component.filteredRows.length).toBe(1);
+    expect(component.filteredRows[0].room.name).toBe('Baby Room');
+
+    component.searchTerm = 'no-such-thing';
+    expect(component.filteredRows.length).toBe(0);
+  });
+
+  it('exposes canLoadMore and visibleRows based on the chunked count', () => {
+    fixture.detectChanges();
+    httpMock.expectOne((req) => req.url === '/api/v1/owner/site-summaries').flush(summariesResponse);
+    httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms').flush(roomsResponse);
+    fixture.detectChanges();
+
+    expect(component.visibleRows.length).toBe(2);
+    expect(component.canLoadMore).toBeFalse();
+
+    const bigList = {
+      rooms: Array.from({ length: 30 }, (_, i) => ({
+        id: `room-${i}`,
+        name: `Room ${i}`,
+        description: null,
+        age_group: 'mixed',
+        capacity: 10,
+        is_active: true,
+        created_at: '2026-06-01T00:00:00Z',
+        updated_at: '2026-06-01T00:00:00Z',
+      })),
+    };
+    component.onSiteValueChange('site-1');
+    httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms').flush(bigList);
+    fixture.detectChanges();
+
+    expect(component.visibleRows.length).toBe(component.limit);
+    expect(component.canLoadMore).toBeTrue();
+
+    component.loadMore();
+    expect(component.visibleRows.length).toBe(30);
+    expect(component.canLoadMore).toBeFalse();
+  });
 });

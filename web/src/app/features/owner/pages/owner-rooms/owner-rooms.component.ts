@@ -1,7 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroBuildingOffice2,
+  heroChartBar,
+  heroFunnel,
+  heroPlus,
+  heroUserCircle,
+  heroUserGroup,
+} from '@ng-icons/heroicons/outline';
 
 import { ROLES, ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -28,20 +36,31 @@ interface RoomRow {
   selector: 'app-owner-rooms',
   imports: [
     CommonModule,
-    FormsModule,
     RouterModule,
     LoadingStateComponent,
     EmptyStateComponent,
     AlertComponent,
     SelectComponent,
+    NgIcon,
   ],
   templateUrl: './owner-rooms.component.html',
-  styleUrl: './owner-rooms.component.css',
+  providers: [
+    provideIcons({
+      heroBuildingOffice2,
+      heroChartBar,
+      heroFunnel,
+      heroPlus,
+      heroUserCircle,
+      heroUserGroup,
+    }),
+  ],
 })
 export class OwnerRoomsComponent implements OnInit {
   private readonly api = inject(OwnerApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+
+  readonly limit = 25;
 
   loadingSites = false;
   loadingRooms = false;
@@ -53,6 +72,8 @@ export class OwnerRoomsComponent implements OnInit {
   selectedSiteName = '';
   rooms: Room[] = [];
   statusFilter: RoomStatusFilter = 'all';
+  searchTerm = '';
+  visibleCount = this.limit;
 
   readonly statusOptions: Option[] = [
     { value: 'all', label: 'All rooms' },
@@ -93,7 +114,7 @@ export class OwnerRoomsComponent implements OnInit {
     return this.isOwner ? `${ROLE_ROUTES.ownerRooms}/new` : `${ROLE_ROUTES.managerRooms}/new`;
   }
 
-  get filteredRows(): RoomRow[] {
+  get statusFilteredRows(): RoomRow[] {
     return this.rooms
       .filter((room) => {
         if (this.statusFilter === 'active') return room.isActive;
@@ -103,16 +124,36 @@ export class OwnerRoomsComponent implements OnInit {
       .map((room) => ({ room, occupancy: this.demoOccupancy(room) }));
   }
 
+  get filteredRows(): RoomRow[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) {
+      return this.statusFilteredRows;
+    }
+
+    return this.statusFilteredRows.filter((row) => {
+      const haystack = [row.room.name, row.room.description ?? ''].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+  }
+
+  get visibleRows(): RoomRow[] {
+    return this.filteredRows.slice(0, this.visibleCount);
+  }
+
+  get canLoadMore(): boolean {
+    return this.visibleCount < this.filteredRows.length && !this.loadingRooms;
+  }
+
   get activeRows(): RoomRow[] {
-    return this.filteredRows.filter((row) => row.room.isActive);
+    return this.statusFilteredRows.filter((row) => row.room.isActive);
   }
 
   get totalRooms(): number {
-    return this.filteredRows.length;
+    return this.statusFilteredRows.length;
   }
 
   get totalCapacity(): number {
-    return this.filteredRows.reduce((sum, row) => sum + row.room.capacity, 0);
+    return this.statusFilteredRows.reduce((sum, row) => sum + row.room.capacity, 0);
   }
 
   get averageOccupancy(): number {
@@ -133,7 +174,19 @@ export class OwnerRoomsComponent implements OnInit {
     }, null);
   }
 
-  get staffRatioMessage(): string {
+  get totalRoomsPill(): string {
+    return this.totalRooms === 0 ? 'No rooms yet' : 'Demo-ready room setup';
+  }
+
+  get totalCapacityPill(): string {
+    return 'Across displayed rooms';
+  }
+
+  get occupancyPill(): string {
+    return this.activeRows.length === 0 ? 'Awaiting rooms' : 'Live snapshot';
+  }
+
+  get staffRatioPill(): string {
     const room = this.highestOccupancyRoom;
     if (!room || room.occupancy.percent < 88) return 'Demo ratio';
     return `Check ${room.room.name}`;
@@ -142,11 +195,24 @@ export class OwnerRoomsComponent implements OnInit {
   onSiteValueChange(siteId: string): void {
     this.selectedSiteId = siteId || null;
     this.selectedSiteName = this.sites.find((site) => site.siteId === siteId)?.siteName ?? '';
+    this.visibleCount = this.limit;
+    this.searchTerm = '';
     this.loadRooms();
   }
 
   onStatusFilterChange(value: string): void {
     this.statusFilter = (value as RoomStatusFilter) || 'all';
+    this.visibleCount = this.limit;
+  }
+
+  onSearchChange(event: Event): void {
+    this.searchTerm = (event.target as HTMLInputElement).value;
+    this.visibleCount = this.limit;
+  }
+
+  loadMore(): void {
+    if (!this.canLoadMore) return;
+    this.visibleCount = Math.min(this.visibleCount + this.limit, this.filteredRows.length);
   }
 
   editRoute(room: Room): string {
@@ -265,6 +331,7 @@ export class OwnerRoomsComponent implements OnInit {
       next: (rooms) => {
         this.rooms = rooms;
         this.loadingRooms = false;
+        this.visibleCount = this.limit;
       },
       error: (err) => {
         this.loadingRooms = false;
