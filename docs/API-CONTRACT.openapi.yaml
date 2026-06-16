@@ -1110,10 +1110,29 @@ components:
               format: date
             notes:
               type: string
+            primary_room_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: UUID of the child's primary room. Effectively required by server-side validation on the guided intake path.
         registration_profile:
           type: object
           description: All registration profile sections
           properties:
+            paper_form_completed_date:
+              type: string
+              format: date
+              nullable: true
+              description: Date the parent/carer signed the physical registration form. Effectively required by server-side validation on the guided intake path.
+            demographics_home:
+              type: object
+            medical_dietary:
+              type: object
+            health_contacts:
+              type: object
+            social_development:
+              type: object
+              properties:
             demographics_home:
               type: object
             medical_dietary:

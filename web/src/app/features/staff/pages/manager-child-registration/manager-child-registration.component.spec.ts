@@ -4,14 +4,42 @@ import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ManagerChildRegistrationComponent } from './manager-child-registration.component';
 import { RegistrationProfileResponse } from '../../models/registration-profile.models';
+import { ChildRecord } from '../../models/children.models';
 
 describe('ManagerChildRegistrationComponent', () => {
   let fixture: ComponentFixture<ManagerChildRegistrationComponent>;
   let component: ManagerChildRegistrationComponent;
   let staffApiMock: jasmine.SpyObj<StaffApiService>;
+  let roomsApiMock: jasmine.SpyObj<StaffRoomsApiService>;
+  let authStub: Partial<AuthService>;
+
+  const mockChild: ChildRecord = {
+    id: 'child-1',
+    firstName: 'Emma',
+    middleName: null,
+    lastName: 'Thompson',
+    fullName: 'Emma Thompson',
+    dateOfBirth: '2022-03-15',
+    startDate: '2024-01-01',
+    endDate: null,
+    coreHourlyRateMinor: null,
+    siteCoreHourlyRateMinor: null,
+    notes: null,
+    isActive: true,
+    leftAt: null,
+    leftReasonCode: null,
+    leftReasonNote: null,
+    primaryRoomId: 'room-1',
+    enrollmentComplete: false,
+    missingRequirements: [],
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  };
 
   const mockProfile: RegistrationProfileResponse = {
     child: { id: 'child-1', fullName: 'Emma Thompson', dateOfBirth: '2022-03-15' },
@@ -63,16 +91,28 @@ describe('ManagerChildRegistrationComponent', () => {
     staffApiMock = jasmine.createSpyObj('StaffApiService', [
       'getRegistrationProfile', 'patchRegistrationProfile',
       'setRegistrationCollectionPassword',
+      'getChild', 'updateChild',
     ]);
 
     staffApiMock.getRegistrationProfile.and.returnValue(of(mockProfile));
     staffApiMock.patchRegistrationProfile.and.returnValue(of(mockProfile));
     staffApiMock.setRegistrationCollectionPassword.and.returnValue(of(mockProfile));
+    staffApiMock.getChild.and.returnValue(of(mockChild));
+    staffApiMock.updateChild.and.returnValue(of(mockChild));
+
+    roomsApiMock = jasmine.createSpyObj('StaffRoomsApiService', ['listRooms']);
+    roomsApiMock.listRooms.and.returnValue(of([]));
+
+    authStub = {
+      activeMembership: (() => ({ branch_id: 'branch-1' })) as AuthService['activeMembership'],
+    };
 
     await TestBed.configureTestingModule({
       imports: [ManagerChildRegistrationComponent],
       providers: [
         { provide: StaffApiService, useValue: staffApiMock },
+        { provide: StaffRoomsApiService, useValue: roomsApiMock },
+        { provide: AuthService, useValue: authStub },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: (key: string) => key === 'childId' ? 'child-1' : null } } } },
         ApiErrorMapper,
       ],
@@ -264,5 +304,34 @@ describe('ManagerChildRegistrationComponent', () => {
   it('adds authorised collector row', () => {
     c().addContactRow(component.authorisedCollectorsDraft);
     expect(component.authorisedCollectorsDraft.length).toBe(1);
+  });
+
+  it('loads child record to expose primaryRoomId', () => {
+    expect(staffApiMock.getChild).toHaveBeenCalledWith('child-1');
+    expect(component.primaryRoomId).toBe('room-1');
+  });
+
+  it('shows paper-form completion date from the loaded profile', () => {
+    component.profile = { ...mockProfile, paperFormCompletedDate: '2026-05-01' };
+    expect(component.paperFormCompletedDateDisplay).toBe('2026-05-01');
+  });
+
+  it('shows em-dash when paper-form completion date is missing', () => {
+    component.profile = { ...mockProfile, paperFormCompletedDate: null };
+    expect(component.paperFormCompletedDateDisplay).toBe('—');
+  });
+
+  it('saves primary room via updateChild', () => {
+    component.primaryRoomId = 'room-2';
+    c().savePrimaryRoom();
+    expect(staffApiMock.updateChild).toHaveBeenCalledWith('child-1', jasmine.objectContaining({ primary_room_id: 'room-2' }));
+    expect(component.roomSaveMessage).toBe('Primary room saved.');
+  });
+
+  it('shows error when primary room save fails', () => {
+    staffApiMock.updateChild.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    component.primaryRoomId = 'room-2';
+    c().savePrimaryRoom();
+    expect(component.roomSaveError).toBeTruthy();
   });
 });

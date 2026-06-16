@@ -152,6 +152,8 @@ Every consent and acknowledgement item on the physical form needs an explicit re
 
 Registration evidence tracking records whether required physical forms and documents are on file or have been checked. It does not include upload, scanning, preview, or digital storage of the physical evidence in this tranche.
 
+The parent/carer paper-form completion date is captured as registration profile metadata at intake (`child_registration_profiles.paper_form_completed_date`) and is read-only thereafter — the form was signed on a specific date in the past and the system does not support re-issuing that date.
+
 ## Office-Use Enrolment Checklist (Post-MVP)
 
 A manager-facing record of nursery administrative checks around an application, start, leaving, contracts, handbooks, and proof documents. It is conceptually separate from the registration/enrolment profile because it describes nursery verification work rather than child or family care information, but managers may complete it alongside the profile in the same registration/enrolment workflow.
@@ -1459,6 +1461,8 @@ Restoring an archived room to active status. Reactivation does not restore any p
 ## Primary Room (Post-MVP)
 
 The single room a child is operationally attached to for day-to-day care. One child has at most one primary room at any time. The primary room is the source of truth for room occupancy: a room's `assigned_count` is the number of children whose `primary_room_id` points at the room. Editing a child's primary room re-points them; no effective-dated history is kept. Replaces prior language of "assigned to a room".
+
+A child's primary room is set at intake and is required to proceed through the guided registration stepper. After intake, the primary room remains editable from the section editor (and from the inline child edit) via `PATCH /api/v1/children/:id`.
 
 ## Unassigned Child (Post-MVP)
 

@@ -224,6 +224,48 @@
                       [describedBy]="shouldShowStep1Error('start_date') ? 'child-start-date-error' : undefined"
                     />
                   </app-form-field>
+
+                  <app-form-field
+                    label="Date parent/carer completed the paper form"
+                    labelFor="child-paper-form-completed-date"
+                    [required]="true"
+                    errorId="child-paper-form-completed-date-error"
+                    [error]="step1VisibleError('paper_form_completed_date')"
+                    hint="The day the parent/carer signed the physical registration form."
+                  >
+                    <app-date-picker
+                      id="child-paper-form-completed-date"
+                      name="paper_form_completed_date"
+                      [(ngModel)]="step1.paper_form_completed_date"
+                      (blurred)="markStep1Touched('paper_form_completed_date')"
+                      [max]="todayIso"
+                      [error]="shouldShowStep1Error('paper_form_completed_date')"
+                      [describedBy]="shouldShowStep1Error('paper_form_completed_date') ? 'child-paper-form-completed-date-error' : undefined"
+                    />
+                  </app-form-field>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <app-form-field
+                    label="Primary room"
+                    labelFor="child-primary-room"
+                    [required]="true"
+                    errorId="child-primary-room-error"
+                    [error]="step1VisibleError('primary_room_id')"
+                    hint="The room this child will be primarily assigned to."
+                  >
+                    <app-select
+                      id="child-primary-room"
+                      name="primary_room_id"
+                      [(ngModel)]="step1.primary_room_id"
+                      (blurred)="markStep1Touched('primary_room_id')"
+                      [error]="shouldShowStep1Error('primary_room_id')"
+                      [describedBy]="shouldShowStep1Error('primary_room_id') ? 'child-primary-room-error' : undefined"
+                      [options]="roomOptions"
+                      placeholder="Select a room..."
+                      [placeholderDisabled]="false"
+                    />
+                  </app-form-field>
                 </div>
               </section>
 

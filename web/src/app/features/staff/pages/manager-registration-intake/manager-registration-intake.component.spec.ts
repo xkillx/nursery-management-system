@@ -69,6 +69,8 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.step1.disability_status = 'no';
     component.step1.disability_notes = '';
     component.step1.access_requirements = '';
+    component.step1.primary_room_id = 'room-1';
+    component.step1.paper_form_completed_date = component.todayIso;
 
     component.step2.allergy_status = 'no';
     component.step2.allergy_details = '';
@@ -129,6 +131,51 @@ describe('ManagerRegistrationIntakeComponent', () => {
     it('passes when all required fields are filled for a new registration', () => {
       fillRequiredForCompletion();
       expect(component.canSubmitLocally()).toBe(true);
+    });
+  });
+
+  describe('Step 1 — primary room and paper-form completion date', () => {
+    it('blocks Step 1 completion when primary_room_id is empty', () => {
+      fillRequiredForCompletion();
+      component.step1.primary_room_id = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks Step 1 completion when paper_form_completed_date is empty', () => {
+      fillRequiredForCompletion();
+      component.step1.paper_form_completed_date = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks Step 1 completion when paper_form_completed_date is in the future', () => {
+      fillRequiredForCompletion();
+      const future = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 10);
+      component.step1.paper_form_completed_date = future;
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('defaults paper_form_completed_date to today for a new registration', () => {
+      expect(component.step1.paper_form_completed_date).toBe(component.todayIso);
+    });
+
+    it('hydrates primary_room_id and paper_form_completed_date from a restored draft', () => {
+      const draft = {
+        currentStep: 'child-basics',
+        step1: {
+          first_name: 'James',
+          last_name: 'Smith',
+          date_of_birth: '2022-01-01',
+          start_date: '2026-09-01',
+          home_address: '123 High Street',
+          first_language: 'English',
+          primary_room_id: 'room-99',
+          paper_form_completed_date: '2026-01-15',
+        },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      component.restoreDraftIfPresentPublic();
+      expect(component.step1.primary_room_id).toBe('room-99');
+      expect(component.step1.paper_form_completed_date).toBe('2026-01-15');
     });
   });
 

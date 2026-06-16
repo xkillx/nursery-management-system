@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
@@ -17,6 +18,8 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ChildRecord } from '../../models/children.models';
 import {
   RegistrationProfileResponse, RegistrationContactEntry,
   RegistrationProfileDemographicsHome, RegistrationProfileMedicalDietary,
@@ -42,6 +45,8 @@ import {
 export class ManagerChildRegistrationComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private api = inject(StaffApiService);
+  private roomsApi = inject(StaffRoomsApiService);
+  private auth = inject(AuthService);
   private errorMapper = inject(ApiErrorMapper);
 
   childId: string | null = null;
@@ -51,6 +56,7 @@ export class ManagerChildRegistrationComponent implements OnInit {
   errorMessage: string | null = null;
 
   profile: RegistrationProfileResponse | null = null;
+  child: ChildRecord | null = null;
 
   collectionPassword = '';
   collectionPasswordMessage: string | null = null;
@@ -75,6 +81,11 @@ export class ManagerChildRegistrationComponent implements OnInit {
   routineCareDraft: RegistrationProfileRoutineCare | null = null;
   gdprName = '';
   gdprDate = '';
+
+  roomOptions: Option[] = [];
+  primaryRoomId: string | null = null;
+  roomSaveMessage: string | null = null;
+  roomSaveError: string | null = null;
 
   readonly sexOptions: Option[] = [
     { value: 'male', label: 'Male' },
@@ -122,6 +133,18 @@ export class ManagerChildRegistrationComponent implements OnInit {
   private loadAll(): void {
     this.isLoading = true;
     this.errorMessage = null;
+    this.loadRoomOptions();
+
+    this.api.getChild(this.childId!).subscribe({
+      next: (child) => {
+        this.child = child;
+        this.primaryRoomId = child.primaryRoomId ?? null;
+      },
+      error: () => {
+        this.child = null;
+        this.primaryRoomId = null;
+      },
+    });
 
     this.api.getRegistrationProfile(this.childId!).subscribe({
       next: (profile) => {
@@ -135,6 +158,53 @@ export class ManagerChildRegistrationComponent implements OnInit {
         this.isLoading = false;
       },
     });
+  }
+
+  private loadRoomOptions(): void {
+    const branchId = this.auth.activeMembership()?.branch_id;
+    if (!branchId) {
+      this.roomOptions = [];
+      return;
+    }
+    this.roomsApi.listRooms(branchId, { includeArchived: false }).subscribe({
+      next: (rooms) => {
+        this.roomOptions = rooms
+          .filter((room) => room.isActive)
+          .map((room) => ({ value: room.id, label: room.name }));
+      },
+      error: () => {
+        this.roomOptions = [];
+      },
+    });
+  }
+
+  protected onPrimaryRoomChange(value: string | null): void {
+    this.primaryRoomId = value;
+  }
+
+  protected savePrimaryRoom(): void {
+    if (!this.childId) return;
+    this.isSavingSection = 'primary_room';
+    this.roomSaveMessage = '';
+    this.roomSaveError = '';
+    this.api.updateChild(this.childId, { primary_room_id: this.primaryRoomId } as Partial<ChildRecord> as Parameters<typeof this.api.updateChild>[1]).subscribe({
+      next: (updated) => {
+        this.child = updated;
+        this.primaryRoomId = updated.primaryRoomId ?? null;
+        this.isSavingSection = null;
+        this.roomSaveMessage = 'Primary room saved.';
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.roomSaveError = formatPresentedApiError(presentApiError(mapped, 'people.child'));
+        this.isSavingSection = null;
+      },
+    });
+  }
+
+  get paperFormCompletedDateDisplay(): string {
+    if (!this.profile?.paperFormCompletedDate) return '—';
+    return this.profile.paperFormCompletedDate;
   }
 
   private initDraftsFromProfile(profile: RegistrationProfileResponse): void {

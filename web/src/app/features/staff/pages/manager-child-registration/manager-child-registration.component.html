@@ -29,6 +29,44 @@
   </div>
 
   <div class="space-y-6">
+    <!-- Registration details (paper-form date + primary room) -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <h3 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Registration details</h3>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Date parent/carer completed the paper form</p>
+          <p class="mt-1 text-sm text-gray-800 dark:text-white/90" data-testid="paper-form-completed-date">{{ paperFormCompletedDateDisplay }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Read-only — set during intake.</p>
+        </div>
+        <app-form-field
+          label="Primary room"
+          labelFor="registration-primary-room"
+          [required]="true"
+        >
+          <app-select
+            id="registration-primary-room"
+            name="primary_room_id"
+            [ngModel]="primaryRoomId"
+            (ngModelChange)="onPrimaryRoomChange($event)"
+            [options]="roomOptions"
+            placeholder="Select a room..."
+            [placeholderDisabled]="false"
+          />
+        </app-form-field>
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <app-button variant="primary" size="sm" (clicked)="savePrimaryRoom()" [disabled]="isSavingSection === 'primary_room'">
+          Save primary room
+        </app-button>
+        @if (roomSaveMessage) {
+          <span class="text-sm text-green-600 dark:text-green-400">{{ roomSaveMessage }}</span>
+        }
+        @if (roomSaveError) {
+          <span class="text-sm text-red-600 dark:text-red-400">{{ roomSaveError }}</span>
+        }
+      </div>
+    </div>
+
     <!-- Status summary -->
     @if (profileCompleteness && !profileCompleteness.isComplete) {
       <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">

@@ -227,6 +227,7 @@ export interface RegistrationProfileResponse {
   fundingSupport: RegistrationProfileFundingSupport | null;
   routineCare: RegistrationProfileRoutineCare | null;
   gdprDeclaration: RegistrationProfileGDPRDeclaration | null;
+  paperFormCompletedDate?: string | null;
   completeness: RegistrationProfileCompleteness;
 }
 
@@ -237,11 +238,27 @@ export interface CompleteRegistrationChildPayload {
   date_of_birth: string;
   start_date: string;
   notes?: string;
+  primary_room_id?: string | null;
+}
+
+export interface CompleteRegistrationRegistrationProfilePayload {
+  demographics_home?: Record<string, unknown>;
+  medical_dietary?: Record<string, unknown>;
+  health_contacts?: Record<string, unknown>;
+  social_development?: Record<string, unknown>;
+  parent_carers?: unknown[];
+  emergency_contacts?: unknown[];
+  authorised_collectors?: unknown[];
+  collection?: Record<string, unknown>;
+  funding_support?: Record<string, unknown>;
+  routine_care?: Record<string, unknown>;
+  gdpr_declaration?: Record<string, unknown>;
+  paper_form_completed_date?: string | null;
 }
 
 export interface CompleteRegistrationPayload {
   child: CompleteRegistrationChildPayload;
-  registration_profile?: Record<string, unknown>;
+  registration_profile?: CompleteRegistrationRegistrationProfilePayload;
   consents?: ConsentWritePayload;
   collection_password?: string;
 }
