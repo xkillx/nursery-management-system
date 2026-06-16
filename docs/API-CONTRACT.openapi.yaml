@@ -43,6 +43,8 @@ tags:
     description: Stripe checkout, webhooks, and payment diagnostics
   - name: Owner
     description: Owner site overview, billing setup, and manager access
+  - name: Rooms
+    description: Room management, including primary-room occupancy counts for children
   - name: Deferred
     description: Proposed contracts not yet implemented
 
@@ -247,6 +249,82 @@ components:
           type: integer
           minimum: 1
           description: Positive GBP pence per hour
+
+    Room:
+      type: object
+      required: [id, name, age_group, capacity, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        age_group:
+          type: string
+          enum: [baby, toddler, preschool, mixed]
+        capacity:
+          type: integer
+          minimum: 1
+        is_active:
+          type: boolean
+        assigned_count:
+          type: integer
+          minimum: 0
+          description: Number of children whose primary_room_id points at this room. Only present when `?include=occupancy` is set on the list endpoint.
+        is_over_capacity:
+          type: boolean
+          description: True when assigned_count > capacity. Only present when `?include=occupancy` is set.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RoomListResponse:
+      type: object
+      required: [rooms]
+      properties:
+        rooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Room"
+
+    CreateRoomRequest:
+      type: object
+      required: [name, age_group, capacity]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        age_group:
+          type: string
+          enum: [baby, toddler, preschool, mixed]
+        capacity:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          maxLength: 1000
+
+    UpdateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        age_group:
+          type: string
+          enum: [baby, toddler, preschool, mixed]
+        capacity:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          maxLength: 1000
 
     HealthResponse:
       type: object
@@ -3173,3 +3251,219 @@ components:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ForbiddenRole"
+
+  /api/v1/sites/{site_id}/rooms:
+    get:
+      tags: [Rooms]
+      summary: List rooms for a site
+      description: |
+        Returns rooms in the requested site. Active rooms only by default; pass
+        `include_archived=true` to include archived rooms. Pass `include=occupancy`
+        to attach `assigned_count` (children whose primary_room_id is the room)
+        and `is_over_capacity` to each room. Without the flag, those fields are
+        absent and the response is unchanged.
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: include_archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include
+          in: query
+          required: false
+          description: Set to `occupancy` to add `assigned_count` and `is_over_capacity` to each room.
+          schema:
+            type: string
+            enum: [occupancy]
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+    post:
+      tags: [Rooms]
+      summary: Create a room in a site
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomRequest"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/rooms/{room_id}:
+    get:
+      tags: [Rooms]
+      summary: Get a room by id
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Room record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Rooms]
+      summary: Update a room
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoomRequest"
+      responses:
+        "200":
+          description: Updated room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/rooms/{room_id}/actions/archive:
+    post:
+      tags: [Rooms]
+      summary: Archive a room
+      description: |
+        Archives a room. Returns HTTP 409 with code `room_has_children` and
+        `details.assigned_count` when active children still have this room as
+        their primary room. The UI uses `assigned_count` to show how many
+        children need to be reassigned before archiving.
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Room archived
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/rooms/{room_id}/actions/activate:
+    post:
+      tags: [Rooms]
+      summary: Reactivate an archived room
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reactivated room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"

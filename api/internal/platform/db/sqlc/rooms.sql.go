@@ -56,11 +56,22 @@ func (q *Queries) RoomsCheckActiveNameExists(ctx context.Context, arg RoomsCheck
 }
 
 const roomsCountActiveChildren = `-- name: RoomsCountActiveChildren :one
-SELECT 0::bigint AS count
+SELECT COUNT(*)::bigint AS count
+FROM children
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND primary_room_id = $3
+  AND is_active = true
 `
 
-func (q *Queries) RoomsCountActiveChildren(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, roomsCountActiveChildren)
+type RoomsCountActiveChildrenParams struct {
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	PrimaryRoomID pgtype.UUID
+}
+
+func (q *Queries) RoomsCountActiveChildren(ctx context.Context, arg RoomsCountActiveChildrenParams) (int64, error) {
+	row := q.db.QueryRow(ctx, roomsCountActiveChildren, arg.TenantID, arg.BranchID, arg.PrimaryRoomID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

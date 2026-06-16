@@ -1,10 +1,10 @@
 # API Schema State
 
-> **Verified as of 2026-06-12.** Latest migration: 000022.
+> **Verified as of 2026-06-16.** Latest migration: 000030.
 
-- **Last verification date**: 2026-06-12
-- **Verified migration version**: 22
-- **Latest migration**: 000022 (`add_branch_core_hourly_rate`)
+- **Last verification date**: 2026-06-16
+- **Verified migration version**: 30
+- **Latest migration**: 000030 (`add_child_primary_room`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
@@ -32,7 +32,7 @@
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `first_name`, nullable `middle_name`, nullable `last_name`, `date_of_birth`, `start_date`, `end_date`, `core_hourly_rate_minor`, `is_active`, `left_at`, `left_reason_code`, `left_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `first_name` is required and not blank. `middle_name` and `last_name` are nullable. `core_hourly_rate_minor >= 0` (legacy; not used for billing — site rate is authoritative). `start_date <= end_date`. |
+| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `first_name`, nullable `middle_name`, nullable `last_name`, `date_of_birth`, `start_date`, `end_date`, `core_hourly_rate_minor`, `is_active`, `left_at`, `left_reason_code`, `left_reason_note`, nullable `primary_room_id` (FK rooms) | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `first_name` is required and not blank. `middle_name` and `last_name` are nullable. `core_hourly_rate_minor >= 0` (legacy; not used for billing — site rate is authoritative). `start_date <= end_date`. `primary_room_id` is the child's operational room; `ON DELETE SET NULL` so archiving or deleting a room does not cascade-block children. Partial index on `(tenant_id, branch_id, primary_room_id) WHERE primary_room_id IS NOT NULL` powers the room occupancy query. |
 | `guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `relationship`, `phone`, `email`, `is_active`, `deactivated_at`, `deactivation_reason_code`, `deactivation_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. |
 | `guardian_child_links` | `id UUID PK`, `tenant_id`, `branch_id`, `guardian_id FK`, `child_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique index on active `(guardian_id, child_id)`. End-reason consistency check. |
 | `parent_membership_guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `membership_id FK`, `guardian_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique: one active mapping per membership, one active `(membership_id, guardian_id)` pair. End-reason consistency check. Triggers enforce parent role and active entities. |

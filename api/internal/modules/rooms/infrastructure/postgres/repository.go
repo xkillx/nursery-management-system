@@ -136,7 +136,11 @@ func (r *RoomRepository) ActiveNameExists(ctx context.Context, tenantID, branchI
 
 func (r *RoomRepository) CountActiveChildren(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (int, error) {
 	q := sqlc.New(tx)
-	count, err := q.RoomsCountActiveChildren(ctx)
+	count, err := q.RoomsCountActiveChildren(ctx, sqlc.RoomsCountActiveChildrenParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		PrimaryRoomID: uuidToPgtype(roomID),
+	})
 	if err != nil {
 		return 0, fmt.Errorf("count active children: %w", err)
 	}

@@ -1456,6 +1456,14 @@ Setting a room to inactive (is_active = false). Archiving is blocked while activ
 
 Restoring an archived room to active status. Reactivation does not restore any previous child assignments or alter the room's name, capacity, or age group.
 
+## Primary Room (Post-MVP)
+
+The single room a child is operationally attached to for day-to-day care. One child has at most one primary room at any time. The primary room is the source of truth for room occupancy: a room's `assigned_count` is the number of children whose `primary_room_id` points at the room. Editing a child's primary room re-points them; no effective-dated history is kept. Replaces prior language of "assigned to a room".
+
+## Unassigned Child (Post-MVP)
+
+A child whose `primary_room_id IS NULL`. Unassigned children do not contribute to any room's occupancy and do not block archiving the rooms they are not attached to. Existing children begin as unassigned after the column is introduced; managers assign them from the Children form.
+
 ## Retention Policy Scope (MVP)
 
 Configurable retention/deletion policy automation is deferred; pilot records are retained with core no-hard-delete rules.
