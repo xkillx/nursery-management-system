@@ -143,6 +143,30 @@ describe('app.routes', () => {
     expect(listParent!.data?.['roles']).toEqual(['manager']);
   });
 
+  it('new registration route is a child of the children list and inherits its role guard', () => {
+    const listParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'staff/manager/children');
+    const newLeaf = allDescendantRoutes(routes)
+      .find(r => r.path === 'new' && r.data?.['breadcrumb']?.label === 'New registration');
+
+    expect(listParent).toBeDefined();
+    expect(newLeaf).toBeDefined();
+    expect(listParent!.data?.['roles']).toEqual(['manager']);
+  });
+
+  it('children list child routes declare "new" before ":childId" so the static segment wins', () => {
+    const listParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'staff/manager/children');
+
+    expect(listParent).toBeDefined();
+    const childPaths = (listParent!.children ?? []).map((c: any) => c.path);
+    const newIndex = childPaths.indexOf('new');
+    const childIdIndex = childPaths.indexOf(':childId');
+    expect(newIndex).toBeGreaterThanOrEqual(0);
+    expect(childIdIndex).toBeGreaterThanOrEqual(0);
+    expect(newIndex).toBeLessThan(childIdIndex);
+  });
+
   it('legacy attendance-children route is a redirect, not a component route', () => {
     const legacyRoute = routes
       .flatMap(r => r.children ?? [])
@@ -351,6 +375,7 @@ describe('app.routes breadcrumb wiring', () => {
   const breadcrumbPaths = [
     'staff/manager/dashboard',
     'staff/manager/children',
+    'staff/manager/children/new',
     'staff/manager/children/:childId',
     'staff/manager/children/:childId/registration',
     'staff/manager/registrations/new',

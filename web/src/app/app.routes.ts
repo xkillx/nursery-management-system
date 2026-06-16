@@ -71,6 +71,14 @@ export const routes: Routes = [
                 title: 'Manager Children | Nursery Management',
               },
               {
+                path: 'new',
+                component: ManagerRegistrationIntakeComponent,
+                data: {
+                  breadcrumb: { label: 'New registration' },
+                },
+                title: 'New Registration | Nursery Management',
+              },
+              {
                 path: ':childId',
                 component: ManagerChildDetailComponent,
                 data: {
