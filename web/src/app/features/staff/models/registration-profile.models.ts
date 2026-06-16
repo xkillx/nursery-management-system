@@ -131,7 +131,6 @@ export interface ConsentRecord {
   child_id: string;
   version: number;
   source: string;
-  paper_form_on_file: boolean;
   urgent_medical_treatment: boolean;
   urgent_medical_treatment_exceptions: string | null;
   plasters: boolean;
@@ -158,7 +157,6 @@ export interface ConsentRecord {
 }
 
 export interface ConsentWritePayload {
-  paper_form_on_file: boolean;
   urgent_medical_treatment: boolean;
   urgent_medical_treatment_exceptions?: string | null;
   plasters: boolean;
@@ -227,7 +225,7 @@ export interface RegistrationProfileResponse {
   fundingSupport: RegistrationProfileFundingSupport | null;
   routineCare: RegistrationProfileRoutineCare | null;
   gdprDeclaration: RegistrationProfileGDPRDeclaration | null;
-  paperFormCompletedDate?: string | null;
+  registrationDate?: string | null;
   completeness: RegistrationProfileCompleteness;
 }
 
@@ -253,7 +251,7 @@ export interface CompleteRegistrationRegistrationProfilePayload {
   funding_support?: Record<string, unknown>;
   routine_care?: Record<string, unknown>;
   gdpr_declaration?: Record<string, unknown>;
-  paper_form_completed_date?: string | null;
+  registration_date?: string | null;
 }
 
 export interface CompleteRegistrationPayload {

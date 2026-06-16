@@ -676,7 +676,7 @@ export class StaffApiService {
       fundingSupport: profile.funding_support as RegistrationProfileResponse['fundingSupport'],
       routineCare: profile.routine_care as RegistrationProfileResponse['routineCare'],
       gdprDeclaration: profile.gdpr_declaration as RegistrationProfileResponse['gdprDeclaration'],
-      paperFormCompletedDate: (profile as unknown as Record<string, unknown>)['paper_form_completed_date'] as string | null ?? null,
+      registrationDate: (profile as unknown as Record<string, unknown>)['registration_date'] as string | null ?? null,
       completeness: {
         isComplete: profile.completeness.is_complete,
         missingSections: profile.completeness.missing_sections,
