@@ -3,6 +3,8 @@ package httpchild
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/children/domain"
 )
 
@@ -21,6 +23,7 @@ type childResponse struct {
 	LeftAt                  *string  `json:"left_at,omitempty"`
 	LeftReasonCode          *string  `json:"left_reason_code,omitempty"`
 	LeftReasonNote          *string  `json:"left_reason_note,omitempty"`
+	PrimaryRoomID           *string  `json:"primary_room_id,omitempty"`
 	EnrollmentComplete      bool     `json:"enrollment_complete"`
 	MissingRequirements     []string `json:"missing_requirements,omitempty"`
 	CreatedAt               string   `json:"created_at"`
@@ -55,6 +58,7 @@ func toChildResponse(child domain.Child) childResponse {
 		IsActive:                child.IsActive,
 		LeftReasonCode:          child.LeftReasonCode,
 		LeftReasonNote:          child.LeftReasonNote,
+		PrimaryRoomID:           primaryRoomIDPtr(child.PrimaryRoomID),
 		EnrollmentComplete:      child.EnrollmentComplete(),
 		MissingRequirements:     child.MissingRequirements(),
 		CreatedAt:               child.CreatedAt.UTC().Format(time.RFC3339),
@@ -100,4 +104,12 @@ func toAttendanceResponse(child domain.AttendanceChild) attendanceChildResponse 
 		resp.AbsenceMarkedAt = &at
 	}
 	return resp
+}
+
+func primaryRoomIDPtr(id *uuid.UUID) *string {
+	if id == nil {
+		return nil
+	}
+	s := id.String()
+	return &s
 }

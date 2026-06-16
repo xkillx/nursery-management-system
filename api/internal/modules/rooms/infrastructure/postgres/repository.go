@@ -168,6 +168,22 @@ func (r *RoomRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenant
 	return mapRoom(row), nil
 }
 
+func (r *RoomRepository) CountAssignedChildrenByBranch(ctx context.Context, tenantID, branchID uuid.UUID) (map[uuid.UUID]int, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.RoomsCountAssignedChildrenByBranch(ctx, sqlc.RoomsCountAssignedChildrenByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("count assigned children: %w", err)
+	}
+	out := make(map[uuid.UUID]int, len(rows))
+	for _, row := range rows {
+		out[pgtypeUUIDToUUID(row.RoomID)] = int(row.AssignedCount)
+	}
+	return out, nil
+}
+
 func mapRoom(row sqlc.Room) domain.Room {
 	return domain.Room{
 		ID:          pgtypeUUIDToUUID(row.ID),

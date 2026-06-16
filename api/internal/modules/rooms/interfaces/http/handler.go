@@ -113,14 +113,15 @@ func (h *Handler) listRooms(c *gin.Context) {
 	}
 
 	includeArchived := c.Query("include_archived") == "true"
+	includeOccupancy := c.Query("include") == "occupancy"
 
-	rooms, err := h.list.Execute(c.Request.Context(), actor, siteID, includeArchived)
+	rooms, counts, err := h.list.Execute(c.Request.Context(), actor, siteID, includeArchived, includeOccupancy)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"rooms": toRoomListResponse(rooms)})
+	c.JSON(http.StatusOK, gin.H{"rooms": toRoomListResponse(rooms, counts)})
 }
 
 func (h *Handler) createRoom(c *gin.Context) {

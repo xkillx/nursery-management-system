@@ -20,4 +20,5 @@ type Repository interface {
 	CountActiveChildren(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (int, error)
 	Exists(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (bool, error)
 	GetByIDForUpdate(ctx context.Context, tx Tx, tenantID, branchID, roomID uuid.UUID) (Room, error)
+	CountAssignedChildrenByBranch(ctx context.Context, tenantID, branchID uuid.UUID) (map[uuid.UUID]int, error)
 }

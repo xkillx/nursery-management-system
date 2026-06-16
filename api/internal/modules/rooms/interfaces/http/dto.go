@@ -3,18 +3,22 @@ package httprooms
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/rooms/domain"
 )
 
 type roomResponse struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-	AgeGroup    string  `json:"age_group"`
-	Capacity    int     `json:"capacity"`
-	IsActive    bool    `json:"is_active"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Description     *string `json:"description,omitempty"`
+	AgeGroup        string  `json:"age_group"`
+	Capacity        int     `json:"capacity"`
+	IsActive        bool    `json:"is_active"`
+	AssignedCount   *int    `json:"assigned_count,omitempty"`
+	IsOverCapacity  *bool   `json:"is_over_capacity,omitempty"`
+	CreatedAt       string  `json:"created_at"`
+	UpdatedAt       string  `json:"updated_at"`
 }
 
 type createRoomRequest struct {
@@ -44,10 +48,26 @@ func toRoomResponse(room domain.Room) roomResponse {
 	}
 }
 
-func toRoomListResponse(rooms []domain.Room) []roomResponse {
+func toRoomListResponse(rooms []domain.Room, counts map[uuid.UUID]int) []roomResponse {
 	out := make([]roomResponse, 0, len(rooms))
 	for _, r := range rooms {
-		out = append(out, toRoomResponse(r))
+		out = append(out, toRoomListItem(r, counts))
 	}
 	return out
+}
+
+func toRoomListItem(room domain.Room, counts map[uuid.UUID]int) roomResponse {
+	resp := toRoomResponse(room)
+	if counts == nil {
+		return resp
+	}
+	assigned, ok := counts[room.ID]
+	if !ok {
+		return resp
+	}
+	count := assigned
+	over := room.Capacity > 0 && count > room.Capacity
+	resp.AssignedCount = &count
+	resp.IsOverCapacity = &over
+	return resp
 }

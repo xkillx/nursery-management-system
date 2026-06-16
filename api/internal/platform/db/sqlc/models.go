@@ -282,6 +282,7 @@ type Child struct {
 	FirstName           string
 	MiddleName          pgtype.Text
 	LastName            pgtype.Text
+	PrimaryRoomID       pgtype.UUID
 }
 
 type ChildRegistrationCompletionAttestation struct {

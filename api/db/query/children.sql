@@ -13,6 +13,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -50,6 +51,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -69,9 +71,9 @@ WHERE c.tenant_id = $1
 -- name: ChildrenCreate :exec
 INSERT INTO children (
     id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date,
-    core_hourly_rate_minor, notes, is_active
+    core_hourly_rate_minor, notes, is_active, primary_room_id
 )
-VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true);
+VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true, $12);
 
 -- name: ChildrenUpdate :execrows
 UPDATE children
@@ -84,6 +86,7 @@ SET
     end_date = CASE WHEN @set_end_date = 1 THEN sqlc.narg('end_date') ELSE end_date END,
     core_hourly_rate_minor = CASE WHEN @set_core_hourly_rate_minor = 1 THEN @core_hourly_rate_minor ELSE core_hourly_rate_minor END,
     notes = CASE WHEN @set_notes = 1 THEN NULLIF(@notes, '') ELSE notes END,
+    primary_room_id = CASE WHEN @set_primary_room_id = 1 THEN sqlc.narg('primary_room_id') ELSE primary_room_id END,
     updated_at = now()
 WHERE tenant_id = @tenant_id AND branch_id = @branch_id AND id = @id;
 
@@ -111,6 +114,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl

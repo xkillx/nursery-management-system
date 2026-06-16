@@ -44,7 +44,11 @@ func (uc *ArchiveRoom) Execute(ctx context.Context, actor RoomActor, siteID, roo
 			return internalError(err)
 		}
 		if count > 0 {
-			return domainerrors.Conflict("room_has_children", fmt.Sprintf("Room has %d active children assigned — reassign them before archiving.", count))
+			return domainerrors.ConflictWithDetails(
+				"room_has_children",
+				fmt.Sprintf("Room has %d active children assigned — reassign them before archiving.", count),
+				map[string]any{"assigned_count": count},
+			)
 		}
 
 		if err := uc.repo.Archive(ctx, tx, actor.TenantID(), siteID, roomID); err != nil {

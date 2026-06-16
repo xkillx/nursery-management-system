@@ -468,3 +468,163 @@ func TestChildListAttendance(t *testing.T) {
 }
 
 func intPtr(v int) *int { return &v }
+
+func TestChildCreate_AndGet_RoundTripPrimaryRoom(t *testing.T) {
+	repo, pool := setupChildRepo(t)
+	ctx := context.Background()
+
+	roomID := uuid.MustParse("50000000-0000-0000-0000-000000000001")
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6)",
+		roomID, childTenantID, childBranchID, "Baby Room", "baby", 10); err != nil {
+		t.Fatalf("insert room: %v", err)
+	}
+
+	childID := uuid.MustParse("40000000-0000-0000-0000-000000000010")
+	child := childdomain.Child{
+		ID:            childID,
+		FirstName:     "Roomed",
+		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
+		StartDate:     dbtest.DateAt(2024, 9, 1),
+		PrimaryRoomID: &roomID,
+	}
+
+	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if !found {
+		t.Fatal("not found")
+	}
+	if got.PrimaryRoomID == nil {
+		t.Fatal("PrimaryRoomID = nil, want non-nil")
+	}
+	if *got.PrimaryRoomID != roomID {
+		t.Errorf("PrimaryRoomID = %s, want %s", *got.PrimaryRoomID, roomID)
+	}
+}
+
+func TestChildCreate_NoPrimaryRoomDefaultsNull(t *testing.T) {
+	repo, _ := setupChildRepo(t)
+	ctx := context.Background()
+
+	childID := uuid.MustParse("40000000-0000-0000-0000-000000000011")
+	child := childdomain.Child{
+		ID:          childID,
+		FirstName:   "Unassigned",
+		DateOfBirth: dbtest.DateAt(2022, 6, 10),
+		StartDate:   dbtest.DateAt(2024, 9, 1),
+	}
+
+	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if !found {
+		t.Fatal("not found")
+	}
+	if got.PrimaryRoomID != nil {
+		t.Errorf("PrimaryRoomID = %v, want nil for unassigned child", *got.PrimaryRoomID)
+	}
+}
+
+func TestChildUpdate_PrimaryRoom(t *testing.T) {
+	repo, pool := setupChildRepo(t)
+	ctx := context.Background()
+
+	roomA := uuid.MustParse("50000000-0000-0000-0000-000000000001")
+	roomB := uuid.MustParse("50000000-0000-0000-0000-000000000002")
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6), ($7, $2, $3, $8, $5, $6)",
+		roomA, childTenantID, childBranchID, "Baby Room", "baby", 10,
+		roomB, "Toddler Room"); err != nil {
+		t.Fatalf("insert rooms: %v", err)
+	}
+
+	childID := uuid.MustParse("40000000-0000-0000-0000-000000000012")
+	if err := repo.Create(ctx, childdomain.Child{
+		ID:            childID,
+		FirstName:     "Mover",
+		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
+		StartDate:     dbtest.DateAt(2024, 9, 1),
+		PrimaryRoomID: &roomA,
+	}, "", childTenantID, childBranchID); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	ct, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
+		"primary_room_id": &roomB,
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if ct != 1 {
+		t.Errorf("rows affected = %d, want 1", ct)
+	}
+
+	got, _, _ := repo.GetByID(ctx, childTenantID, childBranchID, childID)
+	if got.PrimaryRoomID == nil || *got.PrimaryRoomID != roomB {
+		t.Errorf("PrimaryRoomID = %v, want %s", got.PrimaryRoomID, roomB)
+	}
+
+	ct, err = repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
+		"primary_room_id": (*uuid.UUID)(nil),
+	})
+	if err != nil {
+		t.Fatalf("Update clear: %v", err)
+	}
+	if ct != 1 {
+		t.Errorf("rows affected clear = %d, want 1", ct)
+	}
+
+	got, _, _ = repo.GetByID(ctx, childTenantID, childBranchID, childID)
+	if got.PrimaryRoomID != nil {
+		t.Errorf("PrimaryRoomID after clear = %v, want nil", *got.PrimaryRoomID)
+	}
+}
+
+func TestChildPrimaryRoom_OnDeleteRoomSetNull(t *testing.T) {
+	repo, pool := setupChildRepo(t)
+	ctx := context.Background()
+
+	roomID := uuid.MustParse("50000000-0000-0000-0000-000000000003")
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6)",
+		roomID, childTenantID, childBranchID, "To Delete", "baby", 10); err != nil {
+		t.Fatalf("insert room: %v", err)
+	}
+
+	childID := uuid.MustParse("40000000-0000-0000-0000-000000000013")
+	if err := repo.Create(ctx, childdomain.Child{
+		ID:            childID,
+		FirstName:     "Orphaned",
+		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
+		StartDate:     dbtest.DateAt(2024, 9, 1),
+		PrimaryRoomID: &roomID,
+	}, "", childTenantID, childBranchID); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if _, err := pool.Exec(ctx, "DELETE FROM rooms WHERE id = $1", roomID); err != nil {
+		t.Fatalf("delete room: %v", err)
+	}
+
+	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if !found {
+		t.Fatal("child not found after room delete")
+	}
+	if got.PrimaryRoomID != nil {
+		t.Errorf("PrimaryRoomID after room delete = %v, want nil (ON DELETE SET NULL)", *got.PrimaryRoomID)
+	}
+}

@@ -47,6 +47,15 @@ SELECT EXISTS (
 -- name: RoomsCountActiveChildren :one
 SELECT 0::bigint AS count;
 
+-- name: RoomsCountAssignedChildrenByBranch :many
+SELECT primary_room_id AS room_id, COUNT(*)::bigint AS assigned_count
+FROM children
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND primary_room_id IS NOT NULL
+  AND is_active = true
+GROUP BY primary_room_id;
+
 -- name: RoomsGetByIDForUpdate :one
 SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
 FROM rooms

@@ -14,9 +14,9 @@ import (
 const childrenCreate = `-- name: ChildrenCreate :exec
 INSERT INTO children (
     id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date,
-    core_hourly_rate_minor, notes, is_active
+    core_hourly_rate_minor, notes, is_active, primary_room_id
 )
-VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true)
+VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true, $12)
 `
 
 type ChildrenCreateParams struct {
@@ -31,6 +31,7 @@ type ChildrenCreateParams struct {
 	EndDate             pgtype.Date
 	CoreHourlyRateMinor pgtype.Int4
 	Column11            interface{}
+	PrimaryRoomID       pgtype.UUID
 }
 
 func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) error {
@@ -46,6 +47,7 @@ func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) 
 		arg.EndDate,
 		arg.CoreHourlyRateMinor,
 		arg.Column11,
+		arg.PrimaryRoomID,
 	)
 	return err
 }
@@ -84,6 +86,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -122,6 +125,7 @@ type ChildrenGetByIDRow struct {
 	LeftAt                  pgtype.Timestamptz
 	LeftReasonCode          interface{}
 	LeftReasonNote          pgtype.Text
+	PrimaryRoomID           pgtype.UUID
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -145,6 +149,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.LeftAt,
 		&i.LeftReasonCode,
 		&i.LeftReasonNote,
+		&i.PrimaryRoomID,
 		&i.HasGuardianLink,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -167,6 +172,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -206,6 +212,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	LeftAt                  pgtype.Timestamptz
 	LeftReasonCode          interface{}
 	LeftReasonNote          pgtype.Text
+	PrimaryRoomID           pgtype.UUID
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -229,6 +236,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.LeftAt,
 		&i.LeftReasonCode,
 		&i.LeftReasonNote,
+		&i.PrimaryRoomID,
 		&i.HasGuardianLink,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -278,6 +286,7 @@ SELECT c.id,
        c.left_at,
        COALESCE(c.left_reason_code::text, '') AS left_reason_code,
        c.left_reason_note,
+       c.primary_room_id,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -324,6 +333,7 @@ type ChildrenListRow struct {
 	LeftAt                  pgtype.Timestamptz
 	LeftReasonCode          interface{}
 	LeftReasonNote          pgtype.Text
+	PrimaryRoomID           pgtype.UUID
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -359,6 +369,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.LeftAt,
 			&i.LeftReasonCode,
 			&i.LeftReasonNote,
+			&i.PrimaryRoomID,
 			&i.HasGuardianLink,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -512,8 +523,9 @@ SET
     end_date = CASE WHEN $11 = 1 THEN $12 ELSE end_date END,
     core_hourly_rate_minor = CASE WHEN $13 = 1 THEN $14 ELSE core_hourly_rate_minor END,
     notes = CASE WHEN $15 = 1 THEN NULLIF($16, '') ELSE notes END,
+    primary_room_id = CASE WHEN $17 = 1 THEN $18 ELSE primary_room_id END,
     updated_at = now()
-WHERE tenant_id = $17 AND branch_id = $18 AND id = $19
+WHERE tenant_id = $19 AND branch_id = $20 AND id = $21
 `
 
 type ChildrenUpdateParams struct {
@@ -533,6 +545,8 @@ type ChildrenUpdateParams struct {
 	CoreHourlyRateMinor    pgtype.Int4
 	SetNotes               interface{}
 	Notes                  interface{}
+	SetPrimaryRoomID       interface{}
+	PrimaryRoomID          pgtype.UUID
 	TenantID               pgtype.UUID
 	BranchID               pgtype.UUID
 	ID                     pgtype.UUID
@@ -556,6 +570,8 @@ func (q *Queries) ChildrenUpdate(ctx context.Context, arg ChildrenUpdateParams) 
 		arg.CoreHourlyRateMinor,
 		arg.SetNotes,
 		arg.Notes,
+		arg.SetPrimaryRoomID,
+		arg.PrimaryRoomID,
 		arg.TenantID,
 		arg.BranchID,
 		arg.ID,

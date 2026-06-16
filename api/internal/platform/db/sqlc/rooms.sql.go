@@ -66,6 +66,46 @@ func (q *Queries) RoomsCountActiveChildren(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const roomsCountAssignedChildrenByBranch = `-- name: RoomsCountAssignedChildrenByBranch :many
+SELECT primary_room_id AS room_id, COUNT(*)::bigint AS assigned_count
+FROM children
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND primary_room_id IS NOT NULL
+  AND is_active = true
+GROUP BY primary_room_id
+`
+
+type RoomsCountAssignedChildrenByBranchParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+type RoomsCountAssignedChildrenByBranchRow struct {
+	RoomID        pgtype.UUID
+	AssignedCount int64
+}
+
+func (q *Queries) RoomsCountAssignedChildrenByBranch(ctx context.Context, arg RoomsCountAssignedChildrenByBranchParams) ([]RoomsCountAssignedChildrenByBranchRow, error) {
+	rows, err := q.db.Query(ctx, roomsCountAssignedChildrenByBranch, arg.TenantID, arg.BranchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RoomsCountAssignedChildrenByBranchRow
+	for rows.Next() {
+		var i RoomsCountAssignedChildrenByBranchRow
+		if err := rows.Scan(&i.RoomID, &i.AssignedCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const roomsCreate = `-- name: RoomsCreate :exec
 INSERT INTO rooms (id, tenant_id, branch_id, name, description, age_group, capacity, is_active)
 VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, true)

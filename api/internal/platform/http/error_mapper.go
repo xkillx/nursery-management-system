@@ -26,7 +26,9 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		RequestID: requestID,
 	}
 
-	if domainErr.Field != "" {
+	if len(domainErr.Details) > 0 {
+		resp.Details = domainErr.Details
+	} else if domainErr.Field != "" {
 		resp.Details = map[string]string{"field": domainErr.Field}
 	}
 

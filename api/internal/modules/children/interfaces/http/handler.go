@@ -147,13 +147,14 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 	}
 
 	params := application.CreateChildParams{
-		FirstName:   req.FirstName,
-		MiddleName:  stringValue(req.MiddleName),
-		LastName:    stringValue(req.LastName),
-		DateOfBirth: req.DateOfBirth,
-		StartDate:   req.StartDate,
-		EndDate:     req.EndDate,
-		Notes:       req.Notes,
+		FirstName:     req.FirstName,
+		MiddleName:    stringValue(req.MiddleName),
+		LastName:      stringValue(req.LastName),
+		DateOfBirth:   req.DateOfBirth,
+		StartDate:     req.StartDate,
+		EndDate:       req.EndDate,
+		Notes:         req.Notes,
+		PrimaryRoomID: stringValue(req.PrimaryRoomID),
 	}
 
 	child, err := h.createChild.Execute(c.Request.Context(), actor, params)
@@ -186,13 +187,14 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 	}
 
 	params := application.UpdateChildParams{
-		FirstName:   req.FirstName,
-		MiddleName:  req.MiddleName,
-		LastName:    req.LastName,
-		DateOfBirth: req.DateOfBirth,
-		StartDate:   req.StartDate,
-		EndDate:     req.EndDate,
-		Notes:       req.Notes,
+		FirstName:     req.FirstName,
+		MiddleName:    req.MiddleName,
+		LastName:      req.LastName,
+		DateOfBirth:   req.DateOfBirth,
+		StartDate:     req.StartDate,
+		EndDate:       req.EndDate,
+		Notes:         req.Notes,
+		PrimaryRoomID: req.PrimaryRoomID,
 	}
 
 	child, err := h.updateChild.Execute(c.Request.Context(), actor, childID, params)
@@ -265,6 +267,7 @@ type childWriteRequest struct {
 	EndDate             string  `json:"end_date"`
 	CoreHourlyRateMinor *int    `json:"core_hourly_rate_minor"`
 	Notes               string  `json:"notes"`
+	PrimaryRoomID       *string `json:"primary_room_id"`
 }
 
 type reasonRequest struct {

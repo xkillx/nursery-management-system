@@ -6,6 +6,7 @@ type DomainError struct {
 	Code    string
 	Message string
 	Field   string
+	Details map[string]any
 	cause   error
 }
 
@@ -40,6 +41,10 @@ func Forbidden(code, message string) *DomainError {
 
 func Conflict(code, message string) *DomainError {
 	return &DomainError{Code: code, Message: message}
+}
+
+func ConflictWithDetails(code, message string, details map[string]any) *DomainError {
+	return &DomainError{Code: code, Message: message, Details: details}
 }
 
 func Internal(err error) *DomainError {

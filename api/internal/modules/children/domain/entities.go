@@ -22,6 +22,7 @@ type Child struct {
 	LeftAt                  *time.Time
 	LeftReasonCode          *string
 	LeftReasonNote          *string
+	PrimaryRoomID           *uuid.UUID
 	HasGuardianLink         bool
 	CreatedAt               time.Time
 	UpdatedAt               time.Time

@@ -40,7 +40,7 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 		out = append(out, mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 			row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 			row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
-			row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt))
+			row.LeftReasonNote, row.PrimaryRoomID, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt))
 	}
 	return out, nil
 }
@@ -61,7 +61,7 @@ func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uu
 	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
-		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
+		row.LeftReasonNote, row.PrimaryRoomID, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
@@ -78,6 +78,7 @@ func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes 
 		EndDate:             timeToPgtypeDatePtr(child.EndDate),
 		CoreHourlyRateMinor: pgtype.Int4{},
 		Column11:            notes,
+		PrimaryRoomID:       uuidToPgtypeOpt(child.PrimaryRoomID),
 	})
 }
 
@@ -122,6 +123,10 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 		params.SetNotes = int32(1)
 		params.Notes = v.(string)
 	}
+	if v, ok := fields["primary_room_id"]; ok {
+		params.SetPrimaryRoomID = int32(1)
+		params.PrimaryRoomID = uuidToPgtypeOpt(v.(*uuid.UUID))
+	}
 
 	q := sqlc.New(r.pool)
 	ct, err := q.ChildrenUpdate(ctx, params)
@@ -158,7 +163,7 @@ func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenan
 	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
-		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
+		row.LeftReasonNote, row.PrimaryRoomID, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
@@ -223,7 +228,7 @@ func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, 
 	return mapChildRow(row.ID, row.FirstName, row.MiddleName, row.LastName, row.DateOfBirth, row.StartDate, row.EndDate,
 		row.CoreHourlyRateMinor, row.SiteCoreHourlyRateMinor,
 		row.Notes, row.IsActive, row.LeftAt, row.LeftReasonCode,
-		row.LeftReasonNote, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
+		row.LeftReasonNote, row.PrimaryRoomID, row.HasGuardianLink, row.CreatedAt, row.UpdatedAt), true, nil
 }
 
 func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
@@ -250,7 +255,8 @@ func mapChildRow(
 	id pgtype.UUID, firstName string, middleName, lastName pgtype.Text, dateOfBirth, startDate, endDate pgtype.Date,
 	coreHourlyRateMinor pgtype.Int4, siteCoreHourlyRateMinor pgtype.Int4,
 	notes pgtype.Text, isActive bool, leftAt pgtype.Timestamptz,
-	leftReasonCode interface{}, leftReasonNote pgtype.Text, hasGuardianLink bool,
+	leftReasonCode interface{}, leftReasonNote pgtype.Text,
+	primaryRoomID pgtype.UUID, hasGuardianLink bool,
 	createdAt, updatedAt pgtype.Timestamptz,
 ) domain.Child {
 	return domain.Child{
@@ -268,6 +274,7 @@ func mapChildRow(
 		LeftAt:                  pgtypeTimestamptzToTimePtr(leftAt),
 		LeftReasonCode:          ifaceToStringPtr(leftReasonCode),
 		LeftReasonNote:          pgtypeTextToStringPtr(leftReasonNote),
+		PrimaryRoomID:           pgtypeUUIDToUUIDPtr(primaryRoomID),
 		HasGuardianLink:         hasGuardianLink,
 		CreatedAt:               pgtypeTimestamptzToTime(createdAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(updatedAt),
@@ -294,6 +301,13 @@ func ifaceToStringPtr(v interface{}) *string {
 
 func uuidToPgtype(u uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: [16]byte(u), Valid: true}
+}
+
+func uuidToPgtypeOpt(u *uuid.UUID) pgtype.UUID {
+	if u == nil {
+		return pgtype.UUID{}
+	}
+	return uuidToPgtype(*u)
 }
 
 func pgtypeUUIDToUUID(u pgtype.UUID) uuid.UUID {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -16,13 +17,14 @@ import (
 )
 
 type UpdateChildParams struct {
-	FirstName   string
-	MiddleName  *string
-	LastName    *string
-	DateOfBirth string
-	StartDate   string
-	EndDate     string
-	Notes       string
+	FirstName     string
+	MiddleName    *string
+	LastName      *string
+	DateOfBirth   string
+	StartDate     string
+	EndDate       string
+	Notes         string
+	PrimaryRoomID *string
 }
 
 type UpdateChild struct {
@@ -86,6 +88,19 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	if params.Notes != "" {
 		notes := strings.TrimSpace(params.Notes)
 		fields["notes"] = notes
+	}
+
+	if params.PrimaryRoomID != nil {
+		trimmed := strings.TrimSpace(*params.PrimaryRoomID)
+		if trimmed == "" {
+			fields["primary_room_id"] = (*uuid.UUID)(nil)
+		} else {
+			id, err := uuid.Parse(trimmed)
+			if err != nil {
+				return domain.Child{}, domainerrors.Validation("Invalid request payload.", "primary_room_id")
+			}
+			fields["primary_room_id"] = &id
+		}
 	}
 
 	if len(fields) == 0 {

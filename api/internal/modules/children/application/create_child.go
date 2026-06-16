@@ -18,13 +18,14 @@ import (
 )
 
 type CreateChildParams struct {
-	FirstName   string
-	MiddleName  string
-	LastName    string
-	DateOfBirth string
-	StartDate   string
-	EndDate     string
-	Notes       string
+	FirstName      string
+	MiddleName     string
+	LastName       string
+	DateOfBirth    string
+	StartDate      string
+	EndDate        string
+	Notes          string
+	PrimaryRoomID  string
 }
 
 type CreateChild struct {
@@ -69,13 +70,19 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 
 	notes := strings.TrimSpace(params.Notes)
 
+	primaryRoomID, err := parsePrimaryRoomID(params.PrimaryRoomID)
+	if err != nil {
+		return domain.Child{}, err
+	}
+
 	child := domain.Child{
-		ID:          uid.NewUUID(),
-		FirstName:   firstName,
-		DateOfBirth: dob,
-		StartDate:   startDate,
-		EndDate:     endDate,
-		IsActive:    true,
+		ID:            uid.NewUUID(),
+		FirstName:     firstName,
+		DateOfBirth:   dob,
+		StartDate:     startDate,
+		EndDate:       endDate,
+		IsActive:      true,
+		PrimaryRoomID: primaryRoomID,
 	}
 	if middleName != "" {
 		child.MiddleName = &middleName
@@ -107,6 +114,18 @@ func (uc *CreateChild) Execute(ctx context.Context, actor tenant.ActorContext, p
 
 func parseDate(v string) (time.Time, error) {
 	return time.Parse("2006-01-02", strings.TrimSpace(v))
+}
+
+func parsePrimaryRoomID(v string) (*uuid.UUID, error) {
+	trimmed := strings.TrimSpace(v)
+	if trimmed == "" {
+		return nil, domainerrors.Validation("Invalid request payload.", "primary_room_id")
+	}
+	id, err := uuid.Parse(trimmed)
+	if err != nil {
+		return nil, domainerrors.Validation("Invalid request payload.", "primary_room_id")
+	}
+	return &id, nil
 }
 
 // parseDatePtr is unexported; kept for potential internal reuse.

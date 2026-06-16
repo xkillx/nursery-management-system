@@ -16,15 +16,24 @@ func NewListRooms(repo domain.Repository) *ListRooms {
 	return &ListRooms{repo: repo}
 }
 
-func (uc *ListRooms) Execute(ctx context.Context, actor RoomActor, siteID uuid.UUID, includeArchived bool) ([]domain.Room, error) {
+func (uc *ListRooms) Execute(ctx context.Context, actor RoomActor, siteID uuid.UUID, includeArchived, includeOccupancy bool) ([]domain.Room, map[uuid.UUID]int, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	rooms, err := uc.repo.ListByBranch(ctx, actor.TenantID(), siteID, includeArchived)
 	if err != nil {
-		return nil, internalError(err)
+		return nil, nil, internalError(err)
 	}
 
-	return rooms, nil
+	if !includeOccupancy {
+		return rooms, nil, nil
+	}
+
+	counts, err := uc.repo.CountAssignedChildrenByBranch(ctx, actor.TenantID(), siteID)
+	if err != nil {
+		return nil, nil, internalError(err)
+	}
+
+	return rooms, counts, nil
 }

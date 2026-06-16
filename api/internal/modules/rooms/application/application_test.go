@@ -10,6 +10,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/rooms/application"
 	"nursery-management-system/api/internal/modules/rooms/domain"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -30,6 +31,8 @@ type fakeRoomRepo struct {
 	existsErr          error
 	getForUpdate       *domain.Room
 	getForUpdateErr    error
+	assignedCounts     map[uuid.UUID]int
+	assignedCountsErr  error
 }
 
 func (f *fakeRoomRepo) ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]domain.Room, error) {
@@ -100,6 +103,16 @@ func (f *fakeRoomRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID
 		return *f.getForUpdate, f.getForUpdateErr
 	}
 	return domain.Room{}, errors.New("room_not_found: Room not found.")
+}
+
+func (f *fakeRoomRepo) CountAssignedChildrenByBranch(ctx context.Context, tenantID, branchID uuid.UUID) (map[uuid.UUID]int, error) {
+	if f.assignedCountsErr != nil {
+		return nil, f.assignedCountsErr
+	}
+	if f.assignedCounts == nil {
+		return map[uuid.UUID]int{}, nil
+	}
+	return f.assignedCounts, nil
 }
 
 type fakeSiteChecker struct {
@@ -304,6 +317,13 @@ func TestArchiveRoom_HasChildren(t *testing.T) {
 	if err.Error() != "room_has_children: Room has 3 active children assigned — reassign them before archiving." {
 		t.Errorf("unexpected error: %v", err)
 	}
+	domainErr, ok := err.(*domainerrors.DomainError)
+	if !ok {
+		t.Fatalf("expected *DomainError, got %T", err)
+	}
+	if domainErr.Details["assigned_count"] != 3 {
+		t.Errorf("Details[assigned_count] = %v, want 3", domainErr.Details["assigned_count"])
+	}
 }
 
 func TestArchiveRoom_AlreadyArchived(t *testing.T) {
@@ -371,12 +391,15 @@ func TestListRooms_Success(t *testing.T) {
 	}
 
 	uc := application.NewListRooms(repo)
-	rooms, err := uc.Execute(context.Background(), managerActor(tenantID, siteID), siteID, false)
+	rooms, counts, err := uc.Execute(context.Background(), managerActor(tenantID, siteID), siteID, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(rooms) != 2 {
 		t.Errorf("got %d rooms, want 2", len(rooms))
+	}
+	if counts != nil {
+		t.Errorf("counts should be nil when includeOccupancy=false, got %v", counts)
 	}
 }
 
@@ -387,9 +410,41 @@ func TestListRooms_ManagerWrongSite(t *testing.T) {
 	repo := &fakeRoomRepo{}
 
 	uc := application.NewListRooms(repo)
-	_, err := uc.Execute(context.Background(), managerActor(tenantID, siteID), wrongSiteID, false)
+	_, _, err := uc.Execute(context.Background(), managerActor(tenantID, siteID), wrongSiteID, false, false)
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestListRooms_IncludeOccupancy(t *testing.T) {
+	tenantID := uuid.New()
+	siteID := uuid.New()
+	roomA := uuid.New()
+	roomB := uuid.New()
+	repo := &fakeRoomRepo{
+		rooms: []domain.Room{
+			{ID: roomA, Name: "Room A", Capacity: 5},
+			{ID: roomB, Name: "Room B", Capacity: 8},
+		},
+		assignedCounts: map[uuid.UUID]int{
+			roomA: 6,
+			roomB: 3,
+		},
+	}
+
+	uc := application.NewListRooms(repo)
+	rooms, counts, err := uc.Execute(context.Background(), managerActor(tenantID, siteID), siteID, false, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(rooms) != 2 {
+		t.Fatalf("got %d rooms, want 2", len(rooms))
+	}
+	if counts[roomA] != 6 {
+		t.Errorf("room A count = %d, want 6", counts[roomA])
+	}
+	if counts[roomB] != 3 {
+		t.Errorf("room B count = %d, want 3", counts[roomB])
 	}
 }
 
@@ -446,7 +501,7 @@ func TestPractitionerCanListRooms(t *testing.T) {
 	}
 
 	uc := application.NewListRooms(repo)
-	rooms, err := uc.Execute(context.Background(), practitionerActor(tenantID, siteID), siteID, false)
+	rooms, _, err := uc.Execute(context.Background(), practitionerActor(tenantID, siteID), siteID, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
