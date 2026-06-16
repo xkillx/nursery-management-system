@@ -155,12 +155,6 @@ export class AppSidebarComponent {
           ],
         },
         {
-          label: 'Setup',
-          items: [
-            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms' },
-          ],
-        },
-        {
           label: 'People',
           items: [
             { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/staff/manager/children/'] },
@@ -194,12 +188,6 @@ export class AppSidebarComponent {
             { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance', icon: 'attendance' },
           ],
         },
-        {
-          label: 'Setup',
-          items: [
-            { label: 'Rooms', path: ROLE_ROUTES.practitionerRooms, testId: 'staff-link-practitioner-rooms', icon: 'rooms' },
-          ],
-        },
       ];
     }
 
@@ -209,12 +197,6 @@ export class AppSidebarComponent {
           label: 'Overview',
           items: [
             { label: 'Overview', path: ROLE_ROUTES.ownerHome, testId: 'owner-link-overview', icon: 'dashboard' },
-          ],
-        },
-        {
-          label: 'Setup',
-          items: [
-            { label: 'Rooms', path: ROLE_ROUTES.ownerRooms, testId: 'owner-link-rooms', icon: 'rooms' },
           ],
         },
         {

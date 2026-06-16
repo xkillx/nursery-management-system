@@ -20,7 +20,6 @@ import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-i
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
 import { OwnerManagerAccessComponent } from './features/owner/pages/owner-manager-access/owner-manager-access.component';
-import { OwnerRoomsComponent } from './features/owner/pages/owner-rooms/owner-rooms.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
@@ -156,27 +155,6 @@ export const routes: Routes = [
         canActivate: [authGuard, roleGuard],
         data: { roles: ['owner'] },
         title: 'Manager Access | Nursery Management',
-      },
-      {
-        path: 'owner/rooms',
-        component: OwnerRoomsComponent,
-        canActivate: [authGuard, roleGuard],
-        data: { roles: ['owner'] },
-        title: 'Room Management | Nursery Management',
-      },
-      {
-        path: 'staff/manager/rooms',
-        component: OwnerRoomsComponent,
-        canActivate: [authGuard, roleGuard],
-        data: { roles: ['manager'] },
-        title: 'Room Management | Nursery Management',
-      },
-      {
-        path: 'staff/practitioner/rooms',
-        component: OwnerRoomsComponent,
-        canActivate: [authGuard, roleGuard],
-        data: { roles: ['practitioner'] },
-        title: 'Room View | Nursery Management',
       },
       {
         path: 'app/invoices',
