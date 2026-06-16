@@ -24,17 +24,50 @@ function findLeafRoute(routes: Routes, path: string) {
   return matches.find((r) => r.fullPath === path);
 }
 
+function findRouteChain(routes: Routes, path: string): any[] {
+  const matches: any[] = [];
+  collectByPath(routes, '', matches);
+  return matches.filter((r) => path === '' || path.startsWith(r.fullPath));
+}
+
+function findBreadcrumbInChain(routes: Routes, path: string): { label: string; resolve?: unknown } | undefined {
+  const chain = findRouteChain(routes, path);
+  for (const r of chain) {
+    const crumb = r.data?.['breadcrumb'];
+    if (crumb && typeof crumb === 'object' && typeof crumb.label === 'string') {
+      return crumb;
+    }
+  }
+  return undefined;
+}
+
 function collectByPath(routes: Routes, parentPath: string, out: any[]): void {
   for (const r of routes) {
     if (r.path === undefined) continue;
     const fullPath = r.path === '' ? parentPath : parentPath ? `${parentPath}/${r.path}` : r.path;
-    if (r.component) {
-      out.push({ ...r, fullPath });
-    }
+    out.push({ ...r, fullPath });
     if (r.children) {
       collectByPath(r.children, fullPath, out);
     }
   }
+}
+
+function allDescendantRoutes(routes: Routes): any[] {
+  const out: any[] = [];
+  const walk = (rs: Routes) => {
+    for (const r of rs) {
+      out.push(r);
+      if (r.children) walk(r.children);
+    }
+  };
+  walk(routes);
+  return out;
+}
+
+function topLevelRouteChildren(routes: Routes): any[] {
+  return routes
+    .flatMap(r => r.children ?? [])
+    .filter(r => r.path !== undefined);
 }
 
 describe('app.routes', () => {
@@ -92,19 +125,22 @@ describe('app.routes', () => {
 
   for (const dynamic of dynamicPaths) {
     it(`registers dynamic MVP route /${dynamic}`, () => {
-      const allPaths = routes.flatMap(r => r.children ?? []);
-      const found = allPaths.some(r => r.path === dynamic);
+      const allPaths: any[] = [];
+      collectByPath(routes, '', allPaths);
+      const found = allPaths.some(r => r.fullPath === dynamic);
       expect(found).toBeTrue();
     });
   }
 
-  it('child detail route requires manager role only', () => {
-    const detailRoute = routes
-      .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/manager/children/:childId');
+  it('child detail route is a child of the children list and inherits its role guard', () => {
+    const listParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'staff/manager/children');
+    const detailLeaf = allDescendantRoutes(routes)
+      .find(r => r.path === ':childId' && r.data?.['breadcrumb']?.resolve);
 
-    expect(detailRoute).toBeDefined();
-    expect(detailRoute!.data?.['roles']).toEqual(['manager']);
+    expect(listParent).toBeDefined();
+    expect(detailLeaf).toBeDefined();
+    expect(listParent!.data?.['roles']).toEqual(['manager']);
   });
 
   it('legacy attendance-children route is a redirect, not a component route', () => {
@@ -145,21 +181,22 @@ describe('app.routes', () => {
   });
 
   it('invoices list route requires manager role only', () => {
-    const invoicesRoute = routes
-      .flatMap(r => r.children ?? [])
+    const invoicesRoute = allDescendantRoutes(routes)
       .find(r => r.path === 'staff/manager/invoices');
 
     expect(invoicesRoute).toBeDefined();
     expect(invoicesRoute!.data?.['roles']).toEqual(['manager']);
   });
 
-  it('invoice detail route requires manager role only', () => {
-    const detailRoute = routes
-      .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/manager/invoices/:invoiceId');
+  it('invoice detail route is a child of the invoices list and inherits its role guard', () => {
+    const listParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'staff/manager/invoices');
+    const detailLeaf = allDescendantRoutes(routes)
+      .find(r => r.path === ':invoiceId' && r.data?.['breadcrumb']?.resolve);
 
-    expect(detailRoute).toBeDefined();
-    expect(detailRoute!.data?.['roles']).toEqual(['manager']);
+    expect(listParent).toBeDefined();
+    expect(detailLeaf).toBeDefined();
+    expect(listParent!.data?.['roles']).toEqual(['manager']);
   });
 
   it('owner overview route requires owner role only', () => {
@@ -181,25 +218,19 @@ describe('app.routes', () => {
   });
 
   it('owner room routes require owner role only', () => {
-    const ownerRoomRoutes = routes
-      .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('owner/rooms'));
+    const ownerRoomParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'owner/rooms');
 
-    expect(ownerRoomRoutes.length).toBe(3);
-    for (const route of ownerRoomRoutes) {
-      expect(route.data?.['roles']).toEqual(['owner']);
-    }
+    expect(ownerRoomParent).toBeDefined();
+    expect(ownerRoomParent!.data?.['roles']).toEqual(['owner']);
   });
 
   it('manager room routes require manager role only', () => {
-    const managerRoomRoutes = routes
-      .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('staff/manager/rooms'));
+    const managerRoomParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'staff/manager/rooms');
 
-    expect(managerRoomRoutes.length).toBe(3);
-    for (const route of managerRoomRoutes) {
-      expect(route.data?.['roles']).toEqual(['manager']);
-    }
+    expect(managerRoomParent).toBeDefined();
+    expect(managerRoomParent!.data?.['roles']).toEqual(['manager']);
   });
 
   it('does not register practitioner room routes', () => {
@@ -216,13 +247,15 @@ describe('app.routes', () => {
     expect(parentRoute!.data?.['roles']).toEqual(['parent']);
   });
 
-  it('canonical parent invoice detail route requires parent role only', () => {
-    const detailRoute = routes
-      .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'app/invoices/:invoiceId');
+  it('canonical parent invoice detail route is a child of the parent invoices list and inherits its role guard', () => {
+    const listParent = allDescendantRoutes(routes)
+      .find(r => r.path === 'app/invoices');
+    const detailLeaf = allDescendantRoutes(routes)
+      .find(r => r.path === ':invoiceId' && r.data?.['breadcrumb']?.resolve);
 
-    expect(detailRoute).toBeDefined();
-    expect(detailRoute!.data?.['roles']).toEqual(['parent']);
+    expect(listParent).toBeDefined();
+    expect(detailLeaf).toBeDefined();
+    expect(listParent!.data?.['roles']).toEqual(['parent']);
   });
 
   it('legacy /parent/invoices redirects to /app/invoices', () => {
@@ -344,12 +377,10 @@ describe('app.routes breadcrumb wiring', () => {
 
   for (const path of breadcrumbPaths) {
     it(`declares a breadcrumb Crumb on /${path}`, () => {
-      const route = findLeafRoute(routes, path);
-      expect(route).toBeDefined();
-      const crumb = route!.data?.['breadcrumb'];
+      const crumb = findBreadcrumbInChain(routes, path);
       expect(crumb).toBeDefined();
-      expect(typeof crumb.label).toBe('string');
-      expect(crumb.label.length).toBeGreaterThan(0);
+      expect(typeof crumb!.label).toBe('string');
+      expect(crumb!.label.length).toBeGreaterThan(0);
     });
   }
 

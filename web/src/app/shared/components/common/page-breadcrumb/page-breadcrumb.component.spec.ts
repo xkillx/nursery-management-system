@@ -351,5 +351,33 @@ describe('PageBreadcrumbComponent', () => {
       const homeLink = nav!.querySelector('a[aria-label="Home"]');
       expect(homeLink).not.toBeNull();
     });
+
+    it('collects breadcrumbs from both parent and child routes (Home > Rooms > New room)', async () => {
+      const { fixture, runNavigation } = await setupWithRole(ROLES.manager);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        {
+          path: 'rooms',
+          data: { breadcrumb: { label: 'Rooms', link: ['/rooms'] } },
+          children: [
+            {
+              path: 'new',
+              component: HostComponent,
+              data: { breadcrumb: { label: 'New room' } },
+            },
+          ],
+        },
+      ]);
+      await runNavigation(['/rooms/new']);
+      fixture.detectChanges();
+
+      const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
+      expect(nav).not.toBeNull();
+      const labels = Array.from(nav!.querySelectorAll('a, li'))
+        .map((el) => (el.textContent ?? '').trim())
+        .filter((t) => t.length > 0);
+      expect(labels.some((t) => t.includes('Rooms'))).toBeTrue();
+      expect(labels.some((t) => t.includes('New room'))).toBeTrue();
+    });
   });
 });

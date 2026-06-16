@@ -59,53 +59,60 @@ export const routes: Routes = [
           },
           {
             path: 'staff/manager/children',
-            component: ManagerChildrenComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
               breadcrumb: { label: 'Children', link: ['/staff/manager/children'] },
             },
-            title: 'Manager Children | Nursery Management',
+            children: [
+              {
+                path: '',
+                component: ManagerChildrenComponent,
+                title: 'Manager Children | Nursery Management',
+              },
+              {
+                path: ':childId',
+                component: ManagerChildDetailComponent,
+                data: {
+                  breadcrumb: { label: 'Child', resolve: childNameResolver },
+                },
+                title: 'Child Enrollment | Nursery Management',
+              },
+              {
+                path: ':childId/registration',
+                component: ManagerChildRegistrationComponent,
+                data: {
+                  breadcrumb: { label: 'Registration' },
+                },
+                title: 'Child Registration | Nursery Management',
+              },
+            ],
           },
           {
-            path: 'staff/manager/children/:childId',
-            component: ManagerChildDetailComponent,
+            path: 'staff/manager/registrations',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Child', resolve: childNameResolver },
+              breadcrumb: { label: 'Registrations', link: ['/staff/manager/registrations'] },
             },
-            title: 'Child Enrollment | Nursery Management',
-          },
-          {
-            path: 'staff/manager/children/:childId/registration',
-            component: ManagerChildRegistrationComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Registration' },
-            },
-            title: 'Child Registration | Nursery Management',
-          },
-          {
-            path: 'staff/manager/registrations/new',
-            component: ManagerRegistrationIntakeComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'New registration' },
-            },
-            title: 'New Registration | Nursery Management',
-          },
-          {
-            path: 'staff/manager/registrations/:childId/intake',
-            component: ManagerRegistrationIntakeComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Registration intake' },
-            },
-            title: 'Registration Intake | Nursery Management',
+            children: [
+              {
+                path: 'new',
+                component: ManagerRegistrationIntakeComponent,
+                data: {
+                  breadcrumb: { label: 'New registration' },
+                },
+                title: 'New Registration | Nursery Management',
+              },
+              {
+                path: ':childId/intake',
+                component: ManagerRegistrationIntakeComponent,
+                data: {
+                  breadcrumb: { label: 'Registration intake' },
+                },
+                title: 'Registration Intake | Nursery Management',
+              },
+            ],
           },
           {
             path: 'staff/manager/guardians',
@@ -138,34 +145,35 @@ export const routes: Routes = [
             title: 'Attendance Corrections | Nursery Management',
           },
           {
-            path: 'staff/manager/rooms/new',
-            component: OwnerRoomFormComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'New room' },
-            },
-            title: 'New Room | Nursery Management',
-          },
-          {
-            path: 'staff/manager/rooms/:roomId/edit',
-            component: OwnerRoomFormComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
-            },
-            title: 'Edit Room | Nursery Management',
-          },
-          {
             path: 'staff/manager/rooms',
-            component: OwnerRoomsComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
               breadcrumb: { label: 'Rooms', link: ['/staff/manager/rooms'] },
             },
-            title: 'Rooms | Nursery Management',
+            children: [
+              {
+                path: '',
+                component: OwnerRoomsComponent,
+                title: 'Rooms | Nursery Management',
+              },
+              {
+                path: 'new',
+                component: OwnerRoomFormComponent,
+                data: {
+                  breadcrumb: { label: 'New room' },
+                },
+                title: 'New Room | Nursery Management',
+              },
+              {
+                path: ':roomId/edit',
+                component: OwnerRoomFormComponent,
+                data: {
+                  breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
+                },
+                title: 'Edit Room | Nursery Management',
+              },
+            ],
           },
           {
             path: 'staff/manager/funding',
@@ -189,23 +197,26 @@ export const routes: Routes = [
           },
           {
             path: 'staff/manager/invoices',
-            component: ManagerInvoicesComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
               breadcrumb: { label: 'Invoices', link: ['/staff/manager/invoices'] },
             },
-            title: 'Invoices | Nursery Management',
-          },
-          {
-            path: 'staff/manager/invoices/:invoiceId',
-            component: ManagerInvoiceDetailComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Invoice', resolve: invoiceNumberResolver },
-            },
-            title: 'Invoice Detail | Nursery Management',
+            children: [
+              {
+                path: '',
+                component: ManagerInvoicesComponent,
+                title: 'Invoices | Nursery Management',
+              },
+              {
+                path: ':invoiceId',
+                component: ManagerInvoiceDetailComponent,
+                data: {
+                  breadcrumb: { label: 'Invoice', resolve: invoiceNumberResolver },
+                },
+                title: 'Invoice Detail | Nursery Management',
+              },
+            ],
           },
           {
             path: 'staff/practitioner/attendance',
@@ -223,34 +234,35 @@ export const routes: Routes = [
             redirectTo: 'staff/practitioner/attendance',
           },
           {
-            path: 'owner/rooms/new',
-            component: OwnerRoomFormComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['owner'],
-              breadcrumb: { label: 'Owner' },
-            },
-            title: 'New Room | Nursery Management',
-          },
-          {
-            path: 'owner/rooms/:roomId/edit',
-            component: OwnerRoomFormComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['owner'],
-              breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
-            },
-            title: 'Edit Room | Nursery Management',
-          },
-          {
             path: 'owner/rooms',
-            component: OwnerRoomsComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['owner'],
               breadcrumb: { label: 'Rooms', link: ['/owner/rooms'] },
             },
-            title: 'Room Management | Nursery Management',
+            children: [
+              {
+                path: '',
+                component: OwnerRoomsComponent,
+                title: 'Room Management | Nursery Management',
+              },
+              {
+                path: 'new',
+                component: OwnerRoomFormComponent,
+                data: {
+                  breadcrumb: { label: 'New room' },
+                },
+                title: 'New Room | Nursery Management',
+              },
+              {
+                path: ':roomId/edit',
+                component: OwnerRoomFormComponent,
+                data: {
+                  breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
+                },
+                title: 'Edit Room | Nursery Management',
+              },
+            ],
           },
           {
             path: 'owner',
@@ -274,23 +286,26 @@ export const routes: Routes = [
           },
           {
             path: 'app/invoices',
-            component: ParentInvoicesComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['parent'],
-              breadcrumb: { label: 'Billing' },
+              breadcrumb: { label: 'Billing', link: ['/app/invoices'] },
             },
-            title: 'Invoices | Nursery Management',
-          },
-          {
-            path: 'app/invoices/:invoiceId',
-            component: ParentInvoiceDetailComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['parent'],
-              breadcrumb: { label: 'Invoice', resolve: parentInvoiceNumberResolver },
-            },
-            title: 'Invoice Detail | Nursery Management',
+            children: [
+              {
+                path: '',
+                component: ParentInvoicesComponent,
+                title: 'Invoices | Nursery Management',
+              },
+              {
+                path: ':invoiceId',
+                component: ParentInvoiceDetailComponent,
+                data: {
+                  breadcrumb: { label: 'Invoice', resolve: parentInvoiceNumberResolver },
+                },
+                title: 'Invoice Detail | Nursery Management',
+              },
+            ],
           },
     ],
   },
