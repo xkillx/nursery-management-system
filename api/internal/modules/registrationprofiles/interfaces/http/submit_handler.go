@@ -187,15 +187,13 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 			}
 		}
 
-		psi.PaperFormCompletedDate = req.RegistrationProfile.PaperFormCompletedDate
+		psi.RegistrationDate = req.RegistrationProfile.RegistrationDate
 
 		input.Profile = psi
 	}
 
 	if req.Consents != nil {
 		input.Consents = domain.ConsentInput{
-			PaperFormOnFile: req.Consents.PaperFormOnFile,
-
 			UrgentMedicalTreatment:               req.Consents.UrgentMedicalTreatment,
 			UrgentMedicalTreatmentExceptions:     req.Consents.UrgentMedicalTreatmentExceptions,
 			Plasters:                             req.Consents.Plasters,

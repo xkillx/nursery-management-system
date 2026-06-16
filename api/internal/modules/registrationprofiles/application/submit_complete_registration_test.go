@@ -9,7 +9,7 @@ import (
 
 func strPtr(s string) *string { return &s }
 
-func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperFormDate(t *testing.T) {
+func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndRegistrationDate(t *testing.T) {
 	uc := &SubmitCompleteRegistration{}
 
 	cases := []struct {
@@ -20,7 +20,7 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 		wantMessageSub string
 	}{
 		{
-			name: "missing primary room and paper form date",
+			name: "missing primary room and registration date",
 			input: domain.CompleteRegistrationInput{
 				Child: domain.ChildRegistrationInfo{
 					FirstName:   "James",
@@ -28,10 +28,9 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					StartDate:   "2026-09-01",
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: nil,
+					RegistrationDate: nil,
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},
@@ -40,7 +39,7 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 			wantMessageSub: "primary room",
 		},
 		{
-			name: "missing paper form date",
+			name: "missing registration date",
 			input: domain.CompleteRegistrationInput{
 				Child: domain.ChildRegistrationInfo{
 					FirstName:     "James",
@@ -49,16 +48,15 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					PrimaryRoomID: strPtr("11111111-1111-1111-1111-111111111111"),
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: nil,
+					RegistrationDate: nil,
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},
 			wantCode:       "validation_error",
-			wantField:      "paper_form_completed_date",
-			wantMessageSub: "paper form",
+			wantField:      "registration_date",
+			wantMessageSub: "registration date",
 		},
 		{
 			name: "blank primary room string",
@@ -70,10 +68,9 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					PrimaryRoomID: strPtr("   "),
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: strPtr("2026-06-17"),
+					RegistrationDate: strPtr("2026-06-17"),
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},
@@ -91,10 +88,9 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					PrimaryRoomID: strPtr("not-a-uuid"),
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: strPtr("2026-06-17"),
+					RegistrationDate: strPtr("2026-06-17"),
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},
@@ -103,7 +99,7 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 			wantMessageSub: "primary room",
 		},
 		{
-			name: "malformed paper form date",
+			name: "malformed registration date",
 			input: domain.CompleteRegistrationInput{
 				Child: domain.ChildRegistrationInfo{
 					FirstName:     "James",
@@ -112,16 +108,15 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					PrimaryRoomID: strPtr("11111111-1111-1111-1111-111111111111"),
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: strPtr("2026-13-99"),
+					RegistrationDate: strPtr("2026-13-99"),
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},
 			wantCode:       "validation_error",
-			wantField:      "paper_form_completed_date",
-			wantMessageSub: "paper form",
+			wantField:      "registration_date",
+			wantMessageSub: "registration date",
 		},
 		{
 			name: "happy path",
@@ -133,10 +128,9 @@ func TestSubmitCompleteRegistrationValidateInput_RequiresPrimaryRoomAndPaperForm
 					PrimaryRoomID: strPtr("11111111-1111-1111-1111-111111111111"),
 				},
 				Profile: domain.ProfileSectionsInput{
-					PaperFormCompletedDate: strPtr("2026-06-17"),
+					RegistrationDate: strPtr("2026-06-17"),
 				},
 				Consents: domain.ConsentInput{
-					PaperFormOnFile:                      true,
 					SafeguardingReportingAcknowledgement: true,
 				},
 			},

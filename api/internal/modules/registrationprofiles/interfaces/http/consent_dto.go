@@ -12,8 +12,6 @@ type consentRecordResponse struct {
 	Version int    `json:"version"`
 	Source  string `json:"source"`
 
-	PaperFormOnFile bool `json:"paper_form_on_file"`
-
 	UrgentMedicalTreatment               bool    `json:"urgent_medical_treatment"`
 	UrgentMedicalTreatmentExceptions     *string `json:"urgent_medical_treatment_exceptions,omitempty"`
 	Plasters                             bool    `json:"plasters"`
@@ -60,7 +58,6 @@ func toConsentRecordResponse(r domain.ConsentRecord) consentRecordResponse {
 		ChildID:                              r.ChildID.String(),
 		Version:                              r.Version,
 		Source:                               string(r.Source),
-		PaperFormOnFile:                      r.PaperFormOnFile,
 		UrgentMedicalTreatment:               r.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions:     r.UrgentMedicalTreatmentExceptions,
 		Plasters:                             r.Plasters,

@@ -35,7 +35,7 @@ type ProfileSectionsInput struct {
 	FundingSupport         *FundingSupportInput
 	RoutineCare            *RoutineCareInput
 	GDPRDeclaration        *GDPRDeclarationInput
-	PaperFormCompletedDate *string
+	RegistrationDate       *string
 }
 
 type DemographicsHomeInput struct {
@@ -138,8 +138,6 @@ type GDPRDeclarationInput struct {
 }
 
 type ConsentInput struct {
-	PaperFormOnFile bool
-
 	UrgentMedicalTreatment               bool
 	UrgentMedicalTreatmentExceptions     *string
 	Plasters                             bool
@@ -251,10 +249,10 @@ func (c *CompleteRegistrationInput) ToProfile(tenantID, branchID, childID uuid.U
 		p.GDPRDeclaredByName = pi.GDPRDeclaredByName
 	}
 
-	if c.Profile.PaperFormCompletedDate != nil && *c.Profile.PaperFormCompletedDate != "" {
-		t, err := time.Parse("2006-01-02", *c.Profile.PaperFormCompletedDate)
+	if c.Profile.RegistrationDate != nil && *c.Profile.RegistrationDate != "" {
+		t, err := time.Parse("2006-01-02", *c.Profile.RegistrationDate)
 		if err == nil {
-			p.PaperFormCompletedDate = &t
+			p.RegistrationDate = &t
 		}
 	}
 

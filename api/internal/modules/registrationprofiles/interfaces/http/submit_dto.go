@@ -29,7 +29,7 @@ type registrationProfilePayload struct {
 	FundingSupport          *fundingSupportPayload    `json:"funding_support,omitempty"`
 	RoutineCare             *routineCarePayload       `json:"routine_care,omitempty"`
 	GDPRDeclaration         *gdprDeclarationPayload   `json:"gdpr_declaration,omitempty"`
-	PaperFormCompletedDate  *string                   `json:"paper_form_completed_date,omitempty"`
+	RegistrationDate        *string                   `json:"registration_date,omitempty"`
 }
 
 type demographicsHomePayload struct {
@@ -123,8 +123,6 @@ type gdprDeclarationPayload struct {
 }
 
 type consentPayload struct {
-	PaperFormOnFile bool `json:"paper_form_on_file"`
-
 	UrgentMedicalTreatment               bool    `json:"urgent_medical_treatment"`
 	UrgentMedicalTreatmentExceptions     *string `json:"urgent_medical_treatment_exceptions,omitempty"`
 	Plasters                             bool    `json:"plasters"`

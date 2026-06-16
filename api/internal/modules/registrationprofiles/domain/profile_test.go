@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestProfile_PaperFormCompletionRecorded(t *testing.T) {
+func TestProfile_RegistrationDateRecorded(t *testing.T) {
 	now := time.Now()
 
 	cases := []struct {
@@ -34,8 +34,8 @@ func TestProfile_PaperFormCompletionRecorded(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p := &Profile{PaperFormCompletedDate: tc.date}
-			if got := p.PaperFormCompletionRecorded(); got != tc.want {
+			p := &Profile{RegistrationDate: tc.date}
+			if got := p.RegistrationDateRecorded(); got != tc.want {
 				t.Fatalf("got %v want %v", got, tc.want)
 			}
 		})

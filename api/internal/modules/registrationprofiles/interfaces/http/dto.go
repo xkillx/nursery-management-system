@@ -35,7 +35,7 @@ type registrationProfileResponse struct {
 	FundingSupport         *fundingSupportResponse    `json:"funding_support,omitempty"`
 	RoutineCare            *routineCareResponse       `json:"routine_care,omitempty"`
 	GDPRDeclaration        *gdprDeclarationResponse   `json:"gdpr_declaration,omitempty"`
-	PaperFormCompletedDate *string                    `json:"paper_form_completed_date,omitempty"`
+	RegistrationDate       *string                    `json:"registration_date,omitempty"`
 	Completeness           *completenessResponse      `json:"completeness"`
 }
 
@@ -305,9 +305,9 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 		}
 	}
 
-	if p.PaperFormCompletedDate != nil {
-		s := p.PaperFormCompletedDate.Format("2006-01-02")
-		resp.PaperFormCompletedDate = &s
+	if p.RegistrationDate != nil {
+		s := p.RegistrationDate.Format("2006-01-02")
+		resp.RegistrationDate = &s
 	}
 
 	return resp

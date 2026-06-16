@@ -23,8 +23,8 @@ type PatchSection struct {
 	FundingSupport       *FundingSupportPatch    `json:"funding_support,omitempty"`
 	RoutineCare          *RoutineCarePatch       `json:"routine_care,omitempty"`
 	GDPRDeclaration      *GDPRDeclarationPatch   `json:"gdpr_declaration,omitempty"`
-	// PaperFormCompletedDate is intentionally NOT settable from PATCH:
-	// per product decision the date the parent/carer signed the paper form
+	// RegistrationDate is intentionally NOT settable from PATCH:
+	// per product decision the registration date the parent/carer provided
 	// is captured at intake and read-only thereafter.
 }
 

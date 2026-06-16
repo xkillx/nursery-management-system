@@ -20,8 +20,6 @@ type ConsentRecord struct {
 	Version  int
 	Source   ConsentSource
 
-	PaperFormOnFile bool
-
 	UrgentMedicalTreatment               bool
 	UrgentMedicalTreatmentExceptions     *string
 	Plasters                             bool

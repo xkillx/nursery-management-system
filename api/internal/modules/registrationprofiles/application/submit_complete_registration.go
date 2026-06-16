@@ -167,9 +167,6 @@ func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistr
 	if strings.TrimSpace(input.Child.StartDate) == "" {
 		missing = append(missing, "start_date")
 	}
-	if !input.Consents.PaperFormOnFile {
-		missing = append(missing, "consents.paper_form_on_file")
-	}
 	if !input.Consents.SafeguardingReportingAcknowledgement {
 		missing = append(missing, "consents.safeguarding_reporting_acknowledgement")
 	}
@@ -180,10 +177,10 @@ func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistr
 		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "primary_room_id", Message: "Pick a primary room."})
 	}
 
-	if input.Profile.PaperFormCompletedDate == nil || strings.TrimSpace(*input.Profile.PaperFormCompletedDate) == "" {
-		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "paper_form_completed_date", Message: "Enter the date the parent/carer completed the paper form."})
-	} else if _, err := time.Parse("2006-01-02", strings.TrimSpace(*input.Profile.PaperFormCompletedDate)); err != nil {
-		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "paper_form_completed_date", Message: "Enter the date the parent/carer completed the paper form."})
+	if input.Profile.RegistrationDate == nil || strings.TrimSpace(*input.Profile.RegistrationDate) == "" {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "registration_date", Message: "Enter the registration date."})
+	} else if _, err := time.Parse("2006-01-02", strings.TrimSpace(*input.Profile.RegistrationDate)); err != nil {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "registration_date", Message: "Enter the registration date."})
 	}
 
 	if len(missing) > 0 {
@@ -236,8 +233,6 @@ func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, 
 		ChildID:  childID,
 		Version:  version + 1,
 		Source:   domain.ConsentSourcePaperForm,
-
-		PaperFormOnFile: ci.PaperFormOnFile,
 
 		UrgentMedicalTreatment:               ci.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions:     ci.UrgentMedicalTreatmentExceptions,

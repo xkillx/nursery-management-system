@@ -17,8 +17,6 @@ import (
 )
 
 type CreateConsentParams struct {
-	PaperFormOnFile bool `json:"paper_form_on_file"`
-
 	UrgentMedicalTreatment               bool    `json:"urgent_medical_treatment"`
 	UrgentMedicalTreatmentExceptions     *string `json:"urgent_medical_treatment_exceptions,omitempty"`
 	Plasters                             bool    `json:"plasters"`
@@ -60,10 +58,6 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 		return domain.ConsentRecord{}, domainerrors.Validation("Invalid request payload.", "child_id")
 	}
 
-	if !params.PaperFormOnFile {
-		return domain.ConsentRecord{}, domainerrors.Validation("Paper form must be marked as on file.", "paper_form_on_file")
-	}
-
 	if !params.SafeguardingReportingAcknowledgement {
 		return domain.ConsentRecord{}, domainerrors.Validation("Safeguarding/reporting acknowledgement is required.", "safeguarding_reporting_acknowledgement")
 	}
@@ -74,7 +68,6 @@ func (uc *CreateConsent) Execute(ctx context.Context, actor tenant.ActorContext,
 		BranchID:                             actor.BranchID,
 		ChildID:                              cid,
 		Source:                               domain.ConsentSourcePaperForm,
-		PaperFormOnFile:                      params.PaperFormOnFile,
 		UrgentMedicalTreatment:               params.UrgentMedicalTreatment,
 		UrgentMedicalTreatmentExceptions:     params.UrgentMedicalTreatmentExceptions,
 		Plasters:                             params.Plasters,
