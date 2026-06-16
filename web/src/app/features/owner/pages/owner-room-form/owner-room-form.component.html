@@ -1,14 +1,5 @@
 <div class="space-y-6">
   <div>
-    <nav class="mb-2 flex flex-wrap items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-      <span>Settings</span>
-      <span>/</span>
-      <span>{{ selectedSiteName || 'Site' }}</span>
-      <span>/</span>
-      <a [routerLink]="listRoute" [queryParams]="selectedSiteId && isOwner ? { site_id: selectedSiteId } : null" class="text-brand-600 dark:text-brand-400">Rooms</a>
-      <span>/</span>
-      <span class="text-brand-600 dark:text-brand-400">{{ title }}</span>
-    </nav>
     <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">{{ title }}</h1>
     <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">{{ description }}</p>
   </div>
