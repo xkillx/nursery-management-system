@@ -9,16 +9,16 @@ import (
 )
 
 type roomResponse struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	Description     *string `json:"description,omitempty"`
-	AgeGroup        string  `json:"age_group"`
-	Capacity        int     `json:"capacity"`
-	IsActive        bool    `json:"is_active"`
-	AssignedCount   *int    `json:"assigned_count,omitempty"`
-	IsOverCapacity  *bool   `json:"is_over_capacity,omitempty"`
-	CreatedAt       string  `json:"created_at"`
-	UpdatedAt       string  `json:"updated_at"`
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Description    *string `json:"description,omitempty"`
+	AgeGroup       string  `json:"age_group"`
+	Capacity       int     `json:"capacity"`
+	IsActive       bool    `json:"is_active"`
+	AssignedCount  *int    `json:"assigned_count,omitempty"`
+	IsOverCapacity *bool   `json:"is_over_capacity,omitempty"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
 }
 
 type createRoomRequest struct {

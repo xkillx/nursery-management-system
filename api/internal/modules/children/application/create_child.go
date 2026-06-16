@@ -18,14 +18,14 @@ import (
 )
 
 type CreateChildParams struct {
-	FirstName      string
-	MiddleName     string
-	LastName       string
-	DateOfBirth    string
-	StartDate      string
-	EndDate        string
-	Notes          string
-	PrimaryRoomID  string
+	FirstName     string
+	MiddleName    string
+	LastName      string
+	DateOfBirth   string
+	StartDate     string
+	EndDate       string
+	Notes         string
+	PrimaryRoomID string
 }
 
 type CreateChild struct {

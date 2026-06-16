@@ -14,10 +14,10 @@ import (
 )
 
 type ArchiveRoom struct {
-	repo     domain.Repository
-	txMgr    TxManager
-	audit    *audit.Writer
-	pool     *pgxpool.Pool
+	repo  domain.Repository
+	txMgr TxManager
+	audit *audit.Writer
+	pool  *pgxpool.Pool
 }
 
 func NewArchiveRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer, pool *pgxpool.Pool) *ArchiveRoom {

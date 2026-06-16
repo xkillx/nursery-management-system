@@ -14,13 +14,13 @@ import (
 )
 
 type Handler struct {
-	logger       *slog.Logger
-	create       *application.CreateRoom
-	update       *application.UpdateRoom
-	list         *application.ListRooms
-	get          *application.GetRoom
-	archive      *application.ArchiveRoom
-	reactivate   *application.ReactivateRoom
+	logger     *slog.Logger
+	create     *application.CreateRoom
+	update     *application.UpdateRoom
+	list       *application.ListRooms
+	get        *application.GetRoom
+	archive    *application.ArchiveRoom
+	reactivate *application.ReactivateRoom
 }
 
 func NewHandler(
@@ -32,24 +32,24 @@ func NewHandler(
 	reactivate *application.ReactivateRoom,
 ) *Handler {
 	return &Handler{
-		create:       create,
-		update:       update,
-		list:         list,
-		get:          get,
-		archive:      archive,
-		reactivate:   reactivate,
+		create:     create,
+		update:     update,
+		list:       list,
+		get:        get,
+		archive:    archive,
+		reactivate: reactivate,
 	}
 }
 
 func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 	return &Handler{
-		create:       h.create,
-		update:       h.update,
-		list:         h.list,
-		get:          h.get,
-		archive:      h.archive,
-		reactivate:   h.reactivate,
-		logger:       logger,
+		create:     h.create,
+		update:     h.update,
+		list:       h.list,
+		get:        h.get,
+		archive:    h.archive,
+		reactivate: h.reactivate,
+		logger:     logger,
 	}
 }
 
@@ -333,5 +333,3 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-

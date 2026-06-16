@@ -17,22 +17,22 @@ import (
 // ── Fake repositories ──────────────────────────────────────────────────────
 
 type fakeRoomRepo struct {
-	rooms              []domain.Room
-	getErr             error
-	createErr          error
-	updateErr          error
-	archiveErr         error
-	reactivateErr      error
-	activeNameExists   bool
-	activeNameErr      error
-	countActive        int
-	countActiveErr     error
-	exists             bool
-	existsErr          error
-	getForUpdate       *domain.Room
-	getForUpdateErr    error
-	assignedCounts     map[uuid.UUID]int
-	assignedCountsErr  error
+	rooms             []domain.Room
+	getErr            error
+	createErr         error
+	updateErr         error
+	archiveErr        error
+	reactivateErr     error
+	activeNameExists  bool
+	activeNameErr     error
+	countActive       int
+	countActiveErr    error
+	exists            bool
+	existsErr         error
+	getForUpdate      *domain.Room
+	getForUpdateErr   error
+	assignedCounts    map[uuid.UUID]int
+	assignedCountsErr error
 }
 
 func (f *fakeRoomRepo) ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]domain.Room, error) {
