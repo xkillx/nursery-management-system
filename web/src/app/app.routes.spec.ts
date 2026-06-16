@@ -353,11 +353,10 @@ describe('app.routes breadcrumb wiring', () => {
     });
   }
 
-  it('declares the top-level "Settings" Crumb as the ancestor of every real route', () => {
+  it('does not declare a root "Settings" Crumb on the shared layout (Home icon is prepended by the component)', () => {
     const layout = routes.find((r) => r.path === '' && (r.children?.length ?? 0) > 0);
-    const layoutCrumb = layout?.data?.['breadcrumb'];
-    expect(layoutCrumb).toBeDefined();
-    expect(layoutCrumb.label).toBe('Settings');
+    expect(layout).toBeDefined();
+    expect(layout!.data?.['breadcrumb']).toBeUndefined();
   });
 
   it('does not declare a breadcrumb on auth or 404 routes', () => {

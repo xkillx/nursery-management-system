@@ -2,9 +2,13 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, provideRouter, Router, RouterOutlet, Routes } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroHome } from '@ng-icons/heroicons/outline';
 import { of } from 'rxjs';
 
 import { PageBreadcrumbComponent } from './page-breadcrumb.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ROLES } from '../../../../core/constants/roles';
 
 @Component({
   standalone: true,
@@ -36,9 +40,14 @@ class TestHostComponent2 {}
 async function setupTestBed(routes: Routes, options: { expanded?: boolean } = {}): Promise<TestEnv> {
   TestBed.resetTestingModule();
   const hostComponent = options.expanded ? TestHostComponent2 : TestHostComponent1;
+  const fakeAuth = { currentRole: () => ROLES.manager };
   await TestBed.configureTestingModule({
-    imports: [hostComponent],
-    providers: [provideRouter(routes)],
+    imports: [hostComponent, NgIcon],
+    providers: [
+      provideRouter(routes),
+      provideIcons({ heroHome }),
+      { provide: AuthService, useValue: fakeAuth },
+    ],
   }).compileComponents();
 
   const router = TestBed.inject(Router);
@@ -52,17 +61,23 @@ async function setupTestBed(routes: Routes, options: { expanded?: boolean } = {}
 }
 
 describe('PageBreadcrumbComponent', () => {
-  it('renders nothing when no ancestor route declares breadcrumb data', async () => {
+  it('renders only the Home icon when no ancestor route declares breadcrumb data', async () => {
     const { fixture, runNavigation } = await setupTestBed([
       { path: 'empty', component: HostComponent },
     ]);
     await runNavigation(['/empty']);
     fixture.detectChanges();
-    const nav = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
-    expect(nav).toBeNull();
+    const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(nav).not.toBeNull();
+    const homeLink = nav!.querySelector('a[aria-label="Home"]');
+    expect(homeLink).not.toBeNull();
+    const otherLinks = Array.from(nav!.querySelectorAll('a')).filter(
+      (a) => a.getAttribute('aria-label') !== 'Home',
+    );
+    expect(otherLinks.length).toBe(0);
   });
 
-  it('renders the trail from ancestor route data', async () => {
+  it('renders the trail from ancestor route data with the Home icon prepended', async () => {
     const { fixture, runNavigation } = await setupTestBed(
       [
         {
@@ -89,10 +104,12 @@ describe('PageBreadcrumbComponent', () => {
     fixture.detectChanges();
     const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
     expect(nav).not.toBeNull();
+    const homeLink = nav!.querySelector('a[aria-label="Home"]');
+    expect(homeLink).not.toBeNull();
     const items = Array.from(nav!.querySelectorAll('li')).map((li) => (li as HTMLElement).textContent?.trim());
-    expect(items[0]).toContain('Settings');
-    expect(items[1]).toContain('Manager');
-    expect(items[2]).toContain('Rooms');
+    expect(items.some((t) => t?.includes('Settings'))).toBeTrue();
+    expect(items.some((t) => t?.includes('Manager'))).toBeTrue();
+    expect(items.some((t) => t?.includes('Rooms'))).toBeTrue();
   });
 
   it('marks the last segment as aria-current="page"', async () => {
@@ -146,12 +163,18 @@ describe('PageBreadcrumbComponent', () => {
     const listAnchor = fixture.nativeElement.querySelector('nav a[href="/list"]');
     expect(listAnchor).not.toBeNull();
     expect(listAnchor.textContent.trim()).toBe('List');
-    const nonLeafAnchors = fixture.nativeElement.querySelectorAll('nav li:not([aria-current="page"]) a');
+    const nonLeafAnchors = Array.from(
+      fixture.nativeElement.querySelectorAll('nav li:not([aria-current="page"]) a') as NodeListOf<HTMLElement>,
+    ).filter((a) => a.getAttribute('aria-label') !== 'Home');
     expect(nonLeafAnchors.length).toBe(0);
 
     await runNavigation(['/detail']);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('nav a').length).toBe(0);
+    const allAnchors = Array.from(
+      fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLElement>,
+    );
+    const nonHomeAnchors = allAnchors.filter((a) => a.getAttribute('aria-label') !== 'Home');
+    expect(nonHomeAnchors.length).toBe(0);
   });
 
   it('resolves a static label returned by a resolve function', async () => {
@@ -246,18 +269,87 @@ describe('PageBreadcrumbComponent', () => {
     await runNavigation(['/a/b']);
     fixture.detectChanges();
 
-    let visibleItems = Array.from(
-      fixture.nativeElement.querySelectorAll('nav li:not([aria-hidden="true"])'),
-    ).map((li) => (li as HTMLElement).textContent?.trim());
-    expect(visibleItems.some((t) => t?.includes('Settings'))).toBeFalse();
+    let visibleHome = fixture.nativeElement.querySelector('a[aria-label="Home"]');
+    expect(visibleHome).toBeNull();
 
     const button: DebugElement = fixture.debugElement.query(By.css('button[aria-expanded]'));
     button.nativeElement.click();
     fixture.detectChanges();
 
-    visibleItems = Array.from(
-      fixture.nativeElement.querySelectorAll('nav li:not([aria-hidden="true"])'),
-    ).map((li) => (li as HTMLElement).textContent?.trim());
-    expect(visibleItems.some((t) => t?.includes('Settings'))).toBeTrue();
+    visibleHome = fixture.nativeElement.querySelector('a[aria-label="Home"]');
+    expect(visibleHome).not.toBeNull();
+  });
+
+  describe('Home icon prepend', () => {
+    async function setupWithRole(role: string | null): Promise<TestEnv> {
+      TestBed.resetTestingModule();
+      const fakeAuth = { currentRole: () => role };
+      await TestBed.configureTestingModule({
+        imports: [
+          HostComponent,
+          NgIcon,
+        ],
+        providers: [
+          provideRouter([]),
+          provideIcons({ heroHome }),
+          { provide: AuthService, useValue: fakeAuth },
+        ],
+      }).compileComponents();
+      const router = TestBed.inject(Router);
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+      return { router, runNavigation: (c) => router.navigate(c), fixture };
+    }
+
+    it('prepends a Home icon link as the first crumb when the route declares a breadcrumb', async () => {
+      const { fixture, runNavigation } = await setupWithRole(ROLES.manager);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        {
+          path: 'children',
+          data: { breadcrumb: { label: 'Children' } },
+          component: HostComponent,
+        },
+      ]);
+      await runNavigation(['/children']);
+      fixture.detectChanges();
+
+      const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
+      expect(nav).not.toBeNull();
+      const homeLink = nav!.querySelector('a[aria-label="Home"]');
+      expect(homeLink).not.toBeNull();
+      const homeIcon = homeLink!.querySelector('ng-icon');
+      expect(homeIcon).not.toBeNull();
+    });
+
+    it('routes the Home icon to the role-default landing page', async () => {
+      const { fixture, runNavigation } = await setupWithRole(ROLES.owner);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        {
+          path: 'rooms',
+          data: { breadcrumb: { label: 'Rooms' } },
+          component: HostComponent,
+        },
+      ]);
+      await runNavigation(['/rooms']);
+      fixture.detectChanges();
+
+      const homeLink: HTMLAnchorElement | null = fixture.nativeElement.querySelector('a[aria-label="Home"]');
+      expect(homeLink).not.toBeNull();
+      expect(homeLink!.getAttribute('href')).toBe('/owner');
+    });
+
+    it('renders only the Home icon when no route declares a breadcrumb', async () => {
+      const { fixture, runNavigation } = await setupWithRole(ROLES.manager);
+      const router = TestBed.inject(Router);
+      router.resetConfig([{ path: 'plain', component: HostComponent }]);
+      await runNavigation(['/plain']);
+      fixture.detectChanges();
+      const nav: HTMLElement | null = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumb"]');
+      expect(nav).not.toBeNull();
+      const homeLink = nav!.querySelector('a[aria-label="Home"]');
+      expect(homeLink).not.toBeNull();
+    });
   });
 });

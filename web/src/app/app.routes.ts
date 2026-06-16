@@ -36,8 +36,6 @@ import {
   parentInvoiceNumberResolver,
 } from './core/navigation/breadcrumb-resolvers';
 
-const SETTINGS_CRUMB = { label: 'Settings' } as const;
-
 export const routes: Routes = [
   {
     path: '',
@@ -48,7 +46,6 @@ export const routes: Routes = [
   {
     path: '',
     component: AppLayoutComponent,
-    data: { breadcrumb: SETTINGS_CRUMB },
     children: [
           {
             path: 'staff/manager/dashboard',

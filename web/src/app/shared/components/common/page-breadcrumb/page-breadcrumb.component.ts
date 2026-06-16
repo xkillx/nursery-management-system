@@ -1,18 +1,21 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   DestroyRef,
-  Inject,
   Input,
   OnInit,
-  PLATFORM_ID,
   inject,
 } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Observable, of } from 'rxjs';
 import { startWith } from 'rxjs/operators';
+import { NgIcon } from '@ng-icons/core';
+import { heroHome } from '@ng-icons/heroicons/outline';
+
+import { AuthService } from '../../../../core/services/auth.service';
+import { defaultRouteForRole } from '../../../../core/constants/roles';
 
 export type CrumbResolver = (
   route: ActivatedRouteSnapshot,
@@ -29,10 +32,11 @@ export interface Crumb {
 
 export const BREADCRUMB_DATA_KEY = 'breadcrumb';
 
-interface ResolvedCrumb {
+export interface ResolvedCrumb {
   label: string;
   link: string[] | null;
   resolved$: Observable<string>;
+  isHome?: boolean;
 }
 
 interface CollectedCrumb {
@@ -42,13 +46,13 @@ interface CollectedCrumb {
 
 @Component({
   selector: 'app-page-breadcrumb',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NgIcon],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './page-breadcrumb.component.html',
 })
 export class PageBreadcrumbComponent implements OnInit {
-  @Input() mobileCollapseAfter = 1;
+  @Input() mobileCollapseAfter = 2;
 
   crumbs: ResolvedCrumb[] = [];
   visibleCrumbs: ResolvedCrumb[] = [];
@@ -59,10 +63,7 @@ export class PageBreadcrumbComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
-
-  constructor(@Inject(PLATFORM_ID) platformId: object) {
-    void isPlatformBrowser(platformId);
-  }
+  private readonly authService = inject(AuthService);
 
   ngOnInit(): void {
     const sub = this.router.events
@@ -89,12 +90,20 @@ export class PageBreadcrumbComponent implements OnInit {
     const collected: CollectedCrumb[] = [];
     this.collectCrumbs(root, collected);
 
-    this.crumbs = collected.map(({ crumb, snapshot }) => ({
+    const routeCrumbs: ResolvedCrumb[] = collected.map(({ crumb, snapshot }) => ({
       label: crumb.label,
       link: crumb.link ?? null,
       resolved$: this.wrapResolver(crumb, snapshot),
     }));
 
+    const homeCrumb: ResolvedCrumb = {
+      label: 'Home',
+      link: [defaultRouteForRole(this.authService.currentRole())],
+      resolved$: of('Home'),
+      isHome: true,
+    };
+
+    this.crumbs = [homeCrumb, ...routeCrumbs];
     this.collapsed = true;
     this.applyCollapse();
   }
