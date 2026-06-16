@@ -1,4 +1,14 @@
-<app-page-header title="Site overview" description="Cross-site summary of all active nursery sites." />
+<div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div class="max-w-3xl">
+    <nav class="mb-2 flex flex-wrap items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+      <span>Settings</span>
+      <span>/</span>
+      <span class="text-brand-600 dark:text-brand-400">Overview</span>
+    </nav>
+    <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">Site overview</h1>
+    <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">Cross-site summary of all active nursery sites.</p>
+  </div>
+</div>
 
 @if (loading) {
   <app-loading-state label="Loading site summaries..." />
