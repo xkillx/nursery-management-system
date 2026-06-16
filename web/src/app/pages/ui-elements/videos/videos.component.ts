@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { PageBreadcrumbComponent } from '../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ComponentCardComponent } from '../../../shared/components/common/component-card/component-card.component';
 // import { AspectRatioVideoComponent } from '../../../shared/components/ui/videos/aspect-ratio-video/aspect-ratio-video.component';
 import { SixteenIstoNineComponent } from '../../../shared/components/ui/videos/sixteen-isto-nine/sixteen-isto-nine.component';
@@ -10,7 +9,6 @@ import { TwentyoneIstoNineComponent } from "../../../shared/components/ui/videos
 @Component({
   selector: 'app-videos',
   imports: [
-    PageBreadcrumbComponent,
     ComponentCardComponent,
     // AspectRatioVideoComponent,
     SixteenIstoNineComponent,

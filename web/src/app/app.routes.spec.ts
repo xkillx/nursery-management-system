@@ -18,6 +18,25 @@ function flattenPaths(routes: Routes, parentPath = ''): string[] {
   return paths;
 }
 
+function findLeafRoute(routes: Routes, path: string) {
+  const matches: any[] = [];
+  collectByPath(routes, '', matches);
+  return matches.find((r) => r.fullPath === path);
+}
+
+function collectByPath(routes: Routes, parentPath: string, out: any[]): void {
+  for (const r of routes) {
+    if (r.path === undefined) continue;
+    const fullPath = r.path === '' ? parentPath : parentPath ? `${parentPath}/${r.path}` : r.path;
+    if (r.component) {
+      out.push({ ...r, fullPath });
+    }
+    if (r.children) {
+      collectByPath(r.children, fullPath, out);
+    }
+  }
+}
+
 describe('app.routes', () => {
   const paths = flattenPaths(routes);
 
@@ -292,5 +311,74 @@ describe('app.routes', () => {
       expect((route.data?.['roles'] as string[])).not.toContain('practitioner');
       expect((route.data?.['roles'] as string[])).not.toContain('parent');
     }
+  });
+});
+
+describe('app.routes breadcrumb wiring', () => {
+  const breadcrumbPaths = [
+    'staff/manager/dashboard',
+    'staff/manager/children',
+    'staff/manager/children/:childId',
+    'staff/manager/children/:childId/registration',
+    'staff/manager/registrations/new',
+    'staff/manager/registrations/:childId/intake',
+    'staff/manager/guardians',
+    'staff/manager/invites',
+    'staff/manager/attendance-corrections',
+    'staff/manager/rooms',
+    'staff/manager/rooms/new',
+    'staff/manager/rooms/:roomId/edit',
+    'staff/manager/funding',
+    'staff/manager/invoice-run',
+    'staff/manager/invoices',
+    'staff/manager/invoices/:invoiceId',
+    'staff/practitioner/attendance',
+    'owner',
+    'owner/manager-access',
+    'owner/rooms',
+    'owner/rooms/new',
+    'owner/rooms/:roomId/edit',
+    'app/invoices',
+    'app/invoices/:invoiceId',
+  ];
+
+  for (const path of breadcrumbPaths) {
+    it(`declares a breadcrumb Crumb on /${path}`, () => {
+      const route = findLeafRoute(routes, path);
+      expect(route).toBeDefined();
+      const crumb = route!.data?.['breadcrumb'];
+      expect(crumb).toBeDefined();
+      expect(typeof crumb.label).toBe('string');
+      expect(crumb.label.length).toBeGreaterThan(0);
+    });
+  }
+
+  it('declares the top-level "Settings" Crumb as the ancestor of every real route', () => {
+    const layout = routes.find((r) => r.path === '' && (r.children?.length ?? 0) > 0);
+    const layoutCrumb = layout?.data?.['breadcrumb'];
+    expect(layoutCrumb).toBeDefined();
+    expect(layoutCrumb.label).toBe('Settings');
+  });
+
+  it('does not declare a breadcrumb on auth or 404 routes', () => {
+    const authPaths = ['signin', 'signup', 'forgot-password', 'reset-password', 'invite-accept', '**'];
+    for (const p of authPaths) {
+      const route = routes.find((r) => r.path === p);
+      expect(route?.data?.['breadcrumb']).toBeUndefined();
+    }
+  });
+
+  it('uses a resolve function for dynamic child-name and invoice-number segments', () => {
+    const childDetail = findLeafRoute(routes, 'staff/manager/children/:childId');
+    expect(typeof childDetail!.data.breadcrumb.resolve).toBe('function');
+
+    const managerInvoice = findLeafRoute(routes, 'staff/manager/invoices/:invoiceId');
+    expect(typeof managerInvoice!.data.breadcrumb.resolve).toBe('function');
+
+    const parentInvoice = findLeafRoute(routes, 'app/invoices/:invoiceId');
+    expect(typeof parentInvoice!.data.breadcrumb.resolve).toBe('function');
+
+    const ownerRoomEdit = findLeafRoute(routes, 'owner/rooms/:roomId/edit');
+    expect(typeof ownerRoomEdit!.data.breadcrumb.resolve).toBe('function');
   });
 });

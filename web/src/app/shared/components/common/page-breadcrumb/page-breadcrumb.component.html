@@ -1,36 +1,85 @@
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-  <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
-    {{ pageTitle }}
-  </h2>
-  <nav>
-    <ol class="flex items-center gap-1.5">
+<nav *ngIf="crumbs.length > 0" aria-label="Breadcrumb" class="mb-4">
+  <ol class="flex flex-wrap items-center gap-1.5 text-sm">
+    <ng-container *ngIf="showCollapseToggle && hiddenCrumbs.length > 0">
       <li>
-        <a
-          class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
-          routerLink="/"
+        <button
+          type="button"
+          (click)="toggleCollapsed()"
+          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          [attr.aria-expanded]="!collapsed"
+          aria-label="Show full breadcrumb trail"
         >
-          Home
-          <svg
-            class="stroke-current"
-            width="17"
-            height="16"
-            viewBox="0 0 17 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+          <span class="hidden sm:inline">…</span>
+          <span class="sm:hidden">‹</span>
+        </button>
+      </li>
+      <li aria-hidden="true" class="flex items-center text-gray-400 dark:text-gray-500">
+        <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </li>
+    </ng-container>
+
+    <ng-container *ngFor="let crumb of visibleCrumbs; let i = index; let last = last; trackBy: trackByIndex">
+      <li
+        *ngIf="!last"
+        class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400"
+      >
+        <ng-container *ngIf="crumb.link; else staticText">
+          <a
+            [routerLink]="crumb.link"
+            class="transition-colors hover:text-gray-700 dark:hover:text-gray-200"
           >
-            <path
-              d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
-              stroke=""
-              stroke-width="1.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </a>
+            <ng-container *ngIf="crumb.resolved$ | async as label; else pendingFallback">{{ label }}</ng-container>
+            <ng-template #pendingFallback>&nbsp;</ng-template>
+          </a>
+        </ng-container>
+        <ng-template #staticText>
+          <span>
+            <ng-container *ngIf="crumb.resolved$ | async as label; else pendingFallback">{{ label }}</ng-container>
+            <ng-template #pendingFallback>&nbsp;</ng-template>
+          </span>
+        </ng-template>
+        <svg
+          aria-hidden="true"
+          class="stroke-current"
+          width="17"
+          height="16"
+          viewBox="0 0 17 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
+            stroke=""
+            stroke-width="1.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </li>
-      <li class="text-sm text-gray-800 dark:text-white/90">
-        {{ pageTitle }}
+
+      <li
+        *ngIf="last"
+        class="text-gray-800 dark:text-white/90"
+        aria-current="page"
+      >
+        <ng-container *ngIf="crumb.link; else leafStatic">
+          <a
+            [routerLink]="crumb.link"
+            class="text-gray-800 dark:text-white/90"
+          >
+            <ng-container *ngIf="crumb.resolved$ | async as label; else pendingFallback">{{ label }}</ng-container>
+            <ng-template #pendingFallback>&nbsp;</ng-template>
+          </a>
+        </ng-container>
+        <ng-template #leafStatic>
+          <span>
+            <ng-container *ngIf="crumb.resolved$ | async as label; else pendingFallback">{{ label }}</ng-container>
+            <ng-template #pendingFallback>&nbsp;</ng-template>
+          </span>
+        </ng-template>
       </li>
-    </ol>
-  </nav>
-</div>
+    </ng-container>
+  </ol>
+</nav>

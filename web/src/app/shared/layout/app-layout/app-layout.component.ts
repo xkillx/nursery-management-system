@@ -6,6 +6,7 @@ import { BackdropComponent } from '../backdrop/backdrop.component';
 import { RouterModule } from '@angular/router';
 import { AppHeaderComponent } from '../app-header/app-header.component';
 import { ToastContainerComponent } from '../../components/ui/toast/toast-container.component';
+import { PageBreadcrumbComponent } from '../../components/common/page-breadcrumb/page-breadcrumb.component';
 
 @Component({
   selector: 'app-layout',
@@ -16,6 +17,7 @@ import { ToastContainerComponent } from '../../components/ui/toast/toast-contain
     AppSidebarComponent,
     BackdropComponent,
     ToastContainerComponent,
+    PageBreadcrumbComponent,
   ],
   templateUrl: './app-layout.component.html',
 })

@@ -1,6 +1,5 @@
 
 import { Component } from '@angular/core';
-import { PageBreadcrumbComponent } from '../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DefaultInputsComponent } from '../../../shared/components/form/form-elements/default-inputs/default-inputs.component';
 import { SelectInputsComponent } from '../../../shared/components/form/form-elements/select-inputs/select-inputs.component';
 import { TextAreaInputComponent } from '../../../shared/components/form/form-elements/text-area-input/text-area-input.component';
@@ -15,7 +14,6 @@ import { DropzoneComponent } from '../../../shared/components/form/form-elements
 @Component({
   selector: 'app-form-elements',
   imports: [
-    PageBreadcrumbComponent,
     DefaultInputsComponent,
     SelectInputsComponent,
     TextAreaInputComponent,
