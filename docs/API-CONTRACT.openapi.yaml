@@ -1119,11 +1119,11 @@ components:
           type: object
           description: All registration profile sections
           properties:
-            paper_form_completed_date:
+            registration_date:
               type: string
               format: date
               nullable: true
-              description: Date the parent/carer signed the physical registration form. Effectively required by server-side validation on the guided intake path.
+              description: Date the parent/carer provided the registration information. Required on the guided intake path; must be a `YYYY-MM-DD` date not in the future.
             demographics_home:
               type: object
             medical_dietary:
@@ -1204,10 +1204,7 @@ components:
               type: object
         consents:
           type: object
-          required: [paper_form_on_file]
           properties:
-            paper_form_on_file:
-              type: boolean
             urgent_medical_treatment:
               type: boolean
             urgent_medical_treatment_exceptions:
@@ -3048,9 +3045,7 @@ components:
           application/json:
             schema:
               type: object
-              required: [paper_form_on_file]
               properties:
-                paper_form_on_file: { type: boolean }
                 urgent_medical_treatment: { type: boolean }
                 plasters: { type: boolean }
                 safeguarding_reporting_acknowledgement: { type: boolean }
