@@ -1,6 +1,10 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CompleteRegistrationInput struct {
 	Child              ChildRegistrationInfo
@@ -10,26 +14,28 @@ type CompleteRegistrationInput struct {
 }
 
 type ChildRegistrationInfo struct {
-	FirstName   string
-	MiddleName  string
-	LastName    string
-	DateOfBirth string
-	StartDate   string
-	Notes       string
+	FirstName     string
+	MiddleName    string
+	LastName      string
+	DateOfBirth   string
+	StartDate     string
+	Notes         string
+	PrimaryRoomID *string
 }
 
 type ProfileSectionsInput struct {
-	DemographicsHome     *DemographicsHomeInput
-	MedicalDietary       *MedicalDietaryInput
-	HealthContacts       *HealthContactsInput
-	SocialDevelopment    *SocialDevelopmentInput
-	ParentCarers         []ContactEntryInput
-	EmergencyContacts    []ContactEntryInput
-	AuthorisedCollectors []ContactEntryInput
-	Collection           *CollectionInput
-	FundingSupport       *FundingSupportInput
-	RoutineCare          *RoutineCareInput
-	GDPRDeclaration      *GDPRDeclarationInput
+	DemographicsHome       *DemographicsHomeInput
+	MedicalDietary         *MedicalDietaryInput
+	HealthContacts         *HealthContactsInput
+	SocialDevelopment      *SocialDevelopmentInput
+	ParentCarers           []ContactEntryInput
+	EmergencyContacts      []ContactEntryInput
+	AuthorisedCollectors   []ContactEntryInput
+	Collection             *CollectionInput
+	FundingSupport         *FundingSupportInput
+	RoutineCare            *RoutineCareInput
+	GDPRDeclaration        *GDPRDeclarationInput
+	PaperFormCompletedDate *string
 }
 
 type DemographicsHomeInput struct {
@@ -243,6 +249,13 @@ func (c *CompleteRegistrationInput) ToProfile(tenantID, branchID, childID uuid.U
 
 	if pi := c.Profile.GDPRDeclaration; pi != nil {
 		p.GDPRDeclaredByName = pi.GDPRDeclaredByName
+	}
+
+	if c.Profile.PaperFormCompletedDate != nil && *c.Profile.PaperFormCompletedDate != "" {
+		t, err := time.Parse("2006-01-02", *c.Profile.PaperFormCompletedDate)
+		if err == nil {
+			p.PaperFormCompletedDate = &t
+		}
 	}
 
 	return p

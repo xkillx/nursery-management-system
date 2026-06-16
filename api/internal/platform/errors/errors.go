@@ -10,6 +10,11 @@ type DomainError struct {
 	cause   error
 }
 
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
 func (e *DomainError) Error() string {
 	if e.cause != nil {
 		return fmt.Sprintf("%s: %s: %v", e.Code, e.Message, e.cause)
@@ -29,6 +34,20 @@ func AlreadyExists(entity, message string) *DomainError {
 
 func Validation(message string, field string) *DomainError {
 	return &DomainError{Code: "validation_error", Message: message, Field: field}
+}
+
+func ValidationWithFields(message string, fields []FieldError) *DomainError {
+	details := make([]FieldError, 0, len(fields))
+	for _, f := range fields {
+		if f.Field != "" {
+			details = append(details, f)
+		}
+	}
+	return &DomainError{
+		Code:    "validation_error",
+		Message: message,
+		Details: map[string]any{"field_errors": details},
+	}
 }
 
 func Unauthorized(message string) *DomainError {

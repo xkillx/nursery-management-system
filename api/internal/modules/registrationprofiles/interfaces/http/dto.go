@@ -21,21 +21,22 @@ type profileResponse struct {
 }
 
 type registrationProfileResponse struct {
-	Child                childSummaryResponse       `json:"child"`
-	ProfileExists        bool                       `json:"profile_exists"`
-	Profile              *profileResponse           `json:"profile,omitempty"`
-	DemographicsHome     *demographicsHomeResponse  `json:"demographics_home,omitempty"`
-	MedicalDietary       *medicalDietaryResponse    `json:"medical_dietary,omitempty"`
-	HealthContacts       *healthContactsResponse    `json:"health_contacts,omitempty"`
-	SocialDevelopment    *socialDevelopmentResponse `json:"social_development,omitempty"`
-	ParentCarers         []contactEntryResponse     `json:"parent_carers,omitempty"`
-	EmergencyContacts    []contactEntryResponse     `json:"emergency_contacts,omitempty"`
-	AuthorisedCollectors []contactEntryResponse     `json:"authorised_collectors,omitempty"`
-	Collection           *collectionResponse        `json:"collection,omitempty"`
-	FundingSupport       *fundingSupportResponse    `json:"funding_support,omitempty"`
-	RoutineCare          *routineCareResponse       `json:"routine_care,omitempty"`
-	GDPRDeclaration      *gdprDeclarationResponse   `json:"gdpr_declaration,omitempty"`
-	Completeness         *completenessResponse      `json:"completeness"`
+	Child                  childSummaryResponse       `json:"child"`
+	ProfileExists          bool                       `json:"profile_exists"`
+	Profile                *profileResponse           `json:"profile,omitempty"`
+	DemographicsHome       *demographicsHomeResponse  `json:"demographics_home,omitempty"`
+	MedicalDietary         *medicalDietaryResponse    `json:"medical_dietary,omitempty"`
+	HealthContacts         *healthContactsResponse    `json:"health_contacts,omitempty"`
+	SocialDevelopment      *socialDevelopmentResponse `json:"social_development,omitempty"`
+	ParentCarers           []contactEntryResponse     `json:"parent_carers,omitempty"`
+	EmergencyContacts      []contactEntryResponse     `json:"emergency_contacts,omitempty"`
+	AuthorisedCollectors   []contactEntryResponse     `json:"authorised_collectors,omitempty"`
+	Collection             *collectionResponse        `json:"collection,omitempty"`
+	FundingSupport         *fundingSupportResponse    `json:"funding_support,omitempty"`
+	RoutineCare            *routineCareResponse       `json:"routine_care,omitempty"`
+	GDPRDeclaration        *gdprDeclarationResponse   `json:"gdpr_declaration,omitempty"`
+	PaperFormCompletedDate *string                    `json:"paper_form_completed_date,omitempty"`
+	Completeness           *completenessResponse      `json:"completeness"`
 }
 
 type demographicsHomeResponse struct {
@@ -302,6 +303,11 @@ func toRegistrationProfileResponse(pwc domain.ProfileWithChild, comp domain.Comp
 			s := p.GDPRDeclarationDate.Format("2006-01-02")
 			resp.GDPRDeclaration.GDPRDeclarationDate = &s
 		}
+	}
+
+	if p.PaperFormCompletedDate != nil {
+		s := p.PaperFormCompletedDate.Format("2006-01-02")
+		resp.PaperFormCompletedDate = &s
 	}
 
 	return resp

@@ -108,6 +108,8 @@ type Profile struct {
 
 	RoutineCareNotes *string
 
+	PaperFormCompletedDate *time.Time
+
 	GDPRDeclaredByName  *string
 	GDPRDeclaredAt      *time.Time
 	GDPRDeclarationDate *time.Time
@@ -164,4 +166,12 @@ type CollectionPasswordMetadata struct {
 	UpdatedAt             *time.Time
 	UpdatedByUserID       *uuid.UUID
 	UpdatedByMembershipID *uuid.UUID
+}
+
+func (p *Profile) PaperFormCompletionRecorded() bool {
+	if p == nil || p.PaperFormCompletedDate == nil {
+		return false
+	}
+	days := time.Since(*p.PaperFormCompletedDate).Hours() / 24
+	return days >= 0 && days <= 365
 }

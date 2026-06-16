@@ -8,26 +8,28 @@ type submitCompleteRegistrationRequest struct {
 }
 
 type childWritePayload struct {
-	FirstName   string  `json:"first_name"`
-	MiddleName  *string `json:"middle_name"`
-	LastName    *string `json:"last_name"`
-	DateOfBirth string  `json:"date_of_birth"`
-	StartDate   string  `json:"start_date"`
-	Notes       string  `json:"notes,omitempty"`
+	FirstName     string  `json:"first_name"`
+	MiddleName    *string `json:"middle_name"`
+	LastName      *string `json:"last_name"`
+	DateOfBirth   string  `json:"date_of_birth"`
+	StartDate     string  `json:"start_date"`
+	Notes         string  `json:"notes,omitempty"`
+	PrimaryRoomID *string `json:"primary_room_id,omitempty"`
 }
 
 type registrationProfilePayload struct {
-	DemographicsHome     *demographicsHomePayload  `json:"demographics_home,omitempty"`
-	MedicalDietary       *medicalDietaryPayload    `json:"medical_dietary,omitempty"`
-	HealthContacts       *healthContactsPayload    `json:"health_contacts,omitempty"`
-	SocialDevelopment    *socialDevelopmentPayload `json:"social_development,omitempty"`
-	ParentCarers         []contactEntryPayload     `json:"parent_carers,omitempty"`
-	EmergencyContacts    []contactEntryPayload     `json:"emergency_contacts,omitempty"`
-	AuthorisedCollectors []contactEntryPayload     `json:"authorised_collectors,omitempty"`
-	Collection           *collectionPayload        `json:"collection,omitempty"`
-	FundingSupport       *fundingSupportPayload    `json:"funding_support,omitempty"`
-	RoutineCare          *routineCarePayload       `json:"routine_care,omitempty"`
-	GDPRDeclaration      *gdprDeclarationPayload   `json:"gdpr_declaration,omitempty"`
+	DemographicsHome        *demographicsHomePayload  `json:"demographics_home,omitempty"`
+	MedicalDietary          *medicalDietaryPayload    `json:"medical_dietary,omitempty"`
+	HealthContacts          *healthContactsPayload    `json:"health_contacts,omitempty"`
+	SocialDevelopment       *socialDevelopmentPayload `json:"social_development,omitempty"`
+	ParentCarers            []contactEntryPayload     `json:"parent_carers,omitempty"`
+	EmergencyContacts       []contactEntryPayload     `json:"emergency_contacts,omitempty"`
+	AuthorisedCollectors    []contactEntryPayload     `json:"authorised_collectors,omitempty"`
+	Collection              *collectionPayload        `json:"collection,omitempty"`
+	FundingSupport          *fundingSupportPayload    `json:"funding_support,omitempty"`
+	RoutineCare             *routineCarePayload       `json:"routine_care,omitempty"`
+	GDPRDeclaration         *gdprDeclarationPayload   `json:"gdpr_declaration,omitempty"`
+	PaperFormCompletedDate  *string                   `json:"paper_form_completed_date,omitempty"`
 }
 
 type demographicsHomePayload struct {

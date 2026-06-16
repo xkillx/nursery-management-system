@@ -68,12 +68,13 @@ func (h *SubmitHandler) handleSubmit(c *gin.Context) {
 func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegistrationInput {
 	input := domain.CompleteRegistrationInput{
 		Child: domain.ChildRegistrationInfo{
-			FirstName:   req.Child.FirstName,
-			MiddleName:  stringValue(req.Child.MiddleName),
-			LastName:    stringValue(req.Child.LastName),
-			DateOfBirth: req.Child.DateOfBirth,
-			StartDate:   req.Child.StartDate,
-			Notes:       req.Child.Notes,
+			FirstName:     req.Child.FirstName,
+			MiddleName:    stringValue(req.Child.MiddleName),
+			LastName:      stringValue(req.Child.LastName),
+			DateOfBirth:   req.Child.DateOfBirth,
+			StartDate:     req.Child.StartDate,
+			Notes:         req.Child.Notes,
+			PrimaryRoomID: req.Child.PrimaryRoomID,
 		},
 	}
 
@@ -185,6 +186,8 @@ func mapToDomainInput(req submitCompleteRegistrationRequest) domain.CompleteRegi
 				GDPRDeclarationDate: rp.GDPRDeclarationDate,
 			}
 		}
+
+		psi.PaperFormCompletedDate = req.RegistrationProfile.PaperFormCompletedDate
 
 		input.Profile = psi
 	}

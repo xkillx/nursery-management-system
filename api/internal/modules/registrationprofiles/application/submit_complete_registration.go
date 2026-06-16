@@ -59,12 +59,13 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		childInfo := domain.ChildInfo{
-			FirstName:   strings.TrimSpace(input.Child.FirstName),
-			MiddleName:  strings.TrimSpace(input.Child.MiddleName),
-			LastName:    strings.TrimSpace(input.Child.LastName),
-			DateOfBirth: mustParseDate(input.Child.DateOfBirth),
-			StartDate:   mustParseDate(input.Child.StartDate),
-			Notes:       input.Child.Notes,
+			FirstName:     strings.TrimSpace(input.Child.FirstName),
+			MiddleName:    strings.TrimSpace(input.Child.MiddleName),
+			LastName:      strings.TrimSpace(input.Child.LastName),
+			DateOfBirth:   mustParseDate(input.Child.DateOfBirth),
+			StartDate:     mustParseDate(input.Child.StartDate),
+			Notes:         input.Child.Notes,
+			PrimaryRoomID: parseUUIDPtr(input.Child.PrimaryRoomID),
 		}
 
 		child, err := uc.childCreator.CreateChild(ctx, tx, childInfo, actor.TenantID, actor.BranchID)
@@ -155,6 +156,7 @@ func (uc *SubmitCompleteRegistration) Execute(ctx context.Context, actor tenant.
 
 func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistrationInput) error {
 	var missing []string
+	var fieldErrors []domainerrors.FieldError
 
 	if strings.TrimSpace(input.Child.FirstName) == "" {
 		missing = append(missing, "first_name")
@@ -172,13 +174,35 @@ func (uc *SubmitCompleteRegistration) validateInput(input domain.CompleteRegistr
 		missing = append(missing, "consents.safeguarding_reporting_acknowledgement")
 	}
 
+	if input.Child.PrimaryRoomID == nil || strings.TrimSpace(*input.Child.PrimaryRoomID) == "" {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "primary_room_id", Message: "Pick a primary room."})
+	} else if _, err := uuid.Parse(strings.TrimSpace(*input.Child.PrimaryRoomID)); err != nil {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "primary_room_id", Message: "Pick a primary room."})
+	}
+
+	if input.Profile.PaperFormCompletedDate == nil || strings.TrimSpace(*input.Profile.PaperFormCompletedDate) == "" {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "paper_form_completed_date", Message: "Enter the date the parent/carer completed the paper form."})
+	} else if _, err := time.Parse("2006-01-02", strings.TrimSpace(*input.Profile.PaperFormCompletedDate)); err != nil {
+		fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "paper_form_completed_date", Message: "Enter the date the parent/carer completed the paper form."})
+	}
+
 	if len(missing) > 0 {
 		return domainerrors.Validation(
 			fmt.Sprintf("Missing required fields: %s", strings.Join(missing, ", ")),
 			strings.Join(missing, ","),
 		)
 	}
+	if len(fieldErrors) > 0 {
+		return domainerrors.ValidationWithFields("Some fields did not validate.", fieldErrors)
+	}
 	return nil
+}
+
+func stringValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 func mustParseDate(s string) time.Time {
@@ -187,6 +211,21 @@ func mustParseDate(s string) time.Time {
 		return time.Now().UTC()
 	}
 	return t
+}
+
+func parseUUIDPtr(s *string) *uuid.UUID {
+	if s == nil {
+		return nil
+	}
+	v := strings.TrimSpace(*s)
+	if v == "" {
+		return nil
+	}
+	id, err := uuid.Parse(v)
+	if err != nil {
+		return nil
+	}
+	return &id
 }
 
 func buildConsentRecord(childID uuid.UUID, ci domain.ConsentInput, version int, actor tenant.ActorContext) *domain.ConsentRecord {

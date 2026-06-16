@@ -151,6 +151,10 @@ type childCreatorAdapter struct {
 func (a *childCreatorAdapter) CreateChild(ctx context.Context, tx pgx.Tx, child regprofiledomain.ChildInfo, tenantID, branchID uuid.UUID) (regprofiledomain.ChildCreationResult, error) {
 	childID := uid.NewUUID()
 	q := sqlc.New(tx)
+	primaryRoomID := pgtype.UUID{}
+	if child.PrimaryRoomID != nil {
+		primaryRoomID = pgtype.UUID{Bytes: [16]byte(*child.PrimaryRoomID), Valid: true}
+	}
 	err := q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
 		ID:                  pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
 		TenantID:            pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
@@ -162,6 +166,7 @@ func (a *childCreatorAdapter) CreateChild(ctx context.Context, tx pgx.Tx, child 
 		StartDate:           pgtype.Date{Time: child.StartDate, Valid: true},
 		CoreHourlyRateMinor: pgtype.Int4{Valid: false},
 		Column11:            child.Notes,
+		PrimaryRoomID:       primaryRoomID,
 	})
 	if err != nil {
 		return regprofiledomain.ChildCreationResult{}, fmt.Errorf("create child: %w", err)

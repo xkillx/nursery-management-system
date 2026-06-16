@@ -423,6 +423,7 @@ type ChildRegistrationProfile struct {
 	SocialWorkerName                        pgtype.Text
 	SocialWorkerPhone                       pgtype.Text
 	SocialWorkerEmail                       pgtype.Text
+	PaperFormCompletedDate                  pgtype.Date
 }
 
 type FundingProfile struct {
