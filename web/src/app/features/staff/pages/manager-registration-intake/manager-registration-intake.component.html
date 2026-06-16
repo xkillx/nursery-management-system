@@ -226,21 +226,21 @@
                   </app-form-field>
 
                   <app-form-field
-                    label="Date parent/carer completed the paper form"
-                    labelFor="child-paper-form-completed-date"
+                    label="Registration date"
+                    labelFor="child-registration-date"
                     [required]="true"
-                    errorId="child-paper-form-completed-date-error"
-                    [error]="step1VisibleError('paper_form_completed_date')"
-                    hint="The day the parent/carer signed the physical registration form."
+                    errorId="child-registration-date-error"
+                    [error]="step1VisibleError('registration_date')"
+                    hint="The day the parent/carer provided the registration information."
                   >
                     <app-date-picker
-                      id="child-paper-form-completed-date"
-                      name="paper_form_completed_date"
-                      [(ngModel)]="step1.paper_form_completed_date"
-                      (blurred)="markStep1Touched('paper_form_completed_date')"
+                      id="child-registration-date"
+                      name="registration_date"
+                      [(ngModel)]="step1.registration_date"
+                      (blurred)="markStep1Touched('registration_date')"
                       [max]="todayIso"
-                      [error]="shouldShowStep1Error('paper_form_completed_date')"
-                      [describedBy]="shouldShowStep1Error('paper_form_completed_date') ? 'child-paper-form-completed-date-error' : undefined"
+                      [error]="shouldShowStep1Error('registration_date')"
+                      [describedBy]="shouldShowStep1Error('registration_date') ? 'child-registration-date-error' : undefined"
                     />
                   </app-form-field>
                 </div>

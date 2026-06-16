@@ -70,7 +70,7 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.step1.disability_notes = '';
     component.step1.access_requirements = '';
     component.step1.primary_room_id = 'room-1';
-    component.step1.paper_form_completed_date = component.todayIso;
+    component.step1.registration_date = component.todayIso;
 
     component.step2.allergy_status = 'no';
     component.step2.allergy_details = '';
@@ -119,7 +119,6 @@ describe('ManagerRegistrationIntakeComponent', () => {
     component.step3.other_benefits = '';
     component.step3.collection_password = '';
 
-    component.step4.paper_form_on_file = true;
     component.step4.safeguarding_reporting_acknowledgement = true;
     component.step4.information_sharing_consent = true;
     component.step4.information_truthfulness_declaration = true;
@@ -134,31 +133,31 @@ describe('ManagerRegistrationIntakeComponent', () => {
     });
   });
 
-  describe('Step 1 — primary room and paper-form completion date', () => {
+  describe('Step 1 — primary room and registration date', () => {
     it('blocks Step 1 completion when primary_room_id is empty', () => {
       fillRequiredForCompletion();
       component.step1.primary_room_id = '';
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks Step 1 completion when paper_form_completed_date is empty', () => {
+    it('blocks Step 1 completion when registration_date is empty', () => {
       fillRequiredForCompletion();
-      component.step1.paper_form_completed_date = '';
+      component.step1.registration_date = '';
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks Step 1 completion when paper_form_completed_date is in the future', () => {
+    it('blocks Step 1 completion when registration_date is in the future', () => {
       fillRequiredForCompletion();
       const future = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 10);
-      component.step1.paper_form_completed_date = future;
+      component.step1.registration_date = future;
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('defaults paper_form_completed_date to today for a new registration', () => {
-      expect(component.step1.paper_form_completed_date).toBe(component.todayIso);
+    it('defaults registration_date to today for a new registration', () => {
+      expect(component.step1.registration_date).toBe(component.todayIso);
     });
 
-    it('hydrates primary_room_id and paper_form_completed_date from a restored draft', () => {
+    it('hydrates primary_room_id and registration_date from a restored draft', () => {
       const draft = {
         currentStep: 'child-basics',
         step1: {
@@ -169,13 +168,13 @@ describe('ManagerRegistrationIntakeComponent', () => {
           home_address: '123 High Street',
           first_language: 'English',
           primary_room_id: 'room-99',
-          paper_form_completed_date: '2026-01-15',
+          registration_date: '2026-01-15',
         },
       };
       localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
       component.restoreDraftIfPresentPublic();
       expect(component.step1.primary_room_id).toBe('room-99');
-      expect(component.step1.paper_form_completed_date).toBe('2026-01-15');
+      expect(component.step1.registration_date).toBe('2026-01-15');
     });
   });
 
@@ -471,12 +470,6 @@ describe('ManagerRegistrationIntakeComponent', () => {
   });
 
   describe('canSubmitLocally — consents', () => {
-    it('does not block when legacy paper form flag is false', () => {
-      fillRequiredForCompletion();
-      component.step4.paper_form_on_file = false;
-      expect(component.canSubmitLocally()).toBe(true);
-    });
-
     it('blocks when safeguarding acknowledgement off', () => {
       fillRequiredForCompletion();
       component.step4.safeguarding_reporting_acknowledgement = false;

@@ -105,11 +105,11 @@ type Step1Field =
   | 'disability_notes'
   | 'access_requirements'
   | 'primary_room_id'
-  | 'paper_form_completed_date';
+  | 'registration_date';
 
 type Step1RequiredField = Extract<
   Step1Field,
-  'first_name' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language' | 'primary_room_id' | 'paper_form_completed_date'
+  'first_name' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language' | 'primary_room_id' | 'registration_date'
 >;
 
 type ReferralEntry = {
@@ -147,7 +147,7 @@ type RegistrationDraft = {
     disability_notes: string;
     access_requirements: string;
     primary_room_id: string;
-    paper_form_completed_date: string;
+    registration_date: string;
   };
   step2: {
     allergy_status: YesNoUnknownStatus;
@@ -395,7 +395,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     'home_address',
     'first_language',
     'primary_room_id',
-    'paper_form_completed_date',
+    'registration_date',
   ];
   roomOptions: Option[] = [];
   readonly concernItems: { key: string; label: string }[] = [
@@ -506,7 +506,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     disability_notes: '',
     access_requirements: '',
     primary_room_id: '',
-    paper_form_completed_date: this.todayIso,
+    registration_date: this.todayIso,
   };
 
   step2 = {
@@ -573,7 +573,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   };
 
   step4: ConsentWritePayload = {
-    paper_form_on_file: true,
     urgent_medical_treatment: false,
     plasters: false,
     safeguarding_reporting_acknowledgement: false,
@@ -803,12 +802,12 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (field === 'primary_room_id' && !this.step1.primary_room_id) {
       return 'Pick a primary room.';
     }
-    if (field === 'paper_form_completed_date') {
-      if (!this.step1.paper_form_completed_date) {
-        return 'Enter the date the parent/carer completed the paper form.';
+    if (field === 'registration_date') {
+      if (!this.step1.registration_date) {
+        return 'Enter the registration date.';
       }
-      if (this.step1.paper_form_completed_date > this.todayIso) {
-        return 'The paper form completion date cannot be in the future.';
+      if (this.step1.registration_date > this.todayIso) {
+        return 'The registration date cannot be in the future.';
       }
     }
     return null;
@@ -1137,7 +1136,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     const { social_media_channel_notes: _, ...step4Base } = this.step4;
     const consentPayload: ConsentWritePayload = {
       ...step4Base,
-      paper_form_on_file: true,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
     };
@@ -1293,7 +1291,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       emergency_contacts: 'emergency-contacts-group',
       collection_password: 'collection-password',
       primary_room_id: 'child-primary-room',
-      paper_form_completed_date: 'child-paper-form-completed-date',
+      registration_date: 'child-registration-date',
       funding_support_answer: 'funding-support-yes',
       funding_options: 'funding-working-tax-credit',
       other_benefits: 'otherFunding',
@@ -1595,7 +1593,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         primary_room_id: this.step1.primary_room_id || null,
       },
       registration_profile: {
-        paper_form_completed_date: this.step1.paper_form_completed_date || null,
+        registration_date: this.step1.registration_date || null,
         demographics_home: {
           sex: this.step1.sex || null,
           first_language: this.step1.first_language || null,
@@ -1673,7 +1671,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         },
       },
       consents: {
-        paper_form_on_file: true,
         urgent_medical_treatment: this.step4.urgent_medical_treatment,
         urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
         plasters: this.step4.plasters,
@@ -1730,10 +1727,10 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
     if (!this.step1.primary_room_id) {
       issues.push({ stepKey: 'child-basics', field: 'primary_room_id', message: 'Pick a primary room.' });
     }
-    if (!this.step1.paper_form_completed_date) {
-      issues.push({ stepKey: 'child-basics', field: 'paper_form_completed_date', message: 'Enter the date the parent/carer completed the paper form.' });
-    } else if (this.step1.paper_form_completed_date > this.todayIso) {
-      issues.push({ stepKey: 'child-basics', field: 'paper_form_completed_date', message: 'The paper form completion date cannot be in the future.' });
+    if (!this.step1.registration_date) {
+      issues.push({ stepKey: 'child-basics', field: 'registration_date', message: 'Enter the registration date.' });
+    } else if (this.step1.registration_date > this.todayIso) {
+      issues.push({ stepKey: 'child-basics', field: 'registration_date', message: 'The registration date cannot be in the future.' });
     }
 
     if (this.step1.disability_status !== 'yes' && this.step1.disability_status !== 'no') {
@@ -2042,7 +2039,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   private populateStep4FromConsent(record: ConsentRecord): void {
     this.step4 = {
       ...this.step4,
-      paper_form_on_file: record.paper_form_on_file,
       urgent_medical_treatment: record.urgent_medical_treatment,
       urgent_medical_treatment_exceptions: record.urgent_medical_treatment_exceptions,
       plasters: record.plasters,
@@ -2091,8 +2087,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
   }
 
   private populateDraftsFromProfile(profile: RegistrationProfileResponse): void {
-    if (profile.paperFormCompletedDate) {
-      this.step1.paper_form_completed_date = profile.paperFormCompletedDate;
+    if (profile.registrationDate) {
+      this.step1.registration_date = profile.registrationDate;
     }
 
     if (profile.demographicsHome) {
@@ -2458,7 +2454,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       disability_notes: '',
       access_requirements: '',
       primary_room_id: '',
-      paper_form_completed_date: this.todayIso,
+      registration_date: this.todayIso,
     };
     this.step2 = {
       allergy_status: '',
@@ -2522,7 +2518,6 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       has_funding_support: false,
     };
     this.step4 = {
-      paper_form_on_file: true,
       urgent_medical_treatment: false,
       plasters: false,
       safeguarding_reporting_acknowledgement: false,
