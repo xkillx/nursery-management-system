@@ -1,7 +1,7 @@
 <div class="relative">
   <button (click)="toggleDropdown()" class="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400">
     <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-      <img src="/images/user/owner.png" alt="User" />
+      <app-avatar-text [name]="initialsName" className="h-11 w-11" />
     </span>
     <span class="block mr-1 font-medium text-theme-sm">{{ displayName }}</span>
     <svg
