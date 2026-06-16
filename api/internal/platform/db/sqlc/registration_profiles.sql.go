@@ -76,8 +76,8 @@ INSERT INTO child_registration_profiles (
     gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
     demographics_home_reviewed, medical_dietary_reviewed, health_contacts_reviewed,
     social_development_reviewed, parent_responsibility_reviewed,
-    emergency_collection_reviewed, funding_support_reviewed, routine_care_reviewed,
-    paper_form_completed_date
+    emergency_collection_reviewed,     funding_support_reviewed, routine_care_reviewed,
+    registration_date
 ) VALUES (
     $1, $2, $3, $4,
     $5, $6, $7, $8, $9,
@@ -130,7 +130,7 @@ RETURNING
     college_uni_paid_to_parent::text, college_uni_paid_to_nursery::text,
     funding_3yo_term_time::text, funding_2yo_term_time::text, funding_support_notes,
     routine_care_notes,
-    paper_form_completed_date,
+    registration_date,
     gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
     demographics_home_reviewed, medical_dietary_reviewed, health_contacts_reviewed,
     social_development_reviewed, parent_responsibility_reviewed,
@@ -203,7 +203,7 @@ type RegistrationProfileCreateParams struct {
 	EmergencyCollectionReviewed  bool
 	FundingSupportReviewed       bool
 	RoutineCareReviewed          bool
-	PaperFormCompletedDate       pgtype.Date
+	RegistrationDate             pgtype.Date
 }
 
 type RegistrationProfileCreateRow struct {
@@ -264,7 +264,7 @@ type RegistrationProfileCreateRow struct {
 	Funding2yoTermTime                      string
 	FundingSupportNotes                     pgtype.Text
 	RoutineCareNotes                        pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 	GdprDeclaredByName                      pgtype.Text
 	GdprDeclaredAt                          pgtype.Timestamptz
 	GdprDeclarationDate                     pgtype.Date
@@ -346,7 +346,7 @@ func (q *Queries) RegistrationProfileCreate(ctx context.Context, arg Registratio
 		arg.EmergencyCollectionReviewed,
 		arg.FundingSupportReviewed,
 		arg.RoutineCareReviewed,
-		arg.PaperFormCompletedDate,
+		arg.RegistrationDate,
 	)
 	var i RegistrationProfileCreateRow
 	err := row.Scan(
@@ -407,7 +407,7 @@ func (q *Queries) RegistrationProfileCreate(ctx context.Context, arg Registratio
 		&i.Funding2yoTermTime,
 		&i.FundingSupportNotes,
 		&i.RoutineCareNotes,
-		&i.PaperFormCompletedDate,
+		&i.RegistrationDate,
 		&i.GdprDeclaredByName,
 		&i.GdprDeclaredAt,
 		&i.GdprDeclarationDate,
@@ -605,7 +605,7 @@ SELECT
     crp.funding_2yo_term_time::text,
     crp.funding_support_notes,
     crp.routine_care_notes,
-    crp.paper_form_completed_date,
+    crp.registration_date,
     crp.gdpr_declared_by_name,
     crp.gdpr_declared_at,
     crp.gdpr_declaration_date,
@@ -694,7 +694,7 @@ type RegistrationProfileGetByChildRow struct {
 	CrpFunding2yoTermTime                   string
 	FundingSupportNotes                     pgtype.Text
 	RoutineCareNotes                        pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 	GdprDeclaredByName                      pgtype.Text
 	GdprDeclaredAt                          pgtype.Timestamptz
 	GdprDeclarationDate                     pgtype.Date
@@ -775,7 +775,7 @@ func (q *Queries) RegistrationProfileGetByChild(ctx context.Context, arg Registr
 		&i.CrpFunding2yoTermTime,
 		&i.FundingSupportNotes,
 		&i.RoutineCareNotes,
-		&i.PaperFormCompletedDate,
+		&i.RegistrationDate,
 		&i.GdprDeclaredByName,
 		&i.GdprDeclaredAt,
 		&i.GdprDeclarationDate,
@@ -856,7 +856,7 @@ SELECT
     crp.funding_2yo_term_time::text,
     crp.funding_support_notes,
     crp.routine_care_notes,
-    crp.paper_form_completed_date,
+    crp.registration_date,
     crp.gdpr_declared_by_name,
     crp.gdpr_declared_at,
     crp.gdpr_declaration_date,
@@ -946,7 +946,7 @@ type RegistrationProfileGetForUpdateByChildRow struct {
 	CrpFunding2yoTermTime                   string
 	FundingSupportNotes                     pgtype.Text
 	RoutineCareNotes                        pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 	GdprDeclaredByName                      pgtype.Text
 	GdprDeclaredAt                          pgtype.Timestamptz
 	GdprDeclarationDate                     pgtype.Date
@@ -1027,7 +1027,7 @@ func (q *Queries) RegistrationProfileGetForUpdateByChild(ctx context.Context, ar
 		&i.CrpFunding2yoTermTime,
 		&i.FundingSupportNotes,
 		&i.RoutineCareNotes,
-		&i.PaperFormCompletedDate,
+		&i.RegistrationDate,
 		&i.GdprDeclaredByName,
 		&i.GdprDeclaredAt,
 		&i.GdprDeclarationDate,
@@ -1166,7 +1166,7 @@ RETURNING
     college_uni_paid_to_parent::text, college_uni_paid_to_nursery::text,
     funding_3yo_term_time::text, funding_2yo_term_time::text, funding_support_notes,
     routine_care_notes,
-    paper_form_completed_date,
+    registration_date,
     gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
     demographics_home_reviewed, medical_dietary_reviewed, health_contacts_reviewed,
     social_development_reviewed, parent_responsibility_reviewed,
@@ -1242,7 +1242,7 @@ type RegistrationProfileSetCollectionPasswordRow struct {
 	Funding2yoTermTime                      string
 	FundingSupportNotes                     pgtype.Text
 	RoutineCareNotes                        pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 	GdprDeclaredByName                      pgtype.Text
 	GdprDeclaredAt                          pgtype.Timestamptz
 	GdprDeclarationDate                     pgtype.Date
@@ -1327,7 +1327,7 @@ func (q *Queries) RegistrationProfileSetCollectionPassword(ctx context.Context, 
 		&i.Funding2yoTermTime,
 		&i.FundingSupportNotes,
 		&i.RoutineCareNotes,
-		&i.PaperFormCompletedDate,
+		&i.RegistrationDate,
 		&i.GdprDeclaredByName,
 		&i.GdprDeclaredAt,
 		&i.GdprDeclarationDate,
@@ -1397,7 +1397,7 @@ SET
     funding_2yo_term_time = $50,
     funding_support_notes = $51,
     routine_care_notes = $52,
-    paper_form_completed_date = $53,
+    registration_date = $53,
     gdpr_declared_by_name = $54,
     gdpr_declared_at = $55,
     gdpr_declaration_date = $56,
@@ -1436,7 +1436,7 @@ RETURNING
     college_uni_paid_to_parent::text, college_uni_paid_to_nursery::text,
     funding_3yo_term_time::text, funding_2yo_term_time::text, funding_support_notes,
     routine_care_notes,
-    paper_form_completed_date,
+    registration_date,
     gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
     demographics_home_reviewed, medical_dietary_reviewed, health_contacts_reviewed,
     social_development_reviewed, parent_responsibility_reviewed,
@@ -1497,7 +1497,7 @@ type RegistrationProfileUpdateParams struct {
 	Funding2yoTermTime           RegistrationYesNoUnknown
 	FundingSupportNotes          pgtype.Text
 	RoutineCareNotes             pgtype.Text
-	PaperFormCompletedDate       pgtype.Date
+	RegistrationDate             pgtype.Date
 	GdprDeclaredByName           pgtype.Text
 	GdprDeclaredAt               pgtype.Timestamptz
 	GdprDeclarationDate          pgtype.Date
@@ -1569,7 +1569,7 @@ type RegistrationProfileUpdateRow struct {
 	Funding2yoTermTime                      string
 	FundingSupportNotes                     pgtype.Text
 	RoutineCareNotes                        pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 	GdprDeclaredByName                      pgtype.Text
 	GdprDeclaredAt                          pgtype.Timestamptz
 	GdprDeclarationDate                     pgtype.Date
@@ -1639,7 +1639,7 @@ func (q *Queries) RegistrationProfileUpdate(ctx context.Context, arg Registratio
 		arg.Funding2yoTermTime,
 		arg.FundingSupportNotes,
 		arg.RoutineCareNotes,
-		arg.PaperFormCompletedDate,
+		arg.RegistrationDate,
 		arg.GdprDeclaredByName,
 		arg.GdprDeclaredAt,
 		arg.GdprDeclarationDate,
@@ -1711,7 +1711,7 @@ func (q *Queries) RegistrationProfileUpdate(ctx context.Context, arg Registratio
 		&i.Funding2yoTermTime,
 		&i.FundingSupportNotes,
 		&i.RoutineCareNotes,
-		&i.PaperFormCompletedDate,
+		&i.RegistrationDate,
 		&i.GdprDeclaredByName,
 		&i.GdprDeclaredAt,
 		&i.GdprDeclarationDate,

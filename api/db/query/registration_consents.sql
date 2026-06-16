@@ -1,7 +1,6 @@
 -- name: ConsentGetLatestByChild :one
 SELECT
     id, tenant_id, branch_id, child_id, version, source,
-    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -23,7 +22,6 @@ LIMIT 1;
 -- name: ConsentListByChild :many
 SELECT
     id, tenant_id, branch_id, child_id, version, source,
-    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -49,7 +47,6 @@ WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
 -- name: ConsentCreate :exec
 INSERT INTO child_registration_consent_records (
     id, tenant_id, branch_id, child_id, version, source,
-    paper_form_on_file,
     urgent_medical_treatment, urgent_medical_treatment_exceptions,
     plasters, safeguarding_reporting_acknowledgement,
     area_senco_liaison, health_visitor_liaison,
@@ -64,17 +61,16 @@ INSERT INTO child_registration_consent_records (
     gdpr_data_processing_consent
 ) VALUES (
     $1, $2, $3, $4, $5, $6,
-    $7,
-    $8, $9,
-    $10, $11,
-    $12, $13,
-    $14, $15, $16,
-    $17, $18,
-    $19, $20,
-    $21, $22,
-    $23, $24, $25,
-    $26,
-    $27, $28,
-    $29,
-    $30
+    $7, $8,
+    $9, $10,
+    $11, $12,
+    $13, $14, $15,
+    $16, $17,
+    $18, $19,
+    $20, $21,
+    $22, $23, $24,
+    $25,
+    $26, $27,
+    $28,
+    $29
 );

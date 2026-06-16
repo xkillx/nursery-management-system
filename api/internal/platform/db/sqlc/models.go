@@ -306,7 +306,6 @@ type ChildRegistrationConsentRecord struct {
 	ChildID                              pgtype.UUID
 	Version                              int32
 	Source                               string
-	PaperFormOnFile                      bool
 	UrgentMedicalTreatment               bool
 	UrgentMedicalTreatmentExceptions     pgtype.Text
 	Plasters                             bool
@@ -423,7 +422,7 @@ type ChildRegistrationProfile struct {
 	SocialWorkerName                        pgtype.Text
 	SocialWorkerPhone                       pgtype.Text
 	SocialWorkerEmail                       pgtype.Text
-	PaperFormCompletedDate                  pgtype.Date
+	RegistrationDate                        pgtype.Date
 }
 
 type FundingProfile struct {
