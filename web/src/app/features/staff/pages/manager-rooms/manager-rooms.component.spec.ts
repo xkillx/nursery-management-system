@@ -113,31 +113,6 @@ describe('ManagerRoomsComponent', () => {
     expect(names).toEqual(['Sunshine Room', 'Baby Room', 'Empty Room']);
   });
 
-  it('exposes over-capacity rooms for the banner', () => {
-    fixture.detectChanges();
-    flushRooms();
-
-    expect(component.overCapacityRooms.length).toBe(1);
-    expect(component.overCapacityRooms[0].name).toBe('Sunshine Room');
-    expect(component.overCapacityRooms[0].assigned).toBe(14);
-    expect(component.overCapacityRooms[0].capacity).toBe(12);
-
-    const banner = fixture.nativeElement.querySelector('[data-testid="over-capacity-banner"]');
-    expect(banner).not.toBeNull();
-    expect(banner.textContent).toContain('Sunshine Room is over capacity (14/12)');
-  });
-
-  it('hides the banner when no room is over capacity', () => {
-    fixture.detectChanges();
-    httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms').flush({
-      rooms: [roomsResponse.rooms[0]],
-    });
-    fixture.detectChanges();
-
-    expect(component.overCapacityRooms.length).toBe(0);
-    expect(fixture.nativeElement.querySelector('[data-testid="over-capacity-banner"]')).toBeNull();
-  });
-
   it('surfaces an archive error with the assigned count message', () => {
     fixture.detectChanges();
     flushRooms();

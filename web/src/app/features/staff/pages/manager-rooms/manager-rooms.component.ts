@@ -17,10 +17,6 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
-import {
-  OverCapacityBannerComponent,
-  OverCapacityRoom,
-} from '../../../../shared/components/over-capacity-banner/over-capacity-banner.component';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 
 type RoomStatusFilter = 'all' | 'active' | 'archived';
@@ -44,7 +40,6 @@ interface RoomRow {
     EmptyStateComponent,
     AlertComponent,
     SelectComponent,
-    OverCapacityBannerComponent,
     NgIcon,
   ],
   templateUrl: './manager-rooms.component.html',
@@ -142,17 +137,6 @@ export class ManagerRoomsComponent implements OnInit {
   get averageOccupancy(): number {
     if (this.activeRows.length === 0) return 0;
     return Math.round(this.activeRows.reduce((sum, row) => sum + row.occupancy.percent, 0) / this.activeRows.length);
-  }
-
-  get overCapacityRooms(): OverCapacityRoom[] {
-    return this.activeRows
-      .filter((row) => row.room.isOverCapacity === true)
-      .map((row) => ({
-        id: row.room.id,
-        name: row.room.name,
-        assigned: row.occupancy.current,
-        capacity: row.room.capacity,
-      }));
   }
 
   get totalRoomsPill(): string {
