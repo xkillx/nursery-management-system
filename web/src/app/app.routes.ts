@@ -20,6 +20,8 @@ import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-i
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
 import { OwnerManagerAccessComponent } from './features/owner/pages/owner-manager-access/owner-manager-access.component';
+import { OwnerRoomsComponent } from './features/owner/pages/owner-rooms/owner-rooms.component';
+import { OwnerRoomFormComponent } from './features/owner/pages/owner-room-form/owner-room-form.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
@@ -103,6 +105,27 @@ export const routes: Routes = [
         title: 'Attendance Corrections | Nursery Management',
       },
       {
+        path: 'staff/manager/rooms/new',
+        component: OwnerRoomFormComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'New Room | Nursery Management',
+      },
+      {
+        path: 'staff/manager/rooms/:roomId/edit',
+        component: OwnerRoomFormComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Edit Room | Nursery Management',
+      },
+      {
+        path: 'staff/manager/rooms',
+        component: OwnerRoomsComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['manager'] },
+        title: 'Rooms | Nursery Management',
+      },
+      {
         path: 'staff/manager/funding',
         component: ManagerFundingOverviewComponent,
         canActivate: [authGuard, roleGuard],
@@ -141,6 +164,27 @@ export const routes: Routes = [
         path: 'staff/practitioner/attendance-children',
         pathMatch: 'full',
         redirectTo: 'staff/practitioner/attendance',
+      },
+      {
+        path: 'owner/rooms/new',
+        component: OwnerRoomFormComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['owner'] },
+        title: 'New Room | Nursery Management',
+      },
+      {
+        path: 'owner/rooms/:roomId/edit',
+        component: OwnerRoomFormComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['owner'] },
+        title: 'Edit Room | Nursery Management',
+      },
+      {
+        path: 'owner/rooms',
+        component: OwnerRoomsComponent,
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['owner'] },
+        title: 'Room Management | Nursery Management',
       },
       {
         path: 'owner',

@@ -41,10 +41,14 @@ describe('app.routes', () => {
     'staff/manager/funding',
     'staff/manager/invoice-run',
     'staff/manager/invoices',
+    'staff/manager/rooms',
+    'staff/manager/rooms/new',
     'staff/practitioner/attendance',
     'staff/practitioner/attendance-children',
     'owner',
     'owner/manager-access',
+    'owner/rooms',
+    'owner/rooms/new',
     'app/invoices',
     'signin',
     'signup',
@@ -56,6 +60,8 @@ describe('app.routes', () => {
   const dynamicPaths = [
     'staff/manager/children/:childId',
     'staff/manager/invoices/:invoiceId',
+    'staff/manager/rooms/:roomId/edit',
+    'owner/rooms/:roomId/edit',
     'app/invoices/:invoiceId',
   ];
 
@@ -153,6 +159,33 @@ describe('app.routes', () => {
 
     expect(accessRoute).toBeDefined();
     expect(accessRoute!.data?.['roles']).toEqual(['owner']);
+  });
+
+  it('owner room routes require owner role only', () => {
+    const ownerRoomRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('owner/rooms'));
+
+    expect(ownerRoomRoutes.length).toBe(3);
+    for (const route of ownerRoomRoutes) {
+      expect(route.data?.['roles']).toEqual(['owner']);
+    }
+  });
+
+  it('manager room routes require manager role only', () => {
+    const managerRoomRoutes = routes
+      .flatMap(r => r.children ?? [])
+      .filter(r => r.path?.startsWith('staff/manager/rooms'));
+
+    expect(managerRoomRoutes.length).toBe(3);
+    for (const route of managerRoomRoutes) {
+      expect(route.data?.['roles']).toEqual(['manager']);
+    }
+  });
+
+  it('does not register practitioner room routes', () => {
+    expect(paths).not.toContain('staff/practitioner/rooms');
+    expect(paths).not.toContain('staff/practitioner/rooms/new');
   });
 
   it('canonical parent invoices list route requires parent role only', () => {

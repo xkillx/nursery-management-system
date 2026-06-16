@@ -177,6 +177,12 @@ export class AppSidebarComponent {
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/staff/manager/invoices/'] },
           ],
         },
+        {
+          label: 'Setup',
+          items: [
+            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/staff/manager/rooms/'] },
+          ],
+        },
       ];
     }
 
@@ -203,6 +209,12 @@ export class AppSidebarComponent {
           label: 'Access',
           items: [
             { label: 'Manager access', path: ROLE_ROUTES.ownerManagerAccess, testId: 'owner-link-manager-access', icon: 'guardians' },
+          ],
+        },
+        {
+          label: 'Setup',
+          items: [
+            { label: 'Rooms', path: ROLE_ROUTES.ownerRooms, testId: 'owner-link-rooms', icon: 'rooms', matchPaths: ['/owner/rooms/'] },
           ],
         },
       ];
