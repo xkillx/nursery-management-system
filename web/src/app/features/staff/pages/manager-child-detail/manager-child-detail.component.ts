@@ -27,6 +27,8 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { FundingProfileRecord } from '../../models/funding.models';
 import { ChildGuardianLinkRecord, GuardianChildLinkWritePayload, GuardianRecord } from '../../models/guardians.models';
@@ -87,6 +89,8 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 })
 export class ManagerChildDetailComponent implements OnInit {
   private readonly staffApi = inject(StaffApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
+  private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
 
@@ -247,6 +251,8 @@ export class ManagerChildDetailComponent implements OnInit {
       ...this.availableGuardians.map(g => ({ value: g.id, label: g.fullName })),
     ];
   }
+
+  roomOptions: Option[] = [];
 
   get fundingNotSet(): boolean {
     return !this.isLoadingFunding && this.fundingProfile === null && !this.fundingErrorMessage;
@@ -477,7 +483,28 @@ export class ManagerChildDetailComponent implements OnInit {
   private loadAll(): void {
     this.childId = this.route.snapshot.paramMap.get('childId') ?? '';
     if (!this.childId) return;
+    this.loadRoomOptions();
     this.loadChild();
+  }
+
+  private loadRoomOptions(): void {
+    const branchId = this.auth.activeMembership()?.branch_id;
+    if (!branchId) {
+      this.roomOptions = [];
+      return;
+    }
+    this.roomsApi
+      .listRooms(branchId, { includeArchived: false })
+      .subscribe({
+        next: (rooms) => {
+          this.roomOptions = rooms
+            .filter((room) => room.isActive)
+            .map((room) => ({ value: room.id, label: room.name }));
+        },
+        error: () => {
+          this.roomOptions = [];
+        },
+      });
   }
 
   private loadChild(): void {

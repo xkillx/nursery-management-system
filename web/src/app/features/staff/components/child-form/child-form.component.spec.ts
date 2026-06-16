@@ -23,6 +23,7 @@ describe('ChildFormComponent', () => {
     leftAt: null,
     leftReasonCode: null,
     leftReasonNote: null,
+    primaryRoomId: 'room-1',
     enrollmentComplete: true,
     missingRequirements: [],
     createdAt: '2024-08-01T00:00:00Z',
@@ -65,6 +66,7 @@ describe('ChildFormComponent', () => {
     component.form.start_date = '2024-09-01';
     component.form.end_date = '';
     component.form.notes = '';
+    component.form.primary_room_id = 'room-1';
 
     component.submit();
 
@@ -76,6 +78,7 @@ describe('ChildFormComponent', () => {
       start_date: '2024-09-01',
       end_date: '',
       notes: '',
+      primary_room_id: 'room-1',
     });
     expect(savedSpy.calls.mostRecent().args[0]).not.toEqual(jasmine.objectContaining({ core_hourly_rate_minor: jasmine.anything() as any }));
   });
@@ -90,5 +93,36 @@ describe('ChildFormComponent', () => {
     expect(component.form.first_name).toBe('');
     expect(component.form.middle_name).toBe('');
     expect(component.form.last_name).toBe('');
+    expect(component.form.primary_room_id).toBe('');
+  });
+
+  it('emits primary_room_id as null when blank in create mode', () => {
+    const savedSpy = spyOn(component.saved, 'emit');
+    component.primaryRoomRequired = true;
+
+    component.form.first_name = 'Ada';
+    component.form.middle_name = '';
+    component.form.last_name = 'Lovelace';
+    component.form.date_of_birth = '2022-01-15';
+    component.form.start_date = '2024-09-01';
+    component.form.end_date = '';
+    component.form.notes = '';
+    component.form.primary_room_id = '   ';
+
+    component.submit();
+
+    expect(savedSpy).toHaveBeenCalledWith(jasmine.objectContaining({ primary_room_id: null }));
+  });
+
+  it('treats primary room as missing when required and blank in create mode', () => {
+    component.primaryRoomRequired = true;
+    component.form.primary_room_id = '';
+    expect(component.primaryRoomMissing).toBeTrue();
+  });
+
+  it('does not require primary room when primaryRoomRequired is false', () => {
+    component.primaryRoomRequired = false;
+    component.form.primary_room_id = '';
+    expect(component.primaryRoomMissing).toBeFalse();
   });
 });

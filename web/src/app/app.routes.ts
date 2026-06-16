@@ -11,6 +11,7 @@ import { ManagerRegistrationIntakeComponent } from './features/staff/pages/manag
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
+import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
@@ -162,7 +163,7 @@ export const routes: Routes = [
             children: [
               {
                 path: '',
-                component: OwnerRoomsComponent,
+                component: ManagerRoomsComponent,
                 title: 'Rooms | Nursery Management',
               },
               {

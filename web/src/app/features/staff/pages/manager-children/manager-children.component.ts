@@ -19,6 +19,8 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
 import { missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
@@ -60,6 +62,8 @@ import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/ava
 })
 export class ManagerChildrenComponent {
   private readonly staffApi = inject(StaffApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
+  private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
 
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
@@ -69,6 +73,8 @@ export class ManagerChildrenComponent {
     return this.statusOptions.map(s => ({ value: s, label: statusFilterLabel(s) }));
   }
   readonly requirementLabel = missingRequirementLabel;
+
+  roomOptions: Option[] = [];
 
   children: ChildRecord[] = [];
   status: StatusFilter = 'active';
@@ -133,6 +139,27 @@ export class ManagerChildrenComponent {
 
   ngOnInit(): void {
     this.loadChildren();
+    this.loadRoomOptions();
+  }
+
+  private loadRoomOptions(): void {
+    const branchId = this.auth.activeMembership()?.branch_id;
+    if (!branchId) {
+      this.roomOptions = [];
+      return;
+    }
+    this.roomsApi
+      .listRooms(branchId, { includeArchived: false })
+      .subscribe({
+        next: (rooms) => {
+          this.roomOptions = rooms
+            .filter((room) => room.isActive)
+            .map((room) => ({ value: room.id, label: room.name }));
+        },
+        error: () => {
+          this.roomOptions = [];
+        },
+      });
   }
 
   loadChildren(): void {

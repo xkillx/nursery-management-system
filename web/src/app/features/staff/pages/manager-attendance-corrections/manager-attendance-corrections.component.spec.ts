@@ -36,6 +36,7 @@ describe('ManagerAttendanceCorrectionsComponent', () => {
     leftAt: null,
     leftReasonCode: null,
     leftReasonNote: null,
+    primaryRoomId: null,
     enrollmentComplete: true,
     missingRequirements: [],
     createdAt: '2022-08-01T00:00:00Z',

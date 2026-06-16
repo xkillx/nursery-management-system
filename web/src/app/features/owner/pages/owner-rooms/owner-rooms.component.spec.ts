@@ -108,6 +108,7 @@ describe('OwnerRoomsComponent', () => {
     httpMock.expectOne((req) => req.url === '/api/v1/owner/site-summaries').flush(summariesResponse);
     const roomsReq = httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms');
     expect(roomsReq.request.params.get('include_archived')).toBe('true');
+    expect(roomsReq.request.params.get('include')).toBe('occupancy');
     roomsReq.flush(roomsResponse);
     fixture.detectChanges();
 
@@ -132,6 +133,7 @@ describe('OwnerRoomsComponent', () => {
 
     const roomsReq = httpMock.expectOne((req) => req.url === '/api/v1/sites/site-1/rooms');
     expect(roomsReq.request.params.get('include_archived')).toBe('true');
+    expect(roomsReq.request.params.get('include')).toBe('occupancy');
     roomsReq.flush(roomsResponse);
     fixture.detectChanges();
 

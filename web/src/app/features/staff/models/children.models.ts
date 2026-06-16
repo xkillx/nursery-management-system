@@ -16,6 +16,7 @@ export interface ChildRecord {
   leftAt: string | null;
   leftReasonCode: string | null;
   leftReasonNote: string | null;
+  primaryRoomId: string | null;
   enrollmentComplete: boolean;
   missingRequirements: string[];
   createdAt: string;
@@ -30,6 +31,7 @@ export interface ChildWritePayload {
   start_date: string;
   end_date?: string;
   notes?: string;
+  primary_room_id?: string | null;
 }
 
 export interface StaffListQuery {

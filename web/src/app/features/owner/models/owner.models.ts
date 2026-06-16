@@ -99,6 +99,8 @@ export interface Room {
   ageGroup: string;
   capacity: number;
   isActive: boolean;
+  assignedCount?: number;
+  isOverCapacity?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +112,8 @@ export interface ApiRoom {
   age_group: string;
   capacity: number;
   is_active: boolean;
+  assigned_count?: number;
+  is_over_capacity?: boolean;
   created_at: string;
   updated_at: string;
 }

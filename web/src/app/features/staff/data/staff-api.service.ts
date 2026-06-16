@@ -34,6 +34,7 @@ interface ChildApiModel {
   left_at?: string;
   left_reason_code?: string;
   left_reason_note?: string;
+  primary_room_id?: string | null;
   enrollment_complete: boolean;
   missing_requirements?: string[];
   created_at: string;
@@ -468,6 +469,7 @@ export class StaffApiService {
       leftAt: child.left_at ?? null,
       leftReasonCode: child.left_reason_code ?? null,
       leftReasonNote: child.left_reason_note ?? null,
+      primaryRoomId: child.primary_room_id ?? null,
       enrollmentComplete: child.enrollment_complete,
       missingRequirements: child.missing_requirements ?? [],
       createdAt: child.created_at,

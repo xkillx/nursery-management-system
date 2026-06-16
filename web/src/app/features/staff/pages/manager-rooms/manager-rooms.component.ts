@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroBuildingOffice2,
@@ -11,7 +11,7 @@ import {
   heroUserGroup,
 } from '@ng-icons/heroicons/outline';
 
-import { ROLES, ROLE_ROUTES } from '../../../../core/constants/roles';
+import { ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -21,8 +21,7 @@ import {
   OverCapacityBannerComponent,
   OverCapacityRoom,
 } from '../../../../shared/components/over-capacity-banner/over-capacity-banner.component';
-import { OwnerApiService } from '../../data/owner-api.service';
-import { OwnerSiteSummary, Room } from '../../models/owner.models';
+import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 
 type RoomStatusFilter = 'all' | 'active' | 'archived';
 
@@ -32,12 +31,12 @@ interface RoomOccupancy {
 }
 
 interface RoomRow {
-  room: Room;
+  room: StaffRoom;
   occupancy: RoomOccupancy;
 }
 
 @Component({
-  selector: 'app-owner-rooms',
+  selector: 'app-manager-rooms',
   imports: [
     CommonModule,
     RouterModule,
@@ -48,7 +47,7 @@ interface RoomRow {
     OverCapacityBannerComponent,
     NgIcon,
   ],
-  templateUrl: './owner-rooms.component.html',
+  templateUrl: './manager-rooms.component.html',
   providers: [
     provideIcons({
       heroBuildingOffice2,
@@ -60,22 +59,21 @@ interface RoomRow {
     }),
   ],
 })
-export class OwnerRoomsComponent implements OnInit {
-  private readonly api = inject(OwnerApiService);
+export class ManagerRoomsComponent implements OnInit {
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
-  private readonly route = inject(ActivatedRoute);
 
   readonly limit = 25;
+  readonly listRoute = ROLE_ROUTES.managerRooms;
+  readonly newRoomRoute = `${ROLE_ROUTES.managerRooms}/new`;
 
-  loadingSites = false;
   loadingRooms = false;
   archivingRoomId: string | null = null;
   pageError: string | null = null;
 
-  sites: OwnerSiteSummary[] = [];
   selectedSiteId: string | null = null;
   selectedSiteName = '';
-  rooms: Room[] = [];
+  rooms: StaffRoom[] = [];
   statusFilter: RoomStatusFilter = 'all';
   searchTerm = '';
   visibleCount = this.limit;
@@ -87,11 +85,6 @@ export class OwnerRoomsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    if (this.isOwner) {
-      this.loadOwnerSites();
-      return;
-    }
-
     const membership = this.auth.activeMembership();
     if (!membership?.branch_id) {
       this.pageError = 'No site is attached to this manager session.';
@@ -101,22 +94,6 @@ export class OwnerRoomsComponent implements OnInit {
     this.selectedSiteId = membership.branch_id;
     this.selectedSiteName = membership.branch_name ?? 'Assigned site';
     this.loadRooms();
-  }
-
-  get isOwner(): boolean {
-    return this.auth.currentRole() === ROLES.owner;
-  }
-
-  get siteOptions(): Option[] {
-    return this.sites.map((site) => ({ value: site.siteId, label: site.siteName }));
-  }
-
-  get listRoute(): string {
-    return this.isOwner ? ROLE_ROUTES.ownerRooms : ROLE_ROUTES.managerRooms;
-  }
-
-  get newRoomRoute(): string {
-    return this.isOwner ? `${ROLE_ROUTES.ownerRooms}/new` : `${ROLE_ROUTES.managerRooms}/new`;
   }
 
   get statusFilteredRows(): RoomRow[] {
@@ -167,19 +144,6 @@ export class OwnerRoomsComponent implements OnInit {
     return Math.round(this.activeRows.reduce((sum, row) => sum + row.occupancy.percent, 0) / this.activeRows.length);
   }
 
-  get staffRatio(): string {
-    if (this.averageOccupancy >= 88) return '1:4';
-    if (this.averageOccupancy >= 72) return '1:5';
-    return '1:6';
-  }
-
-  get highestOccupancyRoom(): RoomRow | null {
-    return this.activeRows.reduce<RoomRow | null>((highest, row) => {
-      if (!highest || row.occupancy.percent > highest.occupancy.percent) return row;
-      return highest;
-    }, null);
-  }
-
   get overCapacityRooms(): OverCapacityRoom[] {
     return this.activeRows
       .filter((row) => row.room.isOverCapacity === true)
@@ -192,7 +156,7 @@ export class OwnerRoomsComponent implements OnInit {
   }
 
   get totalRoomsPill(): string {
-    return this.totalRooms === 0 ? 'No rooms yet' : 'Demo-ready room setup';
+    return this.totalRooms === 0 ? 'No rooms yet' : 'Live snapshot';
   }
 
   get totalCapacityPill(): string {
@@ -201,20 +165,6 @@ export class OwnerRoomsComponent implements OnInit {
 
   get occupancyPill(): string {
     return this.activeRows.length === 0 ? 'Awaiting rooms' : 'Live snapshot';
-  }
-
-  get staffRatioPill(): string {
-    const room = this.highestOccupancyRoom;
-    if (!room || room.occupancy.percent < 88) return 'Demo ratio';
-    return `Check ${room.room.name}`;
-  }
-
-  onSiteValueChange(siteId: string): void {
-    this.selectedSiteId = siteId || null;
-    this.selectedSiteName = this.sites.find((site) => site.siteId === siteId)?.siteName ?? '';
-    this.visibleCount = this.limit;
-    this.searchTerm = '';
-    this.loadRooms();
   }
 
   onStatusFilterChange(value: string): void {
@@ -232,9 +182,8 @@ export class OwnerRoomsComponent implements OnInit {
     this.visibleCount = Math.min(this.visibleCount + this.limit, this.filteredRows.length);
   }
 
-  editRoute(room: Room): string {
-    const base = this.isOwner ? ROLE_ROUTES.ownerRooms : ROLE_ROUTES.managerRooms;
-    return `${base}/${room.id}/edit`;
+  editRoute(room: StaffRoom): string {
+    return `${ROLE_ROUTES.managerRooms}/${room.id}/edit`;
   }
 
   ageGroupLabel(ageGroup: string): string {
@@ -275,13 +224,13 @@ export class OwnerRoomsComponent implements OnInit {
     return 'bg-brand-500';
   }
 
-  archiveRoom(room: Room): void {
+  archiveRoom(room: StaffRoom): void {
     if (!this.selectedSiteId || !room.isActive) return;
     if (!confirm(`Archive ${room.name}? Children must be reassigned first.`)) return;
 
     this.archivingRoomId = room.id;
     this.pageError = null;
-    this.api.archiveRoom(this.selectedSiteId, room.id).subscribe({
+    this.roomsApi.archiveRoom(this.selectedSiteId, room.id).subscribe({
       next: () => {
         this.archivingRoomId = null;
         this.loadRooms();
@@ -293,12 +242,12 @@ export class OwnerRoomsComponent implements OnInit {
     });
   }
 
-  reactivateRoom(room: Room): void {
+  reactivateRoom(room: StaffRoom): void {
     if (!this.selectedSiteId || room.isActive) return;
 
     this.archivingRoomId = room.id;
     this.pageError = null;
-    this.api.reactivateRoom(this.selectedSiteId, room.id).subscribe({
+    this.roomsApi.reactivateRoom(this.selectedSiteId, room.id).subscribe({
       next: () => {
         this.archivingRoomId = null;
         this.loadRooms();
@@ -308,33 +257,6 @@ export class OwnerRoomsComponent implements OnInit {
         this.pageError = this.mapError(err);
       },
     });
-  }
-
-  private loadOwnerSites(): void {
-    this.loadingSites = true;
-    this.pageError = null;
-
-    this.api.getSiteSummaries().subscribe({
-      next: (res) => {
-        this.sites = res.sites;
-        this.loadingSites = false;
-        this.applyInitialOwnerSite();
-      },
-      error: () => {
-        this.loadingSites = false;
-        this.pageError = 'Failed to load sites.';
-      },
-    });
-  }
-
-  private applyInitialOwnerSite(): void {
-    const querySiteId = this.route.snapshot.queryParamMap.get('site_id');
-    const site = this.sites.find((s) => s.siteId === querySiteId) ?? this.sites[0];
-    if (!site) return;
-
-    this.selectedSiteId = site.siteId;
-    this.selectedSiteName = site.siteName;
-    this.loadRooms();
   }
 
   private loadRooms(): void {
@@ -345,20 +267,22 @@ export class OwnerRoomsComponent implements OnInit {
 
     this.loadingRooms = true;
     this.pageError = null;
-    this.api.listRooms(this.selectedSiteId, true, true).subscribe({
-      next: (rooms) => {
-        this.rooms = rooms;
-        this.loadingRooms = false;
-        this.visibleCount = this.limit;
-      },
-      error: (err) => {
-        this.loadingRooms = false;
-        this.pageError = this.mapError(err);
-      },
-    });
+    this.roomsApi
+      .listRooms(this.selectedSiteId, { includeArchived: true, includeOccupancy: true })
+      .subscribe({
+        next: (rooms) => {
+          this.rooms = rooms;
+          this.loadingRooms = false;
+          this.visibleCount = this.limit;
+        },
+        error: (err) => {
+          this.loadingRooms = false;
+          this.pageError = this.mapError(err);
+        },
+      });
   }
 
-  private computeOccupancy(room: Room): RoomOccupancy {
+  private computeOccupancy(room: StaffRoom): RoomOccupancy {
     if (!room.isActive || room.capacity <= 0) {
       return { current: 0, percent: 0 };
     }

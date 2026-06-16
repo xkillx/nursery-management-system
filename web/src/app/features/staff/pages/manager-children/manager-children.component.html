@@ -82,6 +82,8 @@
       [submitting]="isSaving"
       [fieldErrors]="fieldErrors"
       [serverError]="errorMessage"
+      [roomOptions]="roomOptions"
+      [primaryRoomRequired]="false"
       (saved)="save($event)"
       (cancelled)="closeForm()"
     />

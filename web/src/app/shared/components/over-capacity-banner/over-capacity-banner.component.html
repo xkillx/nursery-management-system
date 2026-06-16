@@ -1,0 +1,28 @@
+@if (visible) {
+  <section
+    role="alert"
+    aria-label="Over capacity rooms"
+    class="flex flex-col gap-2 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-error-700 shadow-theme-xs dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-300"
+    data-testid="over-capacity-banner"
+  >
+    <div class="flex items-center gap-2">
+      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-error-500 text-xs font-bold text-white">!</span>
+      <h2 class="text-sm font-bold uppercase tracking-wide">
+        {{ rooms.length === 1 ? 'Room over capacity' : 'Rooms over capacity' }}
+      </h2>
+    </div>
+    <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+      @for (room of rooms; track room.id) {
+        <li>
+          <a
+            [href]="'#room-' + room.id"
+            class="underline decoration-error-300 underline-offset-2 transition hover:text-error-900 focus:outline-hidden focus:ring-2 focus:ring-error-500/30 dark:hover:text-error-200"
+            [attr.aria-label]="'Jump to ' + room.name + ' row in the rooms table'"
+          >
+            {{ describe(room) }}
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}

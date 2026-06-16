@@ -45,6 +45,21 @@
       <app-date-picker name="end_date" [(ngModel)]="form.end_date" />
     </app-form-field>
 
+    <app-form-field
+      label="Primary room"
+      [required]="primaryRoomRequired"
+      [error]="fieldErrors['primary_room_id'] || ''"
+    >
+      <app-select
+        name="primary_room_id"
+        [options]="roomOptions"
+        [value]="form.primary_room_id"
+        (valueChange)="form.primary_room_id = $event"
+        [placeholderDisabled]="false"
+        placeholder="Select a room"
+      />
+    </app-form-field>
+
     <app-form-field label="Notes (optional)">
       <input
         name="notes"
@@ -54,7 +69,7 @@
     </app-form-field>
 
     <div class="col-span-full flex items-center gap-3 pt-2">
-      <app-button type="submit" variant="primary" [loading]="submitting">
+      <app-button type="submit" variant="primary" [loading]="submitting" [disabled]="primaryRoomMissing">
         {{ submitting ? 'Saving...' : mode === 'create' ? 'Create child' : 'Save changes' }}
       </app-button>
       <app-button type="button" variant="outline" (btnClick)="cancelled.emit()">Cancel</app-button>

@@ -230,10 +230,13 @@ export class OwnerApiService {
     };
   }
 
-  listRooms(siteId: string, includeArchived?: boolean): Observable<Room[]> {
+  listRooms(siteId: string, includeArchived?: boolean, includeOccupancy?: boolean): Observable<Room[]> {
     let params = new HttpParams();
     if (includeArchived) {
       params = params.set('include_archived', 'true');
+    }
+    if (includeOccupancy) {
+      params = params.set('include', 'occupancy');
     }
     return this.http
       .get<ApiRoomListResponse>(apiUrl(`/sites/${siteId}/rooms`), { params })
@@ -276,6 +279,8 @@ export class OwnerApiService {
       ageGroup: r.age_group,
       capacity: r.capacity,
       isActive: r.is_active,
+      assignedCount: r.assigned_count,
+      isOverCapacity: r.is_over_capacity,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };

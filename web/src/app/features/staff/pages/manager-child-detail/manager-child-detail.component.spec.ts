@@ -25,6 +25,7 @@ describe('ManagerChildDetailComponent', () => {
     leftAt: null,
     leftReasonCode: null,
     leftReasonNote: null,
+    primaryRoomId: null,
     enrollmentComplete: false,
     missingRequirements: ['guardian_link'],
     createdAt: '2026-01-01T00:00:00Z',
