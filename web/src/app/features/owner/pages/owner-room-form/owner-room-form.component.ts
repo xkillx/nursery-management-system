@@ -2,6 +2,15 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroArrowLeft,
+  heroBuildingOffice,
+  heroInformationCircle,
+  heroPencilSquare,
+  heroPlus,
+  heroShieldCheck,
+} from '@ng-icons/heroicons/outline';
 
 import { ROLES, ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -27,9 +36,20 @@ interface RoomFormModel {
     LoadingStateComponent,
     AlertComponent,
     SelectComponent,
+    NgIcon,
   ],
   templateUrl: './owner-room-form.component.html',
   styleUrl: './owner-room-form.component.css',
+  providers: [
+    provideIcons({
+      heroArrowLeft,
+      heroBuildingOffice,
+      heroInformationCircle,
+      heroPencilSquare,
+      heroPlus,
+      heroShieldCheck,
+    }),
+  ],
 })
 export class OwnerRoomFormComponent implements OnInit {
   private readonly api = inject(OwnerApiService);

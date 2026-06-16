@@ -14,14 +14,20 @@
 
   <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
     <section class="xl:col-span-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+      <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+          <ng-icon name="heroPencilSquare" size="20" aria-hidden="true" />
+        </span>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Room Details</h2>
       </div>
 
       <form #roomForm="ngForm" class="space-y-6 px-6 py-6" (ngSubmit)="submit(roomForm)" novalidate>
         @if (isOwner) {
           <div>
-            <label for="form-site-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
+            <label for="form-site-select" class="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <ng-icon name="heroBuildingOffice" size="16" aria-hidden="true" class="text-gray-400 dark:text-gray-500" />
+              Site
+            </label>
             <app-select
               id="form-site-select"
               name="site"
@@ -115,8 +121,9 @@
           <a
             [routerLink]="listRoute"
             [queryParams]="selectedSiteId && isOwner ? { site_id: selectedSiteId } : null"
-            class="inline-flex h-11 items-center justify-center rounded-lg border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
+            <ng-icon name="heroArrowLeft" size="18" aria-hidden="true" />
             Back to Rooms
           </a>
           <button
@@ -124,7 +131,7 @@
             class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
             [disabled]="submitting || !selectedSiteId || !!(isEditMode && room && !room.isActive)"
           >
-            <span class="text-lg leading-none">+</span>
+            <ng-icon name="heroPlus" size="18" aria-hidden="true" />
             {{ isEditMode ? 'Save Room' : 'Create Room' }}
           </button>
         </div>
@@ -133,16 +140,34 @@
 
     <aside class="space-y-6">
       <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-500/20 dark:bg-blue-500/10">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
+        <div class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-blue-500 shadow-sm dark:bg-gray-900">
+            <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+          </span>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
+        </div>
         <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
-          <li>Capacity should be based on floor space regulations for the specific age group.</li>
-          <li>The room name will appear in daily activity logs when room assignment is added.</li>
-          <li>Archived rooms are hidden from new operational setup until reactivated.</li>
+          <li class="flex items-start gap-2">
+            <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+            <span>Capacity should be based on floor space regulations for the specific age group.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+            <span>The room name will appear in daily activity logs when room assignment is added.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+            <span>Archived rooms are hidden from new operational setup until reactivated.</span>
+          </li>
         </ul>
       </div>
 
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="h-40 bg-gradient-to-br from-blue-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
+        <div class="relative h-40 bg-gradient-to-br from-blue-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          <span class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 text-emerald-500 shadow-sm backdrop-blur dark:bg-gray-900/80">
+            <ng-icon name="heroShieldCheck" size="22" aria-hidden="true" />
+          </span>
+        </div>
         <div class="p-5">
           <p class="text-sm font-semibold text-gray-900 dark:text-white">Environmental Standards Guidance</p>
           <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Keep room setup aligned with capacity and age-band operating rules.</p>
