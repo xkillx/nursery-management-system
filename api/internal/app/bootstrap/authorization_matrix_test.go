@@ -493,10 +493,25 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		{"GET", "/api/v1/invoices/:invoice_id/payment-status", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices/:invoice_id/payment-events", classProtectedBusiness, []string{"manager"}},
 
-		// Registration Profiles (manager)
-		{"GET", "/api/v1/children/:child_id/registration-profile", classProtectedBusiness, []string{"manager"}},
-		{"PATCH", "/api/v1/children/:child_id/registration-profile", classProtectedBusiness, []string{"manager"}},
-		{"PUT", "/api/v1/children/:child_id/registration-profile/collection-password", classProtectedBusiness, []string{"manager"}},
+		// Child Management sub-resources (manager)
+		{"GET", "/api/v1/children/:child_id/profile", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/profile", classProtectedBusiness, []string{"manager"}},
+		{"PUT", "/api/v1/children/:child_id/collection-settings", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/health", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/health", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/safeguarding", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/safeguarding", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/consent", classProtectedBusiness, []string{"manager"}},
+		{"PUT", "/api/v1/children/:child_id/consent", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/contacts", classProtectedBusiness, []string{"manager"}},
+		{"PUT", "/api/v1/children/:child_id/contacts", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/funding", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/funding", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/room-assignments", classProtectedBusiness, []string{"manager"}},
+		{"POST", "/api/v1/children/:child_id/room-assignments", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/billing-profile", classProtectedBusiness, []string{"manager"}},
+		{"PATCH", "/api/v1/children/:child_id/billing-profile", classProtectedBusiness, []string{"manager"}},
+		{"GET", "/api/v1/children/:child_id/leaving-record", classProtectedBusiness, []string{"manager"}},
 
 		// Owner
 		{"GET", "/api/v1/owner/site-summaries", classProtectedBusiness, []string{"owner"}},
@@ -677,10 +692,10 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		{"parent get invoice", "GET", "/api/v1/parent/invoices/" + h.invoiceA.String(), ""},
 		{"parent checkout", "POST", "/api/v1/parent/invoices/" + h.invoiceA.String() + "/checkout-sessions", ""},
 
-		// Registration Profiles
-		{"get registration profile", "GET", "/api/v1/children/" + h.childA.String() + "/registration-profile", ""},
-		{"patch registration profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/registration-profile", `{"demographics_home":{"sex":"female"}}`},
-		{"set collection password", "PUT", "/api/v1/children/" + h.childA.String() + "/registration-profile/collection-password", `{"password":"test1234"}`},
+		// Child Management sub-resources
+		{"get child profile", "GET", "/api/v1/children/" + h.childA.String() + "/profile", ""},
+		{"patch child profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/profile", `{"disability_status":"unknown"}`},
+		{"set collection settings", "PUT", "/api/v1/children/" + h.childA.String() + "/collection-settings", `{"over_18_collection_acknowledged":true}`},
 
 		// Payment diagnostics
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
@@ -743,9 +758,9 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
 
-		{"get registration profile", "GET", "/api/v1/children/" + h.childA.String() + "/registration-profile", ""},
-		{"patch registration profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/registration-profile", `{"demographics_home":{"sex":"female"}}`},
-		{"set collection password", "PUT", "/api/v1/children/" + h.childA.String() + "/registration-profile/collection-password", `{"password":"test1234"}`},
+		{"get child profile", "GET", "/api/v1/children/" + h.childA.String() + "/profile", ""},
+		{"patch child profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/profile", `{"disability_status":"unknown"}`},
+		{"set collection settings", "PUT", "/api/v1/children/" + h.childA.String() + "/collection-settings", `{"over_18_collection_acknowledged":true}`},
 	}
 
 	for _, tc := range managerOnlyRoutes {
@@ -871,7 +886,7 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 	})
 
 	t.Run("registration profile child B not found from scope A", func(t *testing.T) {
-		w := h.get(t, "/api/v1/children/"+h.childB.String()+"/registration-profile", h.managerAToken)
+		w := h.get(t, "/api/v1/children/"+h.childB.String()+"/profile", h.managerAToken)
 		assertStatusAndCode(t, w, http.StatusNotFound, "child_not_found")
 	})
 

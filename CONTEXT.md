@@ -36,137 +36,13 @@ The first Post-MVP gate that makes the completed MVP safe and understandable for
 
 After pilot readiness and owner/four-site oversight, Post-MVP feature work should proceed through registration and consent, room/session planning, ratio safety, safeguarding and incidents, then learning journeys. Registration and consent come first because child profile and compliance data feed later planning and safety workflows.
 
-## Registration/Enrolment Profile (Post-MVP)
-
-A child-linked profile of information collected during nursery registration that supports safe care, family contact, inclusion needs, health awareness, emergency collection, and later planning. It excludes consent decision history and office-use enrolment checklist tracking, which are separate Post-MVP concepts.
-
-## Registration Profile Access Boundary (Post-MVP)
-
-Managers may maintain the full registration/enrolment profile for children in their nursery site. API-PM-01 does not introduce new practitioner or parent access to the full profile, and existing practitioner attendance and parent invoice surfaces must not expose sensitive profile data.
-
-## Registration Profile Completeness (Post-MVP)
-
-Registration profile completeness describes whether the child-linked registration/enrolment profile has the expected care, contact, health, emergency, and family information captured. It is separate from MVP enrollment completeness and does not block attendance, funding, invoicing, or parent invoice access in API-PM-01.
-
-## Registration/Enrolment Workflow Completion (Post-MVP)
-
-The manager registration/enrolment workflow may present registration profile completion and office-use checklist completion together, but they remain separate statuses because one describes child and family care information while the other describes nursery administrative verification. These statuses are manager follow-up indicators only and do not change the MVP enrollment gate for attendance, funding, invoicing, or parent invoice access.
-
-## Manager-Assisted Registration Intake (Post-MVP)
-
-A manager-facing workflow where nursery staff enter registration and consent information into the system after a parent or carer has completed the physical form. It is not a parent self-service registration portal, although a later digital parent journey may reuse the same registration and consent concepts.
-
-## Registration Intake Entry Points (Post-MVP)
-
-For brand-new children, managers should normally start from the guided registration intake workflow rather than the quick Add Child action. Add Child remains available as a shortcut for operational setup, corrections, or cases where registration paperwork will be completed later.
-
-## Guided Registration Intake (Post-MVP)
-
-New manager-assisted registration intake should use a guided stepper aligned to the paper-form transcription workflow. The existing child detail registration editor remains useful for revisiting and editing saved sections after initial intake.
-
-## Registration Intake Child Creation (Post-MVP)
-
-Starting a new guided registration collects all steps (child basics, medical/health, contacts, consents, office-use checklist) as a frontend-local draft before any server-side record exists. The child record, registration profile, consent records, collection password, and office-use checklist are created atomically when the manager completes the review step. The product does not introduce a separate pending application or server-side draft object; in-progress drafts survive only in browser localStorage. Existing "Add Child" and section-by-section registration editor flows are unaffected.
-
-## Registration-Sourced Child Basics (Post-MVP)
-
-Child basics entered during guided registration create or update the operational child record so managers do not re-enter the same child identity and start-date information in the Children module. The Children module remains the operational place to view and maintain those child basics after intake.
-
-## Registration vs Billing Setup (Post-MVP)
-
-The core hourly rate remains billing setup rather than a registration intake field. Registration may be reviewed or complete while operational billing readiness still depends on the nursery site's core hourly rate and child-month funding requirements.
-
-## Registration Reviewed/Complete (Post-MVP)
-
-Manager-assisted registration intake ends when a manager marks the registration reviewed or complete. The workflow does not use admissions-style approve, reject, or request-more-information states; missing or unclear physical-form information remains visible as follow-up work.
-
-## Registration Completion Attestation (Post-MVP)
-
-Registration reviewed/complete is an explicit manager attestation that records who marked the registration complete and when. For the guided intake stepper, the atomic submission at step 5 serves as the implicit attestation — the child record and registration are created as complete. For the section-by-section registration editor, attestation remains an explicit separate action. In both cases, later changes return the registration to needs-review until a manager attests again.
-
-## Registration Reviewed/Complete Requirements (Post-MVP)
-
-Managers may mark registration reviewed or complete only after required registration sections have been reviewed: child identity, home/contact details, medical and dietary information, parent/carer responsibility, emergency contacts, authorised collection and password policy, core safeguarding/GDPR acknowledgements, consent signer/date, and office-use evidence checklist. Optional details may remain blank when the manager explicitly records none, no, unknown, or not applicable.
-
-## Registration Section Completeness (Post-MVP)
-
-Registration profile completeness is section-based rather than a requirement that every paper-form field is filled. A section may be complete when the manager has reviewed it and captured the relevant information, including explicit none, no, or not-applicable answers where there is nothing to record.
-
-## Registration Profile Partial Save (Post-MVP)
-
-Managers may save registration/enrolment profile sections before the full profile is complete. Missing information is shown as manager follow-up through registration profile completeness rather than rejecting the save or blocking existing nursery operations.
-
-## Registration Unknown vs Confirmed None (Post-MVP)
-
-For health, social-care, development, dietary, and medication topics, blank or missing information means unknown or incomplete. An explicit none or no answer means the family or manager has reviewed the topic and confirmed there is nothing to record.
-
-## Guided Registration Required Answer (Post-MVP)
-
-In the guided manager-assisted intake workflow, managers must record a definite answer before moving past required sections. Unknown remains a legacy or incomplete-data meaning, not a selectable completed answer in the guided intake path.
-
-## Current Registration Profile (Post-MVP)
-
-The manager-facing registration/enrolment profile is the current editable profile for a child. API-PM-01 relies on audit records for update accountability and does not introduce manager-facing historical profile browsing.
-
-## Registration Profile Audit Redaction (Post-MVP)
-
-Registration profile audit records prove who changed which child profile section and when. They should not copy sensitive profile values such as medical notes, social-services details, collection password material, or family contact details into audit details.
-
 ## Child Identity Source of Truth (Post-MVP)
 
 The existing child record remains the source of truth for a child's full name and date of birth. The registration/enrolment profile may display those values for context but does not keep a second editable copy of them.
 
-## Registration GDPR Declaration Metadata (Post-MVP)
-
-The GDPR declaration on the child application form is captured as registration profile declaration metadata: who confirmed it, when it was confirmed, and the declaration date recorded for the form. Consent decisions, retention automation, and subject-access workflows are separate concepts outside API-PM-01.
-
 ## Collection Password (Post-MVP)
 
 A sensitive collection secret recorded for emergency child collection when the nursery has prior notice that someone outside the usual listed contacts will collect the child. Normal registration profile reads expose only password presence and last-updated metadata, not the stored secret itself.
-
-## Registration Contact Entries (Post-MVP)
-
-Parent/carer, emergency contact, and authorised collector entries captured in the registration/enrolment profile describe the form-submitted family and collection context. They do not automatically create or update guardian records, guardian-child links, parent invitations, parent memberships, or parent portal access.
-
-## Registration-to-Guardian Linking (Post-MVP)
-
-Parent/carer entries captured during registration may be used by a manager to create or link operational guardian records, but that action must be explicit. Registration transcription must not automatically create guardians, alter guardian-child links, or grant parent portal access.
-
-## Registration Funding Support Notes (Post-MVP)
-
-Benefits and funding-support answers captured from the registration form are informational profile notes for managers. They do not change Funding v1 profiles, invoice generation, funded deductions, invoice preflight, or billing readiness.
-
-## Consent and Acknowledgement Ledger (Post-MVP)
-
-A history of parent or guardian decisions and acknowledgements for care, safeguarding, outings, creams, media, and similar permissions. It is distinct from the registration/enrolment profile because decisions may be signed, superseded, reviewed, or evidenced over time.
-
-## Paper-Form Consent Record (Post-MVP)
-
-A consent ledger entry recorded by a manager from a signed physical form. The app records the parent or carer decision, signer name, signed date, and manager-entry metadata while treating the physical form as the legal evidence on file.
-
-## Paper-Form Consent Completeness (Post-MVP)
-
-Every consent and acknowledgement item on the physical form needs an explicit recorded decision before registration can be marked reviewed or complete. Optional permissions may be yes or no, but they should not remain blank; mandatory acknowledgements, signer name, and signed date must be present.
-
-## Paper Evidence Metadata (Post-MVP)
-
-Registration evidence tracking records whether required physical forms and documents are on file or have been checked. It does not include upload, scanning, preview, or digital storage of the physical evidence in this tranche. The registration date the parent/carer provided is captured as registration profile metadata at intake; see Registration Date (Post-MVP).
-
-## Registration Date (Post-MVP)
-
-The day the parent/carer provided the registration information to the nursery. It is captured as registration profile metadata at intake (`child_registration_profiles.registration_date`), defaults to today, is editable on the guided intake Step 1, is validated as not-in-future, and is required to proceed. After intake it is read-only in the section editor: the registration is a historical record of when the family registered, and the system does not support re-issuing that date. _Avoid_: paper form completion date, signed date, application date.
-
-## Office-Use Enrolment Checklist (Post-MVP)
-
-A manager-facing record of nursery administrative checks around an application, start, leaving, contracts, handbooks, and proof documents. It is conceptually separate from the registration/enrolment profile because it describes nursery verification work rather than child or family care information, but managers may complete it alongside the profile in the same registration/enrolment workflow.
-
-## Office-Use Checklist Completeness (Post-MVP)
-
-Office-use checklist completeness requires manager review of deposit, application date, start date, sessions/days requested, term-time-only space, contract/signature, handbook, Red Book, birth certificate/passport, and proof of address. A checklist item may be complete through an explicit not-applicable answer; date left is optional for current children and does not make the checklist incomplete.
-
-## Office-Use Dates vs Enrollment Dates (Post-MVP)
-
-Office-use start-date and date-left checks are administrative verification metadata and do not update the child's operational enrollment start or end dates. Operational enrollment dates remain managed through the child record and its enrollment window integrity rules.
 
 ## User Role: Owner
 
@@ -431,10 +307,6 @@ A manager-facing child-focused view for inspecting whether a child has the minim
 ## Child-Specific Core Rate Boundary (Post-MVP)
 
 Managers do not enter or maintain core hourly rates on individual child records for this feature. Child create, edit, registration-linked setup, and enrollment completeness should not treat a child-specific hourly rate as required, while manager-facing billing context may show the nursery site's applicable core hourly rate.
-
-## Manager Registration/Enrolment Editor (Post-MVP)
-
-A child-scoped manager workflow for maintaining the full registration/enrolment profile and the office-use checklist. It is reached from the child detail/enrollment surface, while the child detail page remains the compact summary for child basics, MVP enrollment readiness, linked guardians, funding, and registration follow-up status.
 
 ## No Hard-Delete Core Records (MVP)
 
@@ -1633,3 +1505,32 @@ If a child leaves during a month, billing is automatically derived from attendan
 ## Post-Leave Invoice Artifact Policy (MVP)
 
 Marking a child inactive/left does not trigger automatic voiding of unrelated invoice artifacts; future billing is naturally blocked by attendance-derived invoice generation.
+
+## Child Management (Post-MVP)
+
+Manager maintains the child record and surrounding profile in a guided stepper after a parent or carer has completed the physical form. A child is the root identity; everything else (profile, contacts, health, safeguarding, consent, funding, collection, room placement, billing) is a sub-record of that child. There is no separate registration workflow — the create flow runs as a single transaction.
+
+## Child Management Atomic Create (Post-MVP)
+
+Manager creates a child in a single transaction that includes identity, profile, contacts, health, safeguarding, consent, funding, collection settings, room placement, and billing profile. All sections are optional except identity, room, and the safeguarding acknowledgement. The stepper in the UI keeps its "answer required to proceed" rule, but the API does not enforce that — partial submission is allowed and the manager can fill in the rest later through the per-resource PATCH/PUT endpoints.
+
+## Child Room Placement History (Post-MVP)
+
+`child_room_assignments` is 1:many per child; one row is current (`end_date IS NULL`). Moving a child to a different room closes the current row and inserts a new one in the same transaction. The room id lives on the assignment, not on the child.
+
+## Child Leaving Record (Post-MVP)
+
+Written when a child is marked inactive via `POST /api/v1/children/:id/actions/mark-inactive`; the reason code is constrained to `duplicate_record | entered_in_error | left_nursery | safeguarding_direction | contact_update | access_revoked | other`. The reason note is required when `reason_code = 'other'`. The `children` table no longer carries a `left_at` or `left_reason_code` column; the mark-inactive use case writes a `child_leaving_records` row and updates `children.is_active = false` in one transaction.
+
+## Child Funding Record (Post-MVP)
+
+A per-child eligibility record (`child_funding_records`) capturing 15/30h, 2yo, tax-free childcare, benefits, and support notes. It is distinct from `funding_profiles` (per-billing-month funded allowance minutes used by invoicing). Both tables coexist; the funding record does not change invoice generation.
+
+## Child Collection Settings (Post-MVP)
+
+The collection password hash and acknowledgement (`child_collection_settings`) are 1:1 with the child. The API only exposes password presence and last-updated metadata on read; the stored secret is never returned. `PUT /api/v1/children/:id/collection-settings` accepts an optional password (hashed with bcrypt on the server) and an `over_18_collection_acknowledged` flag.
+
+## Child Profile Audit Redaction (Post-MVP)
+
+Per-sub-resource audit records prove who changed which section and when. They do not copy sensitive values (medical notes, safeguarding notes, contact details, collection password material) into `Details` on the audit log row.
+
