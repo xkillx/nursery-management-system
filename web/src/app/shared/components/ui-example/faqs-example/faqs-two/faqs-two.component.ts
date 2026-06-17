@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { FaqItemTwoComponent } from "../../../faqs/faq-item-two/faq-item-two.component";
 
 @Component({
   selector: 'app-faqs-two',
   imports: [
     CommonModule,
-    FaqItemTwoComponent
 ],
   templateUrl: './faqs-two.component.html',
   styles: ``

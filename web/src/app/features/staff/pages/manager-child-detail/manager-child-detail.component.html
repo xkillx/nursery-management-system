@@ -20,11 +20,11 @@
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">
           {{ child.fullName }}
         </h2>
-        <app-status-badge [variant]="child.isActive ? 'success' : 'muted'">
-          {{ child.isActive ? 'Active' : 'Inactive' }}
+        <app-status-badge [status]="child.isActive ? 'active' : 'inactive'">
         </app-status-badge>
         @if (child.hasCurrentRoom) {
-          <app-status-badge variant="info">Room assigned</app-status-badge>
+          <app-status-badge status="room_assigned">
+          </app-status-badge>
         }
       </div>
       <dl class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">

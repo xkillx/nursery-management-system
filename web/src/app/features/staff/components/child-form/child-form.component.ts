@@ -7,6 +7,7 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { Option } from '../../../../shared/components/form/select/select.component';
 
 type ChildFormValue = {
   first_name: string;
@@ -36,6 +37,8 @@ export class ChildFormComponent {
   @Input() submitting = false;
   @Input() fieldErrors: Record<string, string> = {};
   @Input() serverError: string | null = null;
+  @Input() roomOptions: Option[] = [];
+  @Input() primaryRoomRequired = false;
 
   @Output() saved = new EventEmitter<ChildWritePayload>();
   @Output() cancelled = new EventEmitter<void>();

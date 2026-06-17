@@ -53,6 +53,7 @@ export class StatusBadgeComponent {
     awaiting_provider_update: { color: 'info', label: 'Awaiting provider update' },
     not_issued: { color: 'light', label: 'Not issued' },
     no_payment_due: { color: 'light', label: 'No payment due' },
+    room_assigned: { color: 'info', label: 'Room assigned' },
   };
 
   get resolvedMapping(): StatusMapping {
