@@ -7,7 +7,6 @@ import { ManagerDashboardComponent } from './features/staff/pages/manager-dashbo
 import { ManagerChildrenComponent } from './features/staff/pages/manager-children/manager-children.component';
 import { ManagerChildDetailComponent } from './features/staff/pages/manager-child-detail/manager-child-detail.component';
 import { ManagerChildEditComponent } from './features/staff/pages/manager-child-edit/manager-child-edit.component';
-import { ManagerRegistrationIntakeComponent } from './features/staff/pages/manager-registration-intake/manager-registration-intake.component';
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
@@ -73,11 +72,11 @@ export const routes: Routes = [
               },
               {
                 path: 'new',
-                component: ManagerRegistrationIntakeComponent,
+                component: ManagerChildEditComponent,
                 data: {
-                  breadcrumb: { label: 'New registration' },
+                  breadcrumb: { label: 'Add child' },
                 },
-                title: 'New Registration | Nursery Management',
+                title: 'Add Child | Nursery Management',
               },
               {
                 path: ':childId',
@@ -99,29 +98,18 @@ export const routes: Routes = [
           },
           {
             path: 'staff/manager/registrations',
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Registrations', link: ['/staff/manager/registrations'] },
-            },
-            children: [
-              {
-                path: 'new',
-                component: ManagerRegistrationIntakeComponent,
-                data: {
-                  breadcrumb: { label: 'New registration' },
-                },
-                title: 'New Registration | Nursery Management',
-              },
-              {
-                path: ':childId/intake',
-                component: ManagerRegistrationIntakeComponent,
-                data: {
-                  breadcrumb: { label: 'Registration intake' },
-                },
-                title: 'Registration Intake | Nursery Management',
-              },
-            ],
+            redirectTo: 'staff/manager/children',
+            pathMatch: 'full',
+          },
+          {
+            path: 'staff/manager/registrations/new',
+            redirectTo: 'staff/manager/children/new',
+            pathMatch: 'full',
+          },
+          {
+            path: 'staff/manager/registrations/:childId/intake',
+            redirectTo: 'staff/manager/children/:childId/edit',
+            pathMatch: 'full',
           },
           {
             path: 'staff/manager/guardians',

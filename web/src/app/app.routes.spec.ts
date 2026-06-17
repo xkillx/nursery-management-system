@@ -143,11 +143,11 @@ describe('app.routes', () => {
     expect(listParent!.data?.['roles']).toEqual(['manager']);
   });
 
-  it('new registration route is a child of the children list and inherits its role guard', () => {
+  it('new child route is a child of the children list and inherits its role guard', () => {
     const listParent = allDescendantRoutes(routes)
       .find(r => r.path === 'staff/manager/children');
     const newLeaf = allDescendantRoutes(routes)
-      .find(r => r.path === 'new' && r.data?.['breadcrumb']?.label === 'New registration');
+      .find(r => r.path === 'new' && r.data?.['breadcrumb']?.label === 'Add child');
 
     expect(listParent).toBeDefined();
     expect(newLeaf).toBeDefined();
@@ -377,9 +377,7 @@ describe('app.routes breadcrumb wiring', () => {
     'staff/manager/children',
     'staff/manager/children/new',
     'staff/manager/children/:childId',
-    'staff/manager/children/:childId/registration',
-    'staff/manager/registrations/new',
-    'staff/manager/registrations/:childId/intake',
+    'staff/manager/children/:childId/edit',
     'staff/manager/guardians',
     'staff/manager/invites',
     'staff/manager/attendance-corrections',

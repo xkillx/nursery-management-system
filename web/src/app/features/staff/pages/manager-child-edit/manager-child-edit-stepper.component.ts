@@ -61,7 +61,7 @@ import {
   RegistrationProfileResponse,
   RegistrationWorkflowStatus,
   CompleteRegistrationPayload,
-} from '../../models/registration-profile.models';
+} from '../../models/child-legacy-compat.models';
 
 type StepperStep =
   | 'child-basics'
@@ -221,7 +221,7 @@ type RegistrationDraft = {
 };
 
 @Component({
-  selector: 'app-manager-registration-intake',
+  selector: 'app-manager-child-edit-stepper',
   imports: [
     CommonModule,
     FormsModule,
@@ -269,9 +269,9 @@ type RegistrationDraft = {
       heroXMark,
     }),
   ],
-  templateUrl: './manager-registration-intake.component.html',
+  templateUrl: './manager-child-edit-stepper.component.html',
 })
-export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
+export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);

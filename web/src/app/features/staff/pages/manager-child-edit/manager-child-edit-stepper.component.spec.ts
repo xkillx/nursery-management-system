@@ -3,22 +3,22 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { ManagerRegistrationIntakeComponent } from './manager-registration-intake.component';
+import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
-import { ConsentWritePayload, RegistrationContactEntry } from '../../models/registration-profile.models';
+import { ConsentWritePayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
 import { ToastService } from '../../../../shared/services/toast.service';
 
-describe('ManagerRegistrationIntakeComponent', () => {
-  let fixture: ComponentFixture<ManagerRegistrationIntakeComponent>;
-  let component: ManagerRegistrationIntakeComponent;
+describe('ManagerChildEditStepperComponent', () => {
+  let fixture: ComponentFixture<ManagerChildEditStepperComponent>;
+  let component: ManagerChildEditStepperComponent;
   let toastErrorSpy: jasmine.Spy;
 
   beforeEach(async () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
-      imports: [ManagerRegistrationIntakeComponent],
+      imports: [ManagerChildEditStepperComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -30,7 +30,7 @@ describe('ManagerRegistrationIntakeComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ManagerRegistrationIntakeComponent);
+    fixture = TestBed.createComponent(ManagerChildEditStepperComponent);
     component = fixture.componentInstance;
     component.isNewRegistration = true;
     fixture.detectChanges();

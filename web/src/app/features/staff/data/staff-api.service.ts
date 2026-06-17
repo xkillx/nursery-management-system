@@ -215,12 +215,6 @@ export class StaffApiService {
       .pipe(map((response) => response));
   }
 
-  // Legacy createChild (delegates to the new endpoint for backwards-compat with
-  // the existing manager-registration-intake stepper).
-  createChild(payload: any): Observable<any> {
-    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
-  }
-
   updateChild(childId: string, payload: ChildWritePayload): Observable<ChildRecord> {
     return this.http
       .patch<ChildApiModel>(apiUrl(`/children/${childId}`), payload)
@@ -726,10 +720,10 @@ export class StaffApiService {
     });
   }
 
-  // Legacy registration* methods (kept as compatibility shims for the
-  // manager-registration-intake stepper, which is being progressively
-  // replaced by the new manager-child-edit component). They delegate to
-  // the new per-resource endpoints where possible.
+  // ---- Legacy registration* methods ----
+  // The legacy manager-child-edit-stepper component (the renamed
+  // manager-registration-intake) still calls these. They delegate to the
+  // new per-resource endpoints. New code should not depend on them.
 
   getRegistrationProfile(childId: string): Observable<any> {
     return this.getChildProfile(childId) as unknown as Observable<any>;
@@ -760,6 +754,10 @@ export class StaffApiService {
   }
 
   submitCompleteRegistration(payload: unknown): Observable<any> {
+    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
+  }
+
+  createChild(payload: any): Observable<any> {
     return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
   }
 }

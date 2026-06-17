@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { ManagerRegistrationIntakeComponent } from '../manager-registration-intake/manager-registration-intake.component';
+import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 
 @Component({
   selector: 'app-manager-child-edit',
   standalone: true,
-  imports: [ManagerRegistrationIntakeComponent],
-  template: `<app-manager-registration-intake />`,
+  imports: [ManagerChildEditStepperComponent],
+  template: `<app-manager-child-edit-stepper />`,
 })
 export class ManagerChildEditComponent {}
