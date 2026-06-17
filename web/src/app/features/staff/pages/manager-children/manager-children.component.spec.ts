@@ -67,7 +67,7 @@ last_name: 'Hopper',
     fixture.detectChanges();
 
     expect(component.children.length).toBe(1);
-    expect(component.children[0].coreHourlyRateMinor).toBeNull();
+    expect(component.children[0].siteCoreHourlyRateMinor).toBeNull();
     expect(component.isLoading).toBe(false);
   });
 

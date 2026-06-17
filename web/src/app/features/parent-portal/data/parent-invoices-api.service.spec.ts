@@ -179,7 +179,7 @@ child_last_name: null,
         expect(detail.invoiceId).toBe('inv-1');
         expect(detail.childName).toBe('Ada');
         expect(detail.calculation?.roundedAttendedMinutes).toBe(600);
-        expect(detail.calculation?.coreHourlyRateMinor).toBe(6000);
+        expect(detail.calculation?.siteCoreHourlyRateMinor).toBe(6000);
         expect(detail.lines.length).toBe(2);
         expect(detail.lines[0].sortOrder).toBe(1);
         expect(detail.lines[0].lineKind).toBe('extras');

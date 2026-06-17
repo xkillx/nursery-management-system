@@ -221,7 +221,7 @@ export class ParentInvoicesApiService {
       fundedDeductionMinutes: c.funded_deduction_minutes ?? null,
       coreBillableMinutes: c.core_billable_minutes ?? null,
       includedSessionCount: c.included_session_count ?? null,
-      coreHourlyRateMinor: c.core_hourly_rate_minor ?? null,
+      siteCoreHourlyRateMinor: c.core_hourly_rate_minor ?? null,
       coreSubtotalMinor: c.core_subtotal_minor ?? null,
       extrasTotalMinor: c.extras_total_minor ?? null,
     };

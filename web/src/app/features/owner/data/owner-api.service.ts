@@ -141,9 +141,9 @@ export class OwnerApiService {
     );
   }
 
-  updateSiteBillingSetup(siteId: string, coreHourlyRateMinor: number): Observable<unknown> {
+  updateSiteBillingSetup(siteId: string, siteCoreHourlyRateMinor: number): Observable<unknown> {
     return this.http.put(apiUrl(`/owner/sites/${siteId}/billing-setup`), {
-      core_hourly_rate_minor: coreHourlyRateMinor,
+      core_hourly_rate_minor: siteCoreHourlyRateMinor,
     });
   }
 

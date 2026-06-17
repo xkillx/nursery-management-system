@@ -52,7 +52,7 @@ export interface ManagerInvoiceGeneratedRunException {
 }
 
 export interface ManagerInvoiceCalculation {
-  coreHourlyRateMinor: number | null;
+  siteCoreHourlyRateMinor: number | null;
   rawAttendedMinutes: number | null;
   roundedAttendedMinutes: number | null;
   fundedAllowanceMinutes: number | null;

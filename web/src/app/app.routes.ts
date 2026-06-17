@@ -6,7 +6,7 @@ import { roleGuard } from './core/guards/role.guard';
 import { ManagerDashboardComponent } from './features/staff/pages/manager-dashboard/manager-dashboard.component';
 import { ManagerChildrenComponent } from './features/staff/pages/manager-children/manager-children.component';
 import { ManagerChildDetailComponent } from './features/staff/pages/manager-child-detail/manager-child-detail.component';
-import { ManagerChildRegistrationComponent } from './features/staff/pages/manager-child-registration/manager-child-registration.component';
+import { ManagerChildEditComponent } from './features/staff/pages/manager-child-edit/manager-child-edit.component';
 import { ManagerRegistrationIntakeComponent } from './features/staff/pages/manager-registration-intake/manager-registration-intake.component';
 import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardians/manager-guardians.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
@@ -88,12 +88,12 @@ export const routes: Routes = [
                 title: 'Child Enrollment | Nursery Management',
               },
               {
-                path: ':childId/registration',
-                component: ManagerChildRegistrationComponent,
+                path: ':childId/edit',
+                component: ManagerChildEditComponent,
                 data: {
-                  breadcrumb: { label: 'Registration' },
+                  breadcrumb: { label: 'Edit' },
                 },
-                title: 'Child Registration | Nursery Management',
+                title: 'Edit Child | Nursery Management',
               },
             ],
           },

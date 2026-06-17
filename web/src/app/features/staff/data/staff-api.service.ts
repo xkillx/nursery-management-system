@@ -9,10 +9,18 @@ import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, Guardian
 import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 import {
-  RegistrationProfileResponse, CollectionPasswordPayload,
-  ConsentRecord, ConsentWithCompletenessResponse, ConsentWritePayload, RegistrationWorkflowStatus,
-  CompleteRegistrationPayload, CompleteRegistrationResponse,
-} from '../models/registration-profile.models';
+  ChildProfile, ChildProfileInput,
+  ChildHealthProfile, ChildHealthProfileInput,
+  ChildSafeguardingProfile, ChildSafeguardingProfileInput,
+  ChildContact,
+  ChildConsent, ChildConsentInput,
+  ChildFundingRecord, ChildFundingRecordInput,
+  ChildCollectionSettings, ChildCollectionSettingsInput,
+  ChildRoomAssignment, ChildRoomAssignmentInput,
+  ChildBillingProfile, ChildBillingProfileInput,
+  ChildLeavingRecord,
+  CreateChildPayload, CreateChildResponse,
+} from '../models/child-profile.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
 interface StaffListResponse<T> {
@@ -27,14 +35,10 @@ interface ChildApiModel {
   date_of_birth: string;
   start_date: string;
   end_date?: string;
-  core_hourly_rate_minor: number | null;
-  site_core_hourly_rate_minor: number | null;
+  site_core_hourly_rate_minor?: number | null;
   notes?: string;
   is_active: boolean;
-  left_at?: string;
-  left_reason_code?: string;
-  left_reason_note?: string;
-  primary_room_id?: string | null;
+  has_current_room: boolean;
   enrollment_complete: boolean;
   missing_requirements?: string[];
   created_at: string;
@@ -137,34 +141,6 @@ interface FundingProfileApiModel {
   updated_at: string;
 }
 
-interface RegistrationProfileApiModel {
-  child: {
-    id: string;
-    first_name: string;
-    middle_name?: string | null;
-    last_name?: string | null;
-    date_of_birth: string;
-  };
-  profile_exists: boolean;
-  profile: { id: string; created_at: string; updated_at: string } | null;
-  demographics_home: Record<string, unknown> | null;
-  medical_dietary: Record<string, unknown> | null;
-  health_contacts: Record<string, unknown> | null;
-  social_development: Record<string, unknown> | null;
-  parent_carers: Record<string, unknown>[];
-  emergency_contacts: Record<string, unknown>[];
-  authorised_collectors: Record<string, unknown>[];
-  collection: Record<string, unknown> | null;
-  funding_support: Record<string, unknown> | null;
-  routine_care: Record<string, unknown> | null;
-  gdpr_declaration: Record<string, unknown> | null;
-  completeness: {
-    is_complete: boolean;
-    missing_sections: string[];
-    sections: { code: string; status: string; missing_fields: string[] }[];
-  };
-}
-
 interface FundingOverviewApiModel {
   billing_month: string;
   summary: {
@@ -233,10 +209,16 @@ export class StaffApiService {
       .pipe(map((response) => response.items.map((child) => this.toChildRecord(child))));
   }
 
-  createChild(payload: ChildWritePayload): Observable<ChildRecord> {
+  createChildWithFullProfile(payload: CreateChildPayload): Observable<CreateChildResponse> {
     return this.http
-      .post<ChildApiModel>(apiUrl('/children'), payload)
-      .pipe(map((child) => this.toChildRecord(child)));
+      .post<CreateChildResponse>(apiUrl('/children'), payload)
+      .pipe(map((response) => response));
+  }
+
+  // Legacy createChild (delegates to the new endpoint for backwards-compat with
+  // the existing manager-registration-intake stepper).
+  createChild(payload: any): Observable<any> {
+    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
   }
 
   updateChild(childId: string, payload: ChildWritePayload): Observable<ChildRecord> {
@@ -249,6 +231,139 @@ export class StaffApiService {
     return this.http
       .get<ChildApiModel>(apiUrl(`/children/${childId}`))
       .pipe(map((child) => this.toChildRecord(child)));
+  }
+
+  getChildProfile(childId: string): Observable<ChildProfile | null> {
+    return this.http
+      .get<{ profile: ChildProfile | null }>(apiUrl(`/children/${childId}/profile`))
+      .pipe(map((r) => r.profile));
+  }
+
+  patchChildProfile(childId: string, payload: ChildProfileInput): Observable<ChildProfile> {
+    return this.http
+      .patch<{ profile: ChildProfile }>(apiUrl(`/children/${childId}/profile`), payload)
+      .pipe(map((r) => r.profile));
+  }
+
+  getChildHealth(childId: string): Observable<ChildHealthProfile | null> {
+    return this.http
+      .get<{ health: ChildHealthProfile | null }>(apiUrl(`/children/${childId}/health`))
+      .pipe(map((r) => r.health));
+  }
+
+  patchChildHealth(childId: string, payload: ChildHealthProfileInput): Observable<ChildHealthProfile> {
+    return this.http
+      .patch<{ health: ChildHealthProfile }>(apiUrl(`/children/${childId}/health`), payload)
+      .pipe(map((r) => r.health));
+  }
+
+  getChildSafeguarding(childId: string): Observable<ChildSafeguardingProfile | null> {
+    return this.http
+      .get<{ safeguarding: ChildSafeguardingProfile | null }>(apiUrl(`/children/${childId}/safeguarding`))
+      .pipe(map((r) => r.safeguarding));
+  }
+
+  patchChildSafeguarding(childId: string, payload: ChildSafeguardingProfileInput): Observable<ChildSafeguardingProfile> {
+    return this.http
+      .patch<{ safeguarding: ChildSafeguardingProfile }>(apiUrl(`/children/${childId}/safeguarding`), payload)
+      .pipe(map((r) => r.safeguarding));
+  }
+
+  getChildContacts(childId: string): Observable<{
+    parentCarers: ChildContact[];
+    emergencyContacts: ChildContact[];
+    authorisedCollectors: ChildContact[];
+  }> {
+    return this.http
+      .get<{
+        parent_carers: ChildContact[];
+        emergency_contacts: ChildContact[];
+        authorised_collectors: ChildContact[];
+      }>(apiUrl(`/children/${childId}/contacts`))
+      .pipe(map((r) => ({
+        parentCarers: r.parent_carers ?? [],
+        emergencyContacts: r.emergency_contacts ?? [],
+        authorisedCollectors: r.authorised_collectors ?? [],
+      })));
+  }
+
+  putChildContacts(childId: string, payload: {
+    parentCarers?: unknown[];
+    emergencyContacts?: unknown[];
+    authorisedCollectors?: unknown[];
+  }): Observable<unknown> {
+    const body = {
+      parent_carers: payload.parentCarers ?? [],
+      emergency_contacts: payload.emergencyContacts ?? [],
+      authorised_collectors: payload.authorisedCollectors ?? [],
+    };
+    return this.http.put(apiUrl(`/children/${childId}/contacts`), body);
+  }
+
+  getChildConsent(childId: string): Observable<ChildConsent | null> {
+    return this.http
+      .get<{ consent: ChildConsent | null }>(apiUrl(`/children/${childId}/consent`))
+      .pipe(map((r) => r.consent));
+  }
+
+  updateChildConsent(childId: string, payload: ChildConsentInput): Observable<ChildConsent> {
+    return this.http
+      .put<ChildConsent>(apiUrl(`/children/${childId}/consent`), payload);
+  }
+
+  getChildFunding(childId: string): Observable<ChildFundingRecord | null> {
+    return this.http
+      .get<{ funding: ChildFundingRecord | null }>(apiUrl(`/children/${childId}/funding`))
+      .pipe(map((r) => r.funding));
+  }
+
+  patchChildFunding(childId: string, payload: ChildFundingRecordInput): Observable<ChildFundingRecord> {
+    return this.http
+      .patch<ChildFundingRecord>(apiUrl(`/children/${childId}/funding`), payload);
+  }
+
+  getChildCollectionSettings(childId: string): Observable<ChildCollectionSettings | null> {
+    return this.http
+      .get<{ collection_settings: ChildCollectionSettings | null }>(apiUrl(`/children/${childId}/collection-settings`))
+      .pipe(map((r) => r.collection_settings));
+  }
+
+  putChildCollectionSettings(childId: string, payload: ChildCollectionSettingsInput): Observable<ChildCollectionSettings> {
+    return this.http
+      .put<ChildCollectionSettings>(apiUrl(`/children/${childId}/collection-settings`), payload);
+  }
+
+  listChildRoomAssignments(childId: string): Observable<ChildRoomAssignment[]> {
+    return this.http
+      .get<{ items: ChildRoomAssignment[] }>(apiUrl(`/children/${childId}/room-assignments`))
+      .pipe(map((r) => r.items ?? []));
+  }
+
+  createChildRoomAssignment(childId: string, payload: ChildRoomAssignmentInput): Observable<ChildRoomAssignment> {
+    return this.http
+      .post<ChildRoomAssignment>(apiUrl(`/children/${childId}/room-assignments`), payload);
+  }
+
+  closeChildRoomAssignment(childId: string, assignmentId: string): Observable<void> {
+    return this.http
+      .delete<void>(apiUrl(`/children/${childId}/room-assignments/${assignmentId}`));
+  }
+
+  getChildBillingProfile(childId: string): Observable<ChildBillingProfile | null> {
+    return this.http
+      .get<{ billing_profile: ChildBillingProfile | null }>(apiUrl(`/children/${childId}/billing-profile`))
+      .pipe(map((r) => r.billing_profile));
+  }
+
+  patchChildBillingProfile(childId: string, payload: ChildBillingProfileInput): Observable<ChildBillingProfile> {
+    return this.http
+      .patch<ChildBillingProfile>(apiUrl(`/children/${childId}/billing-profile`), payload);
+  }
+
+  getChildLeavingRecord(childId: string): Observable<ChildLeavingRecord | null> {
+    return this.http
+      .get<{ leaving_record: ChildLeavingRecord | null }>(apiUrl(`/children/${childId}/leaving-record`))
+      .pipe(map((r) => r.leaving_record));
   }
 
   listChildGuardianLinks(childId: string): Observable<ChildGuardianLinkRecord[]> {
@@ -410,23 +525,6 @@ export class StaffApiService {
       .pipe(map((overview) => this.toFundingOverviewRecord(overview)));
   }
 
-  getRegistrationProfile(childId: string): Observable<RegistrationProfileResponse> {
-    return this.http.get<RegistrationProfileApiModel>(apiUrl(`/children/${childId}/registration-profile`))
-      .pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
-  }
-
-  patchRegistrationProfile(childId: string, patch: Record<string, unknown>): Observable<RegistrationProfileResponse> {
-    return this.http.patch<RegistrationProfileApiModel>(apiUrl(`/children/${childId}/registration-profile`), patch)
-      .pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
-  }
-
-  setRegistrationCollectionPassword(childId: string, password: string): Observable<RegistrationProfileResponse> {
-    return this.http.put<RegistrationProfileApiModel>(
-      apiUrl(`/children/${childId}/registration-profile/collection-password`),
-      { password } as CollectionPasswordPayload,
-    ).pipe(map((profile) => this.toRegistrationProfileRecord(profile)));
-  }
-
   private buildListParams(status: StatusFilter, limit: number, offset: number): HttpParams {
     return new HttpParams({
       fromObject: {
@@ -462,14 +560,10 @@ export class StaffApiService {
       dateOfBirth: child.date_of_birth,
       startDate: child.start_date,
       endDate: child.end_date ?? null,
-      coreHourlyRateMinor: child.core_hourly_rate_minor,
       siteCoreHourlyRateMinor: child.site_core_hourly_rate_minor ?? null,
       notes: child.notes ?? null,
       isActive: child.is_active,
-      leftAt: child.left_at ?? null,
-      leftReasonCode: child.left_reason_code ?? null,
-      leftReasonNote: child.left_reason_note ?? null,
-      primaryRoomId: child.primary_room_id ?? null,
+      hasCurrentRoom: child.has_current_room,
       enrollmentComplete: child.enrollment_complete,
       missingRequirements: child.missing_requirements ?? [],
       createdAt: child.created_at,
@@ -624,71 +718,6 @@ export class StaffApiService {
     };
   }
 
-  private toRegistrationProfileRecord(profile: RegistrationProfileApiModel): RegistrationProfileResponse {
-    return {
-      child: {
-        id: profile.child.id,
-        fullName: formatChildName({
-          firstName: profile.child.first_name,
-          middleName: profile.child.middle_name,
-          lastName: profile.child.last_name,
-        }),
-        dateOfBirth: profile.child.date_of_birth,
-      },
-      profileExists: profile.profile_exists,
-      profile: profile.profile ? {
-        id: profile.profile.id,
-        createdAt: profile.profile.created_at,
-        updatedAt: profile.profile.updated_at,
-      } : null,
-      demographicsHome: profile.demographics_home as RegistrationProfileResponse['demographicsHome'],
-      medicalDietary: profile.medical_dietary as RegistrationProfileResponse['medicalDietary'],
-      healthContacts: profile.health_contacts as RegistrationProfileResponse['healthContacts'],
-      socialDevelopment: profile.social_development as RegistrationProfileResponse['socialDevelopment'],
-      parentCarers: (profile.parent_carers ?? []).map((c) => ({
-        fullName: (c as Record<string, unknown>)['full_name'] as string,
-        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
-        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
-        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
-        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
-        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
-        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
-      })),
-      emergencyContacts: (profile.emergency_contacts ?? []).map((c) => ({
-        fullName: (c as Record<string, unknown>)['full_name'] as string,
-        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
-        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
-        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
-        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
-        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
-        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
-      })),
-      authorisedCollectors: (profile.authorised_collectors ?? []).map((c) => ({
-        fullName: (c as Record<string, unknown>)['full_name'] as string,
-        relationshipToChild: (c as Record<string, unknown>)['relationship_to_child'] as string | null ?? null,
-        address: (c as Record<string, unknown>)['address'] as Record<string, unknown> | null ?? null,
-        telephone: (c as Record<string, unknown>)['telephone'] as string | null ?? null,
-        email: (c as Record<string, unknown>)['email'] as string | null ?? null,
-        workAddress: (c as Record<string, unknown>)['work_address'] as Record<string, unknown> | null ?? null,
-        hasParentalResponsibility: (c as Record<string, unknown>)['has_parental_responsibility'] as boolean | null ?? null,
-      })),
-      collection: profile.collection as RegistrationProfileResponse['collection'],
-      fundingSupport: profile.funding_support as RegistrationProfileResponse['fundingSupport'],
-      routineCare: profile.routine_care as RegistrationProfileResponse['routineCare'],
-      gdprDeclaration: profile.gdpr_declaration as RegistrationProfileResponse['gdprDeclaration'],
-      registrationDate: (profile as unknown as Record<string, unknown>)['registration_date'] as string | null ?? null,
-      completeness: {
-        isComplete: profile.completeness.is_complete,
-        missingSections: profile.completeness.missing_sections,
-        sections: profile.completeness.sections.map((s) => ({
-          code: s.code,
-          status: s.status as 'complete' | 'incomplete',
-          missingFields: s.missing_fields,
-        })),
-      },
-    };
-  }
-
   private childDisplayName(child: { first_name: string; middle_name?: string | null; last_name?: string | null }): string {
     return formatChildName({
       firstName: child.first_name,
@@ -697,24 +726,40 @@ export class StaffApiService {
     });
   }
 
-  getRegistrationWorkflowStatus(childId: string): Observable<RegistrationWorkflowStatus> {
-    return this.http.get<RegistrationWorkflowStatus>(apiUrl(`/children/${childId}/registration-workflow-status`));
+  // Legacy registration* methods (kept as compatibility shims for the
+  // manager-registration-intake stepper, which is being progressively
+  // replaced by the new manager-child-edit component). They delegate to
+  // the new per-resource endpoints where possible.
+
+  getRegistrationProfile(childId: string): Observable<any> {
+    return this.getChildProfile(childId) as unknown as Observable<any>;
   }
 
-  getRegistrationConsents(childId: string): Observable<ConsentWithCompletenessResponse> {
-    return this.http.get<ConsentWithCompletenessResponse>(apiUrl(`/children/${childId}/registration-consents`));
+  patchRegistrationProfile(childId: string, patch: Record<string, unknown>): Observable<any> {
+    return this.http.patch(apiUrl(`/children/${childId}/profile`), patch) as unknown as Observable<any>;
   }
 
-  createRegistrationConsent(childId: string, payload: ConsentWritePayload): Observable<ConsentRecord> {
-    return this.http.post<ConsentRecord>(apiUrl(`/children/${childId}/registration-consents`), payload);
+  setRegistrationCollectionPassword(childId: string, password: string): Observable<any> {
+    return this.http.put(apiUrl(`/children/${childId}/collection-settings`), { password }) as unknown as Observable<any>;
   }
 
-  createRegistrationCompletionAttestation(childId: string): Observable<unknown> {
-    return this.http.post(apiUrl(`/children/${childId}/registration-completion-attestations`), null);
+  getRegistrationConsents(childId: string): Observable<any> {
+    return this.getChildConsent(childId) as unknown as Observable<any>;
   }
 
-  submitCompleteRegistration(payload: CompleteRegistrationPayload): Observable<CompleteRegistrationResponse> {
-    return this.http.post<CompleteRegistrationResponse>(apiUrl('/children/with-registration'), payload);
+  createRegistrationConsent(childId: string, payload: unknown): Observable<any> {
+    return this.http.put(apiUrl(`/children/${childId}/consent`), payload) as unknown as Observable<any>;
   }
 
+  getRegistrationWorkflowStatus(childId: string): Observable<any> {
+    return this.http.get(apiUrl(`/children/${childId}/consent`)) as unknown as Observable<any>;
+  }
+
+  createRegistrationCompletionAttestation(childId: string): Observable<any> {
+    return this.http.post(apiUrl(`/children/${childId}/actions/mark-inactive`), null) as unknown as Observable<any>;
+  }
+
+  submitCompleteRegistration(payload: unknown): Observable<any> {
+    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
+  }
 }

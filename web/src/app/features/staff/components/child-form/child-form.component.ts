@@ -7,7 +7,6 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
-import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 
 type ChildFormValue = {
   first_name: string;
@@ -17,7 +16,6 @@ type ChildFormValue = {
   start_date: string;
   end_date: string;
   notes: string;
-  primary_room_id: string;
 };
 
 @Component({
@@ -29,7 +27,6 @@ type ChildFormValue = {
     ButtonComponent,
     AlertComponent,
     DatePickerComponent,
-    SelectComponent,
   ],
   templateUrl: './child-form.component.html',
 })
@@ -39,8 +36,6 @@ export class ChildFormComponent {
   @Input() submitting = false;
   @Input() fieldErrors: Record<string, string> = {};
   @Input() serverError: string | null = null;
-  @Input() roomOptions: Option[] = [];
-  @Input() primaryRoomRequired = true;
 
   @Output() saved = new EventEmitter<ChildWritePayload>();
   @Output() cancelled = new EventEmitter<void>();
@@ -53,12 +48,7 @@ export class ChildFormComponent {
     }
   }
 
-  get primaryRoomMissing(): boolean {
-    return this.primaryRoomRequired && !this.form.primary_room_id;
-  }
-
   submit(): void {
-    const trimmedRoom = this.form.primary_room_id.trim();
     const payload: ChildWritePayload = {
       first_name: this.form.first_name.trim(),
       middle_name: this.form.middle_name.trim() || null,
@@ -67,9 +57,7 @@ export class ChildFormComponent {
       start_date: this.form.start_date,
       end_date: this.form.end_date.trim(),
       notes: this.form.notes.trim(),
-      primary_room_id: trimmedRoom ? trimmedRoom : null,
     };
-
     this.saved.emit(payload);
   }
 
@@ -82,7 +70,6 @@ export class ChildFormComponent {
       start_date: child.startDate,
       end_date: child.endDate ?? '',
       notes: child.notes ?? '',
-      primary_room_id: child.primaryRoomId ?? '',
     };
   }
 
@@ -95,7 +82,6 @@ export class ChildFormComponent {
       start_date: '',
       end_date: '',
       notes: '',
-      primary_room_id: '',
     };
   }
 }

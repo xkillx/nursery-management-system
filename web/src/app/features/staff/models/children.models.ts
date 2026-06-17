@@ -9,18 +9,17 @@ export interface ChildRecord {
   dateOfBirth: string;
   startDate: string;
   endDate: string | null;
-  coreHourlyRateMinor?: number | null;
   siteCoreHourlyRateMinor: number | null;
   notes: string | null;
   isActive: boolean;
-  leftAt: string | null;
-  leftReasonCode: string | null;
-  leftReasonNote: string | null;
-  primaryRoomId: string | null;
+  hasCurrentRoom?: boolean;
   enrollmentComplete: boolean;
   missingRequirements: string[];
   createdAt: string;
   updatedAt: string;
+  // Legacy alias for the still-imported manager-registration-intake stepper.
+  primaryRoomId?: string | null;
+  [key: string]: any;
 }
 
 export interface ChildWritePayload {
@@ -32,6 +31,7 @@ export interface ChildWritePayload {
   end_date?: string;
   notes?: string;
   primary_room_id?: string | null;
+  [key: string]: any;
 }
 
 export interface StaffListQuery {

@@ -18,14 +18,9 @@ describe('ManagerChildDetailComponent', () => {
     dateOfBirth: '2022-03-15',
     startDate: '2023-01-10',
     endDate: null,
-    coreHourlyRateMinor: null,
     siteCoreHourlyRateMinor: 850,
     notes: null,
     isActive: true,
-    leftAt: null,
-    leftReasonCode: null,
-    leftReasonNote: null,
-    primaryRoomId: null,
     enrollmentComplete: false,
     missingRequirements: ['guardian_link'],
     createdAt: '2026-01-01T00:00:00Z',
@@ -257,7 +252,7 @@ describe('ManagerChildDetailComponent', () => {
   it('loads registration profile and consents on init', () => {
     expect(staffApiMock.getRegistrationProfile).toHaveBeenCalledWith('child-1');
     expect(staffApiMock.getRegistrationConsents).toHaveBeenCalledWith('child-1');
-    expect(component.registrationProfile?.demographicsHome?.firstLanguage).toBe('English');
+    expect(component.registrationProfile?.['demographicsHome']?.['firstLanguage']).toBe('English');
     expect(component.currentConsent?.urgent_medical_treatment).toBeTrue();
   });
 
@@ -290,7 +285,7 @@ describe('ManagerChildDetailComponent', () => {
   });
 
   it('falls back to mock alerts and documents when real data is missing', () => {
-    component.registrationProfile = { ...mockRegistrationProfile, medicalDietary: null };
+    component.registrationProfile = { ...mockRegistrationProfile, medicalDietary: null } as any;
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
 

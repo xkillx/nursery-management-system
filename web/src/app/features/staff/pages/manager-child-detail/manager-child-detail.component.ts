@@ -294,19 +294,19 @@ export class ManagerChildDetailComponent implements OnInit {
 
   get medicalDietaryAlerts(): string[] {
     const alerts: string[] = [];
-    const medical = this.registrationProfile?.medicalDietary;
+    const medical: any = this.registrationProfile?.['medicalDietary'];
     if (medical) {
-      if (this.isAffirmative(medical.medicalConditionsStatus) && medical.medicalConditionsNotes) {
-        alerts.push(`Medical: ${medical.medicalConditionsNotes}`);
+      if (this.isAffirmative(medical['medicalConditionsStatus']) && medical['medicalConditionsNotes']) {
+        alerts.push(`Medical: ${medical['medicalConditionsNotes']}`);
       }
-      if (this.isAffirmative(medical.prescribedMedicationStatus) && medical.medicationNotes) {
-        alerts.push(`Medication: ${medical.medicationNotes}`);
+      if (this.isAffirmative(medical['prescribedMedicationStatus']) && medical['medicationNotes']) {
+        alerts.push(`Medication: ${medical['medicationNotes']}`);
       }
-      if (this.isAffirmative(medical.dietaryRequirementsStatus) && medical.dietaryRequirementsNotes) {
-        alerts.push(`Dietary: ${medical.dietaryRequirementsNotes}`);
+      if (this.isAffirmative(medical['dietaryRequirementsStatus']) && medical['dietaryRequirementsNotes']) {
+        alerts.push(`Dietary: ${medical['dietaryRequirementsNotes']}`);
       }
-      if (medical.dietarySideEffects) {
-        alerts.push(`Dietary side effects: ${medical.dietarySideEffects}`);
+      if (medical['dietarySideEffects']) {
+        alerts.push(`Dietary side effects: ${medical['dietarySideEffects']}`);
       }
     }
     return alerts.length > 0 ? alerts : this.mockProfile.alertChips;

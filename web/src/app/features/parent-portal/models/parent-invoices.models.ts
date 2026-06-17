@@ -43,7 +43,7 @@ export interface ParentInvoiceCalculation {
   fundedDeductionMinutes: number | null;
   coreBillableMinutes: number | null;
   includedSessionCount: number | null;
-  coreHourlyRateMinor: number | null;
+  siteCoreHourlyRateMinor: number | null;
   coreSubtotalMinor: number | null;
   extrasTotalMinor: number | null;
 }

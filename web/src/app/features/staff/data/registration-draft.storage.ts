@@ -1,43 +1,62 @@
 import { Injectable } from '@angular/core';
 
-const STORAGE_KEY = 'nursery.registration_intake.draft';
-const STEP_STORAGE_KEY = 'nursery.registration_intake.draft.step';
-const SAVED_AT_STORAGE_KEY = 'nursery.registration_intake.draft.savedAt';
+interface DraftEnvelope {
+  step: number;
+  payload: unknown;
+  savedAt: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RegistrationDraftStorage {
-  private readonly hasStorage = typeof globalThis !== 'undefined' && typeof globalThis.localStorage !== 'undefined';
+  private readonly key = 'nursery.registration_intake.draft';
 
-  load(): string | null {
-    if (!this.hasStorage) return null;
-    return globalThis.localStorage.getItem(STORAGE_KEY);
+  save(payload: unknown, step: number | string): void {
+    try {
+      const envelope: DraftEnvelope = { step: Number(step), payload, savedAt: new Date().toISOString() };
+      localStorage.setItem(this.key, JSON.stringify(envelope));
+    } catch {
+      // ignore
+    }
   }
 
-  loadStep(): string | null {
-    if (!this.hasStorage) return null;
-    return globalThis.localStorage.getItem(STEP_STORAGE_KEY);
+  load(): string | null {
+    try {
+      const raw = localStorage.getItem(this.key);
+      if (!raw) return null;
+      // Support both the legacy plain-object format and the new envelope.
+      try {
+        const parsed = JSON.parse(raw) as DraftEnvelope;
+        if (parsed && typeof parsed === 'object' && 'payload' in parsed) {
+          return JSON.stringify(parsed.payload ?? {});
+        }
+      } catch {
+        // not an envelope
+      }
+      return raw;
+    } catch {
+      return null;
+    }
   }
 
   loadSavedAt(): string | null {
-    if (!this.hasStorage) return null;
-    return globalThis.localStorage.getItem(SAVED_AT_STORAGE_KEY);
-  }
-
-  save(payload: unknown, step: string): void {
-    if (!this.hasStorage) return;
     try {
-      globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      globalThis.localStorage.setItem(STEP_STORAGE_KEY, step);
-      globalThis.localStorage.setItem(SAVED_AT_STORAGE_KEY, new Date().toISOString());
+      const raw = localStorage.getItem(this.key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as DraftEnvelope;
+      if (parsed && typeof parsed === 'object' && 'savedAt' in parsed) {
+        return parsed.savedAt ?? null;
+      }
+      return null;
     } catch {
-      // ignore quota or serialization errors
+      return null;
     }
   }
 
   clear(): void {
-    if (!this.hasStorage) return;
-    globalThis.localStorage.removeItem(STORAGE_KEY);
-    globalThis.localStorage.removeItem(STEP_STORAGE_KEY);
-    globalThis.localStorage.removeItem(SAVED_AT_STORAGE_KEY);
+    try {
+      localStorage.removeItem(this.key);
+    } catch {
+      // ignore
+    }
   }
 }

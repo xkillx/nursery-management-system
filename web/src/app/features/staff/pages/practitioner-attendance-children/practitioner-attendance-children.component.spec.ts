@@ -361,7 +361,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     (childrenWithExtraFields[0] as any).guardianEmail = 'secret@example.com';
     (childrenWithExtraFields[0] as any).guardianPhone = '07123456789';
     (childrenWithExtraFields[0] as any).guardianName = 'Secret Guardian';
-    (childrenWithExtraFields[0] as any).coreHourlyRateMinor = 1500;
+    (childrenWithExtraFields[0] as any).siteCoreHourlyRateMinor = 1500;
     (childrenWithExtraFields[0] as any).fundingValue = 10000;
 
     setChildrenAndDetectChanges(childrenWithExtraFields);

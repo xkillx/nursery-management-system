@@ -43,7 +43,7 @@ const issuedDetail: ManagerInvoiceDetail = {
     { childId: 'c2', childName: 'Alice', blockerCodes: ['incomplete_attendance'] },
   ],
   calculation: {
-    coreHourlyRateMinor: 25,
+    siteCoreHourlyRateMinor: 25,
     rawAttendedMinutes: 1315,
     roundedAttendedMinutes: 1320,
     fundedAllowanceMinutes: 360,

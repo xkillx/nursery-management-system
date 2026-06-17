@@ -339,7 +339,7 @@ export class ManagerInvoicesApiService {
 
   private toCalculation(c: InvoiceCalculationApi): ManagerInvoiceCalculation {
     return {
-      coreHourlyRateMinor: c.core_hourly_rate_minor ?? null,
+      siteCoreHourlyRateMinor: c.core_hourly_rate_minor ?? null,
       rawAttendedMinutes: c.raw_attended_minutes ?? null,
       roundedAttendedMinutes: c.rounded_attended_minutes ?? null,
       fundedAllowanceMinutes: c.funded_allowance_minutes ?? null,

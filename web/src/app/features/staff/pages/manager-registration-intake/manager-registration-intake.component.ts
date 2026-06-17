@@ -1584,7 +1584,7 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
         has_parental_responsibility: null,
       }));
 
-    const payload: CompleteRegistrationPayload = {
+    const payload: any = {
       child: {
         first_name: this.step1.first_name.trim(),
         middle_name: this.step1.middle_name.trim() || null,
@@ -2149,8 +2149,8 @@ export class ManagerRegistrationIntakeComponent implements OnInit, OnDestroy {
       this.step2.concern_sight = profile.socialDevelopment.concernSight === 'yes';
       this.step2.concern_emotional_wellbeing = profile.socialDevelopment.concernEmotionalWellbeing === 'yes';
       this.step2.concern_behaviour = profile.socialDevelopment.concernBehaviour === 'yes';
-      this.referralsDraft = profile.socialDevelopment.professionalReferrals?.length
-        ? profile.socialDevelopment.professionalReferrals.map(r => ({
+      this.referralsDraft = profile['socialDevelopment'].professionalReferrals?.length
+        ? profile['socialDevelopment'].professionalReferrals.map((r: any) => ({
             type: r.type,
             referredDate: r.referredDate ?? '',
             referredBy: r.referredBy ?? '',

@@ -85,17 +85,15 @@ Reference: `docs/user-roles-and-permissions.md` lists Super Admin as a future ro
 
 After pilot readiness and owner/four-site oversight, feature work proceeds in this order:
 
-### 1. Registration and Consent
+### 1. Child Management (identity, profile, contacts, health, safeguarding, consent, funding, collection)
 
-Child registration/enrolment profiles and consent/acknowledgement records. Registration comes first because child profile and compliance data feed later planning and safety workflows.
+Direct child creation, profile, contacts, health, safeguarding, consent, funding, collection, and room placement. Child is the root identity; everything else is a sub-record of the child. The atomic-create milestone lives in API-PM-08.
 
 | ID | Task | Status |
 |---|---|---|
-| API-PM-01 | Child registration/enrolment profile data from `docs/forms/child-application-form.md` | Done |
+| API-PM-08 | Child management refactor — drop registration model, adopt direct child creation | Done |
+| FE-PM-08 | Manager child-edit stepper (read-only detail + Edit button) | Done |
 | API-PM-02 | Consent and acknowledgement ledger from `docs/forms/parental-consent-form.md` | Pending |
-| API-PM-03 | Enrolment document/checklist metadata (office-use fields) | Done |
-| FE-PM-01 | Manager child registration/enrolment editor (includes FE-PM-04 office-use checklist UI) | Done |
-| FE-PM-04 | Registration office-use checklist UI | Folded into FE-PM-01 |
 
 ### 2. Room and Session Planning
 

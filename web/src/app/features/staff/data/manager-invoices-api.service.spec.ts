@@ -270,7 +270,7 @@ child_last_name: null, blocker_codes: ['incomplete_attendance'] },
         expect(detail.invoiceId).toBe('inv-1');
         expect(detail.dueStatus).toBe('due');
         expect(detail.lockedAt).toBe('2026-06-09T12:00:00Z');
-        expect(detail.calculation?.coreHourlyRateMinor).toBe(25);
+        expect(detail.calculation?.siteCoreHourlyRateMinor).toBe(25);
         expect(detail.calculation?.roundedAttendedMinutes).toBe(1320);
         expect(detail.calculation?.coreBillableMinutes).toBe(960);
         expect(detail.generatedRunExceptions.length).toBe(1);

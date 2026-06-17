@@ -16,14 +16,9 @@ describe('ChildFormComponent', () => {
     dateOfBirth: '2022-01-15',
     startDate: '2024-09-01',
     endDate: null,
-    coreHourlyRateMinor: null,
     siteCoreHourlyRateMinor: 750,
     notes: null,
     isActive: true,
-    leftAt: null,
-    leftReasonCode: null,
-    leftReasonNote: null,
-    primaryRoomId: 'room-1',
     enrollmentComplete: true,
     missingRequirements: [],
     createdAt: '2024-08-01T00:00:00Z',
@@ -56,7 +51,7 @@ describe('ChildFormComponent', () => {
     expect(component.form.start_date).toBe('2024-09-01');
   });
 
-  it('emits payload without core_hourly_rate_minor', () => {
+  it('emits payload without primary_room_id or core_hourly_rate_minor', () => {
     const savedSpy = spyOn(component.saved, 'emit');
 
     component.form.first_name = 'Ada';
@@ -66,7 +61,6 @@ describe('ChildFormComponent', () => {
     component.form.start_date = '2024-09-01';
     component.form.end_date = '';
     component.form.notes = '';
-    component.form.primary_room_id = 'room-1';
 
     component.submit();
 
@@ -78,9 +72,7 @@ describe('ChildFormComponent', () => {
       start_date: '2024-09-01',
       end_date: '',
       notes: '',
-      primary_room_id: 'room-1',
     });
-    expect(savedSpy.calls.mostRecent().args[0]).not.toEqual(jasmine.objectContaining({ core_hourly_rate_minor: jasmine.anything() as any }));
   });
 
   it('resets form when selectedChild changes to null', () => {
@@ -93,36 +85,5 @@ describe('ChildFormComponent', () => {
     expect(component.form.first_name).toBe('');
     expect(component.form.middle_name).toBe('');
     expect(component.form.last_name).toBe('');
-    expect(component.form.primary_room_id).toBe('');
-  });
-
-  it('emits primary_room_id as null when blank in create mode', () => {
-    const savedSpy = spyOn(component.saved, 'emit');
-    component.primaryRoomRequired = true;
-
-    component.form.first_name = 'Ada';
-    component.form.middle_name = '';
-    component.form.last_name = 'Lovelace';
-    component.form.date_of_birth = '2022-01-15';
-    component.form.start_date = '2024-09-01';
-    component.form.end_date = '';
-    component.form.notes = '';
-    component.form.primary_room_id = '   ';
-
-    component.submit();
-
-    expect(savedSpy).toHaveBeenCalledWith(jasmine.objectContaining({ primary_room_id: null }));
-  });
-
-  it('treats primary room as missing when required and blank in create mode', () => {
-    component.primaryRoomRequired = true;
-    component.form.primary_room_id = '';
-    expect(component.primaryRoomMissing).toBeTrue();
-  });
-
-  it('does not require primary room when primaryRoomRequired is false', () => {
-    component.primaryRoomRequired = false;
-    component.form.primary_room_id = '';
-    expect(component.primaryRoomMissing).toBeFalse();
   });
 });
