@@ -928,12 +928,13 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 	return mapCollectionSettingRow(row), nil
 }
 
-func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	q := sqlc.New(tx)
 	_, err := q.ChildCollectionSettingSetPassword(ctx, sqlc.ChildCollectionSettingSetPasswordParams{
 		TenantID:                                uuidToPgtype(tenantID),
 		BranchID:                                uuidToPgtype(branchID),
 		ChildID:                                 uuidToPgtype(childID),
+		ID:                                      uuidToPgtype(id),
 		CollectionPasswordHash:                  pgtype.Text{String: hash, Valid: true},
 		CollectionPasswordUpdatedAt:             pgtype.Timestamptz{Time: updatedAt, Valid: true},
 		CollectionPasswordUpdatedByUserID:       uuidToPgtype(userID),
@@ -1143,6 +1144,10 @@ func (r *ChildRepository) GetBillingProfileByChild(ctx context.Context, tenantID
 
 func (r *ChildRepository) UpsertBillingProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
 	q := sqlc.New(tx)
+	effectiveFrom := ""
+	if !p.EffectiveFrom.IsZero() {
+		effectiveFrom = p.EffectiveFrom.Format("2006-01-02")
+	}
 	row, err := q.ChildBillingProfileUpsert(ctx, sqlc.ChildBillingProfileUpsertParams{
 		ID:              uuidToPgtype(p.ID),
 		TenantID:        uuidToPgtype(p.TenantID),
@@ -1150,7 +1155,7 @@ func (r *ChildRepository) UpsertBillingProfile(ctx context.Context, tx pgx.Tx, p
 		ChildID:         uuidToPgtype(p.ChildID),
 		BillingBasis:    string(p.BillingBasis),
 		CustomRateMinor: int32PtrToPgtype(p.CustomRateMinor),
-		Column7:         timeToPgtypeDate(p.EffectiveFrom),
+		Column7:         effectiveFrom,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert child billing profile: %w", err)

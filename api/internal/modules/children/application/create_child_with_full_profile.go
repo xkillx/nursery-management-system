@@ -263,7 +263,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		created = append(created, "collection_settings")
 
 		if collectionHash != "" {
-			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, collectionHash, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
+			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, cs.ID, collectionHash, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
 				return fmt.Errorf("set collection password: %w", err)
 			}
 		}

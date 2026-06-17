@@ -108,7 +108,7 @@ func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.Actor
 			if herr != nil {
 				return domainerrors.Internal(fmt.Errorf("hash collection password: %w", herr))
 			}
-			if perr := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, id, hash, time.Now().UTC(), actor.UserID, actor.MembershipID); perr != nil {
+			if perr := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, id, cs.ID, hash, time.Now().UTC(), actor.UserID, actor.MembershipID); perr != nil {
 				return domainerrors.Internal(fmt.Errorf("set collection password: %w", perr))
 			}
 		}

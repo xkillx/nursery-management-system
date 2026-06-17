@@ -73,7 +73,7 @@ type ChildFundingRepository interface {
 type ChildCollectionSettingsRepository interface {
 	GetCollectionSettingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildCollectionSetting, error)
 	UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *ChildCollectionSetting) (*ChildCollectionSetting, error)
-	SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error
+	SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error
 }
 
 type ChildRoomAssignmentsRepository interface {

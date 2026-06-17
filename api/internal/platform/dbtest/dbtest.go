@@ -290,6 +290,27 @@ func InsertTenant(t testing.TB, pool *pgxpool.Pool, id uuid.UUID, name string) {
 	}
 }
 
+// InsertRoom inserts an active room scoped to a branch.
+func InsertRoom(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, name string, capacity int) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity, is_active)
+		 VALUES ($1, $2, $3, $4, $5, $6, true)`,
+		id, tenantID, branchID, name, "toddler", capacity)
+	if err != nil {
+		t.Fatalf("insert room: %v", err)
+	}
+}
+
+// ExecOnTx is a small helper for running a statement against a transaction in tests.
+func ExecOnTx(t testing.TB, tx pgx.Tx, sql string, args ...any) {
+	t.Helper()
+	_, err := tx.Exec(context.Background(), sql, args...)
+	if err != nil {
+		t.Fatalf("exec on tx: %v", err)
+	}
+}
+
 // InsertBranch inserts a branch scoped to a tenant.
 func InsertBranch(t testing.TB, pool *pgxpool.Pool, tenantID, branchID uuid.UUID, name string) {
 	t.Helper()
