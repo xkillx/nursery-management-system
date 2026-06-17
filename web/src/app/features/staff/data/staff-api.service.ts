@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
@@ -358,6 +358,32 @@ export class StaffApiService {
     return this.http
       .get<{ leaving_record: ChildLeavingRecord | null }>(apiUrl(`/children/${childId}/leaving-record`))
       .pipe(map((r) => r.leaving_record));
+  }
+
+  // Aggregated loader used by the manager-child-edit stepper. Fans out to
+  // every per-resource endpoint in parallel and combines the results.
+  getStepperView(childId: string): Observable<{
+    profile: ChildProfile | null;
+    health: ChildHealthProfile | null;
+    safeguarding: ChildSafeguardingProfile | null;
+    contacts: {
+      parentCarers: ChildContact[];
+      emergencyContacts: ChildContact[];
+      authorisedCollectors: ChildContact[];
+    };
+    collection: ChildCollectionSettings | null;
+    funding: ChildFundingRecord | null;
+    consent: ChildConsent | null;
+  }> {
+    return forkJoin({
+      profile: this.getChildProfile(childId),
+      health: this.getChildHealth(childId),
+      safeguarding: this.getChildSafeguarding(childId),
+      contacts: this.getChildContacts(childId),
+      collection: this.getChildCollectionSettings(childId),
+      funding: this.getChildFunding(childId),
+      consent: this.getChildConsent(childId),
+    });
   }
 
   listChildGuardianLinks(childId: string): Observable<ChildGuardianLinkRecord[]> {
@@ -718,46 +744,5 @@ export class StaffApiService {
       middleName: child.middle_name,
       lastName: child.last_name,
     });
-  }
-
-  // ---- Legacy registration* methods ----
-  // The legacy manager-child-edit-stepper component (the renamed
-  // manager-registration-intake) still calls these. They delegate to the
-  // new per-resource endpoints. New code should not depend on them.
-
-  getRegistrationProfile(childId: string): Observable<any> {
-    return this.getChildProfile(childId) as unknown as Observable<any>;
-  }
-
-  patchRegistrationProfile(childId: string, patch: Record<string, unknown>): Observable<any> {
-    return this.http.patch(apiUrl(`/children/${childId}/profile`), patch) as unknown as Observable<any>;
-  }
-
-  setRegistrationCollectionPassword(childId: string, password: string): Observable<any> {
-    return this.http.put(apiUrl(`/children/${childId}/collection-settings`), { password }) as unknown as Observable<any>;
-  }
-
-  getRegistrationConsents(childId: string): Observable<any> {
-    return this.getChildConsent(childId) as unknown as Observable<any>;
-  }
-
-  createRegistrationConsent(childId: string, payload: unknown): Observable<any> {
-    return this.http.put(apiUrl(`/children/${childId}/consent`), payload) as unknown as Observable<any>;
-  }
-
-  getRegistrationWorkflowStatus(childId: string): Observable<any> {
-    return this.http.get(apiUrl(`/children/${childId}/consent`)) as unknown as Observable<any>;
-  }
-
-  createRegistrationCompletionAttestation(childId: string): Observable<any> {
-    return this.http.post(apiUrl(`/children/${childId}/actions/mark-inactive`), null) as unknown as Observable<any>;
-  }
-
-  submitCompleteRegistration(payload: unknown): Observable<any> {
-    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
-  }
-
-  createChild(payload: any): Observable<any> {
-    return this.http.post(apiUrl('/children'), payload) as unknown as Observable<any>;
   }
 }

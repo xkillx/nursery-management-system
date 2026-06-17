@@ -58,10 +58,17 @@ import {
   ConsentRecord,
   ConsentWritePayload,
   RegistrationContactEntry,
-  RegistrationProfileResponse,
-  RegistrationWorkflowStatus,
+  StepperProfileView,
   CompleteRegistrationPayload,
+  StepperCompletionStatus,
 } from '../../models/child-legacy-compat.models';
+import {
+  ChildProfile,
+  ChildHealthProfile,
+  ChildSafeguardingProfile,
+  ChildCollectionSettings,
+  ChildFundingRecord,
+} from '../../models/child-profile.models';
 
 type StepperStep =
   | 'child-basics'
@@ -467,7 +474,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   currentStep: StepperStep = 'child-basics';
   childId: string | null = null;
   child: ChildRecord | null = null;
-  workflowStatus: RegistrationWorkflowStatus | null = null;
+  workflowStatus: StepperCompletionStatus | null = null;
   isNewRegistration = true;
 
   isLoading = false;
@@ -681,15 +688,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   get canMarkComplete(): boolean {
-    return this.workflowStatus?.can_mark_complete ?? false;
+    return this.workflowStatus?.canMarkComplete ?? false;
   }
 
   get isReviewedComplete(): boolean {
-    return this.workflowStatus?.is_reviewed_complete ?? false;
+    return this.workflowStatus?.isReviewedComplete ?? false;
   }
 
   get needsReview(): boolean {
-    return this.workflowStatus?.needs_review ?? false;
+    return this.workflowStatus?.needsReview ?? false;
   }
 
   get childFullNameDraft(): string {
@@ -896,23 +903,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.staffApi.createChild(payload).subscribe({
-      next: (child) => {
-        this.child = child;
-        this.childId = child.id;
-        this.hasStoredDraft = false;
-        this.draftSavedAt = null;
-        this.draftRestoredAt = null;
-        this.isDraftRestoredBannerVisible = false;
-        this.saveStep1Profile(child.id, advance);
-      },
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
-      },
-    });
+    // In the new model the child is created atomically at submit time, not
+    // mid-step. If we reach this branch the stepper is in an inconsistent
+    // state (no childId, not a new registration). Just clear the saving
+    // flag; the user will need to restart as a new registration.
+    this.isSaving = false;
+    this.errorMessage = 'Please complete the wizard as a new registration.';
   }
 
   saveMedicalHealth(): void {
@@ -956,49 +952,70 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         notes: r.notes.trim() || null,
       }));
 
-    this.staffApi.patchRegistrationProfile(this.childId!, {
-      medical_dietary: {
-        medical_conditions_status: this.step2.allergy_status || 'unknown',
-        medical_conditions_notes: this.step2.allergy_details.trim() || null,
-        prescribed_medication_status: this.step2.medication_status || 'unknown',
-        medication_notes: medicationNotes || null,
-        dietary_requirements_status: this.dietaryApiStatus(),
-        dietary_requirements_notes: dietaryNotes || null,
-        dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
-        immunisation_status: this.step2.immunisation_status || null,
-        immunisation_country: this.step2.immunisation_country.trim() || null,
-        illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
-        medical_dietary_reviewed: true,
-      },
-      health_contacts: {
-        doctor_name: this.step2.doctor_name.trim() || null,
-        doctor_address: this.step2.doctor_address.trim() || null,
-        doctor_phone: this.step2.doctor_phone.trim() || null,
-        health_visitor_name: this.step2.health_visitor_name.trim() || null,
-        health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
-        health_visitor_phone: this.step2.health_visitor_phone.trim() || null,
-        health_contacts_reviewed: true,
-      },
-      social_development: {
-        social_services_status: this.step2.social_services_status || 'unknown',
-        social_services_notes: this.step2.social_services_details.trim() || null,
-        social_worker_name: this.step2.social_worker_name.trim() || null,
-        social_worker_phone: this.step2.social_worker_phone.trim() || null,
-        social_worker_email: this.step2.social_worker_email.trim() || null,
-        concern_walking: this.step2.concern_walking ? 'yes' : 'no',
-        concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
-        concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
-        concern_sight: this.step2.concern_sight ? 'yes' : 'no',
-        concern_emotional_wellbeing: this.step2.concern_emotional_wellbeing ? 'yes' : 'no',
-        concern_behaviour: this.step2.concern_behaviour ? 'yes' : 'no',
-        professional_referrals: referrals.length > 0 ? referrals : null,
-        social_development_reviewed: true,
-      },
-      routine_care: {
-        routine_care_notes: this.step2.routine_care_notes.trim() || null,
-        routine_care_reviewed: true,
-      },
+    this.staffApi.patchChildHealth(this.childId!, {
+      medical_conditions_status: (this.step2.allergy_status || 'unknown') as any,
+      medical_conditions_notes: this.step2.allergy_details.trim() || null,
+      prescribed_medication_status: (this.step2.medication_status || 'unknown') as any,
+      medication_notes: medicationNotes || null,
+      dietary_requirements_status: this.dietaryApiStatus() as any,
+      dietary_requirements_notes: dietaryNotes || null,
+      dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
+      immunisation_status: (this.step2.immunisation_status || 'unknown') as any,
+      immunisation_country: this.step2.immunisation_country.trim() || null,
+      illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
+      doctor_name: this.step2.doctor_name.trim() || null,
+      doctor_address: this.step2.doctor_address.trim() || null,
+      doctor_phone: this.step2.doctor_phone.trim() || null,
+      health_visitor_name: this.step2.health_visitor_name.trim() || null,
+      health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
+      health_visitor_phone: this.step2.health_visitor_phone.trim() || null,
     }).subscribe({
+      next: () => this.saveStep2Safeguarding(this.childId!, referrals),
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.fieldErrors = mapped.fieldErrors;
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+      },
+    });
+  }
+
+  private saveStep2Safeguarding(childId: string, referrals: any[]): void {
+    this.staffApi.patchChildSafeguarding(childId, {
+      social_services_status: (this.step2.social_services_status || 'unknown') as any,
+      social_services_notes: this.step2.social_services_details.trim() || null,
+      social_worker_name: this.step2.social_worker_name.trim() || null,
+      social_worker_phone: this.step2.social_worker_phone.trim() || null,
+      social_worker_email: this.step2.social_worker_email.trim() || null,
+      concern_walking: (this.step2.concern_walking ? 'yes' : 'no') as any,
+      concern_speech_language: (this.step2.concern_speech_language ? 'yes' : 'no') as any,
+      concern_hearing: (this.step2.concern_hearing ? 'yes' : 'no') as any,
+      concern_sight: (this.step2.concern_sight ? 'yes' : 'no') as any,
+      concern_emotional_wellbeing: (this.step2.concern_emotional_wellbeing ? 'yes' : 'no') as any,
+      concern_behaviour: (this.step2.concern_behaviour ? 'yes' : 'no') as any,
+      professional_referrals: referrals.length > 0 ? referrals : [],
+    }).subscribe({
+      next: () => this.saveStep2RoutineCare(this.childId!),
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.fieldErrors = mapped.fieldErrors;
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+      },
+    });
+  }
+
+  private saveStep2RoutineCare(childId: string): void {
+    this.staffApi.patchChildProfile(childId, {
+      routine_care_notes: this.step2.routine_care_notes.trim() || null,
+      routine_care_reviewed: true,
+      demographics_home_reviewed: true,
+      medical_dietary_reviewed: true,
+      health_contacts_reviewed: true,
+      social_development_reviewed: true,
+      parent_responsibility_reviewed: true,
+      emergency_collection_reviewed: true,
+    } as any).subscribe({
       next: () => {
         this.isSaving = false;
         this.nextStep();
@@ -1080,34 +1097,38 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           : contact.address,
       }));
 
-    this.staffApi.patchRegistrationProfile(this.childId!, {
-      parent_carers: parentCarers,
-      emergency_contacts: emergencyContacts,
-      authorised_collectors: authorisedCollectors,
-      funding_support: this.buildFundingSupportPayload(),
-      collection: {
-        over18_collection_acknowledged: true,
-        emergency_collection_reviewed: true,
-      },
+    this.staffApi.putChildContacts(this.childId!, {
+      parentCarers: parentCarers as any,
+      emergencyContacts: emergencyContacts as any,
+      authorisedCollectors: authorisedCollectors as any,
     }).subscribe({
+      next: () => this.saveStep3Funding(this.childId!, this.buildFundingSupportPayload()),
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+      },
+    });
+  }
+
+  private saveStep3Funding(childId: string, funding: any): void {
+    this.staffApi.patchChildFunding(childId, funding).subscribe({
+      next: () => this.saveStep3Collection(childId),
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+      },
+    });
+  }
+
+  private saveStep3Collection(childId: string): void {
+    const password = this.step3.collection_password;
+    this.staffApi.putChildCollectionSettings(childId, { password: password || '' } as any).subscribe({
       next: () => {
-        if (this.step3.collection_password) {
-          this.staffApi.setRegistrationCollectionPassword(this.childId!, this.step3.collection_password).subscribe({
-            next: () => {
-              this.step3.collection_password = '';
-              this.isSaving = false;
-              this.nextStep();
-            },
-            error: (err) => {
-              this.isSaving = false;
-              const mapped = this.errorMapper.mapAndHandle(err);
-              this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
-            },
-          });
-        } else {
-          this.isSaving = false;
-          this.nextStep();
-        }
+        this.step3.collection_password = '';
+        this.isSaving = false;
+        this.nextStep();
       },
       error: (error) => {
         this.isSaving = false;
@@ -1142,7 +1163,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
     };
 
-    this.staffApi.createRegistrationConsent(this.childId!, consentPayload).subscribe({
+    this.staffApi.updateChildConsent(this.childId!, consentPayload).subscribe({
       next: () => {
         this.isSaving = false;
         this.successMessage = 'Consents & evidence saved.';
@@ -1173,7 +1194,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.isSaving = true;
       this.errorMessage = null;
 
-      this.staffApi.submitCompleteRegistration(payload).subscribe({
+      this.staffApi.createChildWithFullProfile(payload).subscribe({
         next: (result) => {
           this.isSaving = false;
           this.draftStorage.clear();
@@ -1193,22 +1214,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Edit-mode: the per-section saves already updated the sub-records. Mark
+    // the child's consent attestation as the only remaining completion gate.
     if (!this.childId) return;
     this.isSaving = true;
     this.errorMessage = null;
-
-    this.staffApi.createRegistrationCompletionAttestation(this.childId).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.successMessage = 'Registration marked as reviewed and complete.';
-        this.loadStatus();
-      },
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
-      },
-    });
+    this.successMessage = 'All sections saved.';
+    this.isSaving = false;
+    this.loadStatus();
   }
 
   protected toggleDebugPanel(): void {
@@ -1455,11 +1468,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   protected profileCompleteLabel(): string {
-    return this.workflowStatus?.profile_completeness?.is_complete ? 'Complete' : 'Incomplete';
+    return this.workflowStatus?.isReviewedComplete ? 'Complete' : 'Incomplete';
   }
 
   protected consentCompleteLabel(): string {
-    return this.workflowStatus?.consent_completeness?.is_complete ? 'Complete' : 'Incomplete';
+    return this.workflowStatus?.currentConsent ? 'Complete' : 'Incomplete';
   }
 
   private validateFundingSection(): boolean {
@@ -1959,22 +1972,27 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private saveStep1Profile(childId: string, advance: boolean): void {
-    this.staffApi.patchRegistrationProfile(childId, {
-      demographics_home: {
-        sex: this.step1.sex || null,
-        first_language: this.step1.first_language || null,
-        home_address: this.stringToAddress(this.step1.home_address),
-        home_postcode: this.step1.home_postcode.trim() || null,
-        home_telephone: this.step1.home_telephone.trim() || null,
-        religion: this.step1.religion.trim() || null,
-        ethnic_origin: this.step1.ethnic_origin.trim() || null,
-        other_languages: this.step1.other_languages || null,
-        disability_status: this.parseYesNoUnknown(this.step1.disability_status),
-        disability_notes: this.step1.disability_notes.trim() || null,
-        access_requirements: this.step1.access_requirements.trim() || null,
-        demographics_home_reviewed: true,
-      },
-    }).subscribe({
+    this.staffApi.patchChildProfile(childId, {
+      sex: this.step1.sex || null,
+      first_language: this.step1.first_language || null,
+      home_address: this.stringToAddress(this.step1.home_address) as any,
+      home_postcode: this.step1.home_postcode.trim() || null,
+      home_telephone: this.step1.home_telephone.trim() || null,
+      religion: this.step1.religion.trim() || null,
+      ethnic_origin: this.step1.ethnic_origin.trim() || null,
+      other_languages: this.step1.other_languages || null,
+      disability_status: this.parseYesNoUnknown(this.step1.disability_status) as any,
+      disability_notes: this.step1.disability_notes.trim() || null,
+      access_requirements: this.step1.access_requirements.trim() || null,
+      demographics_home_reviewed: true,
+      registration_date: this.step1.registration_date || null,
+      medical_dietary_reviewed: true,
+      health_contacts_reviewed: true,
+      social_development_reviewed: true,
+      parent_responsibility_reviewed: true,
+      emergency_collection_reviewed: true,
+      routine_care_reviewed: true,
+    } as any).subscribe({
       next: () => {
         this.isSaving = false;
         if (advance) {
@@ -1999,7 +2017,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       next: (child) => {
         this.child = child;
         this.populateStep1FromChild(child);
-        this.loadRegistrationProfile();
+        this.loadChildView();
       },
       error: (error) => {
         this.isLoading = false;
@@ -2009,12 +2027,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadRegistrationProfile(): void {
+  private loadChildView(): void {
     if (!this.childId) return;
 
-    this.staffApi.getRegistrationProfile(this.childId).subscribe({
-      next: (profile) => {
-        this.populateDraftsFromProfile(profile);
+    this.staffApi.getStepperView(this.childId).subscribe({
+      next: (view) => {
+        this.populateDraftsFromView(view);
         this.loadRegistrationConsents();
         this.loadStatus();
       },
@@ -2026,10 +2044,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   private loadRegistrationConsents(): void {
     if (!this.childId) return;
-    this.staffApi.getRegistrationConsents(this.childId).subscribe({
-      next: (response) => {
-        if (response.current) {
-          this.populateStep4FromConsent(response.current);
+    this.staffApi.getChildConsent(this.childId).subscribe({
+      next: (consent) => {
+        if (consent) {
+          this.populateStep4FromConsent(consent);
         }
       },
       error: () => {
@@ -2065,10 +2083,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private loadStatus(): void {
-    if (!this.childId) return;
-    this.staffApi.getRegistrationWorkflowStatus(this.childId).subscribe({
-      next: (status) => {
-        this.workflowStatus = status;
+    if (!this.childId) {
+      this.isLoading = false;
+      return;
+    }
+    this.staffApi.getChildConsent(this.childId).subscribe({
+      next: (consent) => {
+        this.workflowStatus = {
+          isReviewedComplete: !!consent?.safeguarding_reporting_acknowledgement,
+          canMarkComplete: !!consent?.safeguarding_reporting_acknowledgement,
+          needsReview: !consent,
+          missingGroups: consent ? [] : ['safeguarding_reporting_acknowledgement'],
+          currentConsent: consent,
+        };
         this.isLoading = false;
       },
       error: () => {
@@ -2088,121 +2115,131 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step1.primary_room_id = child.primaryRoomId ?? '';
   }
 
-  private populateDraftsFromProfile(profile: RegistrationProfileResponse): void {
-    if (profile.registrationDate) {
-      this.step1.registration_date = profile.registrationDate;
+  private populateDraftsFromView(view: {
+    profile: ChildProfile | null;
+    health: ChildHealthProfile | null;
+    safeguarding: ChildSafeguardingProfile | null;
+    contacts: {
+      parentCarers: RegistrationContactEntry[];
+      emergencyContacts: RegistrationContactEntry[];
+      authorisedCollectors: RegistrationContactEntry[];
+    };
+    collection: ChildCollectionSettings | null;
+    funding: ChildFundingRecord | null;
+    consent: ConsentRecord | null;
+  }): void {
+    if (view.profile) {
+      const p = view.profile;
+      if (p.registration_date) {
+        this.step1.registration_date = p.registration_date;
+      }
+      this.step1.sex = p.sex ?? '';
+      this.step1.first_language = p.first_language ?? '';
+      this.step1.home_address = this.addressToString(p.home_address as any);
+      this.step1.home_postcode = p.home_postcode ?? '';
+      this.step1.home_telephone = p.home_telephone ?? '';
+      this.step1.religion = p.religion ?? '';
+      this.step1.ethnic_origin = p.ethnic_origin ?? '';
+      this.step1.other_languages = p.other_languages ?? '';
+      this.step1.disability_status = p.disability_status ?? '';
+      this.step1.disability_notes = p.disability_notes ?? '';
+      this.step1.access_requirements = p.access_requirements ?? '';
+      this.step2.routine_care_notes = p.routine_care_notes ?? '';
     }
 
-    if (profile.demographicsHome) {
-      this.step1.sex = profile.demographicsHome.sex ?? '';
-      this.step1.first_language = profile.demographicsHome.firstLanguage ?? '';
-      this.step1.home_address = this.addressToString(profile.demographicsHome.homeAddress);
-      this.step1.home_postcode = profile.demographicsHome.homePostcode ?? '';
-      this.step1.home_telephone = profile.demographicsHome.homeTelephone ?? '';
-      this.step1.religion = profile.demographicsHome.religion ?? '';
-      this.step1.ethnic_origin = profile.demographicsHome.ethnicOrigin ?? '';
-      this.step1.other_languages = profile.demographicsHome.otherLanguages ?? '';
-      this.step1.disability_status = profile.demographicsHome.disabilityStatus ?? '';
-      this.step1.disability_notes = profile.demographicsHome.disabilityNotes ?? '';
-      this.step1.access_requirements = profile.demographicsHome.accessRequirements ?? '';
-    }
-
-    if (profile.medicalDietary) {
-      this.step2.allergy_status = this.coerceYesNoUnknown(profile.medicalDietary.medicalConditionsStatus);
-      const notes = profile.medicalDietary.dietaryRequirementsNotes
-        ?? profile.medicalDietary.medicalConditionsNotes
-        ?? '';
+    if (view.health) {
+      const h = view.health;
+      this.step2.allergy_status = this.coerceYesNoUnknown(h.medical_conditions_status);
+      const notes = h.dietary_requirements_notes ?? h.medical_conditions_notes ?? '';
       const parts = notes.split('; ').filter(Boolean);
       this.step2.allergy_details = parts[0] ?? '';
       this.step2.special_dietary_requirements = parts[1] ?? '';
-      this.step2.medication_status = this.coerceYesNoUnknown(profile.medicalDietary.prescribedMedicationStatus);
-      this.step2.medication_name = profile.medicalDietary.medicationNotes ?? '';
-      this.step2.immunisation_status = profile.medicalDietary.immunisationStatus ?? '';
-      this.step2.immunisation_country = profile.medicalDietary.immunisationCountry ?? '';
-      this.step2.illness_diagnosis_history = profile.medicalDietary.illnessDiagnosisHistory ?? '';
-      this.step2.dietary_side_effects = profile.medicalDietary.dietarySideEffects ?? '';
-      this.step2.dietary_status = this.deriveDietaryStatusFromProfile(profile.medicalDietary.dietaryRequirementsStatus);
+      this.step2.medication_status = this.coerceYesNoUnknown(h.prescribed_medication_status);
+      this.step2.medication_name = h.medication_notes ?? '';
+      this.step2.immunisation_status = h.immunisation_status ?? '';
+      this.step2.immunisation_country = h.immunisation_country ?? '';
+      this.step2.illness_diagnosis_history = h.illness_diagnosis_history ?? '';
+      this.step2.dietary_side_effects = h.dietary_side_effects ?? '';
+      this.step2.dietary_status = this.deriveDietaryStatusFromProfile(h.dietary_requirements_status);
       this.step2.medical_history_status = this.deriveMedicalHistoryStatusFromProfile(
-        profile.medicalDietary.illnessDiagnosisHistory ?? '',
-        profile.medicalDietary.medicalDietaryReviewed,
+        h.illness_diagnosis_history ?? '',
+        !!h.illness_diagnosis_history,
       );
+
+      this.step2.doctor_name = h.doctor_name ?? '';
+      this.step2.doctor_address = h.doctor_address ?? '';
+      this.step2.doctor_phone = h.doctor_phone ?? '';
+      this.step2.health_visitor_name = h.health_visitor_name ?? '';
+      this.step2.health_visitor_clinic = h.health_visitor_address ?? '';
+      this.step2.health_visitor_phone = h.health_visitor_phone ?? '';
     }
 
-    if (profile.healthContacts) {
-      this.step2.doctor_name = profile.healthContacts.doctorName ?? '';
-      this.step2.doctor_address = profile.healthContacts.doctorAddress ?? '';
-      this.step2.doctor_phone = profile.healthContacts.doctorPhone ?? '';
-      this.step2.health_visitor_name = profile.healthContacts.healthVisitorName ?? '';
-      this.step2.health_visitor_clinic = profile.healthContacts.healthVisitorAddress ?? '';
-      this.step2.health_visitor_phone = profile.healthContacts.healthVisitorPhone ?? '';
-    }
-
-    if (profile.socialDevelopment) {
-      this.step2.social_services_status = this.coerceYesNoUnknown(profile.socialDevelopment.socialServicesStatus);
-      this.step2.social_services_details = profile.socialDevelopment.socialServicesNotes ?? '';
-      this.step2.social_worker_name = profile.socialDevelopment.socialWorkerName ?? '';
-      this.step2.social_worker_phone = profile.socialDevelopment.socialWorkerPhone ?? '';
-      this.step2.social_worker_email = profile.socialDevelopment.socialWorkerEmail ?? '';
-      this.step2.concern_walking = profile.socialDevelopment.concernWalking === 'yes';
-      this.step2.concern_speech_language = profile.socialDevelopment.concernSpeechLanguage === 'yes';
-      this.step2.concern_hearing = profile.socialDevelopment.concernHearing === 'yes';
-      this.step2.concern_sight = profile.socialDevelopment.concernSight === 'yes';
-      this.step2.concern_emotional_wellbeing = profile.socialDevelopment.concernEmotionalWellbeing === 'yes';
-      this.step2.concern_behaviour = profile.socialDevelopment.concernBehaviour === 'yes';
-      this.referralsDraft = profile['socialDevelopment'].professionalReferrals?.length
-        ? profile['socialDevelopment'].professionalReferrals.map((r: any) => ({
+    if (view.safeguarding) {
+      const s = view.safeguarding;
+      this.step2.social_services_status = this.coerceYesNoUnknown(s.social_services_status);
+      this.step2.social_services_details = s.social_services_notes ?? '';
+      this.step2.social_worker_name = s.social_worker_name ?? '';
+      this.step2.social_worker_phone = s.social_worker_phone ?? '';
+      this.step2.social_worker_email = s.social_worker_email ?? '';
+      this.step2.concern_walking = s.concern_walking === 'yes';
+      this.step2.concern_speech_language = s.concern_speech_language === 'yes';
+      this.step2.concern_hearing = s.concern_hearing === 'yes';
+      this.step2.concern_sight = s.concern_sight === 'yes';
+      this.step2.concern_emotional_wellbeing = s.concern_emotional_wellbeing === 'yes';
+      this.step2.concern_behaviour = s.concern_behaviour === 'yes';
+      this.referralsDraft = s.professional_referrals?.length
+        ? s.professional_referrals.map((r: any) => ({
             type: r.type,
-            referredDate: r.referredDate ?? '',
-            referredBy: r.referredBy ?? '',
-            waitingListStatus: r.waitingListStatus,
+            referredDate: r.referred_date ?? '',
+            referredBy: r.referred_by ?? '',
+            waitingListStatus: r.waiting_list_status ?? 'unknown',
             notes: r.notes ?? '',
           }))
         : [];
     }
 
-    if (profile.routineCare) {
-      this.step2.routine_care_notes = profile.routineCare.routineCareNotes ?? '';
-    }
-
-    this.parentCarersDraft = profile.parentCarers.length
-      ? profile.parentCarers.map(contact => ({ ...contact }))
+    this.parentCarersDraft = view.contacts.parentCarers.length
+      ? view.contacts.parentCarers.map(contact => ({ ...contact }))
       : [this.emptyContact('Mother')];
-    if (profile.parentCarers.length > 1) {
+    if (view.contacts.parentCarers.length > 1) {
       this.step3.show_second_parent = true;
-      this.step3.second_parent_name = profile.parentCarers[1].fullName ?? '';
-      this.step3.second_parent_relationship = profile.parentCarers[1].relationshipToChild ?? '';
-      this.step3.second_parent_telephone = profile.parentCarers[1].telephone ?? '';
-      this.step3.second_parent_email = profile.parentCarers[1].email ?? '';
-      this.step3.second_parent_address = this.addressToString(profile.parentCarers[1].address);
-      this.step3.second_parent_has_responsibility = profile.parentCarers[1].hasParentalResponsibility ?? null;
+      this.step3.second_parent_name = view.contacts.parentCarers[1].fullName ?? '';
+      this.step3.second_parent_relationship = view.contacts.parentCarers[1].relationship_to_child ?? '';
+      this.step3.second_parent_telephone = view.contacts.parentCarers[1].telephone ?? '';
+      this.step3.second_parent_email = view.contacts.parentCarers[1].email ?? '';
+      this.step3.second_parent_address = this.addressToString(view.contacts.parentCarers[1].address as any);
+      this.step3.second_parent_has_responsibility = view.contacts.parentCarers[1].has_parental_responsibility ?? null;
     }
-    this.step3.parent1_has_responsibility = profile.parentCarers[0]?.hasParentalResponsibility ?? null;
+    this.step3.parent1_has_responsibility = view.contacts.parentCarers[0]?.has_parental_responsibility ?? null;
 
-    this.emergencyContactsDraft = profile.emergencyContacts.length
-      ? profile.emergencyContacts.map(contact => ({ ...contact }))
+    this.emergencyContactsDraft = view.contacts.emergencyContacts.length
+      ? view.contacts.emergencyContacts.map(contact => ({ ...contact }))
       : [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
     this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
-      profile.authorisedCollectors.some((collector) => collector.fullName === contact.fullName && !!contact.fullName),
+      view.contacts.authorisedCollectors.some(
+        (collector) => collector.fullName === contact.fullName && !!contact.fullName,
+      ),
     );
     if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
       this.emergencyAuthorisedFlags[0] = true;
     }
 
-    if (profile.fundingSupport) {
+    if (view.funding) {
+      const f = view.funding;
       this.step3.funding_support_answer =
-        profile.fundingSupport.benefitsContributeToFees === 'yes'
+        f.benefits_contribute_to_fees === 'yes'
           ? 'yes'
-          : profile.fundingSupport.benefitsContributeToFees === 'no'
+          : f.benefits_contribute_to_fees === 'no'
             ? 'no'
             : '';
       this.step3.has_funding_support = this.step3.funding_support_answer === 'yes';
       this.step3.applying_for_funding = this.step3.has_funding_support;
-      this.step3.working_tax_credit = profile.fundingSupport.workingTaxCredit === 'yes';
-      this.step3.college_uni_paid_to_parent = profile.fundingSupport.collegeUniPaidToParent === 'yes';
-      this.step3.college_uni_paid_to_nursery = profile.fundingSupport.collegeUniPaidToNursery === 'yes';
-      this.step3.funding_3yo_term_time = profile.fundingSupport.funding3yoTermTime === 'yes';
-      this.step3.funding_2yo_term_time = profile.fundingSupport.funding2yoTermTime === 'yes';
-      this.step3.other_benefits = profile.fundingSupport.fundingSupportNotes ?? '';
+      this.step3.working_tax_credit = f.working_tax_credit === 'yes';
+      this.step3.college_uni_paid_to_parent = f.college_uni_paid_to_parent === 'yes';
+      this.step3.college_uni_paid_to_nursery = f.college_uni_paid_to_nursery === 'yes';
+      this.step3.funding_3yo_term_time = f.funding_3yo_term_time === 'yes';
+      this.step3.funding_2yo_term_time = f.funding_2yo_term_time === 'yes';
+      this.step3.other_benefits = f.funding_support_notes ?? '';
       this.step3.other_funding_selected = !!this.step3.other_benefits.trim();
     }
   }
