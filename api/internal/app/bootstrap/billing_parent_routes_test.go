@@ -26,7 +26,7 @@ func seedParentAccessChain(t *testing.T, h *billingHarness, suffix string, child
 	mappingID = uuid.MustParse(fmt.Sprintf("f4000000-0000-0000-0000-%012s", suffix))
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, childName,
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, childIsActive)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), childIsActive)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian "+childName, true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
 	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, guardianID)
@@ -299,7 +299,7 @@ func TestParentInvoiceListExcludesDraftsUnlinkedWrongScope(t *testing.T) {
 	// Unlinked child with issued invoice (should NOT appear - no guardian link to parent)
 	unlinkedChildID := uuid.MustParse("f1000000-0000-0000-0000-000000000020")
 	dbtest.InsertChild(t, h.pool, unlinkedChildID, h.tenantID, h.branchID, "Unlinked Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	seedIssuedInvoiceForChild(t, h, "000000000020", unlinkedChildID, "issued", 2000)
 
 	// Wrong tenant invoice (should NOT appear)
@@ -315,7 +315,7 @@ func TestParentInvoiceListExcludesDraftsUnlinkedWrongScope(t *testing.T) {
 	dbtest.InsertUser(t, h.pool, otherUser, "wrong-tenant@example.com", "hash", true)
 	dbtest.InsertMembership(t, h.pool, otherMembership, otherTenant, otherBranch, otherUser, "manager", true)
 	dbtest.InsertChild(t, h.pool, otherChild, otherTenant, otherBranch, "Other Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
 		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-wrong-tenant')`,
@@ -346,7 +346,7 @@ func TestParentInvoiceListExcludesDraftsUnlinkedWrongScope(t *testing.T) {
 	dbtest.InsertUser(t, h.pool, otherBranch2User, "other-branch@example.com", "hash", true)
 	dbtest.InsertMembership(t, h.pool, otherBranch2MID, h.tenantID, otherBranch2, otherBranch2User, "manager", true)
 	dbtest.InsertChild(t, h.pool, otherChild2, h.tenantID, otherBranch2, "Other Branch Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err = h.pool.Exec(ctx,
 		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
 		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-wrong-branch')`,
@@ -451,7 +451,7 @@ func TestParentInvoiceListInactiveMembershipReturnsEmpty(t *testing.T) {
 	linkID := uuid.MustParse("f3000000-0000-0000-0000-000000000091")
 	mappingID := uuid.MustParse("f4000000-0000-0000-0000-000000000091")
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Inactive Member Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, inactiveGuardianID, childID)
 	// Insert mapping while membership is active (satisfies trigger)
 	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, inactiveMID, inactiveGuardianID)
@@ -492,7 +492,7 @@ func TestParentInvoiceListEndedMembershipReturnsEmpty(t *testing.T) {
 	childID := uuid.MustParse("f1000000-0000-0000-0000-000000000095")
 	linkID := uuid.MustParse("f3000000-0000-0000-0000-000000000096")
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Ended Mapping Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, endedGuardianID, childID)
 	// Insert mapping then end it
 	dbtest.InsertParentMapping(t, h.pool, endedMappingID, h.tenantID, h.branchID, endedMID, endedGuardianID)
@@ -528,7 +528,7 @@ func TestParentInvoiceListUnlinkedChildIDReturnsEmpty(t *testing.T) {
 	// Create an unlinked child with issued invoice
 	unlinkedChildID := uuid.MustParse("f1000000-0000-0000-0000-000000000041")
 	dbtest.InsertChild(t, h.pool, unlinkedChildID, h.tenantID, h.branchID, "Unlinked Filter Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	seedIssuedInvoiceForChild(t, h, "000000000041", unlinkedChildID, "issued", 2000)
 
 	// Filter by unlinked child ID
@@ -776,7 +776,7 @@ func TestParentInvoiceDetailUnlinkedChildReturns404(t *testing.T) {
 	// Create unlinked child with issued invoice
 	unlinkedChildID := uuid.MustParse("f1000000-0000-0000-0000-000000000085")
 	dbtest.InsertChild(t, h.pool, unlinkedChildID, h.tenantID, h.branchID, "Unlinked Detail Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	invoiceID, _ := seedIssuedInvoiceForChild(t, h, "000000000085", unlinkedChildID, "issued", 1000)
 
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/parent/invoices/"+invoiceID.String(), h.parentToken, "")
@@ -803,7 +803,7 @@ func TestParentInvoiceDetailWrongTenantReturns404(t *testing.T) {
 	dbtest.InsertUser(t, h.pool, otherUser, "other-detail@example.com", "hash", true)
 	dbtest.InsertMembership(t, h.pool, otherMembership, otherTenant, otherBranch, otherUser, "manager", true)
 	dbtest.InsertChild(t, h.pool, otherChild, otherTenant, otherBranch, "Other Detail Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
 		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-detail-tenant')`,

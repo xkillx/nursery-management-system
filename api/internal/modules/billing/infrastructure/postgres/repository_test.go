@@ -489,7 +489,7 @@ func seedChild(t testing.TB, pool *pgxpool.Pool, tenantID, branchID uuid.UUID) u
 	dbtest.InsertChild(t, pool, childID, tenantID, branchID, "Test Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		500, true)
+		true)
 	return childID
 }
 

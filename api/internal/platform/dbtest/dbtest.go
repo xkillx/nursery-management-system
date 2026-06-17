@@ -338,22 +338,21 @@ func InsertMembership(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, 
 }
 
 // InsertChild inserts a child scoped to tenant+branch.
-func InsertChild(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, firstName string, dob, startDate time.Time, hourlyRate int, isActive bool) {
+func InsertChild(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, firstName string, dob, startDate time.Time, isActive bool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		id, tenantID, branchID, firstName, dob, startDate, hourlyRate, isActive)
+		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		id, tenantID, branchID, firstName, dob, startDate, isActive)
 	if err != nil {
 		t.Fatalf("insert child: %v", err)
 	}
 }
 
-// InsertChildWithNotes inserts a child with notes.
-func InsertChildWithNotes(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, firstName string, dob, startDate time.Time, hourlyRate int, isActive bool, notes *string) {
+func InsertChildWithNotes(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, firstName string, dob, startDate time.Time, isActive bool, notes *string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-		id, tenantID, branchID, firstName, dob, startDate, hourlyRate, isActive, notes)
+		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, is_active, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+		id, tenantID, branchID, firstName, dob, startDate, isActive, notes)
 	if err != nil {
 		t.Fatalf("insert child with notes: %v", err)
 	}

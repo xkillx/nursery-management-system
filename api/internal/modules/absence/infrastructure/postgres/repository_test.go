@@ -42,7 +42,7 @@ func TestAbsenceRepo_CreateAndFind(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 
 	tx := dbtest.BeginTx(t, pool)
 	defer dbtest.CommitTx(t, tx)
@@ -98,7 +98,7 @@ func TestAbsenceRepo_PartialUniqueIndex_OneActivePerChildDate(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 
 	dbtest.InsertAbsenceMarker(t, pool, uuid.New(), absTenantID, absBranchID, childID, absUserID, absMembershipID,
 		localDate, time.Now().UTC(), nil, nil, nil)
@@ -131,7 +131,7 @@ func TestAbsenceRepo_ClearedMarker_AllowsNewActive(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 
 	clearedAt := time.Now().UTC()
 	dbtest.InsertAbsenceMarker(t, pool, uuid.New(), absTenantID, absBranchID, childID, absUserID, absMembershipID,
@@ -174,7 +174,7 @@ func TestAbsenceRepo_Clear_ActiveMarker(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 
 	dbtest.InsertAbsenceMarker(t, pool, markerID, absTenantID, absBranchID, childID, absUserID, absMembershipID,
 		localDate, time.Now().UTC(), nil, nil, nil)
@@ -207,7 +207,7 @@ func TestAbsenceRepo_Clear_AlreadyCleared(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 
 	clearedAt := time.Now().UTC()
 	dbtest.InsertAbsenceMarker(t, pool, markerID, absTenantID, absBranchID, childID, absUserID, absMembershipID,
@@ -233,7 +233,7 @@ func TestAbsenceRepo_HasAttendance_True(t *testing.T) {
 	localDate := dbtest.DateAt(2026, 5, 27)
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertAttendanceSession(t, pool, sessionID, absTenantID, absBranchID, childID, "open",
 		time.Now().UTC(), localDate)
 
@@ -272,7 +272,7 @@ func TestAbsenceRepo_GetByID_WrongScope(t *testing.T) {
 	markerID := uuid.New()
 
 	dbtest.InsertChild(t, pool, childID, absTenantID, absBranchID, "Test Child",
-		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 1), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertAbsenceMarker(t, pool, markerID, absTenantID, absBranchID, childID, absUserID, absMembershipID,
 		dbtest.DateAt(2026, 5, 27), time.Now().UTC(), nil, nil, nil)
 

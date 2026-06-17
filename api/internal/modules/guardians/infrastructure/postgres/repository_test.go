@@ -296,9 +296,9 @@ func TestGuardianCascadeLinks(t *testing.T) {
 	otherLinkID := uuid.MustParse("a6000000-0000-0000-0000-000000000002")
 
 	dbtest.InsertChild(t, pool, childID, guardTenantID, guardBranchID, "Child 1",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertChild(t, pool, otherChildID, guardTenantID, guardBranchID, "Child 2",
-		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertGuardian(t, pool, guardID, guardTenantID, guardBranchID, "John", true)
 	dbtest.InsertGuardianLink(t, pool, linkID, guardTenantID, guardBranchID, guardID, childID)
 	dbtest.InsertGuardianLink(t, pool, otherLinkID, guardTenantID, guardBranchID, guardID, otherChildID)

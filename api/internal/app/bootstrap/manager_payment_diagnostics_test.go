@@ -97,7 +97,7 @@ func TestManagerPaymentStatus_PaymentFailed_RetryAvailable(t *testing.T) {
 	periodEnd := dbtest.DateAt(2026, 5, 31)
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "PF Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "PF Guardian", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
 	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, guardianID)

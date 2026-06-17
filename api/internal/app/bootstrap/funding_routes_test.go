@@ -64,11 +64,11 @@ func setupFundingHarness(t *testing.T) *fundingHarness {
 
 	// Child enrolled from 2026-01-01 onward (no end date)
 	dbtest.InsertChild(t, pool, h.childID, h.tenantID, h.branchID, "Funding Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 
 	// Child enrolled from 2026-01-01 to 2026-03-31
 	dbtest.InsertChild(t, pool, h.childWithEndID, h.tenantID, h.branchID, "Funding Child With End",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err := pool.Exec(context.Background(),
 		"UPDATE children SET end_date = $1 WHERE id = $2",
 		dbtest.DateAt(2026, 3, 31), h.childWithEndID)

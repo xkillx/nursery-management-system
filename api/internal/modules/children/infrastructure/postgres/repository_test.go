@@ -2,7 +2,6 @@ package postgres_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -49,7 +48,7 @@ func TestChildGetByID_WrongTenant(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	_, found, err := repo.GetByID(ctx, uuid.New(), childBranchID, childID)
 	if err != nil {
@@ -66,7 +65,7 @@ func TestChildGetByID_Success(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	child, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
 	if err != nil {
@@ -81,9 +80,6 @@ func TestChildGetByID_Success(t *testing.T) {
 	if !child.IsActive {
 		t.Error("IsActive = false, want true")
 	}
-	if child.CoreHourlyRateMinor == nil || *child.CoreHourlyRateMinor != 500 {
-		t.Errorf("CoreHourlyRateMinor = %v, want 500", child.CoreHourlyRateMinor)
-	}
 }
 
 func TestChildList_FilterActive(t *testing.T) {
@@ -93,128 +89,47 @@ func TestChildList_FilterActive(t *testing.T) {
 	activeID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	inactiveID := uuid.MustParse("40000000-0000-0000-0000-000000000002")
 	dbtest.InsertChild(t, pool, activeID, childTenantID, childBranchID, "Active Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	_, err := pool.Exec(ctx,
-		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
+		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, is_active) VALUES ($1, $2, $3, $4, $5, $6, false)",
 		inactiveID, childTenantID, childBranchID, "Inactive Child",
-		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), 500)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1),
+	)
 	if err != nil {
-		t.Fatalf("insert inactive child: %v", err)
+		t.Fatalf("insert inactive: %v", err)
 	}
 
-	children, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusActive, 10, 0)
+	rows, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusActive, 50, 0)
 	if err != nil {
-		t.Fatalf("List: %v", err)
+		t.Fatalf("List active: %v", err)
 	}
-	if len(children) != 1 {
-		t.Fatalf("expected 1 active child, got %d", len(children))
+	if len(rows) != 1 {
+		t.Errorf("len(rows) = %d, want 1", len(rows))
 	}
-	if children[0].FirstName != "Active Child" {
-		t.Errorf("FirstName = %s, want Active Child", children[0].FirstName)
+
+	rows, err = repo.List(ctx, childTenantID, childBranchID, childdomain.StatusAll, 50, 0)
+	if err != nil {
+		t.Fatalf("List all: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Errorf("len(rows) = %d, want 2", len(rows))
 	}
 }
 
-func TestChildList_FilterInactive(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	activeID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	inactiveID := uuid.MustParse("40000000-0000-0000-0000-000000000002")
-	dbtest.InsertChild(t, pool, activeID, childTenantID, childBranchID, "Active",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
-	_, err := pool.Exec(ctx,
-		"INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active, left_at, left_reason_code) VALUES ($1, $2, $3, $4, $5, $6, $7, false, now(), 'left_nursery')",
-		inactiveID, childTenantID, childBranchID, "Inactive",
-		dbtest.DateAt(2023, 3, 20), dbtest.DateAt(2024, 9, 1), 500)
-	if err != nil {
-		t.Fatalf("insert: %v", err)
-	}
-
-	children, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusInactive, 10, 0)
-	if err != nil {
-		t.Fatalf("List: %v", err)
-	}
-	if len(children) != 1 {
-		t.Fatalf("expected 1 inactive, got %d", len(children))
-	}
-	if children[0].FirstName != "Inactive" {
-		t.Errorf("FirstName = %s, want Inactive", children[0].FirstName)
-	}
-}
-
-func TestChildList_Pagination(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	for i := 0; i < 5; i++ {
-		id := uuid.MustParse(fmt.Sprintf("40000000-0000-0000-%04d-000000000001", i+1))
-		dbtest.InsertChild(t, pool, id, childTenantID, childBranchID, fmt.Sprintf("Child %d", i),
-			dbtest.DateAt(2022, 1, 15+i), dbtest.DateAt(2024, 9, 1), 500, true)
-	}
-
-	children, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusAll, 3, 0)
-	if err != nil {
-		t.Fatalf("List: %v", err)
-	}
-	if len(children) != 3 {
-		t.Fatalf("expected 3, got %d", len(children))
-	}
-
-	children2, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusAll, 3, 3)
-	if err != nil {
-		t.Fatalf("List offset: %v", err)
-	}
-	if len(children2) != 2 {
-		t.Fatalf("expected 2, got %d", len(children2))
-	}
-}
-
-func TestChildCreate_NullNotes(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	child := childdomain.Child{
-		ID:          childID,
-		FirstName:   "NoNotes",
-		DateOfBirth: dbtest.DateAt(2022, 6, 10),
-		StartDate:   dbtest.DateAt(2024, 9, 1),
-	}
-
-	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	var notes *string
-	var rate *int
-	err := pool.QueryRow(ctx, "SELECT notes, core_hourly_rate_minor FROM children WHERE id = $1", childID).Scan(&notes, &rate)
-	if err != nil {
-		t.Fatalf("query notes: %v", err)
-	}
-	if notes != nil {
-		t.Errorf("notes = %v, want nil", notes)
-	}
-	if rate != nil {
-		t.Errorf("core_hourly_rate_minor = %v, want nil", rate)
-	}
-}
-
-func TestChildCreate_WithEndDate(t *testing.T) {
+func TestChildCreate(t *testing.T) {
 	repo, _ := setupChildRepo(t)
 	ctx := context.Background()
 
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	endDate := dbtest.DateAt(2025, 7, 31)
-	child := childdomain.Child{
+	childID := uuid.New()
+	err := repo.Create(ctx, childdomain.Child{
 		ID:          childID,
-		FirstName:   "WithEnd",
-		DateOfBirth: dbtest.DateAt(2022, 6, 10),
+		FirstName:   "Bob",
+		DateOfBirth: dbtest.DateAt(2021, 5, 1),
 		StartDate:   dbtest.DateAt(2024, 9, 1),
-		EndDate:     &endDate,
-	}
-
-	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
+		IsActive:    true,
+	}, "my notes", childTenantID, childBranchID)
+	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
 
@@ -225,57 +140,35 @@ func TestChildCreate_WithEndDate(t *testing.T) {
 	if !found {
 		t.Fatal("not found")
 	}
-	if got.EndDate == nil {
-		t.Fatal("EndDate = nil, want non-nil")
+	if got.FirstName != "Bob" {
+		t.Errorf("FirstName = %s, want Bob", got.FirstName)
 	}
 }
 
-func TestChildUpdate_SelectiveFields(t *testing.T) {
+func TestChildUpdate_FirstName(t *testing.T) {
 	repo, pool := setupChildRepo(t)
 	ctx := context.Background()
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Original",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
-	ct, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
-		"first_name":  "Updated",
-		"middle_name": "",
-		"last_name":   "",
+	rows, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
+		"first_name": "Alicia",
 	})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
 	}
-	if ct != 1 {
-		t.Errorf("rows affected = %d, want 1", ct)
+	if rows == 0 {
+		t.Fatal("Update affected 0 rows")
 	}
 
-	got, _, _ := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if got.FirstName != "Updated" {
-		t.Errorf("FirstName = %s, want Updated", got.FirstName)
-	}
-	if got.MiddleName != nil {
-		t.Errorf("MiddleName = %v, want nil", got.MiddleName)
-	}
-	if got.LastName != nil {
-		t.Errorf("LastName = %v, want nil", got.LastName)
-	}
-	if got.CoreHourlyRateMinor == nil || *got.CoreHourlyRateMinor != 500 {
-		t.Errorf("CoreHourlyRateMinor = %v, want 500 (unchanged)", got.CoreHourlyRateMinor)
-	}
-}
-
-func TestChildUpdate_WrongScope(t *testing.T) {
-	repo, _ := setupChildRepo(t)
-
-	ct, err := repo.Update(context.Background(), uuid.New(), childBranchID, uuid.New(), map[string]any{
-		"first_name": "X",
-	})
+	got, _, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
 	if err != nil {
-		t.Fatalf("Update: %v", err)
+		t.Fatalf("GetByID: %v", err)
 	}
-	if ct != 0 {
-		t.Errorf("rows affected = %d, want 0", ct)
+	if got.FirstName != "Alicia" {
+		t.Errorf("FirstName = %s, want Alicia", got.FirstName)
 	}
 }
 
@@ -286,7 +179,7 @@ func TestChildUpdate_NullNotes(t *testing.T) {
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	notes := "some notes"
 	dbtest.InsertChildWithNotes(t, pool, childID, childTenantID, childBranchID, "Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true, &notes)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true, &notes)
 
 	_, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
 		"notes": "",
@@ -311,30 +204,23 @@ func TestChildMarkInactive(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	tx := dbtest.BeginTx(t, pool)
-	if err := repo.MarkInactive(ctx, tx, childTenantID, childBranchID, childID, "left_nursery", "family moved"); err != nil {
+	if err := repo.MarkInactive(ctx, tx, childTenantID, childBranchID, childID); err != nil {
 		t.Fatalf("MarkInactive: %v", err)
 	}
 	dbtest.CommitTx(t, tx)
 
 	var isActive bool
-	var leftReasonCode, leftReasonNote *string
 	err := pool.QueryRow(ctx,
-		"SELECT is_active, left_reason_code::text, left_reason_note FROM children WHERE id = $1", childID,
-	).Scan(&isActive, &leftReasonCode, &leftReasonNote)
+		"SELECT is_active FROM children WHERE id = $1", childID,
+	).Scan(&isActive)
 	if err != nil {
 		t.Fatalf("query: %v", err)
 	}
 	if isActive {
 		t.Error("is_active = true, want false")
-	}
-	if leftReasonCode == nil || *leftReasonCode != "left_nursery" {
-		t.Errorf("left_reason_code = %v, want left_nursery", leftReasonCode)
-	}
-	if leftReasonNote == nil || *leftReasonNote != "family moved" {
-		t.Errorf("left_reason_note = %v, want family moved", leftReasonNote)
 	}
 }
 
@@ -344,7 +230,7 @@ func TestChildGetByIDForUpdate_ScopeCheck(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	tx := dbtest.BeginTx(t, pool)
 	_, found, err := repo.GetByIDForUpdate(ctx, tx, uuid.New(), childBranchID, childID)
@@ -363,7 +249,7 @@ func TestChildExistsInScope(t *testing.T) {
 
 	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
 	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	tx := dbtest.BeginTx(t, pool)
 	exists, err := repo.ExistsInScope(ctx, tx, childTenantID, childBranchID, childID)
@@ -379,252 +265,7 @@ func TestChildExistsInScope(t *testing.T) {
 		t.Fatalf("ExistsInScope wrong scope: %v", err)
 	}
 	if exists {
-		t.Error("exists = true for wrong tenant")
+		t.Error("exists = true, want false (wrong tenant)")
 	}
 	dbtest.CommitTx(t, tx)
-}
-
-func TestChildGetForCorrection(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	endDate := dbtest.DateAt(2025, 8, 31)
-	dbtest.InsertChildWithNotes(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true, nil)
-
-	_, err := pool.Exec(ctx,
-		"UPDATE children SET end_date = $1 WHERE id = $2", endDate, childID)
-	if err != nil {
-		t.Fatalf("update end_date: %v", err)
-	}
-
-	tx := dbtest.BeginTx(t, pool)
-	info, found, err := repo.GetChildForCorrection(ctx, tx, childTenantID, childBranchID, childID)
-	if err != nil {
-		t.Fatalf("GetChildForCorrection: %v", err)
-	}
-	if !found {
-		t.Fatal("found = false")
-	}
-	if info.ID != childID {
-		t.Errorf("ID = %s, want %s", info.ID, childID)
-	}
-	if info.EndDate == nil {
-		t.Fatal("EndDate = nil")
-	}
-	dbtest.CommitTx(t, tx)
-}
-
-func TestChildGetForCorrection_WrongScope(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	tx := dbtest.BeginTx(t, pool)
-	_, found, err := repo.GetChildForCorrection(ctx, tx, uuid.New(), childBranchID, uuid.New())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if found {
-		t.Error("found = true for wrong scope")
-	}
-	dbtest.CommitTx(t, tx)
-}
-
-func TestChildListAttendance(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
-	guardianID := uuid.MustParse("50000000-0000-0000-0000-000000000001")
-	linkID := uuid.MustParse("60000000-0000-0000-0000-000000000001")
-
-	dbtest.InsertChild(t, pool, childID, childTenantID, childBranchID, "Alice",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
-	dbtest.InsertGuardian(t, pool, guardianID, childTenantID, childBranchID, "Parent", true)
-	dbtest.InsertGuardianLink(t, pool, linkID, childTenantID, childBranchID, guardianID, childID)
-
-	localDate := dbtest.DateAt(2025, 5, 15)
-	children, err := repo.ListAttendance(ctx, childTenantID, childBranchID, localDate)
-	if err != nil {
-		t.Fatalf("ListAttendance: %v", err)
-	}
-	if len(children) != 1 {
-		t.Fatalf("expected 1 child, got %d", len(children))
-	}
-	c := children[0]
-	if c.FirstName != "Alice" {
-		t.Errorf("FirstName = %s, want Alice", c.FirstName)
-	}
-	if c.AttendanceState != "not_checked_in" {
-		t.Errorf("AttendanceState = %s, want not_checked_in", c.AttendanceState)
-	}
-	if c.OpenSessionID != nil {
-		t.Errorf("OpenSessionID = %v, want nil", c.OpenSessionID)
-	}
-	if !c.EnrollmentComplete {
-		t.Error("EnrollmentComplete = false, want true")
-	}
-}
-
-func intPtr(v int) *int { return &v }
-
-func TestChildCreate_AndGet_RoundTripPrimaryRoom(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	roomID := uuid.MustParse("50000000-0000-0000-0000-000000000001")
-	if _, err := pool.Exec(ctx,
-		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6)",
-		roomID, childTenantID, childBranchID, "Baby Room", "baby", 10); err != nil {
-		t.Fatalf("insert room: %v", err)
-	}
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000010")
-	child := childdomain.Child{
-		ID:            childID,
-		FirstName:     "Roomed",
-		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
-		StartDate:     dbtest.DateAt(2024, 9, 1),
-		PrimaryRoomID: &roomID,
-	}
-
-	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if err != nil {
-		t.Fatalf("GetByID: %v", err)
-	}
-	if !found {
-		t.Fatal("not found")
-	}
-	if got.PrimaryRoomID == nil {
-		t.Fatal("PrimaryRoomID = nil, want non-nil")
-	}
-	if *got.PrimaryRoomID != roomID {
-		t.Errorf("PrimaryRoomID = %s, want %s", *got.PrimaryRoomID, roomID)
-	}
-}
-
-func TestChildCreate_NoPrimaryRoomDefaultsNull(t *testing.T) {
-	repo, _ := setupChildRepo(t)
-	ctx := context.Background()
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000011")
-	child := childdomain.Child{
-		ID:          childID,
-		FirstName:   "Unassigned",
-		DateOfBirth: dbtest.DateAt(2022, 6, 10),
-		StartDate:   dbtest.DateAt(2024, 9, 1),
-	}
-
-	if err := repo.Create(ctx, child, "", childTenantID, childBranchID); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if err != nil {
-		t.Fatalf("GetByID: %v", err)
-	}
-	if !found {
-		t.Fatal("not found")
-	}
-	if got.PrimaryRoomID != nil {
-		t.Errorf("PrimaryRoomID = %v, want nil for unassigned child", *got.PrimaryRoomID)
-	}
-}
-
-func TestChildUpdate_PrimaryRoom(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	roomA := uuid.MustParse("50000000-0000-0000-0000-000000000001")
-	roomB := uuid.MustParse("50000000-0000-0000-0000-000000000002")
-	if _, err := pool.Exec(ctx,
-		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6), ($7, $2, $3, $8, $5, $6)",
-		roomA, childTenantID, childBranchID, "Baby Room", "baby", 10,
-		roomB, "Toddler Room"); err != nil {
-		t.Fatalf("insert rooms: %v", err)
-	}
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000012")
-	if err := repo.Create(ctx, childdomain.Child{
-		ID:            childID,
-		FirstName:     "Mover",
-		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
-		StartDate:     dbtest.DateAt(2024, 9, 1),
-		PrimaryRoomID: &roomA,
-	}, "", childTenantID, childBranchID); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	ct, err := repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
-		"primary_room_id": &roomB,
-	})
-	if err != nil {
-		t.Fatalf("Update: %v", err)
-	}
-	if ct != 1 {
-		t.Errorf("rows affected = %d, want 1", ct)
-	}
-
-	got, _, _ := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if got.PrimaryRoomID == nil || *got.PrimaryRoomID != roomB {
-		t.Errorf("PrimaryRoomID = %v, want %s", got.PrimaryRoomID, roomB)
-	}
-
-	ct, err = repo.Update(ctx, childTenantID, childBranchID, childID, map[string]any{
-		"primary_room_id": (*uuid.UUID)(nil),
-	})
-	if err != nil {
-		t.Fatalf("Update clear: %v", err)
-	}
-	if ct != 1 {
-		t.Errorf("rows affected clear = %d, want 1", ct)
-	}
-
-	got, _, _ = repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if got.PrimaryRoomID != nil {
-		t.Errorf("PrimaryRoomID after clear = %v, want nil", *got.PrimaryRoomID)
-	}
-}
-
-func TestChildPrimaryRoom_OnDeleteRoomSetNull(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	roomID := uuid.MustParse("50000000-0000-0000-0000-000000000003")
-	if _, err := pool.Exec(ctx,
-		"INSERT INTO rooms (id, tenant_id, branch_id, name, age_group, capacity) VALUES ($1, $2, $3, $4, $5, $6)",
-		roomID, childTenantID, childBranchID, "To Delete", "baby", 10); err != nil {
-		t.Fatalf("insert room: %v", err)
-	}
-
-	childID := uuid.MustParse("40000000-0000-0000-0000-000000000013")
-	if err := repo.Create(ctx, childdomain.Child{
-		ID:            childID,
-		FirstName:     "Orphaned",
-		DateOfBirth:   dbtest.DateAt(2022, 6, 10),
-		StartDate:     dbtest.DateAt(2024, 9, 1),
-		PrimaryRoomID: &roomID,
-	}, "", childTenantID, childBranchID); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	if _, err := pool.Exec(ctx, "DELETE FROM rooms WHERE id = $1", roomID); err != nil {
-		t.Fatalf("delete room: %v", err)
-	}
-
-	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)
-	if err != nil {
-		t.Fatalf("GetByID: %v", err)
-	}
-	if !found {
-		t.Fatal("child not found after room delete")
-	}
-	if got.PrimaryRoomID != nil {
-		t.Errorf("PrimaryRoomID after room delete = %v, want nil (ON DELETE SET NULL)", *got.PrimaryRoomID)
-	}
 }

@@ -77,7 +77,7 @@ func seedDraftInvoice(t *testing.T, h *billingIssueHarness, suffix string, child
 	invoiceID = uuid.MustParse(fmt.Sprintf("e6000000-0000-0000-0000-%012s", suffix))
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, childName,
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 
 	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date)
@@ -103,7 +103,7 @@ func seedDraftInvoiceForMonth(t *testing.T, h *billingIssueHarness, suffix strin
 	periodEnd := billingMonth.AddDate(0, 1, -1)
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, childName,
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 
 	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date)
@@ -305,7 +305,7 @@ func TestInvoiceIssueNotDraft(t *testing.T) {
 	invoiceID := uuid.MustParse("e6000000-0000-0000-0000-000000000010")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Issued Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 
 	genRunID := uuid.MustParse("e7000000-0000-0000-0000-000000000010")
 	_, err := h.pool.Exec(ctx,
@@ -482,7 +482,7 @@ func TestBulkIssuePartialExceptions(t *testing.T) {
 	issuedInv := uuid.MustParse("e6000000-0000-0000-0000-000000000410")
 	genRunID := uuid.MustParse("e7000000-0000-0000-0000-000000000410")
 	dbtest.InsertChild(t, h.pool, childIssued, h.tenantID, h.branchID, "Already Issued",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
 		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-exc')`,
@@ -722,7 +722,7 @@ func TestBulkIssueInvoiceNumberingTieBreaksSameNameByInvoiceID(t *testing.T) {
 		{highChild, highID},
 	} {
 		dbtest.InsertChild(t, h.pool, pair.childID, h.tenantID, h.branchID, "Same Name Child",
-			dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+			dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 		_, err := h.pool.Exec(context.Background(),
 			`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date)
 			 VALUES ($1, $2, $3, $4, $5, 'monthly', 'draft', 'GBP', 1000, 0, 1000, $6, $7)`,

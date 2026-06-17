@@ -37,7 +37,7 @@ func seedLinkEntities(t testing.TB, pool *pgxpool.Pool) (guardianID, childID uui
 
 	dbtest.InsertGuardian(t, pool, guardianID, linkTenantID, linkBranchID, "Parent G", true)
 	dbtest.InsertChild(t, pool, childID, linkTenantID, linkBranchID, "Child C",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 
 	return guardianID, childID
 }

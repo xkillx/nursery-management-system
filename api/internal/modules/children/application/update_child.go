@@ -6,25 +6,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	domainerrors "nursery-management-system/api/internal/platform/errors"
-	"nursery-management-system/api/internal/platform/tenant"
 
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
+	"nursery-management-system/api/internal/platform/tenant"
 )
 
 type UpdateChildParams struct {
-	FirstName     string
-	MiddleName    *string
-	LastName      *string
-	DateOfBirth   string
-	StartDate     string
-	EndDate       string
-	Notes         string
-	PrimaryRoomID *string
+	FirstName   string
+	MiddleName  *string
+	LastName    *string
+	DateOfBirth string
+	StartDate   string
+	EndDate     string
+	Notes       string
 }
 
 type UpdateChild struct {
@@ -62,7 +59,7 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	}
 
 	if params.DateOfBirth != "" {
-		dob, err := parseDate(params.DateOfBirth)
+		dob, err := time.Parse("2006-01-02", strings.TrimSpace(params.DateOfBirth))
 		if err != nil {
 			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "date_of_birth")
 		}
@@ -70,7 +67,7 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	}
 
 	if params.StartDate != "" {
-		startDate, err := parseDate(params.StartDate)
+		startDate, err := time.Parse("2006-01-02", strings.TrimSpace(params.StartDate))
 		if err != nil {
 			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "start_date")
 		}
@@ -78,7 +75,7 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	}
 
 	if params.EndDate != "" {
-		endDate, err := parseDate(params.EndDate)
+		endDate, err := time.Parse("2006-01-02", strings.TrimSpace(params.EndDate))
 		if err != nil {
 			return domain.Child{}, domainerrors.Validation("Invalid request payload.", "end_date")
 		}
@@ -88,19 +85,6 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	if params.Notes != "" {
 		notes := strings.TrimSpace(params.Notes)
 		fields["notes"] = notes
-	}
-
-	if params.PrimaryRoomID != nil {
-		trimmed := strings.TrimSpace(*params.PrimaryRoomID)
-		if trimmed == "" {
-			fields["primary_room_id"] = (*uuid.UUID)(nil)
-		} else {
-			id, err := uuid.Parse(trimmed)
-			if err != nil {
-				return domain.Child{}, domainerrors.Validation("Invalid request payload.", "primary_room_id")
-			}
-			fields["primary_room_id"] = &id
-		}
 	}
 
 	if len(fields) == 0 {
@@ -130,42 +114,4 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 	}
 
 	return updated, nil
-}
-
-// buildUpdateSetClause converts a fields map into SET clause parts and args for dynamic SQL.
-// The first 3 args must be tenantID, branchID, id. Fields are appended starting at argPos.
-func buildUpdateSetClause(fields map[string]any, argPos int) (string, []any) {
-	setParts := make([]string, 0, len(fields))
-	args := make([]any, 0, len(fields))
-
-	for _, col := range orderedFieldColumns(fields) {
-		val := fields[col]
-		switch col {
-		case "notes":
-			setParts = append(setParts, fmt.Sprintf("notes = NULLIF($%d, '')", argPos))
-		default:
-			setParts = append(setParts, fmt.Sprintf("%s = $%d", col, argPos))
-		}
-		args = append(args, val)
-		argPos++
-	}
-
-	return strings.Join(setParts, ", "), args
-}
-
-// orderedFieldColumns returns column names in a deterministic order.
-func orderedFieldColumns(fields map[string]any) []string {
-	order := []string{"first_name", "middle_name", "last_name", "date_of_birth", "start_date", "end_date", "notes"}
-	result := make([]string, 0, len(fields))
-	for _, col := range order {
-		if _, ok := fields[col]; ok {
-			result = append(result, col)
-		}
-	}
-	return result
-}
-
-// formatDate formats a time.Time as a date string.
-func formatDate(v time.Time) string {
-	return v.Format("2006-01-02")
 }

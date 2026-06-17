@@ -1,0 +1,103 @@
+-- name: ChildConsentGetByChild :one
+SELECT id, tenant_id, branch_id, child_id,
+       urgent_medical_treatment, urgent_medical_treatment_exceptions,
+       plasters, safeguarding_reporting_acknowledgement,
+       information_sharing_consent, gdpr_data_processing_consent,
+       area_senco_liaison, health_visitor_liaison, transition_documents,
+       local_outings, face_painting,
+       parent_supplied_sun_cream, parent_supplied_nappy_cream,
+       development_profile_photos, nursery_display_boards,
+       promotional_literature, nursery_website,
+       staff_student_coursework, social_media, social_media_channel_notes,
+       notes_exceptions, signer_name, signed_date, paper_form_on_file,
+       entered_by_user_id, entered_by_membership_id,
+       created_at, updated_at
+FROM child_consent_records
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
+
+-- name: ChildConsentInsert :one
+INSERT INTO child_consent_records (
+    id, tenant_id, branch_id, child_id,
+    urgent_medical_treatment, urgent_medical_treatment_exceptions,
+    plasters, safeguarding_reporting_acknowledgement,
+    information_sharing_consent, gdpr_data_processing_consent,
+    area_senco_liaison, health_visitor_liaison, transition_documents,
+    local_outings, face_painting,
+    parent_supplied_sun_cream, parent_supplied_nappy_cream,
+    development_profile_photos, nursery_display_boards,
+    promotional_literature, nursery_website,
+    staff_student_coursework, social_media, social_media_channel_notes,
+    notes_exceptions, signer_name, signed_date, paper_form_on_file,
+    entered_by_user_id, entered_by_membership_id
+)
+VALUES (
+    $1, $2, $3, $4,
+    $5, NULLIF($6, ''),
+    $7, $8,
+    $9, $10,
+    $11, $12, $13,
+    $14, $15,
+    $16, $17,
+    $18, $19,
+    $20, $21,
+    $22, $23, NULLIF($24, ''),
+    NULLIF($25, ''), $26, $27, $28,
+    $29, $30
+)
+RETURNING id, tenant_id, branch_id, child_id,
+          urgent_medical_treatment, urgent_medical_treatment_exceptions,
+          plasters, safeguarding_reporting_acknowledgement,
+          information_sharing_consent, gdpr_data_processing_consent,
+          area_senco_liaison, health_visitor_liaison, transition_documents,
+          local_outings, face_painting,
+          parent_supplied_sun_cream, parent_supplied_nappy_cream,
+          development_profile_photos, nursery_display_boards,
+          promotional_literature, nursery_website,
+          staff_student_coursework, social_media, social_media_channel_notes,
+          notes_exceptions, signer_name, signed_date, paper_form_on_file,
+          entered_by_user_id, entered_by_membership_id,
+          created_at, updated_at;
+
+-- name: ChildConsentUpdate :one
+UPDATE child_consent_records SET
+    urgent_medical_treatment = $5,
+    urgent_medical_treatment_exceptions = NULLIF($6, ''),
+    plasters = $7,
+    safeguarding_reporting_acknowledgement = $8,
+    information_sharing_consent = $9,
+    gdpr_data_processing_consent = $10,
+    area_senco_liaison = $11,
+    health_visitor_liaison = $12,
+    transition_documents = $13,
+    local_outings = $14,
+    face_painting = $15,
+    parent_supplied_sun_cream = $16,
+    parent_supplied_nappy_cream = $17,
+    development_profile_photos = $18,
+    nursery_display_boards = $19,
+    promotional_literature = $20,
+    nursery_website = $21,
+    staff_student_coursework = $22,
+    social_media = $23,
+    social_media_channel_notes = NULLIF($24, ''),
+    notes_exceptions = NULLIF($25, ''),
+    signer_name = $26,
+    signed_date = $27,
+    paper_form_on_file = $28,
+    entered_by_user_id = $29,
+    entered_by_membership_id = $30,
+    updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND id = $4
+RETURNING id, tenant_id, branch_id, child_id,
+          urgent_medical_treatment, urgent_medical_treatment_exceptions,
+          plasters, safeguarding_reporting_acknowledgement,
+          information_sharing_consent, gdpr_data_processing_consent,
+          area_senco_liaison, health_visitor_liaison, transition_documents,
+          local_outings, face_painting,
+          parent_supplied_sun_cream, parent_supplied_nappy_cream,
+          development_profile_photos, nursery_display_boards,
+          promotional_literature, nursery_website,
+          staff_student_coursework, social_media, social_media_channel_notes,
+          notes_exceptions, signer_name, signed_date, paper_form_on_file,
+          entered_by_user_id, entered_by_membership_id,
+          created_at, updated_at;

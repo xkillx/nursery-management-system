@@ -13,25 +13,23 @@ import (
 
 const childrenCreate = `-- name: ChildrenCreate :exec
 INSERT INTO children (
-    id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date,
-    core_hourly_rate_minor, notes, is_active, primary_room_id
+    id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date, notes, is_active
 )
-VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, $10, NULLIF($11, ''), true, $12)
+VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9, NULLIF($10, ''), $11)
 `
 
 type ChildrenCreateParams struct {
-	ID                  pgtype.UUID
-	TenantID            pgtype.UUID
-	BranchID            pgtype.UUID
-	FirstName           string
-	Column5             interface{}
-	Column6             interface{}
-	DateOfBirth         pgtype.Date
-	StartDate           pgtype.Date
-	EndDate             pgtype.Date
-	CoreHourlyRateMinor pgtype.Int4
-	Column11            interface{}
-	PrimaryRoomID       pgtype.UUID
+	ID          pgtype.UUID
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	FirstName   string
+	Column5     interface{}
+	Column6     interface{}
+	DateOfBirth pgtype.Date
+	StartDate   pgtype.Date
+	EndDate     pgtype.Date
+	Column10    interface{}
+	IsActive    bool
 }
 
 func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) error {
@@ -45,9 +43,8 @@ func (q *Queries) ChildrenCreate(ctx context.Context, arg ChildrenCreateParams) 
 		arg.DateOfBirth,
 		arg.StartDate,
 		arg.EndDate,
-		arg.CoreHourlyRateMinor,
-		arg.Column11,
-		arg.PrimaryRoomID,
+		arg.Column10,
+		arg.IsActive,
 	)
 	return err
 }
@@ -79,14 +76,17 @@ SELECT c.id,
        c.date_of_birth,
        c.start_date,
        c.end_date,
-       c.core_hourly_rate_minor,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
-       c.left_at,
-       COALESCE(c.left_reason_code::text, '') AS left_reason_code,
-       c.left_reason_note,
-       c.primary_room_id,
+       EXISTS (
+           SELECT 1
+           FROM child_room_assignments cra
+           WHERE cra.tenant_id = c.tenant_id
+             AND cra.branch_id = c.branch_id
+             AND cra.child_id = c.id
+             AND cra.is_current
+       ) AS has_current_room,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -118,14 +118,10 @@ type ChildrenGetByIDRow struct {
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
-	CoreHourlyRateMinor     pgtype.Int4
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
-	LeftAt                  pgtype.Timestamptz
-	LeftReasonCode          interface{}
-	LeftReasonNote          pgtype.Text
-	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -142,14 +138,10 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.DateOfBirth,
 		&i.StartDate,
 		&i.EndDate,
-		&i.CoreHourlyRateMinor,
 		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
-		&i.LeftAt,
-		&i.LeftReasonCode,
-		&i.LeftReasonNote,
-		&i.PrimaryRoomID,
+		&i.HasCurrentRoom,
 		&i.HasGuardianLink,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -165,14 +157,17 @@ SELECT c.id,
        c.date_of_birth,
        c.start_date,
        c.end_date,
-       c.core_hourly_rate_minor,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
-       c.left_at,
-       COALESCE(c.left_reason_code::text, '') AS left_reason_code,
-       c.left_reason_note,
-       c.primary_room_id,
+       EXISTS (
+           SELECT 1
+           FROM child_room_assignments cra
+           WHERE cra.tenant_id = c.tenant_id
+             AND cra.branch_id = c.branch_id
+             AND cra.child_id = c.id
+             AND cra.is_current
+       ) AS has_current_room,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -205,14 +200,10 @@ type ChildrenGetByIDForUpdateRow struct {
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
-	CoreHourlyRateMinor     pgtype.Int4
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
-	LeftAt                  pgtype.Timestamptz
-	LeftReasonCode          interface{}
-	LeftReasonNote          pgtype.Text
-	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -229,14 +220,10 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.DateOfBirth,
 		&i.StartDate,
 		&i.EndDate,
-		&i.CoreHourlyRateMinor,
 		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
-		&i.LeftAt,
-		&i.LeftReasonCode,
-		&i.LeftReasonNote,
-		&i.PrimaryRoomID,
+		&i.HasCurrentRoom,
 		&i.HasGuardianLink,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -279,14 +266,17 @@ SELECT c.id,
        c.date_of_birth,
        c.start_date,
        c.end_date,
-       c.core_hourly_rate_minor,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
-       c.left_at,
-       COALESCE(c.left_reason_code::text, '') AS left_reason_code,
-       c.left_reason_note,
-       c.primary_room_id,
+       EXISTS (
+           SELECT 1
+           FROM child_room_assignments cra
+           WHERE cra.tenant_id = c.tenant_id
+             AND cra.branch_id = c.branch_id
+             AND cra.child_id = c.id
+             AND cra.is_current
+       ) AS has_current_room,
        EXISTS (
            SELECT 1
            FROM guardian_child_links gcl
@@ -326,14 +316,10 @@ type ChildrenListRow struct {
 	DateOfBirth             pgtype.Date
 	StartDate               pgtype.Date
 	EndDate                 pgtype.Date
-	CoreHourlyRateMinor     pgtype.Int4
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
-	LeftAt                  pgtype.Timestamptz
-	LeftReasonCode          interface{}
-	LeftReasonNote          pgtype.Text
-	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
 	HasGuardianLink         bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
@@ -362,14 +348,10 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.DateOfBirth,
 			&i.StartDate,
 			&i.EndDate,
-			&i.CoreHourlyRateMinor,
 			&i.SiteCoreHourlyRateMinor,
 			&i.Notes,
 			&i.IsActive,
-			&i.LeftAt,
-			&i.LeftReasonCode,
-			&i.LeftReasonNote,
-			&i.PrimaryRoomID,
+			&i.HasCurrentRoom,
 			&i.HasGuardianLink,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -486,29 +468,18 @@ func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAt
 const childrenMarkInactive = `-- name: ChildrenMarkInactive :exec
 UPDATE children
 SET is_active = false,
-    left_at = now(),
-    left_reason_code = $1,
-    left_reason_note = NULLIF($2, ''),
     updated_at = now()
-WHERE tenant_id = $3 AND branch_id = $4 AND id = $5
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
 `
 
 type ChildrenMarkInactiveParams struct {
-	LeftReasonCode interface{}
-	Column2        interface{}
-	TenantID       pgtype.UUID
-	BranchID       pgtype.UUID
-	ID             pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
 }
 
 func (q *Queries) ChildrenMarkInactive(ctx context.Context, arg ChildrenMarkInactiveParams) error {
-	_, err := q.db.Exec(ctx, childrenMarkInactive,
-		arg.LeftReasonCode,
-		arg.Column2,
-		arg.TenantID,
-		arg.BranchID,
-		arg.ID,
-	)
+	_, err := q.db.Exec(ctx, childrenMarkInactive, arg.TenantID, arg.BranchID, arg.ID)
 	return err
 }
 
@@ -521,35 +492,29 @@ SET
     date_of_birth = CASE WHEN $7 = 1 THEN $8 ELSE date_of_birth END,
     start_date = CASE WHEN $9 = 1 THEN $10 ELSE start_date END,
     end_date = CASE WHEN $11 = 1 THEN $12 ELSE end_date END,
-    core_hourly_rate_minor = CASE WHEN $13 = 1 THEN $14 ELSE core_hourly_rate_minor END,
-    notes = CASE WHEN $15 = 1 THEN NULLIF($16, '') ELSE notes END,
-    primary_room_id = CASE WHEN $17 = 1 THEN $18 ELSE primary_room_id END,
+    notes = CASE WHEN $13 = 1 THEN NULLIF($14, '') ELSE notes END,
     updated_at = now()
-WHERE tenant_id = $19 AND branch_id = $20 AND id = $21
+WHERE tenant_id = $15 AND branch_id = $16 AND id = $17
 `
 
 type ChildrenUpdateParams struct {
-	SetFirstName           interface{}
-	FirstName              string
-	SetMiddleName          interface{}
-	MiddleName             interface{}
-	SetLastName            interface{}
-	LastName               interface{}
-	SetDateOfBirth         interface{}
-	DateOfBirth            pgtype.Date
-	SetStartDate           interface{}
-	StartDate              pgtype.Date
-	SetEndDate             interface{}
-	EndDate                pgtype.Date
-	SetCoreHourlyRateMinor interface{}
-	CoreHourlyRateMinor    pgtype.Int4
-	SetNotes               interface{}
-	Notes                  interface{}
-	SetPrimaryRoomID       interface{}
-	PrimaryRoomID          pgtype.UUID
-	TenantID               pgtype.UUID
-	BranchID               pgtype.UUID
-	ID                     pgtype.UUID
+	SetFirstName   interface{}
+	FirstName      string
+	SetMiddleName  interface{}
+	MiddleName     interface{}
+	SetLastName    interface{}
+	LastName       interface{}
+	SetDateOfBirth interface{}
+	DateOfBirth    pgtype.Date
+	SetStartDate   interface{}
+	StartDate      pgtype.Date
+	SetEndDate     interface{}
+	EndDate        pgtype.Date
+	SetNotes       interface{}
+	Notes          interface{}
+	TenantID       pgtype.UUID
+	BranchID       pgtype.UUID
+	ID             pgtype.UUID
 }
 
 func (q *Queries) ChildrenUpdate(ctx context.Context, arg ChildrenUpdateParams) (int64, error) {
@@ -566,12 +531,8 @@ func (q *Queries) ChildrenUpdate(ctx context.Context, arg ChildrenUpdateParams) 
 		arg.StartDate,
 		arg.SetEndDate,
 		arg.EndDate,
-		arg.SetCoreHourlyRateMinor,
-		arg.CoreHourlyRateMinor,
 		arg.SetNotes,
 		arg.Notes,
-		arg.SetPrimaryRoomID,
-		arg.PrimaryRoomID,
 		arg.TenantID,
 		arg.BranchID,
 		arg.ID,

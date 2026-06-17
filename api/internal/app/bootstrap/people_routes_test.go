@@ -902,8 +902,8 @@ func seedPeopleData(t *testing.T, pool *pgxpool.Pool) (peopleScope, peopleScopeB
 	dbtest.InsertMembership(t, pool, scopeA.parentMembershipID, scopeA.tenantID, scopeA.branchID, scopeA.parentUserID, "parent", true)
 	dbtest.InsertMembership(t, pool, scopeA.parentMembershipID2, scopeA.tenantID, scopeA.branchID, scopeA.parentUserID2, "parent", true)
 
-	dbtest.InsertChild(t, pool, scopeA.activeChildID, scopeA.tenantID, scopeA.branchID, "Active Child", dbtest.DateAt(2022, 3, 10), dbtest.DateAt(2024, 1, 1), 450, true)
-	dbtest.InsertChild(t, pool, scopeA.inactiveChildID, scopeA.tenantID, scopeA.branchID, "Inactive Child", dbtest.DateAt(2021, 3, 10), dbtest.DateAt(2023, 1, 1), 450, true)
+	dbtest.InsertChild(t, pool, scopeA.activeChildID, scopeA.tenantID, scopeA.branchID, "Active Child", dbtest.DateAt(2022, 3, 10), dbtest.DateAt(2024, 1, 1), true)
+	dbtest.InsertChild(t, pool, scopeA.inactiveChildID, scopeA.tenantID, scopeA.branchID, "Inactive Child", dbtest.DateAt(2021, 3, 10), dbtest.DateAt(2023, 1, 1), true)
 
 	_, err := pool.Exec(context.Background(),
 		"UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1",
@@ -932,7 +932,7 @@ func seedPeopleData(t *testing.T, pool *pgxpool.Pool) (peopleScope, peopleScopeB
 	dbtest.InsertBranch(t, pool, scopeB.tenantID, scopeB.branchID, "Scope B Branch")
 	dbtest.InsertUser(t, pool, scopeB.parentUserID, "scopeb-parent@example.com", "hash", true)
 	dbtest.InsertMembership(t, pool, scopeB.parentMembershipID, scopeB.tenantID, scopeB.branchID, scopeB.parentUserID, "parent", true)
-	dbtest.InsertChild(t, pool, scopeB.childID, scopeB.tenantID, scopeB.branchID, "Scope B Child", dbtest.DateAt(2021, 4, 1), dbtest.DateAt(2024, 1, 1), 450, true)
+	dbtest.InsertChild(t, pool, scopeB.childID, scopeB.tenantID, scopeB.branchID, "Scope B Child", dbtest.DateAt(2021, 4, 1), dbtest.DateAt(2024, 1, 1), true)
 	dbtest.InsertGuardian(t, pool, scopeB.guardianID, scopeB.tenantID, scopeB.branchID, "Scope B Guardian", true)
 	dbtest.InsertGuardianLink(t, pool, scopeB.linkID, scopeB.tenantID, scopeB.branchID, scopeB.guardianID, scopeB.childID)
 	dbtest.InsertParentMapping(t, pool, scopeB.mappingID, scopeB.tenantID, scopeB.branchID, scopeB.parentMembershipID, scopeB.guardianID)

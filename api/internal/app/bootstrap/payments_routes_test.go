@@ -103,7 +103,7 @@ func seedPayableInvoiceWithStatus(t *testing.T, h *paymentsHarness, status strin
 	mappingID := uuid.MustParse("c8000000-0000-0000-0000-000000000001")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Pay Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Pay Guardian", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
 	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, guardianID)
@@ -255,7 +255,7 @@ func TestPaymentsCheckoutSession_DraftNotPayable_409(t *testing.T) {
 	ctx := context.Background()
 	draftChildID := uuid.MustParse("c5000000-0000-0000-0000-000000000099")
 	dbtest.InsertChild(t, h.pool, draftChildID, h.tenantID, h.branchID, "Draft Child",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 
 	invoiceID := uuid.New()
 	_, err := h.pool.Exec(ctx,

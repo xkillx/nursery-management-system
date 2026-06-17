@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/transaction"
+	"nursery-management-system/api/internal/platform/uid"
 )
 
 type MarkInactiveParams struct {
@@ -52,14 +54,31 @@ func (uc *MarkInactive) Execute(ctx context.Context, actor tenant.ActorContext, 
 		}
 
 		if child.IsActive {
-			if markErr := uc.repo.MarkInactive(ctx, tx, actor.TenantID, actor.BranchID, id, reasonCode, reasonNote); markErr != nil {
+			if markErr := uc.repo.MarkInactive(ctx, tx, actor.TenantID, actor.BranchID, id); markErr != nil {
 				return domainerrors.Internal(fmt.Errorf("mark child inactive: %w", markErr))
 			}
 
-			reasonCodePtr := &reasonCode
 			var reasonNotePtr *string
-			if note := strings.TrimSpace(reasonNote); note != "" {
-				reasonNotePtr = &note
+			if reasonNote != "" {
+				reasonNotePtr = &reasonNote
+			}
+			reasonCodePtr := &reasonCode
+
+			leaving := &domain.ChildLeavingRecord{
+				ID:         uid.NewUUID(),
+				TenantID:   actor.TenantID,
+				BranchID:   actor.BranchID,
+				ChildID:    id,
+				LeftAt:     time.Now().UTC(),
+				ReasonCode: reasonCode,
+				ReasonNote: reasonNotePtr,
+			}
+			if err := uc.repo.InsertLeavingRecord(ctx, tx, leaving); err != nil {
+				return domainerrors.Internal(fmt.Errorf("insert leaving record: %w", err))
+			}
+
+			if err := uc.repo.CloseCurrentRoomAssignment(ctx, tx, actor.TenantID, actor.BranchID, id, time.Now().UTC()); err != nil {
+				return domainerrors.Internal(fmt.Errorf("close current room assignment: %w", err))
 			}
 
 			if auditErr := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{

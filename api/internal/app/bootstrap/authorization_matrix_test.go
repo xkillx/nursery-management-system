@@ -205,9 +205,9 @@ func (h *authzHarness) seed(t *testing.T) {
 	}
 
 	dbtest.InsertChild(t, h.pool, h.childA, h.tenantA, h.branchA, "Child A",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertChild(t, h.pool, h.inactiveChildA, h.tenantA, h.branchA, "Inactive Child A",
-		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), 500, true)
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	_, err = h.pool.Exec(ctx, "UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1", h.inactiveChildA)
 	if err != nil {
 		t.Fatalf("deactivate child: %v", err)
@@ -273,7 +273,7 @@ func (h *authzHarness) seed(t *testing.T) {
 	dbtest.InsertMembership(t, h.pool, h.parentBMID, h.tenantB, h.branchB, h.parentBUID, "parent", true)
 
 	dbtest.InsertChild(t, h.pool, h.childB, h.tenantB, h.branchB, "Child B",
-		dbtest.DateAt(2023, 2, 1), dbtest.DateAt(2026, 2, 1), 600, true)
+		dbtest.DateAt(2023, 2, 1), dbtest.DateAt(2026, 2, 1), true)
 	dbtest.InsertGuardian(t, h.pool, h.guardianB, h.tenantB, h.branchB, "Guardian B", true)
 	dbtest.InsertGuardianLink(t, h.pool, h.linkB, h.tenantB, h.branchB, h.guardianB, h.childB)
 	dbtest.InsertParentMapping(t, h.pool, h.mappingB, h.tenantB, h.branchB, h.parentBMID, h.guardianB)
@@ -989,7 +989,7 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 
 	// Unlinked child + invoice (no guardian link to parent A)
 	dbtest.InsertChild(t, h.pool, unlinkedChild, h.tenantA, h.branchA, "Unlinked Child",
-		dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), 500, true)
+		dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), true)
 	_, err = h.pool.Exec(ctx, `INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
 		invoice_number, issued_sequence, generated_run_id, issued_run_id,
 		issued_at, issued_by_user_id, issued_by_membership_id, locked_at, due_at,
@@ -1006,7 +1006,7 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 
 	// Ended link child
 	dbtest.InsertChild(t, h.pool, endedLinkChild, h.tenantA, h.branchA, "Ended Link Child",
-		dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), 500, true)
+		dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), true)
 	dbtest.InsertGuardian(t, h.pool, endedLinkGuardian, h.tenantA, h.branchA, "Ended Link Guardian", true)
 	endedAt := time.Now().UTC()
 	_, err = h.pool.Exec(ctx, `INSERT INTO guardian_child_links (id, tenant_id, branch_id, guardian_id, child_id, ended_at, ended_reason_code)
@@ -1031,7 +1031,7 @@ func TestAuthorizationMatrixParentRelationship(t *testing.T) {
 
 		// Ended mapping child
 		dbtest.InsertChild(t, h.pool, endedMappingChild, h.tenantA, h.branchA, "Ended Mapping Child",
-			dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), 500, true)
+			dbtest.DateAt(2023, 3, 1), dbtest.DateAt(2026, 3, 1), true)
 		dbtest.InsertGuardian(t, h.pool, endedMappingGuardian, h.tenantA, h.branchA, "Ended Mapping Guardian", true)
 		dbtest.InsertGuardianLink(t, h.pool, endedMappingLink, h.tenantA, h.branchA, endedMappingGuardian, endedMappingChild)
 		_, err = h.pool.Exec(ctx, `INSERT INTO parent_membership_guardians (id, tenant_id, branch_id, membership_id, guardian_id, ended_at, ended_reason_code)

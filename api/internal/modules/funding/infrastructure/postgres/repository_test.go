@@ -23,8 +23,7 @@ func TestRepository_CreateAndGet(t *testing.T) {
 	dbtest.InsertBranch(t, pool, tenantID, branchID, "Main Branch")
 	dbtest.InsertChild(t, pool, childID, tenantID, branchID, "Test Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		500, true)
+		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), true)
 
 	repo := NewRepository(pool)
 	tx := dbtest.BeginTx(t, pool)
@@ -74,8 +73,7 @@ func TestRepository_WrongTenantReturnsNotFound(t *testing.T) {
 	dbtest.InsertBranch(t, pool, tenantID, branchID, "Branch")
 	dbtest.InsertChild(t, pool, childID, tenantID, branchID, "Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		500, true)
+		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), true)
 
 	repo := NewRepository(pool)
 	tx := dbtest.BeginTx(t, pool)
@@ -116,8 +114,7 @@ func TestRepository_ExplicitZeroAllowance(t *testing.T) {
 	dbtest.InsertBranch(t, pool, tenantID, branchID, "Branch")
 	dbtest.InsertChild(t, pool, childID, tenantID, branchID, "Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		500, true)
+		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), true)
 
 	repo := NewRepository(pool)
 	tx := dbtest.BeginTx(t, pool)
@@ -163,7 +160,7 @@ func TestRepository_ChildEnrollmentLookup(t *testing.T) {
 	dbtest.InsertBranch(t, pool, tenantID, branchID, "Branch")
 	dbtest.InsertChild(t, pool, childID, tenantID, branchID, "Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		startDate, 500, true)
+		startDate, true)
 
 	repo := NewRepository(pool)
 	tx := dbtest.BeginTx(t, pool)

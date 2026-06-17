@@ -11,92 +11,47 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type RegistrationContactType string
+type ChildContactType string
 
 const (
-	RegistrationContactTypeParentCarer         RegistrationContactType = "parent_carer"
-	RegistrationContactTypeEmergencyContact    RegistrationContactType = "emergency_contact"
-	RegistrationContactTypeAuthorisedCollector RegistrationContactType = "authorised_collector"
+	ChildContactTypeParentCarer         ChildContactType = "parent_carer"
+	ChildContactTypeEmergencyContact    ChildContactType = "emergency_contact"
+	ChildContactTypeAuthorisedCollector ChildContactType = "authorised_collector"
 )
 
-func (e *RegistrationContactType) Scan(src interface{}) error {
+func (e *ChildContactType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = RegistrationContactType(s)
+		*e = ChildContactType(s)
 	case string:
-		*e = RegistrationContactType(s)
+		*e = ChildContactType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for RegistrationContactType: %T", src)
+		return fmt.Errorf("unsupported scan type for ChildContactType: %T", src)
 	}
 	return nil
 }
 
-type NullRegistrationContactType struct {
-	RegistrationContactType RegistrationContactType
-	Valid                   bool // Valid is true if RegistrationContactType is not NULL
+type NullChildContactType struct {
+	ChildContactType ChildContactType
+	Valid            bool // Valid is true if ChildContactType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullRegistrationContactType) Scan(value interface{}) error {
+func (ns *NullChildContactType) Scan(value interface{}) error {
 	if value == nil {
-		ns.RegistrationContactType, ns.Valid = "", false
+		ns.ChildContactType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.RegistrationContactType.Scan(value)
+	return ns.ChildContactType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullRegistrationContactType) Value() (driver.Value, error) {
+func (ns NullChildContactType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.RegistrationContactType), nil
-}
-
-type RegistrationImmunisationStatus string
-
-const (
-	RegistrationImmunisationStatusUnknown     RegistrationImmunisationStatus = "unknown"
-	RegistrationImmunisationStatusUpToDate    RegistrationImmunisationStatus = "up_to_date"
-	RegistrationImmunisationStatusRefused     RegistrationImmunisationStatus = "refused"
-	RegistrationImmunisationStatusPartial     RegistrationImmunisationStatus = "partial"
-	RegistrationImmunisationStatusNotRecorded RegistrationImmunisationStatus = "not_recorded"
-)
-
-func (e *RegistrationImmunisationStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RegistrationImmunisationStatus(s)
-	case string:
-		*e = RegistrationImmunisationStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RegistrationImmunisationStatus: %T", src)
-	}
-	return nil
-}
-
-type NullRegistrationImmunisationStatus struct {
-	RegistrationImmunisationStatus RegistrationImmunisationStatus
-	Valid                          bool // Valid is true if RegistrationImmunisationStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullRegistrationImmunisationStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.RegistrationImmunisationStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.RegistrationImmunisationStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullRegistrationImmunisationStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.RegistrationImmunisationStatus), nil
+	return string(ns.ChildContactType), nil
 }
 
 type RegistrationTermTimeOnlyStatus string
@@ -141,49 +96,6 @@ func (ns NullRegistrationTermTimeOnlyStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.RegistrationTermTimeOnlyStatus), nil
-}
-
-type RegistrationYesNoUnknown string
-
-const (
-	RegistrationYesNoUnknownUnknown RegistrationYesNoUnknown = "unknown"
-	RegistrationYesNoUnknownNo      RegistrationYesNoUnknown = "no"
-	RegistrationYesNoUnknownYes     RegistrationYesNoUnknown = "yes"
-)
-
-func (e *RegistrationYesNoUnknown) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RegistrationYesNoUnknown(s)
-	case string:
-		*e = RegistrationYesNoUnknown(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RegistrationYesNoUnknown: %T", src)
-	}
-	return nil
-}
-
-type NullRegistrationYesNoUnknown struct {
-	RegistrationYesNoUnknown RegistrationYesNoUnknown
-	Valid                    bool // Valid is true if RegistrationYesNoUnknown is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullRegistrationYesNoUnknown) Scan(value interface{}) error {
-	if value == nil {
-		ns.RegistrationYesNoUnknown, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.RegistrationYesNoUnknown.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullRegistrationYesNoUnknown) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.RegistrationYesNoUnknown), nil
 }
 
 type AbsenceMarker struct {
@@ -265,51 +177,58 @@ type Branch struct {
 }
 
 type Child struct {
-	ID                  pgtype.UUID
-	TenantID            pgtype.UUID
-	BranchID            pgtype.UUID
-	DateOfBirth         pgtype.Date
-	StartDate           pgtype.Date
-	EndDate             pgtype.Date
-	CoreHourlyRateMinor pgtype.Int4
-	IsActive            bool
-	LeftAt              pgtype.Timestamptz
-	Notes               pgtype.Text
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
-	LeftReasonCode      interface{}
-	LeftReasonNote      pgtype.Text
-	FirstName           string
-	MiddleName          pgtype.Text
-	LastName            pgtype.Text
-	PrimaryRoomID       pgtype.UUID
+	ID          pgtype.UUID
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	DateOfBirth pgtype.Date
+	StartDate   pgtype.Date
+	EndDate     pgtype.Date
+	IsActive    bool
+	Notes       pgtype.Text
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+	FirstName   string
+	MiddleName  pgtype.Text
+	LastName    pgtype.Text
 }
 
-type ChildRegistrationCompletionAttestation struct {
-	ID                     pgtype.UUID
-	TenantID               pgtype.UUID
-	BranchID               pgtype.UUID
-	ChildID                pgtype.UUID
-	ConsentRecordID        pgtype.UUID
-	ProfileUpdatedAt       pgtype.Timestamptz
-	AttestedByUserID       pgtype.UUID
-	AttestedByMembershipID pgtype.UUID
-	AttestedAt             pgtype.Timestamptz
-	RequestID              pgtype.Text
-	CreatedAt              pgtype.Timestamptz
+type ChildBillingProfile struct {
+	ID              pgtype.UUID
+	TenantID        pgtype.UUID
+	BranchID        pgtype.UUID
+	ChildID         pgtype.UUID
+	BillingBasis    string
+	CustomRateMinor pgtype.Int4
+	EffectiveFrom   pgtype.Date
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }
 
-type ChildRegistrationConsentRecord struct {
+type ChildCollectionSetting struct {
+	ID                                      pgtype.UUID
+	TenantID                                pgtype.UUID
+	BranchID                                pgtype.UUID
+	ChildID                                 pgtype.UUID
+	Over18CollectionAcknowledged            bool
+	CollectionPasswordHash                  pgtype.Text
+	CollectionPasswordUpdatedAt             pgtype.Timestamptz
+	CollectionPasswordUpdatedByUserID       pgtype.UUID
+	CollectionPasswordUpdatedByMembershipID pgtype.UUID
+	CreatedAt                               pgtype.Timestamptz
+	UpdatedAt                               pgtype.Timestamptz
+}
+
+type ChildConsentRecord struct {
 	ID                                   pgtype.UUID
 	TenantID                             pgtype.UUID
 	BranchID                             pgtype.UUID
 	ChildID                              pgtype.UUID
-	Version                              int32
-	Source                               string
 	UrgentMedicalTreatment               bool
 	UrgentMedicalTreatmentExceptions     pgtype.Text
 	Plasters                             bool
 	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent            bool
+	GdprDataProcessingConsent            bool
 	AreaSencoLiaison                     bool
 	HealthVisitorLiaison                 bool
 	TransitionDocuments                  bool
@@ -325,20 +244,21 @@ type ChildRegistrationConsentRecord struct {
 	SocialMedia                          bool
 	SocialMediaChannelNotes              pgtype.Text
 	NotesExceptions                      pgtype.Text
+	SignerName                           string
+	SignedDate                           pgtype.Date
+	PaperFormOnFile                      bool
 	EnteredByUserID                      pgtype.UUID
 	EnteredByMembershipID                pgtype.UUID
 	CreatedAt                            pgtype.Timestamptz
-	InformationSharingConsent            bool
-	GdprDataProcessingConsent            bool
+	UpdatedAt                            pgtype.Timestamptz
 }
 
-type ChildRegistrationContact struct {
+type ChildContact struct {
 	ID                        pgtype.UUID
 	TenantID                  pgtype.UUID
 	BranchID                  pgtype.UUID
-	ProfileID                 pgtype.UUID
 	ChildID                   pgtype.UUID
-	ContactType               RegistrationContactType
+	ContactType               ChildContactType
 	SortOrder                 int32
 	FullName                  string
 	RelationshipToChild       pgtype.Text
@@ -351,78 +271,123 @@ type ChildRegistrationContact struct {
 	UpdatedAt                 pgtype.Timestamptz
 }
 
-type ChildRegistrationProfile struct {
-	ID                                      pgtype.UUID
-	TenantID                                pgtype.UUID
-	BranchID                                pgtype.UUID
-	ChildID                                 pgtype.UUID
-	Sex                                     pgtype.Text
-	Religion                                pgtype.Text
-	EthnicOrigin                            pgtype.Text
-	FirstLanguage                           pgtype.Text
-	OtherLanguages                          pgtype.Text
-	HomeAddress                             []byte
-	HomePostcode                            pgtype.Text
-	HomeTelephone                           pgtype.Text
-	DisabilityStatus                        RegistrationYesNoUnknown
-	DisabilityNotes                         pgtype.Text
-	AccessRequirements                      pgtype.Text
-	MedicalConditionsStatus                 RegistrationYesNoUnknown
-	MedicalConditionsNotes                  pgtype.Text
-	PrescribedMedicationStatus              RegistrationYesNoUnknown
-	MedicationNotes                         pgtype.Text
-	ImmunisationStatus                      RegistrationImmunisationStatus
-	ImmunisationCountry                     pgtype.Text
-	IllnessDiagnosisHistory                 pgtype.Text
-	DietaryRequirementsStatus               RegistrationYesNoUnknown
-	DietaryRequirementsNotes                pgtype.Text
-	DietarySideEffects                      pgtype.Text
-	DoctorName                              pgtype.Text
-	DoctorAddress                           pgtype.Text
-	DoctorPhone                             pgtype.Text
-	HealthVisitorName                       pgtype.Text
-	HealthVisitorAddress                    pgtype.Text
-	HealthVisitorPhone                      pgtype.Text
-	SocialServicesStatus                    RegistrationYesNoUnknown
-	SocialServicesNotes                     pgtype.Text
-	ConcernWalking                          RegistrationYesNoUnknown
-	ConcernSpeechLanguage                   RegistrationYesNoUnknown
-	ConcernHearing                          RegistrationYesNoUnknown
-	ConcernSight                            RegistrationYesNoUnknown
-	ConcernEmotionalWellbeing               RegistrationYesNoUnknown
-	ConcernBehaviour                        RegistrationYesNoUnknown
-	ProfessionalReferrals                   []byte
-	ParentalResponsibilityNotes             pgtype.Text
-	Over18CollectionAcknowledged            bool
-	CollectionPasswordHash                  pgtype.Text
-	CollectionPasswordUpdatedAt             pgtype.Timestamptz
-	CollectionPasswordUpdatedByUserID       pgtype.UUID
-	CollectionPasswordUpdatedByMembershipID pgtype.UUID
-	BenefitsContributeToFees                RegistrationYesNoUnknown
-	WorkingTaxCredit                        RegistrationYesNoUnknown
-	CollegeUniPaidToParent                  RegistrationYesNoUnknown
-	CollegeUniPaidToNursery                 RegistrationYesNoUnknown
-	Funding3yoTermTime                      RegistrationYesNoUnknown
-	Funding2yoTermTime                      RegistrationYesNoUnknown
-	FundingSupportNotes                     pgtype.Text
-	RoutineCareNotes                        pgtype.Text
-	GdprDeclaredByName                      pgtype.Text
-	GdprDeclaredAt                          pgtype.Timestamptz
-	GdprDeclarationDate                     pgtype.Date
-	DemographicsHomeReviewed                bool
-	MedicalDietaryReviewed                  bool
-	HealthContactsReviewed                  bool
-	SocialDevelopmentReviewed               bool
-	ParentResponsibilityReviewed            bool
-	EmergencyCollectionReviewed             bool
-	FundingSupportReviewed                  bool
-	RoutineCareReviewed                     bool
-	CreatedAt                               pgtype.Timestamptz
-	UpdatedAt                               pgtype.Timestamptz
-	SocialWorkerName                        pgtype.Text
-	SocialWorkerPhone                       pgtype.Text
-	SocialWorkerEmail                       pgtype.Text
-	RegistrationDate                        pgtype.Date
+type ChildFundingRecord struct {
+	ID                       pgtype.UUID
+	TenantID                 pgtype.UUID
+	BranchID                 pgtype.UUID
+	ChildID                  pgtype.UUID
+	BenefitsContributeToFees string
+	WorkingTaxCredit         string
+	CollegeUniPaidToParent   string
+	CollegeUniPaidToNursery  string
+	Funding3yoTermTime       string
+	Funding2yoTermTime       string
+	FundingSupportNotes      pgtype.Text
+	FundingSupportReviewed   bool
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+}
+
+type ChildHealthProfile struct {
+	ID                         pgtype.UUID
+	TenantID                   pgtype.UUID
+	BranchID                   pgtype.UUID
+	ChildID                    pgtype.UUID
+	MedicalConditionsStatus    string
+	MedicalConditionsNotes     pgtype.Text
+	PrescribedMedicationStatus string
+	MedicationNotes            pgtype.Text
+	ImmunisationStatus         string
+	ImmunisationCountry        pgtype.Text
+	IllnessDiagnosisHistory    pgtype.Text
+	DietaryRequirementsStatus  string
+	DietaryRequirementsNotes   pgtype.Text
+	DietarySideEffects         pgtype.Text
+	DoctorName                 pgtype.Text
+	DoctorAddress              pgtype.Text
+	DoctorPhone                pgtype.Text
+	HealthVisitorName          pgtype.Text
+	HealthVisitorAddress       pgtype.Text
+	HealthVisitorPhone         pgtype.Text
+	CreatedAt                  pgtype.Timestamptz
+	UpdatedAt                  pgtype.Timestamptz
+}
+
+type ChildLeavingRecord struct {
+	ID         pgtype.UUID
+	TenantID   pgtype.UUID
+	BranchID   pgtype.UUID
+	ChildID    pgtype.UUID
+	LeftAt     pgtype.Timestamptz
+	ReasonCode string
+	ReasonNote pgtype.Text
+	CreatedAt  pgtype.Timestamptz
+}
+
+type ChildProfile struct {
+	ID                           pgtype.UUID
+	TenantID                     pgtype.UUID
+	BranchID                     pgtype.UUID
+	ChildID                      pgtype.UUID
+	Sex                          pgtype.Text
+	Religion                     pgtype.Text
+	EthnicOrigin                 pgtype.Text
+	FirstLanguage                pgtype.Text
+	OtherLanguages               pgtype.Text
+	HomeAddress                  []byte
+	HomePostcode                 pgtype.Text
+	HomeTelephone                pgtype.Text
+	DisabilityStatus             string
+	DisabilityNotes              pgtype.Text
+	AccessRequirements           pgtype.Text
+	RoutineCareNotes             pgtype.Text
+	GdprDeclaredByName           pgtype.Text
+	GdprDeclaredAt               pgtype.Timestamptz
+	GdprDeclarationDate          pgtype.Date
+	RegistrationDate             pgtype.Date
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
+	ParentResponsibilityReviewed bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+type ChildRoomAssignment struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	ChildID   pgtype.UUID
+	RoomID    pgtype.UUID
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	IsCurrent bool
+	CreatedAt pgtype.Timestamptz
+}
+
+type ChildSafeguardingProfile struct {
+	ID                        pgtype.UUID
+	TenantID                  pgtype.UUID
+	BranchID                  pgtype.UUID
+	ChildID                   pgtype.UUID
+	SocialServicesStatus      string
+	SocialServicesNotes       pgtype.Text
+	SocialWorkerName          pgtype.Text
+	SocialWorkerPhone         pgtype.Text
+	SocialWorkerEmail         pgtype.Text
+	ConcernWalking            string
+	ConcernSpeechLanguage     string
+	ConcernHearing            string
+	ConcernSight              string
+	ConcernEmotionalWellbeing string
+	ConcernBehaviour          string
+	ProfessionalReferrals     []byte
+	RestrictedNotes           pgtype.Text
+	CreatedAt                 pgtype.Timestamptz
+	UpdatedAt                 pgtype.Timestamptz
 }
 
 type FundingProfile struct {

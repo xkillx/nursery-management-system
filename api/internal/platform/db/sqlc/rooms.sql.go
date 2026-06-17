@@ -57,34 +57,45 @@ func (q *Queries) RoomsCheckActiveNameExists(ctx context.Context, arg RoomsCheck
 
 const roomsCountActiveChildren = `-- name: RoomsCountActiveChildren :one
 SELECT COUNT(*)::bigint AS count
-FROM children
-WHERE tenant_id = $1
-  AND branch_id = $2
-  AND primary_room_id = $3
-  AND is_active = true
+FROM child_room_assignments cra
+WHERE cra.tenant_id = $1
+  AND cra.branch_id = $2
+  AND cra.room_id = $3
+  AND cra.is_current
+  AND EXISTS (
+      SELECT 1 FROM children c
+      WHERE c.tenant_id = cra.tenant_id
+        AND c.branch_id = cra.branch_id
+        AND c.id = cra.child_id
+        AND c.is_active = true
+  )
 `
 
 type RoomsCountActiveChildrenParams struct {
-	TenantID      pgtype.UUID
-	BranchID      pgtype.UUID
-	PrimaryRoomID pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	RoomID   pgtype.UUID
 }
 
 func (q *Queries) RoomsCountActiveChildren(ctx context.Context, arg RoomsCountActiveChildrenParams) (int64, error) {
-	row := q.db.QueryRow(ctx, roomsCountActiveChildren, arg.TenantID, arg.BranchID, arg.PrimaryRoomID)
+	row := q.db.QueryRow(ctx, roomsCountActiveChildren, arg.TenantID, arg.BranchID, arg.RoomID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const roomsCountAssignedChildrenByBranch = `-- name: RoomsCountAssignedChildrenByBranch :many
-SELECT primary_room_id AS room_id, COUNT(*)::bigint AS assigned_count
-FROM children
-WHERE tenant_id = $1
-  AND branch_id = $2
-  AND primary_room_id IS NOT NULL
-  AND is_active = true
-GROUP BY primary_room_id
+SELECT cra.room_id, COUNT(*)::bigint AS assigned_count
+FROM child_room_assignments cra
+JOIN children c
+  ON c.tenant_id = cra.tenant_id
+ AND c.branch_id = cra.branch_id
+ AND c.id = cra.child_id
+WHERE cra.tenant_id = $1
+  AND cra.branch_id = $2
+  AND cra.is_current
+  AND c.is_active = true
+GROUP BY cra.room_id
 `
 
 type RoomsCountAssignedChildrenByBranchParams struct {

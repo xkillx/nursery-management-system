@@ -78,10 +78,6 @@ import (
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	ownerhandler "nursery-management-system/api/internal/modules/owner/interfaces/http"
 
-	regprofileapp "nursery-management-system/api/internal/modules/registrationprofiles/application"
-	regprofilepostgres "nursery-management-system/api/internal/modules/registrationprofiles/infrastructure/postgres"
-	regprofilehandler "nursery-management-system/api/internal/modules/registrationprofiles/interfaces/http"
-
 	roomsapp "nursery-management-system/api/internal/modules/rooms/application"
 	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	roomshttphandler "nursery-management-system/api/internal/modules/rooms/interfaces/http"
@@ -167,10 +163,30 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	childrenHandler := childhandler.NewHandler(
 		childapp.NewListChildren(childRepo),
 		childapp.NewGetChild(childRepo),
-		childapp.NewCreateChild(childRepo, auditWriter, pool),
+		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager),
 		childapp.NewUpdateChild(childRepo, auditWriter, pool),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
+		childapp.NewGetProfile(childRepo),
+		childapp.NewUpdateProfile(childRepo, auditWriter, txManager),
+		childapp.NewGetContacts(childRepo),
+		childapp.NewReplaceContacts(childRepo, auditWriter, txManager),
+		childapp.NewGetHealth(childRepo),
+		childapp.NewUpdateHealth(childRepo, auditWriter, txManager),
+		childapp.NewGetSafeguarding(childRepo),
+		childapp.NewUpdateSafeguarding(childRepo, auditWriter, txManager),
+		childapp.NewGetConsent(childRepo),
+		childapp.NewUpdateConsent(childRepo, auditWriter, txManager),
+		childapp.NewGetFunding(childRepo),
+		childapp.NewUpdateFunding(childRepo, auditWriter, txManager),
+		childapp.NewGetCollectionSetting(childRepo),
+		childapp.NewSetCollectionPassword(childRepo, auditWriter, txManager),
+		childapp.NewListRoomAssignments(childRepo),
+		childapp.NewCreateRoomAssignment(childRepo, auditWriter, txManager),
+		childapp.NewCloseRoomAssignment(childRepo, auditWriter, txManager),
+		childapp.NewGetBillingProfile(childRepo),
+		childapp.NewUpdateBillingProfile(childRepo, auditWriter, txManager),
+		childapp.NewGetLeavingRecord(childRepo),
 	).WithObservability(logger)
 
 	// Guardians module
@@ -239,24 +255,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Register absence routes (manager + practitioner)
 	absenceHandler.RegisterRoutes(protected)
-
-	// Registration Profiles module
-	regProfileRepo := regprofilepostgres.NewRepository(pool)
-	regProfileGetUC := regprofileapp.NewGetProfile(regProfileRepo)
-	regProfileUpdateUC := regprofileapp.NewUpdateProfile(regProfileRepo, auditWriter, txManager)
-	regProfileSetPasswordUC := regprofileapp.NewSetCollectionPassword(regProfileRepo, auditWriter, txManager)
-	regProfileGetConsentsUC := regprofileapp.NewGetConsents(regProfileRepo)
-	regProfileCreateConsentUC := regprofileapp.NewCreateConsent(regProfileRepo, auditWriter, txManager)
-	regProfileGetWorkflowStatusUC := regprofileapp.NewGetWorkflowStatus(regProfileRepo, regProfileRepo, regProfileRepo)
-	regProfileCreateAttestationUC := regprofileapp.NewCreateAttestation(regProfileRepo, regProfileRepo, regProfileRepo, regProfileGetWorkflowStatusUC, auditWriter, txManager)
-	regProfileHandler := regprofilehandler.NewHandler(regProfileGetUC, regProfileUpdateUC, regProfileSetPasswordUC, regProfileGetConsentsUC, regProfileCreateConsentUC, regProfileGetWorkflowStatusUC, regProfileCreateAttestationUC).WithObservability(logger)
-	regProfileHandler.RegisterRoutes(manager)
-
-	// Registration submit (atomic create)
-	childCreatorAdapter := &childCreatorAdapter{repo: childRepo}
-	submitUC := regprofileapp.NewSubmitCompleteRegistration(regProfileRepo, regProfileRepo, childCreatorAdapter, auditWriter, txManager)
-	submitHandler := regprofilehandler.NewSubmitHandler(submitUC).WithObservability(logger)
-	submitHandler.RegisterRoutes(manager)
 
 	// Funding module
 	fundingRepo := fundingpostgres.NewRepository(pool)

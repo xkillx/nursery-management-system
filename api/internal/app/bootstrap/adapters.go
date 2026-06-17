@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
@@ -20,10 +19,7 @@ import (
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
-	regprofiledomain "nursery-management-system/api/internal/modules/registrationprofiles/domain"
-	"nursery-management-system/api/internal/platform/db/sqlc"
 	"nursery-management-system/api/internal/platform/email"
-	"nursery-management-system/api/internal/platform/uid"
 )
 
 type guardianCheckerAdapter struct {
@@ -144,49 +140,9 @@ func (a *ownerEmailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail
 	return a.sender.Send(ctx, msg)
 }
 
-type childCreatorAdapter struct {
-	repo *postgreschild.ChildRepository
-}
+type childCreatorAdapter struct{}
 
-func (a *childCreatorAdapter) CreateChild(ctx context.Context, tx pgx.Tx, child regprofiledomain.ChildInfo, tenantID, branchID uuid.UUID) (regprofiledomain.ChildCreationResult, error) {
-	childID := uid.NewUUID()
-	q := sqlc.New(tx)
-	primaryRoomID := pgtype.UUID{}
-	if child.PrimaryRoomID != nil {
-		primaryRoomID = pgtype.UUID{Bytes: [16]byte(*child.PrimaryRoomID), Valid: true}
-	}
-	err := q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
-		ID:                  pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
-		TenantID:            pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
-		BranchID:            pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
-		FirstName:           child.FirstName,
-		Column5:             child.MiddleName,
-		Column6:             child.LastName,
-		DateOfBirth:         pgtype.Date{Time: child.DateOfBirth, Valid: true},
-		StartDate:           pgtype.Date{Time: child.StartDate, Valid: true},
-		CoreHourlyRateMinor: pgtype.Int4{Valid: false},
-		Column11:            child.Notes,
-		PrimaryRoomID:       primaryRoomID,
-	})
-	if err != nil {
-		return regprofiledomain.ChildCreationResult{}, fmt.Errorf("create child: %w", err)
-	}
-
-	return regprofiledomain.ChildCreationResult{
-		ID:         childID,
-		FirstName:  child.FirstName,
-		MiddleName: stringPtrFromBlank(child.MiddleName),
-		LastName:   stringPtrFromBlank(child.LastName),
-		StartDate:  child.StartDate,
-	}, nil
-}
-
-func stringPtrFromBlank(v string) *string {
-	if v == "" {
-		return nil
-	}
-	return &v
-}
+var _ = (*childCreatorAdapter)(nil)
 
 // ── Rooms adapters ──────────────────────────────────────────────────────────
 
@@ -206,8 +162,6 @@ func (a *siteExistsCheckerAdapter) SiteExists(ctx context.Context, tenantID, sit
 }
 
 var (
-	_ regprofiledomain.ChildCreator = (*childCreatorAdapter)(nil)
-
 	_ ownerdomain.InviteTokenGenerator = (*ownerInviteTokenAdapter)(nil)
 	_ ownerdomain.ManagerInviteSender  = (*ownerEmailSenderAdapter)(nil)
 )

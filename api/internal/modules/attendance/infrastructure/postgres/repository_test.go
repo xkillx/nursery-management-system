@@ -40,7 +40,7 @@ func seedAttChild(t testing.TB, pool *pgxpool.Pool) uuid.UUID {
 	linkID := uuid.MustParse("d7000000-0000-0000-0000-000000000001")
 
 	dbtest.InsertChild(t, pool, childID, attTenantID, attBranchID, "Att Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertGuardian(t, pool, guardianID, attTenantID, attBranchID, "Att Parent", true)
 	dbtest.InsertGuardianLink(t, pool, linkID, attTenantID, attBranchID, guardianID, childID)
 
@@ -923,7 +923,7 @@ func TestAttListIncompleteSessionsForPeriod_IncludesInactiveChild(t *testing.T) 
 	linkID := uuid.MustParse("d7000000-0000-0000-0000-000000000099")
 
 	dbtest.InsertChild(t, pool, childID, attTenantID, attBranchID, "Inactive Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 	_, err := pool.Exec(ctx,
 		"UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', updated_at = now() WHERE id = $1",
 		childID)
@@ -961,9 +961,9 @@ func TestAttListIncompleteSessionsForPeriod_SortsStably(t *testing.T) {
 	linkB := uuid.MustParse("d7000000-0000-0000-0000-0000000000b2")
 
 	dbtest.InsertChild(t, pool, childA, attTenantID, attBranchID, "Beta Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertChild(t, pool, childB, attTenantID, attBranchID, "Alpha Child",
-		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), 500, true)
+		dbtest.DateAt(2022, 1, 15), dbtest.DateAt(2024, 9, 1), true)
 	dbtest.InsertGuardian(t, pool, guardianA, attTenantID, attBranchID, "Parent A", true)
 	dbtest.InsertGuardian(t, pool, guardianB, attTenantID, attBranchID, "Parent B", true)
 	dbtest.InsertGuardianLink(t, pool, linkA, attTenantID, attBranchID, guardianA, childA)

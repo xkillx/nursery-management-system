@@ -57,7 +57,7 @@ func setupTestHarness(t *testing.T) *testHarness {
 	dbtest.InsertChild(t, pool, h.childID, h.tenantID, h.branchID, "Test Child",
 		time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		500, true)
+		true)
 	dbtest.InsertGuardian(t, pool, h.guardianID, h.tenantID, h.branchID, "Test Guardian", true)
 	dbtest.InsertGuardianLink(t, pool, h.linkID, h.tenantID, h.branchID, h.guardianID, h.childID)
 	dbtest.InsertParentMapping(t, pool, h.mappingID, h.tenantID, h.branchID, h.parentMID, h.guardianID)
