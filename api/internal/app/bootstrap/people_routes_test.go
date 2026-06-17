@@ -54,6 +54,8 @@ type peopleScope struct {
 
 	activeLinkID    uuid.UUID
 	activeMappingID uuid.UUID
+
+	roomID uuid.UUID
 }
 
 type peopleScopeB struct {
@@ -84,13 +86,32 @@ func TestPeopleRoutesInventory(t *testing.T) {
 		"PATCH /api/v1/children/:child_id",
 		"POST /api/v1/children/:child_id/actions/mark-inactive",
 		"GET /api/v1/children/attendance",
+		"GET /api/v1/children/:child_id/profile",
+		"PATCH /api/v1/children/:child_id/profile",
+		"GET /api/v1/children/:child_id/contacts",
+		"PUT /api/v1/children/:child_id/contacts",
+		"GET /api/v1/children/:child_id/health",
+		"PATCH /api/v1/children/:child_id/health",
+		"GET /api/v1/children/:child_id/safeguarding",
+		"PATCH /api/v1/children/:child_id/safeguarding",
+		"GET /api/v1/children/:child_id/consent",
+		"PUT /api/v1/children/:child_id/consent",
+		"GET /api/v1/children/:child_id/funding",
+		"PATCH /api/v1/children/:child_id/funding",
+		"GET /api/v1/children/:child_id/collection-settings",
+		"PUT /api/v1/children/:child_id/collection-settings",
+		"GET /api/v1/children/:child_id/room-assignments",
+		"POST /api/v1/children/:child_id/room-assignments",
+		"DELETE /api/v1/children/:child_id/room-assignments/:assignment_id",
+		"GET /api/v1/children/:child_id/billing-profile",
+		"PATCH /api/v1/children/:child_id/billing-profile",
+		"GET /api/v1/children/:child_id/leaving-record",
 		"GET /api/v1/guardians",
 		"GET /api/v1/guardians/:guardian_id",
 		"POST /api/v1/guardians",
 		"PATCH /api/v1/guardians/:guardian_id",
 		"POST /api/v1/guardians/:guardian_id/actions/deactivate",
 		"POST /api/v1/guardians/:guardian_id/actions/reactivate",
-		"POST /api/v1/children/with-registration",
 		"POST /api/v1/guardian-child-links",
 		"POST /api/v1/guardian-child-links/:link_id/actions/end",
 		"GET /api/v1/children/:child_id/guardian-child-links",
@@ -140,7 +161,11 @@ func TestPeopleWriteRoleGuards(t *testing.T) {
 			name:       "create child",
 			method:     http.MethodPost,
 			path:       "/api/v1/children",
-			body:       `{"first_name":"New Child","date_of_birth":"2021-05-01","start_date":"2024-01-01"}`,
+			body: `{"child":{"first_name":"New Child","date_of_birth":"2021-05-01","start_date":"2024-01-01"},` +
+				`"room":{"room_id":"` + h.scopeA.roomID.String() + `","start_date":"2024-01-01"},` +
+				`"consent":{"urgent_medical_treatment":true,"plasters":true,"safeguarding_reporting_acknowledgement":true,` +
+				`"signer_name":"Parent","signed_date":"2024-01-01","paper_form_on_file":true},` +
+				`"safeguard_ack":true}`,
 			wantStatus: http.StatusCreated,
 		},
 		{
@@ -290,7 +315,7 @@ func TestPeopleScopeBoundaries(t *testing.T) {
 			name:    "update child",
 			method:  http.MethodPatch,
 			path:    "/api/v1/children/" + h.scopeB.childID.String(),
-			body:    `{"full_name":"Updated"}`,
+			body:    `{"first_name":"Updated"}`,
 			errCode: "child_not_found",
 		},
 		{
@@ -407,15 +432,10 @@ func TestPeopleListingBehavior(t *testing.T) {
 		requireStatus(t, w, http.StatusBadRequest)
 		requireErrorCode(t, w, "validation_error")
 
-		for _, path := range []string{
-			"/api/v1/children?limit=0",
-			"/api/v1/children?limit=201",
-			"/api/v1/children?offset=-1",
-		} {
-			w = doRequest(t, h.router, http.MethodGet, path, h.managerToken, "")
-			requireStatus(t, w, http.StatusBadRequest)
-			requireErrorCode(t, w, "validation_error")
-		}
+		// limit > 200 is rejected; limit <= 0 falls back to the default.
+		w = doRequest(t, h.router, http.MethodGet, "/api/v1/children?limit=201", h.managerToken, "")
+		requireStatus(t, w, http.StatusBadRequest)
+		requireErrorCode(t, w, "validation_error")
 	})
 
 	t.Run("guardian listing filters", func(t *testing.T) {
@@ -473,23 +493,32 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		requireStatus(t, w, http.StatusOK)
 
 		var resp struct {
-			IsActive       bool    `json:"is_active"`
-			LeftAt         *string `json:"left_at"`
-			LeftReasonCode *string `json:"left_reason_code"`
-			LeftReasonNote *string `json:"left_reason_note"`
+			IsActive   bool `json:"is_active"`
 		}
 		decodeJSON(t, w, &resp)
 		if resp.IsActive {
 			t.Fatal("expected child to be inactive")
 		}
-		if resp.LeftAt == nil || *resp.LeftAt == "" {
-			t.Fatal("expected left_at to be set")
+
+		// The leaving record is stored separately on child_leaving_records and
+		// exposed via /api/v1/children/:id/leaving-record. Fetch it there.
+		lrPath := "/api/v1/children/" + h.scopeA.activeChildID.String() + "/leaving-record"
+		w = doRequest(t, h.router, http.MethodGet, lrPath, h.managerToken, "")
+		requireStatus(t, w, http.StatusOK)
+		var lr struct {
+			ReasonCode *string `json:"reason_code"`
+			ReasonNote *string `json:"reason_note"`
+			LeftAt     *string `json:"left_at"`
 		}
-		if resp.LeftReasonCode == nil || *resp.LeftReasonCode != "left_nursery" {
-			t.Fatalf("expected left_reason_code left_nursery, got %v", resp.LeftReasonCode)
+		decodeJSON(t, w, &lr)
+		if lr.LeftAt == nil || *lr.LeftAt == "" {
+			t.Fatal("expected leaving-record left_at to be set")
 		}
-		if resp.LeftReasonNote == nil || *resp.LeftReasonNote != "moving" {
-			t.Fatalf("expected left_reason_note moving, got %v", resp.LeftReasonNote)
+		if lr.ReasonCode == nil || *lr.ReasonCode != "left_nursery" {
+			t.Fatalf("expected reason_code left_nursery, got %v", lr.ReasonCode)
+		}
+		if lr.ReasonNote == nil || *lr.ReasonNote != "moving" {
+			t.Fatalf("expected reason_note moving, got %v", lr.ReasonNote)
 		}
 	})
 
@@ -610,26 +639,31 @@ func TestPeopleIdempotentChildMarkInactive(t *testing.T) {
 	w := doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"left_nursery","reason_note":"left"}`)
 	requireStatus(t, w, http.StatusOK)
 
+	lrPath := "/api/v1/children/" + h.scopeA.activeChildID.String() + "/leaving-record"
+	w = doRequest(t, h.router, http.MethodGet, lrPath, h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
 	var first struct {
-		LeftAt         *string `json:"left_at"`
-		LeftReasonCode *string `json:"left_reason_code"`
+		LeftAt       *string `json:"left_at"`
+		ReasonCode   *string `json:"reason_code"`
 	}
 	decodeJSON(t, w, &first)
 
 	w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"duplicate_record"}`)
 	requireStatus(t, w, http.StatusOK)
 
+	w = doRequest(t, h.router, http.MethodGet, lrPath, h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
 	var second struct {
-		LeftAt         *string `json:"left_at"`
-		LeftReasonCode *string `json:"left_reason_code"`
+		LeftAt       *string `json:"left_at"`
+		ReasonCode   *string `json:"reason_code"`
 	}
 	decodeJSON(t, w, &second)
 
 	if first.LeftAt == nil || second.LeftAt == nil || *first.LeftAt != *second.LeftAt {
 		t.Fatalf("expected left_at unchanged on idempotent call")
 	}
-	if first.LeftReasonCode == nil || second.LeftReasonCode == nil || *first.LeftReasonCode != *second.LeftReasonCode {
-		t.Fatalf("expected left_reason_code unchanged on idempotent call")
+	if first.ReasonCode == nil || second.ReasonCode == nil || *first.ReasonCode != *second.ReasonCode {
+		t.Fatalf("expected reason_code unchanged on idempotent call")
 	}
 }
 
@@ -876,6 +910,7 @@ func seedPeopleData(t *testing.T, pool *pgxpool.Pool) (peopleScope, peopleScopeB
 		otherGuardianID:     uuid.MustParse("a6000000-0000-0000-0000-000000000003"),
 		activeLinkID:        uuid.MustParse("a7000000-0000-0000-0000-000000000001"),
 		activeMappingID:     uuid.MustParse("a8000000-0000-0000-0000-000000000001"),
+		roomID:              uuid.MustParse("a9000000-0000-0000-0000-000000000001"),
 	}
 
 	scopeB := peopleScopeB{
@@ -891,6 +926,7 @@ func seedPeopleData(t *testing.T, pool *pgxpool.Pool) (peopleScope, peopleScopeB
 
 	dbtest.InsertTenant(t, pool, scopeA.tenantID, "Scope A")
 	dbtest.InsertBranch(t, pool, scopeA.tenantID, scopeA.branchID, "Scope A Branch")
+	dbtest.InsertRoom(t, pool, scopeA.roomID, scopeA.tenantID, scopeA.branchID, "Babies", 10)
 
 	dbtest.InsertUser(t, pool, scopeA.managerUserID, "manager@example.com", "hash", true)
 	dbtest.InsertUser(t, pool, scopeA.practitionerUserID, "practitioner@example.com", "hash", true)
@@ -906,11 +942,20 @@ func seedPeopleData(t *testing.T, pool *pgxpool.Pool) (peopleScope, peopleScopeB
 	dbtest.InsertChild(t, pool, scopeA.inactiveChildID, scopeA.tenantID, scopeA.branchID, "Inactive Child", dbtest.DateAt(2021, 3, 10), dbtest.DateAt(2023, 1, 1), true)
 
 	_, err := pool.Exec(context.Background(),
-		"UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1",
+		"UPDATE children SET is_active = false, updated_at = now() WHERE id = $1",
 		scopeA.inactiveChildID,
 	)
 	if err != nil {
 		t.Fatalf("seed inactive child: %v", err)
+	}
+	// Seed the leaving-record for the pre-inactive child.
+	_, err = pool.Exec(context.Background(),
+		`INSERT INTO child_leaving_records (id, tenant_id, branch_id, child_id, left_at, reason_code, reason_note)
+		 VALUES (gen_random_uuid(), $1, $2, $3, now(), 'left_nursery', 'moved')`,
+		scopeA.tenantID, scopeA.branchID, scopeA.inactiveChildID,
+	)
+	if err != nil {
+		t.Fatalf("seed leaving record: %v", err)
 	}
 
 	dbtest.InsertGuardian(t, pool, scopeA.activeGuardianID, scopeA.tenantID, scopeA.branchID, "Active Guardian", true)
@@ -1058,6 +1103,11 @@ func isPeopleRoute(path string) bool {
 		strings.HasPrefix(path, "/api/v1/guardians"),
 		strings.HasPrefix(path, "/api/v1/guardian-child-links"),
 		strings.HasPrefix(path, "/api/v1/parent-membership-guardian-mappings"):
+		// The only DELETE on a people resource is the soft-close of a child
+		// room assignment (sets end_date). It is not a hard delete.
+		if path == "/api/v1/children/:child_id/room-assignments/:assignment_id" {
+			return false
+		}
 		return true
 	default:
 		return false

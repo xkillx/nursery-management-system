@@ -208,9 +208,16 @@ func (h *authzHarness) seed(t *testing.T) {
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertChild(t, h.pool, h.inactiveChildA, h.tenantA, h.branchA, "Inactive Child A",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
-	_, err = h.pool.Exec(ctx, "UPDATE children SET is_active = false, left_at = now(), left_reason_code = 'left_nursery', left_reason_note = 'moved', updated_at = now() WHERE id = $1", h.inactiveChildA)
+	_, err = h.pool.Exec(ctx, "UPDATE children SET is_active = false, updated_at = now() WHERE id = $1", h.inactiveChildA)
 	if err != nil {
 		t.Fatalf("deactivate child: %v", err)
+	}
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO child_leaving_records (id, tenant_id, branch_id, child_id, left_at, reason_code, reason_note)
+		 VALUES (gen_random_uuid(), $1, $2, $3, now(), 'left_nursery', 'moved')`,
+		h.tenantA, h.branchA, h.inactiveChildA)
+	if err != nil {
+		t.Fatalf("seed leaving record: %v", err)
 	}
 	dbtest.InsertGuardian(t, h.pool, h.guardianA, h.tenantA, h.branchA, "Guardian A", true)
 	dbtest.InsertGuardianLink(t, h.pool, h.linkA, h.tenantA, h.branchA, h.guardianA, h.childA)
