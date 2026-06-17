@@ -94,7 +94,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                   <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Child registration</h2>
-                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Enter the child's identity, home details, and proposed start date with the parent/carer.</p>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 1: Enter the child's identity, home details, and placement details with the parent/carer.</p>
                 </div>
                 <ng-icon name="heroDocumentCheck" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
               </div>
@@ -107,7 +107,7 @@
                     <ng-icon name="heroUser" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                     <h3 id="child-identity-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Identity & Personal Info</h3>
                   </div>
-                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">First name, date of birth, and proposed start date are required.</p>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">First name and date of birth are required.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -207,6 +207,17 @@
                   </fieldset>
                 </div>
 
+              </section>
+
+              <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="child-proposed-start-date-heading">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroCalendarDays" size="20" class="shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <h3 id="child-proposed-start-date-heading" class="text-lg font-bold text-gray-950 dark:text-white/90">Proposed start date</h3>
+                  </div>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">When the child will start, when they registered, and their assigned room.</p>
+                </div>
+
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field
                     label="Proposed start date"
@@ -243,16 +254,13 @@
                       [describedBy]="shouldShowStep1Error('registration_date') ? 'child-registration-date-error' : undefined"
                     />
                   </app-form-field>
-                </div>
 
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field
                     label="Primary room"
                     labelFor="child-primary-room"
                     [required]="true"
                     errorId="child-primary-room-error"
                     [error]="step1VisibleError('primary_room_id')"
-                    hint="The room this child will be primarily assigned to."
                   >
                     <app-select
                       id="child-primary-room"
