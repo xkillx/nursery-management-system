@@ -1,14 +1,14 @@
 # API Schema State
 
-> **Verified as of 2026-06-16.** Latest migration: 000030.
+> **Verified as of 2026-06-18.** Latest migration: 000034.
 
-- **Last verification date**: 2026-06-16
-- **Verified migration version**: 30
-- **Latest migration**: 000030 (`add_child_primary_room`)
+- **Last verification date**: 2026-06-18
+- **Verified migration version**: 34
+- **Latest migration**: 000034 (`refactor_to_child_management_model`)
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (24)
+## Application Tables (30)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -17,7 +17,7 @@
 | Table | Key columns | Notes |
 |---|---|---|
 | `tenants` | `id UUID PK`, `name TEXT` | Top-level multi-tenant entity |
-| `branches` | `id UUID PK`, `tenant_id FK`, `name TEXT`, `core_hourly_rate_minor INTEGER` | Unique `(tenant_id, name)`, composite unique `(tenant_id, id)`. `core_hourly_rate_minor` nullable; must be positive if set (CHECK). |
+| `branches` | `id UUID PK`, `tenant_id FK`, `name TEXT`, `core_hourly_rate_minor INTEGER` | Unique `(tenant_id, name)`, composite unique `(tenant_id, id)`. `core_hourly_rate_minor` nullable; must be positive if set (CHECK). Authoritative site rate. |
 
 ### Users & Authentication
 
@@ -28,16 +28,31 @@
 | `refresh_tokens` | `id UUID PK`, `user_id FK`, `membership_id FK NOT NULL`, `token_hash UNIQUE`, `expires_at`, `revoked_at` | Bound to membership. |
 | `password_reset_tokens` | `id UUID PK`, `user_id FK`, `token_hash UNIQUE`, `expires_at`, `used_at`, `superseded_at` | CHECK: `used_at IS NULL OR superseded_at IS NULL`. Partial index on active tokens per user. |
 
-### Children & Guardians
+### Children & Sub-Records
+
+The child bounded context is split into a small `children` identity table and 1:1 sub-record tables, plus a 1:many `child_contacts` and `child_room_assignments` history. This replaces the legacy `child_registration_*` four-table model and the operational columns formerly on `children`.
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `first_name`, nullable `middle_name`, nullable `last_name`, `date_of_birth`, `start_date`, `end_date`, `core_hourly_rate_minor`, `is_active`, `left_at`, `left_reason_code`, `left_reason_note`, nullable `primary_room_id` (FK rooms) | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `first_name` is required and not blank. `middle_name` and `last_name` are nullable. `core_hourly_rate_minor >= 0` (legacy; not used for billing — site rate is authoritative). `start_date <= end_date`. `primary_room_id` is the child's operational room; `ON DELETE SET NULL` so archiving or deleting a room does not cascade-block children. Partial index on `(tenant_id, branch_id, primary_room_id) WHERE primary_room_id IS NOT NULL` powers the room occupancy query. |
+| `children` | `id UUID PK`, `tenant_id`, `branch_id`, `first_name`, nullable `middle_name`, nullable `last_name`, `date_of_birth`, `start_date`, `end_date`, `is_active` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. `first_name` is required and not blank. `middle_name` and `last_name` are nullable. `start_date <= end_date`. Room placement and billing rate live in dedicated sub-record tables; the child row itself is identity only. |
+| `child_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, demographics (sex, religion, ethnic_origin, first_language, other_languages), `home_address JSONB`, `home_postcode`, `home_telephone`, disability / access, routine care, GDPR declaration metadata, `registration_date`, 7 section review booleans | 1:1 with `children`. JSONB `home_address` object check. Per-child demographic / consent-declaration row. |
+| `child_contacts` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `contact_type child_contact_type`, `sort_order`, `full_name`, relationship, JSONB `address`/`work_address`, telephone/email, `has_parental_responsibility` | 1:many per child. `contact_type IN ('parent_carer','emergency_contact','authorised_collector')`. UNIQUE `(tenant_id, branch_id, child_id, contact_type, sort_order)`. JSONB object checks. `sort_order >= 0`. |
+| `child_health_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, medical/allergy/dietary status fields, immunisation status/country, doctor + health visitor contact | 1:1 with `children`. `medical_conditions_status`, `prescribed_medication_status`, `dietary_requirements_status` ∈ `('unknown','no','yes')`. `immunisation_status` ∈ `('unknown','up_to_date','refused','partial','not_recorded')`. |
+| `child_safeguarding_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, social services status/notes + social worker contact, six concern flags (walking, speech_language, hearing, sight, emotional_wellbeing, behaviour), `professional_referrals JSONB`, `restricted_notes` | 1:1 with `children`. All six concern flags ∈ `('unknown','no','yes')`. JSONB array check on `professional_referrals`. |
+| `child_consent_records` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, 18 boolean consent flags (`urgent_medical_treatment`, `plasters`, `safeguarding_reporting_acknowledgement`, `information_sharing_consent`, `gdpr_data_processing_consent`, `area_senco_liaison`, `health_visitor_liaison`, `transition_documents`, `local_outings`, `face_painting`, `parent_supplied_sun_cream`, `parent_supplied_nappy_cream`, `development_profile_photos`, `nursery_display_boards`, `promotional_literature`, `nursery_website`, `staff_student_coursework`, `social_media`), `social_media_channel_notes`, `notes_exceptions`, `signer_name`, `signed_date`, `paper_form_on_file`, `entered_by_user_id`/`entered_by_membership_id` | 1:1 with `children`. Single current row per child (no version column). PUT-style update — the new write replaces the current row. |
+| `child_funding_records` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, six eligibility tri-state text fields (benefits_contribute_to_fees, working_tax_credit, college_uni_paid_to_parent, college_uni_paid_to_nursery, funding_3yo_term_time, funding_2yo_term_time), `funding_support_notes`, `funding_support_reviewed` | 1:1 with `children`. Each tri-state ∈ `('unknown','no','yes')`. |
+| `child_collection_settings` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, `over_18_collection_acknowledged`, `collection_password_hash`, `collection_password_updated_at`, `collection_password_updated_by_user_id`/`_membership_id` | 1:1 with `children`. CHECK: all four password-metadata columns are null together, or all non-null together. |
+| `child_room_assignments` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `room_id FK rooms`, `start_date`, nullable `end_date`, generated `is_current BOOLEAN` (= `end_date IS NULL`) | 1:many per child — full room-placement history. `end_date >= start_date`. Partial indexes on the `is_current` rows power capacity / current-room queries. |
+| `child_billing_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, `billing_basis` ∈ `('site_rate','custom')`, `custom_rate_minor` (nullable, positive when present), `effective_from` | 1:1 with `children`. CHECK: `billing_basis='site_rate'` ⇔ `custom_rate_minor IS NULL`; `billing_basis='custom'` ⇔ `custom_rate_minor > 0`. |
+| `child_leaving_records` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, `left_at`, `reason_code` ∈ `lifecycle_reason_code`, `reason_note` | 1:1 with `children`. Created when a child is marked inactive; carries the lifecycle reason and optional note. |
+
+### Guardians
+
+| Table | Key columns | Notes |
+|---|---|---|
 | `guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `full_name`, `relationship`, `phone`, `email`, `is_active`, `deactivated_at`, `deactivation_reason_code`, `deactivation_reason_note` | Composite unique `(tenant_id, branch_id, id)`. Active/inactive consistency check. |
 | `guardian_child_links` | `id UUID PK`, `tenant_id`, `branch_id`, `guardian_id FK`, `child_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique index on active `(guardian_id, child_id)`. End-reason consistency check. |
 | `parent_membership_guardians` | `id UUID PK`, `tenant_id`, `branch_id`, `membership_id FK`, `guardian_id FK`, `ended_at`, `ended_reason_code`, `ended_reason_note` | Partial unique: one active mapping per membership, one active `(membership_id, guardian_id)` pair. End-reason consistency check. Triggers enforce parent role and active entities. |
-| `child_registration_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, 60+ profile columns (see migration), collection password hash/metadata, 8 section review flags, `created_at`, `updated_at` | One profile per child `(tenant_id, branch_id, child_id)` UNIQUE. JSONB checks for `home_address` (object), `professional_referrals` (array). Password consistency check. |
-| `child_registration_contacts` | `id UUID PK`, `tenant_id`, `branch_id`, `profile_id FK CASCADE`, `child_id FK`, `contact_type`, `sort_order`, `full_name`, relationship/contact fields, JSONB `address`/`work_address`, `has_parental_responsibility`, `created_at`, `updated_at` | Unique per `(profile_id, contact_type, sort_order)`. JSONB object checks. Sort order >= 0. FK cascades on profile delete. |
 
 ### Attendance
 
@@ -127,12 +142,12 @@ Manager-facing payment timeline records.
 | Type | Values |
 |---|---|
 | `lifecycle_reason_code` | `duplicate_record`, `entered_in_error`, `left_nursery`, `safeguarding_direction`, `contact_update`, `access_revoked`, `other` |
-| `registration_yes_no_unknown` | `unknown`, `no`, `yes` |
-| `registration_immunisation_status` | `unknown`, `up_to_date`, `refused`, `partial`, `not_recorded` |
-| `registration_contact_type` | `parent_carer`, `emergency_contact`, `authorised_collector` |
+| `child_contact_type` | `parent_carer`, `emergency_contact`, `authorised_collector` |
 
-Used by: `children.left_reason_code`, `guardians.deactivation_reason_code`, `guardian_child_links.ended_reason_code`, `parent_membership_guardians.ended_reason_code`, `audit_logs.reason_code`.
-Registration enums used by: `child_registration_profiles` and `child_registration_contacts` tables (migration 000016).
+Used by: `child_leaving_records.reason_code`, `guardians.deactivation_reason_code`, `guardian_child_links.ended_reason_code`, `parent_membership_guardians.ended_reason_code`, `audit_logs.reason_code`.
+`child_contact_type` is used by `child_contacts.contact_type`.
+
+Tri-state text columns (no enum) on child sub-records: `child_profiles.disability_status`, `child_health_profiles.medical_conditions_status`/`prescribed_medication_status`/`dietary_requirements_status`, `child_safeguarding_profiles.social_services_status` + the six concern flags, `child_funding_records` six eligibility fields — all `('unknown','no','yes')` (immunisation_status is a separate five-value set).
 
 ## Triggers & Functions
 
@@ -190,6 +205,14 @@ Registration enums used by: `child_registration_profiles` and `child_registratio
 | `idx_reconciliation_attempt_created` | `payment_reconciliation_records` | btree | Reconciliation records by attempt + created desc |
 | `idx_stripe_webhook_events_event_type` | `stripe_webhook_events` | btree | Webhook events by type + received desc |
 | `idx_stripe_webhook_events_processing_status` | `stripe_webhook_events` | btree | Webhook events by processing status + received desc |
-| `idx_child_registration_profiles_scope_child` | `child_registration_profiles` | UNIQUE btree | One profile per child per scope |
-| `child_registration_profiles_scope_id_unique` | `child_registration_profiles` | UNIQUE btree | Scope composite key for contact FK |
-| `idx_child_registration_contacts_profile_type` | `child_registration_contacts` | btree | Contacts by profile + type + sort order |
+| `idx_child_profiles_child` | `child_profiles` | btree | Lookup by tenant/branch/child |
+| `idx_child_contacts_child_type` | `child_contacts` | btree | Contacts by child + type + sort order (composite UNIQUE already covers scope lookup) |
+| `idx_child_health_profiles_child` | `child_health_profiles` | btree | Lookup by tenant/branch/child |
+| `idx_child_safeguarding_profiles_child` | `child_safeguarding_profiles` | btree | Lookup by tenant/branch/child |
+| `idx_child_consent_records_child` | `child_consent_records` | btree | Lookup by tenant/branch/child |
+| `idx_child_funding_records_child` | `child_funding_records` | btree | Lookup by tenant/branch/child |
+| `idx_child_collection_settings_child` | `child_collection_settings` | btree | Lookup by tenant/branch/child |
+| `idx_child_room_assignments_child_current` | `child_room_assignments` | btree (partial) | Current room per child |
+| `idx_child_room_assignments_room_current` | `child_room_assignments` | btree (partial) | Current occupants per room (capacity) |
+| `idx_child_billing_profiles_child` | `child_billing_profiles` | btree | Lookup by tenant/branch/child |
+| `idx_child_leaving_records_child` | `child_leaving_records` | btree | Lookup by tenant/branch/child |

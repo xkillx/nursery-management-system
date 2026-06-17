@@ -414,6 +414,11 @@ components:
 
     Child:
       type: object
+      description: |
+        Child identity row. Per-child profile, contacts, health, safeguarding,
+        consent, funding, collection, room, billing, and leaving data live in
+        dedicated sub-resource tables; use the per-resource endpoints below
+        (`/children/:child_id/{profile,contacts,health,...}`).
       properties:
         id:
           type: string
@@ -436,35 +441,251 @@ components:
           type: string
           format: date
           nullable: true
-        core_hourly_rate_minor:
-          type: integer
         notes:
           type: string
           nullable: true
         is_active:
           type: boolean
-        left_at:
-          type: string
-          format: date-time
-          nullable: true
-        left_reason_code:
-          type: string
-          nullable: true
-        left_reason_note:
-          type: string
-          nullable: true
-        enrollment_complete:
+        has_current_room:
           type: boolean
-        missing_requirements:
-          type: array
-          items:
-            type: string
+          description: True when the child has a non-null current `child_room_assignments` row.
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+
+    ChildProfile:
+      type: object
+      description: Per-child demographics, home, access, GDPR declaration, section review flags.
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        sex: { type: string, nullable: true }
+        religion: { type: string, nullable: true }
+        ethnic_origin: { type: string, nullable: true }
+        first_language: { type: string, nullable: true }
+        other_languages: { type: string, nullable: true }
+        home_address:
+          type: object
+          additionalProperties: true
+        home_postcode: { type: string, nullable: true }
+        home_telephone: { type: string, nullable: true }
+        disability_status:
+          type: string
+          enum: [unknown, no, yes]
+        disability_notes: { type: string, nullable: true }
+        access_requirements: { type: string, nullable: true }
+        routine_care_notes: { type: string, nullable: true }
+        gdpr_declared_by_name: { type: string, nullable: true }
+        gdpr_declared_at: { type: string, format: date-time, nullable: true }
+        gdpr_declaration_date: { type: string, format: date, nullable: true }
+        registration_date: { type: string, format: date, nullable: true }
+        demographics_home_reviewed: { type: boolean }
+        medical_dietary_reviewed: { type: boolean }
+        health_contacts_reviewed: { type: boolean }
+        social_development_reviewed: { type: boolean }
+        parent_responsibility_reviewed: { type: boolean }
+        emergency_collection_reviewed: { type: boolean }
+        routine_care_reviewed: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildContact:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        contact_type:
+          type: string
+          enum: [parent_carer, emergency_contact, authorised_collector]
+        sort_order: { type: integer }
+        full_name: { type: string }
+        relationship_to_child: { type: string, nullable: true }
+        address:
+          type: object
+          additionalProperties: true
+        telephone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        work_address:
+          type: object
+          additionalProperties: true
+        has_parental_responsibility: { type: boolean, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildHealthProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        medical_conditions_status: { type: string, enum: [unknown, no, yes] }
+        medical_conditions_notes: { type: string, nullable: true }
+        prescribed_medication_status: { type: string, enum: [unknown, no, yes] }
+        medication_notes: { type: string, nullable: true }
+        immunisation_status:
+          type: string
+          enum: [unknown, up_to_date, refused, partial, not_recorded]
+        immunisation_country: { type: string, nullable: true }
+        illness_diagnosis_history: { type: string, nullable: true }
+        dietary_requirements_status: { type: string, enum: [unknown, no, yes] }
+        dietary_requirements_notes: { type: string, nullable: true }
+        dietary_side_effects: { type: string, nullable: true }
+        doctor_name: { type: string, nullable: true }
+        doctor_address: { type: string, nullable: true }
+        doctor_phone: { type: string, nullable: true }
+        health_visitor_name: { type: string, nullable: true }
+        health_visitor_address: { type: string, nullable: true }
+        health_visitor_phone: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildSafeguardingProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        social_services_status: { type: string, enum: [unknown, no, yes] }
+        social_services_notes: { type: string, nullable: true }
+        social_worker_name: { type: string, nullable: true }
+        social_worker_phone: { type: string, nullable: true }
+        social_worker_email: { type: string, nullable: true }
+        concern_walking: { type: string, enum: [unknown, no, yes] }
+        concern_speech_language: { type: string, enum: [unknown, no, yes] }
+        concern_hearing: { type: string, enum: [unknown, no, yes] }
+        concern_sight: { type: string, enum: [unknown, no, yes] }
+        concern_emotional_wellbeing: { type: string, enum: [unknown, no, yes] }
+        concern_behaviour: { type: string, enum: [unknown, no, yes] }
+        professional_referrals:
+          type: array
+          items: { type: object, additionalProperties: true }
+        restricted_notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildConsentRecord:
+      type: object
+      description: |
+        Single current row per child (no version column). PUT replaces the row.
+        `safeguarding_reporting_acknowledgement` is a hard requirement.
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        urgent_medical_treatment: { type: boolean }
+        urgent_medical_treatment_exceptions: { type: string, nullable: true }
+        plasters: { type: boolean }
+        safeguarding_reporting_acknowledgement: { type: boolean }
+        information_sharing_consent: { type: boolean }
+        gdpr_data_processing_consent: { type: boolean }
+        area_senco_liaison: { type: boolean }
+        health_visitor_liaison: { type: boolean }
+        transition_documents: { type: boolean }
+        local_outings: { type: boolean }
+        face_painting: { type: boolean }
+        parent_supplied_sun_cream: { type: boolean }
+        parent_supplied_nappy_cream: { type: boolean }
+        development_profile_photos: { type: boolean }
+        nursery_display_boards: { type: boolean }
+        promotional_literature: { type: boolean }
+        nursery_website: { type: boolean }
+        staff_student_coursework: { type: boolean }
+        social_media: { type: boolean }
+        social_media_channel_notes: { type: string, nullable: true }
+        notes_exceptions: { type: string, nullable: true }
+        signer_name: { type: string }
+        signed_date: { type: string, format: date }
+        paper_form_on_file: { type: boolean }
+        entered_by_user_id: { type: string, format: uuid }
+        entered_by_membership_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildFundingRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        benefits_contribute_to_fees: { type: string, enum: [unknown, no, yes] }
+        working_tax_credit: { type: string, enum: [unknown, no, yes] }
+        college_uni_paid_to_parent: { type: string, enum: [unknown, no, yes] }
+        college_uni_paid_to_nursery: { type: string, enum: [unknown, no, yes] }
+        funding_3yo_term_time: { type: string, enum: [unknown, no, yes] }
+        funding_2yo_term_time: { type: string, enum: [unknown, no, yes] }
+        funding_support_notes: { type: string, nullable: true }
+        funding_support_reviewed: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildCollectionSettings:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        over_18_collection_acknowledged: { type: boolean }
+        has_collection_password:
+          type: boolean
+          description: True when a collection password hash is set.
+        collection_password_updated_at: { type: string, format: date-time, nullable: true }
+        collection_password_updated_by_user_id: { type: string, format: uuid, nullable: true }
+        collection_password_updated_by_membership_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildCollectionPasswordRequest:
+      type: object
+      required: [collection_password]
+      properties:
+        collection_password:
+          type: string
+          minLength: 4
+          description: Plain-text collection password; server hashes and stores.
+
+    ChildRoomAssignment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        room_id: { type: string, format: uuid }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date, nullable: true }
+        is_current: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    ChildRoomAssignmentCreateRequest:
+      type: object
+      required: [room_id, start_date]
+      properties:
+        room_id: { type: string, format: uuid }
+        start_date: { type: string, format: date }
+        close_current: { type: boolean, default: true, description: Close any current assignment as of `start_date` (default true). }
+
+    ChildBillingProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        billing_basis:
+          type: string
+          enum: [site_rate, custom]
+        custom_rate_minor:
+          type: integer
+          nullable: true
+        effective_from: { type: string, format: date }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChildLeavingRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        left_at: { type: string, format: date-time }
+        reason_code:
+          type: string
+          enum: [duplicate_record, entered_in_error, left_nursery, safeguarding_direction, contact_update, access_revoked, other]
+        reason_note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
 
     Guardian:
       type: object
@@ -1085,196 +1306,70 @@ components:
               minimum: 0
             default: 0
 
-    CompleteRegistrationRequest:
+    CreateChildFullRequest:
       type: object
-      description: Complete registration payload sent by the guided intake stepper at step 5
-      required: [child, consents]
+      description: |
+        Atomic child creation payload. Runs the full child + all sub-records
+        in one transaction. Used by the manager stepper's "Create" submit.
+      required: [child, room_assignment, consent, safeguard_ack]
       properties:
         child:
           type: object
           required: [first_name, date_of_birth, start_date]
           properties:
-            first_name:
-              type: string
-            middle_name:
-              type: string
-              nullable: true
-            last_name:
-              type: string
-              nullable: true
-            date_of_birth:
-              type: string
-              format: date
-            start_date:
-              type: string
-              format: date
-            notes:
-              type: string
-            primary_room_id:
-              type: string
-              format: uuid
-              nullable: true
-              description: UUID of the child's primary room. Effectively required by server-side validation on the guided intake path.
-        registration_profile:
+            first_name: { type: string }
+            middle_name: { type: string, nullable: true }
+            last_name: { type: string, nullable: true }
+            date_of_birth: { type: string, format: date }
+            start_date: { type: string, format: date }
+            notes: { type: string, nullable: true }
+        room_assignment:
           type: object
-          description: All registration profile sections
+          required: [room_id, start_date]
           properties:
-            registration_date:
-              type: string
-              format: date
-              nullable: true
-              description: Date the parent/carer provided the registration information. Required on the guided intake path; must be a `YYYY-MM-DD` date not in the future.
-            demographics_home:
-              type: object
-            medical_dietary:
-              type: object
-            health_contacts:
-              type: object
-            social_development:
-              type: object
-              properties:
-            demographics_home:
-              type: object
-            medical_dietary:
-              type: object
-            health_contacts:
-              type: object
-            social_development:
-              type: object
-              properties:
-                social_services_status:
-                  type: string
-                  nullable: true
-                  enum: [unknown, yes, no]
-                social_services_notes:
-                  type: string
-                  nullable: true
-                social_worker_name:
-                  type: string
-                  nullable: true
-                social_worker_phone:
-                  type: string
-                  nullable: true
-                social_worker_email:
-                  type: string
-                  nullable: true
-                concern_walking:
-                  type: string
-                  nullable: true
-                concern_speech_language:
-                  type: string
-                  nullable: true
-                concern_hearing:
-                  type: string
-                  nullable: true
-                concern_sight:
-                  type: string
-                  nullable: true
-                concern_emotional_wellbeing:
-                  type: string
-                  nullable: true
-                concern_behaviour:
-                  type: string
-                  nullable: true
-                professional_referrals:
-                  type: array
-                  items:
-                    type: object
-                social_development_reviewed:
-                  type: boolean
-            parent_carers:
-              type: array
-              items:
-                type: object
-            emergency_contacts:
-              type: array
-              items:
-                type: object
-            authorised_collectors:
-              type: array
-              items:
-                type: object
-            collection:
-              type: object
-            funding_support:
-              type: object
-            routine_care:
-              type: object
-            gdpr_declaration:
-              type: object
-        consents:
+            room_id: { type: string, format: uuid }
+            start_date: { type: string, format: date }
+        profile:
+          $ref: "#/components/schemas/ChildProfile"
+        health:
+          $ref: "#/components/schemas/ChildHealthProfile"
+        safeguarding:
+          $ref: "#/components/schemas/ChildSafeguardingProfile"
+        contacts:
+          type: array
+          items: { $ref: "#/components/schemas/ChildContact" }
+        funding:
+          $ref: "#/components/schemas/ChildFundingRecord"
+        consent:
+          $ref: "#/components/schemas/ChildConsentRecord"
+        collection_settings:
           type: object
           properties:
-            urgent_medical_treatment:
-              type: boolean
-            urgent_medical_treatment_exceptions:
-              type: string
-              nullable: true
-            plasters:
-              type: boolean
-            safeguarding_reporting_acknowledgement:
-              type: boolean
-            area_senco_liaison:
-              type: boolean
-            health_visitor_liaison:
-              type: boolean
-            transition_documents:
-              type: boolean
-            local_outings:
-              type: boolean
-            face_painting:
-              type: boolean
-            parent_supplied_sun_cream:
-              type: boolean
-            parent_supplied_nappy_cream:
-              type: boolean
-            development_profile_photos:
-              type: boolean
-            nursery_display_boards:
-              type: boolean
-            promotional_literature:
-              type: boolean
-            nursery_website:
-              type: boolean
-            staff_student_coursework:
-              type: boolean
-            social_media:
-              type: boolean
-            social_media_channel_notes:
-              type: string
-              nullable: true
-            notes_exceptions:
-              type: string
-              nullable: true
-        collection_password:
-          type: string
-          description: Optional collection password to set
+            over_18_collection_acknowledged: { type: boolean }
+            collection_password: { type: string, nullable: true, minLength: 4 }
+        billing_profile:
+          $ref: "#/components/schemas/ChildBillingProfile"
+        safeguard_ack:
+          type: boolean
+          description: |
+            Manager attestation that they have read the safeguarding section.
+            Hard requirement at create time.
 
-    CompleteRegistrationResponse:
+    CreateChildFullResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        first_name:
-          type: string
-        middle_name:
-          type: string
-          nullable: true
-        last_name:
-          type: string
-          nullable: true
-        start_date:
-          type: string
-          format: date
-          type: object
-          properties:
-            core_hourly_rate_minor:
-              type: integer
-              nullable: true
-              description: Core hourly rate in minor units (pence), null when not set
-              minimum: 0
-            default: 0
+        child: { $ref: "#/components/schemas/Child" }
+        profile: { $ref: "#/components/schemas/ChildProfile" }
+        health: { $ref: "#/components/schemas/ChildHealthProfile" }
+        safeguarding: { $ref: "#/components/schemas/ChildSafeguardingProfile" }
+        contacts:
+          type: array
+          items: { $ref: "#/components/schemas/ChildContact" }
+        funding: { $ref: "#/components/schemas/ChildFundingRecord" }
+        consent: { $ref: "#/components/schemas/ChildConsentRecord" }
+        collection_settings: { $ref: "#/components/schemas/ChildCollectionSettings" }
+        billing_profile: { $ref: "#/components/schemas/ChildBillingProfile" }
+        room_assignment: { $ref: "#/components/schemas/ChildRoomAssignment" }
       responses:
         "200":
           description: Children list
@@ -2866,11 +2961,11 @@ components:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/children/{child_id}/registration-profile:
+  /api/v1/children/{child_id}/profile:
     get:
-      operationId: getChildRegistrationProfile
-      summary: Get registration/enrolment profile for a child
-      tags: [Registration Profiles]
+      operationId: getChildProfile
+      summary: Get the demographics / home / GDPR-declaration profile for a child
+      tags: [Child Management]
       x-implementation-status: implemented
       x-roles: [manager]
       security:
@@ -2879,27 +2974,20 @@ components:
         - name: child_id
           in: path
           required: true
-          schema:
-            type: string
-            format: uuid
+          schema: { type: string, format: uuid }
       responses:
         "200":
-          description: Registration profile response (defaults when no profile exists)
+          description: Current profile (defaults when no row exists)
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationProfileResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
+              schema: { $ref: "#/components/schemas/ChildProfile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
     patch:
-      operationId: patchChildRegistrationProfile
-      summary: Update partial registration profile sections
-      tags: [Registration Profiles]
+      operationId: patchChildProfile
+      summary: Partial update of the profile
+      tags: [Child Management]
       x-implementation-status: implemented
       x-roles: [manager]
       security:
@@ -2908,74 +2996,28 @@ components:
         - name: child_id
           in: path
           required: true
-          schema:
-            type: string
-            format: uuid
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/RegistrationProfilePatchRequest"
+            schema: { $ref: "#/components/schemas/ChildProfile" }
       responses:
         "200":
           description: Current profile after merge
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationProfileResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
+              schema: { $ref: "#/components/schemas/ChildProfile" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/children/{child_id}/registration-profile/collection-password:
-    put:
-      operationId: setChildRegistrationCollectionPassword
-      summary: Set or replace collection password
-      tags: [Registration Profiles]
-      x-implementation-status: implemented
-      x-roles: [manager]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: child_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegistrationCollectionPasswordRequest"
-      responses:
-        "200":
-          description: Profile response with password metadata
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationProfileResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/v1/children/{child_id}/registration-consents:
+  /api/v1/children/{child_id}/contacts:
     get:
-      operationId: getRegistrationConsents
-      summary: Get current and historical paper-form consent records for a child
-      tags: [Registration Profiles]
+      operationId: getChildContacts
+      summary: Get parent/carer, emergency, and authorised-collector contacts for a child
+      tags: [Child Management]
       x-implementation-status: implemented
       x-roles: [manager]
       security:
@@ -2984,50 +3026,31 @@ components:
         - name: child_id
           in: path
           required: true
-          schema:
-            type: string
-            format: uuid
+          schema: { type: string, format: uuid }
       responses:
         "200":
-          description: Consent records with current, history, and completeness
+          description: Contacts grouped by `contact_type`
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  child:
-                    type: object
-                    properties:
-                      id: { type: string }
-                      first_name: { type: string }
-                      middle_name: { type: string, nullable: true }
-                      last_name: { type: string, nullable: true }
-                      date_of_birth: { type: string }
-                  current:
-                    type: object
-                    nullable: true
-                    description: Current (highest-version) consent record
-                  history:
+                  parent_carers:
                     type: array
-                    items:
-                      type: object
-                  completeness:
-                    type: object
-                    properties:
-                      is_complete: { type: boolean }
-                      missing_decisions:
-                        type: array
-                        items: { type: string }
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    post:
-      operationId: createRegistrationConsent
-      summary: Create a new paper-form consent record version
-      tags: [Registration Profiles]
+                    items: { $ref: "#/components/schemas/ChildContact" }
+                  emergency_contacts:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChildContact" }
+                  authorised_collectors:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChildContact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: putChildContacts
+      summary: Replace the full set of contacts for a child (one PUT per save)
+      tags: [Child Management]
       x-implementation-status: implemented
       x-roles: [manager]
       security:
@@ -3036,9 +3059,7 @@ components:
         - name: child_id
           in: path
           required: true
-          schema:
-            type: string
-            format: uuid
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
@@ -3046,85 +3067,42 @@ components:
             schema:
               type: object
               properties:
-                urgent_medical_treatment: { type: boolean }
-                plasters: { type: boolean }
-                safeguarding_reporting_acknowledgement: { type: boolean }
-                area_senco_liaison: { type: boolean }
-                health_visitor_liaison: { type: boolean }
-                transition_documents: { type: boolean }
-                local_outings: { type: boolean }
-                face_painting: { type: boolean }
-                parent_supplied_sun_cream: { type: boolean }
-                parent_supplied_nappy_cream: { type: boolean }
-                development_profile_photos: { type: boolean }
-                nursery_display_boards: { type: boolean }
-                promotional_literature: { type: boolean }
-                nursery_website: { type: boolean }
-                staff_student_coursework: { type: boolean }
-                social_media: { type: boolean }
-      responses:
-        "201":
-          description: Created consent record
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/v1/children/{child_id}/registration-workflow-status:
-    get:
-      operationId: getRegistrationWorkflowStatus
-      summary: Get registration workflow completeness and attestation status
-      tags: [Registration Profiles]
-      x-implementation-status: implemented
-      x-roles: [manager]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: child_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+                parent_carers:
+                  type: array
+                  items: { $ref: "#/components/schemas/ChildContact" }
+                emergency_contacts:
+                  type: array
+                  items: { $ref: "#/components/schemas/ChildContact" }
+                authorised_collectors:
+                  type: array
+                  items: { $ref: "#/components/schemas/ChildContact" }
       responses:
         "200":
-          description: Workflow status with completeness and attestation
+          description: Contacts after replace
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  child: { type: object }
-                  profile_completeness: { type: object }
-                  consent_completeness: { type: object }
-                  current_consent_record:
-                    type: object
-                    nullable: true
-                  latest_attestation:
-                    type: object
-                    nullable: true
-                  can_mark_complete: { type: boolean }
-                  is_reviewed_complete: { type: boolean }
-                  needs_review: { type: boolean }
-                  missing_groups:
+                  parent_carers:
                     type: array
-                    items: { type: string }
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                    items: { $ref: "#/components/schemas/ChildContact" }
+                  emergency_contacts:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChildContact" }
+                  authorised_collectors:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChildContact" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/children/{child_id}/registration-completion-attestations:
-    post:
-      operationId: createRegistrationCompletionAttestation
-      summary: Mark registration as reviewed and complete
-      tags: [Registration Profiles]
+  /api/v1/children/{child_id}/health:
+    get:
+      operationId: getChildHealth
+      summary: Get the medical / dietary / GP / health-visitor profile for a child
+      tags: [Child Management]
       x-implementation-status: implemented
       x-roles: [manager]
       security:
@@ -3133,20 +3111,416 @@ components:
         - name: child_id
           in: path
           required: true
-          schema:
-            type: string
-            format: uuid
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Health profile (defaults when no row exists)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildHealthProfile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: patchChildHealth
+      summary: Partial update of the health profile
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildHealthProfile" }
+      responses:
+        "200":
+          description: Health profile after merge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildHealthProfile" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/safeguarding:
+    get:
+      operationId: getChildSafeguarding
+      summary: Get the social-services / concerns / professional-referrals profile for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Safeguarding profile (defaults when no row exists)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildSafeguardingProfile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: patchChildSafeguarding
+      summary: Partial update of the safeguarding profile
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildSafeguardingProfile" }
+      responses:
+        "200":
+          description: Safeguarding profile after merge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildSafeguardingProfile" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/consent:
+    get:
+      operationId: getChildConsent
+      summary: Get the single current consent record for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current consent record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildConsentRecord" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateChildConsent
+      summary: Replace the current consent record for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildConsentRecord" }
+      responses:
+        "200":
+          description: Consent record after replace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildConsentRecord" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/funding:
+    get:
+      operationId: getChildFunding
+      summary: Get the funding record for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current funding record (defaults when no row exists)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildFundingRecord" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: patchChildFunding
+      summary: Partial update of the funding record
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildFundingRecord" }
+      responses:
+        "200":
+          description: Funding record after merge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildFundingRecord" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/collection-settings:
+    get:
+      operationId: getChildCollectionSettings
+      summary: Get collection settings (over-18 ack + password metadata) for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current collection settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildCollectionSettings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setChildCollectionSettings
+      summary: Set or replace the collection password for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildCollectionPasswordRequest" }
+      responses:
+        "200":
+          description: Collection settings after password set
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildCollectionSettings" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/room-assignments:
+    get:
+      operationId: listChildRoomAssignments
+      summary: List room placement history for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: List of assignments, current first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChildRoomAssignment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      operationId: createChildRoomAssignment
+      summary: Open a new room assignment (and optionally close the current one)
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildRoomAssignmentCreateRequest" }
       responses:
         "201":
-          description: Attestation created
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/ForbiddenRole"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Assignment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildRoomAssignment" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /api/v1/children/{child_id}/room-assignments/{assignment_id}:
+    delete:
+      operationId: closeChildRoomAssignment
+      summary: Close a room assignment by setting its end_date
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: assignment_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: end_date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "204":
+          description: Assignment closed
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/billing-profile:
+    get:
+      operationId: getChildBillingProfile
+      summary: Get the per-child billing basis
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current billing profile (defaults when no row exists)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildBillingProfile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: patchChildBillingProfile
+      summary: Update the billing basis / custom rate for a child
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChildBillingProfile" }
+      responses:
+        "200":
+          description: Billing profile after update
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildBillingProfile" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/leaving-record:
+    get:
+      operationId: getChildLeavingRecord
+      summary: Get the leaving record for a child (set when the child is marked inactive)
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Leaving record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildLeavingRecord" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/owner/sites/{site_id}/manager-access/{membership_id}/actions/activate:
     post:
@@ -3236,13 +3610,18 @@ components:
                 message: Site not found.
                 request_id: "00000000-0000-0000-0000-000000000003"
 
-  /api/v1/children/with-registration:
+  /api/v1/children:
     post:
-      operationId: submitCompleteRegistration
-      summary: Create child record with full registration atomically
-      description: Accepts all registration steps (child basics, profile, consents, collection password, office checklist) in one request. Creates everything atomically in a single transaction. Acts as the implicit attestation for the guided intake stepper flow.
-      tags: [Registration Profiles]
-      x-implementation-status: new
+      operationId: createChildWithFullProfile
+      summary: Create child and full set of sub-records atomically
+      description: |
+        Atomic child creation. The create payload is the full child + profile +
+        health + safeguarding + contacts + funding + consent + collection
+        settings + billing profile + opening room assignment. The whole batch
+        runs in one DB transaction; if any check fails, nothing is written.
+        Used by the manager stepper's "Create" submit on `manager-child-edit`.
+      tags: [Child Management]
+      x-implementation-status: implemented
       x-roles: [manager]
       security:
         - bearerAuth: []
@@ -3251,20 +3630,152 @@ components:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteRegistrationRequest"
+              $ref: "#/components/schemas/CreateChildFullRequest"
       responses:
-        "200":
-          description: Child record created successfully with full registration
+        "201":
+          description: Child record created successfully with all sub-records
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CompleteRegistrationResponse"
+                $ref: "#/components/schemas/CreateChildFullResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ForbiddenRole"
+
+  /api/v1/children/attendance:
+    get:
+      operationId: listChildrenAttendance
+      summary: List attendance entries for the current branch in a date range
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager, practitioner]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: List of attendance entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AttendanceSession" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+
+  /api/v1/children/{child_id}:
+    get:
+      operationId: getChild
+      summary: Get a child by id
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Child record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Child" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateChild
+      summary: Partial update of the child identity row
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                middle_name: { type: string, nullable: true }
+                last_name: { type: string, nullable: true }
+                date_of_birth: { type: string, format: date }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date, nullable: true }
+                notes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Child after update
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Child" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/children/{child_id}/actions/mark-inactive:
+    post:
+      operationId: markChildInactive
+      summary: Mark a child as inactive, write a leaving record, and close the current room assignment in one transaction
+      tags: [Child Management]
+      x-implementation-status: implemented
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason_code]
+              properties:
+                reason_code:
+                  type: string
+                  enum: [duplicate_record, entered_in_error, left_nursery, safeguarding_direction, contact_update, access_revoked, other]
+                reason_note: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Child after mark-inactive
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Child" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/ForbiddenRole" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
 
   /api/v1/sites/{site_id}/rooms:
     get:
@@ -3273,9 +3784,9 @@ components:
       description: |
         Returns rooms in the requested site. Active rooms only by default; pass
         `include_archived=true` to include archived rooms. Pass `include=occupancy`
-        to attach `assigned_count` (children whose primary_room_id is the room)
-        and `is_over_capacity` to each room. Without the flag, those fields are
-        absent and the response is unchanged.
+        to attach `assigned_count` (children with a current `child_room_assignments`
+        row in the room) and `is_over_capacity` to each room. Without the flag,
+        those fields are absent and the response is unchanged.
       parameters:
         - name: site_id
           in: path
