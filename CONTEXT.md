@@ -2,7 +2,7 @@
 
 ## Pilot Nursery
 
-The first live customer setting used to validate the MVP in production.
+The first live customer setting used to validate the initial release in production.
 
 ## Tenant
 
@@ -14,33 +14,17 @@ A physical nursery location within a tenant. Product-facing docs and user-facing
 
 ## Branch Scope
 
-The existing technical and API scope for a nursery site. Branch scope appears in session membership, authorization, API contracts, and database records, and should be treated as the same location boundary as nursery site in Post-MVP planning.
+The existing technical and API scope for a nursery site. Branch scope appears in session membership, authorization, API contracts, and database records, and should be treated as the same location boundary as nursery site in roadmap planning.
 
-## MVP Scope (Month 1)
+## Release Roadmap
 
-The completed first release baseline focused on attendance, absence markers, funding deduction, invoicing, parent invoice access, Stripe payment collection, and manager/practitioner/parent access.
+The shipped operational baseline covers attendance, absence markers, funding deduction, invoicing, parent invoice access, Stripe payment collection, and manager/practitioner/parent access, and is followed by a stabilization track that extends it with owner and multi-site operations, registration and consent, room/session planning, ratio safety, safeguarding and incidents, learning journeys, and production hardening. The default next workstream is pilot readiness and owner-visible four-site operations, after which feature work proceeds through registration and consent, room/session planning, ratio safety, safeguarding and incidents, then learning journeys; registration and consent come first because child profile and compliance data feed later planning and safety workflows.
 
-## Post-MVP Scope
-
-The product expansion track after the completed month-1 MVP. It extends the operational baseline into owner and multi-site operations, registration and consent, room/session planning, ratio safety, safeguarding and incidents, learning journeys, and production hardening.
-
-## Post-MVP Priority Lane
-
-The default next workstream after MVP completion. Pilot readiness and owner-visible four-site operations take priority before deeper modules such as ratio safety, safeguarding, learning journeys, or SEND.
-
-## Post-MVP Pilot Readiness Gate
-
-The first Post-MVP gate that makes the completed MVP safe and understandable for pilot operation. It covers production deployment documentation, backup and restore, Stripe operations, UAT seed data, smoke testing, visual QA, accessibility review, and terminology cleanup rather than adding new product modules.
-
-## Post-MVP Feature Sequence
-
-After pilot readiness and owner/four-site oversight, Post-MVP feature work should proceed through registration and consent, room/session planning, ratio safety, safeguarding and incidents, then learning journeys. Registration and consent come first because child profile and compliance data feed later planning and safety workflows.
-
-## Child Identity Source of Truth (Post-MVP)
+## Child Identity Source of Truth
 
 The existing child record remains the source of truth for a child's full name and date of birth. The registration/enrolment profile may display those values for context but does not keep a second editable copy of them.
 
-## Collection Password (Post-MVP)
+## Collection Password
 
 A sensitive collection secret recorded for emergency child collection when the nursery has prior notice that someone outside the usual listed contacts will collect the child. Normal registration profile reads expose only password presence and last-updated metadata, not the stored secret itself.
 
@@ -48,51 +32,51 @@ A sensitive collection secret recorded for emergency child collection when the n
 
 The business owner or delegated owner-level operator responsible for oversight across the nursery business and its sites. A tenant may have multiple owner-role users; the pilot may start with one owner account.
 
-## Owner Oversight Scope (Post-MVP)
+## Owner Oversight Scope
 
 The first owner release is cross-site read and oversight first. The owner may inspect site summaries, compare finance and attendance health, review pilot readiness, and administer branch-manager access, while routine attendance, child-record edits, invoice issue, and branch workflow corrections remain branch-manager responsibilities unless a later owner-administration decision expands them.
 
-## Owner Access Mode (Post-MVP)
+## Owner Access Mode
 
 The owner works from a business-wide owner view across all nursery sites, with site filters and drill-downs where needed. Owner access is distinct from switching into or impersonating a branch-scoped manager session.
 
-## Owner Manager Access Administration (Post-MVP)
+## Owner Manager Access Administration
 
 In the first owner release, the owner may invite, activate or deactivate, and assign manager access for each nursery site. The owner may grant site-manager access to a new email address or to an existing active user account without changing that user's other memberships. Practitioner and parent access administration remains a site-manager responsibility.
 
-## Owner Role Provisioning (Post-MVP)
+## Owner Role Provisioning
 
 Owner-role users are provisioned through administrative or bootstrap paths in the first owner release. Owners may manage site-manager access, but they do not invite, assign, or deactivate other owner-role users.
 
-## Owner Cross-Site Summary (Post-MVP)
+## Owner Cross-Site Summary
 
 The owner-facing summary compares nursery sites using aggregate health metrics and exception counts. The first owner landing view is exception-led: sites without active managers, overdue or failed payments, outstanding balances, incomplete attendance, and funding readiness flags are more prominent than routine detail. It does not grant routine drill-down into named child, parent, invoice, or attendance workflows in the first owner release.
 
-## Owner Summary Export Boundary (Post-MVP)
+## Owner Summary Export Boundary
 
 The first owner release provides on-screen cross-site summaries only. Exportable owner reporting is deferred until reporting requirements are clearer.
 
-## Owner Site Health Metrics (Post-MVP)
+## Owner Site Health Metrics
 
 The first owner summary covers attendance today, active enrolled children, invoice and payment health, funding readiness exceptions, and manager access status per site. Invoice and payment health includes invoice counts by status plus financial totals such as issued, paid, outstanding, overdue outstanding, and failed-payment count. Staff costs, Ofsted readiness, room capacity, safeguarding, and learning journey metrics are deferred until those product areas exist.
 
-## Owner Site Setup Visibility (Post-MVP)
+## Owner Site Setup Visibility
 
 Owner summaries include active sites even when setup or current-period data is missing. A site without an active manager is an owner action item; missing finance, funding, or attendance data is shown as zero or not ready according to the metric rather than hiding the site.
 
-## Owner Site Billing Setup (Post-MVP)
+## Owner Site Billing Setup
 
 Owner site overview is the first owner workflow for setting each nursery site's core hourly rate. A missing site core hourly rate is a site setup exception because future draft invoice generation for that site is not billing-ready.
 
-## Owner Summary Time Windows (Post-MVP)
+## Owner Summary Time Windows
 
 Owner attendance summaries use today's site attendance. Owner invoice, payment, and funding readiness summaries default to the current calendar billing month, while active enrolled children and manager access status are current snapshots.
 
-## Owner Site Coverage (Post-MVP)
+## Owner Site Coverage
 
 Owner access applies to all active nursery sites within the owner's tenant. The current pilot has four sites, but four-site access is a pilot shape rather than a permanent product limit.
 
-## Owner Site Filter Boundary (Post-MVP)
+## Owner Site Filter Boundary
 
 Filtering or focusing an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Avoid using site switcher to imply that the owner enters or impersonates a branch-scoped manager or practitioner session. Owners remain blocked from branch-scoped manager write actions such as child or guardian edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
 
@@ -100,7 +84,7 @@ Filtering or focusing an owner view to one nursery site changes what the owner i
 
 A nursery staff role responsible for administration, invoicing, and operational oversight.
 
-## Multi-Site Manager Access (Post-MVP)
+## Multi-Site Manager Access
 
 A manager assigned to more than one nursery site works through separate manager memberships and an active site scope. Multiple manager memberships do not grant owner-style cross-site summaries or tenant-wide site filters.
 
@@ -112,7 +96,7 @@ A nursery staff role focused on day-to-day child attendance operations.
 
 A guardian-side role that views invoices and completes payments.
 
-## Manager Operations Dashboard (MVP)
+## Manager Operations Dashboard
 
 The manager-facing landing surface for operational oversight across attendance, invoicing, and payment status. Avoid generic dashboard or ecommerce dashboard.
 
@@ -120,7 +104,7 @@ The manager-facing landing surface for operational oversight across attendance, 
 
 A user's role-bearing participation in one tenant and one branch. A user may have multiple active memberships, but each authenticated session acts through exactly one membership.
 
-## Role Capability Inheritance (MVP)
+## Role Capability Inheritance
 
 Manager permissions include practitioner attendance actions within the same active session scope.
 
@@ -128,47 +112,47 @@ Manager permissions include practitioner attendance actions within the same acti
 
 A simple funded-hours deduction model used to reduce monthly billed amount per child.
 
-## Funding Profile (MVP)
+## Funding Profile
 
 A child's funded-hours allowance for a single billing month.
 
-## Funded-Hours Allowance (MVP)
+## Funded-Hours Allowance
 
 The amount of core childcare time covered by funding for one child in one billing month. Managers discuss and enter this as hours and minutes, while a missing allowance remains different from an explicit zero allowance.
 
-## Missing Funding Profile (MVP)
+## Missing Funding Profile
 
 A child-month without a recorded funding profile. This is distinct from a funding profile with a zero-minute allowance.
 
-## Missing Funding Profile Invoice Block (MVP)
+## Missing Funding Profile Invoice Block
 
 A missing funding profile blocks invoice draft preflight for that child-month; an explicit zero-minute allowance does not.
 
-## Funding Overview (MVP)
+## Funding Overview
 
 A manager-facing triage surface for a selected billing month that highlights child-month funding profiles needing review. It supports funding readiness checks but does not replace invoice preflight or change invoice blocking rules.
 
-## Funding Overview Triage Flag (MVP)
+## Funding Overview Triage Flag
 
 A warning shown in the funding overview for a missing funding profile, an explicit zero-minute allowance, an allowance under one hour, or an allowance above 160 hours. These flags are advisory and do not block saving funding profiles or generating invoices.
 
-## Funding Profile Enrollment Scope (MVP)
+## Funding Profile Enrollment Scope
 
 Funding profiles are valid for billing months that overlap the child's enrollment window, including historical months after the child has left.
 
-## Funding Profile Partial-Month Rule (MVP)
+## Funding Profile Partial-Month Rule
 
 A funding profile may exist when the billing month overlaps the child's enrollment window by at least one day.
 
-## Funding Profile Audit Scope (MVP)
+## Funding Profile Audit Scope
 
 Funding profile creation and allowance changes are persisted as audit events, while unchanged idempotent saves are not.
 
-## Funding Profile Invoice Snapshot Boundary (MVP)
+## Funding Profile Invoice Snapshot Boundary
 
 Changing a funding profile after an invoice is issued does not change that issued invoice; issued invoice lines preserve the funded allowance applied at issue time.
 
-## Funding v1 Metadata Scope (MVP)
+## Funding v1 Metadata Scope
 
 Funding v1 records only the month-specific allowance; funding source, entitlement type, evidence, stretched funding, term-time rules, and notes are deferred.
 
@@ -176,1361 +160,1361 @@ Funding v1 records only the month-specific allowance; funding source, entitlemen
 
 A monthly billing statement showing gross fees, funded deduction, and final amount due.
 
-## Monthly Invoice (MVP)
+## Monthly Invoice
 
 An invoice for one child and one calendar billing month. A child has at most one monthly invoice for the same billing month within a nursery branch.
 
-## Invoice Line (MVP)
+## Invoice Line
 
 A charge, deduction, extra, or adjustment entry that explains how an invoice total was formed. Invoice lines preserve the billing calculation used for the invoice they belong to.
 
-## Parent Account Provisioning (MVP)
+## Parent Account Provisioning
 
-Parent user accounts are created by manager invitation only; public self-signup is not used in month 1.
+Parent user accounts are created by manager invitation only; public self-signup is not used in the current release.
 
-## Password Reset Request Privacy (MVP)
+## Password Reset Request Privacy
 
 Password reset requests do not reveal whether an email address belongs to an account; the user sees the same accepted outcome either way.
 
-## Password Reset Link State (MVP)
+## Password Reset Link State
 
 Invalid, expired, and already-used password reset links are unusable link states; the user must request a fresh reset link or return to sign-in.
 
-## Manager Invite Access Grant Timing (MVP)
+## Manager Invite Access Grant Timing
 
 A manager invitation does not grant usable access by itself; invited access becomes usable only after the invitee accepts the invitation and sets a password.
 
-## Manager Invite Membership Activation Scope (MVP)
+## Manager Invite Membership Activation Scope
 
-Accepting a manager invitation creates a new active membership for a new login identity; invitation acceptance does not reactivate existing inactive users or inactive memberships in month 1.
+Accepting a manager invitation creates a new active membership for a new login identity; invitation acceptance does not reactivate existing inactive users or inactive memberships in the current release.
 
-## Manager Invite Session Start (MVP)
+## Manager Invite Session Start
 
 Accepting a manager invitation does not automatically start an authenticated session; invitees sign in through the normal login flow after acceptance.
 
-## Guardian Identity Separation (MVP)
+## Guardian Identity Separation
 
 Guardian records store child relationship and contact data independently from authentication users; portal access exists only when a guardian is linked to a parent-role user membership.
 
-## Parent Membership Guardian Mapping (MVP)
+## Parent Membership Guardian Mapping
 
 Within a tenant-branch scope, a parent membership maps to at most one guardian record.
 
-## Parent Mapping Change Flow (MVP)
+## Parent Mapping Change Flow
 
 Changing an active parent membership-to-guardian mapping requires explicitly ending the current mapping (with reason) before creating a new active mapping; implicit in-place replacement is not used.
 
-## Parent Membership End Cascade (MVP)
+## Parent Membership End Cascade
 
 Ending a parent membership ends any active parent-membership-to-guardian mapping in the same action so no dangling active mapping remains.
 
-## Parent Membership End Cascade Reason Attribution (MVP)
+## Parent Membership End Cascade Reason Attribution
 
 When parent membership end cascades to end an active parent-membership-to-guardian mapping, the mapping stores an explicit system cascade reason code so automatic effects are distinguishable from direct manager-initiated end actions.
 
-## Parent Mapping End Visibility Rule (MVP)
+## Parent Mapping End Visibility Rule
 
 Ending an active parent-membership-to-guardian mapping immediately removes that parent membership's access to child-linked resources reachable through that guardian relationship.
 
-## Parent Mapping Idempotent Create (MVP)
+## Parent Mapping Idempotent Create
 
 Creating a parent-membership-to-guardian mapping for a pair that is already active is treated as idempotent success, while attempts to map that membership to a different active guardian require explicit end-then-remap flow.
 
-## Parent Mapping Active-Entity Requirement (MVP)
+## Parent Mapping Active-Entity Requirement
 
 Creating an active parent-membership-to-guardian mapping requires both the membership and guardian to be active at mapping time.
 
-## Guardian Contact vs Login (MVP)
+## Guardian Contact vs Login
 
 Guardian contact records may exist without an email address, while user login identity requires a unique normalized email on the user account.
 
-## Parent-Guardian Email Independence (MVP)
+## Parent-Guardian Email Independence
 
 Parent membership-to-guardian mapping does not require the parent user's login email to match the guardian contact email.
 
-## Guardian Email Auto-Link Policy (MVP)
+## Guardian Email Auto-Link Policy
 
 Entering or editing a guardian contact email does not automatically link that guardian to any user login; parent portal access is granted only through explicit invitation and membership-to-guardian mapping.
 
-## Parent Invite Mapping Separation (MVP)
+## Parent Invite Mapping Separation
 
 Accepting a parent invitation creates login-ready parent membership access but does not automatically map that membership to a guardian; guardian access still requires an explicit parent-membership-to-guardian mapping.
 
-## Contact Detail Scope (MVP)
+## Contact Detail Scope
 
-Child and guardian records carry only minimal operational contact details in month 1; richer profile/contact modeling is deferred until after pilot validation.
+Child and guardian records carry only minimal operational contact details in the current release; richer profile/contact modeling is deferred until after pilot validation.
 
-## Guardian Creation Minimum Data (MVP)
+## Guardian Creation Minimum Data
 
-Guardian creation requires only full name in month 1; email and phone are optional contact details.
+Guardian creation requires only full name in the current release; email and phone are optional contact details.
 
-## Guardian-Child Link (MVP)
+## Guardian-Child Link
 
 A relationship showing that a guardian record is connected to a child within the same nursery scope. A child may have multiple guardian-child links, and active links contribute to parent access and enrollment completeness; ended links no longer grant access.
 
-## Enrollment Complete (MVP)
+## Enrollment Complete
 
 A child record has the minimum information needed for pilot attendance and child-linked invoicing setup: child identity basics, a start date, and at least one active guardian-child link. Site-level billing setup is checked separately through the nursery site's core hourly rate.
 
-## Site Core Hourly Rate (Post-MVP)
+## Site Core Hourly Rate
 
 The GBP hourly fee for standard core childcare attendance at one nursery site before funded-hours deduction. It applies to every child in that site for this feature; child-specific discounts, exceptions, and special fees are outside the site core hourly rate.
 
-## Site Billing Setup Authority (Post-MVP)
+## Site Billing Setup Authority
 
 Owner-level users set the site core hourly rate for each nursery site. Site managers may view the rate used for billing in their site, but pricing policy belongs to owner-level setup for this feature.
 
-## Site Core Hourly Rate Introduction (Post-MVP)
+## Site Core Hourly Rate Introduction
 
 When site core hourly rates are introduced, a nursery site with one consistent existing child hourly rate may use that value as its initial site rate. A site with no existing rate or multiple existing child rates requires owner setup before future draft invoice generation; existing issued invoices keep their saved billing snapshots.
 
-## Current Site Core Hourly Rate (Post-MVP)
+## Current Site Core Hourly Rate
 
 For this feature, a nursery site has one current core hourly rate rather than an effective-dated rate schedule. Draft invoice generation and regeneration use the site's current positive rate at the time of generation, while issued invoices keep their saved calculation snapshot.
 
-## Site Core Hourly Rate Readiness (Post-MVP)
+## Site Core Hourly Rate Readiness
 
 A nursery site is billing-ready only when its site core hourly rate is set to a positive GBP amount. Missing, invalid, or zero site rates are setup exceptions and block future draft invoice generation.
 
-## Site Rate Change Draft Boundary (Post-MVP)
+## Site Rate Change Draft Boundary
 
 Changing a nursery site's core hourly rate does not automatically recalculate existing draft invoices. Managers must run invoice generation or regeneration again for draft invoices to pick up the changed site rate; issued invoices remain locked to their saved snapshots.
 
-## Site Core Hourly Rate Audit (Post-MVP)
+## Site Core Hourly Rate Audit
 
 Owner changes to a nursery site's core hourly rate are audit-significant because they affect future billing. The first release records rate changes for accountability but does not require an owner-facing rate history screen.
 
-## Child Detail/Enrollment Surface (MVP)
+## Child Detail/Enrollment Surface
 
 A manager-facing child-focused view for inspecting whether a child has the minimum data needed for attendance and child-linked invoicing setup. It separates child enrollment completeness from site-level billing setup and month-specific funding profile readiness.
 
-## Child-Specific Core Rate Boundary (Post-MVP)
+## Child-Specific Core Rate Boundary
 
 Managers do not enter or maintain core hourly rates on individual child records for this feature. Child create, edit, registration-linked setup, and enrollment completeness should not treat a child-specific hourly rate as required, while manager-facing billing context may show the nursery site's applicable core hourly rate.
 
-## No Hard-Delete Core Records (MVP)
+## No Hard-Delete Core Records
 
-Child, guardian, attendance, and invoice records are retained during month 1; manager workflows may end, deactivate, correct, or supersede records, but do not permanently delete them.
+Child, guardian, attendance, and invoice records are retained during the current release; manager workflows may end, deactivate, correct, or supersede records, but do not permanently delete them.
 
-## Manager Provisioning Authority (MVP)
+## Manager Provisioning Authority
 
-Manager role assignment is reserved to administrative bootstrap flows in month 1; manager-invited users are limited to non-manager roles.
+Manager role assignment is reserved to administrative bootstrap flows in the current release; manager-invited users are limited to non-manager roles.
 
-## Attendance Record (MVP)
+## Attendance Record
 
 Attendance is captured as an event history (check-in, check-out, correction) instead of a single mutable interval row. Use check-in and check-out rather than sign-in or sign-out.
 
-## Attendance Session (MVP)
+## Attendance Session
 
 An attendance session is one continuous period of a child's attendance, beginning with check-in and ending with check-out.
 
-## Attendance Open Session Rule (MVP)
+## Attendance Open Session Rule
 
 A child may have multiple attendance sessions on the same local day, but may have only one open attendance session at a time. Avoid the phrase active check-in for this rule.
 
-## Attendance Daily List Scope (MVP)
+## Attendance Daily List Scope
 
 The attendance-facing child list shows children for the current `Europe/London` local day: active children and any child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.
 
-## Attendance Correction Target (MVP)
+## Attendance Correction Target
 
 An attendance correction applies to the effective attendance session for one child rather than rewriting the original check-in or check-out event. A correction may adjust an existing session or record a missed session that should have existed.
 
-## Attendance Correction Scope (MVP)
+## Attendance Correction Scope
 
 Attendance correction changes or establishes the full effective check-in and check-out interval for a session; voiding or excluding a session from billing is a separate deferred concept.
 
-## Duplicate Entry Attendance Correction (MVP)
+## Duplicate Entry Attendance Correction
 
-A duplicate-entry attendance correction still establishes a valid effective attendance interval; it does not void, delete, or exclude a session from billing in month 1.
+A duplicate-entry attendance correction still establishes a valid effective attendance interval; it does not void, delete, or exclude a session from billing in the current release.
 
-## Attendance Correction History (MVP)
+## Attendance Correction History
 
 A session may receive more than one attendance correction; each correction remains part of the historical trail while the latest correction determines the current effective interval. Manager correction history presents original attendance events and each correction in chronological order; prior events are read-only.
 
-## Attendance Correction Recorded Time (MVP)
+## Attendance Correction Recorded Time
 
 The time and local day a correction is recorded are the manager action time and action day, distinct from the corrected attendance interval.
 
-## Attendance Correction Authority (MVP)
+## Attendance Correction Authority
 
 Only managers can create attendance correction events.
 
-## Attendance Correction Child Selector Scope (MVP)
+## Attendance Correction Child Selector Scope
 
 Manager correction workflows may target any child in the manager's branch, including inactive children, because historical corrections may be needed after a child has left. Correction validity is still constrained by the child's enrollment window.
 
-## Attendance Correction Reason Vocabulary (MVP)
+## Attendance Correction Reason Vocabulary
 
 Only attendance corrections carry attendance reason codes; routine check-in and check-out events do not. Attendance corrections use attendance-specific reason codes rather than lifecycle reason codes; the starter set is `missed_check_in`, `missed_check_out`, `incorrect_time`, `duplicate_entry`, and `other`. When `other` is selected, managers must provide a note; notes are optional for the standard codes.
 
-## Attendance Correction Audit Reason Semantics (MVP)
+## Attendance Correction Audit Reason Semantics
 
 Attendance correction reason codes are distinct from lifecycle reason codes even when an audit trail records the correction.
 
-## Invoice Source of Truth (MVP)
+## Invoice Source of Truth
 
 Monthly invoice billable minutes are derived from attendance actuals.
 
-## Funding Application Rule (MVP)
+## Funding Application Rule
 
 Funded-hours deduction applies only to core childcare hours; extras remain fully payable.
 
-## Core Attended Minutes (MVP)
+## Core Attended Minutes
 
 Core attended minutes means rounded core attendance minutes for billing and funding deduction, not raw elapsed attendance minutes.
 
-## Funded Deduction Minutes (MVP)
+## Funded Deduction Minutes
 
 Funded deduction minutes are the portion of core attended minutes covered by the child's funded allowance for the billing month.
 
-## Core Billable Minutes (MVP)
+## Core Billable Minutes
 
 Core billable minutes are the remaining core attended minutes after funded deduction minutes are applied.
 
-## Core Billing Formula (MVP)
+## Core Billing Formula
 
 Core due hours are calculated as `max(0, rounded core attendance minutes - funded hours allowance)` before pricing is applied. Rounded core attendance minutes are the sum of per-session billable minutes rather than raw elapsed minutes.
 
-## Core Billing Price Rounding (MVP)
+## Core Billing Price Rounding
 
 Core childcare amounts are converted from minutes and hourly minor-unit rates by rounding any fractional minor unit up to the next minor unit.
 
-## Attendance Billing Rounding (MVP)
+## Attendance Billing Rounding
 
 Each attendance session is rounded up to the nearest 15 minutes for billing. Any positive elapsed-time remainder beyond a 15-minute boundary rounds up; exact 15-minute boundaries do not add another block.
 
-## Billing Timezone (MVP)
+## Billing Timezone
 
 Attendance day boundaries and invoice-period calculations use `Europe/London` local time.
 
-## Attendance Timestamp Semantics (MVP)
+## Attendance Timestamp Semantics
 
 Attendance event times are captured as absolute instants while attendance day grouping is derived from `Europe/London` local dates.
 
-## Incomplete Attendance Handling (MVP)
+## Incomplete Attendance Handling
 
 Attendance records missing check-out are excluded from automatic billing until a manager correction establishes the full effective attendance interval.
 
-## Incomplete Attendance Triage (MVP)
+## Incomplete Attendance Triage
 
 Manager-facing review of unresolved attendance sessions for the current billing month, with today's unresolved sessions surfaced first. This is billing readiness triage rather than a historical attendance report.
 
-## Invoice Generation Flow (MVP)
+## Invoice Generation Flow
 
 Managers manually generate monthly draft invoices before any invoice is issued.
 
-## Invoice Draft Preflight (MVP)
+## Invoice Draft Preflight
 
 A manager-facing readiness preview for one billing month before draft invoice generation. It identifies which child-months are eligible or blocked without being an invoice run.
 
-## Invoice Draft Preflight Population (MVP)
+## Invoice Draft Preflight Population
 
 Invoice draft preflight considers child-months whose enrollment window overlaps the billing month, even if the child is no longer currently active.
 
-## Invoice Draft Preflight Existing Invoice Rule (MVP)
+## Invoice Draft Preflight Existing Invoice Rule
 
 An existing draft monthly invoice does not block invoice draft preflight for that child-month, while an issued-or-later monthly invoice does.
 
-## Invoice Draft Preflight Totals (MVP)
+## Invoice Draft Preflight Totals
 
 Invoice draft preflight totals are estimated aggregate invoice amounts for eligible child-months before draft invoice generation.
 
-## Zero-Attendance Invoice Eligibility (MVP)
+## Zero-Attendance Invoice Eligibility
 
 A child-month with no completed attendance sessions can still pass invoice draft preflight when enrollment, billing, funding, and attendance-completeness data are present.
 
-## Zero-Total Draft Invoice (MVP)
+## Zero-Total Draft Invoice
 
 An eligible child-month can produce a draft monthly invoice with zero amount due; zero-total drafts still represent the monthly billing statement for that child-month.
 
-## Zero-Total Invoice Issue (MVP)
+## Zero-Total Invoice Issue
 
 A zero-total draft invoice can be issued like any other eligible draft invoice and receives an invoice number.
 
-## Payable Invoice (MVP)
+## Payable Invoice
 
 A parent-visible issued-or-later invoice with a positive outstanding balance. Zero-total issued invoices and paid invoices are not payable.
 
-## Parent Billing View (MVP)
+## Parent Billing View
 
 A parent-facing surface where a parent can view current and past issued-or-later invoices for linked children, see payment status, and start payment for payable invoices. Avoid: family account statement, billing dashboard.
 
-## Parent Portal Surface (Post-MVP)
+## Parent Portal Surface
 
 The parent-facing area of the product remains separate from staff and owner operational surfaces. Parent navigation exposes only parent-safe workflows for linked children and must not show staff or owner navigation.
 
-## Parent Invoice Attention Order (MVP)
+## Parent Invoice Attention Order
 
 Parent-facing invoice lists surface invoices needing payment attention before paid or zero-balance history. Overdue invoices have the highest payment attention, followed by payment-failed invoices and then payable issued invoices.
 
-## Parent Invoice Child Group (MVP)
+## Parent Invoice Child Group
 
 A parent-facing grouping of invoice history for one linked child. Child groups organize non-urgent current and past invoices without hiding cross-child payment attention.
 
-## Parent Invoice Detail View (MVP)
+## Parent Invoice Detail View
 
 A parent-facing view of one parent-visible invoice showing the billing period, totals, funded deduction, calculation summary, and invoice lines. It must remain parent-safe and must not expose manager-only invoice generation or audit details.
 
-## Unpaid Invoice Label (MVP)
+## Unpaid Invoice Label
 
 A manager-facing label for issued or overdue invoices with no payment collected. It is not a separate invoice lifecycle state, and payment-failed invoices remain separate because they need failure-specific follow-up.
 
-## Payment Follow-up Queue (MVP)
+## Payment Follow-up Queue
 
 Manager-facing work queue for invoices that need payment attention, sorted by urgency: overdue invoices, payment-failed invoices, then issued unpaid invoices. Avoid splitting these into unrelated dashboard concerns.
 
-## Invoice Issue Mode (MVP)
+## Invoice Issue Mode
 
 Managers can issue invoices one-by-one or in bulk; the default flow is bulk issue with confirmation.
 
-## Invoice Issue Confirmation (MVP)
+## Invoice Issue Confirmation
 
 A manager's explicit approval that selected draft invoices should become immutable issued invoices. Confirmation applies to both one-by-one and bulk issue actions.
 
-## Invoice Issue Result Summary (MVP)
+## Invoice Issue Result Summary
 
 A manager-facing summary shown after invoice issue that identifies which invoices became issued, the invoice numbers assigned, and which drafts were skipped or failed and still need follow-up.
 
-## Invoice Issue Time (MVP)
+## Invoice Issue Time
 
-The business instant when a draft invoice becomes an issued invoice. In month 1, the invoice is also locked and due at that same instant.
+The business instant when a draft invoice becomes an issued invoice. In the current release, the invoice is also locked and due at that same instant.
 
-## Invoice Issue Validation Boundary (MVP)
+## Invoice Issue Validation Boundary
 
 Issuing validates that the invoice is an existing draft invoice in the manager's billing scope. It does not recalculate billing readiness; managers regenerate drafts before issue when source data changes.
 
-## Bulk Invoice Issue (MVP)
+## Bulk Invoice Issue
 
 A manager-triggered issue action for all draft monthly invoices in one billing month or a manager-selected subset of those drafts. Bulk issue requires explicit manager confirmation before invoices become issued.
 
-## Bulk Invoice Issue Default Selection (MVP)
+## Bulk Invoice Issue Default Selection
 
 Manager-facing bulk issue starts with all ready draft invoices selected for the billing month. Managers may remove individual drafts before confirmation, while one-by-one issue remains a fallback action from draft review.
 
-## Invoice Run (MVP)
+## Invoice Run
 
 A manager-triggered monthly billing operation that prepares or issues per-child invoices as a batch. An invoice run may include successful invoices and child-specific exceptions.
 
-## Invoice Run Exception (MVP)
+## Invoice Run Exception
 
 A child-specific blocker reported during invoice preflight, draft generation, or issue. Exceptions do not stop unaffected children from being drafted or issued in the same billing month.
 
-## Invoice Run Status (MVP)
+## Invoice Run Status
 
 Manager-facing current billing-month readiness and progress for invoice generation and issue. It summarizes eligible, blocked, draft, and issued child-months, with the latest run time where one exists.
 
-## Single Invoice Issue Run (MVP)
+## Single Invoice Issue Run
 
 A manager-triggered invoice run that issues exactly one draft invoice. It is still recorded as an invoice run so issued invoice history is consistent across single and bulk issue paths.
 
-## Issued Invoice Edit Policy (MVP)
+## Issued Invoice Edit Policy
 
 Issued invoices are immutable; changes require explicit adjustment rather than direct edits.
 
-## Adjustment Invoice (MVP)
+## Adjustment Invoice
 
 A follow-up invoice that corrects or offsets a previously issued invoice. An adjustment invoice must be linked to the issued invoice it adjusts and must carry a manager-provided reason.
 
-## Payment Scope (MVP)
+## Payment Scope
 
-Parents pay invoices in full; partial payments are not supported in month 1.
+Parents pay invoices in full; partial payments are not supported in the current release.
 
-## Payment Attempt (MVP)
+## Payment Attempt
 
 A single try to collect a payable invoice through the payment provider. Each retry creates a new payment attempt for the same invoice.
 
-## Checkout Retry Availability (MVP)
+## Checkout Retry Availability
 
 A manager-visible indication that a parent can currently start a fresh payment attempt for a payable invoice. It is diagnostic only and is not itself checkout session creation.
 
-## Payment Outcome Authority (MVP)
+## Payment Outcome Authority
 
 Invoice payment state changes only after a payment provider-confirmed outcome. Browser return or cancel navigation after payment initiation is not itself a payment outcome.
 
-## Payment Canceled Return (MVP)
+## Payment Canceled Return
 
 A parent-facing message shown when a parent returns from hosted checkout without completing payment. It is a temporary return outcome, not a durable invoice payment state; the invoice remains payable unless a payment provider-confirmed outcome says otherwise.
 
-## Payment Reconciliation Record (MVP)
+## Payment Reconciliation Record
 
 A manager-facing record of a handled payment outcome for one invoice payment attempt. It explains whether the attempt paid, failed, expired, or was ignored without relying on raw provider webhook payloads as the operational timeline.
 
-## Payment Event (MVP)
+## Payment Event
 
 A manager-facing payment timeline item backed by a payment reconciliation record. Avoid using payment event to mean the raw payment provider webhook payload.
 
-## Webhook Processing Status (MVP)
+## Webhook Processing Status
 
 The local result of processing a verified payment provider webhook event, such as processed, ignored, or rejected. It is distinct from the provider's webhook delivery status.
 
-## Payment Failure State (MVP)
+## Payment Failure State
 
 Failed or canceled payment attempts move invoices to a `payment_failed` state.
 
-## Payment-State Transition Telemetry (MVP)
+## Payment-State Transition Telemetry
 
 Payment-state transition telemetry describes operational monitoring of local payment attempt and invoice status changes caused by checkout creation, verified payment-provider webhook outcomes, or overdue scheduler transitions. It is distinct from payment reconciliation records, which remain the manager-facing history.
 
-## Invoice Numbering (MVP)
+## Invoice Numbering
 
 Invoice identifiers follow `INV-YYYYMM-####` sequence format.
 
-## Invoice Numbering Month (MVP)
+## Invoice Numbering Month
 
 The `YYYYMM` segment of an invoice number is the invoice billing month, not the calendar month when the manager issues it.
 
-## Bulk Invoice Issue Sequence Order (MVP)
+## Bulk Invoice Issue Sequence Order
 
 Bulk-issued invoices receive invoice numbers in deterministic child-name order, with invoice identity used only as a tie-breaker.
 
-## Invoice Granularity (MVP)
+## Invoice Granularity
 
 Invoices are issued per child, not combined at family level.
 
-## Sibling Discount Policy (MVP)
+## Sibling Discount Policy
 
-Sibling discounts are deferred and not part of month 1 billing rules.
+Sibling discounts are deferred and not part of current billing rules.
 
-## Extras Charging Model (MVP)
+## Extras Charging Model
 
 Extras are added manually as invoice line items by managers.
 
-## Draft Invoice Extras Placeholder (MVP)
+## Draft Invoice Extras Placeholder
 
 Draft invoice generation does not create payable extras automatically; it preserves an explicit zero-value placeholder so later manager-entered extras remain outside attendance and funding calculations.
 
-## Draft Invoice Manual Extras Preservation (MVP)
+## Draft Invoice Manual Extras Preservation
 
 Regenerating a draft monthly invoice preserves existing manual extra lines while recalculating attendance-derived core childcare and funded-hours deduction lines.
 
-## Attendance Capture Scope (MVP)
+## Attendance Capture Scope
 
 Attendance capture includes check-in and check-out only; room-move tracking is out of scope.
 
-## Attendance Capture Time Authority (MVP)
+## Attendance Capture Time Authority
 
 Routine practitioner check-in and check-out capture uses the current server time; historical or custom attendance times are manager-controlled corrections.
 
-## Practitioner Attendance Scope (MVP)
+## Practitioner Attendance Scope
 
 Practitioners can perform check-in and check-out for any child within the active session branch.
 
-## Practitioner Contact Visibility (MVP)
+## Practitioner Contact Visibility
 
-Practitioner attendance workflows expose only attendance-facing child information and do not expose guardian contact details such as email or phone in month 1.
+Practitioner attendance workflows expose only attendance-facing child information and do not expose guardian contact details such as email or phone in the current release.
 
-## Child and Guardian Write Authority (MVP)
+## Child and Guardian Write Authority
 
-Child/guardian and relationship write actions (create, update, deactivate, link, unlink, mapping changes) are manager-only in month 1, while practitioner access remains read-only for attendance-facing child views.
+Child/guardian and relationship write actions (create, update, deactivate, link, unlink, mapping changes) are manager-only in the current release, while practitioner access remains read-only for attendance-facing child views.
 
-## Absence Marker (MVP)
+## Absence Marker
 
 An absence marker records that one child was absent for one `Europe/London` local date. It is separate from attendance sessions and attendance corrections, and it does not create, edit, void, or exclude any attendance session; a child-day cannot have both an absence marker and attendance.
 
-## Clear Absence Marker (MVP)
+## Clear Absence Marker
 
 Clearing an absence marker means removing the active absent state for a child-day while preserving the historical record that the marker existed.
 
-## Absence Marker Authority (MVP)
+## Absence Marker Authority
 
 Managers and practitioners may create and clear absence markers. Parents do not have access to absence marker workflows.
 
-## Absence Marker Detail Scope (MVP)
+## Absence Marker Detail Scope
 
-Absence markers do not carry reason codes, notes, charge policy, or funding policy in month 1.
+Absence markers do not carry reason codes, notes, charge policy, or funding policy in the current release.
 
-## Absence Marker Date Scope (MVP)
+## Absence Marker Date Scope
 
-Absence markers are used only for the current `Europe/London` local day in month 1; future absence scheduling is out of scope.
+Absence markers are used only for the current `Europe/London` local day in the current release; future absence scheduling is out of scope.
 
-## Billing Period (MVP)
+## Billing Period
 
 Billing runs monthly on calendar-month boundaries.
 
-## Billing Month (MVP)
+## Billing Month
 
 A calendar month identified as `YYYY-MM` for funding and invoice workflows.
 
-## Invoice Run Default Billing Month (MVP)
+## Invoice Run Default Billing Month
 
 Manager-facing invoice run workflows default to the most recent completed billing month. Managers may still select the current billing month or older billing months intentionally.
 
-## Billing Quantity Unit (MVP)
+## Billing Quantity Unit
 
 Attendance-derived billing quantities use integer minutes as the canonical unit. Hours are a display format only.
 
-## Funded Allowance Unit (MVP)
+## Funded Allowance Unit
 
 Funded-hours allowances are stored and exchanged as integer minutes. Hours are a display format only.
 
-## Funded Allowance Bounds (MVP)
+## Funded Allowance Bounds
 
 A funded-hours allowance may be zero but must not exceed the number of minutes in a 31-day month.
 
-## Child Enrollment Minimum (MVP)
+## Child Enrollment Minimum
 
 A child requires name, date of birth, start date, one linked guardian, and a billing rate before attendance and invoicing flows begin.
 
-## Enrollment Gate Scope (MVP)
+## Enrollment Gate Scope
 
 Enrollment minimum checks gate all new routine attendance capture and invoicing actions, while manager-only historical attendance corrections remain allowed under the post-enrollment correction policy.
 
-## Enrollment-Incomplete Attendance Visibility (MVP)
+## Enrollment-Incomplete Attendance Visibility
 
 Enrollment-incomplete children remain visible in the attendance-facing child list, but routine check-in remains blocked until enrollment is complete.
 
-## Child Creation Flow (MVP)
+## Child Creation Flow
 
 Managers may create a child record before linking a guardian, but attendance and invoicing remain blocked until all child enrollment minimum requirements are satisfied.
 
-## Child Billing Rate Source (MVP)
+## Child Billing Rate Source
 
 Each child has one current core billing rate in enrollment data, while issued invoices preserve the applied rate in invoice lines for historical explainability.
 
-## Draft Invoice Rate Source (MVP)
+## Draft Invoice Rate Source
 
 Draft invoice generation uses the child's current stored core billing rate at generation time, including when generating drafts for historical billing months.
 
-## Zero Core Billing Rate (MVP)
+## Zero Core Billing Rate
 
 A core billing rate of zero is an explicit valid rate, not missing billing data.
 
-## Child Enrollment Lifecycle (MVP)
+## Child Enrollment Lifecycle
 
 Child records remain retained when enrollment ends; the child can be marked inactive/left while attendance and billing history stays intact.
 
-## Child Lifecycle Reason Requirement (MVP)
+## Child Lifecycle Reason Requirement
 
 Manager-initiated child lifecycle transitions such as marking a child inactive/left require a stable reason code with an optional note.
 
-## Child Lifecycle vs Enrollment Date Separation (MVP)
+## Child Lifecycle vs Enrollment Date Separation
 
 Child lifecycle transitions (active/inactive-left) are managed independently from enrollment date edits; enrollment boundary dates are updated through explicit date-change flows with enrollment window integrity checks.
 
-## Child Reactivation Deferral (MVP)
+## Child Reactivation Deferral
 
-Month-1 lifecycle APIs include explicit guardian reactivation, while explicit child reactivation endpoints are deferred unless pilot operations require them.
+Current lifecycle APIs include explicit guardian reactivation, while explicit child reactivation endpoints are deferred unless pilot operations require them.
 
-## Child and Guardian Default Listing Scope (MVP)
+## Child and Guardian Default Listing Scope
 
 Manager child and guardian listings default to active records only, with an explicit option to include inactive or ended records for historical administration.
 
-## Child Identity Uniqueness (MVP)
+## Child Identity Uniqueness
 
 Child identity is anchored by UUID entity identifiers, and matching name/date-of-birth combinations are not enforced as a hard uniqueness rule.
 
-## Post-Enrollment Attendance Correction (MVP)
+## Post-Enrollment Attendance Correction
 
 After enrollment ends, managers may still record corrections for historical attendance sessions so billing derived from attendance actuals remains accurate. Historical corrections require the child to exist in scope but do not require current active enrollment, while the corrected attendance interval remains constrained to the child's enrollment dates.
 
-## Enrollment Date Semantics (MVP)
+## Enrollment Date Semantics
 
 Enrollment boundaries use date-only fields (start and optional end date), while billing calculations continue to derive from attendance timestamps in `Europe/London`.
 
-## Enrollment Window Integrity (MVP)
+## Enrollment Window Integrity
 
 Enrollment date updates are rejected when they would place existing attendance records outside the child's enrollment window.
 
-## Guardian-Child Link Cardinality (MVP)
+## Guardian-Child Link Cardinality
 
 Guardian-child relationships are many-to-many: a child may link to multiple guardians, and a guardian may link to multiple children.
 
-## Parent Visibility Scope (MVP)
+## Parent Visibility Scope
 
 One parent account can be linked to multiple children and can view invoices for linked children within the active session scope.
 
-## Parent Portal (MVP)
+## Parent Portal
 
 The parent-side product surface where a parent-role user views issued invoices for linked children and initiates full invoice payment. It exposes only parent-relevant billing navigation and account/session controls, not staff operational or admin surfaces.
 
-## Parent Invoice Payment Initiation (MVP)
+## Parent Invoice Payment Initiation
 
-Only parent-role users initiate payment for parent-visible payable invoices in month 1. Managers can review invoice and payment state but do not initiate parent payment.
+Only parent-role users initiate payment for parent-visible payable invoices in the current release. Managers can review invoice and payment state but do not initiate parent payment.
 
-## Manager Payment Retry Visibility (MVP)
+## Manager Payment Retry Visibility
 
 A manager-facing indication that a parent can retry payment for a payable invoice, without letting the manager launch Stripe Checkout or complete payment on the parent's behalf.
 
-## Manager Payment Timeline (MVP)
+## Manager Payment Timeline
 
 A lean chronological manager-facing view of payment attempts and webhook/payment outcomes for a single invoice. It explains the outcome, amount, timestamp, and reason in nursery operations language, while provider identifiers remain secondary diagnostics and raw webhook payloads are not shown.
 
-## Manager Invoice Payment Review (MVP)
+## Manager Invoice Payment Review
 
 The invoice-detail anchored manager workflow for understanding payment status, retry availability, and reconciliation history for one invoice. The invoice list may show lightweight payment cues, but FE-23 does not introduce a separate manager Payments area.
 
-## Manager Payment Pending State (MVP)
+## Manager Payment Pending State
 
 A manager-facing payment review state for a checkout attempt that has been created or is still awaiting provider confirmation. Managers see the attempt time and amount, and retry is not presented while the API reports that retry is unavailable.
 
-## Login Identifier (MVP)
+## Login Identifier
 
 User authentication uses a unique, case-insensitive normalized email address as the login identifier.
 
-## Password Credential Policy (MVP)
+## Password Credential Policy
 
-User passwords must be at least 8 characters in month 1; additional composition rules are not enforced.
+User passwords must be at least 8 characters in the current release; additional composition rules are not enforced.
 
-## Pilot Tenant Bootstrap (MVP)
+## Pilot Tenant Bootstrap
 
 The first manager account for a tenant is created through a one-time administrative seed command; subsequent users are provisioned by manager invitation.
 
-## Audit Baseline Scope (MVP)
+## Audit Baseline Scope
 
 Audit logs are mandatory for user provisioning changes, child record updates, attendance events and corrections, funding profile updates, invoice draft/issue actions, and payment-status updates.
 
-## Audit Request Correlation (MVP)
+## Audit Request Correlation
 
 Persisted audit events include request identifier correlation so domain changes can be traced to individual API requests.
 
-## Request Correlation Context (MVP)
+## Request Correlation Context
 
-A shared operational correlation context connects API request handling, audit-visible domain changes, payment-provider webhook handling, and scheduler telemetry for one troubleshooting flow. In month 1, this means correlation identifiers in logs and headers, low-cardinality metrics for correlated operations, and audit-linked request identifiers rather than full distributed tracing spans.
+A shared operational correlation context connects API request handling, audit-visible domain changes, payment-provider webhook handling, and scheduler telemetry for one troubleshooting flow. In the current release, this means correlation identifiers in logs and headers, low-cardinality metrics for correlated operations, and audit-linked request identifiers rather than full distributed tracing spans.
 
-## Audit Actor Semantics (MVP)
+## Audit Actor Semantics
 
 Audit events include actor membership identity for user-initiated actions and may omit actor identity only for system-initiated actions, while tenant and branch scope plus action metadata remain required.
 
-## Manager Invite Audit Scope (MVP)
+## Manager Invite Audit Scope
 
 Manager invitation creation, resend, revocation, and acceptance are persisted as audit events because they change user provisioning state.
 
-## Manager Invite Acceptance Actor Semantics (MVP)
+## Manager Invite Acceptance Actor Semantics
 
 Invitation acceptance audit events are attributed to the newly provisioned user and membership created by that acceptance, while manager-initiated invitation actions are attributed to the manager's active session actor.
 
-## Cross-Month Session Allocation (MVP)
+## Cross-Month Session Allocation
 
 An attendance session that crosses midnight is allocated to the invoice month of its check-in date using `Europe/London` local time.
 
-## API Response Style (MVP)
+## API Response Style
 
 API endpoints return plain JSON resources with standard HTTP status codes instead of a global response envelope.
 
-## API Error Contract (MVP)
+## API Error Contract
 
 API errors use a consistent JSON structure with stable error code, human-readable message, optional details, and request identifier.
 
-## Lifecycle Error Code Baseline (MVP)
+## Lifecycle Error Code Baseline
 
 Child, guardian, guardian-child-link, and parent-mapping lifecycle endpoints use a stable domain error-code set so clients can handle expected lifecycle failures deterministically.
 
-## Authorization Error Status Policy (MVP)
+## Authorization Error Status Policy
 
 Authorization failures return `403 Forbidden` with stable authorization-specific error codes for explicit role, scope-selection, and relationship failures, while opaque resource identifiers outside the active tenant-branch scope are treated as not found so resource existence is not disclosed across scopes.
 
-## Authorization Error Disclosure Policy (MVP)
+## Authorization Error Disclosure Policy
 
 Authorization errors expose stable machine-readable denial codes while keeping human-readable messages generic.
 
-## Authorization Denial Code Baseline (MVP)
+## Authorization Denial Code Baseline
 
 The initial stable authorization denial code set includes role, scope, unknown-role, parent-child-link, and scope-selection denial variants alongside unauthorized authentication failure.
 
-## Scope Selection Error Semantics (MVP)
+## Scope Selection Error Semantics
 
 Authentication-time membership selection does not create a session until a valid active membership is selected. Missing selection after valid credentials returns a membership selection challenge when multiple active memberships are available; malformed selection remains a validation error; an unavailable selected membership returns the challenge again when alternatives remain and a generic sign-in failure when none remain. Authenticated session actions with a well-formed selection outside the user's allowed memberships return an authorization error.
 
-## Persistence Strategy (MVP)
+## Persistence Strategy
 
 Data access uses `sqlc` with `pgx` and typed SQL queries rather than an ORM.
 
-## Migration Workflow (MVP)
+## Migration Workflow
 
 Schema changes are applied with manual `golang-migrate` commands against local PostgreSQL and are not auto-run on API startup.
 
-## Session and Token Policy (MVP)
+## Session and Token Policy
 
 Authentication uses short-lived access JWTs plus database-backed refresh tokens that can be revoked.
 
-## Session Scope Mode (MVP)
+## Session Scope Mode
 
 Each active session is bound to exactly one membership scope (tenant, branch, and role) rather than selecting scope per request.
 
-## Session Scope Selection Rule (MVP)
+## Session Scope Selection Rule
 
 When a user has multiple memberships, the active session scope is chosen explicitly by the user at login and must belong to that user.
 
-## Session Single-Scope Auto-Selection (MVP)
+## Session Single-Scope Auto-Selection
 
 Authentication auto-selects the active membership scope when exactly one active membership is available.
 
-## Login Membership Selection Challenge (MVP)
+## Login Membership Selection Challenge
 
 A pre-session sign-in state reached after a login identity is verified but before an authenticated session exists, when more than one active membership is available and the user must choose one.
 
-## Membership Choice Label (MVP)
+## Membership Choice Label
 
 A user-facing label that helps a person recognize an available membership by nursery, branch, and role. Raw membership, tenant, and branch identifiers are not suitable labels for human selection.
 
-## Membership Selection Retry (MVP)
+## Membership Selection Retry
 
 The continuation of the same sign-in flow after a membership selection challenge, where the user chooses one available membership without re-entering credentials. Editing the login identity or password starts a new sign-in flow.
 
-## Unavailable Membership Choice (MVP)
+## Unavailable Membership Choice
 
 A membership choice that was offered during sign-in but can no longer be selected by the time the user retries. The user should be guided back to another available choice when possible, without creating an authenticated session.
 
-## Session Scope Selection Identifier (MVP)
+## Session Scope Selection Identifier
 
 Session scope selection uses the membership identifier as the canonical selector instead of a tenant-branch-role tuple.
 
-## Session Scope Requirement (MVP)
+## Session Scope Requirement
 
 Authentication does not create a session unless the user has at least one active membership scope available.
 
-## Membership Breadth (MVP)
+## Membership Breadth
 
 A user may hold memberships across multiple tenants and branches, but each active session is bound to exactly one selected membership scope.
 
-## Single Role Per Scope (MVP)
+## Single Role Per Scope
 
-Within a single tenant-branch scope, a user holds exactly one membership role; concurrent dual-role memberships in the same scope are not used in month 1.
+Within a single tenant-branch scope, a user holds exactly one membership role; concurrent dual-role memberships in the same scope are not used in the current release.
 
-## Registered Email Invite Deferral (MVP)
+## Registered Email Invite Deferral
 
-Manager invitations in month 1 are used only for new login identities; inviting an email address that already belongs to a user is deferred until an authenticated existing-user membership invite flow exists.
+Manager invitations in the current release are used only for new login identities; inviting an email address that already belongs to a user is deferred until an authenticated existing-user membership invite flow exists.
 
-## Membership Activity State (MVP)
+## Membership Activity State
 
 Authentication and authorization consider only active memberships; inactive memberships cannot be selected for sessions.
 
-## Session Scope Visibility (MVP)
+## Session Scope Visibility
 
 Authentication responses include both the active session scope and the user's available scopes so clients can present explicit scope switching.
 
-## Session Membership Binding (MVP)
+## Session Membership Binding
 
 Each refresh-token-backed session is bound to one membership scope and cannot change scope unless an explicit membership switch request is validated.
 
-## Session Refresh Scope Integrity (MVP)
+## Session Refresh Scope Integrity
 
 Token refresh succeeds only when the session's bound membership remains active; refresh does not auto-fallback to a different membership.
 
-## Session Claim Shape (MVP)
+## Session Claim Shape
 
 Access tokens include subject user identifier, membership identifier, tenant identifier, branch identifier, role, and standard token timestamps so each request can be unambiguously authorized against one active membership.
 
-## Session Scope Switch Flow (MVP)
+## Session Scope Switch Flow
 
 Changing the active membership scope is an explicit session action and is distinct from routine token refresh.
 
-## Session Scope Switch Authentication (MVP)
+## Session Scope Switch Authentication
 
 Membership scope switching is performed through a refresh-token-backed session action that rotates session tokens.
 
-## Session Action CSRF Policy (MVP)
+## Session Action CSRF Policy
 
-Refresh-token-cookie-backed session actions, including refresh, logout, and membership switch, require CSRF protection in month 1.
+Refresh-token-cookie-backed session actions, including refresh, logout, and membership switch, require CSRF protection in the current release.
 
-## Logout Idempotency (MVP)
+## Logout Idempotency
 
 Session logout is idempotent and returns success even when no active refresh-token session is present.
 
-## Session CSRF Mechanism (MVP)
+## Session CSRF Mechanism
 
 Cookie-backed session actions use a double-submit CSRF token pattern with a client-readable CSRF token echoed in a request header and a trusted origin or referer check.
 
-## Session Scope Switch Auditing (MVP)
+## Session Scope Switch Auditing
 
 Membership scope switch actions are persisted as audit events with actor, previous scope, new scope, and request identifier.
 
-## Authentication Event Persistence Scope (MVP)
+## Authentication Event Persistence Scope
 
-Login, refresh, logout, and password reset activity are treated as authentication/security telemetry in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+Login, refresh, logout, and password reset activity are treated as authentication/security telemetry in structured logs and metrics rather than persisted as audit-log domain events in the current release.
 
-## Authentication Failure Telemetry (MVP)
+## Authentication Failure Telemetry
 
 Authentication failure telemetry covers failed identity, credential, session-token, and reset-token validation. It is distinct from ordinary request validation errors and from authorization denials after a user or session scope is known.
 
-## Token Transport Policy (MVP)
+## Token Transport Policy
 
 Access tokens are sent as bearer tokens, while refresh tokens are stored in secure HttpOnly cookies.
 
-## Session Concurrency (MVP)
+## Session Concurrency
 
 Users may hold multiple active sessions concurrently, with token revocation supported per session.
 
-## Session Persistence Model (MVP)
+## Session Persistence Model
 
-Session state is persisted as refresh-token-backed, revocable session records; a second parallel session artifact is not introduced in month 1.
+Session state is persisted as refresh-token-backed, revocable session records; a second parallel session artifact is not introduced in the current release.
 
-## Membership Change Revocation Policy (MVP)
+## Membership Change Revocation Policy
 
 When membership scope or role is changed, refresh tokens for affected sessions are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
 
-## Password Reset Session Revocation Policy (MVP)
+## Password Reset Session Revocation Policy
 
 After a successful password reset, all refresh-token-backed sessions for that user are revoked immediately, while already-issued access tokens remain valid only until their normal expiry.
 
-## Token Lifetime Policy (MVP)
+## Token Lifetime Policy
 
 Access tokens expire after 15 minutes; refresh tokens expire after 30 days and rotate on refresh.
 
-## Password Reset (MVP)
+## Password Reset
 
 Users can reset passwords through a basic email-link reset flow.
 
-## Password Reset Account Scope (MVP)
+## Password Reset Account Scope
 
 Password reset applies to the global user login identity rather than to an individual membership, tenant, or branch scope.
 
-## Password Reset Request Disclosure Policy (MVP)
+## Password Reset Request Disclosure Policy
 
 Password reset requests do not reveal whether a login identifier belongs to an active user account; eligible active users receive reset email while inactive or unknown users do not, and the requester sees a generic outcome.
 
-## Password Reset Link Supersession (MVP)
+## Password Reset Link Supersession
 
 Only the newest unused password reset link for a user remains valid; creating a new reset request invalidates earlier unused reset links for that user.
 
-## Password Reset Link Lifetime (MVP)
+## Password Reset Link Lifetime
 
 Password reset links are short-lived recovery links that remain valid for 60 minutes from creation.
 
-## Password Reset Link Issuance (MVP)
+## Password Reset Link Issuance
 
 A password reset link is considered issued only when the reset message is accepted for delivery; failed delivery does not leave a usable reset link behind.
 
-## Password Reset Token Exposure Policy (MVP)
+## Password Reset Token Exposure Policy
 
 Raw password reset tokens are delivered only through the reset message and are never returned by API responses.
 
-## Manager Invite Token Exposure Policy (MVP)
+## Manager Invite Token Exposure Policy
 
 Raw manager invitation tokens are delivered only through the invitation message and are never returned by API responses.
 
-## Password Reset Request Throttling (MVP)
+## Password Reset Request Throttling
 
 Password reset requests are rate-limited by login identifier and client source so the public recovery flow cannot be used for unbounded email sending.
 
-## Manager Invite Acceptance Throttling (MVP)
+## Manager Invite Acceptance Throttling
 
 Public invitation acceptance attempts are rate-limited by client source to reduce token-guessing risk.
 
-## Password Reset Token Error Semantics (MVP)
+## Password Reset Token Error Semantics
 
 Invalid, expired, and already-consumed password reset links return distinct stable error codes with generic human-readable messages; superseded reset links are treated as already consumed.
 
-## Manager Invite Link Lifetime (MVP)
+## Manager Invite Link Lifetime
 
 Manager invitation links expire after seven days from issuance.
 
-## Manager Invite Link Supersession (MVP)
+## Manager Invite Link Supersession
 
 Resending a pending manager invitation issues a new invitation link and invalidates the prior unused link for that invitation.
 
-## Manager Invite Link Issuance (MVP)
+## Manager Invite Link Issuance
 
 A manager invitation link is considered issued only when the invitation message is accepted for delivery; failed delivery does not leave a newly generated usable invite link behind.
 
-## Manager Invite Idempotent Create (MVP)
+## Manager Invite Idempotent Create
 
 Creating a manager invitation for the same normalized email, role, tenant, and branch as an existing pending invitation refreshes that pending invitation instead of creating a duplicate; creating one for the same email and scope with a different role is a conflict.
 
-## Manager Invite Historical Reissue (MVP)
+## Manager Invite Historical Reissue
 
 Creating a new manager invitation after an earlier invitation for the same email, role, and scope was revoked or expired creates a new invitation record rather than reopening the historical invitation.
 
-## Manager Invite Minimum Data (MVP)
+## Manager Invite Minimum Data
 
-Creating a manager invitation requires only the invitee login email and invited role in month 1; staff profiles, display names, and guardian linkage are not collected by the invitation flow.
+Creating a manager invitation requires only the invitee login email and invited role in the current release; staff profiles, display names, and guardian linkage are not collected by the invitation flow.
 
-## Manager Invite Scope Source (MVP)
+## Manager Invite Scope Source
 
 Manager invitations target the manager's active tenant-branch session scope; clients do not choose invitation tenant or branch in the request body.
 
-## Manager Invite List Visibility (MVP)
+## Manager Invite List Visibility
 
 Manager invitation lists default to currently pending invitations in the active tenant-branch scope, while accepted, revoked, expired, and all-invite history are available only through explicit status filtering. Status-changing manager actions are available only for currently pending invitations; expired invitations are treated as historical in the manager UI.
 
-## Manager Invite Expiry State (MVP)
+## Manager Invite Expiry State
 
 Invitation expiry is derived from the invitation expiry time rather than a separate manager action or background lifecycle transition.
 
-## Manager Invite Revocation (MVP)
+## Manager Invite Revocation
 
 Managers may revoke pending invitations, including pending invitations whose links have already expired; revoking an already revoked invitation is idempotent, while accepted invitations cannot be revoked.
 
-## Manager Invite Revocation Reason Scope (MVP)
+## Manager Invite Revocation Reason Scope
 
-Manager invitation revocation does not require a reason code or note in month 1; the audit event records the actor and invitation details without using lifecycle reason fields.
+Manager invitation revocation does not require a reason code or note in the current release; the audit event records the actor and invitation details without using lifecycle reason fields.
 
-## Manager Invite Token Error Semantics (MVP)
+## Manager Invite Token Error Semantics
 
 Invalid, expired, revoked, and already-accepted manager invitation links return distinct stable error codes with generic human-readable messages.
 
-## Already-Accepted Manager Invitation Link (MVP)
+## Already-Accepted Manager Invitation Link
 
 A manager invitation link whose invitation has already been accepted by an invitee. It cannot provision another user or membership; avoid calling it an already-used invitation link.
 
-## Manager Invite Acceptance Idempotency (MVP)
+## Manager Invite Acceptance Idempotency
 
 Invitation acceptance is single-use; after one successful acceptance, later attempts with the same invitation link return an already-accepted result and do not create additional users or memberships.
 
-## Email Delivery Strategy (MVP)
+## Email Delivery Strategy
 
 Manager invites and password reset messages are sent through a single provider abstraction, using an SMTP sandbox in development and one transactional email provider in production.
 
-## Branch Scope (MVP)
+## Branch Scope
 
 Records remain branch-scoped in the data model with one default branch used in the pilot.
 
-## Core Record Deletion Policy (MVP)
+## Core Record Deletion Policy
 
 Core child, attendance, and invoice records are not hard-deleted; corrections, voiding, or archival flows are used instead.
 
-## Child and Guardian Management Lifecycle (MVP)
+## Child and Guardian Management Lifecycle
 
 Manager child/guardian management supports create and update plus lifecycle transitions (child inactive/left, guardian deactivated, guardian-child link ended/relinked) rather than hard delete operations.
 
-## Guardian Link Lifecycle (MVP)
+## Guardian Link Lifecycle
 
 Guardian records and guardian-child links are deactivated or ended rather than hard-deleted so history remains explainable while access can be removed immediately.
 
-## Guardian Deactivation Cascade (MVP)
+## Guardian Deactivation Cascade
 
 Deactivating a guardian ends that guardian's active guardian-child links and active parent-membership mapping in the same action so parent access is revoked immediately with no partially active relationship state.
 
-## Guardian Deactivation Idempotency (MVP)
+## Guardian Deactivation Idempotency
 
 Deactivating a guardian is idempotent; repeating the same deactivation request for an already inactive guardian returns success without introducing additional state changes.
 
-## Guardian Lifecycle Timestamp Semantics (MVP)
+## Guardian Lifecycle Timestamp Semantics
 
 Guardian entity lifecycle uses deactivate/reactivate terminology with deactivation-specific timestamps, while "end" timestamps are reserved for relationship records such as guardian-child links and parent-membership mappings.
 
-## Guardian Deactivation Reason Requirement (MVP)
+## Guardian Deactivation Reason Requirement
 
 Manager-initiated guardian deactivation requires a stable reason code with an optional note.
 
-## Deactivation Cascade Reason Attribution (MVP)
+## Deactivation Cascade Reason Attribution
 
 When guardian deactivation cascades to end active guardian-child links or parent-membership mapping, dependent records persist an explicit cascade end reason so automatic effects are distinguishable from direct manager-initiated end actions.
 
-## Guardian Reactivation Policy (MVP)
+## Guardian Reactivation Policy
 
 Managers may reactivate the same guardian record when deactivation was mistaken, but previously ended guardian-child links and parent-membership mapping are not auto-restored and must be re-linked explicitly.
 
-## Relationship End Reason Requirement (MVP)
+## Relationship End Reason Requirement
 
 Manager-initiated actions that end guardian-child links or parent-membership mapping require an explicit reason for audit explainability.
 
-## Relationship End Reason Shape (MVP)
+## Relationship End Reason Shape
 
 Relationship end reasons use a stable machine-readable reason code with an optional human note so audit trails stay both queryable and explainable.
 
-## Lifecycle Reason Vocabulary (MVP)
+## Lifecycle Reason Vocabulary
 
 Lifecycle transitions across child, guardian, guardian-child link, and parent-membership mapping use a shared controlled vocabulary of reason codes with scoped subsets per action.
 
-## Lifecycle Reason Starter Set (MVP)
+## Lifecycle Reason Starter Set
 
-The initial shared reason-code set for month 1 is `duplicate_record`, `entered_in_error`, `left_nursery`, `safeguarding_direction`, `contact_update`, `access_revoked`, and `other`, with scoped usage per lifecycle action.
+The initial shared reason-code set for the current release is `duplicate_record`, `entered_in_error`, `left_nursery`, `safeguarding_direction`, `contact_update`, `access_revoked`, and `other`, with scoped usage per lifecycle action.
 
-## Lifecycle Other-Reason Note Requirement (MVP)
+## Lifecycle Other-Reason Note Requirement
 
 When lifecycle `reason_code` is `other`, a non-empty `reason_note` is required so the audit trail remains explainable.
 
-## Relationship End Terminology (MVP)
+## Relationship End Terminology
 
 Lifecycle actions that stop active links or mappings use the canonical verb "end"; terms implying hard deletion (such as delete/remove) are not used for these actions.
 
-## Child Guardian Link Requirement Enforcement (MVP)
+## Child Guardian Link Requirement Enforcement
 
 Ending a child's last active guardian-child link is allowed, but that child immediately becomes enrollment-incomplete and is blocked from attendance and invoicing until an active guardian link is restored.
 
-## Guardian Link Reactivation (MVP)
+## Guardian Link Reactivation
 
 Only one active guardian-child link may exist per pair at a time, while historical ended links are retained so the same pair can be linked again later.
 
-## Guardian Link Idempotent Create (MVP)
+## Guardian Link Idempotent Create
 
 Creating a guardian-child link for a pair that already has an active link is treated as an idempotent success and does not create a duplicate active link.
 
-## Invoice Due Policy (MVP)
+## Invoice Due Policy
 
 Invoices are due on receipt when issued.
 
-## Unpaid Issued Invoice (MVP)
+## Unpaid Issued Invoice
 
 An issued invoice with an outstanding positive balance. A zero-total issued invoice is not considered unpaid for overdue transition purposes.
 
-## Invoice Overdue Transition (MVP)
+## Invoice Overdue Transition
 
 An unpaid issued invoice transitions to `overdue` at 00:00 the next local day in `Europe/London`.
 
-## Payment Failed Overdue Boundary (MVP)
+## Payment Failed Overdue Boundary
 
 A `payment_failed` invoice remains payable but does not transition to `overdue`.
 
-## Invoice Issue Exception Handling (MVP)
+## Invoice Issue Exception Handling
 
 Invoice issue runs can proceed for eligible draft invoices while invoices that cannot be issued are blocked and returned in an exception list for manager resolution.
 
-## Guided Invoice Run Default Path (MVP)
+## Guided Invoice Run Default Path
 
 Manager-facing invoice runs keep eligible child-months actionable when other child-months have exceptions. The default manager path is to continue with ready invoices and resolve blocked child-months separately.
 
-## Draft Invoice Generation Exception Handling (MVP)
+## Draft Invoice Generation Exception Handling
 
 Draft invoice generation can proceed for eligible child-months while blocked child-months are skipped and returned as exceptions for manager resolution.
 
-## Draft Generation Transaction Boundary (MVP)
+## Draft Generation Transaction Boundary
 
 Expected child-month blockers produce generation exceptions, while unexpected system failures leave no partial invoice generation result behind.
 
-## Invoice Issue Transaction Boundary (MVP)
+## Invoice Issue Transaction Boundary
 
 Expected invoice issue blockers produce issue exceptions, while unexpected system failures leave no partial invoice issue result behind.
 
-## Empty Draft Generation Run (MVP)
+## Empty Draft Generation Run
 
 A draft invoice generation run can complete without creating invoices when no child-months are eligible; this is a valid billing outcome rather than a request failure.
 
-## Empty Invoice Issue Run (MVP)
+## Empty Invoice Issue Run
 
 An invoice issue run can complete without issuing invoices when no draft invoices are eligible; this is a valid billing outcome rather than a request failure.
 
-## Selected Draft Generation Child Exception (MVP)
+## Selected Draft Generation Child Exception
 
 When a selected child-month cannot be found in the active billing scope or does not overlap the billing month, draft generation treats that child-month as an exception rather than failing the whole run.
 
-## Selected Draft Generation Uniqueness (MVP)
+## Selected Draft Generation Uniqueness
 
 Selected-child draft generation operates on unique child-months; duplicate selected child identifiers do not create duplicate invoice work.
 
-## Selected Invoice Issue Uniqueness (MVP)
+## Selected Invoice Issue Uniqueness
 
 Selected-invoice issue operates on unique invoices; duplicate selected invoice identifiers do not create duplicate issue work.
 
-## Invoice Run Blocked Child (MVP)
+## Invoice Run Blocked Child
 
 A child excluded from a specific monthly invoice run because billing readiness checks found a resolvable issue, such as incomplete attendance. This is a run/month-specific billing state, not a child lifecycle state.
 
-## Invoice Exception Reference (MVP)
+## Invoice Exception Reference
 
 A manager-visible reference from invoice review to child-month blockers recorded on the invoice run that generated or processed related invoices. Exception references provide run context and do not represent invoice lines, adjustment invoices, or invoices for blocked child-months.
 
-## Invoice Preflight Blocker (MVP)
+## Invoice Preflight Blocker
 
 A child-month readiness exception returned by invoice draft preflight. A blocked child may have multiple preflight blockers, and each blocker should be exposed with a stable code.
 
-## Invoice Run Exception Resolution (MVP)
+## Invoice Run Exception Resolution
 
 Manager-facing invoice run exceptions identify the blocked child-month, the blocking reason, and the next workflow that can resolve it. The invoice run workflow does not edit attendance, enrollment, billing-rate, or funding records inline.
 
-## Invoice Preflight Enrollment Blocker Codes (MVP)
+## Invoice Preflight Enrollment Blocker Codes
 
 Invoice draft preflight explains enrollment incompleteness with granular stable blocker codes rather than only a generic enrollment-incomplete label.
 
-## Draft Invoice Regeneration (MVP)
+## Draft Invoice Regeneration
 
 After attendance corrections, managers can regenerate draft invoices for individual children without rerunning the full month batch.
 
-## Draft Invoice Generation Scope (MVP)
+## Draft Invoice Generation Scope
 
 Draft invoice generation can target all eligible child-months in a billing month or a manager-selected subset of child-months.
 
-## Draft Invoice Generation Outcome (MVP)
+## Draft Invoice Generation Outcome
 
 Draft invoice generation reports the invoice run outcome and affected invoice references; detailed invoice review remains a separate manager billing view.
 
-## Manager Invoice Review (MVP)
+## Manager Invoice Review
 
 A manager-facing billing view for inspecting generated invoice headers, line items, calculation quantities, status, and due/payment metadata across invoice statuses. Draft invoices are included so managers can review calculations before issue without reconstructing totals elsewhere; invoice line editing is a separate manager workflow, not part of review itself.
 
-## Parent Invoice View (MVP)
+## Parent Invoice View
 
 A parent-facing billing view for issued-or-later invoices belonging to children reachable through that parent's current membership-to-guardian access path. It explains payable invoice identity, child, period, status, totals, payment state, and parent-readable line items.
 
-## Parent Invoice Detail Disclosure (MVP)
+## Parent Invoice Detail Disclosure
 
 Parent invoice detail supports understanding and paying an issued invoice, not reviewing manager billing operations. Manager-only run context, invoice exceptions, lock metadata, adjustment internals, and attendance source-session snapshots are outside the parent disclosure boundary.
 
-## Issued-or-Later Invoice (MVP)
+## Issued-or-Later Invoice
 
 An invoice whose lifecycle has moved beyond draft into `issued`, `payment_failed`, `paid`, or `overdue`. Parents can see issued-or-later invoices for linked children, while draft invoices remain manager-only.
 
-## Invoice Payment Retry (MVP)
+## Invoice Payment Retry
 
 Issued invoices remain payable after `payment_failed` or `overdue` states by creating a fresh Stripe checkout session for the same invoice.
 
-## Tax Handling (MVP)
+## Tax Handling
 
-Month-1 invoicing runs in a single non-VAT mode without VAT calculation logic.
+Current invoicing runs in a single non-VAT mode without VAT calculation logic.
 
-## Invoice Currency (MVP)
+## Invoice Currency
 
-All invoices and Stripe checkout sessions use `GBP` only in month 1.
+All invoices and Stripe checkout sessions use `GBP` only in the current release.
 
-## Portal Delivery Model (MVP)
+## Portal Delivery Model
 
 Managers, practitioners, and parents use one web application with role-scoped access rather than separate applications.
 
-## Billing Visibility Scope (MVP)
+## Billing Visibility Scope
 
 Invoice amounts, statuses, and payment details are visible only to managers and parents; practitioners do not have billing access.
 
-## Access Scope Enforcement (MVP)
+## Access Scope Enforcement
 
-All record access is constrained by both tenant and branch scope in month 1, even with a single pilot tenant and default branch.
+All record access is constrained by both tenant and branch scope in the current release, even with a single pilot tenant and default branch.
 
-## Guardian Link Scope Consistency (MVP)
+## Guardian Link Scope Consistency
 
 Guardian-child links are valid only when guardian and child belong to the same tenant and branch scope.
 
-## Tenancy Isolation Enforcement (MVP)
+## Tenancy Isolation Enforcement
 
-Tenant and branch isolation is enforced in application-layer authorization and query scoping in month 1; database RLS is deferred to post-pilot hardening.
+Tenant and branch isolation is enforced in application-layer authorization and query scoping in the current release; database RLS is deferred to post-pilot hardening.
 
-## Test Priority (MVP)
+## Test Priority
 
 Automated test coverage is prioritized for funding calculation logic, invoice state transitions, authorization scope checks, and Stripe webhook idempotency, with minimal UI end-to-end coverage on core happy paths.
 
-## Authorization Verification Baseline (MVP)
+## Authorization Verification Baseline
 
 Authorization acceptance requires a route-by-route role and scope test matrix that proves unauthenticated requests are rejected, wrong-role/wrong-tenant/wrong-branch requests are forbidden, and correctly scoped allowed-role requests succeed.
 
-## Observability Baseline (MVP)
+## Observability Baseline
 
 Operations monitoring uses structured logs plus essential metrics for webhook outcomes, invoice-generation job health, and authentication failures.
 
-## Authorization Denial Logging (MVP)
+## Authorization Denial Logging
 
 Authorization denials are captured in structured logs with request identifier, actor, scope context, and denial reason code.
 
-## Authorization Denial Persistence Scope (MVP)
+## Authorization Denial Persistence Scope
 
-Authorization denials are treated as operational telemetry and are recorded in structured logs and metrics rather than persisted as audit-log domain events in month 1.
+Authorization denials are treated as operational telemetry and are recorded in structured logs and metrics rather than persisted as audit-log domain events in the current release.
 
-## Authorization Denial Metrics (MVP)
+## Authorization Denial Metrics
 
 Authorization denials emit metrics tagged by stable denial reason code to support operational monitoring.
 
-## Async Processing Scope (MVP)
+## Async Processing Scope
 
 Non-immediate external operations such as email sending and retry handling run through background jobs; user-triggered Stripe checkout session creation remains synchronous.
 
-## Nursery Room (Post-MVP)
+## Nursery Room
 
 An operational room within a nursery site that houses children of a specific age group. A room belongs to exactly one site, and a site may have many rooms. The same room name (e.g. "Baby Room") may exist in different sites within the same tenant, but must be unique among active rooms within a single site. Rooms are archived (is_active = false) rather than hard-deleted because future attendance, child assignment, ratio, and reporting features may reference them.
 
-## Room Age Group (Post-MVP)
+## Room Age Group
 
 A classification for a nursery room: baby, toddler, preschool, or mixed. "Mixed" means the room intentionally serves children across multiple age bands. Age group is a constrained value rather than free text.
 
-## Room Capacity (Post-MVP)
+## Room Capacity
 
 The maximum number of children a room is licensed or configured to hold. Capacity is a positive integer and may be changed over time as room configuration or Ofsted registration changes.
 
-## Room Archive (Post-MVP)
+## Room Archive
 
 Setting a room to inactive (is_active = false). Archiving is blocked while active children remain assigned to the room. Archived rooms may be reactivated later. This follows the same no-hard-delete policy as other core records.
 
-## Room Reactivation (Post-MVP)
+## Room Reactivation
 
 Restoring an archived room to active status. Reactivation does not restore any previous child assignments or alter the room's name, capacity, or age group.
 
-## Primary Room (Post-MVP)
+## Primary Room
 
 The single room a child is operationally attached to for day-to-day care. One child has at most one primary room at any time. The primary room is the source of truth for room occupancy: a room's `assigned_count` is the number of children whose `primary_room_id` points at the room. Editing a child's primary room re-points them; no effective-dated history is kept. Replaces prior language of "assigned to a room".
 
 A child's primary room is set at intake and is required to proceed through the guided registration stepper. After intake, the primary room remains editable from the section editor (and from the inline child edit) via `PATCH /api/v1/children/:id`.
 
-## Unassigned Child (Post-MVP)
+## Unassigned Child
 
 A child whose `primary_room_id IS NULL`. Unassigned children do not contribute to any room's occupancy and do not block archiving the rooms they are not attached to. Existing children begin as unassigned after the column is introduced; managers assign them from the Children form.
 
-## Retention Policy Scope (MVP)
+## Retention Policy Scope
 
 Configurable retention/deletion policy automation is deferred; pilot records are retained with core no-hard-delete rules.
 
-## UAT Signoff Gate (MVP)
+## UAT Signoff Gate
 
 Go-live requires explicit manager signoff on attendance, correction, invoice generation, payment, and payment-retry user acceptance checks.
 
-## Go-Live Rollback Policy (MVP)
+## Go-Live Rollback Policy
 
 If a critical billing defect appears at go-live, new invoice issuance is paused and fallback procedures are used until a verified fix is deployed.
 
-## Scope Change Rule (MVP)
+## Scope Change Rule
 
-During the 30-day delivery window, only changes that unblock the defined success metric are accepted; all other requests are deferred to post-MVP backlog.
+During the 30-day delivery window, only changes that unblock the defined success metric are accepted; all other requests are deferred to the post-release backlog.
 
-## Authorization Model (MVP)
+## Authorization Model
 
 Authorization combines role checks with scope checks, including tenant scope, branch scope, and parent-child linkage where applicable.
 
-## Authorization Guards (MVP)
+## Authorization Guards
 
 Authorization guards are the combined enforcement layer for role, scope, and relationship checks; RBAC is one component of this guard model.
 
-## Authorization Check Taxonomy (MVP)
+## Authorization Check Taxonomy
 
 Scope checks validate tenant and branch boundaries from the active session membership, while relationship checks validate dynamic record linkage such as parent-child access.
 
-## Authorization Evaluation Rule (MVP)
+## Authorization Evaluation Rule
 
 Session-bound scope and role claims are used for baseline access checks, while dynamic relationship checks such as parent-child linkage are validated against current records.
 
-## Parent Relationship Check Freshness (MVP)
+## Parent Relationship Check Freshness
 
 Parent access to child-linked resources is authorized against current guardian-child links at request time.
 
-## Authorization Route Policy (MVP)
+## Authorization Route Policy
 
 Protected endpoints follow default-deny behavior, with explicit role and scope requirements declared per route.
 
-## Route Role Declaration Style (MVP)
+## Route Role Declaration Style
 
-Month-1 protected endpoints declare explicit allowed role lists per route; capability abstraction is deferred.
+Current protected endpoints declare explicit allowed role lists per route; capability abstraction is deferred.
 
-## Unknown Role Handling (MVP)
+## Unknown Role Handling
 
 If a session presents an unknown or unsupported role claim, authorization fails closed with a forbidden response and a stable role-specific error code.
 
-## Authorization Denial Precedence (MVP)
+## Authorization Denial Precedence
 
 When multiple authorization checks fail, guards return one deterministic primary denial code based on a fixed evaluation order.
 
-## Authorization Check Order (MVP)
+## Authorization Check Order
 
 Authorization evaluation order is authentication validity first, then role checks, then tenant/branch scope checks, then relationship checks.
 
-## Authorization Layer Boundary (MVP)
+## Authorization Layer Boundary
 
 Middleware enforces token validity and coarse route-level role and scope checks, while domain logic enforces resource-specific relationship authorization.
 
-## Authorization Context Propagation (MVP)
+## Authorization Context Propagation
 
 Authorization middleware constructs a normalized request authorization context (user, membership, role, tenant, branch, request identifier) for downstream handlers and services.
 
-## Scope Source of Truth (MVP)
+## Scope Source of Truth
 
 Effective tenant and branch scope is derived from the active session membership, and client-supplied scope fields are rejected when they conflict.
 
-## Session Scope Isolation Rule (MVP)
+## Session Scope Isolation Rule
 
 Operations cannot cross into another branch or tenant within the same session; users must switch membership scope before acting in a different scope.
 
-## Attendance Edit Authority (MVP)
+## Attendance Edit Authority
 
 Historical attendance events are not edited directly by practitioners; corrections are captured as manager-only correction events.
 
-## Guardian Link End Visibility Rule (MVP)
+## Guardian Link End Visibility Rule
 
 When a guardian-child link is ended, that parent immediately loses access to that child's invoices, including historical invoices.
 
-## Guardian Relink Visibility Rule (MVP)
+## Guardian Relink Visibility Rule
 
 When a guardian-child relationship is re-linked with an active guardian-child link, parent visibility for that child's invoices is restored based on the current active-link relationship check.
 
-## Draft Invoice Idempotency (MVP)
+## Draft Invoice Idempotency
 
 Regenerating draft invoices for the same month does not create duplicates; existing eligible drafts are replaced or updated unless already issued.
 
-## Draft Invoice Regeneration Identity (MVP)
+## Draft Invoice Regeneration Identity
 
 Regenerating an existing draft monthly invoice preserves the draft invoice identity while replacing its draft calculation contents.
 
-## Draft Invoice Generation Audit Scope (MVP)
+## Draft Invoice Generation Audit Scope
 
 Draft invoice generation records audit history for each draft invoice that is created or recalculated; blocked child-months are represented as invoice run exceptions because no invoice changes for those child-months.
 
-## Invoice Issue Audit Scope (MVP)
+## Invoice Issue Audit Scope
 
 Invoice issue records audit history for each invoice that becomes issued; blocked invoices are represented as invoice run exceptions because no invoice changes for those invoices.
 
-## Invoice Run History (MVP)
+## Invoice Run History
 
 Repeated draft generation requests create separate invoice run history entries even when they update the same child-month draft invoice.
 
-## Issued Invoice Regeneration Policy (MVP)
+## Issued Invoice Regeneration Policy
 
 Issued invoices are not regenerated after attendance changes; post-issue changes require an explicit adjustment flow.
 
-## Draft Regeneration Issue Race Rule (MVP)
+## Draft Regeneration Issue Race Rule
 
 If a draft monthly invoice becomes issued while draft regeneration is being prepared, issued status takes precedence and the invoice is skipped rather than recalculated.
 
-## Stale Draft Blocked Regeneration (MVP)
+## Stale Draft Blocked Regeneration
 
 When an existing draft monthly invoice is no longer eligible for regeneration, the draft is left in place and the child-month is returned as blocked rather than silently removed.
 
-## Adjustment Flow (MVP)
+## Adjustment Flow
 
-Post-issue billing changes are represented by a manager-created follow-up adjustment invoice linked to the original issued invoice, with a required reason. Month-1 operation may defer creating adjustment invoices until a validated pilot need exists.
+Post-issue billing changes are represented by a manager-created follow-up adjustment invoice linked to the original issued invoice, with a required reason. Current operation may defer creating adjustment invoices until a validated pilot need exists.
 
-## API Versioning (MVP)
+## API Versioning
 
 HTTP endpoints are published under a versioned `/api/v1` route prefix.
 
-## Public Route Allowlist (MVP)
+## Public Route Allowlist
 
-Only health and authentication endpoints are public in month 1; all other API routes require authorization guards.
+Only health and authentication endpoints are public in the current release; all other API routes require authorization guards.
 
-## Invite Acceptance Route Visibility (MVP)
+## Invite Acceptance Route Visibility
 
 Invitation acceptance is a public provisioning route because invitees do not have a session before acceptance; all manager invitation management routes remain manager-protected.
 
-## Deployment Model (MVP)
+## Deployment Model
 
 Production runs on a single virtual machine using Docker Compose for service orchestration.
 
-## Entity Identifier Strategy (MVP)
+## Entity Identifier Strategy
 
 Domain entities use UUID primary keys (UUIDv7 preferred, UUIDv4 acceptable).
 
-## Invoice Explainability Persistence (MVP)
+## Invoice Explainability Persistence
 
 Invoice line storage preserves both intermediate billing components (core attended minutes, funded deduction minutes, core billable minutes, hourly rate) and final totals.
 
-## Invoice Attendance Source Snapshot (MVP)
+## Invoice Attendance Source Snapshot
 
 A generated draft invoice preserves a compact snapshot of the attendance sessions used to calculate it so managers can explain how the billed minutes were derived.
 
-## Draft Invoice Calculation Lines (MVP)
+## Draft Invoice Calculation Lines
 
 Generated draft monthly invoices use consistent explanatory lines for core childcare and funded-hours deduction, including a zero-value funded deduction line when no deduction amount is applied.
 
-## Parent Draft Invoice Visibility (MVP)
+## Parent Draft Invoice Visibility
 
 Draft invoices are visible only to managers; parents can view invoices only after they are issued.
 
-## Mid-Month Leave Billing (MVP)
+## Mid-Month Leave Billing
 
 If a child leaves during a month, billing is automatically derived from attendance actuals up to the leave date.
 
-## Post-Leave Invoice Artifact Policy (MVP)
+## Post-Leave Invoice Artifact Policy
 
 Marking a child inactive/left does not trigger automatic voiding of unrelated invoice artifacts; future billing is naturally blocked by attendance-derived invoice generation.
 
-## Child Management (Post-MVP)
+## Child Management
 
 Manager maintains the child record and surrounding profile in a guided stepper after a parent or carer has completed the physical form. A child is the root identity; everything else (profile, contacts, health, safeguarding, consent, funding, collection, room placement, billing) is a sub-record of that child. There is no separate registration workflow — the create flow runs as a single transaction.
 
-## Child Management Atomic Create (Post-MVP)
+## Child Management Atomic Create
 
 Manager creates a child in a single transaction that includes identity, profile, contacts, health, safeguarding, consent, funding, collection settings, room placement, and billing profile. All sections are optional except identity, room, and the safeguarding acknowledgement. The stepper in the UI keeps its "answer required to proceed" rule, but the API does not enforce that — partial submission is allowed and the manager can fill in the rest later through the per-resource PATCH/PUT endpoints.
 
-## Child Room Placement History (Post-MVP)
+## Child Room Placement History
 
 `child_room_assignments` is 1:many per child; one row is current (`end_date IS NULL`). Moving a child to a different room closes the current row and inserts a new one in the same transaction. The room id lives on the assignment, not on the child.
 
-## Child Leaving Record (Post-MVP)
+## Child Leaving Record
 
 Written when a child is marked inactive via `POST /api/v1/children/:id/actions/mark-inactive`; the reason code is constrained to `duplicate_record | entered_in_error | left_nursery | safeguarding_direction | contact_update | access_revoked | other`. The reason note is required when `reason_code = 'other'`. The `children` table no longer carries a `left_at` or `left_reason_code` column; the mark-inactive use case writes a `child_leaving_records` row and updates `children.is_active = false` in one transaction.
 
-## Child Funding Record (Post-MVP)
+## Child Funding Record
 
 A per-child eligibility record (`child_funding_records`) capturing 15/30h, 2yo, tax-free childcare, benefits, and support notes. It is distinct from `funding_profiles` (per-billing-month funded allowance minutes used by invoicing). Both tables coexist; the funding record does not change invoice generation.
 
-## Child Collection Settings (Post-MVP)
+## Child Collection Settings
 
 The collection password hash and acknowledgement (`child_collection_settings`) are 1:1 with the child. The API only exposes password presence and last-updated metadata on read; the stored secret is never returned. `PUT /api/v1/children/:id/collection-settings` accepts an optional password (hashed with bcrypt on the server) and an `over_18_collection_acknowledged` flag.
 
-## Child Profile Audit Redaction (Post-MVP)
+## Child Profile Audit Redaction
 
 Per-sub-resource audit records prove who changed which section and when. They do not copy sensitive values (medical notes, safeguarding notes, contact details, collection password material) into `Details` on the audit log row.
 
