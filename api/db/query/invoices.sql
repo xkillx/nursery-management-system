@@ -405,7 +405,7 @@ SET status = 'issued',
     issued_by_user_id = $8,
     issued_by_membership_id = $9,
     locked_at = $7,
-    due_at = $7,
+    due_at = $10,
     updated_at = now()
 WHERE id = $1
   AND tenant_id = $2
@@ -424,6 +424,53 @@ WHERE status = 'issued'
   AND amount_paid_minor < total_due_minor
   AND due_at < $1
 RETURNING id, tenant_id, branch_id;
+
+-- Advance-pay billing: list active terms covering the billing month, joined with child
+-- and branch data so the application layer can drive invoice generation off a single query.
+-- name: BillingListActiveTermsForGeneration :many
+SELECT
+    t.id            AS term_id,
+    t.tenant_id,
+    t.branch_id,
+    t.child_id,
+    t.term_start_date,
+    t.term_end_date,
+    t.booking_pattern_id,
+    t.site_hourly_rate_minor,
+    t.status,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
+    c.date_of_birth,
+    c.start_date,
+    c.end_date,
+    EXISTS (
+        SELECT 1
+        FROM guardian_child_links gcl
+        WHERE gcl.tenant_id = t.tenant_id
+          AND gcl.branch_id = t.branch_id
+          AND gcl.child_id = t.child_id
+          AND gcl.ended_at IS NULL
+    ) AS has_guardian_link,
+    fp.id AS funding_profile_id,
+    fp.funded_allowance_minutes
+FROM term t
+JOIN children c
+  ON c.tenant_id = t.tenant_id
+ AND c.branch_id = t.branch_id
+ AND c.id = t.child_id
+LEFT JOIN funding_profiles fp
+    ON fp.tenant_id = t.tenant_id
+   AND fp.branch_id = t.branch_id
+   AND fp.child_id = t.child_id
+   AND fp.billing_month = $3
+WHERE t.tenant_id = $1
+  AND t.branch_id = $2
+  AND t.status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND t.term_start_date <= $4
+  AND t.term_end_date >= $3
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, t.id ASC
+FOR UPDATE OF t;
 
 -- name: InvoiceListForParent :many
 SELECT

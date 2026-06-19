@@ -43,6 +43,126 @@ func (q *Queries) AllocateInvoiceNumberSequence(ctx context.Context, arg Allocat
 	return issued_sequence, err
 }
 
+const billingListActiveTermsForGeneration = `-- name: BillingListActiveTermsForGeneration :many
+SELECT
+    t.id            AS term_id,
+    t.tenant_id,
+    t.branch_id,
+    t.child_id,
+    t.term_start_date,
+    t.term_end_date,
+    t.booking_pattern_id,
+    t.site_hourly_rate_minor,
+    t.status,
+    c.first_name,
+    c.middle_name,
+    c.last_name,
+    c.date_of_birth,
+    c.start_date,
+    c.end_date,
+    EXISTS (
+        SELECT 1
+        FROM guardian_child_links gcl
+        WHERE gcl.tenant_id = t.tenant_id
+          AND gcl.branch_id = t.branch_id
+          AND gcl.child_id = t.child_id
+          AND gcl.ended_at IS NULL
+    ) AS has_guardian_link,
+    fp.id AS funding_profile_id,
+    fp.funded_allowance_minutes
+FROM term t
+JOIN children c
+  ON c.tenant_id = t.tenant_id
+ AND c.branch_id = t.branch_id
+ AND c.id = t.child_id
+LEFT JOIN funding_profiles fp
+    ON fp.tenant_id = t.tenant_id
+   AND fp.branch_id = t.branch_id
+   AND fp.child_id = t.child_id
+   AND fp.billing_month = $3
+WHERE t.tenant_id = $1
+  AND t.branch_id = $2
+  AND t.status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND t.term_start_date <= $4
+  AND t.term_end_date >= $3
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, t.id ASC
+FOR UPDATE OF t
+`
+
+type BillingListActiveTermsForGenerationParams struct {
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	BillingMonth  pgtype.Date
+	TermStartDate pgtype.Date
+}
+
+type BillingListActiveTermsForGenerationRow struct {
+	TermID                 pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	ChildID                pgtype.UUID
+	TermStartDate          pgtype.Date
+	TermEndDate            pgtype.Date
+	BookingPatternID       pgtype.UUID
+	SiteHourlyRateMinor    int32
+	Status                 string
+	FirstName              string
+	MiddleName             pgtype.Text
+	LastName               pgtype.Text
+	DateOfBirth            pgtype.Date
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	HasGuardianLink        bool
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+}
+
+// Advance-pay billing: list active terms covering the billing month, joined with child
+// and branch data so the application layer can drive invoice generation off a single query.
+func (q *Queries) BillingListActiveTermsForGeneration(ctx context.Context, arg BillingListActiveTermsForGenerationParams) ([]BillingListActiveTermsForGenerationRow, error) {
+	rows, err := q.db.Query(ctx, billingListActiveTermsForGeneration,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.TermStartDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BillingListActiveTermsForGenerationRow
+	for rows.Next() {
+		var i BillingListActiveTermsForGenerationRow
+		if err := rows.Scan(
+			&i.TermID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.TermStartDate,
+			&i.TermEndDate,
+			&i.BookingPatternID,
+			&i.SiteHourlyRateMinor,
+			&i.Status,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.HasGuardianLink,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const completeInvoiceRun = `-- name: CompleteInvoiceRun :exec
 UPDATE invoice_runs
 SET status = $4,
@@ -1643,7 +1763,7 @@ SET status = 'issued',
     issued_by_user_id = $8,
     issued_by_membership_id = $9,
     locked_at = $7,
-    due_at = $7,
+    due_at = $10,
     updated_at = now()
 WHERE id = $1
   AND tenant_id = $2
@@ -1661,6 +1781,7 @@ type MarkInvoiceIssuedParams struct {
 	IssuedAt             pgtype.Timestamptz
 	IssuedByUserID       pgtype.UUID
 	IssuedByMembershipID pgtype.UUID
+	DueAt                pgtype.Timestamptz
 }
 
 func (q *Queries) MarkInvoiceIssued(ctx context.Context, arg MarkInvoiceIssuedParams) (int64, error) {
@@ -1674,6 +1795,7 @@ func (q *Queries) MarkInvoiceIssued(ctx context.Context, arg MarkInvoiceIssuedPa
 		arg.IssuedAt,
 		arg.IssuedByUserID,
 		arg.IssuedByMembershipID,
+		arg.DueAt,
 	)
 	if err != nil {
 		return 0, err

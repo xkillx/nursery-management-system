@@ -83,7 +83,96 @@ func (r *Repository) ListPreflightAttendanceSessions(ctx context.Context, tenant
 	return result, nil
 }
 
-// --- Generation (API-17) transactional methods ---
+func (r *Repository) ListActiveTermsForGeneration(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.AdvancePayTermRow, error) {
+	monthEnd := billingMonth.AddDate(0, 1, -1)
+	rows, err := r.queriesTx(tx).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		BillingMonth:  timeToPgtypeDate(billingMonth),
+		TermStartDate: timeToPgtypeDate(monthEnd),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list active terms for generation: %w", err)
+	}
+	return mapAdvancePayTermRows(rows), nil
+}
+
+func (r *Repository) ListActiveTerms(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.AdvancePayTermRow, error) {
+	monthEnd := billingMonth.AddDate(0, 1, -1)
+	rows, err := sqlc.New(r.pool).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		BillingMonth:  timeToPgtypeDate(billingMonth),
+		TermStartDate: timeToPgtypeDate(monthEnd),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list active terms (no tx): %w", err)
+	}
+	return mapAdvancePayTermRows(rows), nil
+}
+
+func mapAdvancePayTermRows(rows []sqlc.BillingListActiveTermsForGenerationRow) []domain.AdvancePayTermRow {
+	out := make([]domain.AdvancePayTermRow, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, domain.AdvancePayTermRow{
+			TermID:                 pgtypeUUIDToUUID(row.TermID),
+			TenantID:               pgtypeUUIDToUUID(row.TenantID),
+			BranchID:               pgtypeUUIDToUUID(row.BranchID),
+			ChildID:                pgtypeUUIDToUUID(row.ChildID),
+			TermStartDate:          pgtypeDateToTime(row.TermStartDate),
+			TermEndDate:            pgtypeDateToTime(row.TermEndDate),
+			BookingPatternID:       pgtypeUUIDToUUID(row.BookingPatternID),
+			SiteHourlyRateMinor:    int(row.SiteHourlyRateMinor),
+			Status:                 row.Status,
+			FirstName:              row.FirstName,
+			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
+			LastName:               pgtypeTextToStrPtr(row.LastName),
+			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
+			StartDate:              pgtypeDateToTime(row.StartDate),
+			EndDate:                pgtypeDateToTimePtr(row.EndDate),
+			HasGuardianLink:        row.HasGuardianLink,
+			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
+			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
+		})
+	}
+	return out
+}
+
+func (r *Repository) ListBookingPatternEntries(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
+	// We deliberately query the child_booking_pattern_entries + session_types tables directly
+	// rather than going through the children module's repository, to keep the billing
+	// module independent of the children module's application layer.
+	rows, err := r.queriesTx(tx).ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		PatternID: uuidToPgtype(patternID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list booking pattern entries: %w", err)
+	}
+	out := make([]domain.BookingPatternEntryRow, 0, len(rows))
+	for _, row := range rows {
+		startMin := timeOfDayToMinutes(row.SessionTypeStartTime)
+		endMin := timeOfDayToMinutes(row.SessionTypeEndTime)
+		if endMin <= startMin {
+			continue
+		}
+		out = append(out, domain.BookingPatternEntryRow{
+			DayOfWeek:       int(row.DayOfWeek),
+			SessionTypeID:   pgtypeUUIDToUUID(row.SessionTypeID),
+			SessionTypeName: row.SessionTypeName,
+			StartMinutes:    startMin,
+			EndMinutes:      endMin,
+		})
+	}
+	return out, nil
+}
+
+// timeOfDayToMinutes converts a pgtype.Time (microseconds since midnight) to
+// minutes since midnight, rounded down.
+func timeOfDayToMinutes(t pgtype.Time) int {
+	return int(t.Microseconds / (60 * 1_000_000))
+}
 
 func (r *Repository) queriesTx(tx pgx.Tx) *sqlc.Queries {
 	return sqlc.New(tx)
@@ -342,8 +431,6 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 			QuantityMinutes:        pgtypeInt4ToIntPtr(row.QuantityMinutes),
 			UnitAmountMinor:        pgtypeInt4ToIntPtr(row.UnitAmountMinor),
 			LineAmountMinor:        int(row.LineAmountMinor),
-			RawAttendedMinutes:     pgtypeInt4ToIntPtr(row.RawAttendedMinutes),
-			RoundedAttendedMinutes: pgtypeInt4ToIntPtr(row.RoundedAttendedMinutes),
 			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
 			FundedDeductionMinutes: pgtypeInt4ToIntPtr(row.FundedDeductionMinutes),
 			CoreBillableMinutes:    pgtypeInt4ToIntPtr(row.CoreBillableMinutes),
@@ -582,7 +669,7 @@ func (r *Repository) AllocateInvoiceNumberSequence(ctx context.Context, tx domai
 	return int(seq), nil
 }
 
-func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params domain.IssueInvoiceUpdateParams) error {
+func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params domain.IssueInvoiceUpdateParams) (int64, error) {
 	n, err := r.queriesTx(tx).MarkInvoiceIssued(ctx, sqlc.MarkInvoiceIssuedParams{
 		ID:                   uuidToPgtype(params.ID),
 		TenantID:             uuidToPgtype(params.TenantID),
@@ -593,14 +680,12 @@ func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params
 		IssuedAt:             pgtype.Timestamptz{Time: params.IssuedAt, Valid: true},
 		IssuedByUserID:       uuidToPgtype(params.IssuedByUserID),
 		IssuedByMembershipID: uuidToPgtype(params.IssuedByMembershipID),
+		DueAt:                pgtype.Timestamptz{Time: params.DueAt, Valid: true},
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
-	if n != 1 {
-		return fmt.Errorf("mark invoice issued: expected 1 row affected, got %d", n)
-	}
-	return nil
+	return n, nil
 }
 
 // --- Overdue Transition (API-20) transactional methods ---

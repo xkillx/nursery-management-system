@@ -20,6 +20,14 @@ type BillingRepository interface {
 	ListCandidateChildrenForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]PreflightChildRow, error)
 	ListSelectedChildrenForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, childIDs []uuid.UUID) ([]PreflightChildRow, error)
 	ListAttendanceSessions(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, periodStart, periodEndExclusive time.Time) ([]PreflightAttendanceSessionRow, error)
+
+	// Advance-pay generation: list active terms covering the billing month,
+	// joined with child + funding data, locked FOR UPDATE.
+	ListActiveTermsForGeneration(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
+	// ListActiveTerms is the non-tx variant used by the preflight preview.
+	ListActiveTerms(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
+	ListBookingPatternEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID) ([]BookingPatternEntryRow, error)
+
 	CreateInvoiceRun(ctx context.Context, tx Tx, params InvoiceRunCreateParams) error
 	CompleteInvoiceRun(ctx context.Context, tx Tx, params InvoiceRunCompleteParams) error
 	GetMonthlyInvoiceForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (InvoiceRow, bool, error)
@@ -39,7 +47,7 @@ type BillingRepository interface {
 	ListDraftInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]InvoiceIssueCandidateRow, error)
 	ListSelectedInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, invoiceIDs []uuid.UUID) ([]InvoiceIssueCandidateRow, error)
 	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
-	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) error
+	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) (int64, error)
 
 	// Parent Invoice View (API-21) — read-only, no transaction required.
 	ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) ([]ParentInvoiceRow, error)
@@ -60,6 +68,39 @@ type InvoiceRow struct {
 	FundedDeductionMinor int
 	TotalDueMinor        int
 	CalculationDetails   json.RawMessage
+}
+
+// AdvancePayTermRow is the per-term row from BillingListActiveTermsForGeneration.
+// The application layer joins this with booking-pattern entries to compute the
+// per-term monthly invoice.
+type AdvancePayTermRow struct {
+	TermID                 uuid.UUID
+	TenantID               uuid.UUID
+	BranchID               uuid.UUID
+	ChildID                uuid.UUID
+	TermStartDate          time.Time
+	TermEndDate            time.Time
+	BookingPatternID       uuid.UUID
+	SiteHourlyRateMinor    int
+	Status                 string
+	FirstName              string
+	MiddleName             *string
+	LastName               *string
+	DateOfBirth            time.Time
+	StartDate              time.Time
+	EndDate                *time.Time
+	HasGuardianLink        bool
+	FundingProfileID       *uuid.UUID
+	FundedAllowanceMinutes *int
+}
+
+// BookingPatternEntryRow is the per-entry row from ListBookingPatternEntries.
+type BookingPatternEntryRow struct {
+	DayOfWeek       int
+	SessionTypeID   uuid.UUID
+	SessionTypeName string
+	StartMinutes    int
+	EndMinutes      int
 }
 
 // ExtraLineRow maps an extra invoice line row.

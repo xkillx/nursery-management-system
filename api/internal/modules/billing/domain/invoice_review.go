@@ -62,8 +62,6 @@ type InvoiceReviewLineRow struct {
 	QuantityMinutes        *int
 	UnitAmountMinor        *int
 	LineAmountMinor        int
-	RawAttendedMinutes     *int
-	RoundedAttendedMinutes *int
 	FundedAllowanceMinutes *int
 	FundedDeductionMinutes *int
 	CoreBillableMinutes    *int
@@ -71,17 +69,20 @@ type InvoiceReviewLineRow struct {
 }
 
 // InvoiceReviewCalculation is the curated calculation object for the API response.
+// Under advance-pay this reflects the booking-driven inputs.
 type InvoiceReviewCalculation struct {
-	CoreHourlyRateMinor    int                     `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int                     `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                     `json:"rounded_attended_minutes"`
-	FundedAllowanceMinutes int                     `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int                     `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int                     `json:"core_billable_minutes"`
-	IncludedSessionCount   int                     `json:"included_session_count"`
-	CoreSubtotalMinor      int                     `json:"core_subtotal_minor"`
-	ExtrasTotalMinor       int                     `json:"extras_total_minor"`
-	SourceSessions         []SourceSessionSnapshot `json:"source_sessions"`
+	CoreHourlyRateMinor    int                    `json:"core_hourly_rate_minor"`
+	BookedCoreMinutes      int                    `json:"booked_core_minutes"`
+	BookedSessionCount     int                    `json:"booked_session_count"`
+	FundedAllowanceMinutes int                    `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int                    `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int                    `json:"core_billable_minutes"`
+	CoreSubtotalMinor      int                    `json:"core_subtotal_minor"`
+	ExtrasTotalMinor       int                    `json:"extras_total_minor"`
+	TermID                 uuid.UUID              `json:"term_id"`
+	BookingPatternID       uuid.UUID              `json:"booking_pattern_id"`
+	BookedSessions         []BookedSession        `json:"booked_sessions"`
+	BookedPerEntry         []BookedEntryBreakdown `json:"booked_per_entry"`
 }
 
 // InvoiceRunExceptionReference is a compact exception from an invoice run.

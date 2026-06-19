@@ -19,7 +19,7 @@ import (
 type Handler struct {
 	logger             *slog.Logger
 	preflight          *application.PreflightDraftInvoices
-	generation         *application.GenerateDraftInvoices
+	generation         *application.GenerateDraftInvoicesUseCase
 	listInvoices       *application.ListInvoices
 	getInvoice         *application.GetInvoice
 	issueInvoice       *application.IssueInvoice
@@ -28,7 +28,7 @@ type Handler struct {
 	getParentInvoice   *application.GetParentInvoice
 }
 
-func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoices, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices, listParentInvoices *application.ListParentInvoices, getParentInvoice *application.GetParentInvoice) *Handler {
+func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoicesUseCase, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices, listParentInvoices *application.ListParentInvoices, getParentInvoice *application.GetParentInvoice) *Handler {
 	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices, listParentInvoices: listParentInvoices, getParentInvoice: getParentInvoice}
 }
 
@@ -284,14 +284,6 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 			CoreHourlyRateMinor:    ec.CoreHourlyRateMinor,
 			FundingProfileID:       fundingProfileID,
 			FundedAllowanceMinutes: ec.FundedAllowanceMinutes,
-			RawAttendedMinutes:     ec.RawAttendedMinutes,
-			RoundedAttendedMinutes: ec.RoundedAttendedMinutes,
-			IncludedSessionCount:   ec.IncludedSessionCount,
-			FundedDeductionMinutes: ec.FundedDeductionMinutes,
-			CoreBillableMinutes:    ec.CoreBillableMinutes,
-			SubtotalMinor:          ec.SubtotalMinor,
-			FundedDeductionMinor:   ec.FundedDeductionMinor,
-			TotalDueMinor:          ec.TotalDueMinor,
 			ExistingInvoice:        existingInvoice,
 		})
 	}
@@ -353,15 +345,7 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 			TotalChildrenCount:     r.Summary.TotalChildrenCount,
 			EligibleChildrenCount:  r.Summary.EligibleChildrenCount,
 			BlockedChildrenCount:   r.Summary.BlockedChildrenCount,
-			IncludedSessionCount:   r.Summary.IncludedSessionCount,
-			RawAttendedMinutes:     r.Summary.RawAttendedMinutes,
-			RoundedAttendedMinutes: r.Summary.RoundedAttendedMinutes,
 			FundedAllowanceMinutes: r.Summary.FundedAllowanceMinutes,
-			FundedDeductionMinutes: r.Summary.FundedDeductionMinutes,
-			CoreBillableMinutes:    r.Summary.CoreBillableMinutes,
-			SubtotalMinor:          r.Summary.SubtotalMinor,
-			FundedDeductionMinor:   r.Summary.FundedDeductionMinor,
-			TotalDueMinor:          r.Summary.TotalDueMinor,
 			BlockerCounts:          blockerCounts,
 		},
 		EligibleChildren: eligible,
@@ -581,8 +565,6 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			QuantityMinutes:        line.QuantityMinutes,
 			UnitAmountMinor:        line.UnitAmountMinor,
 			LineAmountMinor:        line.LineAmountMinor,
-			RawAttendedMinutes:     line.RawAttendedMinutes,
-			RoundedAttendedMinutes: line.RoundedAttendedMinutes,
 			FundedAllowanceMinutes: line.FundedAllowanceMinutes,
 			FundedDeductionMinutes: line.FundedDeductionMinutes,
 			CoreBillableMinutes:    line.CoreBillableMinutes,
@@ -594,30 +576,40 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 }
 
 func toCalculationResponse(calc domain.InvoiceReviewCalculation) invoiceCalculationResponse {
-	sessions := make([]sourceSessionResponse, 0, len(calc.SourceSessions))
-	for _, s := range calc.SourceSessions {
-		sessions = append(sessions, sourceSessionResponse{
-			SessionID:              s.SessionID.String(),
-			Status:                 s.Status,
-			CheckInAt:              s.CheckInAt.UTC().Format("2006-01-02T15:04:05Z"),
-			RawElapsedMinutes:      s.RawElapsedMinutes,
-			RoundedBillableMinutes: s.RoundedBillableMinutes,
+	sessions := make([]bookedSessionResponse, 0, len(calc.BookedSessions))
+	for _, s := range calc.BookedSessions {
+		sessions = append(sessions, bookedSessionResponse{
+			DayOfWeek:       s.DayOfWeek,
+			OccurrenceDate:  s.OccurrenceDate.Format("2006-01-02"),
+			DurationMinutes: s.DurationMinutes,
+			SessionTypeID:   s.SessionTypeID,
+			SessionTypeName: s.SessionTypeName,
 		})
-		if s.CheckOutAt != nil {
-			sessions[len(sessions)-1].CheckOutAt = strPtr(s.CheckOutAt.UTC().Format("2006-01-02T15:04:05Z"))
-		}
+	}
+	perEntry := make([]bookedEntryResponse, 0, len(calc.BookedPerEntry))
+	for _, e := range calc.BookedPerEntry {
+		perEntry = append(perEntry, bookedEntryResponse{
+			DayOfWeek:          e.DayOfWeek,
+			SessionTypeID:      e.SessionTypeID,
+			SessionTypeName:    e.SessionTypeName,
+			DurationMinutes:    e.DurationMinutes,
+			OccurrencesInMonth: e.OccurrencesInMonth,
+			TotalMinutes:       e.TotalMinutes,
+		})
 	}
 	return invoiceCalculationResponse{
 		CoreHourlyRateMinor:    calc.CoreHourlyRateMinor,
-		RawAttendedMinutes:     calc.RawAttendedMinutes,
-		RoundedAttendedMinutes: calc.RoundedAttendedMinutes,
+		BookedCoreMinutes:      calc.BookedCoreMinutes,
+		BookedSessionCount:     calc.BookedSessionCount,
 		FundedAllowanceMinutes: calc.FundedAllowanceMinutes,
 		FundedDeductionMinutes: calc.FundedDeductionMinutes,
 		CoreBillableMinutes:    calc.CoreBillableMinutes,
-		IncludedSessionCount:   calc.IncludedSessionCount,
 		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
 		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
-		SourceSessions:         sessions,
+		TermID:                 calc.TermID.String(),
+		BookingPatternID:       calc.BookingPatternID.String(),
+		BookedSessions:         sessions,
+		BookedPerEntry:         perEntry,
 	}
 }
 
@@ -771,12 +763,11 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 func toParentCalculationResponse(calc domain.InvoiceReviewCalculation) parentInvoiceCalculationResponse {
 	return parentInvoiceCalculationResponse{
 		CoreHourlyRateMinor:    calc.CoreHourlyRateMinor,
-		RawAttendedMinutes:     calc.RawAttendedMinutes,
-		RoundedAttendedMinutes: calc.RoundedAttendedMinutes,
+		BookedCoreMinutes:      calc.BookedCoreMinutes,
+		BookedSessionCount:     calc.BookedSessionCount,
 		FundedAllowanceMinutes: calc.FundedAllowanceMinutes,
 		FundedDeductionMinutes: calc.FundedDeductionMinutes,
 		CoreBillableMinutes:    calc.CoreBillableMinutes,
-		IncludedSessionCount:   calc.IncludedSessionCount,
 		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
 		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
 	}

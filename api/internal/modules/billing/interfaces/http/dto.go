@@ -19,15 +19,7 @@ type summaryResponse struct {
 	TotalChildrenCount     int                    `json:"total_children_count"`
 	EligibleChildrenCount  int                    `json:"eligible_children_count"`
 	BlockedChildrenCount   int                    `json:"blocked_children_count"`
-	IncludedSessionCount   int                    `json:"included_session_count"`
-	RawAttendedMinutes     int                    `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                    `json:"rounded_attended_minutes"`
 	FundedAllowanceMinutes int                    `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int                    `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int                    `json:"core_billable_minutes"`
-	SubtotalMinor          int                    `json:"subtotal_minor"`
-	FundedDeductionMinor   int                    `json:"funded_deduction_minor"`
-	TotalDueMinor          int                    `json:"total_due_minor"`
 	BlockerCounts          []blockerCountResponse `json:"blocker_counts"`
 }
 
@@ -39,15 +31,7 @@ type eligibleChildResponse struct {
 	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
 	FundingProfileID       *string             `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
-	RawAttendedMinutes     int                 `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                 `json:"rounded_attended_minutes"`
-	IncludedSessionCount   int                 `json:"included_session_count"`
-	FundedDeductionMinutes int                 `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int                 `json:"core_billable_minutes"`
-	SubtotalMinor          int                 `json:"subtotal_minor"`
-	FundedDeductionMinor   int                 `json:"funded_deduction_minor"`
-	TotalDueMinor          int                 `json:"total_due_minor"`
-	ExistingInvoice        *existingInvoiceRef `json:"existing_invoice"`
+	ExistingInvoice        *existingInvoiceRef `json:"existing_invoice,omitempty"`
 }
 
 type existingInvoiceRef struct {
@@ -220,8 +204,6 @@ type invoiceLineResponse struct {
 	QuantityMinutes        *int   `json:"quantity_minutes"`
 	UnitAmountMinor        *int   `json:"unit_amount_minor"`
 	LineAmountMinor        int    `json:"line_amount_minor"`
-	RawAttendedMinutes     *int   `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes *int   `json:"rounded_attended_minutes"`
 	FundedAllowanceMinutes *int   `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes *int   `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    *int   `json:"core_billable_minutes"`
@@ -230,24 +212,34 @@ type invoiceLineResponse struct {
 
 type invoiceCalculationResponse struct {
 	CoreHourlyRateMinor    int                     `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int                     `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                     `json:"rounded_attended_minutes"`
+	BookedCoreMinutes      int                     `json:"booked_core_minutes"`
+	BookedSessionCount     int                     `json:"booked_session_count"`
 	FundedAllowanceMinutes int                     `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int                     `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int                     `json:"core_billable_minutes"`
-	IncludedSessionCount   int                     `json:"included_session_count"`
 	CoreSubtotalMinor      int                     `json:"core_subtotal_minor"`
 	ExtrasTotalMinor       int                     `json:"extras_total_minor"`
-	SourceSessions         []sourceSessionResponse `json:"source_sessions"`
+	TermID                 string                  `json:"term_id"`
+	BookingPatternID       string                  `json:"booking_pattern_id"`
+	BookedSessions         []bookedSessionResponse `json:"booked_sessions"`
+	BookedPerEntry         []bookedEntryResponse   `json:"booked_per_entry"`
 }
 
-type sourceSessionResponse struct {
-	SessionID              string  `json:"session_id"`
-	Status                 string  `json:"status"`
-	CheckInAt              string  `json:"check_in_at"`
-	CheckOutAt             *string `json:"check_out_at,omitempty"`
-	RawElapsedMinutes      int     `json:"raw_elapsed_minutes"`
-	RoundedBillableMinutes int     `json:"rounded_billable_minutes"`
+type bookedSessionResponse struct {
+	DayOfWeek       int    `json:"day_of_week"`
+	OccurrenceDate  string `json:"occurrence_date"`
+	DurationMinutes int    `json:"duration_minutes"`
+	SessionTypeID   string `json:"session_type_id"`
+	SessionTypeName string `json:"session_type_name"`
+}
+
+type bookedEntryResponse struct {
+	DayOfWeek          int    `json:"day_of_week"`
+	SessionTypeID      string `json:"session_type_id"`
+	SessionTypeName    string `json:"session_type_name"`
+	DurationMinutes    int    `json:"duration_minutes"`
+	OccurrencesInMonth int    `json:"occurrences_in_month"`
+	TotalMinutes       int    `json:"total_minutes"`
 }
 
 type invoiceRunExceptionResponse struct {
@@ -400,12 +392,11 @@ type parentInvoiceLineResponse struct {
 
 type parentInvoiceCalculationResponse struct {
 	CoreHourlyRateMinor    int `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int `json:"rounded_attended_minutes"`
+	BookedCoreMinutes      int `json:"booked_core_minutes"`
+	BookedSessionCount     int `json:"booked_session_count"`
 	FundedAllowanceMinutes int `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int `json:"core_billable_minutes"`
-	IncludedSessionCount   int `json:"included_session_count"`
 	CoreSubtotalMinor      int `json:"core_subtotal_minor"`
 	ExtrasTotalMinor       int `json:"extras_total_minor"`
 }

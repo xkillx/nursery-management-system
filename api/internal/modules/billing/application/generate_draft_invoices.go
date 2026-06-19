@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -18,7 +20,10 @@ import (
 	"nursery-management-system/api/internal/platform/uid"
 )
 
-type GenerateDraftInvoices struct {
+// GenerateDraftInvoicesUseCase implements the advance-pay generation rule.
+// One draft invoice per active Term per month, computed from the Term's
+// Booking Pattern. This replaces the attendance-actuals-based generator.
+type GenerateDraftInvoicesUseCase struct {
 	repo     domain.BillingRepository
 	txMgr    *transaction.Manager
 	auditW   *audit.Writer
@@ -30,12 +35,12 @@ func NewGenerateDraftInvoices(
 	repo domain.BillingRepository,
 	txMgr *transaction.Manager,
 	auditW *audit.Writer,
-) *GenerateDraftInvoices {
-	return &GenerateDraftInvoices{repo: repo, txMgr: txMgr, auditW: auditW}
+) *GenerateDraftInvoicesUseCase {
+	return &GenerateDraftInvoicesUseCase{repo: repo, txMgr: txMgr, auditW: auditW}
 }
 
-func (uc *GenerateDraftInvoices) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *GenerateDraftInvoices {
-	return &GenerateDraftInvoices{
+func (uc *GenerateDraftInvoicesUseCase) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *GenerateDraftInvoicesUseCase {
+	return &GenerateDraftInvoicesUseCase{
 		repo:     uc.repo,
 		txMgr:    uc.txMgr,
 		auditW:   uc.auditW,
@@ -44,7 +49,11 @@ func (uc *GenerateDraftInvoices) WithObservability(logger *slog.Logger, recorder
 	}
 }
 
-func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string, rawChildIDs []string) (domain.DraftGenerationResult, error) {
+// Execute runs the full-month advance-pay generation. The billing month is
+// the first day of the calendar month being invoiced. The system iterates
+// every active Term in the branch whose term range covers the billing month
+// and produces one draft (or issued) invoice per Term.
+func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string, rawChildIDs []string) (domain.DraftGenerationResult, error) {
 	startedAt := time.Now()
 
 	billingMonth, err := ParseBillingMonth(billingMonthRaw)
@@ -56,6 +65,7 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 	if err != nil {
 		return domain.DraftGenerationResult{}, domainerrors.Validation("Invalid child ID format.", "child_ids")
 	}
+	isFullMonth := len(rawChildIDs) == 0
 
 	year := billingMonth.Year()
 	month := billingMonth.Month()
@@ -65,21 +75,11 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 		return domain.DraftGenerationResult{}, domainerrors.Internal(fmt.Errorf("billing period: %w", err))
 	}
 
-	isFullMonth := len(rawChildIDs) == 0
-	nextMonth := month + 1
-	nextYear := year
-	if nextMonth > time.December {
-		nextMonth = time.January
-		nextYear++
-	}
-	nextBillingMonth := time.Date(nextYear, nextMonth, 1, 0, 0, 0, 0, time.UTC)
-
 	runID := uid.NewUUID()
-
 	var result domain.DraftGenerationResult
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
-		// Create invoice run.
+	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+		// 1. Create the invoice run.
 		runErr := uc.repo.CreateInvoiceRun(ctx, tx, domain.InvoiceRunCreateParams{
 			ID:                      runID,
 			TenantID:                actor.TenantID,
@@ -95,111 +95,71 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 			return fmt.Errorf("create invoice run: %w", runErr)
 		}
 
-		// Load children.
-		var children []domain.PreflightChildRow
-		if isFullMonth {
-			children, runErr = uc.repo.ListCandidateChildrenForUpdate(ctx, tx, actor.TenantID, actor.BranchID, billingMonth, nextBillingMonth)
-		} else {
-			children, runErr = uc.repo.ListSelectedChildrenForUpdate(ctx, tx, actor.TenantID, actor.BranchID, childIDs)
-		}
-		if runErr != nil {
-			return fmt.Errorf("list children: %w", runErr)
+		// 2. List candidate terms for the month.
+		candidateTerms, err := uc.repo.ListActiveTermsForGeneration(ctx, tx, actor.TenantID, actor.BranchID, billingMonth)
+		if err != nil {
+			return fmt.Errorf("list active terms: %w", err)
 		}
 
-		// Build lookup of found children for selected-child exceptions.
-		foundChildSet := make(map[uuid.UUID]domain.PreflightChildRow, len(children))
-		for _, c := range children {
-			foundChildSet[c.ChildID] = c
+		// 3. If selected-children mode, build the requested set and the exceptions.
+		blocked := make([]domain.DraftGenerationBlockedChild, 0)
+		requestedSet := make(map[uuid.UUID]struct{}, len(childIDs))
+		for _, id := range childIDs {
+			requestedSet[id] = struct{}{}
 		}
-
-		// For selected-child mode, build exceptions for unknown / out-of-month children.
-		var blocked []domain.DraftGenerationBlockedChild
 		if !isFullMonth {
-			for _, id := range childIDs {
-				child, found := foundChildSet[id]
+			foundTermByChild := make(map[uuid.UUID]domain.AdvancePayTermRow, len(candidateTerms))
+			for _, t := range candidateTerms {
+				foundTermByChild[t.ChildID] = t
+			}
+			for id := range requestedSet {
+				_, found := foundTermByChild[id]
 				if !found {
-					// Could be unknown or out-of-scope. Check if child exists at all.
-					// Since ListSelectedChildrenForUpdate already scopes to tenant/branch,
-					// not found means either child doesn't exist or wrong scope.
 					blocked = append(blocked, domain.DraftGenerationBlockedChild{
 						ChildID: id,
 						Blockers: []domain.PreflightBlocker{
-							{Code: domain.BlockerChildNotFound, Message: "Child not found or not in scope."},
+							{Code: domain.BlockerChildNotFound, Message: "Child has no active term for this billing month."},
 						},
 					})
-					continue
-				}
-				// Check if child overlaps billing month.
-				if !childInBillingMonth(child, billingMonth, nextBillingMonth) {
-					blocked = append(blocked, domain.DraftGenerationBlockedChild{
-						ChildID:         child.ChildID,
-						ChildFirstName:  child.FirstName,
-						ChildMiddleName: child.MiddleName,
-						ChildLastName:   child.LastName,
-						Blockers: []domain.PreflightBlocker{
-							{Code: domain.BlockerChildNotInBillingMonth, Message: "Child is not active during this billing month."},
-						},
-					})
-					delete(foundChildSet, id)
 				}
 			}
 		}
 
-		// Load attendance sessions.
-		sessions, runErr := uc.repo.ListAttendanceSessions(ctx, tx, actor.TenantID, actor.BranchID, period.StartLocal, period.EndExclusiveLocal)
-		if runErr != nil {
-			return fmt.Errorf("list attendance sessions: %w", runErr)
-		}
-
-		sessionsByChild := make(map[uuid.UUID][]domain.AttendanceSessionInput)
-		for _, s := range sessions {
-			sessionsByChild[s.ChildID] = append(sessionsByChild[s.ChildID], domain.AttendanceSessionInput{
-				SessionID:  s.SessionID,
-				Status:     s.Status,
-				CheckInAt:  s.CheckInAt,
-				CheckOutAt: s.CheckOutAt,
-			})
-		}
-
+		// 4. For each candidate term, compute + write the draft invoice.
 		var generated []domain.DraftGenerationChildResult
 		var totalDueSum int
 
-		for _, child := range children {
-			if _, ok := foundChildSet[child.ChildID]; !ok && !isFullMonth {
-				continue // already in blocked from selected-child exceptions
+		for _, termRow := range candidateTerms {
+			if !isFullMonth {
+				if _, ok := requestedSet[termRow.ChildID]; !ok {
+					continue
+				}
 			}
 
-			childSessions := sessionsByChild[child.ChildID]
-			readiness, readinessErr := EvaluateChildReadiness(child, childSessions, year, int(month))
-			if readinessErr != nil {
-				return fmt.Errorf("evaluate readiness for child %s: %w", child.ChildID, readinessErr)
-			}
-
-			if len(readiness.Blockers) > 0 {
-				// If there's an existing draft, and the child is now blocked, leave it in place.
+			// Preflight: Term exists; check funding profile presence + guardian link.
+			preflightBlockers := uc.preflightTerm(termRow)
+			if len(preflightBlockers) > 0 {
 				blocked = append(blocked, domain.DraftGenerationBlockedChild{
-					ChildID:         child.ChildID,
-					ChildFirstName:  child.FirstName,
-					ChildMiddleName: child.MiddleName,
-					ChildLastName:   child.LastName,
-					Blockers:        readiness.Blockers,
+					ChildID:         termRow.ChildID,
+					ChildFirstName:  termRow.FirstName,
+					ChildMiddleName: termRow.MiddleName,
+					ChildLastName:   termRow.LastName,
+					Blockers:        preflightBlockers,
 				})
 				continue
 			}
 
-			// Check for existing monthly invoice under lock.
-			existingInvoice, invoiceFound, runErr := uc.repo.GetMonthlyInvoiceForUpdate(ctx, tx, actor.TenantID, actor.BranchID, child.ChildID, billingMonth)
-			if runErr != nil {
-				return fmt.Errorf("get monthly invoice for child %s: %w", child.ChildID, runErr)
+			// Existing invoice? Lock under transaction.
+			existingInvoice, invoiceFound, err := uc.repo.GetMonthlyInvoiceForUpdate(ctx, tx, actor.TenantID, actor.BranchID, termRow.ChildID, billingMonth)
+			if err != nil {
+				return fmt.Errorf("get monthly invoice: %w", err)
 			}
-
 			if invoiceFound && existingInvoice.Status != domain.InvoiceStatusDraft {
-				// Non-draft invoice exists — block.
 				blocked = append(blocked, domain.DraftGenerationBlockedChild{
-					ChildID:         child.ChildID,
-					ChildFirstName:  child.FirstName,
-					ChildMiddleName: child.MiddleName,
-					ChildLastName:   child.LastName,
+					ChildID:         termRow.ChildID,
+					ChildFirstName:  termRow.FirstName,
+					ChildMiddleName: termRow.MiddleName,
+					ChildLastName:   termRow.LastName,
 					Blockers: []domain.PreflightBlocker{
 						{
 							Code:    domain.BlockerInvoiceAlreadyIssued,
@@ -210,141 +170,175 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				continue
 			}
 
-			// Build calculation details and source sessions.
-			calcDetails := uc.buildCalculationDetails(child, readiness, billingMonthRaw)
-			calcDetailsJSON, jsonErr := domain.MarshalCalculationDetails(calcDetails)
-			if jsonErr != nil {
-				return fmt.Errorf("marshal calc details for child %s: %w", child.ChildID, jsonErr)
+			// 5. Load booking pattern entries for this Term.
+			entries, err := uc.repo.ListBookingPatternEntries(ctx, tx, actor.TenantID, actor.BranchID, termRow.BookingPatternID)
+			if err != nil {
+				return fmt.Errorf("list booking pattern entries: %w", err)
 			}
 
-			// Get existing extra lines (for update case) or empty.
-			var extrasTotalMinor int
+			// 6. Build domain entries + run the booking-driven calculation.
+			domainEntries := make([]domain.BookedPatternEntry, 0, len(entries))
+			for _, e := range entries {
+				domainEntries = append(domainEntries, domain.BookedPatternEntry{
+					DayOfWeek: e.DayOfWeek,
+					SessionType: domain.BookedSessionType{
+						ID:              e.SessionTypeID.String(),
+						Name:            e.SessionTypeName,
+						StartMinutes:    e.StartMinutes,
+						EndMinutes:      e.EndMinutes,
+						DurationMinutes: e.EndMinutes - e.StartMinutes,
+					},
+				})
+			}
+
+			calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
+				termRow.BookingPatternID.String(),
+				domainEntries,
+				billingMonth,
+				termRow.SiteHourlyRateMinor,
+			)
+			if calcErr != nil {
+				return fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)
+			}
+
+			fundedAllowance := 0
+			if termRow.FundedAllowanceMinutes != nil {
+				fundedAllowance = *termRow.FundedAllowanceMinutes
+			}
+			_, billableMinutes, _, billableMinor, err := domain.ComputeFundedDeductionMinor(
+				calc.TotalMinutes, fundedAllowance, termRow.SiteHourlyRateMinor,
+			)
+			if err != nil {
+				return fmt.Errorf("compute funded deduction for term %s: %w", termRow.TermID, err)
+			}
+			fundedDeductionMinutes := minInt(calc.TotalMinutes, fundedAllowance)
+			fundedDeductionMinor := calc.SubtotalMinor - billableMinor
+			if fundedDeductionMinor < 0 {
+				fundedDeductionMinor = 0
+			}
+
+			subtotalMinor := calc.SubtotalMinor
+			totalDueMinor := billableMinor
+
+			// 7. Pre-existing extra line items (if regenerating an existing draft).
+			extrasTotalMinor := 0
 			var existingExtras []domain.ExtraLineRow
 			if invoiceFound {
-				existingExtras, runErr = uc.repo.ListDraftExtraLines(ctx, tx, actor.TenantID, actor.BranchID, existingInvoice.ID)
-				if runErr != nil {
-					return fmt.Errorf("list extra lines for child %s: %w", child.ChildID, runErr)
+				existingExtras, err = uc.repo.ListDraftExtraLines(ctx, tx, actor.TenantID, actor.BranchID, existingInvoice.ID)
+				if err != nil {
+					return fmt.Errorf("list extra lines: %w", err)
+				}
+				for _, ex := range existingExtras {
+					extrasTotalMinor += ex.LineAmountMinor
 				}
 			}
-			for _, ex := range existingExtras {
-				extrasTotalMinor += ex.LineAmountMinor
-			}
 
-			coreSubtotal := readiness.SubtotalMinor
-			fundedDeductionMinor := readiness.FundedDeductionMinor
-			subtotalMinor := coreSubtotal + extrasTotalMinor
-			totalDueMinor := max(0, subtotalMinor-fundedDeductionMinor)
+			calcDetails := domain.InvoiceCalculationDetails{
+				BillingMonth:           billingMonthRaw,
+				ChildID:                termRow.ChildID,
+				CoreHourlyRateMinor:    termRow.SiteHourlyRateMinor,
+				CoreSubtotalMinor:      subtotalMinor,
+				ExtrasTotalMinor:       extrasTotalMinor,
+				ManualExtrasSupported:  true,
+				FundingProfileID:       termRow.FundingProfileID,
+				FundedAllowanceMinutes: fundedAllowance,
+				FundedDeductionMinutes: fundedDeductionMinutes,
+				CoreBillableMinutes:    billableMinutes,
+				TermID:                 termRow.TermID,
+				BookingPatternID:       termRow.BookingPatternID,
+				BookedCoreMinutes:      calc.TotalMinutes,
+				BookedSessions:         calc.Sessions,
+				BookedPerEntry:         calc.PerEntry,
+			}
+			calcDetailsJSON, jsonErr := domain.MarshalCalculationDetails(calcDetails)
+			if jsonErr != nil {
+				return fmt.Errorf("marshal calc details: %w", jsonErr)
+			}
 
 			var invoiceID uuid.UUID
 			var action domain.DraftInvoiceAction
-
 			if invoiceFound {
-				// Update existing draft.
 				invoiceID = existingInvoice.ID
 				action = domain.DraftUpdated
-
-				// Delete system lines, then re-insert.
 				if delErr := uc.repo.DeleteDraftSystemInvoiceLines(ctx, tx, actor.TenantID, actor.BranchID, invoiceID); delErr != nil {
-					return fmt.Errorf("delete system lines for child %s: %w", child.ChildID, delErr)
+					return fmt.Errorf("delete system lines: %w", delErr)
 				}
-
-				// Update calculation_details in the JSON to include extras_total_minor.
-				calcDetails.ExtrasTotalMinor = extrasTotalMinor
-				calcDetailsJSON, jsonErr = domain.MarshalCalculationDetails(calcDetails)
-				if jsonErr != nil {
-					return fmt.Errorf("re-marshal calc details: %w", jsonErr)
-				}
-
 				if updErr := uc.repo.UpdateDraftInvoice(ctx, tx, domain.DraftInvoiceUpdateParams{
 					ID:                   invoiceID,
 					TenantID:             actor.TenantID,
 					BranchID:             actor.BranchID,
 					GeneratedRunID:       runID,
-					SubtotalMinor:        subtotalMinor,
+					SubtotalMinor:        subtotalMinor + extrasTotalMinor,
 					FundedDeductionMinor: fundedDeductionMinor,
-					TotalDueMinor:        totalDueMinor,
+					TotalDueMinor:        totalDueMinor + extrasTotalMinor,
 					CalculationDetails:   calcDetailsJSON,
 				}); updErr != nil {
-					return fmt.Errorf("update draft invoice for child %s: %w", child.ChildID, updErr)
+					return fmt.Errorf("update draft invoice: %w", updErr)
 				}
 			} else {
-				// Create new draft.
 				invoiceID = uid.NewUUID()
 				action = domain.DraftCreated
-
-				calcDetails.ExtrasTotalMinor = extrasTotalMinor
-				calcDetailsJSON, jsonErr = domain.MarshalCalculationDetails(calcDetails)
-				if jsonErr != nil {
-					return fmt.Errorf("re-marshal calc details: %w", jsonErr)
-				}
-
 				if createErr := uc.repo.CreateDraftInvoice(ctx, tx, domain.DraftInvoiceCreateParams{
 					ID:                   invoiceID,
 					TenantID:             actor.TenantID,
 					BranchID:             actor.BranchID,
-					ChildID:              child.ChildID,
+					ChildID:              termRow.ChildID,
 					BillingMonth:         billingMonth,
 					GeneratedRunID:       runID,
 					CurrencyCode:         "GBP",
-					SubtotalMinor:        subtotalMinor,
+					SubtotalMinor:        subtotalMinor + extrasTotalMinor,
 					FundedDeductionMinor: fundedDeductionMinor,
-					TotalDueMinor:        totalDueMinor,
+					TotalDueMinor:        totalDueMinor + extrasTotalMinor,
 					PeriodStartDate:      period.StartLocal,
 					PeriodEndDate:        period.EndExclusiveLocal.AddDate(0, 0, -1),
 					CalculationDetails:   calcDetailsJSON,
 				}); createErr != nil {
-					return fmt.Errorf("create draft invoice for child %s: %w", child.ChildID, createErr)
+					return fmt.Errorf("create draft invoice: %w", createErr)
 				}
 			}
 
-			// Insert core_childcare line.
+			// 8. Insert core_childcare line.
 			coreLineDetails := domain.CoreLineDetails{
-				RawAttendedMinutes:     readiness.RawAttendedMinutes,
-				RoundedAttendedMinutes: readiness.RoundedAttendedMinutes,
-				IncludedSessionCount:   readiness.IncludedSessionCount,
-				CoreBillableMinutes:    readiness.FundingCalc.CoreBillableMinutes,
-				SourceSessions:         calcDetails.SourceSessions,
+				BookedCoreMinutes: calc.TotalMinutes,
+				BookedSessions:    calc.Sessions,
+				BookedPerEntry:    calc.PerEntry,
 			}
 			coreLineDetailsJSON, jsonErr := json.Marshal(coreLineDetails)
 			if jsonErr != nil {
 				return fmt.Errorf("marshal core line details: %w", jsonErr)
 			}
-
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
-				ID:                     uid.NewUUID(),
-				TenantID:               actor.TenantID,
-				BranchID:               actor.BranchID,
-				InvoiceID:              invoiceID,
-				LineKind:               domain.LineKindCoreChildcare,
-				Description:            "Core childcare",
-				SortOrder:              1,
-				QuantityMinutes:        readiness.RoundedAttendedMinutes,
-				UnitAmountMinor:        *child.CoreHourlyRateMinor,
-				LineAmountMinor:        coreSubtotal,
-				RawAttendedMinutes:     readiness.RawAttendedMinutes,
-				RoundedAttendedMinutes: readiness.RoundedAttendedMinutes,
-				SessionCount:           readiness.IncludedSessionCount,
-				Details:                coreLineDetailsJSON,
+				ID:              uid.NewUUID(),
+				TenantID:        actor.TenantID,
+				BranchID:        actor.BranchID,
+				InvoiceID:       invoiceID,
+				LineKind:        domain.LineKindCoreChildcare,
+				Description:     "Core childcare",
+				SortOrder:       1,
+				QuantityMinutes: calc.TotalMinutes,
+				UnitAmountMinor: termRow.SiteHourlyRateMinor,
+				LineAmountMinor: subtotalMinor,
+				SessionCount:    len(calc.Sessions),
+				Details:         coreLineDetailsJSON,
 			}); insErr != nil {
-				return fmt.Errorf("insert core line for child %s: %w", child.ChildID, insErr)
+				return fmt.Errorf("insert core line: %w", insErr)
 			}
 
-			// Insert funded_deduction line (negative or zero amount).
+			// 9. Insert funded_deduction line.
 			deductionLineAmount := -fundedDeductionMinor
 			var deductionLineDetailsJSON []byte
-			if child.FundingProfileID != nil {
+			if termRow.FundingProfileID != nil {
 				deductionDetails := domain.FundedDeductionLineDetails{
-					FundingProfileID:       *child.FundingProfileID,
-					FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,
-					FundedDeductionMinutes: readiness.FundingCalc.FundedDeductionMinutes,
-					CoreBillableMinutes:    readiness.FundingCalc.CoreBillableMinutes,
+					FundingProfileID:       *termRow.FundingProfileID,
+					FundedAllowanceMinutes: fundedAllowance,
+					FundedDeductionMinutes: fundedDeductionMinutes,
+					CoreBillableMinutes:    billableMinutes,
 				}
 				deductionLineDetailsJSON, jsonErr = json.Marshal(deductionDetails)
 				if jsonErr != nil {
 					return fmt.Errorf("marshal deduction line details: %w", jsonErr)
 				}
 			}
-
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
 				ID:                     uid.NewUUID(),
 				TenantID:               actor.TenantID,
@@ -353,16 +347,16 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				LineKind:               domain.LineKindFundedDeduction,
 				Description:            "Funded hours deduction",
 				SortOrder:              2,
-				FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,
-				FundedDeductionMinutes: readiness.FundingCalc.FundedDeductionMinutes,
-				CoreBillableMinutes:    readiness.FundingCalc.CoreBillableMinutes,
+				FundedAllowanceMinutes: fundedAllowance,
+				FundedDeductionMinutes: fundedDeductionMinutes,
+				CoreBillableMinutes:    billableMinutes,
 				LineAmountMinor:        deductionLineAmount,
 				Details:                deductionLineDetailsJSON,
 			}); insErr != nil {
-				return fmt.Errorf("insert deduction line for child %s: %w", child.ChildID, insErr)
+				return fmt.Errorf("insert deduction line: %w", insErr)
 			}
 
-			// Write audit.
+			// 10. Audit.
 			auditAction := domain.AuditInvoiceDraftGenerated
 			if action == domain.DraftUpdated {
 				auditAction = domain.AuditInvoiceDraftRegenerated
@@ -371,30 +365,51 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				ActionType: auditAction,
 				EntityType: domain.AuditEntityInvoice,
 				EntityID:   invoiceID,
+				Details: map[string]any{
+					"term_id":              termRow.TermID.String(),
+					"booking_pattern_id":   termRow.BookingPatternID.String(),
+					"billing_month":        billingMonthRaw,
+					"booked_core_minutes":  calc.TotalMinutes,
+					"funded_deduction_min": fundedDeductionMinor,
+					"total_due_minor":      totalDueMinor + extrasTotalMinor,
+				},
 			}); auditErr != nil {
-				return fmt.Errorf("write audit for invoice %s: %w", invoiceID, auditErr)
+				return fmt.Errorf("write audit: %w", auditErr)
 			}
 
 			generated = append(generated, domain.DraftGenerationChildResult{
-				ChildID:              child.ChildID,
-				ChildFirstName:       child.FirstName,
-				ChildMiddleName:      child.MiddleName,
-				ChildLastName:        child.LastName,
+				ChildID:              termRow.ChildID,
+				ChildFirstName:       termRow.FirstName,
+				ChildMiddleName:      termRow.MiddleName,
+				ChildLastName:        termRow.LastName,
 				Action:               action,
 				InvoiceID:            invoiceID,
-				SubtotalMinor:        subtotalMinor,
+				SubtotalMinor:        subtotalMinor + extrasTotalMinor,
 				FundedDeductionMinor: fundedDeductionMinor,
-				TotalDueMinor:        totalDueMinor,
+				TotalDueMinor:        totalDueMinor + extrasTotalMinor,
 			})
-			totalDueSum += totalDueMinor
+			totalDueSum += totalDueMinor + extrasTotalMinor
 		}
 
-		// Complete invoice run.
+		// 11. Sort the generated slice by structured child name for stable ordering.
+		sort.Slice(generated, func(i, j int) bool {
+			if generated[i].ChildFirstName != generated[j].ChildFirstName {
+				return generated[i].ChildFirstName < generated[j].ChildFirstName
+			}
+			if stringPtrValue(generated[i].ChildMiddleName) != stringPtrValue(generated[j].ChildMiddleName) {
+				return stringPtrValue(generated[i].ChildMiddleName) < stringPtrValue(generated[j].ChildMiddleName)
+			}
+			if stringPtrValue(generated[i].ChildLastName) != stringPtrValue(generated[j].ChildLastName) {
+				return stringPtrValue(generated[i].ChildLastName) < stringPtrValue(generated[j].ChildLastName)
+			}
+			return generated[i].ChildID.String() < generated[j].ChildID.String()
+		})
+
+		// 12. Complete the invoice run.
 		runStatus := domain.InvoiceRunStatusCompleted
 		if len(blocked) > 0 {
 			runStatus = domain.InvoiceRunStatusCompletedWithExceptions
 		}
-
 		runDetails := map[string]any{
 			"mode":            "full_month",
 			"billing_month":   billingMonthRaw,
@@ -450,7 +465,6 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 				TotalDueMinor: totalDueSum,
 			},
 		}
-
 		return nil
 	})
 
@@ -468,91 +482,59 @@ func (uc *GenerateDraftInvoices) Execute(ctx context.Context, actor tenant.Actor
 		outcome = "completed_with_exceptions"
 	}
 	uc.recordOutcome(mode, outcome, startedAt, result, actor)
-
 	return result, nil
 }
 
-func (uc *GenerateDraftInvoices) buildCalculationDetails(child domain.PreflightChildRow, readiness ChildReadinessResult, billingMonth string) domain.InvoiceCalculationDetails {
-	sourceSessions := make([]domain.SourceSessionSnapshot, 0, len(readiness.AttendanceCalc.Sessions))
-	for _, s := range readiness.AttendanceCalc.Sessions {
-		sourceSessions = append(sourceSessions, domain.SourceSessionSnapshot{
-			SessionID:              s.SessionID,
-			Status:                 string(s.Status),
-			CheckInAt:              s.CheckInAt,
-			CheckOutAt:             &s.CheckOutAt,
-			RawElapsedMinutes:      s.RawElapsedMinutes,
-			RoundedBillableMinutes: s.RoundedBillableMinutes,
+func (uc *GenerateDraftInvoicesUseCase) preflightTerm(row domain.AdvancePayTermRow) []domain.PreflightBlocker {
+	var blockers []domain.PreflightBlocker
+	if row.FirstName == "" {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code: domain.BlockerMissingChildName, Message: "Child first name is missing.",
 		})
 	}
-
-	return domain.InvoiceCalculationDetails{
-		BillingMonth:           billingMonth,
-		ChildID:                child.ChildID,
-		CoreHourlyRateMinor:    *child.CoreHourlyRateMinor,
-		CoreSubtotalMinor:      readiness.SubtotalMinor,
-		ManualExtrasSupported:  true,
-		FundingProfileID:       child.FundingProfileID,
-		FundedAllowanceMinutes: readiness.FundedAllowanceMinutes,
-		FundedDeductionMinutes: readiness.FundingCalc.FundedDeductionMinutes,
-		CoreBillableMinutes:    readiness.FundingCalc.CoreBillableMinutes,
-		RawAttendedMinutes:     readiness.RawAttendedMinutes,
-		RoundedAttendedMinutes: readiness.RoundedAttendedMinutes,
-		IncludedSessionCount:   readiness.IncludedSessionCount,
-		SourceSessions:         sourceSessions,
+	if row.DateOfBirth.IsZero() {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code: domain.BlockerMissingChildDateOfBirth, Message: "Child date of birth is missing.",
+		})
 	}
+	if row.StartDate.IsZero() {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code: domain.BlockerMissingChildStartDate, Message: "Child start date is missing.",
+		})
+	}
+	if !row.HasGuardianLink {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code: domain.BlockerMissingGuardianLink, Message: "No active guardian linked to this child.",
+		})
+	}
+	if row.SiteHourlyRateMinor <= 0 {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code: domain.BlockerMissingBillingRate, Message: "Site billing rate is missing or invalid.",
+		})
+	}
+	if row.FundingProfileID == nil {
+		blockers = append(blockers, domain.PreflightBlocker{
+			Code:    domain.BlockerMissingFundingProfile,
+			Message: "Funding profile is missing for this billing month.",
+			Field:   strPtr("funding_profile"),
+		})
+	}
+	return blockers
 }
 
-func parseAndDedupeChildIDs(raw []string) ([]uuid.UUID, error) {
-	if len(raw) == 0 {
-		return nil, nil
-	}
-
-	seen := make(map[uuid.UUID]struct{}, len(raw))
-	result := make([]uuid.UUID, 0, len(raw))
-	for _, r := range raw {
-		id, err := uuid.Parse(r)
-		if err != nil {
-			return nil, fmt.Errorf("invalid child_id %q: %w", r, err)
-		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		result = append(result, id)
-	}
-	return result, nil
-}
-
-func childInBillingMonth(child domain.PreflightChildRow, billingMonth, nextBillingMonth time.Time) bool {
-	if child.StartDate.IsZero() {
-		return false
-	}
-	if !child.StartDate.Before(nextBillingMonth) {
-		return false
-	}
-	if child.EndDate != nil && child.EndDate.Before(billingMonth) {
-		return false
-	}
-	return true
-}
-
-func (uc *GenerateDraftInvoices) recordOutcome(mode, outcome string, startedAt time.Time, result domain.DraftGenerationResult, actor tenant.ActorContext) {
+func (uc *GenerateDraftInvoicesUseCase) recordOutcome(mode, outcome string, startedAt time.Time, result domain.DraftGenerationResult, actor tenant.ActorContext) {
 	elapsed := time.Since(startedAt).Seconds()
 	if uc.recorder != nil {
 		uc.recorder.InvoiceGenerationRun(mode, outcome, elapsed)
-		blockerCounts := make(map[string]int)
 		for _, b := range result.Blocked {
 			for _, bl := range b.Blockers {
-				blockerCounts[string(bl.Code)]++
+				uc.recorder.InvoiceGenerationBlocker(string(bl.Code), 1)
 			}
-		}
-		for code, count := range blockerCounts {
-			uc.recorder.InvoiceGenerationBlocker(code, count)
 		}
 	}
 	if uc.logger != nil {
 		args := []any{
-			"operation", "draft_invoice_generation",
+			"operation", "advance_pay_draft_generation",
 			"outcome", outcome,
 			"run_id", result.RunID.String(),
 			"billing_month", result.BillingMonth,
@@ -568,6 +550,13 @@ func (uc *GenerateDraftInvoices) recordOutcome(mode, outcome string, startedAt t
 		if actor.TraceID != "" {
 			args = append(args, "trace_id", actor.TraceID)
 		}
-		uc.logger.Info("draft_invoice_generation", args...)
+		uc.logger.Info("advance_pay_draft_generation", args...)
 	}
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

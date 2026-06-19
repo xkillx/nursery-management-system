@@ -44,6 +44,15 @@ func (s *stubBillingRepo) ListSelectedChildrenForUpdate(_ context.Context, _ dom
 func (s *stubBillingRepo) ListAttendanceSessions(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _, _ time.Time) ([]domain.PreflightAttendanceSessionRow, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) ListActiveTermsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ListBookingPatternEntries(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) CreateInvoiceRun(_ context.Context, _ domain.Tx, _ domain.InvoiceRunCreateParams) error {
 	panic("stub")
 }
@@ -89,7 +98,7 @@ func (s *stubBillingRepo) ListSelectedInvoicesForIssueForUpdate(_ context.Contex
 func (s *stubBillingRepo) AllocateInvoiceNumberSequence(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _, _ int) (int, error) {
 	panic("stub")
 }
-func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ domain.IssueInvoiceUpdateParams) error {
+func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ domain.IssueInvoiceUpdateParams) (int64, error) {
 	panic("stub")
 }
 func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {

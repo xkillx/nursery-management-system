@@ -78,16 +78,19 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 		issueTime := time.Now().UTC()
 
 		year := candidate.BillingMonth.Year()
-		month := int(candidate.BillingMonth.Month())
+		month := candidate.BillingMonth.Month()
 
-		seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, month)
+		seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, int(month))
 		if seqErr != nil {
 			return fmt.Errorf("allocate invoice number sequence: %w", seqErr)
 		}
 
 		invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
 
-		if markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
+		// Advance-pay: due_at = first day of billing month at 00:00 UTC.
+		dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+
+		if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
 			ID:                   invoiceID,
 			TenantID:             actor.TenantID,
 			BranchID:             actor.BranchID,
@@ -97,6 +100,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 			IssuedAt:             issueTime,
 			IssuedByUserID:       actor.UserID,
 			IssuedByMembershipID: actor.MembershipID,
+			DueAt:                dueAt,
 		}); markErr != nil {
 			return fmt.Errorf("mark invoice issued: %w", markErr)
 		}
@@ -303,20 +307,23 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 
 		issueTime := time.Now().UTC()
 		year := billingMonth.Year()
-		month := int(billingMonth.Month())
+		month := billingMonth.Month()
 
 		var issued []domain.IssuedInvoiceResult
 		var totalDueSum int
 
 		for _, inv := range eligible {
-			seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, month)
+			seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, int(month))
 			if seqErr != nil {
 				return fmt.Errorf("allocate sequence for invoice %s: %w", inv.ID, seqErr)
 			}
 
 			invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
 
-			if markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
+			// Advance-pay: due_at = first day of billing month at 00:00 UTC.
+			dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+
+			if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
 				ID:                   inv.ID,
 				TenantID:             actor.TenantID,
 				BranchID:             actor.BranchID,
@@ -326,6 +333,7 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 				IssuedAt:             issueTime,
 				IssuedByUserID:       actor.UserID,
 				IssuedByMembershipID: actor.MembershipID,
+				DueAt:                dueAt,
 			}); markErr != nil {
 				return fmt.Errorf("mark invoice issued %s: %w", inv.ID, markErr)
 			}

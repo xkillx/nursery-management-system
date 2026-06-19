@@ -103,24 +103,39 @@ type DraftGenerationSummary struct {
 }
 
 // InvoiceCalculationDetails is stored as JSON in invoice.calculation_details.
+//
+// The advance-pay shape records the booking-driven inputs:
+//   - term_id, booking_pattern_id: the term + pattern that drove the calculation
+//   - booked_core_minutes: the sum over all pattern entries in the month
+//   - booked_sessions: per-session explainability (one row per occurrence)
+//   - booked_per_entry: per-(day, session) subtotals
+//
+// The legacy attendance-driven fields are kept as zero values to keep the
+// downstream consumers (parent invoice view, manager invoice review) able to
+// render the same high-level shape.
 type InvoiceCalculationDetails struct {
-	BillingMonth           string                  `json:"billing_month"`
-	ChildID                uuid.UUID               `json:"child_id"`
-	CoreHourlyRateMinor    int                     `json:"core_hourly_rate_minor"`
-	CoreSubtotalMinor      int                     `json:"core_subtotal_minor"`
-	ExtrasTotalMinor       int                     `json:"extras_total_minor"`
-	ManualExtrasSupported  bool                    `json:"manual_extras_supported"`
-	FundingProfileID       *uuid.UUID              `json:"funding_profile_id,omitempty"`
-	FundedAllowanceMinutes int                     `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int                     `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int                     `json:"core_billable_minutes"`
-	RawAttendedMinutes     int                     `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                     `json:"rounded_attended_minutes"`
-	IncludedSessionCount   int                     `json:"included_session_count"`
-	SourceSessions         []SourceSessionSnapshot `json:"source_sessions"`
+	BillingMonth           string     `json:"billing_month"`
+	ChildID                uuid.UUID  `json:"child_id"`
+	CoreHourlyRateMinor    int        `json:"core_hourly_rate_minor"`
+	CoreSubtotalMinor      int        `json:"core_subtotal_minor"`
+	ExtrasTotalMinor       int        `json:"extras_total_minor"`
+	ManualExtrasSupported  bool       `json:"manual_extras_supported"`
+	FundingProfileID       *uuid.UUID `json:"funding_profile_id,omitempty"`
+	FundedAllowanceMinutes int        `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int        `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int        `json:"core_billable_minutes"`
+
+	// Advance-pay source.
+	TermID            uuid.UUID              `json:"term_id"`
+	BookingPatternID  uuid.UUID              `json:"booking_pattern_id"`
+	BookedCoreMinutes int                    `json:"booked_core_minutes"`
+	BookedSessions    []BookedSession        `json:"booked_sessions"`
+	BookedPerEntry    []BookedEntryBreakdown `json:"booked_per_entry"`
 }
 
-// SourceSessionSnapshot captures attendance session data used for invoice calculation.
+// SourceSessionSnapshot is retained for backward-compatible JSON unmarshaling
+// of any historical invoices that used the attendance-driven shape. New
+// invoices never populate this field.
 type SourceSessionSnapshot struct {
 	SessionID              uuid.UUID  `json:"session_id"`
 	Status                 string     `json:"status"`
@@ -137,11 +152,9 @@ func MarshalCalculationDetails(d InvoiceCalculationDetails) ([]byte, error) {
 
 // CoreLineDetails is stored as JSON in the core_childcare invoice line details.
 type CoreLineDetails struct {
-	RawAttendedMinutes     int                     `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                     `json:"rounded_attended_minutes"`
-	IncludedSessionCount   int                     `json:"included_session_count"`
-	CoreBillableMinutes    int                     `json:"core_billable_minutes"`
-	SourceSessions         []SourceSessionSnapshot `json:"source_sessions"`
+	BookedCoreMinutes int                    `json:"booked_core_minutes"`
+	BookedSessions    []BookedSession        `json:"booked_sessions"`
+	BookedPerEntry    []BookedEntryBreakdown `json:"booked_per_entry"`
 }
 
 // FundedDeductionLineDetails is stored as JSON in the funded_deduction invoice line details.
@@ -251,6 +264,7 @@ type IssueInvoiceUpdateParams struct {
 	IssuedAt             time.Time
 	IssuedByUserID       uuid.UUID
 	IssuedByMembershipID uuid.UUID
+	DueAt                time.Time
 }
 
 // InvoiceRunCreateParams holds fields needed to create an invoice_runs row.
