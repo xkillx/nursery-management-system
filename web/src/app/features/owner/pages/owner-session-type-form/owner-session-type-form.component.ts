@@ -6,12 +6,13 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowLeft,
   heroClock,
+  heroInformationCircle,
   heroPencilSquare,
   heroPlus,
   heroShieldCheck,
 } from '@ng-icons/heroicons/outline';
 
-import { ROLE_ROUTES } from '../../../../core/constants/roles';
+import { ROLES, ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -34,6 +35,7 @@ import {
     provideIcons({
       heroArrowLeft,
       heroClock,
+      heroInformationCircle,
       heroPencilSquare,
       heroPlus,
       heroShieldCheck,
@@ -50,7 +52,12 @@ export class OwnerSessionTypeFormComponent implements OnInit {
   sessionTypeId: string | null = null;
   siteId: string | null = null;
   siteName = '';
-  listRoute = ROLE_ROUTES.ownerSessionTypes;
+  role: string | null = null;
+  isOwner = false;
+
+  get listRoute(): string {
+    return this.isOwner ? ROLE_ROUTES.ownerSessionTypes : ROLE_ROUTES.managerSessionTypes;
+  }
 
   loading = false;
   saving = false;
@@ -65,6 +72,8 @@ export class OwnerSessionTypeFormComponent implements OnInit {
 
   ngOnInit(): void {
     const membership = this.auth.activeMembership();
+    this.role = membership?.role ?? null;
+    this.isOwner = this.role === ROLES.owner;
     if (membership?.branch_id) {
       this.siteId = membership.branch_id;
       this.siteName = membership.branch_name ?? 'Assigned site';
