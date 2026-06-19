@@ -1017,18 +1017,32 @@
 
                 @if (parentCarersDraft[0]; as parent) {
                   <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    <app-form-field label="Primary parent/carer full name">
+                    <app-form-field
+                      label="Primary parent/carer full name"
+                      labelFor="primary-full-name"
+                      [required]="true"
+                      errorId="primary-full-name-error"
+                      [error]="step3VisibleError('primary_full_name')"
+                    >
                       <app-input-field
                         id="primary-full-name"
                         name="primary_full_name"
                         type="text"
                         [(ngModel)]="parent.fullName"
+                        (blurred)="markStep3Touched('primary_full_name')"
+                        [error]="shouldShowStep3Error('primary_full_name')"
+                        [describedBy]="shouldShowStep3Error('primary_full_name') ? 'primary-full-name-error' : undefined"
                         autocomplete="name"
-
                         placeholder="e.g. Sarah Johnson"
                       />
                     </app-form-field>
-                    <app-form-field label="Relationship to child">
+                    <app-form-field
+                      label="Relationship to child"
+                      labelFor="primary-relationship"
+                      [required]="true"
+                      errorId="primary-relationship-error"
+                      [error]="step3VisibleError('primary_relationship')"
+                    >
                       <app-select
                         id="primary-relationship"
                         name="primary_relationship"
@@ -1038,14 +1052,22 @@
                         [placeholderDisabled]="false"
                       />
                     </app-form-field>
-                    <app-form-field label="Contact number">
+                    <app-form-field
+                      label="Contact number"
+                      labelFor="primary-telephone"
+                      [required]="true"
+                      errorId="primary-telephone-error"
+                      [error]="step3VisibleError('primary_telephone')"
+                    >
                       <app-input-field
                         id="primary-telephone"
                         name="primary_telephone"
                         type="tel"
                         [(ngModel)]="parent.telephone"
+                        (blurred)="markStep3Touched('primary_telephone')"
+                        [error]="shouldShowStep3Error('primary_telephone')"
+                        [describedBy]="shouldShowStep3Error('primary_telephone') ? 'primary-telephone-error' : undefined"
                         autocomplete="tel"
-
                         placeholder="+44 7000 000000"
                       />
                     </app-form-field>
@@ -1054,7 +1076,6 @@
                         type="email"
                         [(ngModel)]="parent.email"
                         autocomplete="email"
-
                         placeholder="sarah.j@example.com"
                       />
                     </app-form-field>
@@ -1075,7 +1096,13 @@
                       />
                     </app-form-field>
                   </div>
-                  <fieldset class="mt-2" [attr.data-focus-target]="'parent1-responsibility-group'">
+                  <fieldset
+                    class="mt-2"
+                    [attr.data-focus-target]="'parent1-responsibility-group'"
+                    role="radiogroup"
+                    [attr.aria-invalid]="shouldShowStep3Error('parent1_has_responsibility')"
+                    [attr.aria-describedby]="shouldShowStep3Error('parent1_has_responsibility') ? 'parent1-responsibility-error' : null"
+                  >
                     <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Does the primary parent/carer hold parental responsibility?
                       <span class="text-error-500" aria-hidden="true"> *</span>
@@ -1089,10 +1116,13 @@
                           [label]="option.label"
                           [checked]="step3.parent1_has_responsibility === (option.value === 'yes')"
                           className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step3.parent1_has_responsibility = $event === 'yes'"
+                          (valueChange)="step3.parent1_has_responsibility = $event === 'yes'; markStep3Touched('parent1_has_responsibility')"
                         />
                       }
                     </div>
+                    @if (shouldShowStep3Error('parent1_has_responsibility')) {
+                      <p id="parent1-responsibility-error" class="mt-2 text-sm text-error-500" role="alert">{{ step3VisibleError('parent1_has_responsibility') }}</p>
+                    }
                   </fieldset>
                 }
 

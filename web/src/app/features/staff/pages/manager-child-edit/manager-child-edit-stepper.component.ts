@@ -486,6 +486,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   step1Touched: Partial<Record<Step1Field, boolean>> = {};
   step2Submitted = false;
   step2Touched: Record<string, boolean> = {};
+  step3Submitted = false;
+  step3Touched: Record<string, boolean> = {};
   fundingSubmitted = false;
   hasStoredDraft = false;
   draftRestoredAt: string | null = null;
@@ -838,6 +840,35 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step2Touched[field] = true;
   }
 
+  protected markStep3Touched(field: string): void {
+    this.step3Touched[field] = true;
+  }
+
+  protected step3FieldError(field: string): string | null {
+    const primary = this.parentCarersDraft[0];
+    if (field === 'primary_full_name' && !primary?.fullName?.trim()) {
+      return 'Enter the primary parent/carer full name.';
+    }
+    if (field === 'primary_relationship' && !primary?.relationshipToChild?.trim()) {
+      return 'Select the primary parent/carer relationship to the child.';
+    }
+    if (field === 'primary_telephone' && !primary?.telephone?.trim()) {
+      return 'Enter the primary parent/carer contact number.';
+    }
+    if (field === 'parent1_has_responsibility' && this.step3.parent1_has_responsibility === null) {
+      return 'Confirm whether the primary parent/carer holds parental responsibility.';
+    }
+    return null;
+  }
+
+  protected shouldShowStep3Error(field: string): boolean {
+    return (this.step3Submitted || !!this.step3Touched[field]) && !!this.step3FieldError(field);
+  }
+
+  protected step3VisibleError(field: string): string {
+    return this.shouldShowStep3Error(field) ? this.step3FieldError(field) ?? '' : '';
+  }
+
   protected step2FieldError(field: string): string | null {
     if (field === 'allergy_status' && !this.step2.allergy_status) {
       return 'Confirm whether the child has any known allergies.';
@@ -1033,6 +1064,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Create the child record before saving contacts.';
       return;
     }
+    this.step3Submitted = true;
     this.fundingSubmitted = true;
     const firstIssue = this.firstBlockingIssueForStep('contacts-collection');
     if (firstIssue) {
@@ -2588,6 +2620,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step1Submitted = false;
     this.step2Touched = {};
     this.step2Submitted = false;
+    this.step3Touched = {};
+    this.step3Submitted = false;
     this.consentsReviewed = {};
     this.fieldErrors = {};
     this.errorMessage = null;
