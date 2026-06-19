@@ -15,9 +15,10 @@ import {
   heroClipboardDocumentCheck,
   heroClipboardDocumentList,
   heroBanknotes,
+  heroBuildingOffice2,
+  heroClock,
   heroDocumentPlus,
   heroDocumentText,
-  heroHomeModern,
 } from '@ng-icons/heroicons/outline';
 
 export type SidebarIcon =
@@ -62,9 +63,10 @@ export type SidebarNavGroup = {
       heroClipboardDocumentCheck,
       heroClipboardDocumentList,
       heroBanknotes,
+      heroBuildingOffice2,
+      heroClock,
       heroDocumentPlus,
       heroDocumentText,
-      heroHomeModern,
     }),
   ],
   templateUrl: './app-sidebar.component.html',
@@ -85,7 +87,7 @@ export class AppSidebarComponent {
     funding: 'heroBanknotes',
     'invoice-run': 'heroDocumentPlus',
     invoices: 'heroDocumentText',
-    rooms: 'heroHomeModern',
+    rooms: 'heroBuildingOffice2',
     'session-types': 'heroClock',
   };
 

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { NgIcon } from '@ng-icons/core';
 
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -38,6 +39,7 @@ import {
     CommonModule,
     FormsModule,
     RouterLink,
+    NgIcon,
     PageHeaderComponent,
     AlertComponent,
     EmptyStateComponent,

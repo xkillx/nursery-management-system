@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgIcon } from '@ng-icons/core';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -37,6 +38,7 @@ const ROLE_OPTIONS: Option[] = [
   imports: [
     CommonModule,
     FormsModule,
+    NgIcon,
     PageHeaderComponent,
     SelectComponent,
     AlertComponent,
