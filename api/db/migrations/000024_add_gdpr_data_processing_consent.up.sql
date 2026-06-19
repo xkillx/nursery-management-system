@@ -1,2 +1,0 @@
-ALTER TABLE child_registration_consent_records
-ADD COLUMN gdpr_data_processing_consent BOOLEAN NOT NULL DEFAULT false;

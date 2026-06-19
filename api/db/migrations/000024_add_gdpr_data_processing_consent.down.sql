@@ -1,2 +1,0 @@
-ALTER TABLE child_registration_consent_records
-DROP COLUMN gdpr_data_processing_consent;

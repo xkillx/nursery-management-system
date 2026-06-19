@@ -202,23 +202,6 @@ func createSchema(t testing.TB, databaseURL, schemaName string) {
 	if err != nil {
 		t.Fatalf("create schema %s: %v", schemaName, err)
 	}
-
-	// Pre-create enum types that migrations reference with schema-blind IF NOT EXISTS checks.
-	// Without this, concurrent test schemas trigger false "already exists" in pg_type lookup.
-	enumTypes := []string{
-		fmt.Sprintf(
-			"CREATE TYPE %s.lifecycle_reason_code AS ENUM ('duplicate_record','entered_in_error','left_nursery','safeguarding_direction','contact_update','access_revoked','other')",
-			pgx.Identifier{schemaName}.Sanitize(),
-		),
-	}
-	for _, ddl := range enumTypes {
-		_, err = pool.Exec(ctx, ddl)
-		if err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				t.Fatalf("pre-create enum in schema %s: %v", schemaName, err)
-			}
-		}
-	}
 }
 
 // Reset truncates all application tables in dependency-safe order within the test schema.

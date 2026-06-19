@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS child_registration_completion_attestations CASCADE;

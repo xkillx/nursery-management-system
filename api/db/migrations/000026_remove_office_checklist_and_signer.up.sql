@@ -1,5 +1,0 @@
-ALTER TABLE child_registration_completion_attestations DROP COLUMN office_checklist_updated_at;
-DROP TABLE IF EXISTS child_registration_office_checklists CASCADE;
-DROP TYPE IF EXISTS registration_office_check_status;
-ALTER TABLE child_registration_consent_records DROP COLUMN signer_name;
-ALTER TABLE child_registration_consent_records DROP COLUMN signed_date;
