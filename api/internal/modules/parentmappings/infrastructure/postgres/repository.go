@@ -68,7 +68,7 @@ func (r *ParentMappingRepository) GetByIDForUpdate(ctx context.Context, tx pgx.T
 func (r *ParentMappingRepository) End(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
 	q := sqlc.New(tx)
 	return q.ParentMappingsEnd(ctx, sqlc.ParentMappingsEndParams{
-		EndedReasonCode: reasonCode,
+		EndedReasonCode: nullLifecycleReasonCode(reasonCode),
 		Column2:         reasonNote,
 		TenantID:        uuidToPgtype(tenantID),
 		BranchID:        uuidToPgtype(branchID),
@@ -157,4 +157,14 @@ func pgtypeTextToStringPtr(t pgtype.Text) *string {
 		return nil
 	}
 	return &t.String
+}
+
+func nullLifecycleReasonCode(s string) sqlc.NullLifecycleReasonCode {
+	if s == "" {
+		return sqlc.NullLifecycleReasonCode{}
+	}
+	return sqlc.NullLifecycleReasonCode{
+		LifecycleReasonCode: sqlc.LifecycleReasonCode(s),
+		Valid:               true,
+	}
 }

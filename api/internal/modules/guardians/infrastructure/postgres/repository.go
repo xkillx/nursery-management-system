@@ -155,7 +155,7 @@ func (r *GuardianRepository) GetActive(ctx context.Context, tx pgx.Tx, tenantID,
 func (r *GuardianRepository) Deactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
 	q := sqlc.New(tx)
 	return q.GuardiansDeactivate(ctx, sqlc.GuardiansDeactivateParams{
-		DeactivationReasonCode: reasonCode,
+		DeactivationReasonCode: nullLifecycleReasonCode(reasonCode),
 		Column2:                reasonNote,
 		TenantID:               uuidToPgtype(tenantID),
 		BranchID:               uuidToPgtype(branchID),
@@ -166,7 +166,7 @@ func (r *GuardianRepository) Deactivate(ctx context.Context, tx pgx.Tx, tenantID
 func (r *GuardianRepository) CascadeLinks(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID, reasonCode, reasonNote string) error {
 	q := sqlc.New(tx)
 	return q.GuardiansCascadeLinks(ctx, sqlc.GuardiansCascadeLinksParams{
-		EndedReasonCode: reasonCode,
+		EndedReasonCode: nullLifecycleReasonCode(reasonCode),
 		EndedReasonNote: stringToPgtypeText(reasonNote),
 		TenantID:        uuidToPgtype(tenantID),
 		BranchID:        uuidToPgtype(branchID),
@@ -177,7 +177,7 @@ func (r *GuardianRepository) CascadeLinks(ctx context.Context, tx pgx.Tx, tenant
 func (r *GuardianRepository) CascadeMappings(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID, reasonCode, reasonNote string) error {
 	q := sqlc.New(tx)
 	return q.GuardiansCascadeMappings(ctx, sqlc.GuardiansCascadeMappingsParams{
-		EndedReasonCode: reasonCode,
+		EndedReasonCode: nullLifecycleReasonCode(reasonCode),
 		EndedReasonNote: stringToPgtypeText(reasonNote),
 		TenantID:        uuidToPgtype(tenantID),
 		BranchID:        uuidToPgtype(branchID),
@@ -224,6 +224,16 @@ func ifaceToStringPtr(v interface{}) *string {
 		return nil
 	}
 	return &s
+}
+
+func nullLifecycleReasonCode(s string) sqlc.NullLifecycleReasonCode {
+	if s == "" {
+		return sqlc.NullLifecycleReasonCode{}
+	}
+	return sqlc.NullLifecycleReasonCode{
+		LifecycleReasonCode: sqlc.LifecycleReasonCode(s),
+		Valid:               true,
+	}
 }
 
 func derefStr(s *string) string {

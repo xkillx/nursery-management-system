@@ -87,7 +87,7 @@ func (r *GuardianChildLinkRepository) GetByIDForUpdate(ctx context.Context, tx p
 func (r *GuardianChildLinkRepository) End(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
 	q := sqlc.New(tx)
 	return q.GuardianLinksEnd(ctx, sqlc.GuardianLinksEndParams{
-		EndedReasonCode: reasonCode,
+		EndedReasonCode: nullLifecycleReasonCode(reasonCode),
 		Column2:         reasonNote,
 		TenantID:        uuidToPgtype(tenantID),
 		BranchID:        uuidToPgtype(branchID),
@@ -173,4 +173,14 @@ func pgtypeTextToStringPtr(t pgtype.Text) *string {
 		return nil
 	}
 	return &t.String
+}
+
+func nullLifecycleReasonCode(s string) sqlc.NullLifecycleReasonCode {
+	if s == "" {
+		return sqlc.NullLifecycleReasonCode{}
+	}
+	return sqlc.NullLifecycleReasonCode{
+		LifecycleReasonCode: sqlc.LifecycleReasonCode(s),
+		Valid:               true,
+	}
 }
