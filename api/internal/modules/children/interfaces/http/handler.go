@@ -3,8 +3,10 @@ package httpchild
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/children/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
@@ -49,6 +51,12 @@ type Handler struct {
 	updateBillingProfile    *application.UpdateBillingProfile
 
 	getLeavingRecord        *application.GetLeavingRecord
+
+	listBookingPatterns     *application.ListBookingPatterns
+	getBookingPattern       *application.GetBookingPattern
+	getCurrentBookingPattern *application.GetCurrentBookingPattern
+	createBookingPattern    *application.CreateBookingPattern
+	updateBookingPattern    *application.UpdateBookingPattern
 }
 
 func NewHandler(
@@ -78,6 +86,11 @@ func NewHandler(
 	getBillingProfile *application.GetBillingProfile,
 	updateBillingProfile *application.UpdateBillingProfile,
 	getLeavingRecord *application.GetLeavingRecord,
+	listBookingPatterns *application.ListBookingPatterns,
+	getBookingPattern *application.GetBookingPattern,
+	getCurrentBookingPattern *application.GetCurrentBookingPattern,
+	createBookingPattern *application.CreateBookingPattern,
+	updateBookingPattern *application.UpdateBookingPattern,
 ) *Handler {
 	return &Handler{
 		listChildren: listChildren, getChild: getChild, createChildWithFull: createChildWithFull,
@@ -93,6 +106,9 @@ func NewHandler(
 		closeRoomAssignment: closeRoomAssignment,
 		getBillingProfile: getBillingProfile, updateBillingProfile: updateBillingProfile,
 		getLeavingRecord: getLeavingRecord,
+		listBookingPatterns: listBookingPatterns, getBookingPattern: getBookingPattern,
+		getCurrentBookingPattern: getCurrentBookingPattern,
+		createBookingPattern: createBookingPattern, updateBookingPattern: updateBookingPattern,
 	}
 }
 
@@ -125,11 +141,22 @@ func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 		getBillingProfile:       h.getBillingProfile,
 		updateBillingProfile:    h.updateBillingProfile,
 		getLeavingRecord:        h.getLeavingRecord,
+		listBookingPatterns:     h.listBookingPatterns,
+		getBookingPattern:       h.getBookingPattern,
+		getCurrentBookingPattern: h.getCurrentBookingPattern,
+		createBookingPattern:    h.createBookingPattern,
+		updateBookingPattern:    h.updateBookingPattern,
 	}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	protected.GET("/children/attendance", requireRoles("manager", "practitioner"), h.listAttendanceHandler)
+
+	bookingRead := protected.Group("")
+	bookingRead.Use(requireRoles("manager", "practitioner"))
+	bookingRead.GET("/children/:child_id/booking-patterns", h.listBookingPatternsHandler)
+	bookingRead.GET("/children/:child_id/booking-patterns/current", h.getCurrentBookingPatternHandler)
+	bookingRead.GET("/children/:child_id/booking-patterns/:pattern_id", h.getBookingPatternHandler)
 
 	manager := protected.Group("")
 	manager.Use(requireRoles("manager"))
@@ -169,6 +196,9 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	manager.PATCH("/children/:child_id/billing-profile", h.updateBillingProfileHandler)
 
 	manager.GET("/children/:child_id/leaving-record", h.getLeavingRecordHandler)
+
+	manager.POST("/children/:child_id/booking-patterns", h.createBookingPatternHandler)
+	manager.PATCH("/children/:child_id/booking-patterns/:pattern_id", h.updateBookingPatternHandler)
 }
 
 func (h *Handler) listChildrenHandler(c *gin.Context) {
@@ -656,6 +686,132 @@ func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, toChildLeavingRecordResponse(p))
+}
+
+// --- Booking Pattern handlers ---
+
+func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+	items, err := h.listBookingPatterns.Execute(c.Request.Context(), actor, c.Param("child_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": toBookingPatternListResponse(items)})
+}
+
+func (h *Handler) getBookingPatternHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+	p, err := h.getBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toBookingPatternResponse(*p))
+}
+
+func (h *Handler) getCurrentBookingPatternHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+	p, err := h.getCurrentBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Query("date"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toBookingPatternResponse(*p))
+}
+
+func (h *Handler) createBookingPatternHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+	var req bookingPatternRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+	effectiveFrom, err := time.Parse("2006-01-02", req.EffectiveFrom)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+	entries := make([]application.BookingPatternEntryInput, 0, len(req.Entries))
+	for _, e := range req.Entries {
+		stID, perr := uuid.Parse(e.SessionTypeID)
+		if perr != nil {
+			writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+			return
+		}
+		entries = append(entries, application.BookingPatternEntryInput{
+			DayOfWeek:     e.DayOfWeek,
+			SessionTypeID: stID,
+		})
+	}
+	result, err := h.createBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), application.CreateBookingPatternInput{
+		EffectiveFrom: effectiveFrom,
+		Entries:       entries,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, toBookingPatternResponse(*result))
+}
+
+func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+	var req bookingPatternUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+	in := application.UpdateBookingPatternInput{}
+	if req.EffectiveFrom != nil {
+		t, err := time.Parse("2006-01-02", *req.EffectiveFrom)
+		if err != nil {
+			writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+			return
+		}
+		in.EffectiveFrom = &t
+	}
+	if req.Entries != nil {
+		entries := make([]application.BookingPatternEntryInput, 0, len(*req.Entries))
+		for _, e := range *req.Entries {
+			stID, perr := uuid.Parse(e.SessionTypeID)
+			if perr != nil {
+				writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+				return
+			}
+			entries = append(entries, application.BookingPatternEntryInput{
+				DayOfWeek:     e.DayOfWeek,
+				SessionTypeID: stID,
+			})
+		}
+		in.Entries = &entries
+	}
+	result, err := h.updateBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"), in)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toBookingPatternResponse(*result))
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

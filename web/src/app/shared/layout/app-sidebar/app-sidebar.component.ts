@@ -30,7 +30,8 @@ export type SidebarIcon =
   | 'funding'
   | 'invoice-run'
   | 'invoices'
-  | 'rooms';
+  | 'rooms'
+  | 'session-types';
 
 export type SidebarNavItem = {
   label: string;
@@ -85,6 +86,7 @@ export class AppSidebarComponent {
     'invoice-run': 'heroDocumentPlus',
     invoices: 'heroDocumentText',
     rooms: 'heroHomeModern',
+    'session-types': 'heroClock',
   };
 
   private subscription: Subscription = new Subscription();
@@ -181,6 +183,7 @@ export class AppSidebarComponent {
           label: 'Setup',
           items: [
             { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/staff/manager/rooms/'] },
+            { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/staff/manager/session-types/'] },
           ],
         },
       ];
@@ -215,6 +218,7 @@ export class AppSidebarComponent {
           label: 'Setup',
           items: [
             { label: 'Rooms', path: ROLE_ROUTES.ownerRooms, testId: 'owner-link-rooms', icon: 'rooms', matchPaths: ['/owner/rooms/'] },
+            { label: 'Session types', path: ROLE_ROUTES.ownerSessionTypes, testId: 'owner-link-session-types', icon: 'session-types', matchPaths: ['/owner/session-types/'] },
           ],
         },
       ];

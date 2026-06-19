@@ -24,7 +24,7 @@ WHERE tenant_id = $3
 `
 
 type GuardiansCascadeLinksParams struct {
-	EndedReasonCode interface{}
+	EndedReasonCode NullLifecycleReasonCode
 	EndedReasonNote pgtype.Text
 	TenantID        pgtype.UUID
 	BranchID        pgtype.UUID
@@ -55,7 +55,7 @@ WHERE tenant_id = $3
 `
 
 type GuardiansCascadeMappingsParams struct {
-	EndedReasonCode interface{}
+	EndedReasonCode NullLifecycleReasonCode
 	EndedReasonNote pgtype.Text
 	TenantID        pgtype.UUID
 	BranchID        pgtype.UUID
@@ -112,7 +112,7 @@ WHERE tenant_id = $3 AND branch_id = $4 AND id = $5
 `
 
 type GuardiansDeactivateParams struct {
-	DeactivationReasonCode interface{}
+	DeactivationReasonCode NullLifecycleReasonCode
 	Column2                interface{}
 	TenantID               pgtype.UUID
 	BranchID               pgtype.UUID

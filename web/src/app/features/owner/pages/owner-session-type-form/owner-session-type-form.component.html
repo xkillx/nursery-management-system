@@ -1,0 +1,79 @@
+<section class="mx-auto max-w-2xl space-y-6">
+  <a [routerLink]="listRoute" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+    <ng-icon name="heroArrowLeft" class="h-4 w-4"></ng-icon>
+    Back to session types
+  </a>
+
+  <header>
+    <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+      {{ mode === 'create' ? 'New session type' : 'Edit session type' }}
+    </h1>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      Site: {{ siteName || '—' }}
+    </p>
+  </header>
+
+  <app-alert *ngIf="pageError" variant="error" [message]="pageError"></app-alert>
+
+  <app-loading-state *ngIf="loading" message="Loading session type…"></app-loading-state>
+
+  <form
+    *ngIf="!loading"
+    #formRef="ngForm"
+    (ngSubmit)="onSubmit(formRef)"
+    class="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+    novalidate
+  >
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
+      <input
+        type="text"
+        name="name"
+        [(ngModel)]="form.name"
+        maxlength="255"
+        required
+        class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+      />
+      <p *ngIf="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Start time</label>
+        <input
+          type="time"
+          name="startTime"
+          [(ngModel)]="form.startTime"
+          required
+          class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+        <p *ngIf="fieldErrors.startTime" class="mt-1 text-xs text-red-600">{{ fieldErrors.startTime }}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">End time</label>
+        <input
+          type="time"
+          name="endTime"
+          [(ngModel)]="form.endTime"
+          required
+          class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+        <p *ngIf="fieldErrors.endTime" class="mt-1 text-xs text-red-600">{{ fieldErrors.endTime }}</p>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a [routerLink]="listRoute" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+        Cancel
+      </a>
+      <button
+        type="submit"
+        [disabled]="saving"
+        class="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:opacity-50"
+      >
+        <ng-icon [name]="mode === 'create' ? 'heroPlus' : 'heroPencilSquare'" class="h-4 w-4"></ng-icon>
+        {{ saving ? 'Saving…' : (mode === 'create' ? 'Create session type' : 'Save changes') }}
+      </button>
+    </div>
+  </form>
+</section>

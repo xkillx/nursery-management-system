@@ -7,6 +7,7 @@ import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
+import { BookingPattern, BookingPatternInput } from '../models/booking-pattern.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 import {
   ChildProfile, ChildProfileInput,
@@ -341,6 +342,38 @@ export class StaffApiService {
   closeChildRoomAssignment(childId: string, assignmentId: string): Observable<void> {
     return this.http
       .delete<void>(apiUrl(`/children/${childId}/room-assignments/${assignmentId}`));
+  }
+
+  listChildBookingPatterns(childId: string): Observable<BookingPattern[]> {
+    return this.http
+      .get<{ items: BookingPattern[] }>(apiUrl(`/children/${childId}/booking-patterns`))
+      .pipe(map((r) => r.items ?? []));
+  }
+
+  getCurrentChildBookingPattern(childId: string, date?: string): Observable<BookingPattern | null> {
+    let params = new HttpParams();
+    if (date) params = params.set('date', date);
+    return this.http
+      .get<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/current`), { params });
+  }
+
+  getChildBookingPattern(childId: string, patternId: string): Observable<BookingPattern> {
+    return this.http
+      .get<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/${patternId}`));
+  }
+
+  createChildBookingPattern(childId: string, payload: BookingPatternInput): Observable<BookingPattern> {
+    return this.http
+      .post<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns`), payload);
+  }
+
+  updateChildBookingPattern(
+    childId: string,
+    patternId: string,
+    payload: Partial<BookingPatternInput>,
+  ): Observable<BookingPattern> {
+    return this.http
+      .patch<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/${patternId}`), payload);
   }
 
   getChildBillingProfile(childId: string): Observable<ChildBillingProfile | null> {

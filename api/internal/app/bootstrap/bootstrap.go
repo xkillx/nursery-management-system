@@ -81,6 +81,10 @@ import (
 	roomsapp "nursery-management-system/api/internal/modules/rooms/application"
 	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	roomshttphandler "nursery-management-system/api/internal/modules/rooms/interfaces/http"
+
+	sessiontypeapp "nursery-management-system/api/internal/modules/sessiontypes/application"
+	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
+	sessiontypehttphandler "nursery-management-system/api/internal/modules/sessiontypes/interfaces/http"
 )
 
 type BootstrapOptions struct {
@@ -160,6 +164,10 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Children module
 	childRepo := childpostgres.NewChildRepository(pool)
+
+	// Session types repo (declared early so children handler can use the
+	// sessionTypeLookupAdapter for booking pattern entry validation).
+	sessionTypeRepo := sessiontypepostgres.NewRepository(pool)
 	childrenHandler := childhandler.NewHandler(
 		childapp.NewListChildren(childRepo),
 		childapp.NewGetChild(childRepo),
@@ -187,6 +195,11 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewGetBillingProfile(childRepo),
 		childapp.NewUpdateBillingProfile(childRepo, auditWriter, txManager),
 		childapp.NewGetLeavingRecord(childRepo),
+		childapp.NewListBookingPatterns(childRepo),
+		childapp.NewGetBookingPattern(childRepo),
+		childapp.NewGetCurrentBookingPattern(childRepo, func() time.Time { return time.Now().UTC() }),
+		childapp.NewCreateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
+		childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
 	).WithObservability(logger)
 
 	// Guardians module
@@ -367,6 +380,17 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	roomsReactivateUC := roomsapp.NewReactivateRoom(roomsRepo, txManager, auditWriter, pool)
 	roomsHandler := roomshttphandler.NewHandler(roomsCreateUC, roomsUpdateUC, roomsListUC, roomsGetUC, roomsArchiveUC, roomsReactivateUC).WithObservability(logger)
 	roomsHandler.RegisterRoutes(protected)
+
+	// Session types module
+	sessionTypesSiteChecker := &siteExistsCheckerAdapter{repo: ownerRepo}
+	sessionTypesCreateUC := sessiontypeapp.NewCreateSessionType(sessionTypeRepo, sessionTypesSiteChecker, txManager, auditWriter)
+	sessionTypesUpdateUC := sessiontypeapp.NewUpdateSessionType(sessionTypeRepo, sessionTypesSiteChecker, txManager, auditWriter)
+	sessionTypesListUC := sessiontypeapp.NewListSessionTypes(sessionTypeRepo)
+	sessionTypesGetUC := sessiontypeapp.NewGetSessionType(sessionTypeRepo)
+	sessionTypesArchiveUC := sessiontypeapp.NewArchiveSessionType(sessionTypeRepo, txManager, auditWriter)
+	sessionTypesReactivateUC := sessiontypeapp.NewReactivateSessionType(sessionTypeRepo, txManager, auditWriter)
+	sessionTypesHandler := sessiontypehttphandler.NewHandler(sessionTypesCreateUC, sessionTypesUpdateUC, sessionTypesListUC, sessionTypesGetUC, sessionTypesArchiveUC, sessionTypesReactivateUC).WithObservability(logger)
+	sessionTypesHandler.RegisterRoutes(protected)
 
 	return router
 }

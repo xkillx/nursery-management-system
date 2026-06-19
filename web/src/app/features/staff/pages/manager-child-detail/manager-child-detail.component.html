@@ -2,6 +2,9 @@
   <div class="flex items-center justify-between">
     <a routerLink="/staff/manager/children" class="text-sm text-gray-600 hover:underline">← Back to children</a>
     <div class="flex gap-2">
+      <a [routerLink]="['/staff/manager/children', childId, 'booking-pattern']">
+        <app-button variant="secondary">Booking pattern</app-button>
+      </a>
       <a [routerLink]="['/staff/manager/children', childId, 'edit']">
         <app-button variant="primary">Edit</app-button>
       </a>

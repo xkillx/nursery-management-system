@@ -54,6 +54,53 @@ func (ns NullChildContactType) Value() (driver.Value, error) {
 	return string(ns.ChildContactType), nil
 }
 
+type LifecycleReasonCode string
+
+const (
+	LifecycleReasonCodeDuplicateRecord       LifecycleReasonCode = "duplicate_record"
+	LifecycleReasonCodeEnteredInError        LifecycleReasonCode = "entered_in_error"
+	LifecycleReasonCodeLeftNursery           LifecycleReasonCode = "left_nursery"
+	LifecycleReasonCodeSafeguardingDirection LifecycleReasonCode = "safeguarding_direction"
+	LifecycleReasonCodeContactUpdate         LifecycleReasonCode = "contact_update"
+	LifecycleReasonCodeAccessRevoked         LifecycleReasonCode = "access_revoked"
+	LifecycleReasonCodeOther                 LifecycleReasonCode = "other"
+)
+
+func (e *LifecycleReasonCode) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = LifecycleReasonCode(s)
+	case string:
+		*e = LifecycleReasonCode(s)
+	default:
+		return fmt.Errorf("unsupported scan type for LifecycleReasonCode: %T", src)
+	}
+	return nil
+}
+
+type NullLifecycleReasonCode struct {
+	LifecycleReasonCode LifecycleReasonCode
+	Valid               bool // Valid is true if LifecycleReasonCode is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullLifecycleReasonCode) Scan(value interface{}) error {
+	if value == nil {
+		ns.LifecycleReasonCode, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.LifecycleReasonCode.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullLifecycleReasonCode) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.LifecycleReasonCode), nil
+}
+
 type RegistrationTermTimeOnlyStatus string
 
 const (
@@ -162,7 +209,7 @@ type AuditLog struct {
 	CreatedAt         pgtype.Timestamptz
 	RequestID         pgtype.Text
 	ActorMembershipID pgtype.UUID
-	ReasonCode        interface{}
+	ReasonCode        NullLifecycleReasonCode
 	ReasonNote        pgtype.Text
 }
 
@@ -202,6 +249,29 @@ type ChildBillingProfile struct {
 	EffectiveFrom   pgtype.Date
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
+}
+
+type ChildBookingPattern struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	ChildID       pgtype.UUID
+	EffectiveFrom pgtype.Date
+	EffectiveTo   pgtype.Date
+	IsCurrent     bool
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type ChildBookingPatternEntry struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	PatternID     pgtype.UUID
+	DayOfWeek     int32
+	SessionTypeID pgtype.UUID
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type ChildCollectionSetting struct {
@@ -413,7 +483,7 @@ type Guardian struct {
 	DeactivatedAt          pgtype.Timestamptz
 	CreatedAt              pgtype.Timestamptz
 	UpdatedAt              pgtype.Timestamptz
-	DeactivationReasonCode interface{}
+	DeactivationReasonCode NullLifecycleReasonCode
 	DeactivationReasonNote pgtype.Text
 }
 
@@ -426,7 +496,7 @@ type GuardianChildLink struct {
 	EndedAt         pgtype.Timestamptz
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
-	EndedReasonCode interface{}
+	EndedReasonCode NullLifecycleReasonCode
 	EndedReasonNote pgtype.Text
 }
 
@@ -564,7 +634,7 @@ type ParentMembershipGuardian struct {
 	EndedAt         pgtype.Timestamptz
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
-	EndedReasonCode interface{}
+	EndedReasonCode NullLifecycleReasonCode
 	EndedReasonNote pgtype.Text
 }
 
@@ -649,6 +719,18 @@ type Room struct {
 	IsActive    bool
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
+}
+
+type SessionType struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	Name      string
+	StartTime pgtype.Time
+	EndTime   pgtype.Time
+	IsActive  bool
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }
 
 type StripeWebhookEvent struct {

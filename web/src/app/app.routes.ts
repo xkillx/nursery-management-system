@@ -11,6 +11,8 @@ import { ManagerGuardiansComponent } from './features/staff/pages/manager-guardi
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
+import { ManagerSessionTypesComponent } from './features/staff/pages/manager-session-types/manager-session-types.component';
+import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
@@ -22,6 +24,8 @@ import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/ow
 import { OwnerManagerAccessComponent } from './features/owner/pages/owner-manager-access/owner-manager-access.component';
 import { OwnerRoomsComponent } from './features/owner/pages/owner-rooms/owner-rooms.component';
 import { OwnerRoomFormComponent } from './features/owner/pages/owner-room-form/owner-room-form.component';
+import { OwnerSessionTypesComponent } from './features/owner/pages/owner-session-types/owner-session-types.component';
+import { OwnerSessionTypeFormComponent } from './features/owner/pages/owner-session-type-form/owner-session-type-form.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forgot-password.component';
@@ -93,6 +97,14 @@ export const routes: Routes = [
                   breadcrumb: { label: 'Edit' },
                 },
                 title: 'Edit Child | Nursery Management',
+              },
+              {
+                path: ':childId/booking-pattern',
+                component: ManagerBookingPatternComponent,
+                data: {
+                  breadcrumb: { label: 'Booking pattern' },
+                },
+                title: 'Booking pattern | Nursery Management',
               },
             ],
           },
@@ -169,6 +181,33 @@ export const routes: Routes = [
                   breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
                 },
                 title: 'Edit Room | Nursery Management',
+              },
+            ],
+          },
+          {
+            path: 'staff/manager/session-types',
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Session types', link: ['/staff/manager/session-types'] },
+            },
+            children: [
+              {
+                path: '',
+                component: ManagerSessionTypesComponent,
+                title: 'Session types | Nursery Management',
+              },
+              {
+                path: 'new',
+                component: OwnerSessionTypeFormComponent,
+                data: { breadcrumb: { label: 'New session type' } },
+                title: 'New session type | Nursery Management',
+              },
+              {
+                path: ':sessionTypeId/edit',
+                component: OwnerSessionTypeFormComponent,
+                data: { breadcrumb: { label: 'Edit session type' } },
+                title: 'Edit session type | Nursery Management',
               },
             ],
           },
@@ -258,6 +297,33 @@ export const routes: Routes = [
                   breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
                 },
                 title: 'Edit Room | Nursery Management',
+              },
+            ],
+          },
+          {
+            path: 'owner/session-types',
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['owner'],
+              breadcrumb: { label: 'Session types', link: ['/owner/session-types'] },
+            },
+            children: [
+              {
+                path: '',
+                component: OwnerSessionTypesComponent,
+                title: 'Session types | Nursery Management',
+              },
+              {
+                path: 'new',
+                component: OwnerSessionTypeFormComponent,
+                data: { breadcrumb: { label: 'New session type' } },
+                title: 'New session type | Nursery Management',
+              },
+              {
+                path: ':sessionTypeId/edit',
+                component: OwnerSessionTypeFormComponent,
+                data: { breadcrumb: { label: 'Edit session type' } },
+                title: 'Edit session type | Nursery Management',
               },
             ],
           },

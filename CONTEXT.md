@@ -312,6 +312,45 @@ An attendance session is one continuous period of a child's attendance, beginnin
 
 A child may have multiple attendance sessions on the same local day, but may have only one open attendance session at a time. Avoid the phrase active check-in for this rule.
 
+## Session Type
+
+A reusable, site-scoped named time block that defines when a planned childcare session runs, such as Morning 08:00–13:00 or Full Day 08:00–18:00. It is configured per nursery site and selected into a child's booking pattern, and it is distinct from an Attendance Session, which records actual attendance.
+_Avoid_: Session (bare), Session Template
+
+## Booking Pattern
+
+A child's planned weekly attendance expressed as day-of-week and session-type entries, valid over an effective date range. Only one booking pattern is active for a child on any given date, historical patterns are retained rather than overwritten, and it records expected attendance rather than actual attendance.
+_Avoid_: Session Pattern (tolerated alias only)
+
+## Booked Session
+
+One day-of-week plus session-type entry within a booking pattern, representing that a child is expected to attend a specific session type on a specific weekday. A child may have multiple booked sessions on the same day.
+_Avoid_: session slot, pattern item
+
+## Booking Pattern Billing Boundary
+
+Booking patterns record expected attendance only and do not drive billing in the current release; monthly invoices continue to derive billable minutes from attendance actuals, and funding, invoicing, daily-register, and occupancy consumption of booking patterns is deferred to later work.
+
+## Booking Pattern Enrollment Independence
+
+A booking pattern is not part of the child enrollment minimum; a child without a booking pattern remains enrollment-complete, and attendance capture and invoicing are not blocked by the absence of a booking pattern.
+
+## Session Type Management Authority
+
+Session types are site-scoped reference data managed like rooms: managers and owners may create, update, archive, and reactivate them, while practitioners may read them. Session type management is not a parent-facing workflow.
+
+## Booking Pattern Management Authority
+
+Booking pattern assignment and edits are manager-only child-record writes; practitioners may read a child's booking pattern, and owner-level users do not get direct per-child booking-pattern create, edit, or delete access in the current release.
+
+## Booking Pattern History Immutability
+
+Closed or past booking patterns are read-only and are never edited or deleted; only the current open pattern whose effective date is today or later may be edited. Changing an already-started plan is done by appending a new pattern rather than editing history.
+
+## Booking Pattern Effective Date Rules
+
+A new booking pattern's effective-from date must be today or later (no backdating) and must not overlap any existing pattern for the same child. Creating a new pattern closes the previous active pattern by setting its effective-to to the day before the new pattern's effective-from, producing an adjacent, gap-free, non-overlapping timeline. Mid-history insertion of a pattern between existing patterns is not supported.
+
 ## Attendance Daily List Scope
 
 The attendance-facing child list shows children for the current `Europe/London` local day: active children and any child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.

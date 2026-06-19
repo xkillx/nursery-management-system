@@ -223,6 +223,10 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 		"parent_membership_guardians",
 		"guardian_child_links",
 		"guardians",
+		"child_booking_pattern_entries",
+		"child_booking_patterns",
+		"session_types",
+		"child_room_assignments",
 		"children",
 		"refresh_tokens",
 		"audit_logs",
@@ -282,6 +286,22 @@ func InsertRoom(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UU
 		id, tenantID, branchID, name, "toddler", capacity)
 	if err != nil {
 		t.Fatalf("insert room: %v", err)
+	}
+}
+
+// InsertSessionType inserts an active session type scoped to a branch.
+// startMin/endMin are minutes since midnight (e.g. 8*60=480 for 08:00).
+func InsertSessionType(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, name string, startMin, endMin int, isActive bool) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO session_types (id, tenant_id, branch_id, name, start_time, end_time, is_active)
+		 VALUES ($1, $2, $3, $4, $5::time, $6::time, $7)`,
+		id, tenantID, branchID, name,
+		fmt.Sprintf("%02d:%02d", startMin/60, startMin%60),
+		fmt.Sprintf("%02d:%02d", endMin/60, endMin%60),
+		isActive)
+	if err != nil {
+		t.Fatalf("insert session type: %v", err)
 	}
 }
 

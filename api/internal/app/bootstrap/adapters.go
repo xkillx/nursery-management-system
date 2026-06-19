@@ -11,6 +11,7 @@ import (
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
+	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	postgresguardian "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
@@ -19,6 +20,7 @@ import (
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentmappings/domain"
 	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/email"
 )
 
@@ -165,3 +167,28 @@ var (
 	_ ownerdomain.InviteTokenGenerator = (*ownerInviteTokenAdapter)(nil)
 	_ ownerdomain.ManagerInviteSender  = (*ownerEmailSenderAdapter)(nil)
 )
+
+// ── Session types adapters ───────────────────────────────────────────────
+
+type sessionTypeLookupAdapter struct {
+	repo *sessiontypepostgres.SessionTypeRepository
+}
+
+// GetActiveInScope delegates to repo.GetByID. Active/inactive is reported via
+// the IsActive flag on SessionTypeInfo; the application layer enforces the
+// "must be active" rule.
+func (a *sessionTypeLookupAdapter) GetActiveInScope(ctx context.Context, tenantID, branchID, sessionTypeID uuid.UUID) (childapp.SessionTypeInfo, bool, error) {
+	st, err := a.repo.GetByID(ctx, tenantID, branchID, sessionTypeID)
+	if err != nil {
+		return childapp.SessionTypeInfo{}, false, fmt.Errorf("sessiontype lookup: %w", err)
+	}
+	return childapp.SessionTypeInfo{
+		ID:           st.ID,
+		Name:         st.Name,
+		StartMinutes: st.StartMinutes,
+		EndMinutes:   st.EndMinutes,
+		IsActive:     st.IsActive,
+	}, true, nil
+}
+
+var _ childapp.SessionTypeLookup = (*sessionTypeLookupAdapter)(nil)

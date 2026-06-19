@@ -1224,3 +1224,352 @@ func mapLeavingRecordRow(row sqlc.ChildLeavingRecord) *domain.ChildLeavingRecord
 		CreatedAt:  pgtypeTimestamptzToTime(row.CreatedAt),
 	}
 }
+
+// --- Child Booking Patterns ---
+
+func (r *ChildRepository) ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.BookingPattern, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildBookingPatternsListByChild(ctx, sqlc.ChildBookingPatternsListByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list child booking patterns: %w", err)
+	}
+	out := make([]domain.BookingPattern, 0, len(rows))
+	for _, row := range rows {
+		bp := mapBookingPatternRow(row)
+		entries, eerr := r.entriesForPattern(ctx, tenantID, branchID, bp.ID)
+		if eerr != nil {
+			return nil, eerr
+		}
+		bp.Entries = entries
+		out = append(out, bp)
+	}
+	return out, nil
+}
+
+func (r *ChildRepository) GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.ChildBookingPatternsGetByID(ctx, sqlc.ChildBookingPatternsGetByIDParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("get child booking pattern by id: %w", err)
+	}
+	bp := mapBookingPatternRow(row)
+	entries, eerr := r.entriesForPattern(ctx, tenantID, branchID, bp.ID)
+	if eerr != nil {
+		return nil, false, eerr
+	}
+	bp.Entries = entries
+	return &bp, true, nil
+}
+
+func (r *ChildRepository) GetActiveForDate(ctx context.Context, tenantID, branchID, childID uuid.UUID, date time.Time) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.ChildBookingPatternsGetActiveForDate(ctx, sqlc.ChildBookingPatternsGetActiveForDateParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		ChildID:       uuidToPgtype(childID),
+		EffectiveFrom: timeToPgtypeDate(date),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("get active child booking pattern: %w", err)
+	}
+	bp := mapBookingPatternRow(row)
+	entries, eerr := r.entriesForPattern(ctx, tenantID, branchID, bp.ID)
+	if eerr != nil {
+		return nil, false, eerr
+	}
+	bp.Entries = entries
+	return &bp, true, nil
+}
+
+func (r *ChildRepository) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(tx)
+	row, err := q.ChildBookingPatternsGetCurrentOpenByChild(ctx, sqlc.ChildBookingPatternsGetCurrentOpenByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("get current open child booking pattern: %w", err)
+	}
+	bp := mapBookingPatternRow(row)
+	// No entries: open pattern body is not yet hydrated here; create flow uses InsertPattern.
+	return &bp, true, nil
+}
+
+func (r *ChildRepository) GetPreviousClosedByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(tx)
+	row, err := q.ChildBookingPatternsGetPreviousClosedByChild(ctx, sqlc.ChildBookingPatternsGetPreviousClosedByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("get previous closed child booking pattern: %w", err)
+	}
+	bp := mapBookingPatternRow(row)
+	return &bp, true, nil
+}
+
+func (r *ChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
+	q := sqlc.New(tx)
+	row, err := q.ChildBookingPatternsInsert(ctx, sqlc.ChildBookingPatternsInsertParams{
+		ID:            uuidToPgtype(p.ID),
+		TenantID:      uuidToPgtype(p.TenantID),
+		BranchID:      uuidToPgtype(p.BranchID),
+		ChildID:       uuidToPgtype(p.ChildID),
+		EffectiveFrom: timeToPgtypeDate(p.EffectiveFrom),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("insert child booking pattern: %w", err)
+	}
+	for i := range entries {
+		e := &entries[i]
+		e.PatternID = p.ID
+		e.TenantID = p.TenantID
+		e.BranchID = p.BranchID
+		if err := q.ChildBookingPatternEntriesInsert(ctx, sqlc.ChildBookingPatternEntriesInsertParams{
+			ID:            uuidToPgtype(e.ID),
+			TenantID:      uuidToPgtype(e.TenantID),
+			BranchID:      uuidToPgtype(e.BranchID),
+			PatternID:     uuidToPgtype(e.PatternID),
+			DayOfWeek:     int32(e.DayOfWeek),
+			SessionTypeID: uuidToPgtype(e.SessionType.ID),
+		}); err != nil {
+			return nil, fmt.Errorf("insert child booking pattern entry: %w", err)
+		}
+	}
+	bp := mapBookingPatternRow(row)
+	// Re-load entries with joined session type for return value.
+	loadedEntries, lerr := r.entriesForPatternTx(ctx, tx, p.TenantID, p.BranchID, p.ID)
+	if lerr != nil {
+		return nil, lerr
+	}
+	bp.Entries = loadedEntries
+	return &bp, nil
+}
+
+func (r *ChildRepository) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
+	q := sqlc.New(tx)
+	if err := q.ChildBookingPatternsCloseCurrent(ctx, sqlc.ChildBookingPatternsCloseCurrentParams{
+		TenantID:    uuidToPgtype(tenantID),
+		BranchID:    uuidToPgtype(branchID),
+		ChildID:     uuidToPgtype(childID),
+		EffectiveTo: timeToPgtypeDate(effectiveTo),
+	}); err != nil {
+		return fmt.Errorf("close current child booking pattern: %w", err)
+	}
+	return nil
+}
+
+func (r *ChildRepository) ClosePatternByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error {
+	q := sqlc.New(tx)
+	if err := q.ChildBookingPatternsCloseByID(ctx, sqlc.ChildBookingPatternsCloseByIDParams{
+		TenantID:    uuidToPgtype(tenantID),
+		BranchID:    uuidToPgtype(branchID),
+		ID:          uuidToPgtype(patternID),
+		EffectiveTo: timeToPgtypeDate(effectiveTo),
+	}); err != nil {
+		return fmt.Errorf("close child booking pattern by id: %w", err)
+	}
+	return nil
+}
+
+func (r *ChildRepository) ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, entries []domain.BookingPatternEntry) error {
+	q := sqlc.New(tx)
+	if err := q.ChildBookingPatternEntriesDeleteByPattern(ctx, sqlc.ChildBookingPatternEntriesDeleteByPatternParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		PatternID: uuidToPgtype(patternID),
+	}); err != nil {
+		return fmt.Errorf("delete child booking pattern entries: %w", err)
+	}
+	for i := range entries {
+		e := &entries[i]
+		e.PatternID = patternID
+		e.TenantID = tenantID
+		e.BranchID = branchID
+		if err := q.ChildBookingPatternEntriesInsert(ctx, sqlc.ChildBookingPatternEntriesInsertParams{
+			ID:            uuidToPgtype(e.ID),
+			TenantID:      uuidToPgtype(e.TenantID),
+			BranchID:      uuidToPgtype(e.BranchID),
+			PatternID:     uuidToPgtype(e.PatternID),
+			DayOfWeek:     int32(e.DayOfWeek),
+			SessionTypeID: uuidToPgtype(e.SessionType.ID),
+		}); err != nil {
+			return fmt.Errorf("insert child booking pattern entry: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *ChildRepository) UpdateEffectiveFrom(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error {
+	q := sqlc.New(tx)
+	if err := q.ChildBookingPatternsUpdateEffectiveFrom(ctx, sqlc.ChildBookingPatternsUpdateEffectiveFromParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		ID:            uuidToPgtype(patternID),
+		EffectiveFrom: timeToPgtypeDate(effectiveFrom),
+	}); err != nil {
+		return fmt.Errorf("update child booking pattern effective_from: %w", err)
+	}
+	return nil
+}
+
+func (r *ChildRepository) entriesForPattern(ctx context.Context, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntry, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		PatternID: uuidToPgtype(patternID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list child booking pattern entries: %w", err)
+	}
+	out := make([]domain.BookingPatternEntry, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapBookingPatternEntryRow(row))
+	}
+	return out, nil
+}
+
+func (r *ChildRepository) entriesForPatternTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntry, error) {
+	q := sqlc.New(tx)
+	rows, err := q.ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		PatternID: uuidToPgtype(patternID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list child booking pattern entries (tx): %w", err)
+	}
+	out := make([]domain.BookingPatternEntry, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapBookingPatternEntryRow(row))
+	}
+	return out, nil
+}
+
+func mapBookingPatternRow(row interface{}) domain.BookingPattern {
+	type fields struct {
+		ID            pgtype.UUID
+		TenantID      pgtype.UUID
+		BranchID      pgtype.UUID
+		ChildID       pgtype.UUID
+		EffectiveFrom pgtype.Date
+		EffectiveTo   pgtype.Date
+		CreatedAt     pgtype.Timestamptz
+		UpdatedAt     pgtype.Timestamptz
+	}
+	var f fields
+	var isCurrent bool
+	switch v := row.(type) {
+	case sqlc.ChildBookingPattern:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = v.IsCurrent
+	case sqlc.ChildBookingPatternsListByChildRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = !v.EffectiveTo.Valid
+	case sqlc.ChildBookingPatternsGetByIDRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = !v.EffectiveTo.Valid
+	case sqlc.ChildBookingPatternsGetActiveForDateRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = !v.EffectiveTo.Valid
+	case sqlc.ChildBookingPatternsGetCurrentOpenByChildRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = true
+	case sqlc.ChildBookingPatternsGetPreviousClosedByChildRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = false
+	case sqlc.ChildBookingPatternsInsertRow:
+		f = fields{
+			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
+			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
+			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+		isCurrent = !v.EffectiveTo.Valid
+	default:
+		return domain.BookingPattern{}
+	}
+	return domain.BookingPattern{
+		ID:            pgtypeUUIDToUUID(f.ID),
+		TenantID:      pgtypeUUIDToUUID(f.TenantID),
+		BranchID:      pgtypeUUIDToUUID(f.BranchID),
+		ChildID:       pgtypeUUIDToUUID(f.ChildID),
+		EffectiveFrom: pgtypeDateToTime(f.EffectiveFrom),
+		EffectiveTo:   pgtypeDateToTimePtr(f.EffectiveTo),
+		IsCurrent:     isCurrent,
+		CreatedAt:     pgtypeTimestamptzToTime(f.CreatedAt),
+		UpdatedAt:     pgtypeTimestamptzToTime(f.UpdatedAt),
+	}
+}
+
+func mapBookingPatternEntryRow(row sqlc.ChildBookingPatternEntriesListByPatternRow) domain.BookingPatternEntry {
+	return domain.BookingPatternEntry{
+		ID:        pgtypeUUIDToUUID(row.ID),
+		TenantID:  pgtypeUUIDToUUID(row.TenantID),
+		BranchID:  pgtypeUUIDToUUID(row.BranchID),
+		PatternID: pgtypeUUIDToUUID(row.PatternID),
+		DayOfWeek: int(row.DayOfWeek),
+		SessionType: &domain.EntrySessionType{
+			ID:           pgtypeUUIDToUUID(row.SessionTypeID),
+			Name:         row.SessionTypeName,
+			StartMinutes: pgtypeTimeToMinutes(row.SessionTypeStartTime),
+			EndMinutes:   pgtypeTimeToMinutes(row.SessionTypeEndTime),
+			IsActive:     row.SessionTypeIsActive,
+		},
+		CreatedAt: pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt: pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+}
+
+func pgtypeTimeToMinutes(t pgtype.Time) int {
+	if !t.Valid {
+		return 0
+	}
+	return int(t.Microseconds / 60 / 1_000_000)
+}

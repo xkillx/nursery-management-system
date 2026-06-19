@@ -41,7 +41,7 @@ WHERE tenant_id = $3 AND branch_id = $4 AND id = $5
 `
 
 type GuardianLinksEndParams struct {
-	EndedReasonCode interface{}
+	EndedReasonCode NullLifecycleReasonCode
 	Column2         interface{}
 	TenantID        pgtype.UUID
 	BranchID        pgtype.UUID

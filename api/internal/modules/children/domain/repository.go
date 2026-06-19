@@ -95,6 +95,19 @@ type ChildLeavingRepository interface {
 	InsertLeavingRecord(ctx context.Context, tx pgx.Tx, p *ChildLeavingRecord) error
 }
 
+type ChildBookingPatternsRepository interface {
+	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]BookingPattern, error)
+	GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*BookingPattern, bool, error)
+	GetActiveForDate(ctx context.Context, tenantID, branchID, childID uuid.UUID, date time.Time) (*BookingPattern, bool, error)
+	GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*BookingPattern, bool, error)
+	GetPreviousClosedByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*BookingPattern, bool, error)
+	InsertPattern(ctx context.Context, tx pgx.Tx, p *BookingPattern, entries []BookingPatternEntry) (*BookingPattern, error)
+	CloseCurrentPattern(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error
+	ClosePatternByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error
+	ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, entries []BookingPatternEntry) error
+	UpdateEffectiveFrom(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error
+}
+
 // Repository composes the per-concept repositories. The postgres implementation
 // file implements all of them on one struct.
 type Repository interface {
@@ -109,4 +122,5 @@ type Repository interface {
 	ChildRoomAssignmentsRepository
 	ChildBillingProfileRepository
 	ChildLeavingRepository
+	ChildBookingPatternsRepository
 }

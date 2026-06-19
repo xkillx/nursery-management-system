@@ -1,0 +1,96 @@
+<section class="space-y-6">
+  <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Session types</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Manage session types for {{ siteName }}.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <input
+          type="checkbox"
+          [checked]="includeArchived"
+          (change)="toggleArchived()"
+          class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+        />
+        Include archived
+      </label>
+      <a
+        *ngIf="siteId"
+        [routerLink]="newRoute"
+        class="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
+      >
+        <ng-icon name="heroPlus" class="h-4 w-4"></ng-icon>
+        New session type
+      </a>
+    </div>
+  </header>
+
+  <app-alert *ngIf="pageError" variant="error" [message]="pageError"></app-alert>
+
+  <app-loading-state *ngIf="loading" message="Loading session types…"></app-loading-state>
+
+  <ng-container *ngIf="!loading">
+    <app-empty-state
+      *ngIf="types.length === 0"
+      title="No session types yet"
+      message="Create your first session type to start planning booking patterns for this site."
+    ></app-empty-state>
+
+    <div *ngIf="types.length > 0" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-900/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Name</th>
+            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Time</th>
+            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
+            <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tr *ngFor="let t of types" [class.opacity-60]="!t.isActive">
+            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ t.name }}</td>
+            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+              <span class="inline-flex items-center gap-1.5">
+                <ng-icon name="heroClock" class="h-4 w-4 text-gray-400"></ng-icon>
+                {{ t.startTime }} – {{ t.endTime }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm">
+              <span
+                *ngIf="t.isActive"
+                class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+              >Active</span>
+              <span
+                *ngIf="!t.isActive"
+                class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+              >Archived</span>
+            </td>
+            <td class="px-4 py-3 text-right text-sm">
+              <a
+                *ngIf="siteId && t.isActive"
+                [routerLink]="editRoute(t)"
+                class="mr-3 text-brand-600 hover:text-brand-700 dark:text-brand-400"
+              >Edit</a>
+              <button
+                *ngIf="siteId && t.isActive"
+                type="button"
+                (click)="archive(t)"
+                [disabled]="mutatingId === t.id"
+                class="text-amber-600 hover:text-amber-700 disabled:opacity-50"
+              >Archive</button>
+              <button
+                *ngIf="siteId && !t.isActive"
+                type="button"
+                (click)="reactivate(t)"
+                [disabled]="mutatingId === t.id"
+                class="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
+              >Reactivate</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</section>
