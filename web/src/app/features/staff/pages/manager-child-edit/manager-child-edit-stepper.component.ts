@@ -1927,12 +1927,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private collectConsentsIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.step4.safeguarding_reporting_acknowledgement) {
-      issues.push({ stepKey: 'consents-evidence', field: 'safeguarding_reporting_acknowledgement', message: 'Confirm the safeguarding reporting acknowledgement.' });
-    }
-    if (!this.step4.information_sharing_consent) {
-      issues.push({ stepKey: 'consents-evidence', field: 'information_sharing_consent', message: 'Confirm information sharing consent.' });
-    }
     if (!this.step4.gdpr_data_processing_consent) {
       issues.push({ stepKey: 'consents-evidence', field: 'gdpr_data_processing_consent', message: 'Confirm GDPR data processing consent.' });
     }
@@ -1945,6 +1939,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
 
     const optionalConsents: Array<{ key: keyof ConsentWritePayload; label: string }> = [
+      { key: 'safeguarding_reporting_acknowledgement', label: 'safeguarding reporting acknowledgement' },
+      { key: 'information_sharing_consent', label: 'information sharing consent' },
       { key: 'urgent_medical_treatment', label: 'urgent medical treatment' },
       { key: 'plasters', label: 'first aid/plasters' },
       { key: 'area_senco_liaison', label: 'Area SENCO liaison' },
