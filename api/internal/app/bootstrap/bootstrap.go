@@ -292,6 +292,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		billingapp.NewGetInvoice(billingRepo),
 		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter),
 		billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
+		billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
 		billingapp.NewListParentInvoices(billingRepo),
 		billingapp.NewGetParentInvoice(billingRepo),
 	).WithObservability(logger)

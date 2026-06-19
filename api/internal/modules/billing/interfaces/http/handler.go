@@ -17,32 +17,54 @@ import (
 )
 
 type Handler struct {
-	logger             *slog.Logger
-	preflight          *application.PreflightDraftInvoices
-	generation         *application.GenerateDraftInvoicesUseCase
-	listInvoices       *application.ListInvoices
-	getInvoice         *application.GetInvoice
-	issueInvoice       *application.IssueInvoice
-	bulkIssueInvoices  *application.BulkIssueInvoices
-	listParentInvoices *application.ListParentInvoices
-	getParentInvoice   *application.GetParentInvoice
+	logger                *slog.Logger
+	preflight             *application.PreflightDraftInvoices
+	generation            *application.GenerateDraftInvoicesUseCase
+	listInvoices          *application.ListInvoices
+	getInvoice            *application.GetInvoice
+	issueInvoice          *application.IssueInvoice
+	bulkIssueInvoices     *application.BulkIssueInvoices
+	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
+	listParentInvoices    *application.ListParentInvoices
+	getParentInvoice      *application.GetParentInvoice
 }
 
-func NewHandler(preflight *application.PreflightDraftInvoices, generation *application.GenerateDraftInvoicesUseCase, listInvoices *application.ListInvoices, getInvoice *application.GetInvoice, issueInvoice *application.IssueInvoice, bulkIssueInvoices *application.BulkIssueInvoices, listParentInvoices *application.ListParentInvoices, getParentInvoice *application.GetParentInvoice) *Handler {
-	return &Handler{preflight: preflight, generation: generation, listInvoices: listInvoices, getInvoice: getInvoice, issueInvoice: issueInvoice, bulkIssueInvoices: bulkIssueInvoices, listParentInvoices: listParentInvoices, getParentInvoice: getParentInvoice}
+func NewHandler(
+	preflight *application.PreflightDraftInvoices,
+	generation *application.GenerateDraftInvoicesUseCase,
+	listInvoices *application.ListInvoices,
+	getInvoice *application.GetInvoice,
+	issueInvoice *application.IssueInvoice,
+	bulkIssueInvoices *application.BulkIssueInvoices,
+	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase,
+	listParentInvoices *application.ListParentInvoices,
+	getParentInvoice *application.GetParentInvoice,
+) *Handler {
+	return &Handler{
+		preflight:             preflight,
+		generation:            generation,
+		listInvoices:          listInvoices,
+		getInvoice:            getInvoice,
+		issueInvoice:          issueInvoice,
+		bulkIssueInvoices:     bulkIssueInvoices,
+		overrideAttendanceBlk: overrideAttendanceBlk,
+		listParentInvoices:    listParentInvoices,
+		getParentInvoice:      getParentInvoice,
+	}
 }
 
 func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 	return &Handler{
-		preflight:          h.preflight,
-		generation:         h.generation,
-		listInvoices:       h.listInvoices,
-		getInvoice:         h.getInvoice,
-		issueInvoice:       h.issueInvoice,
-		bulkIssueInvoices:  h.bulkIssueInvoices,
-		listParentInvoices: h.listParentInvoices,
-		getParentInvoice:   h.getParentInvoice,
-		logger:             logger,
+		preflight:             h.preflight,
+		generation:            h.generation,
+		listInvoices:          h.listInvoices,
+		getInvoice:            h.getInvoice,
+		issueInvoice:          h.issueInvoice,
+		bulkIssueInvoices:     h.bulkIssueInvoices,
+		overrideAttendanceBlk: h.overrideAttendanceBlk,
+		listParentInvoices:    h.listParentInvoices,
+		getParentInvoice:      h.getParentInvoice,
+		logger:                logger,
 	}
 }
 
@@ -53,6 +75,7 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoice-runs/drafts", h.generateDraftsHandler)
 	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
+	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 }
 
 func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
@@ -146,6 +169,38 @@ func (h *Handler) getInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toInvoiceDetailResponse(result))
+}
+
+func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	invoiceID, err := uuid.Parse(strings.TrimSpace(c.Param("invoice_id")))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid invoice_id.")
+		return
+	}
+
+	var req overrideAttendanceBlockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	result, err := h.overrideAttendanceBlk.Execute(c.Request.Context(), actor, application.OverrideAttendanceBlockInput{
+		InvoiceID:    invoiceID,
+		BillingMonth: strings.TrimSpace(req.BillingMonth),
+		Note:         strings.TrimSpace(req.Note),
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toOverrideAttendanceBlockResponse(result))
 }
 
 func (h *Handler) issueInvoiceHandler(c *gin.Context) {
@@ -610,6 +665,15 @@ func toCalculationResponse(calc domain.InvoiceReviewCalculation) invoiceCalculat
 		BookingPatternID:       calc.BookingPatternID.String(),
 		BookedSessions:         sessions,
 		BookedPerEntry:         perEntry,
+	}
+}
+
+func toOverrideAttendanceBlockResponse(r *application.OverrideAttendanceBlockResult) overrideAttendanceBlockResponse {
+	return overrideAttendanceBlockResponse{
+		InvoiceID:    r.InvoiceID.String(),
+		BillingMonth: r.BillingMonth,
+		OverriddenBy: r.OverriddenBy.String(),
+		OverriddenAt: r.OverriddenAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }
 

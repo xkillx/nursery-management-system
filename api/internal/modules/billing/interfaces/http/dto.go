@@ -267,6 +267,18 @@ type issueInvoiceResponse struct {
 	TotalDueMinor int    `json:"total_due_minor"`
 }
 
+type overrideAttendanceBlockRequest struct {
+	BillingMonth string `json:"billing_month"`
+	Note         string `json:"note"`
+}
+
+type overrideAttendanceBlockResponse struct {
+	InvoiceID    string `json:"invoice_id"`
+	BillingMonth string `json:"billing_month"`
+	OverriddenBy string `json:"overridden_by"`
+	OverriddenAt string `json:"overridden_at"`
+}
+
 type bulkIssueInvoicesRequest struct {
 	BillingMonth string   `json:"billing_month" binding:"required"`
 	InvoiceIDs   []string `json:"invoice_ids"`
