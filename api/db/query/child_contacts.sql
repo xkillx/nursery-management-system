@@ -10,7 +10,7 @@ ORDER BY contact_type ASC, sort_order ASC;
 -- name: ChildContactsDeleteByTypes :exec
 DELETE FROM child_contacts
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
-  AND contact_type = ANY($4::child_contact_type[]);
+  AND contact_type::text = ANY($4::text[]);
 
 -- name: ChildContactsInsert :one
 INSERT INTO child_contacts (

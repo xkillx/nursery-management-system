@@ -356,9 +356,9 @@ export interface CreateChildPayload {
   health?: ChildHealthProfileInput;
   safeguarding?: ChildSafeguardingProfileInput;
   contacts?: {
-    parent_carers?: ChildContact[];
-    emergency_contacts?: ChildContact[];
-    authorised_collectors?: ChildContact[];
+    parent_carers?: Record<string, unknown>[];
+    emergency_contacts?: Record<string, unknown>[];
+    authorised_collectors?: Record<string, unknown>[];
   };
   consent: ChildConsentInput;
   funding?: ChildFundingRecordInput;
@@ -367,11 +367,6 @@ export interface CreateChildPayload {
     room_id: string;
     start_date: string;
   };
-  // Legacy alias for the still-imported manager-registration-intake stepper.
-  collection_password?: string;
-  primary_room_id?: string;
-  registration_profile?: any;
-  [key: string]: any;
 }
 
 export interface CreateChildResponse {

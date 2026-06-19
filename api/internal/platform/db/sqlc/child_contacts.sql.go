@@ -14,14 +14,14 @@ import (
 const childContactsDeleteByTypes = `-- name: ChildContactsDeleteByTypes :exec
 DELETE FROM child_contacts
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
-  AND contact_type = ANY($4::child_contact_type[])
+  AND contact_type::text = ANY($4::text[])
 `
 
 type ChildContactsDeleteByTypesParams struct {
 	TenantID pgtype.UUID
 	BranchID pgtype.UUID
 	ChildID  pgtype.UUID
-	Column4  []ChildContactType
+	Column4  []string
 }
 
 func (q *Queries) ChildContactsDeleteByTypes(ctx context.Context, arg ChildContactsDeleteByTypesParams) error {

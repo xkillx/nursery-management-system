@@ -474,9 +474,9 @@ func (r *ChildRepository) ListContactsByChild(ctx context.Context, tenantID, bra
 
 func (r *ChildRepository) ReplaceContactsForTypes(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ChildContact) error {
 	q := sqlc.New(tx)
-	types := make([]sqlc.ChildContactType, len(contactTypes))
+	types := make([]string, len(contactTypes))
 	for i, t := range contactTypes {
-		types[i] = sqlc.ChildContactType(string(t))
+		types[i] = string(t)
 	}
 	if err := q.ChildContactsDeleteByTypes(ctx, sqlc.ChildContactsDeleteByTypesParams{
 		TenantID:  uuidToPgtype(tenantID),

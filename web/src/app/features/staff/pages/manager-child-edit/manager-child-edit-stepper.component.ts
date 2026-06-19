@@ -68,6 +68,13 @@ import {
   ChildSafeguardingProfile,
   ChildCollectionSettings,
   ChildFundingRecord,
+  ChildConsentInput,
+  ChildContact,
+  ChildProfileInput,
+  ChildHealthProfileInput,
+  ChildSafeguardingProfileInput,
+  ChildCollectionSettingsInput,
+  CreateChildPayload,
 } from '../../models/child-profile.models';
 
 type StepperStep =
@@ -1588,165 +1595,210 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.medication_storage && `Storage: ${this.step2.medication_storage}`,
     ].filter(Boolean).join('\n');
 
-    const parentCarers: Record<string, unknown>[] = [];
-    if (this.parentCarersDraft[0]) {
+    const parentCarers: ChildContact[] = [];
+    if (this.parentCarersDraft[0] && this.parentCarersDraft[0].fullName.trim()) {
       parentCarers.push({
-        full_name: this.parentCarersDraft[0].fullName,
-        relationship_to_child: this.parentCarersDraft[0].relationshipToChild || null,
-        address: this.step3.parent1_address ? { text: this.step3.parent1_address.trim() } : null,
+        fullName: this.parentCarersDraft[0].fullName.trim(),
+        relationshipToChild: this.parentCarersDraft[0].relationshipToChild || null,
+        address: this.step3.parent1_address.trim() ? { text: this.step3.parent1_address.trim() } : null,
         telephone: this.parentCarersDraft[0].telephone || null,
         email: this.parentCarersDraft[0].email || null,
-        has_parental_responsibility: this.step3.parent1_has_responsibility || null,
+        hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
       });
     }
     if (this.step3.show_second_parent && this.step3.second_parent_name.trim()) {
       parentCarers.push({
-        full_name: this.step3.second_parent_name.trim(),
-        relationship_to_child: this.step3.second_parent_relationship.trim() || null,
+        fullName: this.step3.second_parent_name.trim(),
+        relationshipToChild: this.step3.second_parent_relationship.trim() || null,
         address: this.step3.second_parent_address.trim() ? { text: this.step3.second_parent_address.trim() } : null,
         telephone: this.step3.second_parent_telephone.trim() || null,
         email: this.step3.second_parent_email.trim() || null,
-        has_parental_responsibility: this.step3.second_parent_has_responsibility || null,
+        hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
       });
     }
 
-    const emergencyContacts: Record<string, unknown>[] = this.emergencyContactsDraft
+    const emergencyContacts: ChildContact[] = this.emergencyContactsDraft
       .filter(c => c.fullName.trim())
       .map(c => ({
-        full_name: c.fullName.trim(),
-        relationship_to_child: c.relationshipToChild?.trim() || null,
+        fullName: c.fullName.trim(),
+        relationshipToChild: c.relationshipToChild?.trim() || null,
         telephone: c.telephone?.trim() || null,
         email: c.email?.trim() || null,
       }));
 
-    const authorisedCollectors: Record<string, unknown>[] = this.emergencyContactsDraft
+    const authorisedCollectors: ChildContact[] = this.emergencyContactsDraft
       .filter((c, i) => this.emergencyAuthorisedFlags[i] && c.fullName.trim())
       .map(c => ({
-        full_name: c.fullName.trim(),
-        relationship_to_child: c.relationshipToChild?.trim() || null,
+        fullName: c.fullName.trim(),
+        relationshipToChild: c.relationshipToChild?.trim() || null,
         telephone: c.telephone?.trim() || null,
         email: c.email?.trim() || null,
-        has_parental_responsibility: null,
+        hasParentalResponsibility: null,
       }));
 
-    const payload: any = {
-      child: {
-        first_name: this.step1.first_name.trim(),
-        middle_name: this.step1.middle_name.trim() || null,
-        last_name: this.step1.last_name.trim() || null,
-        date_of_birth: this.step1.date_of_birth,
+    const referrals = this.referralsDraft
+      .filter(r => r.type && r.referredBy)
+      .map(r => ({
+        type: r.type,
+        referred_date: r.referredDate || null,
+        referred_by: r.referredBy.trim(),
+        waiting_list_status: r.waitingListStatus || 'unknown',
+        notes: r.notes.trim() || null,
+      }));
+
+    const child: ChildWritePayload = {
+      first_name: this.step1.first_name.trim(),
+      middle_name: this.step1.middle_name.trim() || null,
+      last_name: this.step1.last_name.trim() || null,
+      date_of_birth: this.step1.date_of_birth,
+      start_date: this.step1.start_date,
+      notes: this.step1.notes.trim() || undefined,
+    };
+
+    const profile: ChildProfileInput = {
+      sex: this.step1.sex || null,
+      religion: this.step1.religion.trim() || null,
+      ethnic_origin: this.step1.ethnic_origin.trim() || null,
+      first_language: this.step1.first_language.trim() || null,
+      other_languages: this.step1.other_languages || null,
+      home_postcode: this.step1.home_postcode.trim() || null,
+      home_telephone: this.step1.home_telephone.trim() || null,
+      disability_status: this.parseYesNoUnknownFromStr(this.step1.disability_status) ?? 'unknown',
+      disability_notes: this.step1.disability_notes.trim() || null,
+      access_requirements: this.step1.access_requirements.trim() || null,
+      routine_care_notes: this.step2.routine_care_notes.trim() || null,
+      registration_date: this.step1.registration_date || null,
+      demographics_home_reviewed: true,
+      medical_dietary_reviewed: true,
+      health_contacts_reviewed: true,
+      social_development_reviewed: true,
+      parent_responsibility_reviewed: true,
+      emergency_collection_reviewed: true,
+      routine_care_reviewed: true,
+    };
+    if (this.step1.home_address.trim()) {
+      profile.home_address = { text: this.step1.home_address.trim() };
+    }
+
+    const health: ChildHealthProfileInput = {
+      medical_conditions_status: this.step2.allergy_status || 'unknown',
+      medical_conditions_notes: this.step2.allergy_details.trim() || null,
+      prescribed_medication_status: this.step2.medication_status || 'unknown',
+      medication_notes: medicationNotes || null,
+      dietary_requirements_status: this.dietaryApiStatus(),
+      dietary_requirements_notes: [this.step2.allergy_details.trim(), this.step2.special_dietary_requirements.trim()].filter(Boolean).join('; ') || null,
+      dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
+      immunisation_status: this.step2.immunisation_status || 'unknown',
+      immunisation_country: this.step2.immunisation_country.trim() || null,
+      illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
+      doctor_name: this.step2.doctor_name.trim() || null,
+      doctor_address: this.step2.doctor_address.trim() || null,
+      doctor_phone: this.step2.doctor_phone.trim() || null,
+      health_visitor_name: this.step2.health_visitor_name.trim() || null,
+      health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
+      health_visitor_phone: this.step2.health_visitor_phone.trim() || null,
+    };
+
+    const safeguarding: ChildSafeguardingProfileInput = {
+      social_services_status: this.step2.social_services_status || 'unknown',
+      social_services_notes: this.step2.social_services_details.trim() || null,
+      social_worker_name: this.step2.social_worker_name.trim() || null,
+      social_worker_phone: this.step2.social_worker_phone.trim() || null,
+      social_worker_email: this.step2.social_worker_email.trim() || null,
+      concern_walking: this.step2.concern_walking ? 'yes' : 'no',
+      concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
+      concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
+      concern_sight: this.step2.concern_sight ? 'yes' : 'no',
+      concern_emotional_wellbeing: this.step2.concern_emotional_wellbeing ? 'yes' : 'no',
+      concern_behaviour: this.step2.concern_behaviour ? 'yes' : 'no',
+      professional_referrals: referrals,
+    };
+
+    const funding = this.buildFundingSupportPayload() as {
+      benefits_contribute_to_fees: string;
+      working_tax_credit: string;
+      college_uni_paid_to_parent: string;
+      college_uni_paid_to_nursery: string;
+      funding_3yo_term_time: string;
+      funding_2yo_term_time: string;
+      funding_support_notes?: string | null;
+      funding_support_reviewed: boolean;
+    };
+
+    const consent: ChildConsentInput = {
+      urgent_medical_treatment: this.step4.urgent_medical_treatment,
+      urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
+      plasters: this.step4.plasters,
+      safeguarding_reporting_acknowledgement: this.step4.safeguarding_reporting_acknowledgement,
+      information_sharing_consent: this.step4.information_sharing_consent,
+      information_truthfulness_declaration: this.step4.information_truthfulness_declaration,
+      gdpr_data_processing_consent: this.step4.gdpr_data_processing_consent,
+      area_senco_liaison: this.step4.area_senco_liaison,
+      health_visitor_liaison: this.step4.health_visitor_liaison,
+      transition_documents: this.step4.transition_documents,
+      local_outings: this.step4.local_outings,
+      face_painting: this.step4.face_painting,
+      parent_supplied_sun_cream: this.step4.parent_supplied_sun_cream,
+      parent_supplied_nappy_cream: this.step4.parent_supplied_nappy_cream,
+      development_profile_photos: this.step4.development_profile_photos,
+      nursery_display_boards: this.step4.nursery_display_boards,
+      promotional_literature: this.step4.promotional_literature,
+      nursery_website: this.step4.nursery_website,
+      staff_student_coursework: this.step4.staff_student_coursework,
+      social_media: this.step4.social_media,
+      notes_exceptions: this.step4.notes_exceptions?.trim() || null,
+      signer_name: this.deriveSignerName(),
+      signed_date: this.step1.registration_date || this.todayIso,
+    };
+
+    const collectionSettings: ChildCollectionSettingsInput = {
+      over_18_collection_acknowledged: true,
+    };
+    if (this.step3.collection_password) {
+      collectionSettings.password = this.step3.collection_password;
+    }
+
+    const payload: CreateChildPayload = {
+      child,
+      profile,
+      health,
+      safeguarding,
+      contacts: {
+        parent_carers: parentCarers.map(c => this.toContactWire(c)),
+        emergency_contacts: emergencyContacts.map(c => this.toContactWire(c)),
+        authorised_collectors: authorisedCollectors.map(c => this.toContactWire(c)),
+      },
+      consent,
+      funding,
+      collection_settings: collectionSettings,
+      room: {
+        room_id: this.step1.primary_room_id,
         start_date: this.step1.start_date,
-        notes: this.step1.notes.trim() || undefined,
-        primary_room_id: this.step1.primary_room_id || null,
-      },
-      registration_profile: {
-        registration_date: this.step1.registration_date || null,
-        demographics_home: {
-          sex: this.step1.sex || null,
-          first_language: this.step1.first_language || null,
-          home_address: this.step1.home_address.trim() ? { text: this.step1.home_address.trim() } : null,
-          home_postcode: this.step1.home_postcode.trim() || null,
-          home_telephone: this.step1.home_telephone.trim() || null,
-          religion: this.step1.religion.trim() || null,
-          ethnic_origin: this.step1.ethnic_origin.trim() || null,
-          other_languages: this.step1.other_languages || null,
-          disability_status: this.parseYesNoUnknownFromStr(this.step1.disability_status),
-          disability_notes: this.step1.disability_notes.trim() || null,
-          access_requirements: this.step1.access_requirements.trim() || null,
-          demographics_home_reviewed: true,
-        },
-        medical_dietary: {
-          medical_conditions_status: this.step2.allergy_status || 'unknown',
-          medical_conditions_notes: this.step2.allergy_details.trim() || null,
-          prescribed_medication_status: this.step2.medication_status || 'unknown',
-          medication_notes: medicationNotes || null,
-          dietary_requirements_status: this.dietaryApiStatus(),
-          dietary_requirements_notes: [this.step2.allergy_details.trim(), this.step2.special_dietary_requirements.trim()].filter(Boolean).join('; ') || null,
-          dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
-          immunisation_status: this.step2.immunisation_status || null,
-          immunisation_country: this.step2.immunisation_country.trim() || null,
-          illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
-          medical_dietary_reviewed: true,
-        },
-        health_contacts: {
-          doctor_name: this.step2.doctor_name.trim() || null,
-          doctor_address: this.step2.doctor_address.trim() || null,
-          doctor_phone: this.step2.doctor_phone.trim() || null,
-          health_visitor_name: this.step2.health_visitor_name.trim() || null,
-          health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
-          health_visitor_phone: this.step2.health_visitor_phone.trim() || null,
-          health_contacts_reviewed: true,
-        },
-        social_development: {
-          social_services_status: this.step2.social_services_status || 'unknown',
-          social_services_notes: this.step2.social_services_details.trim() || null,
-        social_worker_name: this.step2.social_worker_name.trim() || null,
-        social_worker_phone: this.step2.social_worker_phone.trim() || null,
-        social_worker_email: this.step2.social_worker_email.trim() || null,
-          concern_walking: this.step2.concern_walking ? 'yes' : 'no',
-          concern_speech_language: this.step2.concern_speech_language ? 'yes' : 'no',
-          concern_hearing: this.step2.concern_hearing ? 'yes' : 'no',
-          concern_sight: this.step2.concern_sight ? 'yes' : 'no',
-          concern_emotional_wellbeing: this.step2.concern_emotional_wellbeing ? 'yes' : 'no',
-          concern_behaviour: this.step2.concern_behaviour ? 'yes' : 'no',
-          professional_referrals: this.referralsDraft.filter(r => r.type && r.referredBy).map(r => ({
-            type: r.type,
-            referred_date: r.referredDate || null,
-            referred_by: r.referredBy.trim(),
-            waiting_list_status: r.waitingListStatus || 'unknown',
-            notes: r.notes.trim() || null,
-          })).length > 0 ? this.referralsDraft.filter(r => r.type && r.referredBy).map(r => ({
-            type: r.type,
-            referred_date: r.referredDate || null,
-            referred_by: r.referredBy.trim(),
-            waiting_list_status: r.waitingListStatus || 'unknown',
-            notes: r.notes.trim() || null,
-          })) : null,
-          social_development_reviewed: true,
-        },
-        parent_carers: parentCarers,
-        emergency_contacts: emergencyContacts,
-        authorised_collectors: authorisedCollectors,
-        collection: {
-          over18_collection_acknowledged: true,
-          emergency_collection_reviewed: true,
-        },
-        funding_support: this.buildFundingSupportPayload(),
-        routine_care: {
-          routine_care_notes: this.step2.routine_care_notes.trim() || null,
-          routine_care_reviewed: true,
-        },
-      },
-      consents: {
-        urgent_medical_treatment: this.step4.urgent_medical_treatment,
-        urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
-        plasters: this.step4.plasters,
-        safeguarding_reporting_acknowledgement: this.step4.safeguarding_reporting_acknowledgement,
-        information_sharing_consent: this.step4.information_sharing_consent,
-        information_truthfulness_declaration: this.step4.information_truthfulness_declaration,
-        gdpr_data_processing_consent: this.step4.gdpr_data_processing_consent,
-        area_senco_liaison: this.step4.area_senco_liaison,
-        health_visitor_liaison: this.step4.health_visitor_liaison,
-        transition_documents: this.step4.transition_documents,
-        local_outings: this.step4.local_outings,
-        face_painting: this.step4.face_painting,
-        parent_supplied_sun_cream: this.step4.parent_supplied_sun_cream,
-        parent_supplied_nappy_cream: this.step4.parent_supplied_nappy_cream,
-        development_profile_photos: this.step4.development_profile_photos,
-        nursery_display_boards: this.step4.nursery_display_boards,
-        promotional_literature: this.step4.promotional_literature,
-        nursery_website: this.step4.nursery_website,
-        staff_student_coursework: this.step4.staff_student_coursework,
-        social_media: this.step4.social_media,
-        notes_exceptions: this.step4.notes_exceptions?.trim() || null,
       },
     };
 
-    if (this.step3.collection_password) {
-      payload.collection_password = this.step3.collection_password;
-    }
-
     return payload;
+  }
+
+  private toContactWire(c: ChildContact): Record<string, unknown> {
+    return {
+      full_name: c.fullName.trim(),
+      relationship_to_child: c.relationshipToChild?.trim() || null,
+      address: c.address ?? null,
+      telephone: c.telephone?.trim() || null,
+      email: c.email?.trim() || null,
+      has_parental_responsibility: c.hasParentalResponsibility ?? null,
+    };
+  }
+
+  private deriveSignerName(): string {
+    const parent = this.parentCarersDraft[0];
+    if (parent && parent.fullName.trim()) return parent.fullName.trim();
+    const fullName = [this.step1.first_name, this.step1.last_name]
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join(' ');
+    return fullName || 'On file';
   }
 
   canSubmitLocally(): boolean {
