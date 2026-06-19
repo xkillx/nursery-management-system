@@ -224,19 +224,20 @@ type Branch struct {
 }
 
 type Child struct {
-	ID          pgtype.UUID
-	TenantID    pgtype.UUID
-	BranchID    pgtype.UUID
-	DateOfBirth pgtype.Date
-	StartDate   pgtype.Date
-	EndDate     pgtype.Date
-	IsActive    bool
-	Notes       pgtype.Text
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-	FirstName   string
-	MiddleName  pgtype.Text
-	LastName    pgtype.Text
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	DateOfBirth   pgtype.Date
+	StartDate     pgtype.Date
+	EndDate       pgtype.Date
+	IsActive      bool
+	Notes         pgtype.Text
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	FirstName     string
+	MiddleName    pgtype.Text
+	LastName      pgtype.Text
+	CurrentTermID pgtype.UUID
 }
 
 type ChildBillingProfile struct {
@@ -588,6 +589,19 @@ type InvoiceRun struct {
 	UpdatedAt               pgtype.Timestamptz
 }
 
+type InvoiceRunAdvance struct {
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	BranchID              pgtype.UUID
+	BillingMonth          pgtype.Date
+	GeneratedAt           pgtype.Timestamptz
+	GeneratedInvoiceCount int32
+	SkippedTermCount      int32
+	ExceptionCount        int32
+	TriggeredBy           string
+	RequestID             pgtype.Text
+}
+
 type ManagerInvite struct {
 	ID                    pgtype.UUID
 	TenantID              pgtype.UUID
@@ -756,6 +770,40 @@ type Tenant struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
+}
+
+type Term struct {
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	BranchID              pgtype.UUID
+	ChildID               pgtype.UUID
+	TermStartDate         pgtype.Date
+	TermEndDate           pgtype.Date
+	BookingPatternID      pgtype.UUID
+	SiteHourlyRateMinor   int32
+	Status                string
+	TerminationReasonCode pgtype.Text
+	TerminationReasonNote pgtype.Text
+	TerminatedAt          pgtype.Timestamptz
+	CreatedAt             pgtype.Timestamptz
+	CreatedByMembershipID pgtype.UUID
+	UpdatedAt             pgtype.Timestamptz
+}
+
+type TermScheduleChange struct {
+	ID                       pgtype.UUID
+	TenantID                 pgtype.UUID
+	BranchID                 pgtype.UUID
+	TermID                   pgtype.UUID
+	PreviousBookingPatternID pgtype.UUID
+	NewBookingPatternID      pgtype.UUID
+	ChangeKind               string
+	RequestedAt              pgtype.Timestamptz
+	EffectiveFrom            pgtype.Date
+	ApprovedByMembershipID   pgtype.UUID
+	ApprovalDecision         pgtype.Text
+	RejectedAt               pgtype.Timestamptz
+	RequestID                string
 }
 
 type User struct {

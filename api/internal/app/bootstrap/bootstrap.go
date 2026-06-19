@@ -85,6 +85,11 @@ import (
 	sessiontypeapp "nursery-management-system/api/internal/modules/sessiontypes/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	sessiontypehttphandler "nursery-management-system/api/internal/modules/sessiontypes/interfaces/http"
+
+	termapp "nursery-management-system/api/internal/modules/term/application"
+	termdomain "nursery-management-system/api/internal/modules/term/domain"
+	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
+	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 )
 
 type BootstrapOptions struct {
@@ -391,6 +396,28 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTypesReactivateUC := sessiontypeapp.NewReactivateSessionType(sessionTypeRepo, txManager, auditWriter)
 	sessionTypesHandler := sessiontypehttphandler.NewHandler(sessionTypesCreateUC, sessionTypesUpdateUC, sessionTypesListUC, sessionTypesGetUC, sessionTypesArchiveUC, sessionTypesReactivateUC).WithObservability(logger)
 	sessionTypesHandler.RegisterRoutes(protected)
+
+	// Term module
+	termRepo := termpostgres.NewTermRepository(pool)
+	scheduleChangeRepo := termpostgres.NewScheduleChangeRepository(pool)
+	bookingPatternLookup := &bookingPatternLookupAdapter{repo: childRepo}
+	siteRateProvider := &siteRateProviderAdapter{repo: ownerRepo}
+
+	createTermUC := termapp.NewCreateTermUseCase(termRepo, txManager, auditWriter, bookingPatternLookup, siteRateProvider)
+	getTermUC := termapp.NewGetTermUseCase(termRepo)
+	getCurrentTermUC := termapp.NewGetCurrentTermForChildUseCase(termRepo)
+	listTermsUC := termapp.NewListTermsForChildUseCase(termRepo)
+	listExpiringUC := termapp.NewListExpiringTermsUseCase(termRepo)
+	requestChangeUC := termapp.NewRequestScheduleChangeUseCase(termRepo, scheduleChangeRepo, txManager, auditWriter, bookingPatternLookup)
+	approveChangeUC := termapp.NewApproveScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
+	rejectChangeUC := termapp.NewRejectScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
+	terminateUC := termapp.NewTerminateTermUseCase(termRepo, txManager, auditWriter)
+	_ = termdomain.ErrTermAlreadyExists
+	termHandler := termhttphandler.NewHandler(
+		createTermUC, getTermUC, getCurrentTermUC, listTermsUC, listExpiringUC,
+		requestChangeUC, approveChangeUC, rejectChangeUC, terminateUC,
+	).WithObservability(logger)
+	termHandler.RegisterManagerRoutes(manager)
 
 	return router
 }
