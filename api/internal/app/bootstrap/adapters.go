@@ -34,14 +34,6 @@ func (a *guardianCheckerAdapter) IsActive(ctx context.Context, tx pgx.Tx, tenant
 	return a.repo.GetActive(ctx, tx, tenantID, branchID, guardianID)
 }
 
-type childCheckerAdapter struct {
-	repo *postgreschild.ChildRepository
-}
-
-func (a *childCheckerAdapter) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (bool, error) {
-	return a.repo.ExistsInScope(ctx, tx, tenantID, branchID, childID)
-}
-
 type membershipCheckerAdapter struct {
 	repo *postgresparent.ParentMappingRepository
 }

@@ -26,10 +26,6 @@ import (
 	guardianpostgres "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
 	guardianhandler "nursery-management-system/api/internal/modules/guardians/interfaces/http"
 
-	linkapp "nursery-management-system/api/internal/modules/guardianlinks/application"
-	linkpostgres "nursery-management-system/api/internal/modules/guardianlinks/infrastructure/postgres"
-	linkhandler "nursery-management-system/api/internal/modules/guardianlinks/interfaces/http"
-
 	mappingapp "nursery-management-system/api/internal/modules/parentmappings/application"
 	mappingpostgres "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
 	mappinghandler "nursery-management-system/api/internal/modules/parentmappings/interfaces/http"
@@ -218,17 +214,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		guardianapp.NewReactivateGuardian(guardianRepo, txManager, auditWriter),
 	)
 
-	// Guardian-Child Links module
-	linkRepo := linkpostgres.NewGuardianChildLinkRepository(pool)
-	guardianChecker := &guardianCheckerAdapter{repo: guardianRepo}
-	childChecker := &childCheckerAdapter{repo: childRepo}
-	linksHandler := linkhandler.NewHandler(
-		linkapp.NewCreateLinkUseCase(linkRepo, auditWriter, txManager, guardianChecker, childChecker),
-		linkapp.NewEndLinkUseCase(linkRepo, auditWriter, txManager),
-		linkapp.NewListChildLinksUseCase(linkRepo, txManager, childChecker),
-	).WithObservability(logger)
-
 	// Parent Mappings module
+	guardianChecker := &guardianCheckerAdapter{repo: guardianRepo}
 	mappingRepo := mappingpostgres.NewParentMappingRepository(pool)
 	membershipChecker := &membershipCheckerAdapter{repo: mappingRepo}
 	mappingsHandler := mappinghandler.NewHandler(
@@ -265,7 +252,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	manager := protected.Group("")
 	manager.Use(httpserver.RequireRolesWithObservability(logger, recorder, "manager"))
 	guardiansHandler.RegisterRoutes(manager)
-	linksHandler.RegisterRoutes(manager)
 	mappingsHandler.RegisterRoutes(manager)
 
 	// Register attendance routes (manager + practitioner)

@@ -221,7 +221,6 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 		"attendance_sessions",
 		"manager_invites",
 		"parent_membership_guardians",
-		"guardian_child_links",
 		"guardians",
 		"child_booking_pattern_entries",
 		"child_booking_patterns",
@@ -390,17 +389,6 @@ func InsertGuardian(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uui
 		id, tenantID, branchID, fullName, isActive)
 	if err != nil {
 		t.Fatalf("insert guardian: %v", err)
-	}
-}
-
-// InsertGuardianLink inserts a guardian-child link.
-func InsertGuardianLink(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, guardianID, childID uuid.UUID) {
-	t.Helper()
-	_, err := pool.Exec(context.Background(),
-		"INSERT INTO guardian_child_links (id, tenant_id, branch_id, guardian_id, child_id) VALUES ($1, $2, $3, $4, $5)",
-		id, tenantID, branchID, guardianID, childID)
-	if err != nil {
-		t.Fatalf("insert guardian link: %v", err)
 	}
 }
 
