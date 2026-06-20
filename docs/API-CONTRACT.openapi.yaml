@@ -328,6 +328,100 @@ components:
           type: string
           maxLength: 1000
 
+    SessionTemplateEntryInput:
+      type: object
+      required: [day_of_week, session_type_id]
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: ISO day of week, Monday=1
+        session_type_id:
+          type: string
+          format: uuid
+
+    SessionTemplateEntryRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        day_of_week:
+          type: integer
+        session_type:
+          $ref: "#/components/schemas/SessionTypeRef"
+
+    SessionTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branch_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionTemplateEntryRef"
+
+    SessionTemplateListResponse:
+      type: object
+      properties:
+        session_templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionTemplate"
+
+    CreateSessionTemplateRequest:
+      type: object
+      required: [name, entries]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        entries:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SessionTemplateEntryInput"
+
+    UpdateSessionTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        entries:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SessionTemplateEntryInput"
+
     HealthResponse:
       type: object
       properties:
@@ -4031,6 +4125,225 @@ components:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Session Templates (Post-MVP: capture pattern at registration)
+  # Named, per-site, reusable weeks of booked sessions. A child booking
+  # pattern **copies** the template's entries at creation time (no FK
+  # from `child_booking_pattern_entries` to `session_templates`); see
+  # ADR-0009.
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/sites/{site_id}/session-templates:
+    get:
+      tags: [SessionTemplates]
+      summary: List session templates for a site
+      description: |
+        Returns templates for the requested site. Active templates only by default;
+        pass `include_archived=true` to include archived templates. List responses do
+        not hydrate entries; fetch a single template to inspect its entries.
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: include_archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of session templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTemplateListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+    post:
+      tags: [SessionTemplates]
+      summary: Create a session template
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionTemplateRequest"
+      responses:
+        "201":
+          description: Session template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTemplate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/session-templates/{template_id}:
+    get:
+      tags: [SessionTemplates]
+      summary: Get a session template by id
+      description: Returns the template with its entries (joined session type).
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session template with entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTemplate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [SessionTemplates]
+      summary: Update a session template
+      description: |
+        Pass any subset of `name`, `description`, and `entries`. If `entries` is
+        present, all existing entries are replaced (full-replace semantics).
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSessionTemplateRequest"
+      responses:
+        "200":
+          description: Updated session template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTemplate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/session-templates/{template_id}/actions/archive:
+    post:
+      tags: [SessionTemplates]
+      summary: Archive a session template
+      description: |
+        Soft-delete. Archived templates are excluded from the default list. Editing or
+        archiving a template never alters historical booking patterns.
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Archive acknowledgement
+          content:
+            application/json: {}
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/sites/{site_id}/session-templates/{template_id}/actions/reactivate:
+    post:
+      tags: [SessionTemplates]
+      summary: Reactivate an archived session template
+      parameters:
+        - name: site_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reactivated session template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTemplate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Terms (Post-MVP: 12-month fixed-term advance-pay)

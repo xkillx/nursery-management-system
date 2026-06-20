@@ -318,10 +318,18 @@ _Avoid_: Session (bare), Session Template
 A child's planned weekly attendance expressed as day-of-week and session-type entries, valid over an effective date range. Only one booking pattern is active for a child on any given date, historical patterns are retained rather than overwritten, and it records expected attendance rather than actual attendance.
 _Avoid_: Session Pattern (tolerated alias only)
 
+## Session Pattern (user-facing label)
+
+**Session pattern** is the user-facing label for the Booking Pattern concept. The API, DB, code, and documentation use the canonical internal name **booking pattern**; the wizard and standalone pages surface the alias "Session pattern" with a short subtitle clarifying the relationship. A child can never be created via the registration wizard without a non-empty pattern.
+
 ## Booked Session
 
 One day-of-week plus session-type entry within a booking pattern, representing that a child is expected to attend a specific session type on a specific weekday. A child may have multiple booked sessions on the same day.
 _Avoid_: session slot, pattern item
+
+## Session Template
+
+A named, per-site, reusable week of booked sessions (a set of day-of-week and session-type entries). Templates are reference data, not enrolled patterns: a child booking pattern **copies** the template's entries at creation time and is independent thereafter. Editing or archiving a template never alters historical patterns.
 
 ## Booking Pattern Billing Boundary
 
@@ -329,11 +337,19 @@ Booking patterns record expected attendance only and do not drive billing in the
 
 ## Booking Pattern Enrollment Independence
 
-A booking pattern is not part of the child enrollment minimum; a child without a booking pattern remains enrollment-complete, and attendance capture and invoicing are not blocked by the absence of a booking pattern.
+A new child created via the registration wizard must have a non-empty booking pattern; the wizard's Session Pattern step is mandatory. Existing children created before this rule remain enrollment-complete and are not backfilled; they are surfaced on the child list and detail with a "No session pattern" badge and a one-click link to the standalone pattern page. Attendance capture and invoicing are not blocked by the absence of a booking pattern for an existing child.
+
+## Booking Pattern Creation Endpoint
+
+The wizard's two-step submit calls `POST /children` first and then `POST /children/:child_id/booking-patterns` for the same actor. If the pattern POST fails after the child POST succeeds, the Review step shows a Retry button and a "Save child without pattern" fallback that routes to the child detail screen; the standalone `:childId/booking-pattern` page can then be used to finish setup. The API does not expose a single-transaction child-with-pattern create.
 
 ## Session Type Management Authority
 
 Session types are site-scoped reference data managed like rooms: managers and owners may create, update, archive, and reactivate them, while practitioners may read them. Session type management is not a parent-facing workflow.
+
+## Session Template Management Authority
+
+Session templates share the session-type authority model: managers and owners may create, update, archive, and reactivate them per site, while practitioners may read them. Templates are not a parent-facing workflow.
 
 ## Booking Pattern Management Authority
 

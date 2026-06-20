@@ -1,14 +1,14 @@
 # API Schema State
 
-> **Verified as of 2026-06-18.** Latest migration: 000003 (advance-pay Terms + scheduler).
+> **Verified as of 2026-06-21.** Latest migration: 000005 (session templates).
 
-- **Last verification date**: 2026-06-18
-- **Verified migration version**: 3
-- **Latest migration**: 000003 (`terms`) — adds `term`, `term_schedule_change`, `invoice_run_advance` tables, plus `children.current_term_id` denormalisation. Implements the booking-based advance-pay invoicing model (see `docs/plans/booking-based-advance-pay-invoicing.md`, `docs/adr/0006-booking-pattern-billing-source.md`, `docs/adr/0007-12-month-fixed-term-contract.md`).
+- **Last verification date**: 2026-06-21
+- **Verified migration version**: 5
+- **Latest migration**: 000005 (`session_templates`) — adds `session_templates` and `session_template_entries` for named, per-site, reusable weeks of booked sessions. Captured at registration; no backfill of existing children (see ADR-0009).
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 
-## Application Tables (30)
+## Application Tables (35)
 
 `schema_migrations` is golang-migrate metadata, not an application table.
 
@@ -45,6 +45,16 @@ The child bounded context is split into a small `children` identity table and 1:
 | `child_room_assignments` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `room_id FK rooms`, `start_date`, nullable `end_date`, generated `is_current BOOLEAN` (= `end_date IS NULL`) | 1:many per child — full room-placement history. `end_date >= start_date`. Partial indexes on the `is_current` rows power capacity / current-room queries. |
 | `child_billing_profiles` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, `billing_basis` ∈ `('site_rate','custom')`, `custom_rate_minor` (nullable, positive when present), `effective_from` | 1:1 with `children`. CHECK: `billing_basis='site_rate'` ⇔ `custom_rate_minor IS NULL`; `billing_basis='custom'` ⇔ `custom_rate_minor > 0`. |
 | `child_leaving_records` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK UNIQUE`, `left_at`, `reason_code` ∈ `lifecycle_reason_code`, `reason_note` | 1:1 with `children`. Created when a child is marked inactive; carries the lifecycle reason and optional note. |
+| `child_booking_patterns` | `id UUID PK`, `tenant_id`, `branch_id`, `child_id FK`, `effective_from DATE`, nullable `effective_to DATE`, generated `is_current BOOLEAN` (= `effective_to IS NULL`) | 1:many per child — full pattern history. CHECK: `effective_to IS NULL OR effective_to >= effective_from`. Partial unique index on the `is_current` rows enforces one open pattern per child. Replacing an active pattern closes it adjacently (`effective_to = new.effective_from - 1 day`). |
+| `child_booking_pattern_entries` | `id UUID PK`, `tenant_id`, `branch_id`, `pattern_id FK`, `day_of_week INTEGER` ∈ `1..7` (ISO Monday=1), `session_type_id FK` | 1:many per pattern. UNIQUE `(tenant_id, branch_id, pattern_id, day_of_week, session_type_id)`. FK to `session_types(tenant_id, branch_id, id)`. Multiple entries on the same day (e.g. AM + PM) are allowed. |
+
+### Session Types and Templates
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `session_types` | `id UUID PK`, `tenant_id`, `branch_id`, `name`, `start_time TIME`, `end_time TIME`, `is_active` | Per-site reference data. CHECK: `start_time < end_time`. Partial unique on `(tenant_id, branch_id, name) WHERE is_active = true` enforces one active name per site. Soft-deletable via `is_active`. |
+| `session_templates` | `id UUID PK`, `tenant_id`, `branch_id`, `name`, nullable `description`, `is_active` | Per-site reference data. Partial unique on `(tenant_id, branch_id, name) WHERE is_active = true`. Soft-deletable via `is_active`. |
+| `session_template_entries` | `id UUID PK`, `tenant_id`, `branch_id`, `template_id FK`, `day_of_week INTEGER` ∈ `1..7`, `session_type_id FK` | 1:many per template. UNIQUE `(tenant_id, branch_id, template_id, day_of_week, session_type_id)`. FK to `session_types`. Templates **copy** entries into a booking pattern at creation time — no FK from `child_booking_pattern_entries` to `session_templates` (history integrity over live update; ADR-0009). |
 
 ### Guardians
 
