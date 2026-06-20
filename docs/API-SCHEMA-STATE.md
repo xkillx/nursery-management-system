@@ -171,10 +171,7 @@ Tri-state text columns (no enum) on child sub-records: `child_profiles.disabilit
 | `memberships_scope_id_unique` | `memberships` | UNIQUE btree | Scope composite key |
 | `memberships_tenant_id_branch_id_user_id_key` | `memberships` | UNIQUE btree | One membership per user per branch |
 | `children_scope_id_unique` | `children` | UNIQUE btree | Scope composite key |
-| `guardians_scope_id_unique` | `guardians` | UNIQUE btree | Scope composite key |
-| `idx_guardian_child_links_active_pair` | `guardian_child_links` | UNIQUE btree (partial) | One active link per guardian-child pair |
-| `idx_parent_membership_guardians_active_membership` | `parent_membership_guardians` | UNIQUE btree (partial) | One active mapping per membership |
-| `idx_parent_membership_guardians_active_pair` | `parent_membership_guardians` | UNIQUE btree (partial) | One active mapping per membership-guardian pair |
+| `idx_parent_membership_children_active_pair` | `parent_membership_children` | UNIQUE btree (partial) | One active mapping per parent-membership-child pair |
 | `idx_attendance_sessions_one_open_child` | `attendance_sessions` | UNIQUE btree (partial) | One open session per child per branch scope |
 | `attendance_events_scope_id_unique` | `attendance_events` | UNIQUE btree | Scope composite key |
 | `attendance_sessions_scope_id_unique` | `attendance_sessions` | UNIQUE btree | Scope composite key |

@@ -8,6 +8,12 @@ Findings are grouped by the categories requested. Each entry: **What** · **Why*
 
 Priority legend: **Critical** (block production / regulatory / data loss) · **High** (correctness or serious UX) · **Medium** (quality / scale) · **Low** (nice-to-have).
 
+> Note on the two-hop model: this review predates the removal of the
+> `guardians` / `guardian_child_links` / `parent_membership_guardians`
+> tables. Findings that referenced those tables have been either rewritten
+> to describe the one-hop model or marked `[Removed: no longer applicable]`
+> with a pointer to `docs/adr/0008-one-hop-parent-access-authorization.md`.
+
 ---
 
 ## 1. Domain Completeness
@@ -158,8 +164,8 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 - **Recommendation:** Add `email_verified_at TIMESTAMPTZ`; set on invite-accept; backfill true for seeded.
 - **Priority:** Medium
 
-### 3.7 No `phone` normalisation on guardians / child_contacts
-- **What:** `guardians.phone TEXT`, `child_contacts.telephone TEXT` — raw strings.
+### 3.7 No `phone` normalisation on child_contacts
+- **What:** `child_contacts.telephone TEXT` — raw string. The guardians table no longer exists (see ADR-0008).
 - **Why:** Cannot send SMS alerts reliably; cannot dedupe contacts.
 - **Recommendation:** Add `phone_e164 TEXT` derived column populated on insert/update via `libphonenumber` (Go port).
 - **Priority:** Low
@@ -198,11 +204,8 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 - **Recommendation:** Add a `is_primary BOOLEAN` column with partial unique index `WHERE is_primary AND contact_type='parent_carer'` per child.
 - **Priority:** Medium
 
-### 4.6 Concurrent active guardian-child links not bounded
-- **What:** `guardian_child_links` partial unique index (mig `000004`) prevents duplicate pairs but no max per child.
-- **Why:** Operational edge but minor.
-- **Recommendation:** None — soft limit in app layer is fine.
-- **Priority:** Low
+### 4.6 [Removed: no longer applicable]
+The `guardian_child_links` table was removed in migration `000004`. The replacement model is a single parent-membership-to-child mapping with no upper bound on the number of children a single parent membership can map to. The previous concern about "concurrent active guardian-child links not bounded" is moot under the one-hop model; the only uniqueness invariant is one active mapping per `(membership_id, child_id)` pair, enforced by a partial unique index on `parent_membership_children`. See ADR-0008.
 
 ### 4.7 Collection password has no strength rule
 - **What:** `child_collection_settings.collection_password_hash` stored as bcrypt hash (good — see `set_collection_password.go`) but no min length / complexity check on the input.
@@ -259,11 +262,8 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 - **Recommendation:** Replace boolean with `status TEXT` enum + status-transition trigger (mirror `enforce_invoice_status_transition` in mig `000012`). Keep boolean as a derived column for query ergonomics.
 - **Priority:** Medium
 
-### 6.2 Guardian deactivation does not cascade to parent_membership_guardians / auth
-- **What:** `deactivate_guardian.go` flips `is_active=false` + `ended_at`. The link in `parent_membership_guardians` (mig `000004`) is not auto-ended; the parent's login still works; collection_password references remain.
-- **Why:** Authorisation drift; safeguarding risk if guardian is restricted.
-- **Recommendation:** Within the same transaction, end `parent_membership_guardians` rows; revoke refresh tokens (call into `authentication` via adapter).
-- **Priority:** High
+### 6.2 [Removed: no longer applicable]
+The `guardians` table and the `parent_membership_guardians` table were both removed in migration `000004`. There is no longer a guardian deactivation flow that would need to cascade. Parent access is now a one-hop join on `parent_membership_children`, and revoking access to a single child is a manager-initiated end action on that mapping. See ADR-0008.
 
 ### 6.3 No leave-and-return flow for staff
 - **What:** Manager / practitioner memberships: `memberships.is_active` + `ended_at` (mig `000004`). No "on leave / sabbatical" state, no planned end date.
@@ -316,11 +316,8 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 - **Recommendation:** Add `EXCLUDE USING gist (child_id WITH =, daterange(start_date, COALESCE(end_date, 'infinity'::date)) WITH &&)` after enabling `btree_gist`.
 - **Priority:** Medium
 
-### 7.4 `parent_membership_guardians` allows only one guardian per membership
-- **What:** Partial unique index on `(membership_id)` (mig `000004`). A parent account can be linked to exactly one guardian record.
-- **Why:** Forces 1:1 parent↔guardian. A second parent in same household needs separate account. Probably intentional, but document.
-- **Recommendation:** Keep, but document in `CONTEXT.md`.
-- **Priority:** Low
+### 7.4 [Removed: no longer applicable]
+The `parent_membership_guardians` table was removed in migration `000004`. The replacement, `parent_membership_children`, allows a single parent membership to map to many children (one mapping per `(membership_id, child_id)` pair). Siblings share one parent account. There is no longer a 1:1 parent↔guardian constraint. See ADR-0008.
 
 ### 7.5 Cross-tenant FKs rely on composite key correctness
 - **What:** Scope-unique FKs `(tenant_id, branch_id, id) → children(tenant_id, branch_id, id)` are good. But child-tenant/branch are taken from request actor, not from the child row itself in every code path.
@@ -328,8 +325,8 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 - **Recommendation:** Add a CI grep rule forbidding raw `WHERE id = $1` queries on tenant-scoped tables.
 - **Priority:** Medium
 
-### 7.6 `branches.is_active` flag exists but children/guardians don't cascade-block
-- **What:** A branch can be deactivated (mig `000015`), but no constraint stops new children/attendances/invoices being added to inactive branches.
+### 7.6 `branches.is_active` flag exists but children don't cascade-block
+- **What:** A branch can be deactivated (mig `000015`), but no constraint stops new children/attendances/invoices being added to inactive branches. The guardians table no longer exists; this concern now applies only to children, not to a separate guardian entity.
 - **Why:** Owner archiving a site doesn't freeze its data.
 - **Recommendation:** CHECK trigger or app-layer rule.
 - **Priority:** Low
@@ -481,7 +478,7 @@ Priority legend: **Critical** (block production / regulatory / data loss) · **H
 ### 10.3 No parent routes for child data
 - **What:** `parent := protected.Group("/parent")` registers billing + payments only (grep confirms only those two modules register parent routes). **Parents cannot read their child's profile, attendance history, contacts, funding, or room assignment via API.**
 - **Why:** Major UX gap; parent portal incomplete.
-- **Recommendation:** Add `RegisterParentRoutes` to `children` module exposing read-only subset (profile summary, attendance summary, contacts of their own link, invoices). Enforce via guardian-link check.
+- **Recommendation:** Add `RegisterParentRoutes` to `children` module exposing read-only subset (profile summary, attendance summary, contacts of their own link, invoices). Enforce via parent-membership-to-child mapping check (the one-hop replacement for the old guardian-link check).
 - **Priority:** High
 
 ### 10.4 No idempotency-key support on POSTs

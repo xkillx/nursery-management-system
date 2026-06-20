@@ -78,7 +78,7 @@ Owner access applies to all active nursery sites within the owner's tenant. The 
 
 ## Owner Site Filter Boundary
 
-Filtering or focusing an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Avoid using site switcher to imply that the owner enters or impersonates a branch-scoped manager or practitioner session. Owners remain blocked from branch-scoped manager write actions such as child or guardian edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
+Filtering or focusing an owner view to one nursery site changes what the owner is inspecting, not what the owner is allowed to do. Avoid using site switcher to imply that the owner enters or impersonates a branch-scoped manager or practitioner session. Owners remain blocked from branch-scoped manager write actions such as child or contact edits, attendance corrections, invoice generation or issue, funding profile management, and practitioner attendance actions.
 
 ## User Role: Manager
 
@@ -94,7 +94,7 @@ A nursery staff role focused on day-to-day child attendance operations.
 
 ## User Role: Parent
 
-A guardian-side role that views invoices and completes payments.
+A parent-side role that views invoices and completes payments. The relationship between the parent membership and the children they can act on is recorded directly on parent_membership_children, not through a separate guardian entity.
 
 ## Manager Operations Dashboard
 
@@ -192,69 +192,65 @@ Accepting a manager invitation creates a new active membership for a new login i
 
 Accepting a manager invitation does not automatically start an authenticated session; invitees sign in through the normal login flow after acceptance.
 
-## Guardian Identity Separation
+## Parent Membership Child Mapping
 
-Guardian records store child relationship and contact data independently from authentication users; portal access exists only when a guardian is linked to a parent-role user membership.
-
-## Parent Membership Guardian Mapping
-
-Within a tenant-branch scope, a parent membership maps to at most one guardian record.
+A relationship showing that a parent-role membership in a given tenant+branch is attached to a specific child. A parent membership may have multiple active child mappings, and a child may have multiple parent memberships attached. Active mappings grant parent portal access for that child; ended mappings do not.
 
 ## Parent Mapping Change Flow
 
-Changing an active parent membership-to-guardian mapping requires explicitly ending the current mapping (with reason) before creating a new active mapping; implicit in-place replacement is not used.
+A single parent membership can be mapped to many children. Each (membership_id, child_id) pair is independent; mapping the same membership to a different child while one mapping is already active is allowed and does not error.
 
 ## Parent Membership End Cascade
 
-Ending a parent membership ends any active parent-membership-to-guardian mapping in the same action so no dangling active mapping remains.
+Ending a parent membership ends all of its active child mappings in the same action so no dangling active mapping remains. The cascade is implemented as a database trigger on the memberships table.
 
 ## Parent Membership End Cascade Reason Attribution
 
-When parent membership end cascades to end an active parent-membership-to-guardian mapping, the mapping stores an explicit system cascade reason code so automatic effects are distinguishable from direct manager-initiated end actions.
+When parent membership end cascades to end an active child mapping, the mapping stores an explicit system cascade reason code so automatic effects are distinguishable from direct manager-initiated end actions.
 
 ## Parent Mapping End Visibility Rule
 
-Ending an active parent-membership-to-guardian mapping immediately removes that parent membership's access to child-linked resources reachable through that guardian relationship.
+When a parent-membership-to-child mapping is ended, that parent immediately loses access to that child's invoices, including historical invoices. Access is authorized against current active mappings at request time.
 
 ## Parent Mapping Idempotent Create
 
-Creating a parent-membership-to-guardian mapping for a pair that is already active is treated as idempotent success, while attempts to map that membership to a different active guardian require explicit end-then-remap flow.
+Creating a parent-membership-to-child mapping for a pair that is already active is treated as idempotent success, returning the existing row; no conflict is raised.
 
 ## Parent Mapping Active-Entity Requirement
 
-Creating an active parent-membership-to-guardian mapping requires both the membership and guardian to be active at mapping time.
-
-## Guardian Contact vs Login
-
-Guardian contact records may exist without an email address, while user login identity requires a unique normalized email on the user account.
-
-## Parent-Guardian Email Independence
-
-Parent membership-to-guardian mapping does not require the parent user's login email to match the guardian contact email.
-
-## Guardian Email Auto-Link Policy
-
-Entering or editing a guardian contact email does not automatically link that guardian to any user login; parent portal access is granted only through explicit invitation and membership-to-guardian mapping.
-
-## Parent Invite Mapping Separation
-
-Accepting a parent invitation creates login-ready parent membership access but does not automatically map that membership to a guardian; guardian access still requires an explicit parent-membership-to-guardian mapping.
+Creating an active parent-membership-to-child mapping requires the parent membership to be active and the child to exist in the same tenant+branch scope. Role must be parent.
 
 ## Contact Detail Scope
 
-Child and guardian records carry only minimal operational contact details in the current release; richer profile/contact modeling is deferred until after pilot validation.
+The child record now carries the full parent/contact set directly, on child_contacts rows of type parent_carer, emergency_contact, or authorised_collector. There is no longer a separate guardians table; rich profile/contact modeling on the child is deferred until after pilot validation.
 
-## Guardian Creation Minimum Data
+## Child Parent Carer Contact Requirement Enforcement
 
-Guardian creation requires only full name in the current release; email and phone are optional contact details.
+A child is enrollment-complete when the child record has at least one child_contacts row of type parent_carer in the same tenant+branch. The blocker is 'no parent_carer contact' rather than the previous 'no active guardian link'. Site-level billing setup is checked separately through the nursery site's core hourly rate.
 
-## Guardian-Child Link
+## Child and Contact Management Lifecycle
 
-A relationship showing that a guardian record is connected to a child within the same nursery scope. A child may have multiple guardian-child links, and active links contribute to parent access and enrollment completeness; ended links no longer grant access.
+A child may have many contact records (parent_carers, emergency contacts, authorised collectors). The parent_carer subset is required for enrollment completeness; the other contact types are operational details.
 
-## Enrollment Complete
+## Relationship End Reason Requirement
 
-A child record has the minimum information needed for pilot attendance and child-linked invoicing setup: child identity basics, a start date, and at least one active guardian-child link. Site-level billing setup is checked separately through the nursery site's core hourly rate.
+Ending a parent-membership-to-child mapping requires a reason code from the lifecycle_reason_code vocabulary, with a free-text note required when reason_code is 'other'.
+
+## Relationship End Reason Shape
+
+The end action writes ended_at, ended_reason_code, and ended_reason_note; the check constraint enforces the same shape used by every other ended relationship in the system.
+
+## Lifecycle Reason Vocabulary
+
+The shared reason codes (duplicate_record, entered_in_error, left_nursery, safeguarding_direction, contact_update, access_revoked, other) apply to child mappings as to every other lifecycle-ending relationship. No new values are added.
+
+## Lifecycle Other-Reason Note Requirement
+
+When the reason code is 'other', a non-empty trimmed reason note is required. The constraint is enforced at the database level.
+
+## Relationship End Terminology
+
+'End' (not 'delete') is the term used for the lifecycle action on a parent-membership-to-child mapping; the row is preserved with ended_at set, and a partial unique index keeps the active-set membership_id+child_id uniqueness invariant.
 
 ## Site Core Hourly Rate
 
@@ -294,7 +290,7 @@ Managers do not enter or maintain core hourly rates on individual child records 
 
 ## No Hard-Delete Core Records
 
-Child, guardian, attendance, and invoice records are retained during the current release; manager workflows may end, deactivate, correct, or supersede records, but do not permanently delete them.
+Child, attendance, and invoice records are retained during the current release; manager workflows may end, deactivate, correct, or supersede records, but do not permanently delete them.
 
 ## Manager Provisioning Authority
 
@@ -641,11 +637,11 @@ Practitioners can perform check-in and check-out for any child within the active
 
 ## Practitioner Contact Visibility
 
-Practitioner attendance workflows expose only attendance-facing child information and do not expose guardian contact details such as email or phone in the current release.
+Practitioner attendance workflows expose only attendance-facing child information and do not expose parent_carer contact details such as email or phone in the current release.
 
-## Child and Guardian Write Authority
+## Child and Contact Write Authority
 
-Child/guardian and relationship write actions (create, update, deactivate, link, unlink, mapping changes) are manager-only in the current release, while practitioner access remains read-only for attendance-facing child views.
+Child/contact and child-mapping write actions (create, update, mapping changes) are manager-only in the current release, while practitioner access remains read-only for attendance-facing child views.
 
 ## Absence Marker
 
@@ -693,7 +689,7 @@ A funded-hours allowance may be zero but must not exceed the number of minutes i
 
 ## Child Enrollment Minimum
 
-A child requires name, date of birth, start date, one linked guardian, and a billing rate before attendance and invoicing flows begin.
+A child requires name, date of birth, start date, one parent_carer contact, and a billing rate before attendance and invoicing flows begin.
 
 ## Enrollment Gate Scope
 
@@ -705,7 +701,7 @@ Enrollment-incomplete children remain visible in the attendance-facing child lis
 
 ## Child Creation Flow
 
-Managers may create a child record before linking a guardian, but attendance and invoicing remain blocked until all child enrollment minimum requirements are satisfied.
+Managers may create a child record before adding a parent_carer contact, but attendance and invoicing remain blocked until all child enrollment minimum requirements are satisfied.
 
 ## Child Billing Rate Source
 
@@ -733,11 +729,11 @@ Child lifecycle transitions (active/inactive-left) are managed independently fro
 
 ## Child Reactivation Deferral
 
-Current lifecycle APIs include explicit guardian reactivation, while explicit child reactivation endpoints are deferred unless pilot operations require them.
+Current lifecycle APIs do not include explicit reactivation of ended parent-child mappings, while explicit child reactivation endpoints are deferred unless pilot operations require them.
 
-## Child and Guardian Default Listing Scope
+## Child Default Listing Scope
 
-Manager child and guardian listings default to active records only, with an explicit option to include inactive or ended records for historical administration.
+Manager child and child listings default to active records only, with an explicit option to include inactive or ended records (child-level only) for historical administration.
 
 ## Child Identity Uniqueness
 
@@ -755,9 +751,9 @@ Enrollment boundaries use date-only fields (start and optional end date), while 
 
 Enrollment date updates are rejected when they would place existing attendance records outside the child's enrollment window.
 
-## Guardian-Child Link Cardinality
+## Parent-Child Mapping Cardinality
 
-Guardian-child relationships are many-to-many: a child may link to multiple guardians, and a guardian may link to multiple children.
+Parent-Child mappings are many-to-many between parent memberships and children: a parent membership may map to many children, and a child may be mapped to by many parent memberships..
 
 ## Parent Visibility Scope
 
@@ -837,7 +833,7 @@ API errors use a consistent JSON structure with stable error code, human-readabl
 
 ## Lifecycle Error Code Baseline
 
-Child, guardian, guardian-child-link, and parent-mapping lifecycle endpoints use a stable domain error-code set so clients can handle expected lifecycle failures deterministically.
+Child, child-contacts, and parent-child-mapping lifecycle endpoints use a stable domain error-code set so clients can handle expected lifecycle failures deterministically.
 
 ## Authorization Error Status Policy
 
@@ -1057,7 +1053,7 @@ Creating a new manager invitation after an earlier invitation for the same email
 
 ## Manager Invite Minimum Data
 
-Creating a manager invitation requires only the invitee login email and invited role in the current release; staff profiles, display names, and guardian linkage are not collected by the invitation flow.
+Creating a manager invitation requires only the invitee login email and invited role in the current release; staff profiles and display names are not collected by the invitation flow.
 
 ## Manager Invite Scope Source
 
@@ -1103,41 +1099,17 @@ Records remain branch-scoped in the data model with one default branch used in t
 
 Core child, attendance, and invoice records are not hard-deleted; corrections, voiding, or archival flows are used instead.
 
-## Child and Guardian Management Lifecycle
+## Child and Contact Management Lifecycle
 
-Manager child/guardian management supports create and update plus lifecycle transitions (child inactive/left, guardian deactivated, guardian-child link ended/relinked) rather than hard delete operations.
+Manager child/contact management supports create and update plus lifecycle transitions (child inactive/left, parent-membership-to-child mapping ended) rather than hard delete operations. There is no longer a separate guardian entity to manage; parent contacts are stored on child_contacts rows of type parent_carer.
 
-## Guardian Link Lifecycle
+## Parent-Child Mapping Recreate Policy
 
-Guardian records and guardian-child links are deactivated or ended rather than hard-deleted so history remains explainable while access can be removed immediately.
-
-## Guardian Deactivation Cascade
-
-Deactivating a guardian ends that guardian's active guardian-child links and active parent-membership mapping in the same action so parent access is revoked immediately with no partially active relationship state.
-
-## Guardian Deactivation Idempotency
-
-Deactivating a guardian is idempotent; repeating the same deactivation request for an already inactive guardian returns success without introducing additional state changes.
-
-## Guardian Lifecycle Timestamp Semantics
-
-Guardian entity lifecycle uses deactivate/reactivate terminology with deactivation-specific timestamps, while "end" timestamps are reserved for relationship records such as guardian-child links and parent-membership mappings.
-
-## Guardian Deactivation Reason Requirement
-
-Manager-initiated guardian deactivation requires a stable reason code with an optional note.
-
-## Deactivation Cascade Reason Attribution
-
-When guardian deactivation cascades to end active guardian-child links or parent-membership mapping, dependent records persist an explicit cascade end reason so automatic effects are distinguishable from direct manager-initiated end actions.
-
-## Guardian Reactivation Policy
-
-Managers may reactivate the same guardian record when deactivation was mistaken, but previously ended guardian-child links and parent-membership mapping are not auto-restored and must be re-linked explicitly.
+Managers may recreate a parent-membership-to-child mapping that was previously ended, restoring the parent's portal access for that child. The system does not auto-restore; the manager must create a new active mapping. The new mapping is independent of the prior ended row's audit history.
 
 ## Relationship End Reason Requirement
 
-Manager-initiated actions that end guardian-child links or parent-membership mapping require an explicit reason for audit explainability.
+Manager-initiated actions that end a parent-membership-to-child mapping require an explicit reason for audit explainability.
 
 ## Relationship End Reason Shape
 
@@ -1145,7 +1117,7 @@ Relationship end reasons use a stable machine-readable reason code with an optio
 
 ## Lifecycle Reason Vocabulary
 
-Lifecycle transitions across child, guardian, guardian-child link, and parent-membership mapping use a shared controlled vocabulary of reason codes with scoped subsets per action.
+Lifecycle transitions across child and parent-membership-to-child mapping use a shared controlled vocabulary of reason codes with scoped subsets per action.
 
 ## Lifecycle Reason Starter Set
 
@@ -1159,17 +1131,17 @@ When lifecycle `reason_code` is `other`, a non-empty `reason_note` is required s
 
 Lifecycle actions that stop active links or mappings use the canonical verb "end"; terms implying hard deletion (such as delete/remove) are not used for these actions.
 
-## Child Guardian Link Requirement Enforcement
+## Child Parent Carer Contact Requirement Enforcement
 
-Ending a child's last active guardian-child link is allowed, but that child immediately becomes enrollment-incomplete and is blocked from attendance and invoicing until an active guardian link is restored.
+Removing a child's last parent_carer contact is allowed, but that child immediately becomes enrollment-incomplete and is blocked from attendance and invoicing until at least one parent_carer contact is restored.
 
-## Guardian Link Reactivation
+## Parent-Child Mapping Idempotent Create
 
-Only one active guardian-child link may exist per pair at a time, while historical ended links are retained so the same pair can be linked again later.
+Creating a parent-membership-to-child mapping for a pair that already has an active mapping is treated as an idempotent success and returns the existing active row.
 
-## Guardian Link Idempotent Create
+## Parent-Child Mapping Re-Linking
 
-Creating a guardian-child link for a pair that already has an active link is treated as an idempotent success and does not create a duplicate active link.
+A parent-membership-to-child mapping can be recreated for a pair that previously had one; the new mapping is independent of the prior ended row's audit history. The partial unique index ensures only one active mapping per pair at a time.
 
 ## Invoice Due Policy
 
@@ -1265,7 +1237,7 @@ A manager-facing billing view for inspecting generated invoice headers, line ite
 
 ## Parent Invoice View
 
-A parent-facing billing view for issued-or-later invoices belonging to children reachable through that parent's current membership-to-guardian access path. It explains payable invoice identity, child, period, status, totals, payment state, and parent-readable line items.
+A parent-facing billing view for issued-or-later invoices belonging to children reachable through that parent's current membership-to-child mappings. It explains payable invoice identity, child, period, status, totals, payment state, and parent-readable line items.
 
 ## Parent Invoice Detail Disclosure
 
@@ -1299,9 +1271,9 @@ Invoice amounts, statuses, and payment details are visible only to managers and 
 
 All record access is constrained by both tenant and branch scope in the current release, even with a single pilot tenant and default branch.
 
-## Guardian Link Scope Consistency
+## Parent-Child Mapping Scope Consistency
 
-Guardian-child links are valid only when guardian and child belong to the same tenant and branch scope.
+Parent-membership-to-child mappings are valid only when the parent membership and the child belong to the same tenant and branch scope; the database trigger `enforce_parent_membership_child_scope` rejects any insert that violates this rule.
 
 ## Tenancy Isolation Enforcement
 
@@ -1399,7 +1371,7 @@ Session-bound scope and role claims are used for baseline access checks, while d
 
 ## Parent Relationship Check Freshness
 
-Parent access to child-linked resources is authorized against current guardian-child links at request time.
+Parent access to child-linked resources is authorized against current parent-membership-to-child mappings at request time.
 
 ## Authorization Route Policy
 
@@ -1441,13 +1413,13 @@ Operations cannot cross into another branch or tenant within the same session; u
 
 Historical attendance events are not edited directly by practitioners; corrections are captured as manager-only correction events.
 
-## Guardian Link End Visibility Rule
+## Parent-Child Mapping End Visibility Rule
 
-When a guardian-child link is ended, that parent immediately loses access to that child's invoices, including historical invoices.
+When a parent-membership-to-child mapping is ended, that parent immediately loses access to that child's invoices, including historical invoices.
 
-## Guardian Relink Visibility Rule
+## Parent-Child Relink Visibility Rule
 
-When a guardian-child relationship is re-linked with an active guardian-child link, parent visibility for that child's invoices is restored based on the current active-link relationship check.
+When a parent-membership-to-child mapping is recreated for a pair that previously had one, parent visibility for that child's invoices is restored based on the current active-mapping relationship check.
 
 ## Draft Invoice Idempotency
 
