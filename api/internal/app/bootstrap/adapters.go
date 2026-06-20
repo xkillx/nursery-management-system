@@ -20,6 +20,7 @@ import (
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
 	parentchilddomain "nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
+	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/email"
@@ -174,11 +175,66 @@ type sessionTypeLookupAdapter struct {
 // the IsActive flag on SessionTypeInfo; the application layer enforces the
 // "must be active" rule.
 func (a *sessionTypeLookupAdapter) GetActiveInScope(ctx context.Context, tenantID, branchID, sessionTypeID uuid.UUID) (childapp.SessionTypeInfo, bool, error) {
-	st, err := a.repo.GetByID(ctx, tenantID, branchID, sessionTypeID)
+	info, found, err := a.lookup(ctx, tenantID, branchID, sessionTypeID)
 	if err != nil {
-		return childapp.SessionTypeInfo{}, false, fmt.Errorf("sessiontype lookup: %w", err)
+		return childapp.SessionTypeInfo{}, false, err
+	}
+	if !found {
+		return childapp.SessionTypeInfo{}, false, nil
 	}
 	return childapp.SessionTypeInfo{
+		ID:           info.ID,
+		Name:         info.Name,
+		StartMinutes: info.StartMinutes,
+		EndMinutes:   info.EndMinutes,
+		IsActive:     info.IsActive,
+	}, true, nil
+}
+
+// GetActiveInScopeForTemplates satisfies the sessiontemplates-package lookup
+// interface. Both packages need the same shape of projection, so the work is
+// done in `lookup` and we project the result here.
+func (a *sessionTypeLookupAdapter) GetActiveInScopeForTemplates(ctx context.Context, tenantID, branchID, sessionTypeID uuid.UUID) (sessiontemplateapp.SessionTypeInfo, bool, error) {
+	info, found, err := a.lookup(ctx, tenantID, branchID, sessionTypeID)
+	if err != nil {
+		return sessiontemplateapp.SessionTypeInfo{}, false, err
+	}
+	if !found {
+		return sessiontemplateapp.SessionTypeInfo{}, false, nil
+	}
+	return sessiontemplateapp.SessionTypeInfo{
+		ID:           info.ID,
+		Name:         info.Name,
+		StartMinutes: info.StartMinutes,
+		EndMinutes:   info.EndMinutes,
+		IsActive:     info.IsActive,
+	}, true, nil
+}
+
+func (a *sessionTypeLookupAdapter) lookup(ctx context.Context, tenantID, branchID, sessionTypeID uuid.UUID) (struct {
+	ID           uuid.UUID
+	Name         string
+	StartMinutes int
+	EndMinutes   int
+	IsActive     bool
+}, bool, error) {
+	st, err := a.repo.GetByID(ctx, tenantID, branchID, sessionTypeID)
+	if err != nil {
+		return struct {
+			ID           uuid.UUID
+			Name         string
+			StartMinutes int
+			EndMinutes   int
+			IsActive     bool
+		}{}, false, fmt.Errorf("sessiontype lookup: %w", err)
+	}
+	return struct {
+		ID           uuid.UUID
+		Name         string
+		StartMinutes int
+		EndMinutes   int
+		IsActive     bool
+	}{
 		ID:           st.ID,
 		Name:         st.Name,
 		StartMinutes: st.StartMinutes,
@@ -188,6 +244,19 @@ func (a *sessionTypeLookupAdapter) GetActiveInScope(ctx context.Context, tenantI
 }
 
 var _ childapp.SessionTypeLookup = (*sessionTypeLookupAdapter)(nil)
+var _ sessiontemplateapp.SessionTypeLookup = (*sessionTemplateLookupTemplateAdapter)(nil)
+
+// sessionTemplateLookupTemplateAdapter wraps the parent adapter to expose only
+// the template-package lookup signature. This keeps the two interfaces
+// (children + sessiontemplates) decoupled at the type level while sharing
+// the underlying repository.
+type sessionTemplateLookupTemplateAdapter struct {
+	inner *sessionTypeLookupAdapter
+}
+
+func (a *sessionTemplateLookupTemplateAdapter) GetActiveInScope(ctx context.Context, tenantID, branchID, sessionTypeID uuid.UUID) (sessiontemplateapp.SessionTypeInfo, bool, error) {
+	return a.inner.GetActiveInScopeForTemplates(ctx, tenantID, branchID, sessionTypeID)
+}
 
 // ── Term module adapters ──────────────────────────────────────────────────
 

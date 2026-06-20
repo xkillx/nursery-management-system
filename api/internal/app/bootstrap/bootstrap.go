@@ -78,6 +78,10 @@ import (
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	sessiontypehttphandler "nursery-management-system/api/internal/modules/sessiontypes/interfaces/http"
 
+	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
+	sessiontemplatepostgres "nursery-management-system/api/internal/modules/sessiontemplates/infrastructure/postgres"
+	sessiontemplatehttphandler "nursery-management-system/api/internal/modules/sessiontemplates/interfaces/http"
+
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	termdomain "nursery-management-system/api/internal/modules/term/domain"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
@@ -367,6 +371,19 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTypesReactivateUC := sessiontypeapp.NewReactivateSessionType(sessionTypeRepo, txManager, auditWriter)
 	sessionTypesHandler := sessiontypehttphandler.NewHandler(sessionTypesCreateUC, sessionTypesUpdateUC, sessionTypesListUC, sessionTypesGetUC, sessionTypesArchiveUC, sessionTypesReactivateUC).WithObservability(logger)
 	sessionTypesHandler.RegisterRoutes(protected)
+
+	// Session templates module
+	sessionTemplateRepo := sessiontemplatepostgres.NewRepository(pool)
+	sessionTemplatesSiteChecker := &siteExistsCheckerAdapter{repo: ownerRepo}
+	sessionTypeLookup := &sessionTemplateLookupTemplateAdapter{inner: &sessionTypeLookupAdapter{repo: sessionTypeRepo}}
+	sessionTemplatesCreateUC := sessiontemplateapp.NewCreateSessionTemplate(sessionTemplateRepo, sessionTemplatesSiteChecker, sessionTypeLookup, txManager, auditWriter)
+	sessionTemplatesUpdateUC := sessiontemplateapp.NewUpdateSessionTemplate(sessionTemplateRepo, sessionTemplatesSiteChecker, sessionTypeLookup, txManager, auditWriter)
+	sessionTemplatesListUC := sessiontemplateapp.NewListSessionTemplates(sessionTemplateRepo)
+	sessionTemplatesGetUC := sessiontemplateapp.NewGetSessionTemplate(sessionTemplateRepo)
+	sessionTemplatesArchiveUC := sessiontemplateapp.NewArchiveSessionTemplate(sessionTemplateRepo, txManager, auditWriter)
+	sessionTemplatesReactivateUC := sessiontemplateapp.NewReactivateSessionTemplate(sessionTemplateRepo, txManager, auditWriter)
+	sessionTemplatesHandler := sessiontemplatehttphandler.NewHandler(sessionTemplatesCreateUC, sessionTemplatesUpdateUC, sessionTemplatesListUC, sessionTemplatesGetUC, sessionTemplatesArchiveUC, sessionTemplatesReactivateUC).WithObservability(logger)
+	sessionTemplatesHandler.RegisterRoutes(protected)
 
 	// Term module
 	termRepo := termpostgres.NewTermRepository(pool)
