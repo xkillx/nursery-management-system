@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	app "nursery-management-system/api/internal/modules/parentmappings/application"
+	app "nursery-management-system/api/internal/modules/parentchildmappings/application"
 	"nursery-management-system/api/internal/platform/lifecycle"
 	"nursery-management-system/api/internal/platform/tenant"
 	httpserver "nursery-management-system/api/internal/platform/http"
@@ -34,8 +34,8 @@ func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
-	group.POST("/parent-membership-guardian-mappings", h.createMappingHandler)
-	group.POST("/parent-membership-guardian-mappings/:mapping_id/actions/end", h.endMappingHandler)
+	group.POST("/parent-membership-children", h.createMappingHandler)
+	group.POST("/parent-membership-children/:mapping_id/actions/end", h.endMappingHandler)
 }
 
 func (h *Handler) createMappingHandler(c *gin.Context) {
@@ -47,7 +47,7 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 
 	var req struct {
 		MembershipID string `json:"membership_id"`
-		GuardianID   string `json:"guardian_id"`
+		ChildID      string `json:"child_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
@@ -59,9 +59,9 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "membership_id"})
 		return
 	}
-	guardianID, err := uuid.Parse(strings.TrimSpace(req.GuardianID))
+	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "guardian_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "child_id"})
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 		TenantID:     actor.TenantID,
 		BranchID:     actor.BranchID,
 		MembershipID: membershipID,
-		GuardianID:   guardianID,
+		ChildID:      childID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -130,20 +130,12 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 		httpserver.WriteError(c, http.StatusBadRequest, "membership_not_active", "Invalid request payload.", nil)
 		return
 	}
-	if errors.Is(err, app.ErrGuardianNotFound) {
-		httpserver.WriteError(c, http.StatusNotFound, "guardian_not_found", "Resource not found.", nil)
-		return
-	}
-	if errors.Is(err, app.ErrGuardianNotActive) {
-		httpserver.WriteError(c, http.StatusBadRequest, "guardian_not_active", "Invalid request payload.", nil)
-		return
-	}
-	if errors.Is(err, app.ErrActiveConflict) {
-		httpserver.WriteError(c, http.StatusConflict, "parent_mapping_active_conflict", "Invalid request payload.", nil)
+	if errors.Is(err, app.ErrChildNotFound) {
+		httpserver.WriteError(c, http.StatusNotFound, "child_not_found", "Resource not found.", nil)
 		return
 	}
 	if errors.Is(err, app.ErrMappingNotFound) {
-		httpserver.WriteError(c, http.StatusNotFound, "parent_mapping_not_found", "Resource not found.", nil)
+		httpserver.WriteError(c, http.StatusNotFound, "parent_child_mapping_not_found", "Resource not found.", nil)
 		return
 	}
 

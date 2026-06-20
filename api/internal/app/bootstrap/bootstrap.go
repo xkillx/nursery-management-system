@@ -22,13 +22,9 @@ import (
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 
-	guardianapp "nursery-management-system/api/internal/modules/guardians/application"
-	guardianpostgres "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
-	guardianhandler "nursery-management-system/api/internal/modules/guardians/interfaces/http"
-
-	mappingapp "nursery-management-system/api/internal/modules/parentmappings/application"
-	mappingpostgres "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
-	mappinghandler "nursery-management-system/api/internal/modules/parentmappings/interfaces/http"
+	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
+	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
+	parentchildhandler "nursery-management-system/api/internal/modules/parentchildmappings/interfaces/http"
 
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
@@ -203,24 +199,13 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
 	).WithObservability(logger)
 
-	// Guardians module
-	guardianRepo := guardianpostgres.NewGuardianRepository(pool)
-	guardiansHandler := guardianhandler.NewHandler(
-		guardianapp.NewListGuardians(guardianRepo),
-		guardianapp.NewGetGuardian(guardianRepo),
-		guardianapp.NewCreateGuardian(guardianRepo, auditWriter, pool),
-		guardianapp.NewUpdateGuardian(guardianRepo, auditWriter, pool),
-		guardianapp.NewDeactivateGuardian(guardianRepo, txManager, auditWriter),
-		guardianapp.NewReactivateGuardian(guardianRepo, txManager, auditWriter),
-	)
-
-	// Parent Mappings module
-	guardianChecker := &guardianCheckerAdapter{repo: guardianRepo}
-	mappingRepo := mappingpostgres.NewParentMappingRepository(pool)
+	// Parent-Child Mappings module
+	mappingRepo := parentchildpostgres.NewParentChildMappingRepository(pool)
 	membershipChecker := &membershipCheckerAdapter{repo: mappingRepo}
-	mappingsHandler := mappinghandler.NewHandler(
-		mappingapp.NewCreateMappingUseCase(mappingRepo, auditWriter, txManager, membershipChecker, guardianChecker),
-		mappingapp.NewEndMappingUseCase(mappingRepo, auditWriter, txManager),
+	childScopeChecker := &childScopeCheckerAdapter{repo: childRepo}
+	mappingsHandler := parentchildhandler.NewHandler(
+		parentchildapp.NewCreateMappingUseCase(mappingRepo, auditWriter, txManager, membershipChecker, childScopeChecker),
+		parentchildapp.NewEndMappingUseCase(mappingRepo, auditWriter, txManager),
 	).WithObservability(logger)
 
 	// Attendance module
@@ -251,7 +236,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	manager := protected.Group("")
 	manager.Use(httpserver.RequireRolesWithObservability(logger, recorder, "manager"))
-	guardiansHandler.RegisterRoutes(manager)
 	mappingsHandler.RegisterRoutes(manager)
 
 	// Register attendance routes (manager + practitioner)

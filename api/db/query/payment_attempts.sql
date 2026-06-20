@@ -11,17 +11,12 @@ JOIN memberships m
  AND m.role = 'parent'
  AND m.is_active = true
  AND m.ended_at IS NULL
-JOIN parent_membership_guardians pmg
-  ON pmg.tenant_id = i.tenant_id
- AND pmg.branch_id = i.branch_id
- AND pmg.membership_id = m.id
- AND pmg.ended_at IS NULL
-JOIN guardian_child_links gcl
-  ON gcl.tenant_id = i.tenant_id
- AND gcl.branch_id = i.branch_id
- AND gcl.guardian_id = pmg.guardian_id
- AND gcl.child_id = i.child_id
- AND gcl.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
 WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.id = $4

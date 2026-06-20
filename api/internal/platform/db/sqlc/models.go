@@ -472,35 +472,6 @@ type FundingProfile struct {
 	UpdatedAt              pgtype.Timestamptz
 }
 
-type Guardian struct {
-	ID                     pgtype.UUID
-	TenantID               pgtype.UUID
-	BranchID               pgtype.UUID
-	FullName               string
-	Email                  pgtype.Text
-	Phone                  pgtype.Text
-	Notes                  pgtype.Text
-	IsActive               bool
-	DeactivatedAt          pgtype.Timestamptz
-	CreatedAt              pgtype.Timestamptz
-	UpdatedAt              pgtype.Timestamptz
-	DeactivationReasonCode NullLifecycleReasonCode
-	DeactivationReasonNote pgtype.Text
-}
-
-type GuardianChildLink struct {
-	ID              pgtype.UUID
-	TenantID        pgtype.UUID
-	BranchID        pgtype.UUID
-	GuardianID      pgtype.UUID
-	ChildID         pgtype.UUID
-	EndedAt         pgtype.Timestamptz
-	CreatedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
-	EndedReasonCode NullLifecycleReasonCode
-	EndedReasonNote pgtype.Text
-}
-
 type Invoice struct {
 	ID                     pgtype.UUID
 	TenantID               pgtype.UUID
@@ -639,15 +610,15 @@ type Membership struct {
 	EndedAt   pgtype.Timestamptz
 }
 
-type ParentMembershipGuardian struct {
+type ParentMembershipChild struct {
 	ID              pgtype.UUID
 	TenantID        pgtype.UUID
 	BranchID        pgtype.UUID
 	MembershipID    pgtype.UUID
-	GuardianID      pgtype.UUID
-	EndedAt         pgtype.Timestamptz
+	ChildID         pgtype.UUID
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
+	EndedAt         pgtype.Timestamptz
 	EndedReasonCode NullLifecycleReasonCode
 	EndedReasonNote pgtype.Text
 }

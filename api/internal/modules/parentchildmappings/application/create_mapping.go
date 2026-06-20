@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"nursery-management-system/api/internal/modules/parentmappings/domain"
+	"nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/uid"
 )
@@ -16,9 +16,7 @@ var (
 	ErrMembershipNotFound = errors.New("membership not found")
 	ErrMembershipNotParent = errors.New("membership not parent role")
 	ErrMembershipNotActive = errors.New("membership not active")
-	ErrGuardianNotFound   = errors.New("guardian not found")
-	ErrGuardianNotActive  = errors.New("guardian not active")
-	ErrActiveConflict     = errors.New("parent mapping active conflict")
+	ErrChildNotFound       = errors.New("child not found")
 )
 
 type CreateMappingUseCase struct {
@@ -26,26 +24,39 @@ type CreateMappingUseCase struct {
 	audit      *audit.Writer
 	txMgr      TxManager
 	membership domain.MembershipChecker
-	guardian   domain.GuardianChecker
+	children   ChildChecker
 }
 
 type TxManager interface {
 	ExecTx(ctx context.Context, fn func(tx pgx.Tx) error) error
 }
 
-func NewCreateMappingUseCase(repo domain.Repository, auditWriter *audit.Writer, txMgr TxManager, membership domain.MembershipChecker, guardian domain.GuardianChecker) *CreateMappingUseCase {
-	return &CreateMappingUseCase{repo: repo, audit: auditWriter, txMgr: txMgr, membership: membership, guardian: guardian}
+// ChildChecker is implemented by the children module's repository. It exists
+// here as a port so this module does not import the children module directly
+// (AGENTS.md: no cross-module imports).
+type ChildChecker interface {
+	ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (bool, error)
+}
+
+func NewCreateMappingUseCase(
+	repo domain.Repository,
+	auditWriter *audit.Writer,
+	txMgr TxManager,
+	membership domain.MembershipChecker,
+	children ChildChecker,
+) *CreateMappingUseCase {
+	return &CreateMappingUseCase{repo: repo, audit: auditWriter, txMgr: txMgr, membership: membership, children: children}
 }
 
 type CreateMappingParams struct {
 	TenantID     uuid.UUID
 	BranchID     uuid.UUID
 	MembershipID uuid.UUID
-	GuardianID   uuid.UUID
+	ChildID      uuid.UUID
 }
 
-func (uc *CreateMappingUseCase) Execute(ctx context.Context, actor ActorContext, params CreateMappingParams) (domain.ParentMapping, error) {
-	var result domain.ParentMapping
+func (uc *CreateMappingUseCase) Execute(ctx context.Context, actor ActorContext, params CreateMappingParams) (domain.ParentChildMapping, error) {
+	var result domain.ParentChildMapping
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		membership, mFound, err := uc.membership.GetForScope(ctx, tx, params.TenantID, params.BranchID, params.MembershipID)
@@ -62,35 +73,29 @@ func (uc *CreateMappingUseCase) Execute(ctx context.Context, actor ActorContext,
 			return ErrMembershipNotActive
 		}
 
-		guardianActive, gFound, err := uc.guardian.IsActive(ctx, tx, params.TenantID, params.BranchID, params.GuardianID)
+		childExists, err := uc.children.ExistsInScope(ctx, tx, params.TenantID, params.BranchID, params.ChildID)
 		if err != nil {
 			return err
 		}
-		if !gFound {
-			return ErrGuardianNotFound
-		}
-		if !guardianActive {
-			return ErrGuardianNotActive
+		if !childExists {
+			return ErrChildNotFound
 		}
 
-		existing, hasMapping, err := uc.repo.FindActiveByMembership(ctx, tx, params.TenantID, params.BranchID, params.MembershipID)
+		existing, hasMapping, err := uc.repo.FindActiveByPair(ctx, tx, params.TenantID, params.BranchID, params.MembershipID, params.ChildID)
 		if err != nil {
 			return err
 		}
 		if hasMapping {
-			if existing.GuardianID == params.GuardianID {
-				result = existing
-				return nil
-			}
-			return ErrActiveConflict
+			result = existing
+			return nil
 		}
 
-		mapping := domain.ParentMapping{
+		mapping := domain.ParentChildMapping{
 			ID:           uid.NewUUID(),
 			TenantID:     params.TenantID,
 			BranchID:     params.BranchID,
 			MembershipID: params.MembershipID,
-			GuardianID:   params.GuardianID,
+			ChildID:      params.ChildID,
 		}
 
 		if err := uc.repo.Create(ctx, tx, mapping); err != nil {
@@ -104,11 +109,11 @@ func (uc *CreateMappingUseCase) Execute(ctx context.Context, actor ActorContext,
 
 		if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
 			ActionType: "parent_mapping_created",
-			EntityType: "parent_membership_guardian_mapping",
+			EntityType: "parent_membership_child_mapping",
 			EntityID:   created.ID,
 			Details: map[string]any{
 				"membership_id": params.MembershipID.String(),
-				"guardian_id":   params.GuardianID.String(),
+				"child_id":      params.ChildID.String(),
 			},
 		}); err != nil {
 			return err

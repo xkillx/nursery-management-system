@@ -8,9 +8,10 @@ import (
 )
 
 type Repository interface {
-	FindActiveByMembership(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (ParentMapping, bool, error)
-	Create(ctx context.Context, tx pgx.Tx, mapping ParentMapping) error
-	GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (ParentMapping, bool, error)
+	FindActiveByPair(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID, childID uuid.UUID) (ParentChildMapping, bool, error)
+	ListActiveByMembership(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) ([]ParentChildMapping, error)
+	Create(ctx context.Context, tx pgx.Tx, mapping ParentChildMapping) error
+	GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (ParentChildMapping, bool, error)
 	End(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error
 }
 
@@ -22,8 +23,4 @@ type MembershipInfo struct {
 	ID       uuid.UUID
 	Role     string
 	IsActive bool
-}
-
-type GuardianChecker interface {
-	IsActive(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID) (bool, bool, error)
 }

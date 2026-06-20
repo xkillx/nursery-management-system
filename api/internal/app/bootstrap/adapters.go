@@ -14,33 +14,35 @@ import (
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
-	postgresguardian "nursery-management-system/api/internal/modules/guardians/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
-	"nursery-management-system/api/internal/modules/parentmappings/domain"
-	postgresparent "nursery-management-system/api/internal/modules/parentmappings/infrastructure/postgres"
+	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
+	parentchilddomain "nursery-management-system/api/internal/modules/parentchildmappings/domain"
+	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/email"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
-type guardianCheckerAdapter struct {
-	repo *postgresguardian.GuardianRepository
-}
-
-func (a *guardianCheckerAdapter) IsActive(ctx context.Context, tx pgx.Tx, tenantID, branchID, guardianID uuid.UUID) (bool, bool, error) {
-	return a.repo.GetActive(ctx, tx, tenantID, branchID, guardianID)
-}
-
 type membershipCheckerAdapter struct {
-	repo *postgresparent.ParentMappingRepository
+	repo *parentchildpostgres.ParentChildMappingRepository
 }
 
-func (a *membershipCheckerAdapter) GetForScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (domain.MembershipInfo, bool, error) {
+func (a *membershipCheckerAdapter) GetForScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (parentchilddomain.MembershipInfo, bool, error) {
 	return a.repo.GetMembershipForScope(ctx, tx, tenantID, branchID, membershipID)
 }
+
+type childScopeCheckerAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *childScopeCheckerAdapter) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (bool, error) {
+	return a.repo.ExistsInScope(ctx, tx, tenantID, branchID, childID)
+}
+
+var _ parentchildapp.ChildChecker = (*childScopeCheckerAdapter)(nil)
 
 type childEnrollmentCheckerAdapter struct {
 	repo *postgreschild.ChildRepository

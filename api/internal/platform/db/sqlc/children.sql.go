@@ -87,16 +87,16 @@ SELECT c.id,
              AND cra.child_id = c.id
              AND cra.is_current
        ) AS has_current_room,
-       EXISTS (
-           SELECT 1
-           FROM guardian_child_links gcl
-           WHERE gcl.tenant_id = c.tenant_id
-             AND gcl.branch_id = c.branch_id
-             AND gcl.child_id = c.id
-             AND gcl.ended_at IS NULL
-       ) AS has_guardian_link,
-       c.created_at,
-       c.updated_at
+        EXISTS (
+            SELECT 1
+            FROM child_contacts cc
+            WHERE cc.tenant_id = c.tenant_id
+              AND cc.branch_id = c.branch_id
+              AND cc.child_id = c.id
+              AND cc.contact_type = 'parent_carer'
+        ) AS has_parent_carer_contact,
+        c.created_at,
+        c.updated_at
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
@@ -122,7 +122,7 @@ type ChildrenGetByIDRow struct {
 	Notes                   pgtype.Text
 	IsActive                bool
 	HasCurrentRoom          bool
-	HasGuardianLink         bool
+	HasParentCarerContact   bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -142,7 +142,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.Notes,
 		&i.IsActive,
 		&i.HasCurrentRoom,
-		&i.HasGuardianLink,
+		&i.HasParentCarerContact,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -168,16 +168,16 @@ SELECT c.id,
              AND cra.child_id = c.id
              AND cra.is_current
        ) AS has_current_room,
-       EXISTS (
-           SELECT 1
-           FROM guardian_child_links gcl
-           WHERE gcl.tenant_id = c.tenant_id
-             AND gcl.branch_id = c.branch_id
-             AND gcl.child_id = c.id
-             AND gcl.ended_at IS NULL
-       ) AS has_guardian_link,
-       c.created_at,
-       c.updated_at
+        EXISTS (
+            SELECT 1
+            FROM child_contacts cc
+            WHERE cc.tenant_id = c.tenant_id
+              AND cc.branch_id = c.branch_id
+              AND cc.child_id = c.id
+              AND cc.contact_type = 'parent_carer'
+        ) AS has_parent_carer_contact,
+        c.created_at,
+        c.updated_at
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
@@ -204,7 +204,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	Notes                   pgtype.Text
 	IsActive                bool
 	HasCurrentRoom          bool
-	HasGuardianLink         bool
+	HasParentCarerContact   bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -224,7 +224,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.Notes,
 		&i.IsActive,
 		&i.HasCurrentRoom,
-		&i.HasGuardianLink,
+		&i.HasParentCarerContact,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -277,16 +277,16 @@ SELECT c.id,
              AND cra.child_id = c.id
              AND cra.is_current
        ) AS has_current_room,
-       EXISTS (
-           SELECT 1
-           FROM guardian_child_links gcl
-           WHERE gcl.tenant_id = c.tenant_id
-             AND gcl.branch_id = c.branch_id
-             AND gcl.child_id = c.id
-             AND gcl.ended_at IS NULL
-       ) AS has_guardian_link,
-       c.created_at,
-       c.updated_at
+        EXISTS (
+            SELECT 1
+            FROM child_contacts cc
+            WHERE cc.tenant_id = c.tenant_id
+              AND cc.branch_id = c.branch_id
+              AND cc.child_id = c.id
+              AND cc.contact_type = 'parent_carer'
+        ) AS has_parent_carer_contact,
+        c.created_at,
+        c.updated_at
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
@@ -320,7 +320,7 @@ type ChildrenListRow struct {
 	Notes                   pgtype.Text
 	IsActive                bool
 	HasCurrentRoom          bool
-	HasGuardianLink         bool
+	HasParentCarerContact   bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -352,7 +352,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.Notes,
 			&i.IsActive,
 			&i.HasCurrentRoom,
-			&i.HasGuardianLink,
+			&i.HasParentCarerContact,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -376,11 +376,11 @@ SELECT c.id,
         AND c.start_date IS NOT NULL
         AND EXISTS (
             SELECT 1
-            FROM guardian_child_links gcl
-            WHERE gcl.tenant_id = c.tenant_id
-              AND gcl.branch_id = c.branch_id
-              AND gcl.child_id = c.id
-              AND gcl.ended_at IS NULL
+            FROM child_contacts cc
+            WHERE cc.tenant_id = c.tenant_id
+              AND cc.branch_id = c.branch_id
+              AND cc.child_id = c.id
+              AND cc.contact_type = 'parent_carer'
         )) AS enrollment_complete,
        CASE
          WHEN s.id IS NOT NULL THEN 'checked_in'

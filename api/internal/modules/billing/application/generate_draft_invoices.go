@@ -502,7 +502,7 @@ func (uc *GenerateDraftInvoicesUseCase) preflightTerm(row domain.AdvancePayTermR
 			Code: domain.BlockerMissingChildStartDate, Message: "Child start date is missing.",
 		})
 	}
-	if !row.HasGuardianLink {
+	if !row.HasParentCarerContact {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingGuardianLink, Message: "No active guardian linked to this child.",
 		})

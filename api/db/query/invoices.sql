@@ -46,12 +46,12 @@ SELECT
     b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
-        FROM guardian_child_links gcl
-        WHERE gcl.tenant_id = c.tenant_id
-          AND gcl.branch_id = c.branch_id
-          AND gcl.child_id = c.id
-          AND gcl.ended_at IS NULL
-    ) AS has_guardian_link,
+        FROM child_contacts cc
+        WHERE cc.tenant_id = c.tenant_id
+          AND cc.branch_id = c.branch_id
+          AND cc.child_id = c.id
+          AND cc.contact_type = 'parent_carer'
+    ) AS has_parent_carer_contact,
     fp.id AS funding_profile_id,
     fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
@@ -104,12 +104,12 @@ SELECT
     b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
-        FROM guardian_child_links gcl
-        WHERE gcl.tenant_id = c.tenant_id
-          AND gcl.branch_id = c.branch_id
-          AND gcl.child_id = c.id
-          AND gcl.ended_at IS NULL
-    ) AS has_guardian_link,
+        FROM child_contacts cc
+        WHERE cc.tenant_id = c.tenant_id
+          AND cc.branch_id = c.branch_id
+          AND cc.child_id = c.id
+          AND cc.contact_type = 'parent_carer'
+    ) AS has_parent_carer_contact,
     fp.id AS funding_profile_id,
     fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
@@ -146,12 +146,12 @@ SELECT
     b.core_hourly_rate_minor,
     EXISTS (
         SELECT 1
-        FROM guardian_child_links gcl
-        WHERE gcl.tenant_id = c.tenant_id
-          AND gcl.branch_id = c.branch_id
-          AND gcl.child_id = c.id
-          AND gcl.ended_at IS NULL
-    ) AS has_guardian_link,
+        FROM child_contacts cc
+        WHERE cc.tenant_id = c.tenant_id
+          AND cc.branch_id = c.branch_id
+          AND cc.child_id = c.id
+          AND cc.contact_type = 'parent_carer'
+    ) AS has_parent_carer_contact,
     fp.id AS funding_profile_id,
     fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
@@ -446,12 +446,12 @@ SELECT
     c.end_date,
     EXISTS (
         SELECT 1
-        FROM guardian_child_links gcl
-        WHERE gcl.tenant_id = t.tenant_id
-          AND gcl.branch_id = t.branch_id
-          AND gcl.child_id = t.child_id
-          AND gcl.ended_at IS NULL
-    ) AS has_guardian_link,
+        FROM child_contacts cc
+        WHERE cc.tenant_id = t.tenant_id
+          AND cc.branch_id = t.branch_id
+          AND cc.child_id = t.child_id
+          AND cc.contact_type = 'parent_carer'
+    ) AS has_parent_carer_contact,
     fp.id AS funding_profile_id,
     fp.funded_allowance_minutes
 FROM term t
@@ -496,17 +496,12 @@ JOIN memberships m
  AND m.role = 'parent'
  AND m.is_active = true
  AND m.ended_at IS NULL
-JOIN parent_membership_guardians pmg
-  ON pmg.tenant_id = i.tenant_id
- AND pmg.branch_id = i.branch_id
- AND pmg.membership_id = m.id
- AND pmg.ended_at IS NULL
-JOIN guardian_child_links gcl
-  ON gcl.tenant_id = i.tenant_id
- AND gcl.branch_id = i.branch_id
- AND gcl.guardian_id = pmg.guardian_id
- AND gcl.child_id = i.child_id
- AND gcl.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
 WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
@@ -553,17 +548,12 @@ JOIN memberships m
  AND m.role = 'parent'
  AND m.is_active = true
  AND m.ended_at IS NULL
-JOIN parent_membership_guardians pmg
-  ON pmg.tenant_id = i.tenant_id
- AND pmg.branch_id = i.branch_id
- AND pmg.membership_id = m.id
- AND pmg.ended_at IS NULL
-JOIN guardian_child_links gcl
-  ON gcl.tenant_id = i.tenant_id
- AND gcl.branch_id = i.branch_id
- AND gcl.guardian_id = pmg.guardian_id
- AND gcl.child_id = i.child_id
- AND gcl.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
 WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.id = $4
@@ -582,17 +572,12 @@ JOIN memberships m
  AND m.role = 'parent'
  AND m.is_active = true
  AND m.ended_at IS NULL
-JOIN parent_membership_guardians pmg
-  ON pmg.tenant_id = i.tenant_id
- AND pmg.branch_id = i.branch_id
- AND pmg.membership_id = m.id
- AND pmg.ended_at IS NULL
-JOIN guardian_child_links gcl
-  ON gcl.tenant_id = i.tenant_id
- AND gcl.branch_id = i.branch_id
- AND gcl.guardian_id = pmg.guardian_id
- AND gcl.child_id = i.child_id
- AND gcl.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
 WHERE il.tenant_id = $1
   AND il.branch_id = $2
   AND il.invoice_id = $4

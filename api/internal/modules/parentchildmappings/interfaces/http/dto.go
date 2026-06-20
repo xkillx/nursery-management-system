@@ -3,13 +3,13 @@ package httpmapping
 import (
 	"time"
 
-	"nursery-management-system/api/internal/modules/parentmappings/domain"
+	"nursery-management-system/api/internal/modules/parentchildmappings/domain"
 )
 
-type parentMappingResponse struct {
+type parentChildMappingResponse struct {
 	ID              string  `json:"id"`
 	MembershipID    string  `json:"membership_id"`
-	GuardianID      string  `json:"guardian_id"`
+	ChildID         string  `json:"child_id"`
 	EndedAt         *string `json:"ended_at,omitempty"`
 	EndedReasonCode *string `json:"ended_reason_code,omitempty"`
 	EndedReasonNote *string `json:"ended_reason_note,omitempty"`
@@ -17,11 +17,11 @@ type parentMappingResponse struct {
 	UpdatedAt       string  `json:"updated_at"`
 }
 
-func toMappingResponse(m domain.ParentMapping) parentMappingResponse {
-	resp := parentMappingResponse{
+func toMappingResponse(m domain.ParentChildMapping) parentChildMappingResponse {
+	resp := parentChildMappingResponse{
 		ID:              m.ID.String(),
 		MembershipID:    m.MembershipID.String(),
-		GuardianID:      m.GuardianID.String(),
+		ChildID:         m.ChildID.String(),
 		EndedReasonCode: m.EndedReasonCode,
 		EndedReasonNote: m.EndedReasonNote,
 		CreatedAt:       m.CreatedAt.UTC().Format(time.RFC3339),

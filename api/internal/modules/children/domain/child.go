@@ -18,7 +18,7 @@ type Child struct {
 	Notes                   *string
 	IsActive                bool
 	HasCurrentRoom          bool
-	HasGuardianLink         bool
+	HasParentCarerContact   bool
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }
@@ -56,8 +56,8 @@ func (c Child) MissingRequirements() []string {
 	if c.StartDate.IsZero() {
 		missing = append(missing, "start_date")
 	}
-	if !c.HasGuardianLink {
-		missing = append(missing, "guardian_link")
+	if !c.HasParentCarerContact {
+		missing = append(missing, "parent_carer_contact")
 	}
 	return missing
 }

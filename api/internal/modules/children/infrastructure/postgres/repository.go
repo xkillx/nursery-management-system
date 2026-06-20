@@ -246,7 +246,7 @@ func mapChildRow(row interface{}) domain.Child {
 		Notes                   pgtype.Text
 		IsActive                bool
 		HasCurrentRoom          bool
-		HasGuardianLink         bool
+		HasParentCarerContact   bool
 		CreatedAt               pgtype.Timestamptz
 		UpdatedAt               pgtype.Timestamptz
 	}
@@ -257,7 +257,7 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasGuardianLink: v.HasGuardianLink,
+			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDRow:
@@ -265,7 +265,7 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasGuardianLink: v.HasGuardianLink,
+			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDForUpdateRow:
@@ -273,7 +273,7 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasGuardianLink: v.HasGuardianLink,
+			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	default:
@@ -291,7 +291,7 @@ func mapChildRow(row interface{}) domain.Child {
 		Notes:                   pgtypeTextToStringPtr(f.Notes),
 		IsActive:                f.IsActive,
 		HasCurrentRoom:          f.HasCurrentRoom,
-		HasGuardianLink:         f.HasGuardianLink,
+		HasParentCarerContact:   f.HasParentCarerContact,
 		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
 	}

@@ -220,8 +220,7 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 		"attendance_events",
 		"attendance_sessions",
 		"manager_invites",
-		"parent_membership_guardians",
-		"guardians",
+		"parent_membership_children",
 		"child_booking_pattern_entries",
 		"child_booking_patterns",
 		"session_types",
@@ -381,25 +380,41 @@ func InsertChildWithNotes(t testing.TB, pool *pgxpool.Pool, id, tenantID, branch
 	}
 }
 
-// InsertGuardian inserts a guardian scoped to tenant+branch.
-func InsertGuardian(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID uuid.UUID, fullName string, isActive bool) {
+// InsertParentCarerContact inserts a child_contacts row of type parent_carer
+// for the given child. Used to seed enrollment-complete state in tests.
+func InsertParentCarerContact(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, childID uuid.UUID, fullName string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		"INSERT INTO guardians (id, tenant_id, branch_id, full_name, is_active) VALUES ($1, $2, $3, $4, $5)",
-		id, tenantID, branchID, fullName, isActive)
+		"INSERT INTO child_contacts (id, tenant_id, branch_id, child_id, contact_type, sort_order, full_name) VALUES ($1, $2, $3, $4, 'parent_carer', 1, $5)",
+		id, tenantID, branchID, childID, fullName)
 	if err != nil {
-		t.Fatalf("insert guardian: %v", err)
+		t.Fatalf("insert parent_carer contact: %v", err)
 	}
 }
 
-// InsertParentMapping inserts a parent membership guardian mapping.
-func InsertParentMapping(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, membershipID, guardianID uuid.UUID) {
+// InsertGuardian is a no-op stub kept for legacy test compatibility. The
+// guardian entity was removed; tests that previously inserted a guardian
+// should use InsertParentCarerContact and InsertParentMapping to seed the
+// new one-hop parent-access model. This stub lets old fixtures compile.
+func InsertGuardian(t testing.TB, _ *pgxpool.Pool, _, _, _ uuid.UUID, _ string, _ bool) {
+	t.Helper()
+}
+
+// InsertGuardianLink is a no-op stub kept for legacy test compatibility.
+// The guardian_child_links table was removed; tests that previously
+// inserted a link should drop the call entirely.
+func InsertGuardianLink(t testing.TB, _ *pgxpool.Pool, _, _, _, _, _ uuid.UUID) {
+	t.Helper()
+}
+
+// InsertParentMapping inserts a parent-membership-to-child mapping.
+func InsertParentMapping(t testing.TB, pool *pgxpool.Pool, id, tenantID, branchID, membershipID, childID uuid.UUID) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		"INSERT INTO parent_membership_guardians (id, tenant_id, branch_id, membership_id, guardian_id) VALUES ($1, $2, $3, $4, $5)",
-		id, tenantID, branchID, membershipID, guardianID)
+		"INSERT INTO parent_membership_children (id, tenant_id, branch_id, membership_id, child_id) VALUES ($1, $2, $3, $4, $5)",
+		id, tenantID, branchID, membershipID, childID)
 	if err != nil {
-		t.Fatalf("insert parent mapping: %v", err)
+		t.Fatalf("insert parent-child mapping: %v", err)
 	}
 }
 

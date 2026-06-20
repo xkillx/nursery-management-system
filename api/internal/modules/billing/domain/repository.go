@@ -89,7 +89,7 @@ type AdvancePayTermRow struct {
 	DateOfBirth            time.Time
 	StartDate              time.Time
 	EndDate                *time.Time
-	HasGuardianLink        bool
+	HasParentCarerContact bool
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes *int
 }

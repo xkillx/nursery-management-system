@@ -15,8 +15,8 @@ type PreflightChildRow struct {
 	StartDate              time.Time
 	EndDate                *time.Time
 	CoreHourlyRateMinor    *int
-	HasGuardianLink        bool
-	FundingProfileID       *uuid.UUID
+	HasParentCarerContact bool
+	FundingProfileID      *uuid.UUID
 	FundedAllowanceMinutes *int
 	ExistingInvoiceID      *uuid.UUID
 	ExistingInvoiceStatus  *string
