@@ -247,6 +247,7 @@ func mapChildRow(row interface{}) domain.Child {
 		IsActive                bool
 		HasCurrentRoom          bool
 		HasParentCarerContact   bool
+		HasBookingPattern       bool
 		CreatedAt               pgtype.Timestamptz
 		UpdatedAt               pgtype.Timestamptz
 	}
@@ -258,6 +259,7 @@ func mapChildRow(row interface{}) domain.Child {
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
 			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDRow:
@@ -266,6 +268,7 @@ func mapChildRow(row interface{}) domain.Child {
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
 			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDForUpdateRow:
@@ -274,6 +277,7 @@ func mapChildRow(row interface{}) domain.Child {
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
 			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	default:
@@ -292,6 +296,7 @@ func mapChildRow(row interface{}) domain.Child {
 		IsActive:                f.IsActive,
 		HasCurrentRoom:          f.HasCurrentRoom,
 		HasParentCarerContact:   f.HasParentCarerContact,
+		HasBookingPattern:       f.HasBookingPattern,
 		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
 	}

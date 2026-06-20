@@ -25,6 +25,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c
@@ -66,6 +73,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c
@@ -126,6 +140,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c

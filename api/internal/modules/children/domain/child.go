@@ -19,6 +19,7 @@ type Child struct {
 	IsActive                bool
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
+	HasBookingPattern       bool
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }

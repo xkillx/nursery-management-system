@@ -706,6 +706,28 @@ type Room struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type SessionTemplate struct {
+	ID          pgtype.UUID
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	Name        string
+	Description pgtype.Text
+	IsActive    bool
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type SessionTemplateEntry struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	TemplateID    pgtype.UUID
+	DayOfWeek     int32
+	SessionTypeID pgtype.UUID
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
 type SessionType struct {
 	ID        pgtype.UUID
 	TenantID  pgtype.UUID

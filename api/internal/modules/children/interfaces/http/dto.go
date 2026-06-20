@@ -18,6 +18,7 @@ type childResponse struct {
 	Notes                   *string  `json:"notes,omitempty"`
 	IsActive                bool     `json:"is_active"`
 	HasCurrentRoom          bool     `json:"has_current_room"`
+	HasBookingPattern       bool     `json:"has_booking_pattern"`
 	EnrollmentComplete      bool     `json:"enrollment_complete"`
 	MissingRequirements     []string `json:"missing_requirements,omitempty"`
 	CreatedAt               string   `json:"created_at"`
@@ -66,6 +67,7 @@ func toChildResponse(child domain.Child) childResponse {
 		Notes:                   child.Notes,
 		IsActive:                child.IsActive,
 		HasCurrentRoom:          child.HasCurrentRoom,
+		HasBookingPattern:       child.HasBookingPattern,
 		EnrollmentComplete:      child.EnrollmentComplete(),
 		MissingRequirements:     child.MissingRequirements(),
 		CreatedAt:               child.CreatedAt.UTC().Format(time.RFC3339),

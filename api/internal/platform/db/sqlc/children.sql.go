@@ -95,6 +95,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c
@@ -123,6 +130,7 @@ type ChildrenGetByIDRow struct {
 	IsActive                bool
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
+	HasBookingPattern       bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -143,6 +151,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.IsActive,
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
+		&i.HasBookingPattern,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -176,6 +185,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c
@@ -205,6 +221,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	IsActive                bool
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
+	HasBookingPattern       bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -225,6 +242,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.IsActive,
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
+		&i.HasBookingPattern,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -285,6 +303,13 @@ SELECT c.id,
               AND cc.child_id = c.id
               AND cc.contact_type = 'parent_carer'
         ) AS has_parent_carer_contact,
+        EXISTS (
+            SELECT 1
+            FROM child_booking_patterns cbp
+            WHERE cbp.tenant_id = c.tenant_id
+              AND cbp.branch_id = c.branch_id
+              AND cbp.child_id = c.id
+        ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
 FROM children c
@@ -321,6 +346,7 @@ type ChildrenListRow struct {
 	IsActive                bool
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
+	HasBookingPattern       bool
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -353,6 +379,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.IsActive,
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
+			&i.HasBookingPattern,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
