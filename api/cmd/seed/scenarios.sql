@@ -25,32 +25,16 @@ VALUES
   ('88888888-8888-8888-8888-888888888888', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '55555555-5555-5555-5555-555555555555', 'parent', true, NULL)
 ON CONFLICT (tenant_id, branch_id, user_id) DO UPDATE SET role = EXCLUDED.role, is_active = true, ended_at = NULL, updated_at = now();
 
--- Scenario: child with two guardians, one parent mapping
+-- Scenario: child with a parent_carer contact and an active parent-membership mapping
 INSERT INTO children (id, tenant_id, branch_id, first_name, date_of_birth, start_date, core_hourly_rate_minor, is_active)
 VALUES ('99999999-9999-9999-9999-999999999999', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Seed Child', '2021-01-01', '2024-01-01', 1200, true)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO guardians (id, tenant_id, branch_id, full_name, email, is_active)
+INSERT INTO child_contacts (id, tenant_id, branch_id, child_id, contact_type, sort_order, full_name, email, telephone, has_parental_responsibility)
 VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Seed Guardian One', NULL, true),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Seed Guardian Two', NULL, true)
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '99999999-9999-9999-9999-999999999999', 'parent_carer', 1, 'Seed Parent Carer', 'parent@seed.local', '07123456789', true)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO guardian_child_links (id, tenant_id, branch_id, guardian_id, child_id)
-VALUES
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999'),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '99999999-9999-9999-9999-999999999999')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO parent_membership_guardians (id, tenant_id, branch_id, membership_id, guardian_id)
-VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '88888888-8888-8888-8888-888888888888', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-ON CONFLICT DO NOTHING;
-
--- Scenario: link end and relink
-UPDATE guardian_child_links
-SET ended_at = now(), updated_at = now()
-WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc' AND ended_at IS NULL;
-
-INSERT INTO guardian_child_links (id, tenant_id, branch_id, guardian_id, child_id, created_at)
-VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999', now())
+INSERT INTO parent_membership_children (id, tenant_id, branch_id, membership_id, child_id)
+VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '88888888-8888-8888-8888-888888888888', '99999999-9999-9999-9999-999999999999')
 ON CONFLICT DO NOTHING;
