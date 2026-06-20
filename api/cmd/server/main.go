@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"nursery-management-system/api/internal/app/bootstrap"
+	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
 	"nursery-management-system/api/internal/platform/logging"
@@ -19,7 +20,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
-	"nursery-management-system/api/internal/platform/jobs"
+	invoicerun "nursery-management-system/api/internal/modules/invoicerun"
+	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
+	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/transaction"
 )
 
@@ -56,14 +59,22 @@ func main() {
 	}
 	defer pool.Close()
 
-	var scheduler *jobs.Scheduler
+	var scheduler *invoicerun.Scheduler
 	if cfg.SchedulerOwner {
 		billingRepo := billingpostgres.NewRepository(pool)
 		txMgr := transaction.NewManager(pool)
 		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, txMgr, func() time.Time { return time.Now().UTC() })
 
+		termRepo := termpostgres.NewTermRepository(pool)
+		auditWriter := audit.NewWriter()
+		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
+		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter)
+		lister := invoicerun.NewSystemTenantBranchLister(pool)
+		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, lister)
+		generateRunner := invoicerun.NewGenerateAdvanceInvoicesRunner(generateUC, lister)
+
 		var schedErr error
-		scheduler, schedErr = jobs.NewScheduler(logger, overdueUC, recorder)
+		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, generateRunner, recorder)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)
