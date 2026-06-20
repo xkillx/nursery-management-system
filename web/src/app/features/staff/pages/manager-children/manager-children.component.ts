@@ -3,7 +3,6 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  heroArrowDownTray,
   heroCheckCircle,
   heroChevronLeft,
   heroChevronRight,
@@ -47,7 +46,6 @@ import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/ava
   templateUrl: './manager-children.component.html',
   providers: [
     provideIcons({
-      heroArrowDownTray,
       heroCheckCircle,
       heroChevronLeft,
       heroChevronRight,
@@ -297,31 +295,6 @@ export class ManagerChildrenComponent {
       month: 'short',
       year: 'numeric',
     }).format(date);
-  }
-
-  exportChildren(): void {
-    const rows = this.filteredChildren.map((child) => [
-      child.fullName,
-      child.id,
-      child.dateOfBirth,
-      child.startDate,
-      child.isActive ? 'Active' : 'Inactive',
-      child.enrollmentComplete ? 'Complete' : 'Incomplete',
-      this.formatMissingRequirements(child),
-    ]);
-    const csv = [
-      ['Child name', 'ID', 'Date of birth', 'Start date', 'Active status', 'Enrollment status', 'Missing requirements'],
-      ...rows,
-    ]
-      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'children-directory.csv';
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
 }
