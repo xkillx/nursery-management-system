@@ -1899,9 +1899,9 @@
                   Back
                 </app-button>
                 @if (isNewRegistration) {
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="submitRegistration()">
-                    {{ isSaving ? 'Creating...' : 'Complete Registration' }}
-                    <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
+                  <app-button type="button" size="md" className="min-h-12 px-8 shadow-theme-md" (btnClick)="nextStep()">
+                    Continue
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                   </app-button>
                 } @else {
                   <div class="flex flex-wrap gap-3">
@@ -1917,6 +1917,251 @@
               </div>
             </div>
           </div>
+
+      @if (currentStep === 'session-pattern') {
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="space-y-6">
+            <header class="space-y-2">
+              <h2 class="text-xl font-bold text-gray-950 dark:text-white/90">Session pattern</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Also called booking pattern — your child's planned week of booked sessions.
+              </p>
+            </header>
+
+            <app-alert
+              *ngIf="sessionPatternLoadError"
+              variant="warning"
+              [title]="sessionPatternLoadError"
+              message="Ask the owner to set up session types for this site, or add them from Session types."
+            ></app-alert>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <app-form-field
+                label="Effective from"
+                htmlFor="pattern-effective-from"
+                [required]="true"
+                [error]="hasFieldIssue('pattern_effective_from') ? fieldIssueMessage('pattern_effective_from') : null"
+              >
+                <app-date-picker
+                  inputId="pattern-effective-from"
+                  name="pattern-effective-from"
+                  [value]="patternEffectiveFrom"
+                  (valueChange)="setPatternEffectiveFrom($event)"
+                ></app-date-picker>
+              </app-form-field>
+            </div>
+
+            <section
+              *ngIf="availableSessionTemplates.length > 0"
+              class="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40"
+            >
+              <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Start from a template</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <app-select
+                  name="pattern-template-pick"
+                  [options]="templateOptions"
+                  [value]="''"
+                  placeholder="Choose a template…"
+                  (valueChange)="applyTemplate($event)"
+                ></app-select>
+                <button
+                  type="button"
+                  class="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                  (click)="skipTemplate()"
+                >
+                  Skip template
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Templates copy their entries into this child's pattern at creation time. Edits to the template never alter existing patterns.
+              </p>
+            </section>
+
+            <section class="space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Booked sessions</h3>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                    (click)="copyMonToAllWeekdays()"
+                  >
+                    Copy Mon to weekdays
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                    (click)="clearAllPatternEntries()"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+
+              <p
+                *ngIf="hasFieldIssue('pattern_entries')"
+                id="pattern-entries-error"
+                class="text-sm text-error-500"
+                role="alert"
+              >
+                {{ fieldIssueMessage('pattern_entries') }}
+              </p>
+
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <div
+                  *ngFor="let d of dayLabels"
+                  class="flex flex-wrap items-center gap-2 border-b border-gray-100 px-3 py-2 last:border-b-0 dark:border-gray-800"
+                >
+                  <div class="w-12 text-sm font-semibold text-gray-700 dark:text-gray-200">{{ d.label }}</div>
+                  <div class="flex flex-1 flex-wrap gap-2">
+                    <div
+                      *ngFor="let entry of dayEntriesFor(d.value); let i = index"
+                      class="flex items-center gap-1"
+                    >
+                      <app-select
+                        [name]="'pattern-day-' + d.value + '-entry-' + i"
+                        [options]="sessionTypeOptions"
+                        [value]="entry.session_type_id"
+                        (valueChange)="setPatternEntryType(d.value, i, $event)"
+                        placeholder="Pick a session type…"
+                      ></app-select>
+                      <button
+                        type="button"
+                        class="rounded p-1 text-gray-400 hover:text-error-500"
+                        (click)="removePatternEntry(d.value, i)"
+                        aria-label="Remove session"
+                      >
+                        <ng-icon name="heroXMark" size="16" aria-hidden="true"></ng-icon>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                      (click)="addPatternEntry(d.value)"
+                    >
+                      <ng-icon name="heroPlusCircle" size="14" aria-hidden="true"></ng-icon>
+                      add session
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+              <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()">
+                <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
+                Back
+              </app-button>
+              <app-button type="button" size="md" className="min-h-12 px-8 shadow-theme-md" (btnClick)="nextStep()">
+                Continue
+                <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+              </app-button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (currentStep === 'review-complete') {
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="space-y-6">
+            <header class="space-y-2">
+              <h2 class="text-xl font-bold text-gray-950 dark:text-white/90">Review and create</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Confirm everything is in place. On Create we'll register the child, then save the session pattern.
+              </p>
+            </header>
+
+            <app-alert
+              *ngIf="errorMessage && patternRetriedAfterChildCreate"
+              variant="warning"
+              [title]="'Partial failure'"
+              [message]="errorMessage"
+            ></app-alert>
+
+            <dl class="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-700">
+              <div class="grid gap-2 px-4 py-3 sm:grid-cols-3">
+                <dt class="text-sm font-medium text-gray-500">Child details</dt>
+                <dd class="text-sm text-gray-900 sm:col-span-2">
+                  {{ childFullNameDraft || '—' }}
+                  · DOB {{ step1.date_of_birth || '—' }}
+                  · Start {{ step1.start_date || '—' }}
+                </dd>
+              </div>
+              <div class="grid gap-2 px-4 py-3 sm:grid-cols-3">
+                <dt class="text-sm font-medium text-gray-500">Primary room</dt>
+                <dd class="text-sm text-gray-900 sm:col-span-2">
+                  {{ roomLabelFor(step1.primary_room_id) || '—' }}
+                </dd>
+              </div>
+              <div class="grid gap-2 px-4 py-3 sm:grid-cols-3">
+                <dt class="text-sm font-medium text-gray-500">Session pattern</dt>
+                <dd class="text-sm text-gray-900 sm:col-span-2">
+                  Effective {{ patternEffectiveFrom || '—' }}
+                  <ul *ngIf="flattenedPatternEntries.length > 0" class="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <li *ngFor="let e of flattenedPatternEntries">
+                      Day {{ e.day_of_week }} — {{ sessionTypeLabel(e.session_type_id) }}
+                    </li>
+                  </ul>
+                </dd>
+              </div>
+            </dl>
+
+            <div
+              *ngIf="!patternRetriedAfterChildCreate"
+              class="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
+            >
+              <ng-icon name="heroInformationCircle" size="18" class="mt-0.5 text-blue-500" aria-hidden="true"></ng-icon>
+              <span>
+                On Create we'll register the child, then save the session pattern. If the pattern step fails, you can retry from this screen.
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+              <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()" [disabled]="isSaving || patternSubmitting">
+                <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
+                Back
+              </app-button>
+              <div class="flex flex-wrap gap-2">
+                <ng-container *ngIf="!patternRetriedAfterChildCreate; else retryActions">
+                  <app-button
+                    type="button"
+                    size="md"
+                    [loading]="isSaving || patternSubmitting"
+                    [disabled]="isSaving || patternSubmitting"
+                    className="min-h-12 px-8 shadow-theme-md"
+                    (btnClick)="submitRegistration()"
+                  >
+                    {{ isSaving || patternSubmitting ? 'Creating...' : 'Create child' }}
+                    <ng-icon name="heroPaperAirplane" size="20" aria-hidden="true" />
+                  </app-button>
+                </ng-container>
+                <ng-template #retryActions>
+                  <app-button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    className="min-h-12 px-6 shadow-theme-xs"
+                    (btnClick)="retrySessionPattern()"
+                    [loading]="patternSubmitting"
+                    [disabled]="patternSubmitting"
+                  >
+                    Retry
+                  </app-button>
+                  <app-button
+                    type="button"
+                    size="md"
+                    className="min-h-12 px-8 shadow-theme-md"
+                    (btnClick)="finalizeWithoutPattern()"
+                    [disabled]="patternSubmitting"
+                  >
+                    Save child without pattern
+                  </app-button>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
 
           <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             <ng-icon name="heroLockClosed" size="16" class="text-success-500" aria-hidden="true" />

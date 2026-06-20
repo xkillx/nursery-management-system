@@ -51,9 +51,12 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { StaffSessionTypesApiService } from '../../data/session-types-api.service';
+import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
+import { BookingPatternInput } from '../../models/booking-pattern.models';
 import {
   ConsentRecord,
   ConsentWritePayload,
@@ -81,9 +84,9 @@ type StepperStep =
   | 'child-basics'
   | 'medical-health'
   | 'contacts-collection'
-  | 'consents-evidence';
-
-type StoredStepperStep = StepperStep | 'review-complete';
+  | 'consents-evidence'
+  | 'session-pattern'
+  | 'review-complete';
 
 type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
 type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
@@ -142,7 +145,7 @@ type ConsentItem = {
 };
 
 type RegistrationDraft = {
-  currentStep: StoredStepperStep;
+  currentStep: StepperStep;
   step1: {
     first_name: string;
     middle_name: string;
@@ -226,6 +229,10 @@ type RegistrationDraft = {
     has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
+  step5: {
+    effective_from: string;
+    entries: { day_of_week: number; session_type_id: string }[];
+  };
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
@@ -288,6 +295,8 @@ type RegistrationDraft = {
 export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
+  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
+  private readonly sessionTemplatesApi = inject(StaffSessionTemplatesApiService);
   private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
@@ -300,7 +309,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private dismissTimeout: ReturnType<typeof setTimeout> | null = null;
   private hasRestoredDraft = false;
 
-  readonly steps: IntakeStep[] = [
+  private readonly fullSteps: IntakeStep[] = [
     {
       key: 'child-basics',
       label: 'Child Details',
@@ -325,7 +334,25 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       shortLabel: 'Consents',
       description: 'Terms and decisions',
     },
+    {
+      key: 'session-pattern',
+      label: 'Session Pattern',
+      shortLabel: 'Pattern',
+      description: 'Planned week of sessions',
+    },
+    {
+      key: 'review-complete',
+      label: 'Review & Create',
+      shortLabel: 'Review',
+      description: 'Confirm and create',
+    },
   ];
+
+  private readonly editSteps: IntakeStep[] = this.fullSteps.slice(0, 4);
+
+  get steps(): IntakeStep[] {
+    return this.isNewRegistration ? this.fullSteps : this.editSteps;
+  }
 
   readonly languageOptions = [
     'English',
@@ -617,6 +644,23 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
   finalCompletionIssues: FinalCompletionIssue[] = [];
 
+  // Session pattern (step 5) — held in component state because the pattern
+  // is sent to a separate endpoint after the child is created.
+  patternEffectiveFrom: string = '';
+  patternEntries: { day_of_week: number; session_type_id: string }[] = [];
+  patternDayEntries: Record<number, { session_type_id: string }[]> = {
+    1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [],
+  };
+  patternSubmitting = false;
+  patternError: string | null = null;
+  patternSkipTemplate = false;
+  availableSessionTypes: { id: string; name: string; startTime: string; endTime: string; isActive: boolean }[] = [];
+  availableSessionTemplates: { id: string; name: string; description?: string | null; isActive: boolean; entries: { day_of_week: number; session_type_id: string }[] }[] = [];
+  sessionPatternLoading = false;
+  sessionPatternLoadError: string | null = null;
+  patternRetriedAfterChildCreate = false;
+  patternRetryError: string | null = null;
+
   parentCarersDraft: RegistrationContactEntry[] = [this.emptyContact('Mother')];
   emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
   emergencyAuthorisedFlags = [true, false];
@@ -647,8 +691,52 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
 
     this.loadRoomOptions();
+    this.loadSessionPatternSupportData();
+    this.initialisePatternDefaultEffectiveDate();
     this.restoreDraftIfPresent();
     this.subscribeToDraftAutoSave();
+  }
+
+  private loadSessionPatternSupportData(): void {
+    const branchId = this.auth.activeMembership()?.branch_id;
+    if (!branchId) {
+      this.sessionPatternLoadError = 'No site is attached to this manager session.';
+      return;
+    }
+    this.sessionPatternLoading = true;
+    this.sessionPatternLoadError = null;
+    this.sessionTypesApi.listSessionTypes(branchId, { includeArchived: false }).subscribe({
+      next: (types) => {
+        this.availableSessionTypes = types.filter((t) => t.isActive);
+        this.sessionPatternLoading = false;
+        if (this.availableSessionTypes.length === 0) {
+          this.sessionPatternLoadError = 'Set up session types first';
+        }
+      },
+      error: () => {
+        this.sessionPatternLoading = false;
+        this.sessionPatternLoadError = 'Failed to load session types. You can retry from this step.';
+      },
+    });
+    this.sessionTemplatesApi.listSessionTemplates(branchId, { includeArchived: false }).subscribe({
+      next: (templates) => {
+        this.availableSessionTemplates = templates.filter((t) => t.isActive);
+      },
+      error: () => {
+        this.availableSessionTemplates = [];
+      },
+    });
+  }
+
+  private initialisePatternDefaultEffectiveDate(): void {
+    if (this.patternEffectiveFrom) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const start = this.step1?.start_date;
+    if (start && start >= today) {
+      this.patternEffectiveFrom = start;
+    } else {
+      this.patternEffectiveFrom = today;
+    }
   }
 
   private loadRoomOptions(): void {
@@ -1232,16 +1320,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       const payload = this.buildCompleteRegistrationPayload();
       this.isSaving = true;
       this.errorMessage = null;
+      this.patternError = null;
+      this.patternRetryError = null;
 
       this.staffApi.createChildWithFullProfile(payload).subscribe({
         next: (result) => {
-          this.isSaving = false;
-          this.draftStorage.clear();
-          this.hasStoredDraft = false;
-          this.draftSavedAt = null;
-          this.draftRestoredAt = null;
-          this.isDraftRestoredBannerVisible = false;
-          this.router.navigate(['/staff/manager/children', result.id]);
+          this.childId = result.id;
+          // Step 1 of the two-step submit succeeded. Now post the session
+          // pattern (D3). On success, navigate to the child detail; on
+          // failure, surface a partial-failure UI so the manager can retry
+          // or close the wizard without a pattern.
+          this.submitSessionPattern(result.id);
         },
         error: (error) => {
           this.isSaving = false;
@@ -1261,6 +1350,57 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.successMessage = 'All sections saved.';
     this.isSaving = false;
     this.loadStatus();
+  }
+
+  private submitSessionPattern(childId: string): void {
+    const flat = this.flattenedPatternEntries;
+    const entries = flat.map((e) => ({ dayOfWeek: e.day_of_week, sessionTypeId: e.session_type_id }));
+    this.patternSubmitting = true;
+    this.staffApi
+      .createChildBookingPattern(childId, {
+        effectiveFrom: this.patternEffectiveFrom,
+        entries,
+      } as unknown as BookingPatternInput)
+      .subscribe({
+        next: () => {
+          this.patternSubmitting = false;
+          this.isSaving = false;
+          this.draftStorage.clear();
+          this.hasStoredDraft = false;
+          this.draftSavedAt = null;
+          this.draftRestoredAt = null;
+          this.isDraftRestoredBannerVisible = false;
+          this.toast.success(`Child created. Session pattern set for ${this.patternEffectiveFrom}.`);
+          this.router.navigate(['/staff/manager/children', childId]);
+        },
+        error: (error) => {
+          this.patternSubmitting = false;
+          this.isSaving = false;
+          this.patternRetriedAfterChildCreate = true;
+          const mapped = this.errorMapper.mapAndHandle(error);
+          this.patternRetryError =
+            formatPresentedApiError(presentApiError(mapped, 'registration.intake')) ??
+            'The session pattern could not be saved. Retry, or save the child without a pattern and finish from the child detail screen.';
+          this.errorMessage = this.patternRetryError;
+        },
+      });
+  }
+
+  protected retrySessionPattern(): void {
+    if (!this.childId) return;
+    this.submitSessionPattern(this.childId);
+  }
+
+  protected finalizeWithoutPattern(): void {
+    this.draftStorage.clear();
+    this.hasStoredDraft = false;
+    this.draftSavedAt = null;
+    this.draftRestoredAt = null;
+    this.isDraftRestoredBannerVisible = false;
+    this.toast.success('Child created. You can set up the session pattern from the child detail screen.');
+    if (this.childId) {
+      this.router.navigate(['/staff/manager/children', this.childId]);
+    }
   }
 
   protected toggleDebugPanel(): void {
@@ -1353,6 +1493,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       information_sharing_consent: 'information-sharing-consent',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
+      pattern_effective_from: 'pattern-effective-from',
+      pattern_entries: 'pattern-entries',
     };
     return map[field] ?? field;
   }
@@ -1842,8 +1984,23 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.collectContactsIssues(issues);
     this.collectFundingIssues(issues);
     this.collectConsentsIssues(issues);
+    this.collectSessionPatternIssues(issues);
 
     return issues;
+  }
+
+  private collectSessionPatternIssues(issues: FinalCompletionIssue[]): void {
+    if (!this.patternEffectiveFrom) {
+      issues.push({ stepKey: 'session-pattern', field: 'pattern_effective_from', message: 'Effective date is required (YYYY-MM-DD).' });
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.patternEffectiveFrom < today) {
+      issues.push({ stepKey: 'session-pattern', field: 'pattern_effective_from', message: 'Effective date cannot be in the past.' });
+    }
+    if (this.flattenedPatternEntries.length === 0) {
+      issues.push({ stepKey: 'session-pattern', field: 'pattern_entries', message: 'Add at least one booked session before continuing.' });
+    }
   }
 
   private collectMedicalSafetyIssues(issues: FinalCompletionIssue[]): void {
@@ -2014,6 +2171,118 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         issues.push({ stepKey: 'consents-evidence', field: item.key, message: `Record an explicit Yes or No decision for ${item.label}.` });
       }
     }
+  }
+
+  // ── Session pattern helpers ───────────────────────────────────────────
+
+  readonly dayLabels: { value: number; label: string }[] = [
+    { value: 1, label: 'Mon' },
+    { value: 2, label: 'Tue' },
+    { value: 3, label: 'Wed' },
+    { value: 4, label: 'Thu' },
+    { value: 5, label: 'Fri' },
+    { value: 6, label: 'Sat' },
+    { value: 7, label: 'Sun' },
+  ];
+
+  protected get sessionTypeOptions(): { value: string; label: string }[] {
+    return this.availableSessionTypes.map((t) => ({
+      value: t.id,
+      label: `${t.name} (${t.startTime}-${t.endTime})`,
+    }));
+  }
+
+  protected get templateOptions(): { value: string; label: string }[] {
+    return this.availableSessionTemplates.map((t) => ({ value: t.id, label: t.name }));
+  }
+
+  protected sessionTypeLabel(id: string): string {
+    const t = this.availableSessionTypes.find((s) => s.id === id);
+    return t ? `${t.name} (${t.startTime}-${t.endTime})` : '(unknown)';
+  }
+
+  protected dayEntriesFor(day: number): { session_type_id: string }[] {
+    return this.patternDayEntries[day] ?? [];
+  }
+
+  addPatternEntry(day: number): void {
+    this.patternDayEntries = {
+      ...this.patternDayEntries,
+      [day]: [...(this.patternDayEntries[day] ?? []), { session_type_id: '' }],
+    };
+    this.notifyDraftChanged();
+  }
+
+  removePatternEntry(day: number, index: number): void {
+    const arr = [...(this.patternDayEntries[day] ?? [])];
+    arr.splice(index, 1);
+    this.patternDayEntries = { ...this.patternDayEntries, [day]: arr };
+    this.notifyDraftChanged();
+  }
+
+  setPatternEntryType(day: number, index: number, value: string): void {
+    const arr = [...(this.patternDayEntries[day] ?? [])];
+    arr[index] = { session_type_id: value };
+    this.patternDayEntries = { ...this.patternDayEntries, [day]: arr };
+    this.notifyDraftChanged();
+  }
+
+  copyMonToAllWeekdays(): void {
+    const monday = [...(this.patternDayEntries[1] ?? [])];
+    this.patternDayEntries = {
+      1: monday,
+      2: [...monday],
+      3: [...monday],
+      4: [...monday],
+      5: [...monday],
+      6: this.patternDayEntries[6] ?? [],
+      7: this.patternDayEntries[7] ?? [],
+    };
+    this.notifyDraftChanged();
+  }
+
+  clearAllPatternEntries(): void {
+    this.patternDayEntries = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+    this.notifyDraftChanged();
+  }
+
+  applyTemplate(templateId: string): void {
+    const t = this.availableSessionTemplates.find((x) => x.id === templateId);
+    if (!t) return;
+    const dayMap: Record<number, { session_type_id: string }[]> = {
+      1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [],
+    };
+    for (const e of t.entries) {
+      if (e.day_of_week >= 1 && e.day_of_week <= 7) {
+        dayMap[e.day_of_week].push({ session_type_id: e.session_type_id });
+      }
+    }
+    this.patternDayEntries = dayMap;
+    this.patternSkipTemplate = false;
+    this.notifyDraftChanged();
+  }
+
+  protected skipTemplate(): void {
+    this.clearAllPatternEntries();
+    this.patternSkipTemplate = true;
+    this.notifyDraftChanged();
+  }
+
+  protected setPatternEffectiveFrom(value: string): void {
+    this.patternEffectiveFrom = value;
+    this.notifyDraftChanged();
+  }
+
+  protected get flattenedPatternEntries(): { day_of_week: number; session_type_id: string }[] {
+    const out: { day_of_week: number; session_type_id: string }[] = [];
+    for (let d = 1; d <= 7; d++) {
+      for (const e of this.patternDayEntries[d] ?? []) {
+        if (e.session_type_id) {
+          out.push({ day_of_week: d, session_type_id: e.session_type_id });
+        }
+      }
+    }
+    return out;
   }
 
   private parseYesNoUnknownFromStr(value: string): string | null {
@@ -2336,6 +2605,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     };
   }
 
+  protected roomLabelFor(roomId: string | null | undefined): string {
+    if (!roomId) return '';
+    return this.roomOptions.find((r) => r.value === roomId)?.label ?? '';
+  }
+
   private filterContacts(entries: RegistrationContactEntry[]): RegistrationContactEntry[] {
     return entries
       .filter(contact => this.contactHasValue(contact))
@@ -2442,6 +2716,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step2: { ...this.step2 },
       step3: { ...this.step3 },
       step4: { ...this.step4 },
+      step5: {
+        effective_from: this.patternEffectiveFrom,
+        entries: this.flattenedPatternEntries,
+      },
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -2529,11 +2807,23 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (draft.referralsDraft?.length) {
       this.referralsDraft = draft.referralsDraft.map(r => ({ ...r }));
     }
+    if (draft.step5) {
+      this.patternEffectiveFrom = draft.step5.effective_from || this.patternEffectiveFrom;
+      const dayMap: Record<number, { session_type_id: string }[]> = {
+        1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [],
+      };
+      for (const e of draft.step5.entries ?? []) {
+        if (e.day_of_week >= 1 && e.day_of_week <= 7 && e.session_type_id) {
+          dayMap[e.day_of_week].push({ session_type_id: e.session_type_id });
+        }
+      }
+      this.patternDayEntries = dayMap;
+    }
     if (draft.currentStep) {
       if (this.steps.some(step => step.key === draft.currentStep)) {
         this.currentStep = draft.currentStep as StepperStep;
       } else if (draft.currentStep === 'review-complete') {
-        this.currentStep = 'consents-evidence';
+        this.currentStep = 'review-complete';
       }
     }
     this.step1Submitted = !!draft.step1?.first_name?.trim();

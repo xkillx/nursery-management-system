@@ -124,6 +124,12 @@ describe('ManagerChildEditStepperComponent', () => {
     component.step4.information_truthfulness_declaration = true;
     component.step4.gdpr_data_processing_consent = true;
     markAllConsentsReviewed();
+
+    component.patternEffectiveFrom = '2026-09-01';
+    component.patternDayEntries = {
+      1: [{ session_type_id: 'session-type-1' }],
+      2: [], 3: [], 4: [], 5: [], 6: [], 7: [],
+    };
   }
 
   describe('canSubmitLocally — happy path', () => {
@@ -638,6 +644,63 @@ describe('ManagerChildEditStepperComponent', () => {
       component.referralsDraft = [];
       component.addReferralEntry();
       expect(component.referralsDraft[0].waitingListStatus).toBe('not_applicable');
+    });
+  });
+
+  describe('session pattern', () => {
+    it('blocks when pattern effective date missing', () => {
+      fillRequiredForCompletion();
+      component.patternEffectiveFrom = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks when pattern effective date is in the past', () => {
+      fillRequiredForCompletion();
+      component.patternEffectiveFrom = '2020-01-01';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks when no entries are added', () => {
+      fillRequiredForCompletion();
+      component.patternDayEntries = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('passes when at least one entry is added', () => {
+      fillRequiredForCompletion();
+      expect(component.canSubmitLocally()).toBe(true);
+    });
+
+    it('copyMonToAllWeekdays copies Monday entries to Tue-Fri only', () => {
+      fillRequiredForCompletion();
+      component.patternDayEntries = { 1: [{ session_type_id: 'a' }], 2: [], 3: [], 4: [], 5: [], 6: [{ session_type_id: 'b' }], 7: [{ session_type_id: 'c' }] };
+      component.copyMonToAllWeekdays();
+      expect(component.patternDayEntries[2]).toEqual([{ session_type_id: 'a' }]);
+      expect(component.patternDayEntries[3]).toEqual([{ session_type_id: 'a' }]);
+      expect(component.patternDayEntries[4]).toEqual([{ session_type_id: 'a' }]);
+      expect(component.patternDayEntries[5]).toEqual([{ session_type_id: 'a' }]);
+      expect(component.patternDayEntries[6]).toEqual([{ session_type_id: 'b' }]);
+      expect(component.patternDayEntries[7]).toEqual([{ session_type_id: 'c' }]);
+    });
+
+    it('applyTemplate distributes entries by day_of_week', () => {
+      fillRequiredForCompletion();
+      component.availableSessionTemplates = [
+        {
+          id: 'tpl-1',
+          name: 'Standard',
+          description: null,
+          isActive: true,
+          entries: [
+            { day_of_week: 1, session_type_id: 'a' },
+            { day_of_week: 3, session_type_id: 'b' },
+          ],
+        },
+      ];
+      component.applyTemplate('tpl-1');
+      expect(component.patternDayEntries[1]).toEqual([{ session_type_id: 'a' }]);
+      expect(component.patternDayEntries[2]).toEqual([]);
+      expect(component.patternDayEntries[3]).toEqual([{ session_type_id: 'b' }]);
     });
   });
 });
