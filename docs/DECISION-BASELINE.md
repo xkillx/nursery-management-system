@@ -73,29 +73,34 @@ Do not treat the one-site lock below as blocking accepted Post-MVP scope.
 ## 7. Funding and Billing Rules
 
 - Funding model: simple funded-hours deduction (`Funding v1`).
-- Funding applies to core childcare hours only; extras always payable.
-- Core formula: `max(0, core_attended_hours - funded_hours_allowance)`.
-- Child minimum before billing/attendance: name, DOB, start date, one guardian, billing rate.
+- Funding applies to booked core childcare minutes only; extras always payable.
+- Core formula: `max(0, booked_core_minutes - funded_minutes_allowance)`.
+- Child minimum before billing/attendance: name, DOB, start date, one guardian, billing rate, an active Term, a booking pattern, and a Funding Profile for the billing month.
 - Billing period: monthly calendar month only.
 
-## 8. Invoicing Policy
+## 8. Invoicing Policy (Post-MVP: booking-based advance-pay)
 
-- Invoice source of truth: attendance actuals.
-- Draft generation: manager manual monthly trigger.
-- Parent visibility: draft invoices are manager-only; parents see issued and later states only.
-- Issue mode: one-by-one and bulk; default bulk with confirmation.
+- Invoice source of truth: the active Term's Booking Pattern. Attendance is no longer a billing input. See `docs/adr/0006-booking-pattern-billing-source.md`.
+- Commercial model: 12-month fixed-term advance-pay. See `docs/adr/0007-12-month-fixed-term-contract.md`.
+- Draft generation: scheduler-driven on the 25th of the prior month at 00:05 Europe/London; the manager can also trigger a full-month regeneration explicitly.
+- Issue: auto-issue on the 25th. The invoice is parent-visible and payable the same day.
+- Parent visibility: issued (and later) invoices are parent-visible; drafts are manager-only.
+- Issue mode: bulk (the scheduled run); one-by-one and bulk-issue endpoints remain for the "regenerate and re-issue" path.
 - Immutable issued invoices: no direct edit after issue.
-- Invoice numbering: `INV-YYYYMM-####`.
+- Invoice numbering: `INV-YYYYMM-####` (unchanged).
 - Invoice granularity: per child (not family-combined).
 - Currency: GBP only.
 - Tax mode: non-VAT only for month 1.
-- Due policy: due on receipt.
-- Overdue transition: unpaid issued invoice becomes `overdue` at next local midnight.
-- Incomplete attendance on issue: block only affected children and return exception list.
-- Draft regeneration: allowed per child after correction; no duplicates for same month.
-- Issued regeneration: not allowed; use adjustment flow.
-- Adjustment flow: manager creates linked follow-up adjustment invoice with required reason.
-- Child leaves mid-month: billing is automatically derived from attendance actuals up to leave date.
+- Due policy: `due_at = billing_month_start` (1st of the month at 00:00 UTC). The system issues on the 25th of the prior month; the parent owes from the 1st.
+- Overdue transition: unpaid issued invoice becomes `overdue` at 00:00 on the 8th of the billing month in Europe/London (1-week grace). A `payment_failed` invoice does not transition to `overdue`.
+- Attendance block: practitioners see a per-child "attendance blocked — invoice overdue" warning on the daily list when the child's billing month is past the 8th and the invoice is unpaid; managers can override per child for the current billing month.
+- Booking-pattern changes: in-term changes follow a 1-month-notice rule. Decreases are auto-approved and effective on the 1st of the month at least one calendar month after the request. Increases require manager approval (room capacity + staff:child ratios).
+- Early termination: 1-month notice. The parent pays for the notice month only; no further liability; no refunds of any pre-generated drafts (none will exist for the cancelled term going forward under the rolling-generation rule).
+- 52-week billing: the booked pattern is billed for all 52 weeks of the year, including weeks the nursery is closed; no closure calendar, no pro-rating.
+- Extras: manual invoice line items added by managers (unchanged from the existing `Extras Charging Model`).
+- Term renewal: T-45 soft warning, T-30 renewal prompt, T+1 transition to `ended` if no renewal recorded. The child becomes `inactive` on the day after `term_end_date` when no renewal is on file.
+- Adjustment flow: manager creates linked follow-up adjustment invoice with required reason (unchanged).
+- Settling-in window: free, no invoice; attendance is captured for the register only.
 
 ## 9. Payments and Stripe
 

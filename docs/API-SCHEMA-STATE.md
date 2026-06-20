@@ -1,10 +1,10 @@
 # API Schema State
 
-> **Verified as of 2026-06-18.** Latest migration: 000034.
+> **Verified as of 2026-06-18.** Latest migration: 000003 (advance-pay Terms + scheduler).
 
 - **Last verification date**: 2026-06-18
-- **Verified migration version**: 34
-- **Latest migration**: 000034 (`refactor_to_child_management_model`)
+- **Verified migration version**: 3
+- **Latest migration**: 000003 (`terms`) — adds `term`, `term_schedule_change`, `invoice_run_advance` tables, plus `children.current_term_id` denormalisation. Implements the booking-based advance-pay invoicing model (see `docs/plans/booking-based-advance-pay-invoicing.md`, `docs/adr/0006-booking-pattern-billing-source.md`, `docs/adr/0007-12-month-fixed-term-contract.md`).
 - **Workflow**: `make migrate-verify` (up → version → down -all → up → version)
 - **Migration tool**: golang-migrate (manual, not auto-run at API startup)
 

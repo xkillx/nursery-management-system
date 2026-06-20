@@ -45,6 +45,8 @@ tags:
     description: Owner site overview, billing setup, and manager access
   - name: Rooms
     description: Room management, including primary-room occupancy counts for children
+  - name: Terms
+    description: 12-month fixed-term advance-pay Term lifecycle, schedule changes, and termination
   - name: Deferred
     description: Proposed contracts not yet implemented
 
@@ -1370,6 +1372,43 @@ components:
         collection_settings: { $ref: "#/components/schemas/ChildCollectionSettings" }
         billing_profile: { $ref: "#/components/schemas/ChildBillingProfile" }
         room_assignment: { $ref: "#/components/schemas/ChildRoomAssignment" }
+
+    Term:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        child_id: { type: string, format: uuid }
+        term_start_date: { type: string, format: date, description: "YYYY-MM-01" }
+        term_end_date: { type: string, format: date, description: "YYYY-MM-DD; = start + 12 months - 1 day" }
+        booking_pattern_id: { type: string, format: uuid }
+        site_hourly_rate_minor: { type: integer, description: "Snapshotted branch rate at term creation" }
+        status:
+          type: string
+          enum: [pre_term, active, pending_renewal, ended, terminated]
+        termination_reason_code: { type: string, nullable: true }
+        termination_reason_note: { type: string, nullable: true }
+        terminated_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    TermScheduleChange:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        term_id: { type: string, format: uuid }
+        previous_booking_pattern_id: { type: string, format: uuid }
+        new_booking_pattern_id: { type: string, format: uuid }
+        change_kind:
+          type: string
+          enum: [decrease, increase]
+        requested_at: { type: string, format: date-time }
+        effective_from: { type: string, format: date, description: "YYYY-MM-01" }
+        approved_by_membership_id: { type: string, format: uuid, nullable: true }
+        approval_decision:
+          type: string
+          enum: [approved, rejected]
+          nullable: true
+        rejected_at: { type: string, format: date-time, nullable: true }
+
       responses:
         "200":
           description: Children list
@@ -3992,3 +4031,408 @@ components:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Terms (Post-MVP: 12-month fixed-term advance-pay)
+  # See docs/adr/0006-booking-pattern-billing-source.md and
+  # docs/adr/0007-12-month-fixed-term-contract.md for the model.
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/children/{child_id}/terms:
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listChildTerms
+      summary: List all Terms for a child (historical and current)
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of terms (most recent first)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Term"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createChildTerm
+      summary: Create a Term (typically the first Term at child creation, or a renewal)
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [term_start_date, booking_pattern_id]
+              properties:
+                term_start_date:
+                  type: string
+                  format: date
+                  description: "YYYY-MM-01. term_end_date is derived as start + 12 months - 1 day."
+                booking_pattern_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Term created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Term"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/children/{child_id}/terms/current:
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getCurrentChildTerm
+      summary: Get the active Term for a child
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current term (or 404 if none)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Term"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/terms:
+    get:
+      operationId: listExpiringTerms
+      summary: List Terms within the renewal window (default 30 days, max 365)
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expiring_within_days
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+      responses:
+        "200":
+          description: List of terms in the renewal window
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Term"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+
+  /api/v1/terms/{term_id}:
+    parameters:
+      - name: term_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTerm
+      summary: Get a Term by ID
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Term
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Term"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/terms/{term_id}/schedule-changes:
+    parameters:
+      - name: term_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: requestTermScheduleChange
+      summary: Request a 1-month-notice in-term booking pattern change. Decreases are auto-approved; increases require manager approval.
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_booking_pattern_id, effective_from, change_kind]
+              properties:
+                new_booking_pattern_id:
+                  type: string
+                  format: uuid
+                effective_from:
+                  type: string
+                  format: date
+                  description: "YYYY-MM-01, must be >= today + 1 month (1-month notice)"
+                change_kind:
+                  type: string
+                  enum: [decrease, increase]
+      responses:
+        "201":
+          description: Schedule change created (decreases are auto-approved)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TermScheduleChange"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/terms/{term_id}/schedule-changes/{change_id}/approve:
+    parameters:
+      - name: term_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: change_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: approveTermScheduleChange
+      summary: Approve a pending increase. Decreases are auto-approved at request time and cannot be approved.
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Schedule change approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TermScheduleChange"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/terms/{term_id}/schedule-changes/{change_id}/reject:
+    parameters:
+      - name: term_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: change_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: rejectTermScheduleChange
+      summary: Reject a pending increase. Decreases cannot be rejected (they are auto-approved at request time).
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Schedule change rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TermScheduleChange"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/terms/{term_id}/actions/terminate:
+    parameters:
+      - name: term_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: terminateTerm
+      summary: Early termination with 1-month notice. The parent pays for the notice month only.
+      tags: [Terms]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason_code]
+              properties:
+                reason_code:
+                  type: string
+                  description: "Lifecycle reason code (duplicate_record, entered_in_error, left_nursery, safeguarding_direction, contact_update, access_revoked, other)"
+                reason_note:
+                  type: string
+                effective_month:
+                  type: string
+                  format: date
+                  description: "YYYY-MM-01. Defaults to next calendar month. Must be >= today + 1 month."
+      responses:
+        "200":
+          description: Term terminated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Term"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/invoices/{invoice_id}/override-attendance-block:
+    parameters:
+      - name: invoice_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: overrideInvoiceAttendanceBlock
+      summary: Manager override of the 8th-of-month attendance block for one billing month. Recorded as an audit event; subsequent months require a fresh override.
+      tags: [Invoices]
+      x-roles: [manager]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [billing_month]
+              properties:
+                billing_month:
+                  type: string
+                  description: "YYYY-MM"
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Override recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoice_id:
+                    type: string
+                    format: uuid
+                  billing_month:
+                    type: string
+                  overridden_by:
+                    type: string
+                    format: uuid
+                  overridden_at:
+                    type: string
+                    format: date-time
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenRole"
+        "404":
+          $ref: "#/components/responses/NotFound"
