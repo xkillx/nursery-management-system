@@ -27,7 +27,7 @@ func newTestLogger() *slog.Logger {
 
 func TestNewScheduler_RegistersAllJobs(t *testing.T) {
 	lister := &fakeLister{}
-	expire := NewExpireTermsRunner(nil, lister)
+	expire := NewExpireTermsRunner(nil, nil, lister)
 	generate := NewGenerateAdvanceInvoicesRunner(nil, lister)
 	s, err := NewScheduler(newTestLogger(), nil, expire, generate, nil)
 	if err != nil {

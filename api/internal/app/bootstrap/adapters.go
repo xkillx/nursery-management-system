@@ -23,6 +23,7 @@ import (
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/email"
+	"nursery-management-system/api/internal/platform/tenant"
 )
 
 type guardianCheckerAdapter struct {
@@ -233,3 +234,26 @@ func (a *siteRateProviderAdapter) SiteHourlyRateMinor(ctx context.Context, tx pg
 }
 
 var _ termapp.SiteRateProvider = (*siteRateProviderAdapter)(nil)
+
+// childDeactivatorAdapter satisfies termapp.ChildDeactivator by delegating
+// to the children.MarkInactive use case. The reason code/note come from
+// the term module (e.g., "term ended without renewal").
+type childDeactivatorAdapter struct {
+	markInactiveUC *childapp.MarkInactive
+}
+
+func (a *childDeactivatorAdapter) MarkChildInactive(ctx context.Context, tenantID, branchID, childID uuid.UUID, reasonCode, reasonNote string) error {
+	actor := tenant.ActorContext{
+		TenantID:      tenantID,
+		BranchID:      branchID,
+		RequestID:     "system:expire_terms",
+		CorrelationID: "system:expire_terms",
+	}
+	_, err := a.markInactiveUC.Execute(ctx, actor, childID.String(), childapp.MarkInactiveParams{
+		ReasonCode: reasonCode,
+		ReasonNote: reasonNote,
+	})
+	return err
+}
+
+var _ termapp.ChildDeactivator = (*childDeactivatorAdapter)(nil)

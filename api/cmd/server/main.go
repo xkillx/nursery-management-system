@@ -68,9 +68,10 @@ func main() {
 		termRepo := termpostgres.NewTermRepository(pool)
 		auditWriter := audit.NewWriter()
 		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
+		markPendingUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txMgr)
 		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter)
 		lister := invoicerun.NewSystemTenantBranchLister(pool)
-		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, lister)
+		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
 		generateRunner := invoicerun.NewGenerateAdvanceInvoicesRunner(generateUC, lister)
 
 		var schedErr error

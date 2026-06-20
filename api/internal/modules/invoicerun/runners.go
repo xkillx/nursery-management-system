@@ -112,18 +112,29 @@ func (r *GenerateAdvanceInvoicesRunner) RunForBillingMonth(ctx context.Context, 
 }
 
 // ExpireTermsRunner iterates every (tenant, branch) and runs the term
-// expire use case, which flips active terms to `pending_renewal` at T-30
-// and to `ended` at T+1 if no renewal has been recorded.
+// lifecycle steps in order:
+//
+//  1. MarkPendingRenewal — flip active terms to pending_renewal when
+//     their term_end_date is within the next PendingRenewalThresholdDays days.
+//  2. ExpireTerms — flip terms that reached their term_end_date + 1 day to
+//     status='ended' and, if no renewal term exists, mark the child
+//     inactive (Phase 5 acceptance criterion).
 type ExpireTermsRunner struct {
 	expireTerms        *termapp.ExpireTermsUseCase
+	markPendingRenewal *termapp.MarkPendingRenewalUseCase
 	tenantBranchLister TenantBranchLister
 }
 
 func NewExpireTermsRunner(
 	expireTerms *termapp.ExpireTermsUseCase,
+	markPendingRenewal *termapp.MarkPendingRenewalUseCase,
 	lister TenantBranchLister,
 ) *ExpireTermsRunner {
-	return &ExpireTermsRunner{expireTerms: expireTerms, tenantBranchLister: lister}
+	return &ExpireTermsRunner{
+		expireTerms:        expireTerms,
+		markPendingRenewal: markPendingRenewal,
+		tenantBranchLister: lister,
+	}
 }
 
 func (r *ExpireTermsRunner) RunForAllTenantsAndBranches(ctx context.Context) error {
@@ -133,13 +144,19 @@ func (r *ExpireTermsRunner) RunForAllTenantsAndBranches(ctx context.Context) err
 	if r.expireTerms == nil {
 		return fmt.Errorf("expire-terms use case not configured")
 	}
+	if r.markPendingRenewal == nil {
+		return fmt.Errorf("mark-pending-renewal use case not configured")
+	}
 	scopes, err := r.tenantBranchLister.ListAllTenantBranches(ctx)
 	if err != nil {
 		return fmt.Errorf("list tenant branches: %w", err)
 	}
 	for _, scope := range scopes {
-		if _, expErr := r.expireTerms.RunForTenantBranch(ctx, scope.TenantID, scope.BranchID); expErr != nil {
-			return fmt.Errorf("expire terms for %s/%s: %w", scope.TenantID, scope.BranchID, expErr)
+		if _, err := r.markPendingRenewal.RunForTenantBranch(ctx, scope.TenantID, scope.BranchID); err != nil {
+			return fmt.Errorf("mark pending renewal for %s/%s: %w", scope.TenantID, scope.BranchID, err)
+		}
+		if _, err := r.expireTerms.RunForTenantBranch(ctx, scope.TenantID, scope.BranchID); err != nil {
+			return fmt.Errorf("expire terms for %s/%s: %w", scope.TenantID, scope.BranchID, err)
 		}
 	}
 	return nil

@@ -413,6 +413,11 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	approveChangeUC := termapp.NewApproveScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
 	rejectChangeUC := termapp.NewRejectScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
 	terminateUC := termapp.NewTerminateTermUseCase(termRepo, txManager, auditWriter)
+	expireTermsUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txManager).
+		WithDeactivator(&childDeactivatorAdapter{markInactiveUC: childapp.NewMarkInactive(childRepo, txManager, auditWriter)})
+	markPendingRenewalUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txManager)
+	_ = expireTermsUC
+	_ = markPendingRenewalUC
 	_ = termdomain.ErrTermAlreadyExists
 	termHandler := termhttphandler.NewHandler(
 		createTermUC, getTermUC, getCurrentTermUC, listTermsUC, listExpiringUC,
