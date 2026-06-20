@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroExclamationTriangle } from '@ng-icons/heroicons/outline';
 
 import { StaffApiService } from '../../data/staff-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -19,12 +21,14 @@ import { ChildContact } from '../../models/child-profile.models';
   imports: [
     CommonModule,
     RouterLink,
+    NgIcon,
     ButtonComponent,
     AlertComponent,
     StatusBadgeComponent,
     EmptyStateComponent,
     LoadingStateComponent,
   ],
+  providers: [provideIcons({ heroExclamationTriangle })],
   templateUrl: './manager-child-detail.component.html',
 })
 export class ManagerChildDetailComponent implements OnInit {

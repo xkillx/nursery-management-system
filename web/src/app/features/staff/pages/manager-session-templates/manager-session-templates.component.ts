@@ -16,10 +16,10 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { AuthService } from '../../../../core/services/auth.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
-import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import {
   StaffSessionTemplatesApiService,
@@ -55,10 +55,10 @@ const DAY_LABELS: Record<number, string> = {
     NgIcon,
     AlertComponent,
     ButtonComponent,
+    FormFieldComponent,
     InputFieldComponent,
     TextAreaComponent,
     SelectComponent,
-    EmptyStateComponent,
     LoadingStateComponent,
   ],
   templateUrl: './manager-session-templates.component.html',
@@ -96,6 +96,7 @@ export class ManagerSessionTemplatesComponent implements OnInit {
   formSaving = false;
   formError: string | null = null;
   formFieldErrors: { name?: string; description?: string; entries?: string } = {};
+
 
   readonly dayOptions: Option[] = (Object.keys(DAY_LABELS) as unknown as number[])
     .sort((a, b) => a - b)

@@ -1918,7 +1918,7 @@
             </div>
           </div>
 
-      @if (currentStep === 'session-pattern') {
+      @if (isSessionPatternStep()) {
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="space-y-6">
             <header class="space-y-2">
@@ -1940,13 +1940,12 @@
                 label="Effective from"
                 htmlFor="pattern-effective-from"
                 [required]="true"
-                [error]="hasFieldIssue('pattern_effective_from') ? fieldIssueMessage('pattern_effective_from') : null"
+                [error]="hasFieldIssue('pattern_effective_from') ? fieldIssueMessage('pattern_effective_from') : ''"
               >
                 <app-date-picker
-                  inputId="pattern-effective-from"
+                  id="pattern-effective-from"
                   name="pattern-effective-from"
-                  [value]="patternEffectiveFrom"
-                  (valueChange)="setPatternEffectiveFrom($event)"
+                  [(ngModel)]="patternEffectiveFrom"
                 ></app-date-picker>
               </app-form-field>
             </div>
@@ -2061,7 +2060,7 @@
         </div>
       }
 
-      @if (currentStep === 'review-complete') {
+      @if (isReviewCompleteStep()) {
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="space-y-6">
             <header class="space-y-2">

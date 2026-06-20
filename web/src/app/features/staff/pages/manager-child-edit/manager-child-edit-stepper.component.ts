@@ -354,6 +354,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return this.isNewRegistration ? this.fullSteps : this.editSteps;
   }
 
+  isSessionPatternStep(): boolean {
+    return this.currentStep === 'session-pattern';
+  }
+
+  isReviewCompleteStep(): boolean {
+    return this.currentStep === 'review-complete';
+  }
+
   readonly languageOptions = [
     'English',
     'Mandarin Chinese',
