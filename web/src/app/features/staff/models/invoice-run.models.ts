@@ -7,7 +7,7 @@ export const InvoiceRunBlockerCodes = {
   MISSING_CHILD_NAME: 'missing_child_name',
   MISSING_CHILD_DATE_OF_BIRTH: 'missing_child_date_of_birth',
   MISSING_CHILD_START_DATE: 'missing_child_start_date',
-  MISSING_GUARDIAN_LINK: 'missing_guardian_link',
+  MISSING_PARENT_CARER_CONTACT: 'missing_parent_carer_contact',
   MISSING_BILLING_RATE: 'missing_billing_rate',
   MISSING_FUNDING_PROFILE: 'missing_funding_profile',
   INCOMPLETE_ATTENDANCE: 'incomplete_attendance',

@@ -189,11 +189,6 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       route: '/staff/manager/children',
     },
     {
-      label: 'Manage guardians',
-      description: 'Add, edit, and manage guardian records',
-      route: '/staff/manager/guardians',
-    },
-    {
       label: 'Start invoice run',
       description: 'Generate invoices for the current billing month',
       route: '/staff/manager/invoice-run',

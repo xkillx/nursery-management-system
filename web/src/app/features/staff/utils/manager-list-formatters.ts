@@ -53,7 +53,7 @@ const REQUIREMENT_LABELS: Record<string, string> = {
 	first_name: 'First name',
 	date_of_birth: 'Date of birth',
   start_date: 'Start date',
-  guardian_link: 'Linked guardian',
+  parent_carer_contact: 'Parent carer contact',
 };
 
 export function missingRequirementLabel(code: string): string {

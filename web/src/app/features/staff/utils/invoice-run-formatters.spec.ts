@@ -58,7 +58,7 @@ describe('invoice-run-formatters', () => {
       expect(blockerLabel('missing_child_name')).toBe('Missing child name');
       expect(blockerLabel('missing_child_date_of_birth')).toBe('Missing date of birth');
       expect(blockerLabel('missing_child_start_date')).toBe('Missing start date');
-      expect(blockerLabel('missing_guardian_link')).toBe('Missing guardian link');
+      expect(blockerLabel('missing_parent_carer_contact')).toBe('Missing parent carer contact');
       expect(blockerLabel('invoice_already_issued')).toBe('Already issued');
     });
 
@@ -98,8 +98,8 @@ describe('invoice-run-formatters', () => {
       expect(action.route).toEqual(['/staff/manager/children', 'child-2']);
     });
 
-    it('routes missing guardian link to child detail', () => {
-      const action = blockerNextAction('missing_guardian_link', 'child-3');
+    it('routes missing parent carer contact to child detail', () => {
+      const action = blockerNextAction('missing_parent_carer_contact', 'child-3');
       expect(action.route).toEqual(['/staff/manager/children', 'child-3']);
     });
 

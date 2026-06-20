@@ -14,7 +14,6 @@ export const ROLE_ROUTES = {
   ownerSessionTypes: '/owner/session-types',
   managerDashboard: '/staff/manager/dashboard',
   managerChildren: '/staff/manager/children',
-  managerGuardians: '/staff/manager/guardians',
   managerInvites: '/staff/manager/invites',
   managerRooms: '/staff/manager/rooms',
   managerSessionTypes: '/staff/manager/session-types',

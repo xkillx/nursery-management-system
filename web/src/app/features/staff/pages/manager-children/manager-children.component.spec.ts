@@ -25,7 +25,7 @@ last_name: 'Lovelace',
     left_reason_code: null,
     left_reason_note: null,
     enrollment_complete: false,
-    missing_requirements: ['guardian_link'],
+    missing_requirements: ['parent_carer_contact'],
     created_at: '2024-08-01T00:00:00Z',
     updated_at: '2024-08-01T00:00:00Z',
   };
@@ -94,7 +94,7 @@ last_name: 'Hopper',
   });
 
   it('maps missing requirement codes to labels', () => {
-    expect(component.requirementLabel('guardian_link')).toBe('Linked guardian');
+    expect(component.requirementLabel('parent_carer_contact')).toBe('Parent carer contact');
     expect(component.requirementLabel('billing_rate')).toBe('billing_rate');
   });
 
@@ -125,7 +125,7 @@ last_name: 'Hopper',
 
     const child = component.children[0];
     const labels = child.missingRequirements.map(component.requirementLabel);
-    expect(labels).toEqual(['Linked guardian']);
+    expect(labels).toEqual(['Parent carer contact']);
   });
 
   it('hides pagination controls when all results fit on one page', () => {

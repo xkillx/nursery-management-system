@@ -24,7 +24,6 @@ import {
 export type SidebarIcon =
   | 'dashboard'
   | 'children'
-  | 'guardians'
   | 'invites'
   | 'attendance'
   | 'attendance-corrections'
@@ -80,7 +79,6 @@ export class AppSidebarComponent {
   iconMap: Record<SidebarIcon, string> = {
     dashboard: 'heroSquares2x2',
     children: 'heroUserGroup',
-    guardians: 'heroUsers',
     invites: 'heroEnvelope',
     attendance: 'heroClipboardDocumentCheck',
     'attendance-corrections': 'heroClipboardDocumentList',
@@ -162,7 +160,6 @@ export class AppSidebarComponent {
           label: 'People',
           items: [
             { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/staff/manager/children/'] },
-            { label: 'Guardians', path: ROLE_ROUTES.managerGuardians, testId: 'staff-link-manager-guardians', icon: 'guardians' },
             { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites', icon: 'invites' },
           ],
         },
@@ -213,7 +210,7 @@ export class AppSidebarComponent {
         {
           label: 'Access',
           items: [
-            { label: 'Manager access', path: ROLE_ROUTES.ownerManagerAccess, testId: 'owner-link-manager-access', icon: 'guardians' },
+            { label: 'Manager access', path: ROLE_ROUTES.ownerManagerAccess, testId: 'owner-link-manager-access', icon: 'children' },
           ],
         },
         {

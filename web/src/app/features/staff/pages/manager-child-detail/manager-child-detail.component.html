@@ -84,17 +84,30 @@
     </section>
 
     <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Linked guardians</h3>
-      @if (linkedGuardians.length === 0) {
-        <app-empty-state message="No guardians linked yet."></app-empty-state>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Parent carers</h3>
+      @if (parentCarers.length === 0) {
+        <app-empty-state message="No parent carers yet."></app-empty-state>
       } @else {
         <ul class="mt-2 divide-y divide-gray-100">
-          @for (link of linkedGuardians; track link.id) {
-            <li class="py-2 text-sm text-gray-800 dark:text-white/90">{{ link.guardian.fullName }}</li>
+          @for (carer of parentCarers; track carer.id) {
+            <li class="py-2 text-sm text-gray-800 dark:text-white/90">
+              <div class="font-medium">{{ carer.fullName }}</div>
+              @if (carer.email || carer.telephone) {
+                <div class="text-xs text-gray-500">
+                  @if (carer.email) { <span>{{ carer.email }}</span> }
+                  @if (carer.email && carer.telephone) { <span> · </span> }
+                  @if (carer.telephone) { <span>{{ carer.telephone }}</span> }
+                </div>
+              }
+            </li>
           }
         </ul>
       }
     </section>
+
+    @if (parentCarers.length > 0) {
+      <!-- Note: end-of-section spacer for layout consistency. -->
+    }
   } @else {
     <app-empty-state message="No data."></app-empty-state>
   }

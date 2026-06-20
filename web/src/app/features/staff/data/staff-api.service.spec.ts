@@ -393,7 +393,7 @@ last_name: 'Lovelace',
     is_active: true,
     has_current_room: false,
     enrollment_complete: false,
-    missing_requirements: ['guardian_link'],
+    missing_requirements: ['parent_carer_contact'],
     created_at: '2024-08-01T00:00:00Z',
     updated_at: '2024-08-01T00:00:00Z',
   };
@@ -439,7 +439,7 @@ last_name: 'Lovelace',
         isActive: true,
         hasCurrentRoom: false,
         enrollmentComplete: false,
-        missingRequirements: ['guardian_link'],
+        missingRequirements: ['parent_carer_contact'],
         createdAt: '2024-08-01T00:00:00Z',
         updatedAt: '2024-08-01T00:00:00Z',
       });
@@ -458,78 +458,6 @@ last_name: 'Lovelace',
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
     req.flush({ items: [noRequirements] });
-  });
-});
-
-describe('StaffApiService — Guardians', () => {
-  let service: StaffApiService;
-  let httpMock: HttpTestingController;
-
-  const guardianApiModel = {
-    id: 'guardian-1',
-    full_name: 'Sarah Thompson',
-    email: 'sarah@example.com',
-    phone: '+44 7700 900001',
-    notes: null,
-    is_active: true,
-    deactivated_at: null,
-    deactivation_reason_code: null,
-    deactivation_reason_note: null,
-    created_at: '2024-08-01T00:00:00Z',
-    updated_at: '2024-08-01T00:00:00Z',
-  };
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    });
-
-    service = TestBed.inject(StaffApiService);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();
-  });
-
-  it('listGuardians sends status, limit, offset query params', () => {
-    service.listGuardians({ status: 'inactive', limit: 5, offset: 10 }).subscribe();
-
-    const req = httpMock.expectOne((r) => r.url === '/api/v1/guardians');
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('status')).toBe('inactive');
-    expect(req.request.params.get('limit')).toBe('5');
-    expect(req.request.params.get('offset')).toBe('10');
-    req.flush({ items: [] });
-  });
-
-  it('listGuardians maps nullable contact and lifecycle fields', () => {
-    const minimalGuardian = {
-      ...guardianApiModel,
-      email: undefined,
-      phone: undefined,
-      notes: undefined,
-    };
-
-    service.listGuardians({ status: 'active', limit: 10, offset: 0 }).subscribe((guardians) => {
-      expect(guardians.length).toBe(1);
-      expect(guardians[0]).toEqual({
-        id: 'guardian-1',
-        fullName: 'Sarah Thompson',
-        email: null,
-        phone: null,
-        notes: null,
-        isActive: true,
-        deactivatedAt: null,
-        deactivationReasonCode: null,
-        deactivationReasonNote: null,
-        createdAt: '2024-08-01T00:00:00Z',
-        updatedAt: '2024-08-01T00:00:00Z',
-      });
-    });
-
-    const req = httpMock.expectOne((r) => r.url === '/api/v1/guardians');
-    req.flush({ items: [minimalGuardian] });
   });
 });
 

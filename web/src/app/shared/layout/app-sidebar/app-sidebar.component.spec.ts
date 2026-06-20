@@ -38,12 +38,11 @@ describe('AppSidebarComponent', () => {
       authStub.role = ROLES.manager;
     });
 
-    it('shows dashboard, children, guardians, invites, attendance, billing, and rooms', () => {
+    it('shows dashboard, children, invites, attendance, billing, and rooms', () => {
       fixture.detectChanges();
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
       const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
-      const managerGuardians = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-guardians"]');
       const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       const managerFunding = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-funding"]');
       const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
@@ -54,7 +53,6 @@ describe('AppSidebarComponent', () => {
 
       expect(dashboard).toBeTruthy();
       expect(managerChildren).toBeTruthy();
-      expect(managerGuardians).toBeTruthy();
       expect(managerInvites).toBeTruthy();
       expect(managerFunding).toBeTruthy();
       expect(managerInvoiceRun).toBeTruthy();
@@ -255,7 +253,6 @@ describe('AppSidebarComponent', () => {
       const staffIds = [
         'staff-link-manager-dashboard',
         'staff-link-manager-children',
-        'staff-link-manager-guardians',
         'staff-link-manager-invites',
         'staff-link-practitioner-attendance',
         'staff-link-manager-funding',
@@ -357,7 +354,6 @@ describe('AppSidebarComponent', () => {
       const staffIds = [
         'staff-link-manager-dashboard',
         'staff-link-manager-children',
-        'staff-link-manager-guardians',
         'staff-link-manager-invites',
         'staff-link-practitioner-attendance',
         'staff-link-manager-funding',

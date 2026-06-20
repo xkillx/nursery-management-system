@@ -49,7 +49,7 @@ const BLOCKER_LABELS: Record<string, string> = {
   missing_child_name: 'Missing child name',
   missing_child_date_of_birth: 'Missing date of birth',
   missing_child_start_date: 'Missing start date',
-  missing_guardian_link: 'Missing guardian link',
+  missing_parent_carer_contact: 'Missing parent carer contact',
   invoice_already_issued: 'Already issued',
   child_not_found: 'Child not found',
   child_not_in_billing_month: 'Child not in billing month',
@@ -97,7 +97,7 @@ export function blockerNextAction(
     case 'missing_child_name':
     case 'missing_child_date_of_birth':
     case 'missing_child_start_date':
-    case 'missing_guardian_link':
+    case 'missing_parent_carer_contact':
       return {
         label: 'Review child',
         route: childId ? ['/staff/manager/children', childId] : ['/staff/manager/children'],

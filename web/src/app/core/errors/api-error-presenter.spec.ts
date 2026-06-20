@@ -206,21 +206,9 @@ describe('presentApiError', () => {
       expect(result.showRequestId).toBe(false);
     });
 
-    it('guardian_not_found shows return-to-list action', () => {
-      const result = presentApiError(mapped({ code: 'guardian_not_found' }), 'people.guardian');
-      expect(result.action?.route).toEqual(['/staff/manager/guardians']);
-      expect(result.showRequestId).toBe(false);
-    });
-
-    it('guardian_not_active shows reactivation guidance', () => {
-      const result = presentApiError(mapped({ code: 'guardian_not_active' }), 'people.guardianLink');
-      expect(result.message).toContain('Reactivate');
-      expect(result.showRequestId).toBe(false);
-    });
-
-    it('parent_mapping_active_conflict shows end-current guidance', () => {
-      const result = presentApiError(mapped({ code: 'parent_mapping_active_conflict' }), 'people.guardianLink');
-      expect(result.message).toContain('End the current active mapping');
+    it('parent_child_mapping_not_found shows refresh guidance', () => {
+      const result = presentApiError(mapped({ code: 'parent_child_mapping_not_found' }), 'people.child');
+      expect(result.message).toContain('Refresh');
       expect(result.showRequestId).toBe(false);
     });
 
@@ -234,7 +222,7 @@ describe('presentApiError', () => {
     });
 
     it('reason codes set field errors', () => {
-      const codes = ['child_lifecycle_reason_required', 'guardian_deactivation_reason_required', 'relationship_reason_required'];
+      const codes = ['child_lifecycle_reason_required', 'relationship_reason_required'];
       for (const code of codes) {
         const result = presentApiError(mapped({ code }), 'people.child');
         expect(result.fieldErrors['reason_code']).toBeDefined();

@@ -12,7 +12,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { ChildGuardianLinkRecord, GuardianRecord } from '../../models/guardians.models';
+import { ChildContact } from '../../models/child-profile.models';
 
 @Component({
   selector: 'app-manager-child-detail',
@@ -39,8 +39,7 @@ export class ManagerChildDetailComponent implements OnInit {
   childId = '';
   child: ChildRecord | null = null;
   profile: ChildProfile | null = null;
-  linkedGuardians: ChildGuardianLinkRecord[] = [];
-  allGuardians: GuardianRecord[] = [];
+  parentCarers: ChildContact[] = [];
 
   isLoading = false;
   errorMessage: string | null = null;
@@ -59,7 +58,7 @@ export class ManagerChildDetailComponent implements OnInit {
     this.staffApi.getChild(this.childId).subscribe({
       next: (child) => {
         this.child = child;
-        this.loadLinkedGuardians();
+        this.loadParentCarers();
         this.loadProfile();
       },
       error: (err) => {
@@ -69,27 +68,14 @@ export class ManagerChildDetailComponent implements OnInit {
     });
   }
 
-  private loadLinkedGuardians(): void {
-    this.staffApi.listChildGuardianLinks(this.childId).subscribe({
-      next: (links) => {
-        this.linkedGuardians = links;
-        this.loadAllGuardians();
-      },
-      error: () => {
-        this.linkedGuardians = [];
-        this.isLoading = false;
-      },
-    });
-  }
-
-  private loadAllGuardians(): void {
-    this.staffApi.listGuardians({ status: 'all', limit: 200, offset: 0 }).subscribe({
-      next: (response) => {
-        this.allGuardians = response;
+  private loadParentCarers(): void {
+    this.staffApi.getChildContacts(this.childId).subscribe({
+      next: (contacts) => {
+        this.parentCarers = contacts.parentCarers;
         this.isLoading = false;
       },
       error: () => {
-        this.allGuardians = [];
+        this.parentCarers = [];
         this.isLoading = false;
       },
     });

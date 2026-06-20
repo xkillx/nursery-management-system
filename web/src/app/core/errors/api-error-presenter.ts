@@ -10,8 +10,6 @@ export type ApiErrorContext =
   | 'attendance.rowAction'
   | 'attendance.correction'
   | 'people.child'
-  | 'people.guardian'
-  | 'people.guardianLink'
   | 'invoice.run'
   | 'invoice.managerList'
   | 'invoice.managerDetail'
@@ -77,9 +75,7 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
 
   'not_found',
   'child_not_found',
-  'guardian_not_found',
-  'guardian_child_link_not_found',
-  'parent_mapping_not_found',
+  'parent_child_mapping_not_found',
   'membership_not_found',
   'invoice_not_found',
   'funding_profile_not_found',
@@ -99,12 +95,9 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'absence_marker_exists',
   'absence_marker_not_found',
 
-  'guardian_not_active',
   'membership_not_parent',
   'membership_not_active',
-  'parent_mapping_active_conflict',
   'child_lifecycle_reason_required',
-  'guardian_deactivation_reason_required',
   'relationship_reason_required',
   'lifecycle_reason_invalid',
 
@@ -115,7 +108,7 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'invoice_already_issued',
   'incomplete_attendance',
   'missing_funding_profile',
-  'missing_guardian_link',
+  'missing_parent_carer_contact',
   'missing_billing_rate',
   'missing_child_name',
   'missing_child_date_of_birth',
@@ -273,22 +266,12 @@ function presentKnownError(
     case 'attendance_session_not_found':
       break;
 
-    // Child/guardian
+    // Child
     case 'child_not_found':
       base.message = 'This child could not be found. Return to the children list.';
       base.action = { label: 'View children', route: ['/staff/manager/children'] };
       break;
-    case 'guardian_not_found':
-      base.message = 'This guardian could not be found. Return to the guardians list.';
-      base.action = { label: 'View guardians', route: ['/staff/manager/guardians'] };
-      break;
-    case 'guardian_not_active':
-      base.message = 'This guardian is inactive. Reactivate the guardian before linking.';
-      break;
-    case 'guardian_child_link_not_found':
-      base.message = 'This link no longer exists. Refresh the page.';
-      break;
-    case 'parent_mapping_not_found':
+    case 'parent_child_mapping_not_found':
       base.message = 'This mapping no longer exists. Refresh the page.';
       break;
     case 'parent_mapping_active_conflict':
@@ -307,7 +290,6 @@ function presentKnownError(
       base.message = 'Choose a billing month within the child\'s enrollment window.';
       break;
     case 'child_lifecycle_reason_required':
-    case 'guardian_deactivation_reason_required':
     case 'relationship_reason_required':
       base.message = 'A reason is required.';
       base.fieldErrors['reason_code'] = base.message;
@@ -357,8 +339,8 @@ function presentKnownError(
     case 'missing_funding_profile':
       base.message = 'Funding profile is missing for one or more children.';
       break;
-    case 'missing_guardian_link':
-      base.message = 'A guardian link is missing for one or more children.';
+    case 'missing_parent_carer_contact':
+      base.message = 'A parent carer contact is missing for one or more children.';
       break;
     case 'invoice_already_issued':
       base.message = 'An invoice has already been issued for this billing period.';

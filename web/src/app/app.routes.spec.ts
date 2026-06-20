@@ -88,7 +88,6 @@ describe('app.routes', () => {
   const mvpPaths = [
     'staff/manager/dashboard',
     'staff/manager/children',
-    'staff/manager/guardians',
     'staff/manager/invites',
     'staff/manager/funding',
     'staff/manager/invoice-run',
@@ -378,7 +377,6 @@ describe('app.routes breadcrumb wiring', () => {
     'staff/manager/children/new',
     'staff/manager/children/:childId',
     'staff/manager/children/:childId/edit',
-    'staff/manager/guardians',
     'staff/manager/invites',
     'staff/manager/attendance-corrections',
     'staff/manager/rooms',

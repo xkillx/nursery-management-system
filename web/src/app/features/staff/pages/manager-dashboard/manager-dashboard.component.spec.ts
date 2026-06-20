@@ -105,7 +105,6 @@ describe('ManagerDashboardComponent', () => {
 
     expect(hrefs.some((h) => h.includes('/staff/practitioner/attendance'))).toBe(true);
     expect(hrefs.some((h) => h.includes('/staff/manager/children'))).toBe(true);
-    expect(hrefs.some((h) => h.includes('/staff/manager/guardians'))).toBe(true);
   });
 
   it('renders disabled future actions with aria-disabled and no navigation', () => {

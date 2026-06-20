@@ -5,7 +5,6 @@ import { Observable, forkJoin, map } from 'rxjs';
 import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
-import { GuardianRecord, GuardianWritePayload, ChildGuardianLinkRecord, GuardianChildLinkWritePayload } from '../models/guardians.models';
 import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
 import { BookingPattern, BookingPatternInput } from '../models/booking-pattern.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
@@ -42,20 +41,6 @@ interface ChildApiModel {
   has_current_room: boolean;
   enrollment_complete: boolean;
   missing_requirements?: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-interface GuardianApiModel {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-  is_active: boolean;
-  deactivated_at?: string;
-  deactivation_reason_code?: string;
-  deactivation_reason_note?: string;
   created_at: string;
   updated_at: string;
 }
@@ -177,23 +162,6 @@ interface InviteApiModel {
   expires_at: string;
   accepted_at?: string | null;
   revoked_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface LinkedGuardianSummaryApiModel {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  is_active: boolean;
-}
-
-interface ChildGuardianLinkApiModel {
-  id: string;
-  guardian_id: string;
-  child_id: string;
-  guardian: LinkedGuardianSummaryApiModel;
   created_at: string;
   updated_at: string;
 }
@@ -419,38 +387,6 @@ export class StaffApiService {
     });
   }
 
-  listChildGuardianLinks(childId: string): Observable<ChildGuardianLinkRecord[]> {
-    return this.http
-      .get<StaffListResponse<ChildGuardianLinkApiModel>>(apiUrl(`/children/${childId}/guardian-child-links`))
-      .pipe(map((response) => response.items.map((link) => this.toChildGuardianLinkRecord(link))));
-  }
-
-  createGuardianChildLink(payload: GuardianChildLinkWritePayload): Observable<ChildGuardianLinkRecord> {
-    return this.http
-      .post<ChildGuardianLinkApiModel>(apiUrl('/guardian-child-links'), payload)
-      .pipe(map((link) => this.toChildGuardianLinkRecord(link)));
-  }
-
-  listGuardians(query: StaffListQuery): Observable<GuardianRecord[]> {
-    return this.http
-      .get<StaffListResponse<GuardianApiModel>>(apiUrl('/guardians'), {
-        params: this.buildListParams(query.status, query.limit, query.offset),
-      })
-      .pipe(map((response) => response.items.map((guardian) => this.toGuardianRecord(guardian))));
-  }
-
-  createGuardian(payload: GuardianWritePayload): Observable<GuardianRecord> {
-    return this.http
-      .post<GuardianApiModel>(apiUrl('/guardians'), payload)
-      .pipe(map((guardian) => this.toGuardianRecord(guardian)));
-  }
-
-  updateGuardian(guardianId: string, payload: GuardianWritePayload): Observable<GuardianRecord> {
-    return this.http
-      .patch<GuardianApiModel>(apiUrl(`/guardians/${guardianId}`), payload)
-      .pipe(map((guardian) => this.toGuardianRecord(guardian)));
-  }
-
   listAttendanceChildren(): Observable<AttendanceChildRecord[]> {
     return this.http
       .get<StaffListResponse<AttendanceChildApiModel>>(apiUrl('/children/attendance'))
@@ -624,22 +560,6 @@ export class StaffApiService {
     };
   }
 
-  private toGuardianRecord(guardian: GuardianApiModel): GuardianRecord {
-    return {
-      id: guardian.id,
-      fullName: guardian.full_name,
-      email: guardian.email ?? null,
-      phone: guardian.phone ?? null,
-      notes: guardian.notes ?? null,
-      isActive: guardian.is_active,
-      deactivatedAt: guardian.deactivated_at ?? null,
-      deactivationReasonCode: guardian.deactivation_reason_code ?? null,
-      deactivationReasonNote: guardian.deactivation_reason_note ?? null,
-      createdAt: guardian.created_at,
-      updatedAt: guardian.updated_at,
-    };
-  }
-
   private toInviteRecord(invite: InviteApiModel): InviteRecord {
     return {
       id: invite.id,
@@ -651,23 +571,6 @@ export class StaffApiService {
       revokedAt: invite.revoked_at ?? null,
       createdAt: invite.created_at,
       updatedAt: invite.updated_at,
-    };
-  }
-
-  private toChildGuardianLinkRecord(link: ChildGuardianLinkApiModel): ChildGuardianLinkRecord {
-    return {
-      id: link.id,
-      guardianId: link.guardian_id,
-      childId: link.child_id,
-      guardian: {
-        id: link.guardian.id,
-        fullName: link.guardian.full_name,
-        email: link.guardian.email ?? null,
-        phone: link.guardian.phone ?? null,
-        isActive: link.guardian.is_active,
-      },
-      createdAt: link.created_at,
-      updatedAt: link.updated_at,
     };
   }
 

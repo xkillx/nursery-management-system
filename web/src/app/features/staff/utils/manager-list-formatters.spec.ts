@@ -87,8 +87,8 @@ describe('manager-list-formatters', () => {
   });
 
   describe('missingRequirementLabel', () => {
-    it('maps guardian_link to Linked guardian', () => {
-      expect(missingRequirementLabel('guardian_link')).toBe('Linked guardian');
+    it('maps parent_carer_contact to Parent carer contact', () => {
+      expect(missingRequirementLabel('parent_carer_contact')).toBe('Parent carer contact');
     });
 
     it('maps first_name to First name', () => {
