@@ -250,6 +250,13 @@
                   <div class="flex flex-wrap gap-2">
                     <app-status-badge [status]="child.isActive ? 'active' : 'inactive'"></app-status-badge>
                     <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
+                    <span
+                      *ngIf="child.hasBookingPattern === false"
+                      class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-200"
+                      title="No session pattern recorded for this child"
+                    >
+                      Incomplete: no session pattern
+                    </span>
                   </div>
                   <p class="mt-2 max-w-72 text-xs text-gray-500 dark:text-gray-400">{{ formatMissingRequirements(child) }}</p>
                 </td>

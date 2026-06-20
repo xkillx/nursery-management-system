@@ -3,13 +3,33 @@
     <a routerLink="/staff/manager/children" class="text-sm text-gray-600 hover:underline">← Back to children</a>
     <div class="flex gap-2">
       <a [routerLink]="['/staff/manager/children', childId, 'booking-pattern']">
-        <app-button variant="secondary">Booking pattern</app-button>
+        <app-button variant="secondary">Session pattern</app-button>
       </a>
       <a [routerLink]="['/staff/manager/children', childId, 'edit']">
         <app-button variant="primary">Edit</app-button>
       </a>
     </div>
   </div>
+
+  @if (child && child.hasBookingPattern === false) {
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+      role="status"
+    >
+      <div class="flex items-start gap-2">
+        <ng-icon name="heroExclamationTriangle" size="18" class="mt-0.5 shrink-0 text-amber-500" aria-hidden="true"></ng-icon>
+        <div>
+          <p class="font-medium">No session pattern recorded for this child.</p>
+          <p class="mt-1 text-xs text-amber-800/80 dark:text-amber-100/80">
+            Captured at registration. You can set one up from the dedicated screen.
+          </p>
+        </div>
+      </div>
+      <a [routerLink]="['/staff/manager/children', childId, 'booking-pattern']">
+        <app-button variant="secondary">Set up session pattern</app-button>
+      </a>
+    </div>
+  }
 
   @if (errorMessage) {
     <app-alert variant="error" [message]="errorMessage"></app-alert>

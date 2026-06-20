@@ -148,4 +148,13 @@ last_name: 'Hopper',
 
     expect(component.hasMultiplePages).toBe(true);
   });
+
+  it('maps has_booking_pattern to hasBookingPattern on each child', () => {
+    fixture.detectChanges();
+    flushChildren([{ ...childApi, has_booking_pattern: false }, { ...completeChildApi, id: 'child-2', has_booking_pattern: true }]);
+    fixture.detectChanges();
+
+    expect(component.children[0].hasBookingPattern).toBe(false);
+    expect(component.children[1].hasBookingPattern).toBe(true);
+  });
 });
