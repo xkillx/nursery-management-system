@@ -1,0 +1,248 @@
+<div class="space-y-6">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">Session templates</h1>
+      <p class="mt-1 text-sm text-slate-600">
+        Named, reusable weeks of booked sessions for <span class="font-medium">{{ siteName }}</span>.
+        Templates are copied into each child's booking pattern at creation time, so editing or
+        archiving a template never alters historical patterns.
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        (click)="toggleIncludeArchived()"
+      >
+        <ng-icon name="heroArchiveBox" class="h-4 w-4"></ng-icon>
+        {{ includeArchived ? 'Hide archived' : 'Show archived' }}
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        (click)="openCreate()"
+        [disabled]="isEditorOpen"
+      >
+        <ng-icon name="heroPlus" class="h-4 w-4"></ng-icon>
+        New template
+      </button>
+    </div>
+  </header>
+
+  <app-alert
+    *ngIf="pageError"
+    variant="error"
+    title="Couldn't load templates"
+    [message]="pageError"
+  ></app-alert>
+
+  <app-loading-state *ngIf="loading && templates.length === 0" label="Loading templates…"></app-loading-state>
+
+  <!-- Editor -->
+  <section
+    *ngIf="isEditorOpen"
+    class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+  >
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-slate-900">{{ editorTitle }}</h2>
+      <button
+        type="button"
+        class="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        (click)="closeEditor()"
+        aria-label="Close"
+      >
+        <ng-icon name="heroXMark" class="h-5 w-5"></ng-icon>
+      </button>
+    </div>
+
+    <app-alert
+      *ngIf="formError"
+      variant="error"
+      [message]="formError"
+    ></app-alert>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <app-form-field
+        label="Template name"
+        htmlFor="tpl-name"
+        [required]="true"
+        [error]="formFieldErrors.name"
+      >
+        <app-input-field
+          inputId="tpl-name"
+          name="tpl-name"
+          [(ngModel)]="formName"
+          placeholder="e.g. Standard 3-day Full"
+          maxlength="120"
+        ></app-input-field>
+      </app-form-field>
+
+      <app-form-field
+        label="Description"
+        htmlFor="tpl-desc"
+        [error]="formFieldErrors.description"
+      >
+        <app-text-area
+          inputId="tpl-desc"
+          name="tpl-desc"
+          [(ngModel)]="formDescription"
+          placeholder="What is this template for?"
+          [rows]="2"
+          maxlength="1000"
+        ></app-text-area>
+      </app-form-field>
+    </div>
+
+    <div class="mt-6">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-sm font-medium text-slate-700">Booked sessions</h3>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            (click)="copyMonToAllWeekdays()"
+          >
+            Copy Mon to weekdays
+          </button>
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            (click)="clearAllEntries()"
+          >
+            Clear all
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="formFieldErrors.entries" class="mb-2 text-sm text-red-600">
+        {{ formFieldErrors.entries }}
+      </p>
+
+      <div class="divide-y divide-slate-100 rounded-md border border-slate-200">
+        <div
+          *ngFor="let opt of dayOptions"
+          class="flex flex-wrap items-center gap-2 px-3 py-2"
+        >
+          <div class="w-12 text-sm font-medium text-slate-700">
+            {{ opt.label }}
+          </div>
+          <div class="flex flex-1 flex-wrap gap-2">
+            <div
+              *ngFor="let entry of entriesForDay(+opt.value); let i = index"
+              class="flex items-center gap-1"
+            >
+              <app-select
+                [name]="'entry-' + opt.value + '-' + i"
+                [options]="sessionTypeOptions"
+                [value]="entry.sessionTypeId"
+                (valueChange)="setEntryType(+opt.value, i, $event)"
+                placeholder="Pick a session type…"
+              ></app-select>
+              <button
+                type="button"
+                class="rounded-md p-1 text-slate-400 hover:text-red-600"
+                (click)="removeEntry(+opt.value, i)"
+                aria-label="Remove session"
+              >
+                <ng-icon name="heroTrash" class="h-4 w-4"></ng-icon>
+              </button>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+              (click)="addEntry(+opt.value)"
+            >
+              <ng-icon name="heroPlus" class="h-3.5 w-3.5"></ng-icon>
+              add session
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap justify-end gap-2">
+      <app-button variant="secondary" (click)="closeEditor()" [disabled]="formSaving">
+        Cancel
+      </app-button>
+      <app-button variant="primary" (click)="submit()" [loading]="formSaving">
+        {{ editorSubmitLabel }}
+      </app-button>
+    </div>
+  </section>
+
+  <!-- List -->
+  <section class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-2">Name</th>
+          <th class="px-4 py-2">Description</th>
+          <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <tr *ngFor="let t of visibleRows" class="text-slate-700">
+          <td class="px-4 py-3 font-medium text-slate-900">{{ t.name }}</td>
+          <td class="px-4 py-3 text-slate-600">{{ t.description || '—' }}</td>
+          <td class="px-4 py-3">
+            <span
+              *ngIf="t.isActive; else archived"
+              class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+            >
+              Active
+            </span>
+            <ng-template #archived>
+              <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                Archived
+              </span>
+            </ng-template>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="inline-flex flex-wrap items-center justify-end gap-1">
+              <button
+                type="button"
+                class="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                (click)="openEdit(t)"
+                [disabled]="mutatingId === t.id"
+              >
+                Edit
+              </button>
+              <button
+                *ngIf="t.isActive"
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                (click)="archive(t)"
+                [disabled]="mutatingId === t.id"
+              >
+                <ng-icon name="heroArchiveBox" class="h-3.5 w-3.5"></ng-icon>
+                Archive
+              </button>
+              <button
+                *ngIf="!t.isActive"
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+                (click)="reactivate(t)"
+                [disabled]="mutatingId === t.id"
+              >
+                <ng-icon name="heroArrowPath" class="h-3.5 w-3.5"></ng-icon>
+                Reactivate
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && visibleRows.length === 0">
+          <td colspan="4" class="px-4 py-8 text-center text-slate-500">
+            <div class="flex flex-col items-center gap-2">
+              <ng-icon name="heroClipboardDocumentList" class="h-8 w-8 text-slate-300"></ng-icon>
+              <p class="text-sm">No session templates yet for this site.</p>
+              <p class="text-xs text-slate-400">
+                Templates speed up registration by capturing a common week (e.g. Mon/Tue/Wed full days).
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

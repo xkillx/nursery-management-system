@@ -13,6 +13,7 @@ export interface ChildRecord {
   notes: string | null;
   isActive: boolean;
   hasCurrentRoom?: boolean;
+  hasBookingPattern?: boolean;
   enrollmentComplete: boolean;
   missingRequirements: string[];
   createdAt: string;

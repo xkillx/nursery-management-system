@@ -39,6 +39,7 @@ interface ChildApiModel {
   notes?: string;
   is_active: boolean;
   has_current_room: boolean;
+  has_booking_pattern?: boolean;
   enrollment_complete: boolean;
   missing_requirements?: string[];
   created_at: string;
@@ -553,6 +554,7 @@ export class StaffApiService {
       notes: child.notes ?? null,
       isActive: child.is_active,
       hasCurrentRoom: child.has_current_room,
+      hasBookingPattern: child.has_booking_pattern ?? false,
       enrollmentComplete: child.enrollment_complete,
       missingRequirements: child.missing_requirements ?? [],
       createdAt: child.created_at,

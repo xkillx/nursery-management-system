@@ -11,6 +11,7 @@ import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
 import { ManagerSessionTypesComponent } from './features/staff/pages/manager-session-types/manager-session-types.component';
+import { ManagerSessionTemplatesComponent } from './features/staff/pages/manager-session-templates/manager-session-templates.component';
 import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
@@ -101,9 +102,9 @@ export const routes: Routes = [
                 path: ':childId/booking-pattern',
                 component: ManagerBookingPatternComponent,
                 data: {
-                  breadcrumb: { label: 'Booking pattern' },
+                  breadcrumb: { label: 'Session pattern' },
                 },
-                title: 'Booking pattern | Nursery Management',
+                title: 'Session pattern (booking pattern) | Nursery Management',
               },
             ],
           },
@@ -199,6 +200,16 @@ export const routes: Routes = [
                 title: 'Edit session type | Nursery Management',
               },
             ],
+          },
+          {
+            path: 'staff/manager/session-templates',
+            component: ManagerSessionTemplatesComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Session templates' },
+            },
+            title: 'Session templates | Nursery Management',
           },
           {
             path: 'staff/manager/funding',

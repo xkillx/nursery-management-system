@@ -17,6 +17,7 @@ export const ROLE_ROUTES = {
   managerInvites: '/staff/manager/invites',
   managerRooms: '/staff/manager/rooms',
   managerSessionTypes: '/staff/manager/session-types',
+  managerSessionTemplates: '/staff/manager/session-templates',
   managerFunding: '/staff/manager/funding',
   managerAttendanceCorrections: '/staff/manager/attendance-corrections',
   managerInvoiceRun: '/staff/manager/invoice-run',
