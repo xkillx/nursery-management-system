@@ -253,9 +253,10 @@ export interface ChildConsentInput {
   social_media: boolean;
   social_media_channel_notes?: string | null;
   notes_exceptions?: string | null;
-  signer_name?: string;
-  signed_date?: string;
+  signer_name: string;
+  signed_date: string;
   paper_form_on_file?: boolean;
+  consent_change_reason?: string | null;
 }
 
 export interface ChildFundingRecord {

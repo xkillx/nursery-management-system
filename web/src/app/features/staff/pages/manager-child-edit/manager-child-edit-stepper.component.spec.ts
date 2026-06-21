@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 import { StaffApiService } from '../../data/staff-api.service';
@@ -120,8 +121,12 @@ describe('ManagerChildEditStepperComponent', () => {
 
     component.step4.safeguarding_reporting_acknowledgement = true;
     component.step4.information_sharing_consent = true;
+    component.step4.urgent_medical_treatment = true;
+    component.step4.plasters = true;
     component.step4.information_truthfulness_declaration = true;
     component.step4.gdpr_data_processing_consent = true;
+    component.step4.signer_name = 'Sarah Johnson';
+    component.step4.signed_date = component.todayIso;
     markAllConsentsReviewed();
 
     component.patternEffectiveFrom = '2026-09-01';
@@ -475,41 +480,174 @@ describe('ManagerChildEditStepperComponent', () => {
   });
 
   describe('canSubmitLocally — consents', () => {
-    it('blocks when safeguarding acknowledgement off', () => {
+    it('blocks when truthfulness declaration is not granted (required)', () => {
       fillRequiredForCompletion();
-      component.step4.safeguarding_reporting_acknowledgement = false;
+      component.step4.information_truthfulness_declaration = false;
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when information sharing consent off', () => {
-      fillRequiredForCompletion();
-      component.step4.information_sharing_consent = false;
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when GDPR consent off', () => {
+    it('blocks when GDPR consent is not granted (required)', () => {
       fillRequiredForCompletion();
       component.step4.gdpr_data_processing_consent = false;
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('untouched default consent values block new registration completion', () => {
+    it('blocks when required-acknowledged item is untouched', () => {
       fillRequiredForCompletion();
-      component.consentsReviewed = {};
+      component.consentsReviewed['safeguarding_reporting_acknowledgement'] = false;
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('explicit No on optional consent satisfies reviewed gate', () => {
+    it('allows required-acknowledged No answer (advisory only, not blocking)', () => {
+      fillRequiredForCompletion();
+      component.step4.safeguarding_reporting_acknowledgement = false;
+      component.consentsReviewed['safeguarding_reporting_acknowledgement'] = true;
+      expect(component.canSubmitLocally()).toBe(true);
+      expect(component.consentAdvisories.length).toBeGreaterThan(0);
+    });
+
+    it('allows optional consents to remain false without blocking', () => {
       fillRequiredForCompletion();
       component.setConsentValue('social_media', false);
+      component.setConsentValue('face_painting', false);
       expect(component.canSubmitLocally()).toBe(true);
     });
 
-    it('existing registration skips optional-consent reviewed gate', () => {
+    it('blocks when signer_name is empty', () => {
       fillRequiredForCompletion();
-      component.consentsReviewed = {};
-      component.isNewRegistration = false;
+      component.step4.signer_name = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks when signed_date is empty', () => {
+      fillRequiredForCompletion();
+      component.step4.signed_date = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('passes when all required and required-acknowledged items are answered and audit trail is filled', () => {
+      fillRequiredForCompletion();
       expect(component.canSubmitLocally()).toBe(true);
+    });
+  });
+
+  describe('tier classification', () => {
+    it('classifies GDPR and truthfulness as required', () => {
+      expect(component.consentTier('gdpr_data_processing_consent')).toBe('required');
+      expect(component.consentTier('information_truthfulness_declaration')).toBe('required');
+    });
+
+    it('classifies safeguarding, information sharing, urgent medical, and plasters as required-acknowledged', () => {
+      expect(component.consentTier('safeguarding_reporting_acknowledgement')).toBe('required_acknowledged');
+      expect(component.consentTier('information_sharing_consent')).toBe('required_acknowledged');
+      expect(component.consentTier('urgent_medical_treatment')).toBe('required_acknowledged');
+      expect(component.consentTier('plasters')).toBe('required_acknowledged');
+    });
+
+    it('classifies professional liaison, activities, and photos as optional', () => {
+      expect(component.consentTier('area_senco_liaison')).toBe('optional');
+      expect(component.consentTier('local_outings')).toBe('optional');
+      expect(component.consentTier('social_media')).toBe('optional');
+    });
+
+    it('renders the right label and badge class per tier', () => {
+      expect(component.consentTierLabel('gdpr_data_processing_consent')).toBe('Required');
+      expect(component.consentTierLabel('safeguarding_reporting_acknowledgement')).toBe('Required — must answer');
+      expect(component.consentTierLabel('social_media')).toBe('Optional');
+
+      expect(component.consentTierBadgeClass('gdpr_data_processing_consent')).toContain('bg-error-100');
+      expect(component.consentTierBadgeClass('safeguarding_reporting_acknowledgement')).toContain('bg-warning-100');
+      expect(component.consentTierBadgeClass('social_media')).toContain('bg-gray-100');
+    });
+  });
+
+  describe('consent advisories', () => {
+    it('records a "No" on a required-acknowledged item as an advisory', () => {
+      fillRequiredForCompletion();
+      component.step4.urgent_medical_treatment = false;
+      component.consentsReviewed['urgent_medical_treatment'] = true;
+      const advisories = component.collectConsentAdvisories();
+      expect(advisories.length).toBe(1);
+      expect(advisories[0].field).toBe('urgent_medical_treatment');
+    });
+
+    it('does not record a "Yes" on a required-acknowledged item as an advisory', () => {
+      fillRequiredForCompletion();
+      expect(component.collectConsentAdvisories().length).toBe(0);
+    });
+  });
+
+  describe('consent values changed since snapshot', () => {
+    it('returns false when no original snapshot exists', () => {
+      fillRequiredForCompletion();
+      component.originalStep4Snapshot = null;
+      expect(component.consentValuesChangedSince(null)).toBe(false);
+    });
+
+    it('returns true when a boolean consent differs from the snapshot', () => {
+      fillRequiredForCompletion();
+      component.originalStep4Snapshot = { ...component.step4 };
+      component.step4.social_media = !component.originalStep4Snapshot.social_media;
+      expect(component.consentValuesChangedSince(component.originalStep4Snapshot)).toBe(true);
+    });
+
+    it('returns false when values match the snapshot', () => {
+      fillRequiredForCompletion();
+      component.originalStep4Snapshot = { ...component.step4 };
+      expect(component.consentValuesChangedSince(component.originalStep4Snapshot)).toBe(false);
+    });
+  });
+
+  describe('Mark Reviewed/Complete button removed in edit mode', () => {
+    it('does not render the no-op Mark Reviewed/Complete button in edit mode', () => {
+      fillRequiredForCompletion();
+      component.isNewRegistration = false;
+      component.currentStep = 'consents-evidence';
+      fixture.detectChanges();
+      const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+      const labels = buttons.map(b => (b.textContent || '').trim());
+      expect(labels.some(l => l.includes('Mark Reviewed/Complete'))).toBe(false);
+      expect(labels.some(l => l.includes('Save Changes'))).toBe(true);
+    });
+  });
+
+  describe('Reason for change in edit-mode save', () => {
+    it('includes consent_change_reason in the API payload when a value differs and a reason is set', () => {
+      fillRequiredForCompletion();
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.currentStep = 'consents-evidence';
+      component.originalStep4Snapshot = { ...component.step4 };
+      component.step4.social_media = !component.originalStep4Snapshot.social_media;
+      component.step4.consent_change_reason = 'Parent called to withdraw social media consent';
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+
+      component.saveConsentsEvidence();
+
+      expect(updateSpy).toHaveBeenCalled();
+      const payload = updateSpy.calls.mostRecent().args[1] as any;
+      expect(payload.consent_change_reason).toBe('Parent called to withdraw social media consent');
+      expect(payload.signer_name).toBe('Sarah Johnson');
+      expect(payload.signed_date).toBe(component.todayIso);
+    });
+
+    it('omits consent_change_reason when values match the snapshot', () => {
+      fillRequiredForCompletion();
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.currentStep = 'consents-evidence';
+      component.originalStep4Snapshot = { ...component.step4 };
+      component.step4.consent_change_reason = 'Should not be sent';
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+
+      component.saveConsentsEvidence();
+
+      const payload = updateSpy.calls.mostRecent().args[1] as any;
+      expect(payload.consent_change_reason).toBeNull();
     });
   });
 
@@ -571,15 +709,29 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(toastErrorSpy).toHaveBeenCalled();
     });
 
-    it('saveConsentsEvidence blocks on missing safeguarding consent', () => {
+    it('saveConsentsEvidence blocks on untouched required-acknowledged consent', () => {
       fillRequiredForCompletion();
-      component.step4.safeguarding_reporting_acknowledgement = false;
+      component.consentsReviewed['safeguarding_reporting_acknowledgement'] = false;
       component.currentStep = 'consents-evidence';
 
       component.saveConsentsEvidence();
 
       expect(component.currentStep).toBe('consents-evidence');
       expect(toastErrorSpy).toHaveBeenCalled();
+    });
+
+    it('saveConsentsEvidence allows No on a required-acknowledged item', () => {
+      fillRequiredForCompletion();
+      component.step4.safeguarding_reporting_acknowledgement = false;
+      component.consentsReviewed['safeguarding_reporting_acknowledgement'] = true;
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.currentStep = 'consents-evidence';
+
+      spyOn(component['staffApi'], 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+      component.saveConsentsEvidence();
+
+      expect(toastErrorSpy).not.toHaveBeenCalled();
     });
   });
 

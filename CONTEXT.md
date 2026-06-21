@@ -1545,3 +1545,31 @@ The collection password hash and acknowledgement (`child_collection_settings`) a
 
 Per-sub-resource audit records prove who changed which section and when. They do not copy sensitive values (medical notes, safeguarding notes, contact details, collection password material) into `Details` on the audit log row.
 
+## Consent Decision Tier
+
+The product classification of a single consent item on Step 4 of the manager child-registration stepper. Each item is one of **Required**, **Required-acknowledged**, or **Optional**, and the tier governs both the validation rules and the visual badge the manager sees.
+
+## Required Consent
+
+A consent item the parent must explicitly grant (tick Yes) for the child's registration to be considered complete. In the current release this is GDPR data processing consent and the information truthfulness declaration. A Required item that is not Yes is a blocking completion issue.
+
+## Required-acknowledged Consent
+
+A consent item the parent must explicitly answer Yes or No for the child's registration to be considered complete. In the current release this is safeguarding reporting acknowledgement, information sharing consent, urgent medical treatment, and first aid/plasters. A No answer is recorded truthfully, does not block completion, is surfaced in the review summary with a clear warning, and captures an optional free-text reason in the audit trail.
+
+## Optional Consent
+
+A consent item the parent may grant or decline at their discretion. The child's registration can be completed without recording a decision. In the current release this covers professional liaison (Area SENCO, Health Visitor, Transition documents), activities (local outings, face painting, parent-supplied sun cream, parent-supplied nappy cream), and photographs & social media (development records, display boards, promotional literature, website, staff/student coursework, social media).
+
+## Consent Record Audit Trail
+
+The evidence captured on the consent record itself in addition to the system audit log: **signed_by** (the parent/carer full name who gave the consent) and **date_signed** (when the consent was given, date-only). Both fields are required for the consent record to be considered complete and are distinct from the manager's session identity recorded in the audit log.
+
+## Consent Review Completion
+
+The state where a child's consent record has every Required item = Yes, every Required-acknowledged item touched (Yes or No), and the consent record audit trail (signed_by + date_signed) is filled. Optional items do not contribute to the completion check. The review-and-create step in new-registration mode and the Save Changes action in edit mode both surface this state.
+
+## Consent Reason for Change
+
+A one-line free-text note a manager may add when saving an edit to a consent record that changes a value from the previously saved state. The note is passed to the API and recorded as part of the audit event for the change. Reason for change is optional and is only requested when at least one consent value differs from the previously saved value; it is not requested for first-time saves during new registration.
+

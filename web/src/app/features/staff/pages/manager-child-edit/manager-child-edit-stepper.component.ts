@@ -97,6 +97,51 @@ type FinalCompletionIssue = {
   message: string;
 };
 
+type ConsentAdvisory = {
+  stepKey: 'consents-evidence';
+  field: string;
+  message: string;
+};
+
+type ConsentTier = 'required' | 'required_acknowledged' | 'optional';
+
+const CONSENT_TIERS: Record<keyof ConsentWritePayload, ConsentTier> = {
+  gdpr_data_processing_consent: 'required',
+  information_truthfulness_declaration: 'required',
+  safeguarding_reporting_acknowledgement: 'required_acknowledged',
+  information_sharing_consent: 'required_acknowledged',
+  urgent_medical_treatment: 'required_acknowledged',
+  plasters: 'required_acknowledged',
+  area_senco_liaison: 'optional',
+  health_visitor_liaison: 'optional',
+  transition_documents: 'optional',
+  local_outings: 'optional',
+  face_painting: 'optional',
+  parent_supplied_sun_cream: 'optional',
+  parent_supplied_nappy_cream: 'optional',
+  development_profile_photos: 'optional',
+  nursery_display_boards: 'optional',
+  promotional_literature: 'optional',
+  nursery_website: 'optional',
+  staff_student_coursework: 'optional',
+  social_media: 'optional',
+  urgent_medical_treatment_exceptions: 'optional',
+  notes_exceptions: 'optional',
+  social_media_channel_notes: 'optional',
+  signer_name: 'optional',
+  signed_date: 'optional',
+  paper_form_on_file: 'optional',
+  consent_change_reason: 'optional',
+};
+
+const REQUIRED_ACKNOWLEDGED_KEYS = (Object.keys(CONSENT_TIERS) as (keyof ConsentWritePayload)[]).filter(
+  (k) => CONSENT_TIERS[k] === 'required_acknowledged',
+);
+
+const REQUIRED_KEYS = (Object.keys(CONSENT_TIERS) as (keyof ConsentWritePayload)[]).filter(
+  (k) => CONSENT_TIERS[k] === 'required',
+);
+
 type IntakeStep = {
   key: StepperStep;
   label: string;
@@ -647,10 +692,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     social_media: false,
     urgent_medical_treatment_exceptions: null,
     notes_exceptions: null,
+    signer_name: '',
+    signed_date: '',
+    consent_change_reason: null,
   };
 
+  step4NoReasons: Partial<Record<keyof ConsentWritePayload, string>> = {};
+
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
+  consentAdvisories: ConsentAdvisory[] = [];
   finalCompletionIssues: FinalCompletionIssue[] = [];
+  originalStep4Snapshot: ConsentWritePayload | null = null;
 
   // Session pattern (step 5) — held in component state because the pattern
   // is sent to a separate endpoint after the child is created.
@@ -832,6 +884,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.errorMessage = null;
       setTimeout(() => this.focusStepHeading(), 50);
     }
+  }
+
+  continueFromConsents(): void {
+    const firstIssue = this.firstBlockingIssueForStep('consents-evidence');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
+      return;
+    }
+    this.consentAdvisories = this.collectConsentAdvisories();
+    this.successMessage = 'Consents & evidence saved to draft.';
+    this.nextStep();
   }
 
   prevStep(): void {
@@ -1291,17 +1354,45 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.errorMessage = null;
 
-    const { social_media_channel_notes: _, ...step4Base } = this.step4;
+    const { social_media_channel_notes: _ignored, ...step4Base } = this.step4;
+    const signedDate = this.step4.signed_date || this.todayIso;
+    const valuesChanged = this.consentValuesChangedSince(this.originalStep4Snapshot);
+    const consentChangeReason = valuesChanged
+      ? this.step4.consent_change_reason?.trim() || null
+      : null;
+
     const consentPayload: ConsentWritePayload = {
       ...step4Base,
+      signer_name: this.step4.signer_name.trim(),
+      signed_date: signedDate,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
+      consent_change_reason: consentChangeReason,
     };
 
     this.staffApi.updateChildConsent(this.childId!, consentPayload).subscribe({
-      next: () => {
+      next: (saved) => {
         this.isSaving = false;
         this.successMessage = 'Consents & evidence saved.';
+        this.originalStep4Snapshot = {
+          ...this.step4,
+          consent_change_reason: null,
+        };
+        this.step4.consent_change_reason = null;
+        if (saved) {
+          this.workflowStatus = {
+            ...(this.workflowStatus ?? {
+              isReviewedComplete: false,
+              canMarkComplete: false,
+              needsReview: true,
+              missingGroups: [],
+              currentConsent: null,
+            }),
+            isReviewedComplete: !!saved.safeguarding_reporting_acknowledgement,
+            canMarkComplete: !!saved.safeguarding_reporting_acknowledgement,
+            currentConsent: saved,
+          };
+        }
         this.loadStatus();
       },
       error: (error) => {
@@ -1316,6 +1407,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   submitRegistration(): void {
     const issues = this.collectFinalCompletionIssues();
     this.finalCompletionIssues = issues;
+    this.consentAdvisories = this.collectConsentAdvisories();
     if (issues.length > 0) {
       this.handleValidationFailure(issues[0]);
       return;
@@ -1350,14 +1442,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Edit-mode: the per-section saves already updated the sub-records. Mark
-    // the child's consent attestation as the only remaining completion gate.
-    if (!this.childId) return;
-    this.isSaving = true;
-    this.errorMessage = null;
-    this.successMessage = 'All sections saved.';
-    this.isSaving = false;
-    this.loadStatus();
+    // Edit-mode: no global "Mark Reviewed/Complete" gesture. Edit mode shows
+    // only the per-section Save Changes buttons. The server derives the
+    // consent completion state from the saved record.
   }
 
   private submitSessionPattern(childId: string): void {
@@ -1588,6 +1675,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   setConsentValue(key: keyof ConsentWritePayload, checked: boolean): void {
     (this.step4[key] as boolean) = checked;
     this.consentsReviewed[key] = true;
+    this.consentAdvisories = this.collectConsentAdvisories();
     this.notifyDraftChanged();
   }
 
@@ -1595,7 +1683,45 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     const next = !this.consentValue(key);
     (this.step4[key] as boolean) = next;
     this.consentsReviewed[key] = true;
+    this.consentAdvisories = this.collectConsentAdvisories();
     this.notifyDraftChanged();
+  }
+
+  consentTier(key: keyof ConsentWritePayload): ConsentTier {
+    return CONSENT_TIERS[key] ?? 'optional';
+  }
+
+  consentTierLabel(key: keyof ConsentWritePayload): string {
+    const tier = this.consentTier(key);
+    if (tier === 'required') return 'Required';
+    if (tier === 'required_acknowledged') return 'Required — must answer';
+    return 'Optional';
+  }
+
+  consentTierBadgeClass(key: keyof ConsentWritePayload): string {
+    const tier = this.consentTier(key);
+    const base = 'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide';
+    if (tier === 'required') {
+      return `${base} bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300`;
+    }
+    if (tier === 'required_acknowledged') {
+      return `${base} bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300`;
+    }
+    return `${base} bg-gray-100 text-gray-600 dark:bg-gray-700/40 dark:text-gray-300`;
+  }
+
+  setNoReason(key: keyof ConsentWritePayload, value: string): void {
+    this.step4NoReasons = { ...this.step4NoReasons, [key]: value };
+  }
+
+  advisoryMessage(field: string): string {
+    const labels: Record<string, string> = {
+      safeguarding_reporting_acknowledgement: 'Safeguarding reporting acknowledgement',
+      information_sharing_consent: 'Information sharing consent',
+      urgent_medical_treatment: 'Urgent medical treatment',
+      plasters: 'First aid / plasters',
+    };
+    return labels[field] ?? field;
   }
 
   private markAllConsentsReviewed(): void {
@@ -1897,8 +2023,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       staff_student_coursework: this.step4.staff_student_coursework,
       social_media: this.step4.social_media,
       notes_exceptions: this.step4.notes_exceptions?.trim() || null,
-      signer_name: this.deriveSignerName(),
-      signed_date: this.step1.registration_date || this.todayIso,
+      signer_name: this.step4.signer_name.trim(),
+      signed_date: this.step4.signed_date || this.step1.registration_date || this.todayIso,
     };
 
     const collectionSettings: ChildCollectionSettingsInput = {
@@ -1952,7 +2078,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   canSubmitLocally(): boolean {
-    return this.collectFinalCompletionIssues().length === 0;
+    const issues = this.collectFinalCompletionIssues();
+    this.consentAdvisories = this.collectConsentAdvisories();
+    this.finalCompletionIssues = issues;
+    return issues.length === 0;
   }
 
   collectFinalCompletionIssues(): FinalCompletionIssue[] {
@@ -2144,41 +2273,87 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private collectConsentsIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.step4.gdpr_data_processing_consent) {
-      issues.push({ stepKey: 'consents-evidence', field: 'gdpr_data_processing_consent', message: 'Confirm GDPR data processing consent.' });
-    }
-    if (!this.step4.information_truthfulness_declaration) {
-      issues.push({ stepKey: 'consents-evidence', field: 'information_truthfulness_declaration', message: 'Confirm the truthfulness declaration.' });
-    }
-
-    if (!this.isNewRegistration) {
-      return;
-    }
-
-    const optionalConsents: Array<{ key: keyof ConsentWritePayload; label: string }> = [
-      { key: 'safeguarding_reporting_acknowledgement', label: 'safeguarding reporting acknowledgement' },
-      { key: 'information_sharing_consent', label: 'information sharing consent' },
-      { key: 'urgent_medical_treatment', label: 'urgent medical treatment' },
-      { key: 'plasters', label: 'first aid/plasters' },
-      { key: 'area_senco_liaison', label: 'Area SENCO liaison' },
-      { key: 'health_visitor_liaison', label: 'Health Visitor liaison' },
-      { key: 'transition_documents', label: 'transition documents' },
-      { key: 'local_outings', label: 'local outings' },
-      { key: 'face_painting', label: 'face painting' },
-      { key: 'parent_supplied_sun_cream', label: 'parent-supplied sun cream' },
-      { key: 'parent_supplied_nappy_cream', label: 'parent-supplied nappy cream' },
-      { key: 'development_profile_photos', label: 'development profile photos' },
-      { key: 'nursery_display_boards', label: 'nursery display boards' },
-      { key: 'promotional_literature', label: 'promotional literature' },
-      { key: 'nursery_website', label: 'nursery website' },
-      { key: 'staff_student_coursework', label: 'staff/student coursework' },
-      { key: 'social_media', label: 'social media' },
-    ];
-    for (const item of optionalConsents) {
-      if (!this.consentsReviewed[item.key]) {
-        issues.push({ stepKey: 'consents-evidence', field: item.key, message: `Record an explicit Yes or No decision for ${item.label}.` });
+    for (const key of REQUIRED_KEYS) {
+      if (this.step4[key] !== true) {
+        issues.push({
+          stepKey: 'consents-evidence',
+          field: key as string,
+          message: this.requiredConsentMessage(key),
+        });
       }
     }
+
+    for (const key of REQUIRED_ACKNOWLEDGED_KEYS) {
+      if (!this.consentsReviewed[key]) {
+        issues.push({
+          stepKey: 'consents-evidence',
+          field: key as string,
+          message: this.requiredAcknowledgedMessage(key),
+        });
+      }
+    }
+
+    if (!this.step4.signer_name.trim()) {
+      issues.push({
+        stepKey: 'consents-evidence',
+        field: 'signer_name',
+        message: 'Record the parent or carer full name who signed the consent.',
+      });
+    }
+    if (!this.step4.signed_date) {
+      issues.push({
+        stepKey: 'consents-evidence',
+        field: 'signed_date',
+        message: 'Record the date the consent was signed.',
+      });
+    }
+  }
+
+  private requiredConsentMessage(key: keyof ConsentWritePayload): string {
+    if (key === 'gdpr_data_processing_consent') {
+      return 'Confirm GDPR data processing consent.';
+    }
+    if (key === 'information_truthfulness_declaration') {
+      return 'Confirm the truthfulness declaration.';
+    }
+    return 'This required consent must be granted.';
+  }
+
+  private requiredAcknowledgedMessage(key: keyof ConsentWritePayload): string {
+    const labels: Record<string, string> = {
+      safeguarding_reporting_acknowledgement: 'safeguarding reporting acknowledgement',
+      information_sharing_consent: 'information sharing consent',
+      urgent_medical_treatment: 'urgent medical treatment',
+      plasters: 'first aid/plasters',
+    };
+    return `Record an explicit Yes or No decision for ${labels[key as string] ?? key}.`;
+  }
+
+  collectConsentAdvisories(): ConsentAdvisory[] {
+    const advisories: ConsentAdvisory[] = [];
+    for (const key of REQUIRED_ACKNOWLEDGED_KEYS) {
+      if (this.step4[key] === false) {
+        advisories.push({
+          stepKey: 'consents-evidence',
+          field: key as string,
+          message: this.requiredAcknowledgedMessage(key),
+        });
+      }
+    }
+    return advisories;
+  }
+
+  consentValuesChangedSince(snapshot: ConsentWritePayload | null): boolean {
+    if (!snapshot) return false;
+    const booleanKeys = (Object.keys(this.step4) as (keyof ConsentWritePayload)[]).filter(
+      (k) => typeof this.step4[k] === 'boolean',
+    );
+    for (const key of booleanKeys) {
+      if (this.step4[key] !== snapshot[key]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ── Session pattern helpers ───────────────────────────────────────────
@@ -2435,7 +2610,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       staff_student_coursework: record.staff_student_coursework,
       social_media: record.social_media,
       notes_exceptions: record.notes_exceptions,
+      signer_name: record.signer_name ?? '',
+      signed_date: record.signed_date ?? '',
+      consent_change_reason: null,
     };
+    this.originalStep4Snapshot = { ...this.step4 };
+    this.consentAdvisories = this.collectConsentAdvisories();
     this.markAllConsentsReviewed();
   }
 
@@ -2956,7 +3136,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       social_media: false,
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
+      signer_name: '',
+      signed_date: '',
+      consent_change_reason: null,
     };
+    this.step4NoReasons = {};
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = [true];
@@ -2969,6 +3153,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step3Touched = {};
     this.step3Submitted = false;
     this.consentsReviewed = {};
+    this.consentAdvisories = [];
+    this.originalStep4Snapshot = null;
     this.fieldErrors = {};
     this.errorMessage = null;
   }
