@@ -105,10 +105,9 @@ describe('ManagerChildEditStepperComponent', () => {
         workAddress: null,
         hasParentalResponsibility: null,
       },
-      emptyContact(),
     ];
-    component.emergencyAuthorisedFlags = [false, false];
-    component.emergencyContactAddresses = ['', ''];
+    component.emergencyAuthorisedFlags = [false];
+    component.emergencyContactAddresses = [''];
 
     component.step3.funding_support_answer = 'no';
     component.step3.working_tax_credit = false;
@@ -415,7 +414,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
     it('requires at least one emergency contact with name, relationship, phone', () => {
       fillRequiredForCompletion();
-      component.emergencyContactsDraft = [emptyContact(), emptyContact()];
+      component.emergencyContactsDraft = [emptyContact()];
       expect(component.canSubmitLocally()).toBe(false);
     });
 
@@ -424,7 +423,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.emergencyContactsDraft[0].fullName = 'Mary Hill';
       component.emergencyContactsDraft[0].relationshipToChild = 'Grandparent';
       component.emergencyContactsDraft[0].telephone = '020 9999 0000';
-      component.emergencyAuthorisedFlags = [true, false];
+      component.emergencyAuthorisedFlags = [true];
       component.step3.collection_password = '';
       expect(component.canSubmitLocally()).toBe(false);
       component.step3.collection_password = 'secret123';
@@ -433,7 +432,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
     it('does not require password when no non-parent authorised collector', () => {
       fillRequiredForCompletion();
-      component.emergencyAuthorisedFlags = [false, false];
+      component.emergencyAuthorisedFlags = [false];
       component.step3.collection_password = '';
       expect(component.canSubmitLocally()).toBe(true);
     });

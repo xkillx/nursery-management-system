@@ -670,9 +670,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   patternRetryError: string | null = null;
 
   parentCarersDraft: RegistrationContactEntry[] = [this.emptyContact('Mother')];
-  emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
-  emergencyAuthorisedFlags = [true, false];
-  emergencyContactAddresses: string[] = ['', ''];
+  emergencyContactsDraft: RegistrationContactEntry[] = [this.emptyContact('Grandparent')];
+  emergencyAuthorisedFlags = [true];
+  emergencyContactAddresses: string[] = [''];
   referralsDraft: ReferralEntry[] = [];
 
   readonly referralTypeOptions: Option[] = [
@@ -2571,7 +2571,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.emergencyContactsDraft = view.contacts.emergencyContacts.length
       ? view.contacts.emergencyContacts.map(contact => ({ ...contact }))
-      : [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
+      : [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
       view.contacts.authorisedCollectors.some(
         (collector) => collector.fullName === contact.fullName && !!contact.fullName,
@@ -2958,9 +2958,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       notes_exceptions: null,
     };
     this.parentCarersDraft = [this.emptyContact('Mother')];
-    this.emergencyContactsDraft = [this.emptyContact('Grandparent'), this.emptyContact('Aunt')];
-    this.emergencyAuthorisedFlags = [true, false];
-    this.emergencyContactAddresses = ['', ''];
+    this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
+    this.emergencyAuthorisedFlags = [true];
+    this.emergencyContactAddresses = [''];
     this.referralsDraft = [];
     this.step1Touched = {};
     this.step1Submitted = false;
