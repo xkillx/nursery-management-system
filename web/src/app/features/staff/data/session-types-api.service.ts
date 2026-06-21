@@ -16,8 +16,8 @@ export interface StaffSessionType {
 
 export interface StaffSessionTypeInput {
   name: string;
-  startTime: string;
-  endTime: string;
+  start_time: string;
+  end_time: string;
 }
 
 interface ApiSessionType {

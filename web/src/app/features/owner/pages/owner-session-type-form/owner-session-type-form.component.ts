@@ -17,6 +17,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import {
+  StaffSessionTypeInput,
   StaffSessionTypesApiService,
 } from '../../../staff/data/session-types-api.service';
 
@@ -139,10 +140,10 @@ export class OwnerSessionTypeFormComponent implements OnInit {
     }
     this.saving = true;
     this.pageError = null;
-    const payload = {
+    const payload: StaffSessionTypeInput = {
       name: this.form.name.trim(),
-      startTime: this.form.startTime,
-      endTime: this.form.endTime,
+      start_time: this.form.startTime,
+      end_time: this.form.endTime,
     };
     const op =
       this.mode === 'create'
