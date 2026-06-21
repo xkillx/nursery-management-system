@@ -558,7 +558,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     { key: 'social_media', label: 'Nursery Social Media Accounts', detail: '' },
   ];
 
-  currentStep: StepperStep = 'child-basics';
+  private _currentStep: StepperStep = 'child-basics';
+  get currentStep(): StepperStep { return this._currentStep; }
+  set currentStep(step: StepperStep) {
+    this._currentStep = step;
+    if (step === 'consents-evidence' && this.parentCarersDraft[0]?.fullName && !this.step4.signer_name) {
+      this.step4.signer_name = this.parentCarersDraft[0].fullName;
+    }
+  }
   childId: string | null = null;
   child: ChildRecord | null = null;
   workflowStatus: StepperCompletionStatus | null = null;
@@ -1689,25 +1696,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   consentTier(key: keyof ConsentWritePayload): ConsentTier {
     return CONSENT_TIERS[key] ?? 'optional';
-  }
-
-  consentTierLabel(key: keyof ConsentWritePayload): string {
-    const tier = this.consentTier(key);
-    if (tier === 'required') return 'Required';
-    if (tier === 'required_acknowledged') return 'Required — must answer';
-    return 'Optional';
-  }
-
-  consentTierBadgeClass(key: keyof ConsentWritePayload): string {
-    const tier = this.consentTier(key);
-    const base = 'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide';
-    if (tier === 'required') {
-      return `${base} bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300`;
-    }
-    if (tier === 'required_acknowledged') {
-      return `${base} bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300`;
-    }
-    return `${base} bg-gray-100 text-gray-600 dark:bg-gray-700/40 dark:text-gray-300`;
   }
 
   setNoReason(key: keyof ConsentWritePayload, value: string): void {
@@ -3137,7 +3125,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       urgent_medical_treatment_exceptions: null,
       notes_exceptions: null,
       signer_name: '',
-      signed_date: '',
+      signed_date: this.todayIso,
       consent_change_reason: null,
     };
     this.step4NoReasons = {};

@@ -550,15 +550,7 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(component.consentTier('social_media')).toBe('optional');
     });
 
-    it('renders the right label and badge class per tier', () => {
-      expect(component.consentTierLabel('gdpr_data_processing_consent')).toBe('Required');
-      expect(component.consentTierLabel('safeguarding_reporting_acknowledgement')).toBe('Required — must answer');
-      expect(component.consentTierLabel('social_media')).toBe('Optional');
 
-      expect(component.consentTierBadgeClass('gdpr_data_processing_consent')).toContain('bg-error-100');
-      expect(component.consentTierBadgeClass('safeguarding_reporting_acknowledgement')).toContain('bg-warning-100');
-      expect(component.consentTierBadgeClass('social_media')).toContain('bg-gray-100');
-    });
   });
 
   describe('consent advisories', () => {

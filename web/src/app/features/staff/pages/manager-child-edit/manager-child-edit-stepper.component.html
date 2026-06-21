@@ -1532,7 +1532,7 @@
 
       @if (currentStep === 'consents-evidence') {
         <section>
-          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
@@ -1592,7 +1592,6 @@
                       <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
                           <p class="font-bold">{{ item.label }}</p>
-                          <span [class]="consentTierBadgeClass(item.key)">{{ consentTierLabel(item.key) }}</span>
                         </div>
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
@@ -1619,186 +1618,135 @@
                   <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">We have a duty to report any child protection concerns regarding possible abuse to relevant authorities.</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-800">
-                    <div
-                      role="button"
-                      tabindex="0"
-                      [attr.data-focus-target]="'safeguarding-reporting-consent'"
-                      [attr.aria-invalid]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
-                      [attr.aria-describedby]="hasFieldIssue('safeguarding_reporting_acknowledgement') ? 'safeguarding-consent-error' : null"
-                      class="flex cursor-pointer items-center gap-3 rounded-lg p-4 transition"
-                      [class.bg-brand-50]="step4.safeguarding_reporting_acknowledgement"
-                      [class.bg-white]="!step4.safeguarding_reporting_acknowledgement"
-                      [class.border-error-400]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
-                      [ngClass]="{
-                        'dark:bg-brand-500/10': step4.safeguarding_reporting_acknowledgement,
-                        'dark:bg-gray-900/50': !step4.safeguarding_reporting_acknowledgement
-                      }"
-                      (click)="toggleConsent('safeguarding_reporting_acknowledgement')"
-                      (keydown.enter)="toggleConsent('safeguarding_reporting_acknowledgement')"
-                      (keydown.space)="toggleConsent('safeguarding_reporting_acknowledgement'); $event.preventDefault()"
-                    >
-                      <div class="pointer-events-none flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <app-checkbox
-                            name="safeguarding_reporting_acknowledgement"
-                            [ngModel]="step4.safeguarding_reporting_acknowledgement"
-                            (ngModelChange)="setConsentValue('safeguarding_reporting_acknowledgement', $event)"
-                            label="I understand that safeguarding concerns may be reported to relevant authorities."
-                          />
-                          <span [class]="consentTierBadgeClass('safeguarding_reporting_acknowledgement')">{{ consentTierLabel('safeguarding_reporting_acknowledgement') }}</span>
-                        </div>
+                  <div
+                    role="button"
+                    tabindex="0"
+                    [attr.data-focus-target]="'safeguarding-reporting-consent'"
+                    [attr.aria-invalid]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
+                    [attr.aria-describedby]="hasFieldIssue('safeguarding_reporting_acknowledgement') ? 'safeguarding-consent-error' : null"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.safeguarding_reporting_acknowledgement"
+                    [class.bg-brand-50]="step4.safeguarding_reporting_acknowledgement"
+                    [class.border-gray-200]="!step4.safeguarding_reporting_acknowledgement"
+                    [class.bg-white]="!step4.safeguarding_reporting_acknowledgement"
+                    [class.border-error-400]="hasFieldIssue('safeguarding_reporting_acknowledgement')"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.safeguarding_reporting_acknowledgement,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.safeguarding_reporting_acknowledgement
+                    }"
+                    (click)="toggleConsent('safeguarding_reporting_acknowledgement')"
+                    (keydown.enter)="toggleConsent('safeguarding_reporting_acknowledgement')"
+                    (keydown.space)="toggleConsent('safeguarding_reporting_acknowledgement'); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <app-checkbox
+                          name="safeguarding_reporting_acknowledgement"
+                          [ngModel]="step4.safeguarding_reporting_acknowledgement"
+                          (ngModelChange)="setConsentValue('safeguarding_reporting_acknowledgement', $event)"
+                          label="I understand that safeguarding concerns may be reported to relevant authorities."
+                        />
                       </div>
                     </div>
-                    @if (step4.safeguarding_reporting_acknowledgement === false) {
-                      <div class="px-4 pb-4">
-                        <app-form-field label="Reason (optional)">
-                          <app-text-area
-                            name="no-reason-safeguarding_reporting_acknowledgement"
-                            [ngModel]="step4NoReasons['safeguarding_reporting_acknowledgement'] || ''"
-                            (ngModelChange)="setNoReason('safeguarding_reporting_acknowledgement', $event)"
-                            placeholder="Capture the parent's reason for declining (optional)"
-                            [rows]="2"
-                          ></app-text-area>
-                        </app-form-field>
-                      </div>
-                    }
-                    @if (hasFieldIssue('safeguarding_reporting_acknowledgement')) {
-                      <p id="safeguarding-consent-error" class="mt-2 px-4 pb-4 text-sm text-error-500" role="alert">{{ fieldIssueMessage('safeguarding_reporting_acknowledgement') }}</p>
-                    }
                   </div>
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-800">
-                    <div
-                      role="button"
-                      tabindex="0"
-                      [attr.data-focus-target]="'urgent_medical_treatment'"
-                      class="flex cursor-pointer items-center gap-3 rounded-lg p-4 transition"
-                      [class.bg-brand-50]="step4.urgent_medical_treatment"
-                      [class.bg-white]="!step4.urgent_medical_treatment"
-                      [ngClass]="{
-                        'dark:bg-brand-500/10': step4.urgent_medical_treatment,
-                        'dark:bg-gray-900/50': !step4.urgent_medical_treatment
-                      }"
-                      (click)="toggleConsent('urgent_medical_treatment')"
-                      (keydown.enter)="toggleConsent('urgent_medical_treatment')"
-                      (keydown.space)="toggleConsent('urgent_medical_treatment'); $event.preventDefault()"
-                    >
-                      <div class="pointer-events-none flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <app-checkbox
-                            name="urgent_medical_treatment"
-                            [ngModel]="step4.urgent_medical_treatment"
-                            (ngModelChange)="setConsentValue('urgent_medical_treatment', $event)"
-                            label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
-                          />
-                          <span [class]="consentTierBadgeClass('urgent_medical_treatment')">{{ consentTierLabel('urgent_medical_treatment') }}</span>
-                        </div>
+
+                  @if (hasFieldIssue('safeguarding_reporting_acknowledgement')) {
+                    <p id="safeguarding-consent-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('safeguarding_reporting_acknowledgement') }}</p>
+                  }
+
+                  <div
+                    role="button"
+                    tabindex="0"
+                    [attr.data-focus-target]="'urgent_medical_treatment'"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.urgent_medical_treatment"
+                    [class.bg-brand-50]="step4.urgent_medical_treatment"
+                    [class.border-gray-200]="!step4.urgent_medical_treatment"
+                    [class.bg-white]="!step4.urgent_medical_treatment"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.urgent_medical_treatment,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.urgent_medical_treatment
+                    }"
+                    (click)="toggleConsent('urgent_medical_treatment')"
+                    (keydown.enter)="toggleConsent('urgent_medical_treatment')"
+                    (keydown.space)="toggleConsent('urgent_medical_treatment'); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <app-checkbox
+                          name="urgent_medical_treatment"
+                          [ngModel]="step4.urgent_medical_treatment"
+                          (ngModelChange)="setConsentValue('urgent_medical_treatment', $event)"
+                          label="I give permission for the nursery to seek emergency medical treatment for my child when necessary."
+                        />
                       </div>
                     </div>
-                    @if (step4.urgent_medical_treatment === false) {
-                      <div class="px-4 pb-4">
-                        <app-form-field label="Reason (optional)">
-                          <app-text-area
-                            name="no-reason-urgent_medical_treatment"
-                            [ngModel]="step4NoReasons['urgent_medical_treatment'] || ''"
-                            (ngModelChange)="setNoReason('urgent_medical_treatment', $event)"
-                            placeholder="Capture the parent's reason for declining (optional)"
-                            [rows]="2"
-                          ></app-text-area>
-                        </app-form-field>
-                      </div>
-                    }
                   </div>
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-800">
-                    <div
-                      role="button"
-                      tabindex="0"
-                      [attr.data-focus-target]="'plasters'"
-                      class="flex cursor-pointer items-center gap-3 rounded-lg p-4 transition"
-                      [class.bg-brand-50]="step4.plasters"
-                      [class.bg-white]="!step4.plasters"
-                      [ngClass]="{
-                        'dark:bg-brand-500/10': step4.plasters,
-                        'dark:bg-gray-900/50': !step4.plasters
-                      }"
-                      (click)="toggleConsent('plasters')"
-                      (keydown.enter)="toggleConsent('plasters')"
-                      (keydown.space)="toggleConsent('plasters'); $event.preventDefault()"
-                    >
-                      <div class="pointer-events-none flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <app-checkbox
-                            name="plasters"
-                            [ngModel]="step4.plasters"
-                            (ngModelChange)="setConsentValue('plasters', $event)"
-                            label="I consent to trained staff administering routine first aid, including the use of plasters."
-                          />
-                          <span [class]="consentTierBadgeClass('plasters')">{{ consentTierLabel('plasters') }}</span>
-                        </div>
+
+                  <div
+                    role="button"
+                    tabindex="0"
+                    [attr.data-focus-target]="'plasters'"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.plasters"
+                    [class.bg-brand-50]="step4.plasters"
+                    [class.border-gray-200]="!step4.plasters"
+                    [class.bg-white]="!step4.plasters"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.plasters,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.plasters
+                    }"
+                    (click)="toggleConsent('plasters')"
+                    (keydown.enter)="toggleConsent('plasters')"
+                    (keydown.space)="toggleConsent('plasters'); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <app-checkbox
+                          name="plasters"
+                          [ngModel]="step4.plasters"
+                          (ngModelChange)="setConsentValue('plasters', $event)"
+                          label="I consent to trained staff administering routine first aid, including the use of plasters."
+                        />
                       </div>
                     </div>
-                    @if (step4.plasters === false) {
-                      <div class="px-4 pb-4">
-                        <app-form-field label="Reason (optional)">
-                          <app-text-area
-                            name="no-reason-plasters"
-                            [ngModel]="step4NoReasons['plasters'] || ''"
-                            (ngModelChange)="setNoReason('plasters', $event)"
-                            placeholder="Capture the parent's reason for declining (optional)"
-                            [rows]="2"
-                          ></app-text-area>
-                        </app-form-field>
-                      </div>
-                    }
                   </div>
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-800">
-                    <div
-                      role="button"
-                      tabindex="0"
-                      [attr.data-focus-target]="'information-sharing-consent'"
-                      [attr.aria-invalid]="hasFieldIssue('information_sharing_consent')"
-                      [attr.aria-describedby]="hasFieldIssue('information_sharing_consent') ? 'information-sharing-error' : null"
-                      class="flex cursor-pointer items-center gap-3 rounded-lg p-4 transition"
-                      [class.bg-brand-50]="step4.information_sharing_consent"
-                      [class.bg-white]="!step4.information_sharing_consent"
-                      [class.border-error-400]="hasFieldIssue('information_sharing_consent')"
-                      [ngClass]="{
-                        'dark:bg-brand-500/40 dark:bg-brand-500/10': step4.information_sharing_consent,
-                        'dark:border-gray-800 dark:bg-gray-900/50': !step4.information_sharing_consent
-                      }"
-                      (click)="toggleConsent('information_sharing_consent')"
-                      (keydown.enter)="toggleConsent('information_sharing_consent')"
-                      (keydown.space)="toggleConsent('information_sharing_consent'); $event.preventDefault()"
-                    >
-                      <div class="pointer-events-none flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <app-checkbox
-                            name="information_sharing_consent"
-                            [ngModel]="step4.information_sharing_consent"
-                            (ngModelChange)="setConsentValue('information_sharing_consent', $event)"
-                            label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
-                          />
-                          <span [class]="consentTierBadgeClass('information_sharing_consent')">{{ consentTierLabel('information_sharing_consent') }}</span>
-                        </div>
+
+                  <div
+                    role="button"
+                    tabindex="0"
+                    [attr.data-focus-target]="'information-sharing-consent'"
+                    [attr.aria-invalid]="hasFieldIssue('information_sharing_consent')"
+                    [attr.aria-describedby]="hasFieldIssue('information_sharing_consent') ? 'information-sharing-error' : null"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition"
+                    [class.border-brand-200]="step4.information_sharing_consent"
+                    [class.bg-brand-50]="step4.information_sharing_consent"
+                    [class.border-gray-200]="!step4.information_sharing_consent"
+                    [class.bg-white]="!step4.information_sharing_consent"
+                    [class.border-error-400]="hasFieldIssue('information_sharing_consent')"
+                    [ngClass]="{
+                      'dark:border-brand-500/40 dark:bg-brand-500/10': step4.information_sharing_consent,
+                      'dark:border-gray-800 dark:bg-gray-900/50': !step4.information_sharing_consent
+                    }"
+                    (click)="toggleConsent('information_sharing_consent')"
+                    (keydown.enter)="toggleConsent('information_sharing_consent')"
+                    (keydown.space)="toggleConsent('information_sharing_consent'); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <app-checkbox
+                          name="information_sharing_consent"
+                          [ngModel]="step4.information_sharing_consent"
+                          (ngModelChange)="setConsentValue('information_sharing_consent', $event)"
+                          label="I understand that relevant information may be shared with healthcare professionals or authorities when required for my child's welfare."
+                        />
                       </div>
                     </div>
-                    @if (step4.information_sharing_consent === false) {
-                      <div class="px-4 pb-4">
-                        <app-form-field label="Reason (optional)">
-                          <app-text-area
-                            name="no-reason-information_sharing_consent"
-                            [ngModel]="step4NoReasons['information_sharing_consent'] || ''"
-                            (ngModelChange)="setNoReason('information_sharing_consent', $event)"
-                            placeholder="Capture the parent's reason for declining (optional)"
-                            [rows]="2"
-                          ></app-text-area>
-                        </app-form-field>
-                      </div>
-                    }
-                    @if (hasFieldIssue('information_sharing_consent')) {
-                      <p id="information-sharing-error" class="mt-2 px-4 pb-4 text-sm text-error-500" role="alert">{{ fieldIssueMessage('information_sharing_consent') }}</p>
-                    }
                   </div>
+
+                  @if (hasFieldIssue('information_sharing_consent')) {
+                    <p id="information-sharing-error" class="mt-2 text-sm text-error-500" role="alert">{{ fieldIssueMessage('information_sharing_consent') }}</p>
+                  }
                 </div>
                 <app-form-field label="Urgent treatment exceptions" className="md:max-w-1/2">
                   <app-input-field
@@ -1843,7 +1791,6 @@
                             [ngModel]="consentValue(item.key)"
                             (ngModelChange)="setConsentValue(item.key, $event)"
                           />
-                          <span [class]="consentTierBadgeClass(item.key)">{{ consentTierLabel(item.key) }}</span>
                         </div>
                       </div>
                     </div>
@@ -1884,7 +1831,6 @@
                             [ngModel]="consentValue(item.key)"
                             (ngModelChange)="setConsentValue(item.key, $event)"
                           />
-                          <span [class]="consentTierBadgeClass(item.key)">{{ consentTierLabel(item.key) }}</span>
                         </div>
                       </div>
                     </div>
@@ -1897,7 +1843,6 @@
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroClipboardDocumentCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h3 id="truthfulness-heading" class="text-lg font-bold">Information Truthfulness Declaration</h3>
-                  <span [class]="consentTierBadgeClass('information_truthfulness_declaration')">{{ consentTierLabel('information_truthfulness_declaration') }}</span>
                 </div>
                 <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
                   Confirm that the parent/carer has read and acknowledged the truthfulness declaration below.
@@ -1943,7 +1888,6 @@
                 <div class="flex items-center gap-3">
                   <ng-icon name="heroShieldCheck" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h3 class="text-lg font-bold">GDPR Data Processing Consent</h3>
-                  <span [class]="consentTierBadgeClass('gdpr_data_processing_consent')">{{ consentTierLabel('gdpr_data_processing_consent') }}</span>
                 </div>
                 <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
                   Confirm that the parent/carer has read and acknowledged the GDPR declaration below.
