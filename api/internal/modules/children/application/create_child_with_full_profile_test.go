@@ -18,10 +18,11 @@ import (
 
 type fakeChildRepository struct {
 	domain.Repository
-	createCallCount     int
-	insertPatternCalled bool
-	insertPatternFrom   time.Time
-	insertPatternCnt    int
+	createCallCount      int
+	insertPatternCalled  bool
+	insertPatternFrom    time.Time
+	insertPatternTo      *time.Time
+	insertPatternCnt     int
 }
 
 func (f *fakeChildRepository) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
@@ -31,6 +32,7 @@ func (f *fakeChildRepository) Create(ctx context.Context, child domain.Child, no
 func (f *fakeChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
 	f.insertPatternCalled = true
 	f.insertPatternFrom = p.EffectiveFrom
+	f.insertPatternTo = p.EffectiveTo
 	f.insertPatternCnt = len(entries)
 	return p, nil
 }
@@ -212,6 +214,84 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		}
 		if slices.Contains(result.CreatedSubRecords, "booking_pattern") {
 			t.Errorf("expected CreatedSubRecords not to contain 'booking_pattern', got %v", result.CreatedSubRecords)
+		}
+	})
+
+	t.Run("SuccessfulCreateWithBookingPatternEffectiveTo", func(t *testing.T) {
+		tenantID := uuid.New()
+		branchID := uuid.New()
+		stID := uuid.New()
+
+		repo := &fakeChildRepository{}
+		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
+		txm := &fakeCreateTxm{}
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+		})
+
+		effectiveTo := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)
+		input := newDefaultInput()
+		input.BookingPattern = &application.BookingPatternInput{
+			EffectiveFrom: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+			EffectiveTo:   &effectiveTo,
+			Entries: []application.BookingPatternEntryInput{
+				{DayOfWeek: 1, SessionTypeID: stID},
+			},
+		}
+
+		result, err := uc.Execute(context.Background(), createActorContext(tenantID, branchID), input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !slices.Contains(result.CreatedSubRecords, "booking_pattern") {
+			t.Errorf("expected CreatedSubRecords to contain 'booking_pattern', got %v", result.CreatedSubRecords)
+		}
+		if !repo.insertPatternCalled {
+			t.Fatal("expected InsertPattern to be called")
+		}
+		if repo.insertPatternTo == nil {
+			t.Fatal("expected EffectiveTo to be set, got nil")
+		}
+		if !repo.insertPatternTo.Equal(effectiveTo) {
+			t.Errorf("expected EffectiveTo %s, got %s", effectiveTo.Format("2006-01-02"), repo.insertPatternTo.Format("2006-01-02"))
+		}
+	})
+
+	t.Run("EffectiveToBeforeEffectiveFromRejected", func(t *testing.T) {
+		tenantID := uuid.New()
+		branchID := uuid.New()
+		stID := uuid.New()
+
+		repo := &fakeChildRepository{}
+		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
+		txm := &fakeCreateTxm{}
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+		})
+
+		effectiveTo := time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC)
+		input := newDefaultInput()
+		input.BookingPattern = &application.BookingPatternInput{
+			EffectiveFrom: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+			EffectiveTo:   &effectiveTo,
+			Entries: []application.BookingPatternEntryInput{
+				{DayOfWeek: 1, SessionTypeID: stID},
+			},
+		}
+
+		_, err := uc.Execute(context.Background(), createActorContext(tenantID, branchID), input)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		var de *domainerrors.DomainError
+		if !errors.As(err, &de) {
+			t.Fatalf("expected *DomainError, got %T", err)
+		}
+		if de.Code != "booking_pattern_effective_to_before_from" {
+			t.Errorf("got code %q, want booking_pattern_effective_to_before_from", de.Code)
+		}
+		if repo.insertPatternCalled {
+			t.Error("expected InsertPattern NOT to be called when effective_to before effective_from")
 		}
 	})
 

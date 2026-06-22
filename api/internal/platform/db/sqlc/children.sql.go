@@ -101,6 +101,7 @@ SELECT c.id,
             WHERE cbp.tenant_id = c.tenant_id
               AND cbp.branch_id = c.branch_id
               AND cbp.child_id = c.id
+              AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
@@ -191,6 +192,7 @@ SELECT c.id,
             WHERE cbp.tenant_id = c.tenant_id
               AND cbp.branch_id = c.branch_id
               AND cbp.child_id = c.id
+              AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
         c.created_at,
         c.updated_at
@@ -309,6 +311,7 @@ SELECT c.id,
             WHERE cbp.tenant_id = c.tenant_id
               AND cbp.branch_id = c.branch_id
               AND cbp.child_id = c.id
+              AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
         c.created_at,
         c.updated_at

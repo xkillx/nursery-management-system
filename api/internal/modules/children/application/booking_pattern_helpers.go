@@ -19,6 +19,7 @@ import (
 // within a larger creation flow (e.g. create child with full profile).
 type BookingPatternInput struct {
 	EffectiveFrom time.Time
+	EffectiveTo   *time.Time
 	Entries       []BookingPatternEntryInput
 }
 
@@ -69,13 +70,16 @@ func resolveBookingPatternEntries(ctx context.Context, lookup SessionTypeLookup,
 // booking pattern. It checks effectiveFrom is not backdated, closes any open
 // pattern adjacently, inserts the new pattern, and optionally writes an audit
 // entry. The caller must have already verified the child exists in scope.
-func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Repository, auditWriter *audit.Writer, actor tenant.ActorContext, childID uuid.UUID, effectiveFrom time.Time, entries []domain.BookingPatternEntry, writeAudit bool, clock TodayFunc) (*domain.BookingPattern, error) {
+func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Repository, auditWriter *audit.Writer, actor tenant.ActorContext, childID uuid.UUID, effectiveFrom time.Time, effectiveTo *time.Time, entries []domain.BookingPatternEntry, writeAudit bool, clock TodayFunc) (*domain.BookingPattern, error) {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
 	today := LondonTodayDate(clock)
 	if effectiveFrom.Before(today) {
 		return nil, domainerrors.New("booking_pattern_backdated", "Invalid request payload.", "effective_from")
+	}
+	if effectiveTo != nil && effectiveTo.Before(effectiveFrom) {
+		return nil, domainerrors.New("booking_pattern_effective_to_before_from", "Invalid request payload.", "effective_to")
 	}
 
 	openPattern, ofound, oerr := repo.GetCurrentOpenByChild(ctx, tx, actor.TenantID, actor.BranchID, childID)
@@ -98,6 +102,7 @@ func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Reposi
 		BranchID:      actor.BranchID,
 		ChildID:       childID,
 		EffectiveFrom: effectiveFrom,
+		EffectiveTo:   effectiveTo,
 	}
 	saved, serr := repo.InsertPattern(ctx, tx, pattern, entries)
 	if serr != nil {
@@ -105,15 +110,19 @@ func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Reposi
 	}
 
 	if writeAudit && auditWriter != nil {
+		details := map[string]any{
+			"pattern_id":     saved.ID.String(),
+			"effective_from": saved.EffectiveFrom.Format("2006-01-02"),
+			"entry_count":    len(saved.Entries),
+		}
+		if saved.EffectiveTo != nil {
+			details["effective_to"] = saved.EffectiveTo.Format("2006-01-02")
+		}
 		if aerr := auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{
 			ActionType: "child_booking_pattern_created",
 			EntityType: "child",
 			EntityID:   childID,
-			Details: map[string]any{
-				"pattern_id":     saved.ID.String(),
-				"effective_from": saved.EffectiveFrom.Format("2006-01-02"),
-				"entry_count":    len(saved.Entries),
-			},
+			Details:    details,
 		}); aerr != nil {
 			return nil, domainerrors.Internal(fmt.Errorf("audit child_booking_pattern_created: %w", aerr))
 		}

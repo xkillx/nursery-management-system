@@ -1343,6 +1343,7 @@ func (r *ChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domai
 		BranchID:      uuidToPgtype(p.BranchID),
 		ChildID:       uuidToPgtype(p.ChildID),
 		EffectiveFrom: timeToPgtypeDate(p.EffectiveFrom),
+		EffectiveTo:   timeToPgtypeDatePtr(p.EffectiveTo),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("insert child booking pattern: %w", err)

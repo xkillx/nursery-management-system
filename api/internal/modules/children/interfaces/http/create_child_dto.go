@@ -18,6 +18,7 @@ type bookingPatternEntryPayload struct {
 
 type bookingPatternPayload struct {
 	EffectiveFrom string                       `json:"effective_from"`
+	EffectiveTo   *string                      `json:"effective_to"`
 	Entries       []bookingPatternEntryPayload `json:"entries"`
 }
 
@@ -222,6 +223,13 @@ func mapCreateChildRequest(req createChildRequest) (application.CreateChildFullI
 				return in, domainerrors.Validation("Invalid request payload.", "booking_pattern.effective_from")
 			}
 			bp.EffectiveFrom = t
+		}
+		if req.BookingPattern.EffectiveTo != nil && *req.BookingPattern.EffectiveTo != "" {
+			et, err := time.Parse("2006-01-02", *req.BookingPattern.EffectiveTo)
+			if err != nil {
+				return in, domainerrors.Validation("Invalid request payload.", "booking_pattern.effective_to")
+			}
+			bp.EffectiveTo = &et
 		}
 		for i, e := range req.BookingPattern.Entries {
 			stID, err := uuid.Parse(e.SessionTypeID)

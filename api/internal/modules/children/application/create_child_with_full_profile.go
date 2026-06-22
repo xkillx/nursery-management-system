@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -402,7 +403,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			if !input.BookingPattern.EffectiveFrom.IsZero() {
 				bpEffectiveFrom = input.BookingPattern.EffectiveFrom
 			}
-			if _, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, resolvedEntries, true, uc.clock); err != nil {
+			if _, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, true, uc.clock); err != nil {
 				return err
 			}
 			created = append(created, "booking_pattern")
@@ -434,6 +435,10 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		return nil
 	})
 	if err != nil {
+		var de *domainerrors.DomainError
+		if errors.As(err, &de) {
+			return nil, de
+		}
 		return nil, domainerrors.Internal(err)
 	}
 

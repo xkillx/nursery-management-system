@@ -367,6 +367,10 @@ Closed or past booking patterns are read-only and are never edited or deleted; o
 
 A new booking pattern's effective-from date must be today or later (no backdating) and must not overlap any existing pattern for the same child. Creating a new pattern closes the previous active pattern by setting its effective-to to the day before the new pattern's effective-from, producing an adjacent, gap-free, non-overlapping timeline. Mid-history insertion of a pattern between existing patterns is not supported.
 
+## Booking Pattern Planned End Date
+
+A manager may optionally set an effective-to date when creating a booking pattern, recording a planned end for that weekly pattern (for example, a child attending a fixed schedule until a set date before switching). When left blank the pattern is open-ended, matching the prior behaviour. The effective-to must be on or after the effective-from date. While the current date falls within the effective range the pattern remains the child's active pattern; once the effective-to date passes the pattern lapses and the child surfaces with a "no session pattern" state until a new pattern is created. This is distinct from the system-set effective-to produced when one pattern supersedes another, and it is independent of the Term's 12-month commercial end date.
+
 ## Attendance Daily List Scope
 
 The attendance-facing child list shows children for the current `Europe/London` local day: active children and any child with an open attendance session that still needs resolution. Avoid treating this as a historical attendance report.

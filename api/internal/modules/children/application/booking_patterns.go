@@ -69,6 +69,7 @@ type BookingPatternEntryInput struct {
 
 type CreateBookingPatternInput struct {
 	EffectiveFrom time.Time
+	EffectiveTo   *time.Time
 	Entries       []BookingPatternEntryInput
 }
 
@@ -227,7 +228,7 @@ func (uc *CreateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 		}
 
 		var terr error
-		result, terr = createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, cid, in.EffectiveFrom, resolved, true, uc.clock)
+		result, terr = createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, cid, in.EffectiveFrom, in.EffectiveTo, resolved, true, uc.clock)
 		return terr
 	})
 	if err != nil {

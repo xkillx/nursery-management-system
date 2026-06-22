@@ -232,8 +232,8 @@ func (q *Queries) ChildBookingPatternsGetPreviousClosedByChild(ctx context.Conte
 }
 
 const childBookingPatternsInsert = `-- name: ChildBookingPatternsInsert :one
-INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from, effective_to)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
 `
 
@@ -243,6 +243,7 @@ type ChildBookingPatternsInsertParams struct {
 	BranchID      pgtype.UUID
 	ChildID       pgtype.UUID
 	EffectiveFrom pgtype.Date
+	EffectiveTo   pgtype.Date
 }
 
 type ChildBookingPatternsInsertRow struct {
@@ -263,6 +264,7 @@ func (q *Queries) ChildBookingPatternsInsert(ctx context.Context, arg ChildBooki
 		arg.BranchID,
 		arg.ChildID,
 		arg.EffectiveFrom,
+		arg.EffectiveTo,
 	)
 	var i ChildBookingPatternsInsertRow
 	err := row.Scan(

@@ -37,8 +37,8 @@ ORDER BY effective_to DESC
 LIMIT 1;
 
 -- name: ChildBookingPatternsInsert :one
-INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from, effective_to)
+VALUES ($1, $2, $3, $4, $5, sqlc.narg('effective_to'))
 RETURNING id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at;
 
 -- name: ChildBookingPatternsCloseCurrent :exec
