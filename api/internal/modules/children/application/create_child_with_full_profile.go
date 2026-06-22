@@ -13,7 +13,6 @@ import (
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
-	"nursery-management-system/api/internal/platform/transaction"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
@@ -148,15 +147,16 @@ type ChildRoomAssignmentInput struct {
 }
 
 type CreateChildFullInput struct {
-	Child             CreateChildIdentityInput
-	Profile           *ChildProfileInput
-	Health            *ChildHealthProfileInput
-	Safeguarding      *ChildSafeguardingProfileInput
-	Contacts          []ChildContactInput
-	Consent           *ChildConsentInput
-	Funding           *ChildFundingRecordInput
+	Child              CreateChildIdentityInput
+	Profile            *ChildProfileInput
+	Health             *ChildHealthProfileInput
+	Safeguarding       *ChildSafeguardingProfileInput
+	Contacts           []ChildContactInput
+	Consent            *ChildConsentInput
+	Funding            *ChildFundingRecordInput
 	CollectionSettings *ChildCollectionSettingsInput
-	Room              *ChildRoomAssignmentInput
+	Room               *ChildRoomAssignmentInput
+	BookingPattern     *BookingPatternInput
 }
 
 type ChildCreationResult struct {
@@ -169,13 +169,18 @@ type ChildCreationResult struct {
 }
 
 type CreateChildWithFullProfile struct {
-	repo  domain.Repository
-	audit *audit.Writer
-	txm   *transaction.Manager
+	repo          domain.Repository
+	audit         *audit.Writer
+	txm           TxManager
+	sessionLookup SessionTypeLookup
+	clock         TodayFunc
 }
 
-func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm *transaction.Manager) *CreateChildWithFullProfile {
-	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm}
+func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, clock TodayFunc) *CreateChildWithFullProfile {
+	if clock == nil {
+		clock = func() time.Time { return time.Now().UTC() }
+	}
+	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, clock: clock}
 }
 
 func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.ActorContext, input CreateChildFullInput) (*ChildCreationResult, error) {
@@ -220,6 +225,14 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			return nil, domainerrors.Internal(fmt.Errorf("hash collection password: %w", hashErr))
 		}
 		collectionHash = h
+	}
+
+	var resolvedEntries []domain.BookingPatternEntry
+	if input.BookingPattern != nil {
+		resolvedEntries, err = resolveBookingPatternEntries(ctx, uc.sessionLookup, actor, input.BookingPattern.Entries)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var result *ChildCreationResult
@@ -384,16 +397,30 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 		created = append(created, "billing_profile")
 
-		if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
-			ActionType: "child_created",
-			EntityType: "child",
-			EntityID:   childID,
-			Details: map[string]any{
-				"first_name":          firstName,
-				"created_sub_records": created,
-			},
-		}); err != nil {
-			return fmt.Errorf("audit child_created: %w", err)
+		if input.BookingPattern != nil {
+			bpEffectiveFrom := startDate
+			if !input.BookingPattern.EffectiveFrom.IsZero() {
+				bpEffectiveFrom = input.BookingPattern.EffectiveFrom
+			}
+			if _, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, resolvedEntries, true, uc.clock); err != nil {
+				return err
+			}
+			created = append(created, "booking_pattern")
+		}
+
+		if uc.audit != nil {
+			if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+				ActionType: "child_created",
+				EntityType: "child",
+				EntityID:   childID,
+				Details: map[string]any{
+					"first_name":          firstName,
+					"created_sub_records": created,
+					"booking_pattern":     input.BookingPattern != nil,
+				},
+			}); err != nil {
+				return fmt.Errorf("audit child_created: %w", err)
+			}
 		}
 
 		result = &ChildCreationResult{
@@ -454,6 +481,15 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "consents.signed_date", Message: "Enter the signed date."})
 		} else if _, err := time.Parse("2006-01-02", s); err != nil {
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "consents.signed_date", Message: "Enter the signed date."})
+		}
+	}
+
+	if input.BookingPattern != nil {
+		if len(input.BookingPattern.Entries) == 0 {
+			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.entries", Message: "Invalid request payload."})
+		}
+		if !input.BookingPattern.EffectiveFrom.IsZero() && input.BookingPattern.EffectiveFrom.Year() < 1970 {
+			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.effective_from", Message: "Invalid request payload."})
 		}
 	}
 

@@ -211,48 +211,9 @@ func (uc *CreateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 		return nil, domainerrors.Validation("Invalid request payload.", "entries")
 	}
 
-	today := LondonTodayDate(uc.clock)
-	if in.EffectiveFrom.Before(today) {
-		return nil, domainerrors.New("booking_pattern_backdated", "Invalid request payload.", "effective_from")
-	}
-
-	// Validate + dedupe entries; resolve each session type.
-	seen := make(map[BookingPatternEntryInput]struct{}, len(in.Entries))
-	resolved := make([]domain.BookingPatternEntry, 0, len(in.Entries))
-	for _, e := range in.Entries {
-		if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
-			return nil, domainerrors.Validation("Invalid request payload.", "day_of_week")
-		}
-		if e.SessionTypeID == uuid.Nil {
-			return nil, domainerrors.Validation("Invalid request payload.", "session_type_id")
-		}
-		key := BookingPatternEntryInput{DayOfWeek: e.DayOfWeek, SessionTypeID: e.SessionTypeID}
-		if _, dup := seen[key]; dup {
-			return nil, domainerrors.New("booking_pattern_duplicate_entry", "Invalid request payload.", "entries")
-		}
-		seen[key] = struct{}{}
-
-		info, found, err := uc.sessionLookup.GetActiveInScope(ctx, actor.TenantID, actor.BranchID, e.SessionTypeID)
-		if err != nil {
-			return nil, domainerrors.Internal(fmt.Errorf("lookup session type: %w", err))
-		}
-		if !found {
-			return nil, domainerrors.Forbidden("session_type_not_in_branch", "Invalid request payload.")
-		}
-		if !info.IsActive {
-			return nil, domainerrors.New("session_type_archived", "Invalid request payload.", "session_type_id")
-		}
-		resolved = append(resolved, domain.BookingPatternEntry{
-			ID:        uid.NewUUID(),
-			DayOfWeek: e.DayOfWeek,
-			SessionType: &domain.EntrySessionType{
-				ID:           info.ID,
-				Name:         info.Name,
-				StartMinutes: info.StartMinutes,
-				EndMinutes:   info.EndMinutes,
-				IsActive:     info.IsActive,
-			},
-		})
+	resolved, err := resolveBookingPatternEntries(ctx, uc.sessionLookup, actor, in.Entries)
+	if err != nil {
+		return nil, err
 	}
 
 	var result *domain.BookingPattern
@@ -265,50 +226,9 @@ func (uc *CreateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 			return domainerrors.NotFound("child", "Resource not found.")
 		}
 
-		// If an open pattern exists, validate effective_from > open.effective_from,
-		// and close the open one adjacently.
-		openPattern, ofound, oerr := uc.repo.GetCurrentOpenByChild(ctx, tx, actor.TenantID, actor.BranchID, cid)
-		if oerr != nil {
-			return domainerrors.Internal(fmt.Errorf("get current open pattern: %w", oerr))
-		}
-		if ofound {
-			if !in.EffectiveFrom.After(openPattern.EffectiveFrom) {
-				return domainerrors.New("booking_pattern_overlap", "Invalid request payload.", "effective_from")
-			}
-			closeTo := in.EffectiveFrom.AddDate(0, 0, -1)
-			if err := uc.repo.CloseCurrentPattern(ctx, tx, actor.TenantID, actor.BranchID, cid, closeTo); err != nil {
-				return domainerrors.Internal(fmt.Errorf("close previous pattern: %w", err))
-			}
-		}
-
-		pattern := &domain.BookingPattern{
-			ID:            uid.NewUUID(),
-			TenantID:      actor.TenantID,
-			BranchID:      actor.BranchID,
-			ChildID:       cid,
-			EffectiveFrom: in.EffectiveFrom,
-		}
-		saved, serr := uc.repo.InsertPattern(ctx, tx, pattern, resolved)
-		if serr != nil {
-			return domainerrors.Internal(fmt.Errorf("insert booking pattern: %w", serr))
-		}
-
-		if uc.audit != nil {
-			if aerr := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
-				ActionType: "child_booking_pattern_created",
-				EntityType: "child",
-				EntityID:   cid,
-				Details: map[string]any{
-					"pattern_id":     saved.ID.String(),
-					"effective_from": saved.EffectiveFrom.Format("2006-01-02"),
-					"entry_count":    len(saved.Entries),
-				},
-			}); aerr != nil {
-				return domainerrors.Internal(fmt.Errorf("audit child_booking_pattern_created: %w", aerr))
-			}
-		}
-		result = saved
-		return nil
+		var terr error
+		result, terr = createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, cid, in.EffectiveFrom, resolved, true, uc.clock)
+		return terr
 	})
 	if err != nil {
 		return nil, err

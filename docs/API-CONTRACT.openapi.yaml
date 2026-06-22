@@ -1445,6 +1445,29 @@ components:
             collection_password: { type: string, nullable: true, minLength: 4 }
         billing_profile:
           $ref: "#/components/schemas/ChildBillingProfile"
+        booking_pattern:
+          type: object
+          description: Optional booking pattern to create atomically with the child. When present, the server creates the child and the pattern in one transaction.
+          properties:
+            effective_from:
+              type: string
+              format: date
+              description: The date the pattern starts (YYYY-MM-DD). Defaults to the child's start_date.
+            entries:
+              type: array
+              description: The booked sessions in the pattern.
+              items:
+                type: object
+                properties:
+                  day_of_week:
+                    type: integer
+                    minimum: 1
+                    maximum: 7
+                    description: Day of week (1=Monday, 7=Sunday).
+                  session_type_id:
+                    type: string
+                    format: uuid
+                    description: The ID of a session type active in the branch.
         safeguard_ack:
           type: boolean
           description: |

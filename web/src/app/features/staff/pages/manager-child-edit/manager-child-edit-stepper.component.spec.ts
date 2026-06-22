@@ -1,13 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
+import { AuthService } from '../../../../core/services/auth.service';
+import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
 import { ConsentWritePayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -128,12 +130,6 @@ describe('ManagerChildEditStepperComponent', () => {
     component.step4.signer_name = 'Sarah Johnson';
     component.step4.signed_date = component.todayIso;
     markAllConsentsReviewed();
-
-    component.patternEffectiveFrom = '2026-09-01';
-    component.patternDayEntries = {
-      1: [{ session_type_id: 'session-type-1' }],
-      2: [], 3: [], 4: [], 5: [], 6: [], 7: [],
-    };
   }
 
   describe('canSubmitLocally — happy path', () => {
@@ -790,60 +786,156 @@ describe('ManagerChildEditStepperComponent', () => {
     });
   });
 
-  describe('session pattern', () => {
-    it('blocks when pattern effective date missing', () => {
+  describe('wizard step list (expanded to five steps)', () => {
+    it('new-registration step list has five entries with the expected keys', () => {
+      component.isNewRegistration = true;
+      const keys = component.steps.map(s => s.key);
+      expect(component.steps.length).toBe(5);
+      expect(keys).toEqual([
+        'child-basics',
+        'medical-health',
+        'contacts-collection',
+        'consents-evidence',
+        'session-pattern',
+      ]);
+    });
+  });
+
+  describe('createChildFromSessionPatternStep', () => {
+    it('creates the child with booking pattern and navigates to the child detail page on success', () => {
       fillRequiredForCompletion();
-      component.patternEffectiveFrom = '';
-      expect(component.canSubmitLocally()).toBe(false);
+      component.currentStep = 'session-pattern';
+      component.isNewRegistration = true;
+      component.patternEffectiveFrom = '2026-09-01';
+      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
+      const staffApi = TestBed.inject(StaffApiService);
+      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+      );
+      const bookingPatternSpy = spyOn(staffApi, 'createChildBookingPattern').and.callThrough();
+      const router = TestBed.inject(Router);
+      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
+
+      component.createChildFromSessionPatternStep();
+
+      expect(createSpy).toHaveBeenCalledTimes(1);
+      const payload = createSpy.calls.mostRecent().args[0] as any;
+      expect(payload.booking_pattern).toBeDefined();
+      expect(payload.booking_pattern.effective_from).toBe('2026-09-01');
+      expect(payload.booking_pattern.entries).toEqual([{ day_of_week: 1, session_type_id: 'st-1' }]);
+      expect(bookingPatternSpy).not.toHaveBeenCalled();
+      expect(navigateSpy).toHaveBeenCalledWith(['/staff/manager/children', 'new-child-1']);
+      expect(localStorage.getItem('nursery.registration_intake.draft')).toBeNull();
     });
 
-    it('blocks when pattern effective date is in the past', () => {
+    it('does not call the API and sets patternError when patternEntries is empty', () => {
       fillRequiredForCompletion();
-      component.patternEffectiveFrom = '2020-01-01';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
+      component.currentStep = 'session-pattern';
+      component.patternEntries = [];
+      const staffApi = TestBed.inject(StaffApiService);
+      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.callThrough();
 
-    it('blocks when no entries are added', () => {
-      fillRequiredForCompletion();
-      component.patternDayEntries = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
-      expect(component.canSubmitLocally()).toBe(false);
-    });
+      component.createChildFromSessionPatternStep();
 
-    it('passes when at least one entry is added', () => {
-      fillRequiredForCompletion();
-      expect(component.canSubmitLocally()).toBe(true);
+      expect(createSpy).not.toHaveBeenCalled();
+      expect(component.patternError).toContain('Add at least one booked session');
     });
+  });
 
-    it('copyMonToAllWeekdays copies Monday entries to Tue-Fri only', () => {
-      fillRequiredForCompletion();
-      component.patternDayEntries = { 1: [{ session_type_id: 'a' }], 2: [], 3: [], 4: [], 5: [], 6: [{ session_type_id: 'b' }], 7: [{ session_type_id: 'c' }] };
-      component.copyMonToAllWeekdays();
-      expect(component.patternDayEntries[2]).toEqual([{ session_type_id: 'a' }]);
-      expect(component.patternDayEntries[3]).toEqual([{ session_type_id: 'a' }]);
-      expect(component.patternDayEntries[4]).toEqual([{ session_type_id: 'a' }]);
-      expect(component.patternDayEntries[5]).toEqual([{ session_type_id: 'a' }]);
-      expect(component.patternDayEntries[6]).toEqual([{ session_type_id: 'b' }]);
-      expect(component.patternDayEntries[7]).toEqual([{ session_type_id: 'c' }]);
-    });
+  describe('applyTemplate', () => {
+    it('copies entries into patternEntries', () => {
+      const auth = TestBed.inject(AuthService);
+      (auth as any).state.set({
+        accessToken: null,
+        user: null,
+        activeMembership: { branch_id: 'site-1', role: 'manager', membership_id: 'm-1', tenant_id: 't-1', tenant_name: 'Test', branch_name: 'Test Site' },
+        availableMemberships: [],
+      });
 
-    it('applyTemplate distributes entries by day_of_week', () => {
-      fillRequiredForCompletion();
-      component.availableSessionTemplates = [
-        {
-          id: 'tpl-1',
-          name: 'Standard',
-          description: null,
-          isActive: true,
-          entries: [
-            { day_of_week: 1, session_type_id: 'a' },
-            { day_of_week: 3, session_type_id: 'b' },
-          ],
-        },
-      ];
+      const sessionTemplatesApi = TestBed.inject(StaffSessionTemplatesApiService);
+      spyOn(sessionTemplatesApi, 'getSessionTemplate').and.returnValue(of({
+        id: 'tpl-1',
+        branchId: 'site-1',
+        name: 'Mon-Wed Template',
+        description: null,
+        isActive: true,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+        entries: [
+          { id: 'e-1', dayOfWeek: 1, sessionType: { id: 'st-1', name: 'Morning', startTime: '09:00', endTime: '12:00', isActive: true } },
+          { id: 'e-2', dayOfWeek: 3, sessionType: { id: 'st-2', name: 'Afternoon', startTime: '13:00', endTime: '16:00', isActive: true } },
+        ],
+      }));
+
       component.applyTemplate('tpl-1');
-      expect(component.patternDayEntries[1]).toEqual([{ session_type_id: 'a' }]);
-      expect(component.patternDayEntries[2]).toEqual([]);
-      expect(component.patternDayEntries[3]).toEqual([{ session_type_id: 'b' }]);
+
+      expect(component.patternEntries).toEqual([
+        { dayOfWeek: 1, sessionTypeId: 'st-1' },
+        { dayOfWeek: 3, sessionTypeId: 'st-2' },
+      ]);
+    });
+  });
+
+  describe('draft restore — session-pattern step', () => {
+    it('draft restore onto session-pattern step', () => {
+      const draft = {
+        currentStep: 'session-pattern',
+        step1: { first_name: 'James', last_name: 'Smith' },
+        step5: {
+          patternEffectiveFrom: '2026-09-01',
+          patternEntries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }],
+        },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      component.restoreDraftIfPresentPublic();
+      expect(component.currentStep).toBe('session-pattern');
+      expect(component.patternEntries).toEqual([{ dayOfWeek: 1, sessionTypeId: 'st-1' }]);
+      expect(component.patternEffectiveFrom).toBe('2026-09-01');
+    });
+
+    it('stale four-step draft (no step5) restores onto consents-evidence with empty step 5', () => {
+      const draft = {
+        currentStep: 'consents-evidence',
+        step1: { first_name: 'James' },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      component.restoreDraftIfPresentPublic();
+      expect(component.currentStep).toBe('consents-evidence');
+      expect(component.patternEntries).toEqual([]);
+      expect(component.patternEffectiveFrom).toBe('');
+    });
+
+    it('restores a draft with currentStep "review-complete" onto the consents step', () => {
+      const draft = {
+        currentStep: 'review-complete',
+        step1: { first_name: 'James', last_name: 'Smith' },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      component.restoreDraftIfPresentPublic();
+      expect(component.currentStep).toBe('consents-evidence');
+    });
+
+    it('restores a draft with currentStep "session-pattern" onto the session-pattern step', () => {
+      const draft = {
+        currentStep: 'session-pattern',
+        step1: { first_name: 'James', last_name: 'Smith' },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      component.restoreDraftIfPresentPublic();
+      expect(component.currentStep).toBe('session-pattern');
+    });
+
+    it('restores step5 data from a draft', () => {
+      const draft = {
+        currentStep: 'consents-evidence',
+        step1: { first_name: 'James' },
+        step5: { patternEffectiveFrom: '2026-09-01', patternEntries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }] },
+      };
+      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
+      expect(() => component.restoreDraftIfPresentPublic()).not.toThrow();
+      expect(component.currentStep).toBe('consents-evidence');
+      expect(component.patternEntries).toEqual([{ dayOfWeek: 1, sessionTypeId: 'st-1' }]);
+      expect(component.patternEffectiveFrom).toBe('2026-09-01');
     });
   });
 });

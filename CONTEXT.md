@@ -320,7 +320,7 @@ _Avoid_: Session Pattern (tolerated alias only)
 
 ## Session Pattern (user-facing label)
 
-**Session pattern** is the user-facing label for the Booking Pattern concept. The API, DB, code, and documentation use the canonical internal name **booking pattern**; the wizard and standalone pages surface the alias "Session pattern" with a short subtitle clarifying the relationship. A child can never be created via the registration wizard without a non-empty pattern.
+**Session pattern** is the user-facing label for the Booking Pattern concept. The API, DB, code, and documentation use the canonical internal name **booking pattern**; the wizard and standalone pages surface the alias "Session pattern" with a short subtitle clarifying the relationship. The registration wizard has a mandatory Session Pattern step (step 5 of 5); a child can never be created via the wizard without a non-empty pattern, and there is no "save without pattern" fallback.
 
 ## Booked Session
 
@@ -337,11 +337,15 @@ Booking patterns record expected attendance only and do not drive billing in the
 
 ## Booking Pattern Enrollment Independence
 
-A new child created via the registration wizard must have a non-empty booking pattern; the wizard's Session Pattern step is mandatory. Existing children created before this rule remain enrollment-complete and are not backfilled; they are surfaced on the child list and detail with a "No session pattern" badge and a one-click link to the standalone pattern page. Attendance capture and invoicing are not blocked by the absence of a booking pattern for an existing child.
+A new child created via the registration wizard must have a non-empty booking pattern; the wizard's Session Pattern step (step 5 of 5) is mandatory and has no "save without pattern" fallback. Existing children created before this rule remain enrollment-complete and are not backfilled; they are surfaced on the child list and detail with a "No session pattern" badge and a one-click link to the standalone pattern page. Attendance capture and invoicing are not blocked by the absence of a booking pattern for an existing child.
 
 ## Booking Pattern Creation Endpoint
 
-The wizard's two-step submit calls `POST /children` first and then `POST /children/:child_id/booking-patterns` for the same actor. If the pattern POST fails after the child POST succeeds, the Review step shows a Retry button and a "Save child without pattern" fallback that routes to the child detail screen; the standalone `:childId/booking-pattern` page can then be used to finish setup. The API does not expose a single-transaction child-with-pattern create.
+The registration wizard creates the child and its booking pattern in a single atomic request to `POST /children` with an optional `booking_pattern` payload. When the payload is present, the server inserts the child, contacts, and booking-pattern entries in one database transaction, so either the whole registration succeeds or nothing is created; the wizard never produces an incomplete child from a transient failure. The pattern's `effective_from` defaults to the child's `start_date` and may be overridden by the manager (subject to the existing "today or later" rule). The standalone endpoint `POST /children/:child_id/booking-patterns` is unchanged and remains the path for adding or changing a pattern after the child exists.
+
+## Atomic Child-with-Pattern Creation
+
+The wizard's submit gesture is an all-or-nothing registration: the child identity, profile, health, safeguarding, contacts, consent, funding, collection settings, room assignment, billing profile, and booking pattern are committed in one database transaction. A domain error anywhere in the transaction (invalid session type, archived session type, pattern overlap, missing required field) rolls back the entire registration and surfaces a single error to the manager, who stays on the wizard and retries. This supersedes the earlier two-POST wizard submit and its "Save child without pattern" fallback. The standalone pattern page is unaffected and continues to use the per-child pattern endpoints.
 
 ## Session Type Management Authority
 

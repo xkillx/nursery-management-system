@@ -172,7 +172,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	childrenHandler := childhandler.NewHandler(
 		childapp.NewListChildren(childRepo),
 		childapp.NewGetChild(childRepo),
-		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager),
+		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
 		childapp.NewUpdateChild(childRepo, auditWriter, pool),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),

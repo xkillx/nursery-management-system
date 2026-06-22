@@ -2,21 +2,36 @@ package httpchild
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/children/application"
 	"nursery-management-system/api/internal/modules/children/domain"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
 
+type bookingPatternEntryPayload struct {
+	DayOfWeek     int    `json:"day_of_week"`
+	SessionTypeID string `json:"session_type_id"`
+}
+
+type bookingPatternPayload struct {
+	EffectiveFrom string                       `json:"effective_from"`
+	Entries       []bookingPatternEntryPayload `json:"entries"`
+}
+
 type createChildRequest struct {
-	Child             childIdentityPayload   `json:"child"`
-	Profile           *childProfilePayload   `json:"profile"`
-	Health            *childHealthPayload    `json:"health"`
-	Safeguarding      *childSafeguardingPayload `json:"safeguarding"`
-	Contacts          *childContactsPayload  `json:"contacts"`
-	Consent           *childConsentPayload   `json:"consent"`
-	Funding           *childFundingPayload   `json:"funding"`
+	Child             childIdentityPayload       `json:"child"`
+	Profile           *childProfilePayload       `json:"profile"`
+	Health            *childHealthPayload        `json:"health"`
+	Safeguarding      *childSafeguardingPayload  `json:"safeguarding"`
+	Contacts          *childContactsPayload      `json:"contacts"`
+	Consent           *childConsentPayload       `json:"consent"`
+	Funding           *childFundingPayload       `json:"funding"`
 	CollectionSettings *collectionSettingsPayload `json:"collection_settings"`
-	Room              *roomAssignmentPayload `json:"room"`
+	Room              *roomAssignmentPayload     `json:"room"`
+	BookingPattern    *bookingPatternPayload     `json:"booking_pattern"`
 }
 
 type childIdentityPayload struct {
@@ -196,6 +211,29 @@ func mapCreateChildRequest(req createChildRequest) (application.CreateChildFullI
 			RoomID:    req.Room.RoomID,
 			StartDate: req.Room.StartDate,
 		}
+	}
+	if req.BookingPattern != nil {
+		bp := application.BookingPatternInput{
+			Entries: make([]application.BookingPatternEntryInput, len(req.BookingPattern.Entries)),
+		}
+		if req.BookingPattern.EffectiveFrom != "" {
+			t, err := time.Parse("2006-01-02", req.BookingPattern.EffectiveFrom)
+			if err != nil {
+				return in, domainerrors.Validation("Invalid request payload.", "booking_pattern.effective_from")
+			}
+			bp.EffectiveFrom = t
+		}
+		for i, e := range req.BookingPattern.Entries {
+			stID, err := uuid.Parse(e.SessionTypeID)
+			if err != nil {
+				return in, domainerrors.Validation("Invalid request payload.", fmt.Sprintf("booking_pattern.entries[%d].session_type_id", i))
+			}
+			bp.Entries[i] = application.BookingPatternEntryInput{
+				DayOfWeek:    e.DayOfWeek,
+				SessionTypeID: stID,
+			}
+		}
+		in.BookingPattern = &bp
 	}
 	return in, nil
 }
