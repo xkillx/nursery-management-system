@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/email"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -220,6 +222,18 @@ func (a *sessionTypeLookupAdapter) lookup(ctx context.Context, tenantID, branchI
 }, bool, error) {
 	st, err := a.repo.GetByID(ctx, tenantID, branchID, sessionTypeID)
 	if err != nil {
+		var de *domainerrors.DomainError
+		if errors.As(err, &de) {
+			if len(de.Code) > 10 && de.Code[len(de.Code)-10:] == "_not_found" {
+				return struct {
+					ID           uuid.UUID
+					Name         string
+					StartMinutes int
+					EndMinutes   int
+					IsActive     bool
+				}{}, false, nil
+			}
+		}
 		return struct {
 			ID           uuid.UUID
 			Name         string

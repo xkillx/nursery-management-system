@@ -47,7 +47,10 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"password_reset_token_invalid", "password_reset_token_expired", "password_reset_token_used",
 		"invite_token_invalid", "invite_token_expired", "invite_token_revoked", "invite_token_accepted",
 		"invite_role_not_allowed",
-		"payment_webhook_invalid_signature":
+		"payment_webhook_invalid_signature",
+		"booking_pattern_backdated", "booking_pattern_effective_to_before_from",
+		"booking_pattern_overlap", "booking_pattern_duplicate_entry",
+		"session_type_archived":
 		status = http.StatusBadRequest
 	case "attendance_session_already_open", "attendance_session_not_open",
 		"child_enrollment_incomplete", "attendance_invalid_time_order",

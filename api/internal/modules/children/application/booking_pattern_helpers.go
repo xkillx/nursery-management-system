@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -43,6 +44,10 @@ func resolveBookingPatternEntries(ctx context.Context, lookup SessionTypeLookup,
 
 		info, found, err := lookup.GetActiveInScope(ctx, actor.TenantID, actor.BranchID, e.SessionTypeID)
 		if err != nil {
+			var de *domainerrors.DomainError
+			if errors.As(err, &de) {
+				return nil, de
+			}
 			return nil, domainerrors.Internal(fmt.Errorf("lookup session type: %w", err))
 		}
 		if !found {
