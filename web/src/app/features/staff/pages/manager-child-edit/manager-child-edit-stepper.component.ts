@@ -544,6 +544,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (step === 'consents-evidence' && this.parentCarersDraft[0]?.fullName && !this.step4.signer_name) {
       this.step4.signer_name = this.parentCarersDraft[0].fullName;
     }
+    if (step === 'session-pattern') {
+      this.loadSessionPatternSupportData();
+    }
   }
   childId: string | null = null;
   child: ChildRecord | null = null;
@@ -1367,7 +1370,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
 
     this.nextStep();
-    this.loadSessionPatternSupportData();
     this.initialisePatternDefaultEffectiveDate();
   }
 
@@ -1436,6 +1438,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   loadSessionPatternSupportData(): void {
     const branchId = this.auth.activeMembership()?.branch_id;
     if (!branchId) return;
+    if (this.sessionPatternLoading) return;
     this.sessionPatternLoading = true;
     this.sessionPatternLoadError = null;
 
