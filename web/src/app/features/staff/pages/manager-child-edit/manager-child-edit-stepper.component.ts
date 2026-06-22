@@ -44,6 +44,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { SwitchComponent } from '../../../../shared/components/form/input/switch.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { RadioComponent } from '../../../../shared/components/form/input/radio.component';
@@ -294,6 +295,7 @@ type RegistrationDraft = {
     AlertComponent,
     ButtonComponent,
     CheckboxComponent,
+    SwitchComponent,
     FormFieldComponent,
     InputFieldComponent,
     LoadingStateComponent,

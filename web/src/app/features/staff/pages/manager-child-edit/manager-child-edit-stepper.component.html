@@ -1607,7 +1607,7 @@
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
                       <div class="shrink-0 pointer-events-none">
-                        <app-checkbox
+                        <app-switch
                           [name]="'professional-consent-' + item.key"
                           [ariaLabel]="'Allow ' + item.label"
                           [ngModel]="consentValue(item.key)"
@@ -1657,7 +1657,7 @@
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
                       <div class="shrink-0 pointer-events-none">
-                        <app-checkbox
+                        <app-switch
                           [name]="'protection-consent-' + item.key"
                           [ariaLabel]="'Acknowledge ' + item.label"
                           [ngModel]="consentValue(item.key)"
@@ -1704,7 +1704,7 @@
                         <p class="text-xs text-gray-600 dark:text-gray-400">{{ item.detail }}</p>
                       </div>
                       <div class="shrink-0 pointer-events-none">
-                        <app-checkbox
+                        <app-switch
                           [name]="'activity-consent-' + item.key"
                           [ariaLabel]="'Allow ' + item.label"
                           [ngModel]="consentValue(item.key)"
@@ -1743,12 +1743,12 @@
                     >
                       <div class="pointer-events-none flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                          <app-checkbox
-                            [name]="'photo-consent-' + item.key"
-                            [label]="item.label"
-                            [ngModel]="consentValue(item.key)"
-                            (ngModelChange)="setConsentValue(item.key, $event)"
-                          />
+                        <app-switch
+                          [name]="'photo-consent-' + item.key"
+                          [label]="item.label"
+                          [ngModel]="consentValue(item.key)"
+                          (ngModelChange)="setConsentValue(item.key, $event)"
+                        />
                         </div>
                       </div>
                     </div>
