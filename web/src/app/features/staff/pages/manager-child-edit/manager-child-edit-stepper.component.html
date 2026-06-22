@@ -499,8 +499,8 @@
                 </div>
               </section>
 
-              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center">
-                <app-button type="submit" size="lg" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md">
+              <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-end">
+                <app-button type="submit" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md">
                   {{ isSaving ? 'Saving...' : 'Continue' }}
                   <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                 </app-button>
@@ -1244,10 +1244,10 @@
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
                 <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="prevStep()">
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
-                  Back to Child Details
+                  Back
                 </app-button>
                 <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveMedicalHealth()">
-                  {{ isSaving ? 'Saving...' : 'Next Step: Contacts' }}
+                  {{ isSaving ? 'Saving...' : 'Continue' }}
                   <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                 </app-button>
               </div>
@@ -1837,10 +1837,10 @@
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
                 <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="prevStep()">
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
-                  Back to Medical Info
+                  Back
                 </app-button>
                 <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveContactsCollection()">
-                  {{ isSaving ? 'Saving...' : 'Continue to Consents' }}
+                  {{ isSaving ? 'Saving...' : 'Continue' }}
                   <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                 </app-button>
               </div>
@@ -2218,7 +2218,7 @@
               </section>
 
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-                <app-button type="button" variant="outline" size="md" className="min-h-12 px-6 shadow-theme-xs" (btnClick)="prevStep()">
+                <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="prevStep()">
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back
                 </app-button>
