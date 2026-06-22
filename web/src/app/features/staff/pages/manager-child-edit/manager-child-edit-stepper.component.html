@@ -536,22 +536,65 @@
                     [attr.aria-invalid]="shouldShowStep2Error('allergy_status')"
                     [attr.aria-describedby]="shouldShowStep2Error('allergy_status') ? 'allergy-status-error' : null"
                   >
-                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                       Does the child have any known allergies?
                       <span class="text-error-500" aria-hidden="true"> *</span>
                     </legend>
-                    <div class="grid gap-3 sm:grid-cols-3">
-                      @for (option of yesNoUnknownOptions; track option.value) {
-                        <app-radio
-                          [id]="'allergy-status-' + option.value"
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label
+                        for="allergy-status-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.allergy_status === 'yes'"
+                        [class.bg-brand-50]="step2.allergy_status === 'yes'"
+                        [class.text-brand-700]="step2.allergy_status === 'yes'"
+                        [class.border-gray-200]="step2.allergy_status !== 'yes'"
+                        [class.text-gray-800]="step2.allergy_status !== 'yes'"
+                        [class.dark:border-brand-500]="step2.allergy_status === 'yes'"
+                        [class.dark:bg-brand-500/10]="step2.allergy_status === 'yes'"
+                        [class.dark:text-brand-300]="step2.allergy_status === 'yes'"
+                        [class.dark:border-gray-700]="step2.allergy_status !== 'yes'"
+                        [class.dark:text-gray-200]="step2.allergy_status !== 'yes'"
+                      >
+                        <input
+                          id="allergy-status-yes"
+                          type="radio"
                           name="allergy_status"
-                          [value]="option.value"
-                          [label]="option.label"
-                          [checked]="step2.allergy_status === option.value"
-                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.allergy_status = $any($event); markStep2Touched('allergy_status')"
+                          value="yes"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.allergy_status === 'yes'"
+                          [attr.aria-invalid]="shouldShowStep2Error('allergy_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('allergy_status') ? 'allergy-status-error' : null"
+                          (change)="step2.allergy_status = 'yes'; markStep2Touched('allergy_status')"
                         />
-                      }
+                        <span>Yes</span>
+                      </label>
+                      <label
+                        for="allergy-status-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.allergy_status === 'no'"
+                        [class.bg-brand-50]="step2.allergy_status === 'no'"
+                        [class.text-brand-700]="step2.allergy_status === 'no'"
+                        [class.border-gray-200]="step2.allergy_status !== 'no'"
+                        [class.text-gray-800]="step2.allergy_status !== 'no'"
+                        [class.dark:border-brand-500]="step2.allergy_status === 'no'"
+                        [class.dark:bg-brand-500/10]="step2.allergy_status === 'no'"
+                        [class.dark:text-brand-300]="step2.allergy_status === 'no'"
+                        [class.dark:border-gray-700]="step2.allergy_status !== 'no'"
+                        [class.dark:text-gray-200]="step2.allergy_status !== 'no'"
+                      >
+                        <input
+                          id="allergy-status-no"
+                          type="radio"
+                          name="allergy_status"
+                          value="no"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.allergy_status === 'no'"
+                          [attr.aria-invalid]="shouldShowStep2Error('allergy_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('allergy_status') ? 'allergy-status-error' : null"
+                          (change)="step2.allergy_status = 'no'; markStep2Touched('allergy_status')"
+                        />
+                        <span>No</span>
+                      </label>
                     </div>
                     @if (shouldShowStep2Error('allergy_status')) {
                       <p id="allergy-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('allergy_status') }}</p>
@@ -584,22 +627,65 @@
                     [attr.aria-invalid]="shouldShowStep2Error('medication_status')"
                     [attr.aria-describedby]="shouldShowStep2Error('medication_status') ? 'medication-status-error' : null"
                   >
-                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                       Is the child currently taking any regular medication?
                       <span class="text-error-500" aria-hidden="true"> *</span>
                     </legend>
-                    <div class="grid gap-3 sm:grid-cols-3">
-                      @for (option of yesNoUnknownOptions; track option.value) {
-                        <app-radio
-                          [id]="'medication-status-' + option.value"
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label
+                        for="medication-status-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.medication_status === 'yes'"
+                        [class.bg-brand-50]="step2.medication_status === 'yes'"
+                        [class.text-brand-700]="step2.medication_status === 'yes'"
+                        [class.border-gray-200]="step2.medication_status !== 'yes'"
+                        [class.text-gray-800]="step2.medication_status !== 'yes'"
+                        [class.dark:border-brand-500]="step2.medication_status === 'yes'"
+                        [class.dark:bg-brand-500/10]="step2.medication_status === 'yes'"
+                        [class.dark:text-brand-300]="step2.medication_status === 'yes'"
+                        [class.dark:border-gray-700]="step2.medication_status !== 'yes'"
+                        [class.dark:text-gray-200]="step2.medication_status !== 'yes'"
+                      >
+                        <input
+                          id="medication-status-yes"
+                          type="radio"
                           name="medication_status"
-                          [value]="option.value"
-                          [label]="option.label"
-                          [checked]="step2.medication_status === option.value"
-                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.medication_status = $any($event); markStep2Touched('medication_status')"
+                          value="yes"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.medication_status === 'yes'"
+                          [attr.aria-invalid]="shouldShowStep2Error('medication_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('medication_status') ? 'medication-status-error' : null"
+                          (change)="step2.medication_status = 'yes'; markStep2Touched('medication_status')"
                         />
-                      }
+                        <span>Yes</span>
+                      </label>
+                      <label
+                        for="medication-status-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.medication_status === 'no'"
+                        [class.bg-brand-50]="step2.medication_status === 'no'"
+                        [class.text-brand-700]="step2.medication_status === 'no'"
+                        [class.border-gray-200]="step2.medication_status !== 'no'"
+                        [class.text-gray-800]="step2.medication_status !== 'no'"
+                        [class.dark:border-brand-500]="step2.medication_status === 'no'"
+                        [class.dark:bg-brand-500/10]="step2.medication_status === 'no'"
+                        [class.dark:text-brand-300]="step2.medication_status === 'no'"
+                        [class.dark:border-gray-700]="step2.medication_status !== 'no'"
+                        [class.dark:text-gray-200]="step2.medication_status !== 'no'"
+                      >
+                        <input
+                          id="medication-status-no"
+                          type="radio"
+                          name="medication_status"
+                          value="no"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.medication_status === 'no'"
+                          [attr.aria-invalid]="shouldShowStep2Error('medication_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('medication_status') ? 'medication-status-error' : null"
+                          (change)="step2.medication_status = 'no'; markStep2Touched('medication_status')"
+                        />
+                        <span>No</span>
+                      </label>
                     </div>
                     @if (shouldShowStep2Error('medication_status')) {
                       <p id="medication-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('medication_status') }}</p>
@@ -650,18 +736,70 @@
                   <h4 id="medical-immunisations-heading" class="text-lg font-bold">Immunisations</h4>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Please confirm if the child's immunisations are up to date according to the UK routine schedule.</p>
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  @for (option of immunisationOptions; track option.value) {
-                    <app-radio
-                      [id]="'immunisation-' + option.value"
+                <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <label
+                    for="immunisation-up_to_date"
+                    class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus-within:ring-brand-500/30"
+                    [class.border-brand-500]="step2.immunisation_status === 'up_to_date'"
+                    [class.bg-brand-50]="step2.immunisation_status === 'up_to_date'"
+                    [class.text-brand-700]="step2.immunisation_status === 'up_to_date'"
+                    [class.dark:border-brand-500]="step2.immunisation_status === 'up_to_date'"
+                    [class.dark:bg-brand-500/10]="step2.immunisation_status === 'up_to_date'"
+                    [class.dark:text-brand-300]="step2.immunisation_status === 'up_to_date'"
+                  >
+                    <input
+                      id="immunisation-up_to_date"
+                      type="radio"
                       name="immunisation_status"
-                      [value]="option.value"
-                      [label]="option.label"
-                      [checked]="step2.immunisation_status === option.value"
-                      className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                      (valueChange)="step2.immunisation_status = $event"
+                      value="up_to_date"
+                      class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                      [checked]="step2.immunisation_status === 'up_to_date'"
+                      (change)="step2.immunisation_status = 'up_to_date'"
                     />
-                  }
+                    <span>Fully Up-to-Date</span>
+                  </label>
+                  <label
+                    for="immunisation-partial"
+                    class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus-within:ring-brand-500/30"
+                    [class.border-brand-500]="step2.immunisation_status === 'partial'"
+                    [class.bg-brand-50]="step2.immunisation_status === 'partial'"
+                    [class.text-brand-700]="step2.immunisation_status === 'partial'"
+                    [class.dark:border-brand-500]="step2.immunisation_status === 'partial'"
+                    [class.dark:bg-brand-500/10]="step2.immunisation_status === 'partial'"
+                    [class.dark:text-brand-300]="step2.immunisation_status === 'partial'"
+                  >
+                    <input
+                      id="immunisation-partial"
+                      type="radio"
+                      name="immunisation_status"
+                      value="partial"
+                      class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                      [checked]="step2.immunisation_status === 'partial'"
+                      (change)="step2.immunisation_status = 'partial'"
+                    />
+                    <span>Partially (Delayed)</span>
+                  </label>
+                  <label
+                    for="immunisation-refused"
+                    class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus-within:ring-brand-500/30"
+                    [class.border-brand-500]="step2.immunisation_status === 'refused'"
+                    [class.bg-brand-50]="step2.immunisation_status === 'refused'"
+                    [class.text-brand-700]="step2.immunisation_status === 'refused'"
+                    [class.dark:border-brand-500]="step2.immunisation_status === 'refused'"
+                    [class.dark:bg-brand-500/10]="step2.immunisation_status === 'refused'"
+                    [class.dark:text-brand-300]="step2.immunisation_status === 'refused'"
+                  >
+                    <input
+                      id="immunisation-refused"
+                      type="radio"
+                      name="immunisation_status"
+                      value="refused"
+                      class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                      [checked]="step2.immunisation_status === 'refused'"
+                      (change)="step2.immunisation_status = 'refused'"
+                    />
+                    <span>Not Immunised</span>
+                  </label>
                 </div>
               </section>
 
@@ -686,22 +824,65 @@
                   [attr.aria-invalid]="shouldShowStep2Error('medical_history_status')"
                   [attr.aria-describedby]="shouldShowStep2Error('medical_history_status') ? 'medical-history-status-error' : null"
                 >
-                  <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                     Medical history (illness, diagnosis, or hospital stays)
                     <span class="text-error-500" aria-hidden="true"> *</span>
                   </legend>
-                  <div class="grid gap-3 sm:grid-cols-3">
-                    @for (option of noneDetailsUnknownOptions; track option.value) {
-                      <app-radio
-                        [id]="'medical-history-' + option.value"
+                  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label
+                      for="medical-history-none"
+                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                      [class.border-brand-500]="step2.medical_history_status === 'none'"
+                      [class.bg-brand-50]="step2.medical_history_status === 'none'"
+                      [class.text-brand-700]="step2.medical_history_status === 'none'"
+                      [class.border-gray-200]="step2.medical_history_status !== 'none'"
+                      [class.text-gray-800]="step2.medical_history_status !== 'none'"
+                      [class.dark:border-brand-500]="step2.medical_history_status === 'none'"
+                      [class.dark:bg-brand-500/10]="step2.medical_history_status === 'none'"
+                      [class.dark:text-brand-300]="step2.medical_history_status === 'none'"
+                      [class.dark:border-gray-700]="step2.medical_history_status !== 'none'"
+                      [class.dark:text-gray-200]="step2.medical_history_status !== 'none'"
+                    >
+                      <input
+                        id="medical-history-none"
+                        type="radio"
                         name="medical_history_status"
-                        [value]="option.value"
-                        [label]="option.label"
-                        [checked]="step2.medical_history_status === option.value"
-                        className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                        (valueChange)="step2.medical_history_status = $any($event); markStep2Touched('medical_history_status')"
+                        value="none"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="step2.medical_history_status === 'none'"
+                        [attr.aria-invalid]="shouldShowStep2Error('medical_history_status')"
+                        [attr.aria-describedby]="shouldShowStep2Error('medical_history_status') ? 'medical-history-status-error' : null"
+                        (change)="step2.medical_history_status = 'none'; markStep2Touched('medical_history_status')"
                       />
-                    }
+                      <span>None</span>
+                    </label>
+                    <label
+                      for="medical-history-details"
+                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                      [class.border-brand-500]="step2.medical_history_status === 'details'"
+                      [class.bg-brand-50]="step2.medical_history_status === 'details'"
+                      [class.text-brand-700]="step2.medical_history_status === 'details'"
+                      [class.border-gray-200]="step2.medical_history_status !== 'details'"
+                      [class.text-gray-800]="step2.medical_history_status !== 'details'"
+                      [class.dark:border-brand-500]="step2.medical_history_status === 'details'"
+                      [class.dark:bg-brand-500/10]="step2.medical_history_status === 'details'"
+                      [class.dark:text-brand-300]="step2.medical_history_status === 'details'"
+                      [class.dark:border-gray-700]="step2.medical_history_status !== 'details'"
+                      [class.dark:text-gray-200]="step2.medical_history_status !== 'details'"
+                    >
+                      <input
+                        id="medical-history-details"
+                        type="radio"
+                        name="medical_history_status"
+                        value="details"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="step2.medical_history_status === 'details'"
+                        [attr.aria-invalid]="shouldShowStep2Error('medical_history_status')"
+                        [attr.aria-describedby]="shouldShowStep2Error('medical_history_status') ? 'medical-history-status-error' : null"
+                        (change)="step2.medical_history_status = 'details'; markStep2Touched('medical_history_status')"
+                      />
+                      <span>Details recorded</span>
+                    </label>
                   </div>
                   @if (shouldShowStep2Error('medical_history_status')) {
                     <p id="medical-history-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('medical_history_status') }}</p>
@@ -726,22 +907,65 @@
                   [attr.aria-invalid]="shouldShowStep2Error('dietary_status')"
                   [attr.aria-describedby]="shouldShowStep2Error('dietary_status') ? 'dietary-status-error' : null"
                 >
-                  <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                     Dietary requirements
                     <span class="text-error-500" aria-hidden="true"> *</span>
                   </legend>
-                  <div class="grid gap-3 sm:grid-cols-3">
-                    @for (option of noneDetailsUnknownOptions; track option.value) {
-                      <app-radio
-                        [id]="'dietary-status-' + option.value"
+                  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label
+                      for="dietary-status-none"
+                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                      [class.border-brand-500]="step2.dietary_status === 'none'"
+                      [class.bg-brand-50]="step2.dietary_status === 'none'"
+                      [class.text-brand-700]="step2.dietary_status === 'none'"
+                      [class.border-gray-200]="step2.dietary_status !== 'none'"
+                      [class.text-gray-800]="step2.dietary_status !== 'none'"
+                      [class.dark:border-brand-500]="step2.dietary_status === 'none'"
+                      [class.dark:bg-brand-500/10]="step2.dietary_status === 'none'"
+                      [class.dark:text-brand-300]="step2.dietary_status === 'none'"
+                      [class.dark:border-gray-700]="step2.dietary_status !== 'none'"
+                      [class.dark:text-gray-200]="step2.dietary_status !== 'none'"
+                    >
+                      <input
+                        id="dietary-status-none"
+                        type="radio"
                         name="dietary_status"
-                        [value]="option.value"
-                        [label]="option.label"
-                        [checked]="step2.dietary_status === option.value"
-                        className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                        (valueChange)="step2.dietary_status = $any($event); markStep2Touched('dietary_status')"
+                        value="none"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="step2.dietary_status === 'none'"
+                        [attr.aria-invalid]="shouldShowStep2Error('dietary_status')"
+                        [attr.aria-describedby]="shouldShowStep2Error('dietary_status') ? 'dietary-status-error' : null"
+                        (change)="step2.dietary_status = 'none'; markStep2Touched('dietary_status')"
                       />
-                    }
+                      <span>None</span>
+                    </label>
+                    <label
+                      for="dietary-status-details"
+                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                      [class.border-brand-500]="step2.dietary_status === 'details'"
+                      [class.bg-brand-50]="step2.dietary_status === 'details'"
+                      [class.text-brand-700]="step2.dietary_status === 'details'"
+                      [class.border-gray-200]="step2.dietary_status !== 'details'"
+                      [class.text-gray-800]="step2.dietary_status !== 'details'"
+                      [class.dark:border-brand-500]="step2.dietary_status === 'details'"
+                      [class.dark:bg-brand-500/10]="step2.dietary_status === 'details'"
+                      [class.dark:text-brand-300]="step2.dietary_status === 'details'"
+                      [class.dark:border-gray-700]="step2.dietary_status !== 'details'"
+                      [class.dark:text-gray-200]="step2.dietary_status !== 'details'"
+                    >
+                      <input
+                        id="dietary-status-details"
+                        type="radio"
+                        name="dietary_status"
+                        value="details"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="step2.dietary_status === 'details'"
+                        [attr.aria-invalid]="shouldShowStep2Error('dietary_status')"
+                        [attr.aria-describedby]="shouldShowStep2Error('dietary_status') ? 'dietary-status-error' : null"
+                        (change)="step2.dietary_status = 'details'; markStep2Touched('dietary_status')"
+                      />
+                      <span>Details recorded</span>
+                    </label>
                   </div>
                   @if (shouldShowStep2Error('dietary_status')) {
                     <p id="dietary-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('dietary_status') }}</p>
@@ -805,22 +1029,65 @@
                     [attr.aria-invalid]="shouldShowStep2Error('social_services_status')"
                     [attr.aria-describedby]="shouldShowStep2Error('social_services_status') ? 'social-services-status-error' : null"
                   >
-                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                       Has the child or anyone in the family been referred to or in contact with social services?
                       <span class="text-error-500" aria-hidden="true"> *</span>
                     </legend>
-                    <div class="grid gap-3 sm:grid-cols-3">
-                      @for (option of yesNoUnknownOptions; track option.value) {
-                        <app-radio
-                          [id]="'social-services-' + option.value"
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label
+                        for="social-services-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.social_services_status === 'yes'"
+                        [class.bg-brand-50]="step2.social_services_status === 'yes'"
+                        [class.text-brand-700]="step2.social_services_status === 'yes'"
+                        [class.border-gray-200]="step2.social_services_status !== 'yes'"
+                        [class.text-gray-800]="step2.social_services_status !== 'yes'"
+                        [class.dark:border-brand-500]="step2.social_services_status === 'yes'"
+                        [class.dark:bg-brand-500/10]="step2.social_services_status === 'yes'"
+                        [class.dark:text-brand-300]="step2.social_services_status === 'yes'"
+                        [class.dark:border-gray-700]="step2.social_services_status !== 'yes'"
+                        [class.dark:text-gray-200]="step2.social_services_status !== 'yes'"
+                      >
+                        <input
+                          id="social-services-yes"
+                          type="radio"
                           name="social_services_status"
-                          [value]="option.value"
-                          [label]="option.label"
-                          [checked]="step2.social_services_status === option.value"
-                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step2.social_services_status = $any($event); markStep2Touched('social_services_status')"
+                          value="yes"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.social_services_status === 'yes'"
+                          [attr.aria-invalid]="shouldShowStep2Error('social_services_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('social_services_status') ? 'social-services-status-error' : null"
+                          (change)="step2.social_services_status = 'yes'; markStep2Touched('social_services_status')"
                         />
-                      }
+                        <span>Yes</span>
+                      </label>
+                      <label
+                        for="social-services-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step2.social_services_status === 'no'"
+                        [class.bg-brand-50]="step2.social_services_status === 'no'"
+                        [class.text-brand-700]="step2.social_services_status === 'no'"
+                        [class.border-gray-200]="step2.social_services_status !== 'no'"
+                        [class.text-gray-800]="step2.social_services_status !== 'no'"
+                        [class.dark:border-brand-500]="step2.social_services_status === 'no'"
+                        [class.dark:bg-brand-500/10]="step2.social_services_status === 'no'"
+                        [class.dark:text-brand-300]="step2.social_services_status === 'no'"
+                        [class.dark:border-gray-700]="step2.social_services_status !== 'no'"
+                        [class.dark:text-gray-200]="step2.social_services_status !== 'no'"
+                      >
+                        <input
+                          id="social-services-no"
+                          type="radio"
+                          name="social_services_status"
+                          value="no"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step2.social_services_status === 'no'"
+                          [attr.aria-invalid]="shouldShowStep2Error('social_services_status')"
+                          [attr.aria-describedby]="shouldShowStep2Error('social_services_status') ? 'social-services-status-error' : null"
+                          (change)="step2.social_services_status = 'no'; markStep2Touched('social_services_status')"
+                        />
+                        <span>No</span>
+                      </label>
                     </div>
                     @if (shouldShowStep2Error('social_services_status')) {
                       <p id="social-services-status-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('social_services_status') }}</p>
@@ -871,32 +1138,32 @@
                   <h4 id="medical-developmental-heading" class="text-lg font-bold">Developmental Concerns</h4>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Please indicate any concerns you have about the child's development in the following areas.</p>
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                   @for (item of concernItems; track item.key) {
-                    <div
-                      role="button"
-                      tabindex="0"
-                      class="flex cursor-pointer items-center justify-between rounded-lg border p-3 transition dark:text-gray-300"
-                      [class.border-brand-200]="getConcernValue(item.key)"
+                    <label
+                      [for]="'concern-' + item.key"
+                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                      [class.border-brand-500]="getConcernValue(item.key)"
                       [class.bg-brand-50]="getConcernValue(item.key)"
+                      [class.text-brand-700]="getConcernValue(item.key)"
                       [class.border-gray-200]="!getConcernValue(item.key)"
-                      [class.bg-white]="!getConcernValue(item.key)"
-                      [ngClass]="{
-                        'dark:border-brand-500/40 dark:bg-brand-500/10': getConcernValue(item.key),
-                        'dark:border-gray-800 dark:bg-gray-900/70': !getConcernValue(item.key)
-                      }"
-                      (click)="setConcernValue(item.key, !getConcernValue(item.key))"
-                      (keydown.enter)="setConcernValue(item.key, !getConcernValue(item.key))"
-                      (keydown.space)="setConcernValue(item.key, !getConcernValue(item.key)); $event.preventDefault()"
+                      [class.text-gray-800]="!getConcernValue(item.key)"
+                      [class.dark:border-brand-500]="getConcernValue(item.key)"
+                      [class.dark:bg-brand-500/10]="getConcernValue(item.key)"
+                      [class.dark:text-brand-300]="getConcernValue(item.key)"
+                      [class.dark:border-gray-700]="!getConcernValue(item.key)"
+                      [class.dark:text-gray-200]="!getConcernValue(item.key)"
                     >
-                      <span class="text-sm font-medium">{{ item.label }}</span>
-                      <app-checkbox
-                        [name]="'concern-' + item.key"
-                        [ariaLabel]="item.label"
-                        [ngModel]="getConcernValue(item.key)"
-                        (ngModelChange)="setConcernValue(item.key, $event)"
+                      <input
+                        [id]="'concern-' + item.key"
+                        type="checkbox"
+                        [name]="item.key"
+                        class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="getConcernValue(item.key)"
+                        (change)="setConcernValue(item.key, $any($event.target).checked)"
                       />
-                    </div>
+                      <span>{{ item.label }}</span>
+                    </label>
                   }
                 </div>
               </section>
@@ -1114,23 +1381,69 @@
                     [attr.aria-invalid]="shouldShowStep3Error('parent1_has_responsibility')"
                     [attr.aria-describedby]="shouldShowStep3Error('parent1_has_responsibility') ? 'parent1-responsibility-error' : null"
                   >
-                    <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                       Does the primary parent/carer hold parental responsibility?
                       <span class="text-error-500" aria-hidden="true"> *</span>
                     </legend>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      @for (option of parentalResponsibilityOptions; track option.value) {
-                        <app-radio
-                          [id]="'parent1-responsibility-' + option.value"
+
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label
+                        for="parent1-responsibility-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step3.parent1_has_responsibility === true"
+                        [class.bg-brand-50]="step3.parent1_has_responsibility === true"
+                        [class.text-brand-700]="step3.parent1_has_responsibility === true"
+                        [class.border-gray-200]="step3.parent1_has_responsibility !== true"
+                        [class.text-gray-800]="step3.parent1_has_responsibility !== true"
+                        [class.dark:border-brand-500]="step3.parent1_has_responsibility === true"
+                        [class.dark:bg-brand-500/10]="step3.parent1_has_responsibility === true"
+                        [class.dark:text-brand-300]="step3.parent1_has_responsibility === true"
+                        [class.dark:border-gray-700]="step3.parent1_has_responsibility !== true"
+                        [class.dark:text-gray-200]="step3.parent1_has_responsibility !== true"
+                      >
+                        <input
+                          id="parent1-responsibility-yes"
+                          type="radio"
                           name="parent1_has_responsibility"
-                          [value]="option.value"
-                          [label]="option.label"
-                          [checked]="step3.parent1_has_responsibility === (option.value === 'yes')"
-                          className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                          (valueChange)="step3.parent1_has_responsibility = $event === 'yes'; markStep3Touched('parent1_has_responsibility')"
+                          value="yes"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step3.parent1_has_responsibility === true"
+                          [attr.aria-invalid]="shouldShowStep3Error('parent1_has_responsibility')"
+                          [attr.aria-describedby]="shouldShowStep3Error('parent1_has_responsibility') ? 'parent1-responsibility-error' : null"
+                          (change)="step3.parent1_has_responsibility = true; markStep3Touched('parent1_has_responsibility')"
                         />
-                      }
+                        <span>Yes</span>
+                      </label>
+
+                      <label
+                        for="parent1-responsibility-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="step3.parent1_has_responsibility === false"
+                        [class.bg-brand-50]="step3.parent1_has_responsibility === false"
+                        [class.text-brand-700]="step3.parent1_has_responsibility === false"
+                        [class.border-gray-200]="step3.parent1_has_responsibility !== false"
+                        [class.text-gray-800]="step3.parent1_has_responsibility !== false"
+                        [class.dark:border-brand-500]="step3.parent1_has_responsibility === false"
+                        [class.dark:bg-brand-500/10]="step3.parent1_has_responsibility === false"
+                        [class.dark:text-brand-300]="step3.parent1_has_responsibility === false"
+                        [class.dark:border-gray-700]="step3.parent1_has_responsibility !== false"
+                        [class.dark:text-gray-200]="step3.parent1_has_responsibility !== false"
+                      >
+                        <input
+                          id="parent1-responsibility-no"
+                          type="radio"
+                          name="parent1_has_responsibility"
+                          value="no"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step3.parent1_has_responsibility === false"
+                          [attr.aria-invalid]="shouldShowStep3Error('parent1_has_responsibility')"
+                          [attr.aria-describedby]="shouldShowStep3Error('parent1_has_responsibility') ? 'parent1-responsibility-error' : null"
+                          (change)="step3.parent1_has_responsibility = false; markStep3Touched('parent1_has_responsibility')"
+                        />
+                        <span>No</span>
+                      </label>
                     </div>
+
                     @if (shouldShowStep3Error('parent1_has_responsibility')) {
                       <p id="parent1-responsibility-error" class="mt-2 text-sm text-error-500" role="alert">{{ step3VisibleError('parent1_has_responsibility') }}</p>
                     }
