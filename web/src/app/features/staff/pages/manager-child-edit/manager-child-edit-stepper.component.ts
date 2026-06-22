@@ -505,26 +505,49 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     },
   ];
 
+  readonly protectionConsentItems: ConsentItem[] = [
+    {
+      key: 'safeguarding_reporting_acknowledgement',
+      label: 'Safeguarding Reporting',
+      detail: 'Acknowledgement that safeguarding concerns may be reported to relevant authorities.',
+    },
+    {
+      key: 'urgent_medical_treatment',
+      label: 'Emergency Medical Treatment',
+      detail: 'Permission to seek emergency medical treatment for the child when necessary.',
+    },
+    {
+      key: 'plasters',
+      label: 'First Aid & Plasters',
+      detail: 'Consent for trained staff to administer routine first aid, including the use of plasters.',
+    },
+    {
+      key: 'information_sharing_consent',
+      label: 'Information Sharing',
+      detail: "Relevant information may be shared with healthcare professionals or authorities when required for the child's welfare.",
+    },
+  ];
+
   readonly activityConsentItems: ConsentItem[] = [
     {
       key: 'local_outings',
-      label: 'Regular outings in the local area for community learning',
-      detail: '',
+      label: 'Local Outings',
+      detail: 'Permission for regular outings in the local area for community learning.',
     },
     {
       key: 'face_painting',
-      label: 'Face painting during themed days and celebrations',
-      detail: '',
+      label: 'Face Painting',
+      detail: 'Permission for face painting during themed days and celebrations.',
     },
     {
       key: 'parent_supplied_sun_cream',
-      label: 'Permission for staff to apply parent-supplied sun cream',
-      detail: '',
+      label: 'Sun Cream',
+      detail: 'Permission for staff to apply parent-supplied sun cream.',
     },
     {
       key: 'parent_supplied_nappy_cream',
-      label: 'Permission for staff to apply parent-supplied nappy cream',
-      detail: '',
+      label: 'Nappy Cream',
+      detail: 'Permission for staff to apply parent-supplied nappy cream.',
     },
   ];
 
@@ -1584,8 +1607,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       funding_support_answer: 'funding-support-yes',
       funding_options: 'funding-working-tax-credit',
       other_benefits: 'otherFunding',
-      safeguarding_reporting_acknowledgement: 'safeguarding-reporting-consent',
-      information_sharing_consent: 'information-sharing-consent',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
     };
