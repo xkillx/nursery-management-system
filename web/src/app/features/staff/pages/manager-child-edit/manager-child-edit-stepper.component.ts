@@ -953,6 +953,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (field === 'parent1_has_responsibility' && this.step3.parent1_has_responsibility === null) {
       return 'Confirm whether the primary parent/carer holds parental responsibility.';
     }
+    if (field === 'primary_email' && !primary?.email?.trim()) {
+      return 'Enter the primary parent/carer email address.';
+    }
     return null;
   }
 
@@ -2201,6 +2204,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     if (this.step3.parent1_has_responsibility === null) {
       issues.push({ stepKey: 'contacts-collection', field: 'parent1_has_responsibility', message: 'Confirm whether the primary parent/carer holds parental responsibility.' });
+    }
+    if (!primary?.email?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'primary_email', message: 'Record the primary parent/carer email address.' });
     }
 
     const validEmergency = this.emergencyContactsDraft.filter(contact =>

@@ -1071,10 +1071,21 @@
                         placeholder="+44 7000 000000"
                       />
                     </app-form-field>
-                    <app-form-field label="Email address">
+                    <app-form-field
+                      label="Email address"
+                      labelFor="primary-email"
+                      [required]="true"
+                      errorId="primary-email-error"
+                      [error]="step3VisibleError('primary_email')"
+                    >
                       <app-input-field
+                        id="primary-email"
+                        name="primary_email"
                         type="email"
                         [(ngModel)]="parent.email"
+                        (blurred)="markStep3Touched('primary_email')"
+                        [error]="shouldShowStep3Error('primary_email')"
+                        [describedBy]="shouldShowStep3Error('primary_email') ? 'primary-email-error' : undefined"
                         autocomplete="email"
                         placeholder="sarah.j@example.com"
                       />

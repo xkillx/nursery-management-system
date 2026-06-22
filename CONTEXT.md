@@ -228,6 +228,10 @@ The child record now carries the full parent/contact set directly, on child_cont
 
 A child is enrollment-complete when the child record has at least one child_contacts row of type parent_carer in the same tenant+branch. The blocker is 'no parent_carer contact' rather than the previous 'no active guardian link'. Site-level billing setup is checked separately through the nursery site's core hourly rate.
 
+## Parent Carer Email Required
+
+A parent_carer contact's email address is required for child creation and contact replacement. The email is needed for parent account invitations, invoice notifications, and payment communication. The second parent/carer email remains optional.
+
 ## Child and Contact Management Lifecycle
 
 A child may have many contact records (parent_carers, emergency contacts, authorised collectors). The parent_carer subset is required for enrollment completeness; the other contact types are operational details.

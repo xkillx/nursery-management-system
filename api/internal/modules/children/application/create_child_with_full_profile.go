@@ -489,6 +489,17 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 		}
 	}
 
+	for i, c := range input.Contacts {
+		if c.ContactType == domain.ContactTypeParentCarer {
+			if c.Email == nil || strings.TrimSpace(*c.Email) == "" {
+				fieldErrors = append(fieldErrors, domainerrors.FieldError{
+					Field:   fmt.Sprintf("contacts[%d].email", i),
+					Message: "Enter the primary parent/carer email address.",
+				})
+			}
+		}
+	}
+
 	if input.BookingPattern != nil {
 		if len(input.BookingPattern.Entries) == 0 {
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.entries", Message: "Invalid request payload."})

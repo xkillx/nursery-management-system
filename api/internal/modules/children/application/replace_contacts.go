@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -75,6 +76,11 @@ func (uc *ReplaceContacts) Execute(ctx context.Context, actor tenant.ActorContex
 		for _, in := range inputs {
 			if _, ok := bucketed[in.ContactType]; !ok {
 				return domainerrors.Validation("Invalid request payload.", "contact_type")
+			}
+			if in.ContactType == domain.ContactTypeParentCarer {
+				if in.Email == nil || strings.TrimSpace(*in.Email) == "" {
+					return domainerrors.Validation("Enter the parent/carer email address.", "email")
+				}
 			}
 			bucketed[in.ContactType] = append(bucketed[in.ContactType], in)
 		}
