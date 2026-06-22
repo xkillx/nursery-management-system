@@ -1575,6 +1575,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       primary_full_name: 'primary-full-name',
       primary_relationship: 'primary-relationship',
       primary_telephone: 'primary-telephone',
+      primary_email: 'primary-email',
       parent1_has_responsibility: 'parent1-responsibility-group',
       emergency_contacts: 'emergency-contacts-group',
       collection_password: 'collection-password',
