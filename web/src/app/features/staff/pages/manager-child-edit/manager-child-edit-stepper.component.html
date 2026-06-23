@@ -2188,9 +2188,9 @@
                     <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                     Back
                   </app-button>
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
-                    {{ isSaving ? 'Creating...' : 'Create child' }}
-                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="advanceFromSessionPattern()">
+                    Continue
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                   </app-button>
                 </div>
               }
@@ -2541,9 +2541,9 @@
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back
                 </app-button>
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="nextStep()">
-                  {{ isSaving ? 'Saving...' : 'Continue' }}
-                  <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
+                  {{ isSaving ? 'Creating...' : 'Create child' }}
+                  <ng-icon name="heroCheck" size="20" aria-hidden="true" />
                 </app-button>
               </div>
             </div>

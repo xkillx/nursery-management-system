@@ -1420,6 +1420,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.initialisePatternDefaultEffectiveDate();
   }
 
+  advanceFromSessionPattern(): void {
+    this.patternError = null;
+
+    if (this.patternEntries.length === 0) {
+      this.patternError = 'Add at least one booked session.';
+      return;
+    }
+
+    this.nextStep();
+  }
+
   createChildFromSessionPatternStep(): void {
     this.patternError = null;
 
@@ -1444,19 +1455,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
 
     const payload = this.buildCompleteRegistrationPayload();
-    if (this.patternEntries.length > 0) {
-      const bp: any = {
-        effective_from: this.patternEffectiveFrom || this.step1.start_date,
-        entries: this.patternEntries.map(e => ({
-          day_of_week: e.dayOfWeek,
-          session_type_id: e.sessionTypeId,
-        })),
-      };
-      if (this.patternEffectiveTo) {
-        bp.effective_to = this.patternEffectiveTo;
-      }
-      (payload as any).booking_pattern = bp;
-    }
 
     this.isSaving = true;
     this.errorMessage = null;
@@ -1959,6 +1957,20 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         start_date: this.step1.start_date,
       },
     };
+
+    if (this.patternEntries.length > 0) {
+      const bp: any = {
+        effective_from: this.patternEffectiveFrom || this.step1.start_date,
+        entries: this.patternEntries.map(e => ({
+          day_of_week: e.dayOfWeek,
+          session_type_id: e.sessionTypeId,
+        })),
+      };
+      if (this.patternEffectiveTo) {
+        bp.effective_to = this.patternEffectiveTo;
+      }
+      (payload as any).booking_pattern = bp;
+    }
 
     return payload;
   }
