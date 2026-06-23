@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -26,7 +25,6 @@ import { formatGrantOutcome } from '../../utils/owner-formatters';
     CommonModule,
     FormsModule,
     RouterModule,
-    PageHeaderComponent,
     SelectComponent,
     LoadingStateComponent,
     EmptyStateComponent,
