@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -143,4 +144,34 @@ func pgtypeBoolToPtr(b pgtype.Bool) *bool {
 		return nil
 	}
 	return &b.Bool
+}
+
+func float64ToPgtypeNumeric(f *float64) pgtype.Numeric {
+	if f == nil {
+		return pgtype.Numeric{Valid: false}
+	}
+	// Convert float64 to big.Int with scale factor for numeric(5,2)
+	// Multiply by 100 to preserve 2 decimal places
+	scaled := new(big.Int)
+	scaled.SetInt64(int64(*f * 100))
+	return pgtype.Numeric{Int: scaled, Exp: -2, Valid: true, InfinityModifier: pgtype.Finite}
+}
+
+func pgtypeNumericToFloat64Ptr(n pgtype.Numeric) *float64 {
+	if !n.Valid {
+		return nil
+	}
+	f, err := n.Float64Value()
+	if err != nil {
+		return nil
+	}
+	val := f.Float64
+	return &val
+}
+
+func timeToPgtypeDateStr(t *time.Time) pgtype.Date {
+	if t == nil {
+		return pgtype.Date{}
+	}
+	return pgtype.Date{Time: *t, Valid: true}
 }

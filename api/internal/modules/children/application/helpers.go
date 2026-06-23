@@ -152,19 +152,48 @@ func buildChildContactEntries(tenantID, branchID, childID uuid.UUID, inputs []Ch
 }
 
 func buildChildFundingFromInput(tenantID, branchID, childID uuid.UUID, in *ChildFundingRecordInput) *domain.ChildFundingRecord {
+	ft := domain.FundingType(in.FundingType)
+	if !ft.Valid() {
+		ft = domain.FundingTypeUnknown
+	}
+	fm := domain.FundingModel(in.FundingModel)
+	if !fm.Valid() {
+		fm = domain.FundingModelUnknown
+	}
+	bs := domain.BenefitsStatus(in.BenefitsStatus)
+	if !bs.Valid() {
+		bs = domain.BenefitsStatusUnknown
+	}
+
+	var startDate, endDate *time.Time
+	if in.FundingStartDate != nil && *in.FundingStartDate != "" {
+		if t, err := time.Parse("2006-01-02", *in.FundingStartDate); err == nil {
+			startDate = &t
+		}
+	}
+	if in.FundingEndDate != nil && *in.FundingEndDate != "" {
+		if t, err := time.Parse("2006-01-02", *in.FundingEndDate); err == nil {
+			endDate = &t
+		}
+	}
+
 	return &domain.ChildFundingRecord{
-		ID:                          uuid.New(),
-		TenantID:                    tenantID,
-		BranchID:                    branchID,
-		ChildID:                     childID,
-		BenefitsContributeToFees:    domain.YesNoUnknown(in.BenefitsContributeToFees),
-		WorkingTaxCredit:            domain.YesNoUnknown(in.WorkingTaxCredit),
-		CollegeUniPaidToParent:      domain.YesNoUnknown(in.CollegeUniPaidToParent),
-		CollegeUniPaidToNursery:     domain.YesNoUnknown(in.CollegeUniPaidToNursery),
-		Funding3yoTermTime:          domain.YesNoUnknown(in.Funding3yoTermTime),
-		Funding2yoTermTime:          domain.YesNoUnknown(in.Funding2yoTermTime),
-		FundingSupportNotes:         in.FundingSupportNotes,
-		FundingSupportReviewed:      in.FundingSupportReviewed,
+		ID:                       uuid.New(),
+		TenantID:                 tenantID,
+		BranchID:                 branchID,
+		ChildID:                  childID,
+		FundingEnabled:           in.FundingEnabled,
+		FundingType:              ft,
+		FundingModel:             fm,
+		FundedHoursPerWeek:       in.FundedHoursPerWeek,
+		FundingStartDate:         startDate,
+		FundingEndDate:           endDate,
+		EligibilityCode:          trimEmptyToNil(in.EligibilityCode),
+		EligibilityCodeValidated: in.EligibilityCodeValidated,
+		EvidenceReceived:         in.EvidenceReceived,
+		BenefitsStatus:           bs,
+		BenefitNotes:             trimEmptyToNil(in.BenefitNotes),
+		ManagerNotes:             trimEmptyToNil(in.ManagerNotes),
 	}
 }
 
@@ -196,4 +225,32 @@ func ValidateReasonCode(code, note string) error {
 		return domainerrors.New("reason_note_required_for_other", "Invalid request payload.", "reason_note")
 	}
 	return nil
+}
+
+func validateFundingInput(in *ChildFundingRecordInput, prefix string) []domainerrors.FieldError {
+	var errs []domainerrors.FieldError
+
+	ft := domain.FundingType(in.FundingType)
+	if !ft.Valid() || ft == domain.FundingTypeNone || ft == "" {
+		errs = append(errs, domainerrors.FieldError{Field: prefix + "funding_type", Message: "Select a funding type."})
+	}
+
+	if in.FundedHoursPerWeek != nil {
+		if *in.FundedHoursPerWeek <= 0 {
+			errs = append(errs, domainerrors.FieldError{Field: prefix + "funded_hours_per_week", Message: "Must be greater than 0."})
+		} else if *in.FundedHoursPerWeek > 30 && ft != domain.FundingTypeCustom {
+			errs = append(errs, domainerrors.FieldError{Field: prefix + "funded_hours_per_week", Message: "Must not exceed 30 hours unless funding type is Custom."})
+		}
+	}
+
+	if in.FundingStartDate != nil && *in.FundingStartDate != "" &&
+		in.FundingEndDate != nil && *in.FundingEndDate != "" {
+		start, err1 := time.Parse("2006-01-02", *in.FundingStartDate)
+		end, err2 := time.Parse("2006-01-02", *in.FundingEndDate)
+		if err1 == nil && err2 == nil && !end.After(start) {
+			errs = append(errs, domainerrors.FieldError{Field: prefix + "funding_end_date", Message: "Must be after start date."})
+		}
+	}
+
+	return errs
 }

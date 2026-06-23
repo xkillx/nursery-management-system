@@ -1,0 +1,3 @@
+# Registration funding is guidance-only; invoices read only funding_profiles
+
+The `child_funding_records` table captures structured funding eligibility during child registration (funding type, funded hours, eligibility code, evidence). Invoice deduction logic reads only from `funding_profiles` (the per-billing-month allowance table). The two tables are never joined in billing, and registration funding is never auto-converted into monthly funding profiles. We chose to keep them separate for pilot safety — managers stay in control of the monthly allowance that actually affects invoices — rather than auto-deriving deductions from registration data, which would couple billing to registration-time data that may be incomplete or unvalidated.

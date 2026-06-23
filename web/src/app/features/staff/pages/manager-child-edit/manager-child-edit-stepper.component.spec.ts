@@ -111,13 +111,6 @@ describe('ManagerChildEditStepperComponent', () => {
     component.emergencyAuthorisedFlags = [false];
     component.emergencyContactAddresses = [''];
 
-    component.step3.funding_support_answer = 'no';
-    component.step3.working_tax_credit = false;
-    component.step3.college_uni_paid_to_parent = false;
-    component.step3.funding_3yo_term_time = false;
-    component.step3.funding_2yo_term_time = false;
-    component.step3.other_funding_selected = false;
-    component.step3.other_benefits = '';
     component.step3.collection_password = '';
 
     component.step4.safeguarding_reporting_acknowledgement = true;
@@ -434,42 +427,6 @@ describe('ManagerChildEditStepperComponent', () => {
       fillRequiredForCompletion();
       component.emergencyAuthorisedFlags = [false];
       component.step3.collection_password = '';
-      expect(component.canSubmitLocally()).toBe(true);
-    });
-  });
-
-  describe('canSubmitLocally — funding', () => {
-    it('blocks when funding answer missing', () => {
-      fillRequiredForCompletion();
-      component.step3.funding_support_answer = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('blocks when funding yes without any option selected', () => {
-      fillRequiredForCompletion();
-      component.step3.funding_support_answer = 'yes';
-      component.step3.working_tax_credit = false;
-      component.step3.college_uni_paid_to_parent = false;
-      component.step3.funding_3yo_term_time = false;
-      component.step3.funding_2yo_term_time = false;
-      component.step3.other_funding_selected = false;
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('satisfies when funding yes with working tax credit', () => {
-      fillRequiredForCompletion();
-      component.step3.funding_support_answer = 'yes';
-      component.step3.working_tax_credit = true;
-      expect(component.canSubmitLocally()).toBe(true);
-    });
-
-    it('blocks when funding yes with other but no details', () => {
-      fillRequiredForCompletion();
-      component.step3.funding_support_answer = 'yes';
-      component.step3.other_funding_selected = true;
-      component.step3.other_benefits = '';
-      expect(component.canSubmitLocally()).toBe(false);
-      component.step3.other_benefits = 'Council scheme';
       expect(component.canSubmitLocally()).toBe(true);
     });
   });

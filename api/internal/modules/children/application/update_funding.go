@@ -62,6 +62,12 @@ func (uc *UpdateFunding) Execute(ctx context.Context, actor tenant.ActorContext,
 		return nil, domainerrors.Validation("Invalid request payload.", "body")
 	}
 
+	if in.FundingEnabled {
+		if fieldErrs := validateFundingInput(in, ""); len(fieldErrs) > 0 {
+			return nil, domainerrors.ValidationWithFields("Some fields did not validate.", fieldErrs)
+		}
+	}
+
 	var result *domain.ChildFundingRecord
 	err = uc.txm.ExecTx(ctx, func(tx pgx.Tx) error {
 		exists, eerr := uc.repo.ExistsInScope(ctx, tx, actor.TenantID, actor.BranchID, id)

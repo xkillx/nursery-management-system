@@ -259,30 +259,42 @@ export interface ChildConsentInput {
   consent_change_reason?: string | null;
 }
 
+export type FundingType = 'none' | 'fifteen_hours' | 'thirty_hours' | 'two_year_old' | 'custom' | 'unknown';
+export type FundingModel = 'term_time_only' | 'stretched' | 'unknown';
+export type BenefitsStatus = 'no' | 'yes' | 'unknown';
+
 export interface ChildFundingRecord {
   id: string;
   child_id: string;
-  benefits_contribute_to_fees: string;
-  working_tax_credit: string;
-  college_uni_paid_to_parent: string;
-  college_uni_paid_to_nursery: string;
-  funding_3yo_term_time: string;
-  funding_2yo_term_time: string;
-  funding_support_notes?: string | null;
-  funding_support_reviewed: boolean;
+  funding_enabled: boolean;
+  funding_type: FundingType;
+  funding_model: FundingModel;
+  funded_hours_per_week: number | null;
+  funding_start_date: string | null;
+  funding_end_date: string | null;
+  eligibility_code: string | null;
+  eligibility_code_validated: boolean;
+  evidence_received: boolean;
+  benefits_status: BenefitsStatus;
+  benefit_notes: string | null;
+  manager_notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface ChildFundingRecordInput {
-  benefits_contribute_to_fees: string;
-  working_tax_credit: string;
-  college_uni_paid_to_parent: string;
-  college_uni_paid_to_nursery: string;
-  funding_3yo_term_time: string;
-  funding_2yo_term_time: string;
-  funding_support_notes?: string | null;
-  funding_support_reviewed: boolean;
+  funding_enabled: boolean;
+  funding_type: FundingType;
+  funding_model: FundingModel;
+  funded_hours_per_week: number | null;
+  funding_start_date: string | null;
+  funding_end_date: string | null;
+  eligibility_code: string | null;
+  eligibility_code_validated: boolean;
+  evidence_received: boolean;
+  benefits_status: BenefitsStatus;
+  benefit_notes: string | null;
+  manager_notes: string | null;
 }
 
 export interface ChildCollectionSettings {

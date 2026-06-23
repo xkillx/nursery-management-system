@@ -1547,7 +1547,27 @@ Written when a child is marked inactive via `POST /api/v1/children/:id/actions/m
 
 ## Child Funding Record
 
-A per-child eligibility record (`child_funding_records`) capturing 15/30h, 2yo, tax-free childcare, benefits, and support notes. It is distinct from `funding_profiles` (per-billing-month funded allowance minutes used by invoicing). Both tables coexist; the funding record does not change invoice generation.
+A per-child eligibility and guidance record (`child_funding_records`) capturing funding type, funding model, funded hours per week, eligibility code, evidence status, benefits status, and manager notes. It is captured during child registration and is manager guidance only. It is distinct from `funding_profiles` (per-billing-month funded allowance minutes used by invoicing). Both tables coexist; the funding record does not change invoice generation.
+
+## Funding Type
+
+The classification of a child's funded childcare entitlement captured on the child funding record: `none`, `fifteen_hours`, `thirty_hours`, `two_year_old`, `custom`, or `unknown`. This is registration-time guidance and does not by itself determine monthly invoice deductions.
+
+## Funding Model
+
+How funded hours are spread across the year on the child funding record: `term_time_only` (38 weeks), `stretched` (51 weeks), or `unknown`. This is registration-time guidance; stretched-funding calculation from this field is deferred.
+
+## Registration Funding Guidance Panel
+
+A read-only panel shown when a manager is viewing or creating a monthly funding profile, displaying the child's registration funding type, funding model, funded hours per week, eligibility code, and funding start/end date. It is advisory and is accompanied by helper text stating that monthly invoice deductions are controlled only by the monthly funding profile.
+
+## Suggested Monthly Allowance
+
+A non-binding suggestion shown in the monthly funding profile editor when the child funding record has `funded_hours_per_week`: `funded_hours_per_week × 4.33 × 60` minutes. The manager must explicitly confirm or override the value; it is never auto-saved.
+
+## Eligibility Code Validation
+
+A manager-attested boolean on the child funding record indicating whether the childcare eligibility code has been validated externally (e.g. in ECS/DfE systems). In the current release the validation is a manual manager attestation; live DfE/ECS integration is deferred.
 
 ## Child Collection Settings
 

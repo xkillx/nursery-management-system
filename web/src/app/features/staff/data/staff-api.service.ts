@@ -287,7 +287,8 @@ export class StaffApiService {
 
   patchChildFunding(childId: string, payload: ChildFundingRecordInput): Observable<ChildFundingRecord> {
     return this.http
-      .patch<ChildFundingRecord>(apiUrl(`/children/${childId}/funding`), payload);
+      .patch<{ funding: ChildFundingRecord }>(apiUrl(`/children/${childId}/funding`), payload)
+      .pipe(map((r) => r.funding));
   }
 
   getChildCollectionSettings(childId: string): Observable<ChildCollectionSettings | null> {

@@ -358,15 +358,14 @@ func TestChildFunding_Upsert(t *testing.T) {
 	childID := newChildID(t, pool, childTenantID, childBranchID, "Funding Kid")
 	notes := "low income family"
 	f := &childdomain.ChildFundingRecord{
-		ID:                       uuid.New(),
-		TenantID:                 childTenantID,
-		BranchID:                 childBranchID,
-		ChildID:                  childID,
-		BenefitsContributeToFees: childdomain.YesNoUnknownYes,
-		WorkingTaxCredit:         childdomain.YesNoUnknownNo,
-		Funding3yoTermTime:       childdomain.YesNoUnknownUnknown,
-		Funding2yoTermTime:       childdomain.YesNoUnknownUnknown,
-		FundingSupportNotes:      &notes,
+		ID:             uuid.New(),
+		TenantID:       childTenantID,
+		BranchID:       childBranchID,
+		ChildID:        childID,
+		FundingEnabled: true,
+		FundingType:    childdomain.FundingTypeThirtyHours,
+		FundingModel:   childdomain.FundingModelTermTimeOnly,
+		ManagerNotes:   &notes,
 	}
 
 	tx := dbtest.BeginTx(t, pool)
@@ -382,11 +381,11 @@ func TestChildFunding_Upsert(t *testing.T) {
 	if !found {
 		t.Fatal("found = false")
 	}
-	if got.BenefitsContributeToFees != childdomain.YesNoUnknownYes {
-		t.Errorf("BenefitsContributeToFees = %s, want yes", got.BenefitsContributeToFees)
+	if got.FundingType != childdomain.FundingTypeThirtyHours {
+		t.Errorf("FundingType = %s, want thirty_hours", got.FundingType)
 	}
-	if got.FundingSupportNotes == nil || *got.FundingSupportNotes != "low income family" {
-		t.Errorf("FundingSupportNotes = %v, want 'low income family'", got.FundingSupportNotes)
+	if got.ManagerNotes == nil || *got.ManagerNotes != "low income family" {
+		t.Errorf("ManagerNotes = %v, want 'low income family'", got.ManagerNotes)
 	}
 }
 

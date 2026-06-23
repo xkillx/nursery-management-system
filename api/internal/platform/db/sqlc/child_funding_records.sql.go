@@ -13,10 +13,11 @@ import (
 
 const childFundingRecordGetByChild = `-- name: ChildFundingRecordGetByChild :one
 SELECT id, tenant_id, branch_id, child_id,
-       benefits_contribute_to_fees, working_tax_credit,
-       college_uni_paid_to_parent, college_uni_paid_to_nursery,
-       funding_3yo_term_time, funding_2yo_term_time,
-       funding_support_notes, funding_support_reviewed,
+       funding_enabled, funding_type, funding_model,
+       funded_hours_per_week, funding_start_date, funding_end_date,
+       eligibility_code, eligibility_code_validated,
+       evidence_received, benefits_status,
+       benefit_notes, manager_notes,
        created_at, updated_at
 FROM child_funding_records
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
@@ -28,22 +29,47 @@ type ChildFundingRecordGetByChildParams struct {
 	ChildID  pgtype.UUID
 }
 
-func (q *Queries) ChildFundingRecordGetByChild(ctx context.Context, arg ChildFundingRecordGetByChildParams) (ChildFundingRecord, error) {
+type ChildFundingRecordGetByChildRow struct {
+	ID                       pgtype.UUID
+	TenantID                 pgtype.UUID
+	BranchID                 pgtype.UUID
+	ChildID                  pgtype.UUID
+	FundingEnabled           bool
+	FundingType              string
+	FundingModel             string
+	FundedHoursPerWeek       pgtype.Numeric
+	FundingStartDate         pgtype.Date
+	FundingEndDate           pgtype.Date
+	EligibilityCode          pgtype.Text
+	EligibilityCodeValidated bool
+	EvidenceReceived         bool
+	BenefitsStatus           string
+	BenefitNotes             pgtype.Text
+	ManagerNotes             pgtype.Text
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+}
+
+func (q *Queries) ChildFundingRecordGetByChild(ctx context.Context, arg ChildFundingRecordGetByChildParams) (ChildFundingRecordGetByChildRow, error) {
 	row := q.db.QueryRow(ctx, childFundingRecordGetByChild, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildFundingRecord
+	var i ChildFundingRecordGetByChildRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.BenefitsContributeToFees,
-		&i.WorkingTaxCredit,
-		&i.CollegeUniPaidToParent,
-		&i.CollegeUniPaidToNursery,
-		&i.Funding3yoTermTime,
-		&i.Funding2yoTermTime,
-		&i.FundingSupportNotes,
-		&i.FundingSupportReviewed,
+		&i.FundingEnabled,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
+		&i.FundingStartDate,
+		&i.FundingEndDate,
+		&i.EligibilityCode,
+		&i.EligibilityCodeValidated,
+		&i.EvidenceReceived,
+		&i.BenefitsStatus,
+		&i.BenefitNotes,
+		&i.ManagerNotes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -53,31 +79,40 @@ func (q *Queries) ChildFundingRecordGetByChild(ctx context.Context, arg ChildFun
 const childFundingRecordUpsert = `-- name: ChildFundingRecordUpsert :one
 INSERT INTO child_funding_records (
     id, tenant_id, branch_id, child_id,
-    benefits_contribute_to_fees, working_tax_credit,
-    college_uni_paid_to_parent, college_uni_paid_to_nursery,
-    funding_3yo_term_time, funding_2yo_term_time,
-    funding_support_notes, funding_support_reviewed
+    funding_enabled, funding_type, funding_model,
+    funded_hours_per_week, funding_start_date, funding_end_date,
+    eligibility_code, eligibility_code_validated,
+    evidence_received, benefits_status,
+    benefit_notes, manager_notes
 )
 VALUES (
     $1, $2, $3, $4,
-    $5, $6, $7, $8, $9, $10,
-    NULLIF($11, ''), $12
+    $5, $6, $7,
+    NULLIF($8::numeric, ''), NULLIF($9, '')::date, NULLIF($10, '')::date,
+    NULLIF($11, ''), $12,
+    $13, $14,
+    NULLIF($15, ''), NULLIF($16, '')
 )
 ON CONFLICT (child_id) DO UPDATE SET
-    benefits_contribute_to_fees = EXCLUDED.benefits_contribute_to_fees,
-    working_tax_credit = EXCLUDED.working_tax_credit,
-    college_uni_paid_to_parent = EXCLUDED.college_uni_paid_to_parent,
-    college_uni_paid_to_nursery = EXCLUDED.college_uni_paid_to_nursery,
-    funding_3yo_term_time = EXCLUDED.funding_3yo_term_time,
-    funding_2yo_term_time = EXCLUDED.funding_2yo_term_time,
-    funding_support_notes = EXCLUDED.funding_support_notes,
-    funding_support_reviewed = EXCLUDED.funding_support_reviewed,
+    funding_enabled = EXCLUDED.funding_enabled,
+    funding_type = EXCLUDED.funding_type,
+    funding_model = EXCLUDED.funding_model,
+    funded_hours_per_week = EXCLUDED.funded_hours_per_week,
+    funding_start_date = EXCLUDED.funding_start_date,
+    funding_end_date = EXCLUDED.funding_end_date,
+    eligibility_code = EXCLUDED.eligibility_code,
+    eligibility_code_validated = EXCLUDED.eligibility_code_validated,
+    evidence_received = EXCLUDED.evidence_received,
+    benefits_status = EXCLUDED.benefits_status,
+    benefit_notes = EXCLUDED.benefit_notes,
+    manager_notes = EXCLUDED.manager_notes,
     updated_at = now()
 RETURNING id, tenant_id, branch_id, child_id,
-          benefits_contribute_to_fees, working_tax_credit,
-          college_uni_paid_to_parent, college_uni_paid_to_nursery,
-          funding_3yo_term_time, funding_2yo_term_time,
-          funding_support_notes, funding_support_reviewed,
+          funding_enabled, funding_type, funding_model,
+          funded_hours_per_week, funding_start_date, funding_end_date,
+          eligibility_code, eligibility_code_validated,
+          evidence_received, benefits_status,
+          benefit_notes, manager_notes,
           created_at, updated_at
 `
 
@@ -86,45 +121,78 @@ type ChildFundingRecordUpsertParams struct {
 	TenantID                 pgtype.UUID
 	BranchID                 pgtype.UUID
 	ChildID                  pgtype.UUID
-	BenefitsContributeToFees string
-	WorkingTaxCredit         string
-	CollegeUniPaidToParent   string
-	CollegeUniPaidToNursery  string
-	Funding3yoTermTime       string
-	Funding2yoTermTime       string
+	FundingEnabled           bool
+	FundingType              string
+	FundingModel             string
+	Column8                  pgtype.Numeric
+	Column9                  interface{}
+	Column10                 interface{}
 	Column11                 interface{}
-	FundingSupportReviewed   bool
+	EligibilityCodeValidated bool
+	EvidenceReceived         bool
+	BenefitsStatus           string
+	Column15                 interface{}
+	Column16                 interface{}
 }
 
-func (q *Queries) ChildFundingRecordUpsert(ctx context.Context, arg ChildFundingRecordUpsertParams) (ChildFundingRecord, error) {
+type ChildFundingRecordUpsertRow struct {
+	ID                       pgtype.UUID
+	TenantID                 pgtype.UUID
+	BranchID                 pgtype.UUID
+	ChildID                  pgtype.UUID
+	FundingEnabled           bool
+	FundingType              string
+	FundingModel             string
+	FundedHoursPerWeek       pgtype.Numeric
+	FundingStartDate         pgtype.Date
+	FundingEndDate           pgtype.Date
+	EligibilityCode          pgtype.Text
+	EligibilityCodeValidated bool
+	EvidenceReceived         bool
+	BenefitsStatus           string
+	BenefitNotes             pgtype.Text
+	ManagerNotes             pgtype.Text
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+}
+
+func (q *Queries) ChildFundingRecordUpsert(ctx context.Context, arg ChildFundingRecordUpsertParams) (ChildFundingRecordUpsertRow, error) {
 	row := q.db.QueryRow(ctx, childFundingRecordUpsert,
 		arg.ID,
 		arg.TenantID,
 		arg.BranchID,
 		arg.ChildID,
-		arg.BenefitsContributeToFees,
-		arg.WorkingTaxCredit,
-		arg.CollegeUniPaidToParent,
-		arg.CollegeUniPaidToNursery,
-		arg.Funding3yoTermTime,
-		arg.Funding2yoTermTime,
+		arg.FundingEnabled,
+		arg.FundingType,
+		arg.FundingModel,
+		arg.Column8,
+		arg.Column9,
+		arg.Column10,
 		arg.Column11,
-		arg.FundingSupportReviewed,
+		arg.EligibilityCodeValidated,
+		arg.EvidenceReceived,
+		arg.BenefitsStatus,
+		arg.Column15,
+		arg.Column16,
 	)
-	var i ChildFundingRecord
+	var i ChildFundingRecordUpsertRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.BenefitsContributeToFees,
-		&i.WorkingTaxCredit,
-		&i.CollegeUniPaidToParent,
-		&i.CollegeUniPaidToNursery,
-		&i.Funding3yoTermTime,
-		&i.Funding2yoTermTime,
-		&i.FundingSupportNotes,
-		&i.FundingSupportReviewed,
+		&i.FundingEnabled,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
+		&i.FundingStartDate,
+		&i.FundingEndDate,
+		&i.EligibilityCode,
+		&i.EligibilityCodeValidated,
+		&i.EvidenceReceived,
+		&i.BenefitsStatus,
+		&i.BenefitNotes,
+		&i.ManagerNotes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

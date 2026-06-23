@@ -347,16 +347,20 @@ type ChildFundingRecord struct {
 	TenantID                 pgtype.UUID
 	BranchID                 pgtype.UUID
 	ChildID                  pgtype.UUID
-	BenefitsContributeToFees string
-	WorkingTaxCredit         string
-	CollegeUniPaidToParent   string
-	CollegeUniPaidToNursery  string
-	Funding3yoTermTime       string
-	Funding2yoTermTime       string
-	FundingSupportNotes      pgtype.Text
-	FundingSupportReviewed   bool
 	CreatedAt                pgtype.Timestamptz
 	UpdatedAt                pgtype.Timestamptz
+	FundingEnabled           bool
+	FundingType              string
+	FundingModel             string
+	FundedHoursPerWeek       pgtype.Numeric
+	FundingStartDate         pgtype.Date
+	FundingEndDate           pgtype.Date
+	EligibilityCode          pgtype.Text
+	EligibilityCodeValidated bool
+	EvidenceReceived         bool
+	BenefitsStatus           string
+	BenefitNotes             pgtype.Text
+	ManagerNotes             pgtype.Text
 }
 
 type ChildHealthProfile struct {

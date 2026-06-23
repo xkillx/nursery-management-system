@@ -127,14 +127,18 @@ type ChildConsentInput struct {
 }
 
 type ChildFundingRecordInput struct {
-	BenefitsContributeToFees string
-	WorkingTaxCredit         string
-	CollegeUniPaidToParent   string
-	CollegeUniPaidToNursery  string
-	Funding3yoTermTime       string
-	Funding2yoTermTime       string
-	FundingSupportNotes      *string
-	FundingSupportReviewed   bool
+	FundingEnabled           bool
+	FundingType              string
+	FundingModel             string
+	FundedHoursPerWeek       *float64
+	FundingStartDate         *string
+	FundingEndDate           *string
+	EligibilityCode          *string
+	EligibilityCodeValidated bool
+	EvidenceReceived         bool
+	BenefitsStatus           string
+	BenefitNotes             *string
+	ManagerNotes             *string
 }
 
 type ChildCollectionSettingsInput struct {
@@ -381,6 +385,17 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			if _, err := uc.repo.UpsertFunding(ctx, tx, f); err != nil {
 				return fmt.Errorf("create child funding: %w", err)
 			}
+			if aerr := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+				ActionType: "child_funding_created",
+				EntityType: "child",
+				EntityID:   childID,
+				Details: map[string]any{
+					"funding_enabled": input.Funding.FundingEnabled,
+					"funding_type":    input.Funding.FundingType,
+				},
+			}); aerr != nil {
+				return fmt.Errorf("audit child_funding_created: %w", aerr)
+			}
 			created = append(created, "funding")
 		}
 
@@ -507,6 +522,10 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 		if !input.BookingPattern.EffectiveFrom.IsZero() && input.BookingPattern.EffectiveFrom.Year() < 1970 {
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.effective_from", Message: "Invalid request payload."})
 		}
+	}
+
+	if input.Funding != nil && input.Funding.FundingEnabled {
+		fieldErrors = append(fieldErrors, validateFundingInput(input.Funding, "funding.")...)
 	}
 
 	if len(missing) > 0 {

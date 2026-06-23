@@ -140,14 +140,18 @@ type childConsentPayload struct {
 }
 
 type childFundingPayload struct {
-	BenefitsContributeToFees string  `json:"benefits_contribute_to_fees"`
-	WorkingTaxCredit         string  `json:"working_tax_credit"`
-	CollegeUniPaidToParent   string  `json:"college_uni_paid_to_parent"`
-	CollegeUniPaidToNursery  string  `json:"college_uni_paid_to_nursery"`
-	Funding3yoTermTime       string  `json:"funding_3yo_term_time"`
-	Funding2yoTermTime       string  `json:"funding_2yo_term_time"`
-	FundingSupportNotes      *string `json:"funding_support_notes"`
-	FundingSupportReviewed   bool    `json:"funding_support_reviewed"`
+	FundingEnabled           bool     `json:"funding_enabled"`
+	FundingType              string   `json:"funding_type"`
+	FundingModel             string   `json:"funding_model"`
+	FundedHoursPerWeek       *float64 `json:"funded_hours_per_week"`
+	FundingStartDate         *string  `json:"funding_start_date"`
+	FundingEndDate           *string  `json:"funding_end_date"`
+	EligibilityCode          *string  `json:"eligibility_code"`
+	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
+	EvidenceReceived         bool     `json:"evidence_received"`
+	BenefitsStatus           string   `json:"benefits_status"`
+	BenefitNotes             *string  `json:"benefit_notes"`
+	ManagerNotes             *string  `json:"manager_notes"`
 }
 
 type collectionSettingsPayload struct {
@@ -333,10 +337,18 @@ func mapChildConsentPayloadToInput(p *childConsentPayload) *application.ChildCon
 
 func mapChildFundingPayloadToInput(p *childFundingPayload) *application.ChildFundingRecordInput {
 	return &application.ChildFundingRecordInput{
-		BenefitsContributeToFees: p.BenefitsContributeToFees, WorkingTaxCredit: p.WorkingTaxCredit,
-		CollegeUniPaidToParent: p.CollegeUniPaidToParent, CollegeUniPaidToNursery: p.CollegeUniPaidToNursery,
-		Funding3yoTermTime: p.Funding3yoTermTime, Funding2yoTermTime: p.Funding2yoTermTime,
-		FundingSupportNotes: p.FundingSupportNotes, FundingSupportReviewed: p.FundingSupportReviewed,
+		FundingEnabled:           p.FundingEnabled,
+		FundingType:              p.FundingType,
+		FundingModel:             p.FundingModel,
+		FundedHoursPerWeek:       p.FundedHoursPerWeek,
+		FundingStartDate:         p.FundingStartDate,
+		FundingEndDate:           p.FundingEndDate,
+		EligibilityCode:          p.EligibilityCode,
+		EligibilityCodeValidated: p.EligibilityCodeValidated,
+		EvidenceReceived:         p.EvidenceReceived,
+		BenefitsStatus:           p.BenefitsStatus,
+		BenefitNotes:             p.BenefitNotes,
+		ManagerNotes:             p.ManagerNotes,
 	}
 }
 

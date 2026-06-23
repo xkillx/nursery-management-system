@@ -521,7 +521,7 @@ func (h *Handler) getFundingHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"funding": nil})
 		return
 	}
-	c.JSON(http.StatusOK, toChildFundingResponse(p))
+	c.JSON(http.StatusOK, gin.H{"funding": toChildFundingResponse(p)})
 }
 
 func (h *Handler) updateFundingHandler(c *gin.Context) {

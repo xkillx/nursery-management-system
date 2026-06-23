@@ -77,6 +77,7 @@ import {
   ChildHealthProfileInput,
   ChildSafeguardingProfileInput,
   ChildCollectionSettingsInput,
+  ChildFundingRecordInput,
   CreateChildPayload,
 } from '../../models/child-profile.models';
 
@@ -85,7 +86,8 @@ type StepperStep =
   | 'medical-health'
   | 'contacts-collection'
   | 'consents-evidence'
-  | 'session-pattern';
+  | 'session-pattern'
+  | 'funding-benefits';
 
 type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
 type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
@@ -249,14 +251,6 @@ type RegistrationDraft = {
     collection_password: string;
     collection_password_hint: string;
     national_insurance_number: string;
-    funding_support_answer: string;
-    applying_for_funding: boolean;
-    early_years_pupil_premium: boolean;
-    working_tax_credit: boolean;
-    college_uni_paid_to_parent: boolean;
-    college_uni_paid_to_nursery: boolean;
-    funding_3yo_term_time: boolean;
-    funding_2yo_term_time: boolean;
     parent1_address: string;
     parent1_work_address: string;
     parent1_has_responsibility: boolean | null;
@@ -268,15 +262,26 @@ type RegistrationDraft = {
     second_parent_address: string;
     second_parent_work_address: string;
     second_parent_has_responsibility: boolean | null;
-    other_benefits: string;
-    other_funding_selected: boolean;
-    has_funding_support: boolean;
   };
   step4: ConsentWritePayload;
   step5?: {
     patternEffectiveFrom: string;
     patternEffectiveTo?: string;
     patternEntries: { dayOfWeek: number; sessionTypeId: string }[];
+  };
+  step6?: {
+    funding_enabled: boolean;
+    funding_type: string;
+    funding_model: string;
+    funded_hours_per_week: number | null;
+    funding_start_date: string;
+    funding_end_date: string;
+    eligibility_code: string;
+    eligibility_code_validated: boolean;
+    evidence_received: boolean;
+    benefits_status: string;
+    benefit_notes: string;
+    manager_notes: string;
   };
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
@@ -385,6 +390,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       label: 'Session Pattern',
       shortLabel: 'Pattern',
       description: 'Planned weekly attendance',
+    },
+    {
+      key: 'funding-benefits',
+      label: 'Funding & Benefits',
+      shortLabel: 'Funding',
+      description: 'Funding eligibility and benefits',
     },
   ];
 
@@ -589,7 +600,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   step2Touched: Record<string, boolean> = {};
   step3Submitted = false;
   step3Touched: Record<string, boolean> = {};
-  fundingSubmitted = false;
   hasStoredDraft = false;
   draftRestoredAt: string | null = null;
   draftSavedAt: string | null = null;
@@ -660,14 +670,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     collection_password: '',
     collection_password_hint: '',
     national_insurance_number: '',
-    funding_support_answer: '',
-    applying_for_funding: false,
-    early_years_pupil_premium: false,
-    working_tax_credit: false,
-    college_uni_paid_to_parent: false,
-    college_uni_paid_to_nursery: false,
-    funding_3yo_term_time: false,
-    funding_2yo_term_time: false,
     parent1_address: '',
     parent1_work_address: '',
     parent1_has_responsibility: null as boolean | null,
@@ -679,9 +681,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     second_parent_address: '',
     second_parent_work_address: '',
     second_parent_has_responsibility: null as boolean | null,
-    other_benefits: '',
-    other_funding_selected: false,
-    has_funding_support: false,
   };
 
   step4: ConsentWritePayload = {
@@ -718,6 +717,43 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   patternEntries: { dayOfWeek: number; sessionTypeId: string }[] = [];
   patternError: string | null = null;
   availableSessionTypes: StaffSessionType[] = [];
+
+  step6 = {
+    funding_enabled: false,
+    funding_type: 'unknown',
+    funding_model: 'unknown',
+    funded_hours_per_week: null as number | null,
+    funding_start_date: '',
+    funding_end_date: '',
+    eligibility_code: '',
+    eligibility_code_validated: false,
+    evidence_received: false,
+    benefits_status: 'unknown',
+    benefit_notes: '',
+    manager_notes: '',
+  };
+
+  get step6Errors(): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!this.step6.funding_enabled) return errors;
+    if (!this.step6.funding_type || this.step6.funding_type === 'unknown' || this.step6.funding_type === 'none') {
+      errors['funding_type'] = 'Select a funding type.';
+    }
+    if (this.step6.funded_hours_per_week !== null && this.step6.funded_hours_per_week !== undefined) {
+      if (this.step6.funded_hours_per_week <= 0) {
+        errors['funded_hours_per_week'] = 'Must be greater than 0.';
+      } else if (this.step6.funded_hours_per_week > 30 && this.step6.funding_type !== 'custom') {
+        errors['funded_hours_per_week'] = 'Must not exceed 30 hours unless funding type is Custom.';
+      }
+    }
+    if (this.step6.funding_start_date && this.step6.funding_end_date) {
+      if (new Date(this.step6.funding_end_date) <= new Date(this.step6.funding_start_date)) {
+        errors['funding_end_date'] = 'Must be after start date.';
+      }
+    }
+    return errors;
+  }
+
   sessionPatternLoading = false;
   sessionPatternLoadError: string | null = null;
 
@@ -1186,7 +1222,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     this.step3Submitted = true;
-    this.fundingSubmitted = true;
     const firstIssue = this.firstBlockingIssueForStep('contacts-collection');
     if (firstIssue) {
       this.handleValidationFailure(firstIssue);
@@ -1254,18 +1289,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       emergencyContacts: emergencyContacts as any,
       authorisedCollectors: authorisedCollectors as any,
     }).subscribe({
-      next: () => this.saveStep3Funding(this.childId!, this.buildFundingSupportPayload()),
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
-      },
-    });
-  }
-
-  private saveStep3Funding(childId: string, funding: any): void {
-    this.staffApi.patchChildFunding(childId, funding).subscribe({
-      next: () => this.saveStep3Collection(childId),
+      next: () => this.saveStep3Collection(this.childId!),
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
@@ -1380,7 +1404,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step1Submitted = true;
     this.step2Submitted = true;
     this.step3Submitted = true;
-    this.fundingSubmitted = true;
 
     const issues = this.collectFinalCompletionIssues();
     this.finalCompletionIssues = issues;
@@ -1390,10 +1413,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     const consentIssues = issues.filter(i => i.stepKey === 'consents-evidence' || i.stepKey === 'contacts-collection' || i.stepKey === 'child-basics' || i.stepKey === 'medical-health');
     if (consentIssues.length > 0) {
       this.handleValidationFailure(consentIssues[0]);
-      return;
-    }
-
-    if (!this.validateFundingSection()) {
       return;
     }
 
@@ -1538,6 +1557,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         patternEffectiveFrom: this.patternEffectiveFrom,
         patternEntries: this.patternEntries,
       },
+      step6: this.step6,
       consentsReviewed: this.consentsReviewed,
       parentCarersDraft: this.parentCarersDraft,
       emergencyContactsDraft: this.emergencyContactsDraft,
@@ -1606,9 +1626,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       collection_password: 'collection-password',
       primary_room_id: 'child-primary-room',
       registration_date: 'child-registration-date',
-      funding_support_answer: 'funding-support-yes',
-      funding_options: 'funding-working-tax-credit',
-      other_benefits: 'otherFunding',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
     };
@@ -1735,55 +1752,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected setFundingSupportAnswer(answer: 'yes' | 'no'): void {
-    this.step3.funding_support_answer = answer;
-    this.step3.has_funding_support = answer === 'yes';
-    this.fundingSubmitted = false;
-
-    if (answer === 'no') {
-      this.clearFundingOptions();
-    }
-
-    this.notifyDraftChanged();
-  }
-
-  protected setFundingOption(
-    key: 'working_tax_credit' | 'college_uni_paid_to_parent' | 'funding_3yo_term_time' | 'funding_2yo_term_time',
-    checked: boolean,
-  ): void {
-    this.step3[key] = checked;
-    this.notifyDraftChanged();
-  }
-
-  protected setOtherFundingSelected(checked: boolean): void {
-    this.step3.other_funding_selected = checked;
-    if (!checked) {
-      this.step3.other_benefits = '';
-    }
-    this.notifyDraftChanged();
-  }
-
-  protected get fundingAnswerError(): string {
-    if (!this.fundingSubmitted || this.step3.funding_support_answer) {
-      return '';
-    }
-    return 'Select Yes or No to continue.';
-  }
-
-  protected get fundingOptionsError(): string {
-    if (!this.fundingSubmitted || this.step3.funding_support_answer !== 'yes' || this.hasSelectedFundingOption()) {
-      return '';
-    }
-    return 'Select at least one funding or benefit option.';
-  }
-
-  protected get otherFundingError(): string {
-    if (!this.fundingSubmitted || !this.step3.other_funding_selected || this.step3.other_benefits.trim()) {
-      return '';
-    }
-    return 'Enter the funding or benefit details.';
-  }
-
   protected profileCompleteLabel(): string {
     return this.workflowStatus?.isReviewedComplete ? 'Complete' : 'Incomplete';
   }
@@ -1792,77 +1760,23 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return this.workflowStatus?.currentConsent ? 'Complete' : 'Incomplete';
   }
 
-  private validateFundingSection(): boolean {
-    this.fundingSubmitted = true;
-
-    if (this.fundingAnswerError) {
-      this.errorMessage = this.fundingAnswerError;
-      this.focusFundingControl('funding-support-yes');
-      return false;
+  private buildFundingPayload(): ChildFundingRecordInput | undefined {
+    if (!this.step6 || (!this.step6.funding_enabled && !this.step6.funding_type)) {
+      return undefined;
     }
-
-    if (this.fundingOptionsError) {
-      this.errorMessage = this.fundingOptionsError;
-      this.focusFundingControl('funding-working-tax-credit');
-      return false;
-    }
-
-    if (this.otherFundingError) {
-      this.errorMessage = this.otherFundingError;
-      this.focusFundingControl('otherFunding');
-      return false;
-    }
-
-    this.errorMessage = null;
-    return true;
-  }
-
-  private focusFundingControl(id: string): void {
-    setTimeout(() => {
-      (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>(`#${id}`)?.focus();
-    }, 0);
-  }
-
-  private hasSelectedFundingOption(): boolean {
-    return this.step3.working_tax_credit
-      || this.step3.college_uni_paid_to_parent
-      || this.step3.funding_3yo_term_time
-      || this.step3.funding_2yo_term_time
-      || this.step3.other_funding_selected;
-  }
-
-  private clearFundingOptions(): void {
-    this.step3.applying_for_funding = false;
-    this.step3.early_years_pupil_premium = false;
-    this.step3.working_tax_credit = false;
-    this.step3.college_uni_paid_to_parent = false;
-    this.step3.college_uni_paid_to_nursery = false;
-    this.step3.funding_3yo_term_time = false;
-    this.step3.funding_2yo_term_time = false;
-    this.step3.other_funding_selected = false;
-    this.step3.other_benefits = '';
-    this.step3.national_insurance_number = '';
-  }
-
-  private buildFundingSupportPayload(): Record<string, unknown> {
-    const answer = this.step3.funding_support_answer;
-    const statusFor = (selected: boolean): string => {
-      if (answer === 'yes') return selected ? 'yes' : 'no';
-      if (answer === 'no') return 'no';
-      return 'unknown';
-    };
-
     return {
-      benefits_contribute_to_fees: answer || 'unknown',
-      working_tax_credit: statusFor(this.step3.working_tax_credit),
-      college_uni_paid_to_parent: statusFor(this.step3.college_uni_paid_to_parent),
-      college_uni_paid_to_nursery: statusFor(false),
-      funding_3yo_term_time: statusFor(this.step3.funding_3yo_term_time),
-      funding_2yo_term_time: statusFor(this.step3.funding_2yo_term_time),
-      funding_support_notes: this.step3.other_funding_selected
-        ? this.step3.other_benefits.trim() || null
-        : null,
-      funding_support_reviewed: true,
+      funding_enabled: this.step6?.funding_enabled ?? false,
+      funding_type: (this.step6?.funding_type ?? 'unknown') as any,
+      funding_model: (this.step6?.funding_model ?? 'unknown') as any,
+      funded_hours_per_week: this.step6?.funded_hours_per_week ?? null,
+      funding_start_date: this.step6?.funding_start_date || null,
+      funding_end_date: this.step6?.funding_end_date || null,
+      eligibility_code: this.step6?.eligibility_code || null,
+      eligibility_code_validated: this.step6?.eligibility_code_validated ?? false,
+      evidence_received: this.step6?.evidence_received ?? false,
+      benefits_status: (this.step6?.benefits_status ?? 'unknown') as any,
+      benefit_notes: this.step6?.benefit_notes || null,
+      manager_notes: this.step6?.manager_notes || null,
     };
   }
 
@@ -1992,16 +1906,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       professional_referrals: referrals,
     };
 
-    const funding = this.buildFundingSupportPayload() as {
-      benefits_contribute_to_fees: string;
-      working_tax_credit: string;
-      college_uni_paid_to_parent: string;
-      college_uni_paid_to_nursery: string;
-      funding_3yo_term_time: string;
-      funding_2yo_term_time: string;
-      funding_support_notes?: string | null;
-      funding_support_reviewed: boolean;
-    };
+    const funding = this.buildFundingPayload();
 
     const consent: ChildConsentInput = {
       urgent_medical_treatment: this.step4.urgent_medical_treatment,
@@ -2121,7 +2026,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.collectMedicalSafetyIssues(issues);
     this.collectContactsIssues(issues);
-    this.collectFundingIssues(issues);
     this.collectConsentsIssues(issues);
     this.collectSessionPatternIssues(issues);
 
@@ -2245,21 +2149,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     );
     if (hasAuthorisedNonParent && !this.step3.collection_password.trim()) {
       issues.push({ stepKey: 'contacts-collection', field: 'collection_password', message: 'Set an authorised collection password before completing.' });
-    }
-  }
-
-  private collectFundingIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.step3.funding_support_answer) {
-      issues.push({ stepKey: 'contacts-collection', field: 'funding_support_answer', message: 'Select Yes or No for funding/benefits support.' });
-      return;
-    }
-    if (this.step3.funding_support_answer === 'yes') {
-      if (!this.hasSelectedFundingOption()) {
-        issues.push({ stepKey: 'contacts-collection', field: 'funding_options', message: 'Select at least one funding or benefit option.' });
-      }
-      if (this.step3.other_funding_selected && !this.step3.other_benefits.trim()) {
-        issues.push({ stepKey: 'contacts-collection', field: 'other_benefits', message: 'Enter the funding or benefit details.' });
-      }
     }
   }
 
@@ -2652,21 +2541,20 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     if (view.funding) {
       const f = view.funding;
-      this.step3.funding_support_answer =
-        f.benefits_contribute_to_fees === 'yes'
-          ? 'yes'
-          : f.benefits_contribute_to_fees === 'no'
-            ? 'no'
-            : '';
-      this.step3.has_funding_support = this.step3.funding_support_answer === 'yes';
-      this.step3.applying_for_funding = this.step3.has_funding_support;
-      this.step3.working_tax_credit = f.working_tax_credit === 'yes';
-      this.step3.college_uni_paid_to_parent = f.college_uni_paid_to_parent === 'yes';
-      this.step3.college_uni_paid_to_nursery = f.college_uni_paid_to_nursery === 'yes';
-      this.step3.funding_3yo_term_time = f.funding_3yo_term_time === 'yes';
-      this.step3.funding_2yo_term_time = f.funding_2yo_term_time === 'yes';
-      this.step3.other_benefits = f.funding_support_notes ?? '';
-      this.step3.other_funding_selected = !!this.step3.other_benefits.trim();
+      this.step6 = {
+        funding_enabled: f.funding_enabled,
+        funding_type: f.funding_type,
+        funding_model: f.funding_model,
+        funded_hours_per_week: f.funded_hours_per_week,
+        funding_start_date: f.funding_start_date ?? '',
+        funding_end_date: f.funding_end_date ?? '',
+        eligibility_code: f.eligibility_code ?? '',
+        eligibility_code_validated: f.eligibility_code_validated,
+        evidence_received: f.evidence_received,
+        benefits_status: f.benefits_status,
+        benefit_notes: f.benefit_notes ?? '',
+        manager_notes: f.manager_notes ?? '',
+      };
     }
   }
 
@@ -2853,13 +2741,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     if (draft.step3) {
       this.step3 = { ...this.step3, ...draft.step3 };
-      if (!this.step3.funding_support_answer && this.step3.has_funding_support) {
-        this.step3.funding_support_answer = 'yes';
-      }
-      this.step3.has_funding_support = this.step3.funding_support_answer === 'yes';
-      if (this.step3.funding_support_answer === 'no') {
-        this.clearFundingOptions();
-      }
     }
     if (draft.step4) {
       this.step4 = { ...this.step4, ...draft.step4 };
@@ -2873,6 +2754,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.patternEffectiveFrom = draft.step5.patternEffectiveFrom ?? '';
       this.patternEffectiveTo = draft.step5.patternEffectiveTo ?? '';
       this.patternEntries = draft.step5.patternEntries ? draft.step5.patternEntries.map(e => ({ ...e })) : [];
+    }
+    if (draft.step6) {
+      this.step6 = { ...this.step6, ...draft.step6 };
     }
     if (draft.consentsReviewed) this.consentsReviewed = { ...this.consentsReviewed, ...draft.consentsReviewed };
     if (draft.parentCarersDraft?.length) {
@@ -2975,14 +2859,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       collection_password: '',
       collection_password_hint: '',
       national_insurance_number: '',
-      funding_support_answer: '',
-      applying_for_funding: false,
-      early_years_pupil_premium: false,
-      working_tax_credit: false,
-      college_uni_paid_to_parent: false,
-      college_uni_paid_to_nursery: false,
-      funding_3yo_term_time: false,
-      funding_2yo_term_time: false,
       parent1_address: '',
       parent1_work_address: '',
       parent1_has_responsibility: null,
@@ -2994,9 +2870,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       second_parent_address: '',
       second_parent_work_address: '',
       second_parent_has_responsibility: null,
-      other_benefits: '',
-      other_funding_selected: false,
-      has_funding_support: false,
     };
     this.step4 = {
       urgent_medical_treatment: false,

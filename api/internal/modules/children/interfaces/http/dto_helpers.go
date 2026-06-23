@@ -404,57 +404,83 @@ func toChildConsentResponse(p *domain.ChildConsent) childConsentResponse {
 }
 
 type childFundingRequest struct {
-	BenefitsContributeToFees string  `json:"benefits_contribute_to_fees"`
-	WorkingTaxCredit         string  `json:"working_tax_credit"`
-	CollegeUniPaidToParent   string  `json:"college_uni_paid_to_parent"`
-	CollegeUniPaidToNursery  string  `json:"college_uni_paid_to_nursery"`
-	Funding3yoTermTime       string  `json:"funding_3yo_term_time"`
-	Funding2yoTermTime       string  `json:"funding_2yo_term_time"`
-	FundingSupportNotes      *string `json:"funding_support_notes"`
-	FundingSupportReviewed   bool    `json:"funding_support_reviewed"`
+	FundingEnabled           bool     `json:"funding_enabled"`
+	FundingType              string   `json:"funding_type"`
+	FundingModel             string   `json:"funding_model"`
+	FundedHoursPerWeek       *float64 `json:"funded_hours_per_week"`
+	FundingStartDate         *string  `json:"funding_start_date"`
+	FundingEndDate           *string  `json:"funding_end_date"`
+	EligibilityCode          *string  `json:"eligibility_code"`
+	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
+	EvidenceReceived         bool     `json:"evidence_received"`
+	BenefitsStatus           string   `json:"benefits_status"`
+	BenefitNotes             *string  `json:"benefit_notes"`
+	ManagerNotes             *string  `json:"manager_notes"`
 }
 
 type childFundingResponse struct {
-	ID                       string  `json:"id"`
-	ChildID                  string  `json:"child_id"`
-	BenefitsContributeToFees string  `json:"benefits_contribute_to_fees"`
-	WorkingTaxCredit         string  `json:"working_tax_credit"`
-	CollegeUniPaidToParent   string  `json:"college_uni_paid_to_parent"`
-	CollegeUniPaidToNursery  string  `json:"college_uni_paid_to_nursery"`
-	Funding3yoTermTime       string  `json:"funding_3yo_term_time"`
-	Funding2yoTermTime       string  `json:"funding_2yo_term_time"`
-	FundingSupportNotes      *string `json:"funding_support_notes"`
-	FundingSupportReviewed   bool    `json:"funding_support_reviewed"`
-	CreatedAt                string  `json:"created_at"`
-	UpdatedAt                string  `json:"updated_at"`
+	ID                       string   `json:"id"`
+	ChildID                  string   `json:"child_id"`
+	FundingEnabled           bool     `json:"funding_enabled"`
+	FundingType              string   `json:"funding_type"`
+	FundingModel             string   `json:"funding_model"`
+	FundedHoursPerWeek       *float64 `json:"funded_hours_per_week"`
+	FundingStartDate         *string  `json:"funding_start_date"`
+	FundingEndDate           *string  `json:"funding_end_date"`
+	EligibilityCode          *string  `json:"eligibility_code"`
+	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
+	EvidenceReceived         bool     `json:"evidence_received"`
+	BenefitsStatus           string   `json:"benefits_status"`
+	BenefitNotes             *string  `json:"benefit_notes"`
+	ManagerNotes             *string  `json:"manager_notes"`
+	CreatedAt                string   `json:"created_at"`
+	UpdatedAt                string   `json:"updated_at"`
 }
 
 func mapChildFundingRequest(req childFundingRequest) *application.ChildFundingRecordInput {
 	return &application.ChildFundingRecordInput{
-		BenefitsContributeToFees: req.BenefitsContributeToFees,
-		WorkingTaxCredit: req.WorkingTaxCredit,
-		CollegeUniPaidToParent: req.CollegeUniPaidToParent,
-		CollegeUniPaidToNursery: req.CollegeUniPaidToNursery,
-		Funding3yoTermTime: req.Funding3yoTermTime,
-		Funding2yoTermTime: req.Funding2yoTermTime,
-		FundingSupportNotes: req.FundingSupportNotes,
-		FundingSupportReviewed: req.FundingSupportReviewed,
+		FundingEnabled:           req.FundingEnabled,
+		FundingType:              req.FundingType,
+		FundingModel:             req.FundingModel,
+		FundedHoursPerWeek:       req.FundedHoursPerWeek,
+		FundingStartDate:         req.FundingStartDate,
+		FundingEndDate:           req.FundingEndDate,
+		EligibilityCode:          req.EligibilityCode,
+		EligibilityCodeValidated: req.EligibilityCodeValidated,
+		EvidenceReceived:         req.EvidenceReceived,
+		BenefitsStatus:           req.BenefitsStatus,
+		BenefitNotes:             req.BenefitNotes,
+		ManagerNotes:             req.ManagerNotes,
 	}
 }
 
 func toChildFundingResponse(p *domain.ChildFundingRecord) childFundingResponse {
+	var startDate, endDate *string
+	if p.FundingStartDate != nil {
+		s := p.FundingStartDate.Format("2006-01-02")
+		startDate = &s
+	}
+	if p.FundingEndDate != nil {
+		s := p.FundingEndDate.Format("2006-01-02")
+		endDate = &s
+	}
 	return childFundingResponse{
-		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		BenefitsContributeToFees: string(p.BenefitsContributeToFees),
-		WorkingTaxCredit: string(p.WorkingTaxCredit),
-		CollegeUniPaidToParent: string(p.CollegeUniPaidToParent),
-		CollegeUniPaidToNursery: string(p.CollegeUniPaidToNursery),
-		Funding3yoTermTime: string(p.Funding3yoTermTime),
-		Funding2yoTermTime: string(p.Funding2yoTermTime),
-		FundingSupportNotes: p.FundingSupportNotes,
-		FundingSupportReviewed: p.FundingSupportReviewed,
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
+		ID:                       p.ID.String(),
+		ChildID:                  p.ChildID.String(),
+		FundingEnabled:           p.FundingEnabled,
+		FundingType:              string(p.FundingType),
+		FundingModel:             string(p.FundingModel),
+		FundedHoursPerWeek:       p.FundedHoursPerWeek,
+		FundingStartDate:         startDate,
+		FundingEndDate:           endDate,
+		EligibilityCode:          p.EligibilityCode,
+		EligibilityCodeValidated: p.EligibilityCodeValidated,
+		EvidenceReceived:         p.EvidenceReceived,
+		BenefitsStatus:           string(p.BenefitsStatus),
+		BenefitNotes:             p.BenefitNotes,
+		ManagerNotes:             p.ManagerNotes,
+		CreatedAt:                p.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:                p.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
 
