@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroEnvelope, heroLockClosed, heroEye, heroEyeSlash } from '@ng-icons/heroicons/outline';
 import { LabelComponent } from '../../form/label/label.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
 import { ButtonComponent } from '../../ui/button/button.component';
@@ -18,6 +20,7 @@ import { isMembershipSelectionRequired } from '../../../../core/models/api-error
   selector: 'app-signin-form',
   imports: [
     CommonModule,
+    NgIcon,
     LabelComponent,
     CheckboxComponent,
     ButtonComponent,
@@ -25,6 +28,7 @@ import { isMembershipSelectionRequired } from '../../../../core/models/api-error
     RouterModule,
     FormsModule
 ],
+  providers: [provideIcons({ heroEnvelope, heroLockClosed, heroEye, heroEyeSlash })],
   templateUrl: './signin-form.component.html',
   styles: ``
 })
