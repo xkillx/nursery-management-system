@@ -43,6 +43,19 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 	return out, nil
 }
 
+func (r *ChildRepository) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter) (int, error) {
+	q := sqlc.New(r.pool)
+	n, err := q.ChildrenCount(ctx, sqlc.ChildrenCountParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		StatusFilter: string(filter),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count children: %w", err)
+	}
+	return int(n), nil
+}
+
 func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.ChildrenGetByID(ctx, sqlc.ChildrenGetByIDParams{

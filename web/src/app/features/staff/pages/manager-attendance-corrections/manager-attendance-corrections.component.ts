@@ -258,8 +258,8 @@ export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy 
     this.api
       .listChildren({ status: 'all' as StatusFilter, limit: 200, offset: 0 })
       .pipe(takeUntil(this.destroy$))
-      .subscribe((children) => {
-        this.children = children;
+      .subscribe(({ items }) => {
+        this.children = items;
       });
   }
 

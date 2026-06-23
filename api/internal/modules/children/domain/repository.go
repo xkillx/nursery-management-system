@@ -27,6 +27,7 @@ type ChildCorrectionInfo struct {
 
 type ChildIdentityRepository interface {
 	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int) ([]Child, error)
+	Count(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	Create(ctx context.Context, child Child, notes string, tenantID, branchID uuid.UUID) error
 	Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error)

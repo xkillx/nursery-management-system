@@ -11,6 +11,31 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const childrenCount = `-- name: ChildrenCount :one
+SELECT COUNT(*)
+FROM children c
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND (
+      $3 = 'all'
+      OR ($3 = 'active' AND c.is_active = true)
+      OR ($3 = 'inactive' AND c.is_active = false)
+  )
+`
+
+type ChildrenCountParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	StatusFilter interface{}
+}
+
+func (q *Queries) ChildrenCount(ctx context.Context, arg ChildrenCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, childrenCount, arg.TenantID, arg.BranchID, arg.StatusFilter)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const childrenCreate = `-- name: ChildrenCreate :exec
 INSERT INTO children (
     id, tenant_id, branch_id, first_name, middle_name, last_name, date_of_birth, start_date, end_date, notes, is_active

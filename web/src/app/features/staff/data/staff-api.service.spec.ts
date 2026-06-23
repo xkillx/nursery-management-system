@@ -419,13 +419,14 @@ last_name: 'Lovelace',
     expect(req.request.params.get('status')).toBe('active');
     expect(req.request.params.get('limit')).toBe('10');
     expect(req.request.params.get('offset')).toBe('0');
-    req.flush({ items: [] });
+    req.flush({ items: [], total: 0 });
   });
 
   it('listChildren maps snake_case to camelCase with enrollment fields', () => {
-    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe((children: ChildRecord[]) => {
-      expect(children.length).toBe(1);
-      expect(children[0]).toEqual({
+    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe(({ items, total }) => {
+      expect(items.length).toBe(1);
+      expect(total).toBe(1);
+      expect(items[0]).toEqual({
         id: 'child-1',
         firstName: 'Ada',
         middleName: null,
@@ -447,18 +448,18 @@ last_name: 'Lovelace',
     });
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
-    req.flush({ items: [childApiModel] });
+    req.flush({ items: [childApiModel], total: 1 });
   });
 
   it('listChildren defaults missing_requirements to empty array', () => {
     const noRequirements = { ...childApiModel, missing_requirements: undefined };
 
-    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe((children: ChildRecord[]) => {
-      expect(children[0].missingRequirements).toEqual([]);
+    service.listChildren({ status: 'active', limit: 10, offset: 0 }).subscribe(({ items }) => {
+      expect(items[0].missingRequirements).toEqual([]);
     });
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/children');
-    req.flush({ items: [noRequirements] });
+    req.flush({ items: [noRequirements], total: 1 });
   });
 });
 

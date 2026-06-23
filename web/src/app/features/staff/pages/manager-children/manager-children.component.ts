@@ -4,14 +4,12 @@ import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCheckCircle,
-  heroChevronLeft,
-  heroChevronRight,
   heroClock,
-  heroEllipsisVertical,
   heroExclamationCircle,
-  heroFunnel,
+  heroMagnifyingGlass,
   heroPlus,
   heroUserGroup,
+  heroPencilSquare,
 } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
@@ -28,6 +26,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
+import { DrawerComponent } from '../../../../shared/components/ui/modal/drawer.component';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 @Component({
   selector: 'app-manager-children',
@@ -41,20 +41,19 @@ import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/ava
     EmptyStateComponent,
     LoadingStateComponent,
     AvatarTextComponent,
+    DrawerComponent,
     NgIcon,
   ],
   templateUrl: './manager-children.component.html',
   providers: [
     provideIcons({
       heroCheckCircle,
-      heroChevronLeft,
-      heroChevronRight,
       heroClock,
-      heroEllipsisVertical,
       heroExclamationCircle,
-      heroFunnel,
+      heroMagnifyingGlass,
       heroPlus,
       heroUserGroup,
+      heroPencilSquare,
     }),
   ],
 })
@@ -63,6 +62,7 @@ export class ManagerChildrenComponent {
   private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly toast = inject(ToastService);
 
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
 
@@ -75,11 +75,13 @@ export class ManagerChildrenComponent {
   roomOptions: Option[] = [];
 
   children: ChildRecord[] = [];
+  totalCount = 0;
   status: StatusFilter = 'active';
   searchTerm = '';
   limit = 25;
   offset = 0;
   isLoading = false;
+  isLoadingCards = true;
   isSaving = false;
 
   selectedChild: ChildRecord | null = null;
@@ -88,12 +90,8 @@ export class ManagerChildrenComponent {
   errorMessage: string | null = null;
   fieldErrors: Record<string, string> = {};
 
-  get visibleRangeStart(): number {
-    return this.filteredChildren.length === 0 ? 0 : this.offset + 1;
-  }
-
-  get visibleRangeEnd(): number {
-    return this.offset + this.filteredChildren.length;
+  get isSearchActive(): boolean {
+    return this.searchTerm.trim().length > 0;
   }
 
   get filteredChildren(): ChildRecord[] {
@@ -105,7 +103,6 @@ export class ManagerChildrenComponent {
     return this.children.filter((child) => {
       const searchableText = [
         child.fullName,
-        child.id,
         child.dateOfBirth,
         child.startDate,
         this.formatMissingRequirements(child),
@@ -127,16 +124,8 @@ export class ManagerChildrenComponent {
     return this.children.reduce((total, child) => total + child.missingRequirements.length, 0);
   }
 
-  get canGoNext(): boolean {
-    return this.children.length >= this.limit && !this.isLoading;
-  }
-
-  get canGoPrevious(): boolean {
-    return this.offset > 0 && !this.isLoading;
-  }
-
-  get hasMultiplePages(): boolean {
-    return this.children.length >= this.limit || this.offset > 0;
+  get canLoadMore(): boolean {
+    return this.children.length >= this.limit && !this.isLoading && !this.isSearchActive;
   }
 
   ngOnInit(): void {
@@ -175,27 +164,42 @@ export class ManagerChildrenComponent {
         offset: this.offset,
       })
       .subscribe({
-        next: (children) => {
-          this.children = children;
+        next: ({ items, total }) => {
+          this.children = items;
+          this.totalCount = total;
           this.isLoading = false;
+          this.isLoadingCards = false;
         },
         error: (error) => {
           this.isLoading = false;
+          this.isLoadingCards = false;
           const mapped = this.errorMapper.mapAndHandle(error);
           this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
         },
       });
   }
 
+  loadMore(): void {
+    if (!this.canLoadMore) return;
+    this.offset += this.limit;
+    this.loadChildren();
+  }
+
   onStatusChange(nextStatus: string): void {
     this.status = nextStatus as StatusFilter;
     this.offset = 0;
-    this.searchTerm = '';
     this.loadChildren();
   }
 
   onSearchChange(event: Event): void {
     this.searchTerm = (event.target as HTMLInputElement).value;
+  }
+
+  activeFilterByStatus(status: 'incomplete' | 'requirements'): void {
+    this.status = 'all';
+    this.offset = 0;
+    this.searchTerm = '';
+    this.loadChildren();
   }
 
   openEdit(child: ChildRecord): void {
@@ -221,6 +225,7 @@ export class ManagerChildrenComponent {
       next: () => {
         this.isSaving = false;
         this.closeForm();
+        this.toast.success('Child record updated successfully');
         this.loadChildren();
       },
       error: (error) => {
@@ -230,24 +235,6 @@ export class ManagerChildrenComponent {
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
       },
     });
-  }
-
-  nextPage(): void {
-    if (this.children.length < this.limit) {
-      return;
-    }
-
-    this.offset += this.limit;
-    this.loadChildren();
-  }
-
-  previousPage(): void {
-    if (this.offset === 0) {
-      return;
-    }
-
-    this.offset = Math.max(0, this.offset - this.limit);
-    this.loadChildren();
   }
 
   formatMissingRequirements(child: ChildRecord): string {
@@ -297,4 +284,7 @@ export class ManagerChildrenComponent {
     }).format(date);
   }
 
+  formatRoomLabel(child: ChildRecord): string {
+    return child.hasCurrentRoom ? 'Assigned' : 'Not assigned';
+  }
 }

@@ -58,7 +58,7 @@ last_name: 'Hopper',
     const req = httpMock.expectOne(
       (r) => r.url === '/api/v1/children' && r.params.get('status') === 'active',
     );
-    req.flush({ items });
+    req.flush({ items, total: items.length });
   }
 
   it('loads active children on init', () => {
@@ -88,7 +88,7 @@ last_name: 'Hopper',
     const req = httpMock.expectOne(
       (r) => r.url === '/api/v1/children' && r.params.get('status') === 'all',
     );
-    req.flush({ items: [childApi, completeChildApi] });
+    req.flush({ items: [childApi, completeChildApi], total: 2 });
 
     expect(component.children.length).toBe(2);
   });
@@ -126,27 +126,6 @@ last_name: 'Hopper',
     const child = component.children[0];
     const labels = child.missingRequirements.map(component.requirementLabel);
     expect(labels).toEqual(['Parent carer contact']);
-  });
-
-  it('hides pagination controls when all results fit on one page', () => {
-    fixture.detectChanges();
-    flushChildren([childApi]);
-    fixture.detectChanges();
-
-    expect(component.children.length).toBe(1);
-    expect(component.hasMultiplePages).toBe(false);
-  });
-
-  it('shows pagination controls when more pages may exist', () => {
-    fixture.detectChanges();
-    const fullPage = Array.from({ length: 25 }, (_, i) => ({
-      ...childApi,
-      id: `child-${i}`,
-    }));
-    flushChildren(fullPage);
-    fixture.detectChanges();
-
-    expect(component.hasMultiplePages).toBe(true);
   });
 
   it('maps has_booking_pattern to hasBookingPattern on each child', () => {

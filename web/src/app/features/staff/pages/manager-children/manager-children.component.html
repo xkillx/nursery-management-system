@@ -21,53 +21,88 @@
     </div>
   </section>
 
-  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Children summary">
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-          <ng-icon name="heroUserGroup" size="24" aria-hidden="true" />
+  @if (isLoadingCards) {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Loading summary">
+      @for (_ of [1,2,3,4]; track _) {
+        <article class="animate-pulse rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-start justify-between gap-4">
+            <div class="size-12 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+            <div class="h-4 w-16 rounded bg-gray-200 dark:bg-gray-700"></div>
+          </div>
+          <div class="mt-5 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="mt-2 h-8 w-16 rounded bg-gray-200 dark:bg-gray-700"></div>
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Children summary">
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroUserGroup" size="24" aria-hidden="true" />
+          </div>
+          <span class="text-xs font-semibold text-success-600 dark:text-success-400">{{ statusLabel(status) }}</span>
         </div>
-        <span class="text-xs font-semibold text-success-600 dark:text-success-400">{{ statusLabel(status) }}</span>
-      </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Children</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ children.length }}</p>
-    </article>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Children</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ totalCount }}</p>
+        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          Showing {{ children.length }} on this page
+        </p>
+      </article>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
-          <ng-icon name="heroCheckCircle" size="24" aria-hidden="true" />
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+            <ng-icon name="heroCheckCircle" size="24" aria-hidden="true" />
+          </div>
+          <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Live</span>
         </div>
-        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Live</span>
-      </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Active Records</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ activeCount }}</p>
-    </article>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Active Records</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ activeCount }}</p>
+      </article>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300">
-          <ng-icon name="heroExclamationCircle" size="24" aria-hidden="true" />
+      <button
+        type="button"
+        class="group rounded-lg border border-gray-200 bg-white p-5 text-left shadow-theme-xs transition hover:border-warning-300 hover:bg-warning-50/50 focus:outline-hidden focus:ring-3 focus:ring-warning-500/20 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-warning-500/5"
+        (click)="activeFilterByStatus('incomplete')"
+        [attr.aria-label]="'View ' + incompleteCount + ' children with incomplete records'"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300">
+            <ng-icon name="heroExclamationCircle" size="24" aria-hidden="true" />
+          </div>
+          <span class="text-xs font-semibold text-warning-700 dark:text-warning-300">Action Required</span>
         </div>
-        <span class="text-xs font-semibold text-warning-700 dark:text-warning-300">Action Required</span>
-      </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Incomplete Records</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ incompleteCount }}</p>
-    </article>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Incomplete Records</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ incompleteCount }}</p>
+      </button>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-blue-light-50 text-blue-light-700 dark:bg-blue-light-500/15 dark:text-blue-light-300">
-          <ng-icon name="heroClock" size="24" aria-hidden="true" />
+      <button
+        type="button"
+        class="group rounded-lg border border-gray-200 bg-white p-5 text-left shadow-theme-xs transition hover:border-blue-light-300 hover:bg-blue-light-50/50 focus:outline-hidden focus:ring-3 focus:ring-blue-light-500/20 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-blue-light-500/5"
+        (click)="activeFilterByStatus('requirements')"
+        [attr.aria-label]="'View ' + missingRequirementCount + ' pending requirements'"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-blue-light-50 text-blue-light-700 dark:bg-blue-light-500/15 dark:text-blue-light-300">
+            <ng-icon name="heroClock" size="24" aria-hidden="true" />
+          </div>
+          <span class="text-xs font-semibold text-brand-600 dark:text-brand-300">Current Page</span>
         </div>
-        <span class="text-xs font-semibold text-brand-600 dark:text-brand-300">Current Page</span>
-      </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Pending Requirements</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ missingRequirementCount }}</p>
-    </article>
-  </section>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Pending Requirements</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ missingRequirementCount }}</p>
+      </button>
+    </section>
+  }
 
-  @if (showForm) {
+  <app-drawer
+    [isOpen]="showForm"
+    position="right"
+    size="lg"
+    title="Edit Child Record"
+    ariaLabel="Edit child record"
+    (close)="closeForm()"
+  >
     <app-child-form
       mode="edit"
       [selectedChild]="selectedChild"
@@ -79,7 +114,7 @@
       (saved)="save($event)"
       (cancelled)="closeForm()"
     />
-  }
+  </app-drawer>
 
   @if (errorMessage && !showForm) {
     <app-alert variant="error" [message]="errorMessage"></app-alert>
@@ -91,7 +126,7 @@
         <label for="children-search" class="sr-only">Filter by child name or record details</label>
         <div class="relative">
           <ng-icon
-            name="heroFunnel"
+            name="heroMagnifyingGlass"
             size="18"
             class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
             aria-hidden="true"
@@ -116,31 +151,11 @@
         />
       </div>
 
-      <div class="flex items-center justify-between gap-3 lg:justify-end">
-        @if (hasMultiplePages) {
+      <div class="flex items-center justify-end gap-3">
+        @if (isSearchActive) {
           <span class="text-sm text-gray-600 dark:text-gray-400">
-            Showing {{ visibleRangeStart }}–{{ visibleRangeEnd }}
+            {{ filteredChildren.length }} {{ filteredChildren.length === 1 ? 'match' : 'matches' }}
           </span>
-          <div class="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              class="inline-flex size-11 items-center justify-center bg-gray-50 text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-              [disabled]="!canGoPrevious"
-              (click)="previousPage()"
-              aria-label="Previous children page"
-            >
-              <ng-icon name="heroChevronLeft" size="18" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="inline-flex size-11 items-center justify-center border-l border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-              [disabled]="!canGoNext"
-              (click)="nextPage()"
-              aria-label="Next children page"
-            >
-              <ng-icon name="heroChevronRight" size="18" aria-hidden="true" />
-            </button>
-          </div>
         } @else {
           <span class="text-sm text-gray-600 dark:text-gray-400">
             {{ children.length }} {{ children.length === 1 ? 'child' : 'children' }}
@@ -162,7 +177,6 @@
                 <app-avatar-text [name]="child.fullName" className="shrink-0 rounded-xl"></app-avatar-text>
                 <div class="min-w-0 flex-1">
                   <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">ID: {{ child.id }}</p>
                 </div>
                 <app-status-badge [status]="child.enrollmentComplete ? 'complete' : 'incomplete'"></app-status-badge>
               </div>
@@ -174,22 +188,15 @@
                 </div>
                 <div>
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Room</dt>
-                  <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ child.hasCurrentRoom ? 'Assigned' : 'Not assigned' }}</dd>
+                  <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ formatRoomLabel(child) }}</dd>
                 </div>
-                <div>
+                <div class="xsm:col-span-2">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Missing requirements</dt>
                   <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ formatMissingRequirements(child) }}</dd>
                 </div>
               </dl>
 
               <div class="mt-4 flex gap-2">
-                <a
-                  [routerLink]="['/staff/manager/children', child.id]"
-                  class="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                  [attr.aria-label]="'View child record for ' + child.fullName"
-                >
-                  View Record
-                </a>
                 <button
                   type="button"
                   class="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
@@ -197,6 +204,13 @@
                 >
                   Edit
                 </button>
+                <a
+                  [routerLink]="['/staff/manager/children', child.id]"
+                  class="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                  [attr.aria-label]="'View child record for ' + child.fullName"
+                >
+                  View Record
+                </a>
               </div>
             </article>
           }
@@ -231,7 +245,6 @@
                     <app-avatar-text [name]="child.fullName" className="shrink-0 rounded-xl"></app-avatar-text>
                     <div class="min-w-0">
                       <p class="font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</p>
-                      <p class="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">ID: {{ child.id }}</p>
                     </div>
                   </div>
                 </td>
@@ -262,6 +275,14 @@
 
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      class="inline-flex size-11 items-center justify-center rounded-lg text-brand-600 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                      (click)="openEdit(child)"
+                      [attr.aria-label]="'Edit child record for ' + child.fullName"
+                    >
+                      <ng-icon name="heroPencilSquare" size="20" aria-hidden="true" />
+                    </button>
                     <a
                       [routerLink]="['/staff/manager/children', child.id]"
                       class="inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10"
@@ -269,14 +290,6 @@
                     >
                       View Record
                     </a>
-                    <button
-                      type="button"
-                      class="inline-flex size-11 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-200"
-                      (click)="openEdit(child)"
-                      [attr.aria-label]="'Edit child record for ' + child.fullName"
-                    >
-                      <ng-icon name="heroEllipsisVertical" size="20" aria-hidden="true" />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -286,13 +299,12 @@
       </table>
     </div>
 
-    @if (!isLoading && filteredChildren.length > 0 && hasMultiplePages) {
+    @if (!isLoading && filteredChildren.length > 0 && canLoadMore) {
       <div class="border-t border-gray-200 bg-brand-25/50 px-4 py-4 text-center dark:border-gray-800 dark:bg-brand-500/[0.06]">
         <button
           type="button"
           class="text-sm font-semibold text-brand-600 transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-45 dark:text-brand-300"
-          [disabled]="!canGoNext"
-          (click)="nextPage()"
+          (click)="loadMore()"
         >
           Load {{ limit }} More Results
         </button>

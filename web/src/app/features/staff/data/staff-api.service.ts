@@ -25,6 +25,7 @@ import { formatChildName } from '../utils/manager-list-formatters';
 
 interface StaffListResponse<T> {
   items: T[];
+  total: number;
 }
 
 interface ChildApiModel {
@@ -171,12 +172,15 @@ interface InviteApiModel {
 export class StaffApiService {
   private readonly http = inject(HttpClient);
 
-  listChildren(query: StaffListQuery): Observable<ChildRecord[]> {
+  listChildren(query: StaffListQuery): Observable<{ items: ChildRecord[]; total: number }> {
     return this.http
       .get<StaffListResponse<ChildApiModel>>(apiUrl('/children'), {
         params: this.buildListParams(query.status, query.limit, query.offset),
       })
-      .pipe(map((response) => response.items.map((child) => this.toChildRecord(child))));
+      .pipe(map((response) => ({
+        items: response.items.map((child) => this.toChildRecord(child)),
+        total: response.total,
+      })));
   }
 
   createChildWithFullProfile(payload: CreateChildPayload): Observable<CreateChildResponse> {

@@ -89,7 +89,7 @@ describe('ManagerAttendanceCorrectionsComponent', () => {
     ]);
     const authSpy = jasmine.createSpyObj('AuthService', ['clearSession']);
 
-    apiSpy.listChildren.and.returnValue(of([mockChild, mockChildNoEndDate]));
+    apiSpy.listChildren.and.returnValue(of({ items: [mockChild, mockChildNoEndDate], total: 2 }));
     apiSpy.listCorrectionSessions.and.returnValue(of(mockSessionContext));
     apiSpy.getCorrectionHistory.and.returnValue(
       of({ session: mockSession, items: [] }),

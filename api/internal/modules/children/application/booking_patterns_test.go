@@ -178,6 +178,9 @@ func (f *fakeChildBPRepo) UpdateEffectiveFrom(ctx context.Context, tx pgx.Tx, te
 func (f *fakeChildBPRepo) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int) ([]domain.Child, error) {
 	return nil, nil
 }
+func (f *fakeChildBPRepo) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter) (int, error) {
+	return 0, nil
+}
 func (f *fakeChildBPRepo) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
 	if f.getByIDErr != nil {
 		return domain.Child{}, false, f.getByIDErr

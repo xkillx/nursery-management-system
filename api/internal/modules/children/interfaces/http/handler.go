@@ -208,7 +208,14 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 		return
 	}
 
-	children, err := h.listChildren.Execute(c.Request.Context(), actor, c.Query("status"), parseIntQuery(c, "limit", 50), parseIntQuery(c, "offset", 0))
+	statusFilter := c.Query("status")
+	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, parseIntQuery(c, "limit", 50), parseIntQuery(c, "offset", 0))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	total, err := h.listChildren.Count(c.Request.Context(), actor, statusFilter)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -219,7 +226,7 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 		out = append(out, toChildResponse(child))
 	}
 
-	c.JSON(http.StatusOK, gin.H{"items": out})
+	c.JSON(http.StatusOK, gin.H{"items": out, "total": total})
 }
 
 func (h *Handler) getChildHandler(c *gin.Context) {

@@ -35,3 +35,17 @@ func (uc *ListChildren) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	return children, nil
 }
+
+func (uc *ListChildren) Count(ctx context.Context, actor tenant.ActorContext, statusFilter string) (int, error) {
+	sf, err := ValidateStatusFilter(statusFilter)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := uc.repo.Count(ctx, actor.TenantID, actor.BranchID, sf)
+	if err != nil {
+		return 0, domainerrors.Internal(fmt.Errorf("count children: %w", err))
+	}
+
+	return n, nil
+}

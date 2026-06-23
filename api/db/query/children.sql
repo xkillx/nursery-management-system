@@ -164,6 +164,17 @@ SELECT EXISTS (
   SELECT 1 FROM children WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
 );
 
+-- name: ChildrenCount :one
+SELECT COUNT(*)
+FROM children c
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND (
+      sqlc.arg('status_filter') = 'all'
+      OR (sqlc.arg('status_filter') = 'active' AND c.is_active = true)
+      OR (sqlc.arg('status_filter') = 'inactive' AND c.is_active = false)
+  );
+
 -- name: ChildrenListAttendance :many
 SELECT c.id,
        c.first_name,

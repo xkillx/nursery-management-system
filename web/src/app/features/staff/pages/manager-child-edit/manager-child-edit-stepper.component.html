@@ -1796,6 +1796,9 @@
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <app-form-field label="Set collection password">
                     <div class="relative">
+                      <span class="pointer-events-none absolute left-4 inset-y-0 z-10 flex items-center text-gray-400 dark:text-gray-500">
+                        <ng-icon name="heroLockClosed" size="18" aria-hidden="true" />
+                      </span>
                       <app-input-field
                         id="collection-password"
                         name="collection_password"
@@ -1804,17 +1807,18 @@
                         autocomplete="new-password"
 
                         placeholder="Min. 6 characters"
+                        className="pl-10"
                       />
                       <button
                         type="button"
                         (click)="showCollectionPassword = !showCollectionPassword"
-                        class="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                        class="absolute right-4 inset-y-0 z-10 flex items-center cursor-pointer text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                         [attr.aria-label]="showCollectionPassword ? 'Hide password' : 'Show password'"
                       >
                         @if (showCollectionPassword) {
-                          <ng-icon name="heroEyeSlash" size="20" class="text-gray-500 dark:text-gray-400" />
+                          <ng-icon name="heroEyeSlash" size="20" aria-hidden="true" />
                         } @else {
-                          <ng-icon name="heroEye" size="20" class="text-gray-500 dark:text-gray-400" />
+                          <ng-icon name="heroEye" size="20" aria-hidden="true" />
                         }
                       </button>
                     </div>
