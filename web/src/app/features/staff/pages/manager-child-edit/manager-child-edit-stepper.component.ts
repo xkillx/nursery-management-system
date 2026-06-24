@@ -34,6 +34,8 @@ import {
   heroUserGroup,
   heroXMark,
   heroCalendar,
+  heroCurrencyPound,
+  heroPencilSquare,
 } from '@ng-icons/heroicons/outline';
 
 import { environment } from '../../../../../environments/environment';
@@ -270,16 +272,15 @@ type RegistrationDraft = {
     patternEntries: { dayOfWeek: number; sessionTypeId: string }[];
   };
   step6?: {
-    funding_enabled: boolean;
+    no_funding: boolean;
     funding_type: string;
     funding_model: string;
     funded_hours_per_week: number | null;
     funding_start_date: string;
     funding_end_date: string;
-    eligibility_code: string;
-    eligibility_code_validated: boolean;
-    evidence_received: boolean;
     benefits_status: string;
+    benefits: string[];
+    other_benefit_name: string;
     benefit_notes: string;
     manager_notes: string;
   };
@@ -340,6 +341,8 @@ type RegistrationDraft = {
       heroUserGroup,
       heroXMark,
       heroCalendar,
+      heroCurrencyPound,
+      heroPencilSquare,
     }),
   ],
   templateUrl: './manager-child-edit-stepper.component.html',
@@ -580,7 +583,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (step === 'consents-evidence' && this.parentCarersDraft[0]?.fullName && !this.step4.signer_name) {
       this.step4.signer_name = this.parentCarersDraft[0].fullName;
     }
-    if (step === 'session-pattern') {
+    if (step === 'session-pattern' || step === 'funding-benefits') {
       this.loadSessionPatternSupportData();
     }
   }
@@ -719,23 +722,100 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   availableSessionTypes: StaffSessionType[] = [];
 
   step6 = {
-    funding_enabled: false,
-    funding_type: 'unknown',
-    funding_model: 'unknown',
+    no_funding: true,
+    funding_type: 'none',
+    funding_model: 'term_time_only',
     funded_hours_per_week: null as number | null,
     funding_start_date: '',
     funding_end_date: '',
-    eligibility_code: '',
-    eligibility_code_validated: false,
-    evidence_received: false,
     benefits_status: 'unknown',
+    benefits: [] as string[],
+    other_benefit_name: '',
     benefit_notes: '',
     manager_notes: '',
   };
 
+  readonly fundingTypeOptions = [
+    { value: 'none', label: 'No funding' },
+    { value: 'fifteen_hours', label: '15 Hours' },
+    { value: 'thirty_hours', label: '30 Hours' },
+    { value: 'two_year_old', label: 'Two-Year-Old Funding' },
+    { value: 'custom', label: 'Custom' },
+  ];
+
+  readonly fundingModelOptions = [
+    { value: 'term_time_only', label: 'Term-time only (38 weeks)' },
+    { value: 'stretched', label: 'Stretched (51 weeks)' },
+  ];
+
+  readonly benefitOptions = [
+    { value: 'universal_credit', label: 'Universal Credit' },
+    { value: 'income_support', label: 'Income Support' },
+    { value: 'jobseekers_allowance', label: "Jobseeker's Allowance" },
+    { value: 'esa_income_related', label: 'ESA (Income Related)' },
+    { value: 'child_tax_credit', label: 'Child Tax Credit' },
+    { value: 'other_support', label: 'Other Support' },
+  ];
+
+  fundedHoursTouched = false;
+
+  defaultFundedHoursForType(type: string): number {
+    if (type === 'fifteen_hours') return 15;
+    if (type === 'thirty_hours') return 30;
+    return 0;
+  }
+
+  get totalBookedHoursPerWeek(): number {
+    if (!this.patternEntries.length || !this.availableSessionTypes.length) return 0;
+    const typeMap = new Map(this.availableSessionTypes.map(st => [st.id, st]));
+    let total = 0;
+    for (const entry of this.patternEntries) {
+      const st = typeMap.get(entry.sessionTypeId);
+      if (st) {
+        const [sh, sm] = st.startTime.split(':').map(Number);
+        const [eh, em] = st.endTime.split(':').map(Number);
+        total += (eh + em / 60) - (sh + sm / 60);
+      }
+    }
+    return Math.round(total * 10) / 10;
+  }
+
+  get parentPaidHoursPerWeek(): number {
+    const funded = this.step6.funded_hours_per_week ?? 0;
+    return Math.max(0, this.totalBookedHoursPerWeek - funded);
+  }
+
+  get calculationGridWarning(): string | null {
+    const funded = this.step6.funded_hours_per_week ?? 0;
+    if (funded > this.totalBookedHoursPerWeek) {
+      return 'Funded hours exceed total booked hours. Parent-paid hours will be negative.';
+    }
+    return null;
+  }
+
+  protected toggleBenefit(value: string): void {
+    const idx = this.step6.benefits.indexOf(value);
+    if (idx >= 0) {
+      this.step6.benefits.splice(idx, 1);
+    } else {
+      this.step6.benefits.push(value);
+    }
+  }
+
+  protected onFundingTypeChange(type: string): void {
+    this.step6.funding_type = type;
+    if (!this.fundedHoursTouched) {
+      this.step6.funded_hours_per_week = this.defaultFundedHoursForType(type);
+    }
+  }
+
+  protected onFundedHoursEdited(): void {
+    this.fundedHoursTouched = true;
+  }
+
   get step6Errors(): Record<string, string> {
     const errors: Record<string, string> = {};
-    if (!this.step6.funding_enabled) return errors;
+    if (this.step6.no_funding) return errors;
     if (!this.step6.funding_type || this.step6.funding_type === 'unknown' || this.step6.funding_type === 'none') {
       errors['funding_type'] = 'Select a funding type.';
     }
@@ -750,6 +830,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       if (new Date(this.step6.funding_end_date) <= new Date(this.step6.funding_start_date)) {
         errors['funding_end_date'] = 'Must be after start date.';
       }
+    }
+    if (this.step6.benefits_status === 'yes' && (!this.step6.benefits || this.step6.benefits.length === 0)) {
+      errors['benefits'] = 'Select at least one benefit type when benefits status is Yes.';
     }
     return errors;
   }
@@ -1454,6 +1537,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const stepErrors = this.step6Errors;
+    if (Object.keys(stepErrors).length > 0) {
+      const firstErrorKey = Object.keys(stepErrors)[0];
+      this.errorMessage = stepErrors[firstErrorKey];
+      return;
+    }
+
     const payload = this.buildCompleteRegistrationPayload();
 
     this.isSaving = true;
@@ -1626,6 +1716,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       registration_date: 'child-registration-date',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
+      funding_type: 'funding_type',
+      funded_hours_per_week: 'funded_hours_per_week',
+      funding_end_date: 'funding_end_date',
+      benefits: 'benefits-yes',
     };
     return map[field] ?? field;
   }
@@ -1759,21 +1853,28 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private buildFundingPayload(): ChildFundingRecordInput | undefined {
-    if (!this.step6 || (!this.step6.funding_enabled && !this.step6.funding_type)) {
+    if (!this.step6) {
       return undefined;
     }
+    // TODO: Backend wiring — new fields (benefits array, other_benefit_name)
+    // may be ignored until the API type is updated.
+    const benefitParts = [
+      this.step6.benefit_notes,
+      this.step6.benefits.length ? `Benefits: ${this.step6.benefits.join(', ')}` : '',
+      this.step6.other_benefit_name ? `Other: ${this.step6.other_benefit_name}` : '',
+    ].filter(Boolean).join(' | ');
     return {
-      funding_enabled: this.step6?.funding_enabled ?? false,
-      funding_type: (this.step6?.funding_type ?? 'unknown') as any,
-      funding_model: (this.step6?.funding_model ?? 'unknown') as any,
+      funding_enabled: !this.step6.no_funding,
+      funding_type: (this.step6?.funding_type ?? 'none') as any,
+      funding_model: (this.step6?.funding_model ?? 'term_time_only') as any,
       funded_hours_per_week: this.step6?.funded_hours_per_week ?? null,
       funding_start_date: this.step6?.funding_start_date || null,
       funding_end_date: this.step6?.funding_end_date || null,
-      eligibility_code: this.step6?.eligibility_code || null,
-      eligibility_code_validated: this.step6?.eligibility_code_validated ?? false,
-      evidence_received: this.step6?.evidence_received ?? false,
+      eligibility_code: null,
+      eligibility_code_validated: false,
+      evidence_received: false,
       benefits_status: (this.step6?.benefits_status ?? 'unknown') as any,
-      benefit_notes: this.step6?.benefit_notes || null,
+      benefit_notes: benefitParts || null,
       manager_notes: this.step6?.manager_notes || null,
     };
   }
@@ -2040,6 +2141,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.collectContactsIssues(issues);
     this.collectConsentsIssues(issues);
     this.collectSessionPatternIssues(issues);
+    this.collectFundingBenefitsIssues(issues);
 
     return issues;
   }
@@ -2208,6 +2310,16 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         field: 'pattern_entries',
         message: 'Add at least one booked session.',
       });
+    }
+  }
+
+  private collectFundingBenefitsIssues(issues: FinalCompletionIssue[]): void {
+    if (!this.isNewRegistration || this.currentStep !== 'funding-benefits') {
+      return;
+    }
+    const stepErrors = this.step6Errors;
+    for (const [field, message] of Object.entries(stepErrors)) {
+      issues.push({ stepKey: 'funding-benefits', field, message });
     }
   }
 
@@ -2554,16 +2666,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (view.funding) {
       const f = view.funding;
       this.step6 = {
-        funding_enabled: f.funding_enabled,
-        funding_type: f.funding_type,
-        funding_model: f.funding_model,
+        no_funding: !f.funding_enabled,
+        funding_type: f.funding_type === 'unknown' ? 'none' : f.funding_type,
+        funding_model: f.funding_model === 'unknown' ? 'term_time_only' : f.funding_model,
         funded_hours_per_week: f.funded_hours_per_week,
         funding_start_date: f.funding_start_date ?? '',
         funding_end_date: f.funding_end_date ?? '',
-        eligibility_code: f.eligibility_code ?? '',
-        eligibility_code_validated: f.eligibility_code_validated,
-        evidence_received: f.evidence_received,
         benefits_status: f.benefits_status,
+        benefits: [],
+        other_benefit_name: '',
         benefit_notes: f.benefit_notes ?? '',
         manager_notes: f.manager_notes ?? '',
       };
@@ -2698,6 +2809,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         patternEffectiveTo: this.patternEffectiveTo,
         patternEntries: [...this.patternEntries],
       },
+      step6: { ...this.step6 },
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -2928,6 +3040,20 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step2Submitted = false;
     this.step3Touched = {};
     this.step3Submitted = false;
+    this.step6 = {
+      no_funding: true,
+      funding_type: 'none',
+      funding_model: 'term_time_only',
+      funded_hours_per_week: null as number | null,
+      funding_start_date: '',
+      funding_end_date: '',
+      benefits_status: 'unknown',
+      benefits: [],
+      other_benefit_name: '',
+      benefit_notes: '',
+      manager_notes: '',
+    };
+    this.fundedHoursTouched = false;
     this.consentsReviewed = {};
     this.consentAdvisories = [];
     this.originalStep4Snapshot = null;
