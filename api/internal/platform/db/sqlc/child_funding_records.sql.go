@@ -88,7 +88,7 @@ INSERT INTO child_funding_records (
 VALUES (
     $1, $2, $3, $4,
     $5, $6, $7,
-    NULLIF($8::numeric, ''), NULLIF($9, '')::date, NULLIF($10, '')::date,
+    $8::numeric, $9::date, $10::date,
     NULLIF($11, ''), $12,
     $13, $14,
     NULLIF($15, ''), NULLIF($16, '')
@@ -125,8 +125,8 @@ type ChildFundingRecordUpsertParams struct {
 	FundingType              string
 	FundingModel             string
 	Column8                  pgtype.Numeric
-	Column9                  interface{}
-	Column10                 interface{}
+	Column9                  pgtype.Date
+	Column10                 pgtype.Date
 	Column11                 interface{}
 	EligibilityCodeValidated bool
 	EvidenceReceived         bool

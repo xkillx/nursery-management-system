@@ -15,7 +15,8 @@ const (
 	pgCodeUniqueViolation  = "23505"
 	pgCodeCheckViolation   = "23514"
 	pgCodeNotNullViolation = "23502"
-	pgCodeStringTruncation = "22001"
+	pgCodeStringTruncation          = "22001"
+	pgCodeInvalidTextRepresentation = "22P02"
 )
 
 // mapExecTxError converts an error returned from an ExecTx callback into a
@@ -80,6 +81,13 @@ func mapPgError(pgErr *pgconn.PgError) *domainerrors.DomainError {
 		field := extractColumnFromMessage(pgErr.Message)
 		return domainerrors.Validation(
 			fmt.Sprintf("%s value is too long.", field),
+			field,
+		)
+
+	case pgCodeInvalidTextRepresentation:
+		field := extractColumnFromMessage(pgErr.Message)
+		return domainerrors.Validation(
+			fmt.Sprintf("Invalid value for %s.", field),
 			field,
 		)
 	}

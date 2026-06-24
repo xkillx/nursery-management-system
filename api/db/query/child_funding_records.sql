@@ -21,7 +21,7 @@ INSERT INTO child_funding_records (
 VALUES (
     $1, $2, $3, $4,
     $5, $6, $7,
-    NULLIF($8::numeric, ''), NULLIF($9, '')::date, NULLIF($10, '')::date,
+    $8::numeric, $9::date, $10::date,
     NULLIF($11, ''), $12,
     $13, $14,
     NULLIF($15, ''), NULLIF($16, '')
