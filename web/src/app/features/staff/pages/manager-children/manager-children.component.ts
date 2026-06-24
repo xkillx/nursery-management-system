@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCheckCircle,
+  heroChevronDown,
+  heroChevronUp,
+  heroChevronUpDown,
   heroClock,
   heroExclamationCircle,
   heroMagnifyingGlass,
@@ -11,6 +14,8 @@ import {
   heroUserGroup,
   heroPencilSquare,
 } from '@ng-icons/heroicons/outline';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -27,7 +32,12 @@ import { EmptyStateComponent } from '../../../../shared/components/common/empty-
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
 import { DrawerComponent } from '../../../../shared/components/ui/modal/drawer.component';
+import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
+import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
 import { ToastService } from '../../../../shared/services/toast.service';
+
+type SortColumn = 'name' | 'age';
+type SortDirection = 'asc' | 'desc';
 
 @Component({
   selector: 'app-manager-children',
@@ -42,12 +52,17 @@ import { ToastService } from '../../../../shared/services/toast.service';
     LoadingStateComponent,
     AvatarTextComponent,
     DrawerComponent,
+    TableShellComponent,
+    TablePaginationComponent,
     NgIcon,
   ],
   templateUrl: './manager-children.component.html',
   providers: [
     provideIcons({
       heroCheckCircle,
+      heroChevronDown,
+      heroChevronUp,
+      heroChevronUpDown,
       heroClock,
       heroExclamationCircle,
       heroMagnifyingGlass,
@@ -57,12 +72,14 @@ import { ToastService } from '../../../../shared/services/toast.service';
     }),
   ],
 })
-export class ManagerChildrenComponent {
+export class ManagerChildrenComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly toast = inject(ToastService);
+  private readonly searchSubject = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   readonly statusOptions: StatusFilter[] = ['active', 'inactive', 'all'];
 
@@ -84,6 +101,9 @@ export class ManagerChildrenComponent {
   isLoadingCards = true;
   isSaving = false;
 
+  sortColumn: SortColumn | null = null;
+  sortDirection: SortDirection = 'asc';
+
   selectedChild: ChildRecord | null = null;
   showForm = false;
 
@@ -96,20 +116,23 @@ export class ManagerChildrenComponent {
 
   get filteredChildren(): ChildRecord[] {
     const term = this.searchTerm.trim().toLowerCase();
-    if (!term) {
-      return this.children;
+    let result = this.children;
+
+    if (term) {
+      result = result.filter((child) => {
+        const searchableText = [
+          child.fullName,
+          child.dateOfBirth,
+          child.startDate,
+          this.formatMissingRequirements(child),
+        ].join(' ').toLowerCase();
+
+        return searchableText.includes(term);
+      });
     }
 
-    return this.children.filter((child) => {
-      const searchableText = [
-        child.fullName,
-        child.dateOfBirth,
-        child.startDate,
-        this.formatMissingRequirements(child),
-      ].join(' ').toLowerCase();
-
-      return searchableText.includes(term);
-    });
+    result = this.sortData(result);
+    return result;
   }
 
   get activeCount(): number {
@@ -124,13 +147,21 @@ export class ManagerChildrenComponent {
     return this.children.reduce((total, child) => total + child.missingRequirements.length, 0);
   }
 
-  get canLoadMore(): boolean {
-    return this.children.length >= this.limit && !this.isLoading && !this.isSearchActive;
-  }
-
   ngOnInit(): void {
+    this.searchSubject.pipe(
+      debounceTime(200),
+      takeUntil(this.destroy$),
+    ).subscribe(term => {
+      this.searchTerm = term;
+    });
+
     this.loadChildren();
     this.loadRoomOptions();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private loadRoomOptions(): void {
@@ -179,8 +210,14 @@ export class ManagerChildrenComponent {
       });
   }
 
-  loadMore(): void {
-    if (!this.canLoadMore) return;
+  previousPage(): void {
+    if (this.offset === 0) return;
+    this.offset -= this.limit;
+    this.loadChildren();
+  }
+
+  nextPage(): void {
+    if (this.offset + this.limit >= this.totalCount) return;
     this.offset += this.limit;
     this.loadChildren();
   }
@@ -192,7 +229,35 @@ export class ManagerChildrenComponent {
   }
 
   onSearchChange(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value;
+    this.searchSubject.next((event.target as HTMLInputElement).value);
+  }
+
+  toggleSort(column: SortColumn): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  getSortIcon(column: SortColumn): string {
+    if (this.sortColumn !== column) return 'heroChevronUpDown';
+    return this.sortDirection === 'asc' ? 'heroChevronUp' : 'heroChevronDown';
+  }
+
+  private sortData(data: ChildRecord[]): ChildRecord[] {
+    if (!this.sortColumn) return data;
+
+    return [...data].sort((a, b) => {
+      let cmp = 0;
+      if (this.sortColumn === 'name') {
+        cmp = a.fullName.localeCompare(b.fullName);
+      } else if (this.sortColumn === 'age') {
+        cmp = new Date(a.dateOfBirth).getTime() - new Date(b.dateOfBirth).getTime();
+      }
+      return this.sortDirection === 'asc' ? cmp : -cmp;
+    });
   }
 
   activeFilterByStatus(status: 'incomplete' | 'requirements'): void {
@@ -286,5 +351,16 @@ export class ManagerChildrenComponent {
 
   formatRoomLabel(child: ChildRecord): string {
     return child.hasCurrentRoom ? 'Assigned' : 'Not assigned';
+  }
+
+  childOverviewStatus(child: ChildRecord): string {
+    if (!child.isActive) return 'inactive';
+    if (!child.enrollmentComplete) return 'incomplete';
+    if (!child.hasCurrentRoom || child.hasBookingPattern === false) return 'incomplete';
+    return 'enrolled';
+  }
+
+  childOverStatus(child: ChildRecord): string {
+    return child.enrollmentComplete ? 'complete' : 'incomplete';
   }
 }

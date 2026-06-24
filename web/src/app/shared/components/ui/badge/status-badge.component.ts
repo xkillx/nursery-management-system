@@ -54,6 +54,8 @@ export class StatusBadgeComponent {
     not_issued: { color: 'light', label: 'Not issued' },
     no_payment_due: { color: 'light', label: 'No payment due' },
     room_assigned: { color: 'info', label: 'Room assigned' },
+    enrolled: { color: 'success', label: 'Enrolled' },
+    missing_session_pattern: { color: 'warning', label: 'No session pattern' },
   };
 
   get resolvedMapping(): StatusMapping {
