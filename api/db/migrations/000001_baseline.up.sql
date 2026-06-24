@@ -1,6 +1,6 @@
 -- Baseline schema (squashed).
--- Replaces migrations 000001..000034. No production data; rebuilt from scratch.
--- Derived by applying the prior migration set and dumping the live schema.
+-- Replaces migrations 000001..000006. No production data; rebuilt from scratch.
+-- Derived from the final schema state after all 6 historic migrations.
 
 CREATE TYPE child_contact_type AS ENUM (
     'parent_carer',
@@ -34,22 +34,18 @@ BEGIN
             RETURN NEW;
         END IF;
 
-        -- paid is terminal
         IF OLD.status = 'paid' THEN
             RAISE EXCEPTION 'invoice % is paid and cannot transition', OLD.id;
         END IF;
 
-        -- cannot go back to draft
         IF NEW.status = 'draft' THEN
             RAISE EXCEPTION 'invoice % cannot transition back to draft', OLD.id;
         END IF;
 
-        -- payment_failed cannot go to overdue
         IF OLD.status = 'payment_failed' AND NEW.status = 'overdue' THEN
             RAISE EXCEPTION 'invoice % is payment_failed and cannot transition to overdue', OLD.id;
         END IF;
 
-        -- legal transitions
         CASE OLD.status
             WHEN 'draft' THEN
                 IF NEW.status NOT IN ('issued') THEN
@@ -74,89 +70,17 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION enforce_parent_mapping_active_entities() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    membership_active BOOLEAN;
-    guardian_active BOOLEAN;
-BEGIN
-    IF NEW.ended_at IS NOT NULL THEN
-        RETURN NEW;
-    END IF;
-
-    SELECT is_active INTO membership_active
-    FROM memberships
-    WHERE id = NEW.membership_id
-      AND tenant_id = NEW.tenant_id
-      AND branch_id = NEW.branch_id;
-
-    IF membership_active IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'parent_membership_guardians requires active membership';
-    END IF;
-
-    SELECT is_active INTO guardian_active
-    FROM guardians
-    WHERE id = NEW.guardian_id
-      AND tenant_id = NEW.tenant_id
-      AND branch_id = NEW.branch_id;
-
-    IF guardian_active IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'parent_membership_guardians requires active guardian';
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
-
-CREATE FUNCTION enforce_parent_membership_guardian_role() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    membership_role TEXT;
-BEGIN
-    SELECT role INTO membership_role FROM memberships WHERE id = NEW.membership_id;
-    IF membership_role IS NULL THEN
-        RAISE EXCEPTION 'parent_membership_guardians requires valid membership';
-    END IF;
-    IF membership_role <> 'parent' THEN
-        RAISE EXCEPTION 'parent_membership_guardians requires parent role membership';
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-CREATE FUNCTION prevent_non_parent_with_active_guardian_mapping() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF NEW.role <> 'parent' THEN
-        IF EXISTS (
-            SELECT 1
-            FROM parent_membership_guardians
-            WHERE membership_id = NEW.id
-              AND ended_at IS NULL
-        ) THEN
-            RAISE EXCEPTION 'membership role must remain parent while active guardian mapping exists';
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
 CREATE FUNCTION protect_issued_invoice_immutability() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
     IF OLD.status <> 'draft' THEN
-        -- Only these fields may change after issue
         IF NEW.status IS DISTINCT FROM OLD.status
            OR NEW.amount_paid_minor IS DISTINCT FROM OLD.amount_paid_minor
            OR NEW.paid_at IS DISTINCT FROM OLD.paid_at
            OR NEW.payment_failed_at IS DISTINCT FROM OLD.payment_failed_at
            OR NEW.payment_status_updated_at IS DISTINCT FROM OLD.payment_status_updated_at
            OR NEW.updated_at IS DISTINCT FROM OLD.updated_at THEN
-            -- Verify no other fields changed
             IF NEW.id IS DISTINCT FROM OLD.id
                OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
                OR NEW.branch_id IS DISTINCT FROM OLD.branch_id
@@ -187,7 +111,6 @@ BEGIN
             END IF;
             RETURN NEW;
         ELSE
-            -- No permitted field changed — reject
             RAISE EXCEPTION 'invoice % is not draft and cannot be modified', OLD.id;
         END IF;
     END IF;
@@ -226,82 +149,82 @@ BEGIN
 END;
 $$;
 
-CREATE TABLE absence_markers (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    local_date date NOT NULL,
-    marked_at timestamp with time zone DEFAULT now() NOT NULL,
-    marked_by_user_id uuid NOT NULL,
-    marked_by_membership_id uuid NOT NULL,
-    cleared_at timestamp with time zone,
-    cleared_by_user_id uuid,
-    cleared_by_membership_id uuid,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT absence_markers_cleared_at_gte_marked_at CHECK (((cleared_at IS NULL) OR (cleared_at >= marked_at))),
-    CONSTRAINT absence_markers_cleared_at_null_implies_membership_null CHECK (((cleared_at IS NULL) = (cleared_by_membership_id IS NULL))),
-    CONSTRAINT absence_markers_cleared_at_null_implies_user_null CHECK (((cleared_at IS NULL) = (cleared_by_user_id IS NULL)))
-);
+CREATE FUNCTION enforce_parent_membership_child_role() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    membership_role TEXT;
+    membership_is_active BOOLEAN;
+BEGIN
+    IF NEW.ended_at IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
 
-CREATE TABLE attendance_events (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    session_id uuid NOT NULL,
-    event_type text NOT NULL,
-    occurred_at timestamp with time zone NOT NULL,
-    local_date date NOT NULL,
-    recorded_by_user_id uuid NOT NULL,
-    recorded_by_membership_id uuid NOT NULL,
-    request_id text,
-    reason_code text,
-    reason_note text,
-    details jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT attendance_events_reason_shape_check CHECK ((((event_type = ANY (ARRAY['check_in'::text, 'check_out'::text])) AND (reason_code IS NULL) AND (reason_note IS NULL)) OR ((event_type = 'correction'::text) AND (reason_code = ANY (ARRAY['missed_check_in'::text, 'missed_check_out'::text, 'incorrect_time'::text, 'duplicate_entry'::text, 'other'::text])) AND ((reason_code <> 'other'::text) OR (NULLIF(btrim(reason_note), ''::text) IS NOT NULL))))),
-    CONSTRAINT attendance_events_type_check CHECK ((event_type = ANY (ARRAY['check_in'::text, 'check_out'::text, 'correction'::text])))
-);
+    SELECT role, is_active INTO membership_role, membership_is_active
+    FROM memberships
+    WHERE id = NEW.membership_id;
 
-CREATE TABLE attendance_sessions (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    status text NOT NULL,
-    check_in_at timestamp with time zone NOT NULL,
-    check_out_at timestamp with time zone,
-    check_in_local_date date NOT NULL,
-    check_out_local_date date,
-    check_in_event_id uuid,
-    check_out_event_id uuid,
-    corrected_by_event_id uuid,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT attendance_sessions_open_shape_check CHECK ((((status = 'open'::text) AND (check_out_at IS NULL) AND (check_out_local_date IS NULL)) OR ((status = ANY (ARRAY['complete'::text, 'corrected'::text])) AND (check_out_at IS NOT NULL) AND (check_out_local_date IS NOT NULL)))),
-    CONSTRAINT attendance_sessions_status_check CHECK ((status = ANY (ARRAY['open'::text, 'complete'::text, 'corrected'::text]))),
-    CONSTRAINT attendance_sessions_time_order_check CHECK (((check_out_at IS NULL) OR (check_out_at > check_in_at)))
-);
+    IF membership_role IS NULL THEN
+        RAISE EXCEPTION 'parent_membership_children requires valid membership';
+    END IF;
+    IF membership_role <> 'parent' THEN
+        RAISE EXCEPTION 'parent_membership_children requires parent role membership';
+    END IF;
+    IF membership_is_active IS DISTINCT FROM true THEN
+        RAISE EXCEPTION 'parent_membership_children requires active membership';
+    END IF;
+    RETURN NEW;
+END;
+$$;
 
-CREATE TABLE audit_logs (
+CREATE FUNCTION enforce_parent_membership_child_scope() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    child_exists BOOLEAN;
+BEGIN
+    IF NEW.ended_at IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM children
+        WHERE id = NEW.child_id
+          AND tenant_id = NEW.tenant_id
+          AND branch_id = NEW.branch_id
+    ) INTO child_exists;
+
+    IF NOT child_exists THEN
+        RAISE EXCEPTION 'parent_membership_children requires child in same tenant and branch';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE FUNCTION cascade_parent_membership_child_end() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW.ended_at IS NOT NULL
+       AND (OLD.ended_at IS NULL OR OLD.ended_at IS DISTINCT FROM NEW.ended_at) THEN
+        UPDATE parent_membership_children
+        SET ended_at = NEW.ended_at,
+            updated_at = now(),
+            ended_reason_code = 'system_cascade',
+            ended_reason_note = NULL
+        WHERE membership_id = NEW.id
+          AND ended_at IS NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TABLE tenants (
     id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    actor_user_id uuid,
-    action_type text NOT NULL,
-    action_entity_type text NOT NULL,
-    action_entity_id uuid,
-    reason text,
-    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    request_id text,
-    actor_membership_id uuid,
-    reason_code lifecycle_reason_code,
-    reason_note text,
-    CONSTRAINT audit_logs_reason_other_note_check CHECK (((reason_code IS DISTINCT FROM 'other'::lifecycle_reason_code) OR ((reason_note IS NOT NULL) AND (btrim(reason_note) <> ''::text)))),
-    CONSTRAINT audit_logs_reason_shape_check CHECK (((reason_code IS NOT NULL) OR (reason_note IS NULL)))
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE branches (
@@ -315,33 +238,164 @@ CREATE TABLE branches (
     CONSTRAINT branches_core_hourly_rate_positive_check CHECK (((core_hourly_rate_minor IS NULL) OR (core_hourly_rate_minor > 0)))
 );
 
-CREATE TABLE child_billing_profiles (
+CREATE TABLE users (
     id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    billing_basis text DEFAULT 'site_rate'::text NOT NULL,
-    custom_rate_minor integer,
-    effective_from date DEFAULT CURRENT_DATE NOT NULL,
+    email text NOT NULL,
+    email_normalized text NOT NULL,
+    password_hash text NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_billing_profiles_basis_check CHECK ((billing_basis = ANY (ARRAY['site_rate'::text, 'custom'::text]))),
-    CONSTRAINT child_billing_profiles_custom_rate_consistency CHECK ((((billing_basis = 'site_rate'::text) AND (custom_rate_minor IS NULL)) OR ((billing_basis = 'custom'::text) AND (custom_rate_minor IS NOT NULL) AND (custom_rate_minor > 0))))
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE child_collection_settings (
+CREATE TABLE memberships (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid,
+    user_id uuid NOT NULL,
+    role text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    ended_at timestamp with time zone,
+    CONSTRAINT memberships_active_consistency_check CHECK ((((is_active = true) AND (ended_at IS NULL)) OR ((is_active = false) AND (ended_at IS NOT NULL)))),
+    CONSTRAINT memberships_owner_branch_check CHECK ((((role = 'owner'::text) AND (branch_id IS NULL)) OR ((role = ANY (ARRAY['manager'::text, 'practitioner'::text, 'parent'::text])) AND (branch_id IS NOT NULL)))),
+    CONSTRAINT memberships_role_check CHECK ((role = ANY (ARRAY['owner'::text, 'manager'::text, 'practitioner'::text, 'parent'::text])))
+);
+
+CREATE TABLE rooms (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    name text NOT NULL,
+    description text,
+    age_group text NOT NULL,
+    capacity integer NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE children (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    date_of_birth date NOT NULL,
+    start_date date NOT NULL,
+    end_date date,
+    is_active boolean DEFAULT true NOT NULL,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    first_name text NOT NULL,
+    middle_name text,
+    last_name text,
+    current_term_id uuid,
+    CONSTRAINT children_enrollment_dates_check CHECK (((end_date IS NULL) OR (start_date <= end_date))),
+    CONSTRAINT children_first_name_not_blank_check CHECK ((btrim(first_name) <> ''::text))
+);
+
+CREATE TABLE child_profiles (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
-    over_18_collection_acknowledged boolean DEFAULT false CONSTRAINT child_collection_settings_over_18_collection_acknowled_not_null NOT NULL,
-    collection_password_hash text,
-    collection_password_updated_at timestamp with time zone,
-    collection_password_updated_by_user_id uuid,
-    collection_password_updated_by_membership_id uuid,
+    sex text,
+    religion text,
+    ethnic_origin text,
+    first_language text,
+    other_languages text,
+    home_address jsonb DEFAULT '{}'::jsonb NOT NULL,
+    home_postcode text,
+    home_telephone text,
+    disability_status text DEFAULT 'unknown'::text NOT NULL,
+    disability_notes text,
+    access_requirements text,
+    routine_care_notes text,
+    gdpr_declared_by_name text,
+    gdpr_declared_at timestamp with time zone,
+    gdpr_declaration_date date,
+    registration_date date,
+    demographics_home_reviewed boolean DEFAULT false NOT NULL,
+    medical_dietary_reviewed boolean DEFAULT false NOT NULL,
+    health_contacts_reviewed boolean DEFAULT false NOT NULL,
+    social_development_reviewed boolean DEFAULT false NOT NULL,
+    parent_responsibility_reviewed boolean DEFAULT false NOT NULL,
+    emergency_collection_reviewed boolean DEFAULT false NOT NULL,
+    routine_care_reviewed boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_collection_settings_password_consistency CHECK ((((collection_password_hash IS NULL) AND (collection_password_updated_at IS NULL) AND (collection_password_updated_by_user_id IS NULL) AND (collection_password_updated_by_membership_id IS NULL)) OR ((collection_password_hash IS NOT NULL) AND (collection_password_updated_at IS NOT NULL) AND (collection_password_updated_by_user_id IS NOT NULL) AND (collection_password_updated_by_membership_id IS NOT NULL))))
+    CONSTRAINT child_profiles_address_is_object CHECK ((jsonb_typeof(home_address) = 'object'::text))
+);
+
+CREATE TABLE child_contacts (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    contact_type child_contact_type NOT NULL,
+    sort_order integer NOT NULL,
+    full_name text NOT NULL,
+    relationship_to_child text,
+    address jsonb DEFAULT '{}'::jsonb NOT NULL,
+    telephone text,
+    email text,
+    work_address jsonb DEFAULT '{}'::jsonb NOT NULL,
+    has_parental_responsibility boolean,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_contacts_address_is_object CHECK ((jsonb_typeof(address) = 'object'::text)),
+    CONSTRAINT child_contacts_full_name_check CHECK ((btrim(full_name) <> ''::text)),
+    CONSTRAINT child_contacts_sort_order_nonneg CHECK ((sort_order >= 0)),
+    CONSTRAINT child_contacts_work_address_is_object CHECK ((jsonb_typeof(work_address) = 'object'::text))
+);
+
+CREATE TABLE child_health_profiles (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    medical_conditions_status text DEFAULT 'unknown'::text NOT NULL,
+    medical_conditions_notes text,
+    prescribed_medication_status text DEFAULT 'unknown'::text NOT NULL,
+    medication_notes text,
+    immunisation_status text DEFAULT 'unknown'::text NOT NULL,
+    immunisation_country text,
+    illness_diagnosis_history text,
+    dietary_requirements_status text DEFAULT 'unknown'::text NOT NULL,
+    dietary_requirements_notes text,
+    dietary_side_effects text,
+    doctor_name text,
+    doctor_address text,
+    doctor_phone text,
+    health_visitor_name text,
+    health_visitor_address text,
+    health_visitor_phone text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE child_safeguarding_profiles (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    social_services_status text DEFAULT 'unknown'::text NOT NULL,
+    social_services_notes text,
+    social_worker_name text,
+    social_worker_phone text,
+    social_worker_email text,
+    concern_walking text DEFAULT 'unknown'::text NOT NULL,
+    concern_speech_language text DEFAULT 'unknown'::text NOT NULL,
+    concern_hearing text DEFAULT 'unknown'::text NOT NULL,
+    concern_sight text DEFAULT 'unknown'::text NOT NULL,
+    concern_emotional_wellbeing text DEFAULT 'unknown'::text CONSTRAINT child_safeguarding_profiles_concern_emotional_wellbein_not_null NOT NULL,
+    concern_behaviour text DEFAULT 'unknown'::text NOT NULL,
+    professional_referrals jsonb DEFAULT '[]'::jsonb NOT NULL,
+    restricted_notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_safeguarding_profiles_referrals_is_array CHECK ((jsonb_typeof(professional_referrals) = 'array'::text))
 );
 
 CREATE TABLE child_consent_records (
@@ -379,113 +433,58 @@ CREATE TABLE child_consent_records (
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE child_contacts (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    contact_type child_contact_type NOT NULL,
-    sort_order integer NOT NULL,
-    full_name text NOT NULL,
-    relationship_to_child text,
-    address jsonb DEFAULT '{}'::jsonb NOT NULL,
-    telephone text,
-    email text,
-    work_address jsonb DEFAULT '{}'::jsonb NOT NULL,
-    has_parental_responsibility boolean,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_contacts_address_is_object CHECK ((jsonb_typeof(address) = 'object'::text)),
-    CONSTRAINT child_contacts_full_name_check CHECK ((btrim(full_name) <> ''::text)),
-    CONSTRAINT child_contacts_sort_order_nonneg CHECK ((sort_order >= 0)),
-    CONSTRAINT child_contacts_work_address_is_object CHECK ((jsonb_typeof(work_address) = 'object'::text))
-);
-
 CREATE TABLE child_funding_records (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
-    benefits_contribute_to_fees text DEFAULT 'unknown'::text NOT NULL,
-    working_tax_credit text DEFAULT 'unknown'::text NOT NULL,
-    college_uni_paid_to_parent text DEFAULT 'unknown'::text NOT NULL,
-    college_uni_paid_to_nursery text DEFAULT 'unknown'::text NOT NULL,
-    funding_3yo_term_time text DEFAULT 'unknown'::text NOT NULL,
-    funding_2yo_term_time text DEFAULT 'unknown'::text NOT NULL,
-    funding_support_notes text,
-    funding_support_reviewed boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE TABLE child_health_profiles (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    medical_conditions_status text DEFAULT 'unknown'::text NOT NULL,
-    medical_conditions_notes text,
-    prescribed_medication_status text DEFAULT 'unknown'::text NOT NULL,
-    medication_notes text,
-    immunisation_status text DEFAULT 'unknown'::text NOT NULL,
-    immunisation_country text,
-    illness_diagnosis_history text,
-    dietary_requirements_status text DEFAULT 'unknown'::text NOT NULL,
-    dietary_requirements_notes text,
-    dietary_side_effects text,
-    doctor_name text,
-    doctor_address text,
-    doctor_phone text,
-    health_visitor_name text,
-    health_visitor_address text,
-    health_visitor_phone text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE TABLE child_leaving_records (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    left_at timestamp with time zone DEFAULT now() NOT NULL,
-    reason_code text NOT NULL,
-    reason_note text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_leaving_records_reason_check CHECK ((reason_code = ANY (ARRAY['duplicate_record'::text, 'entered_in_error'::text, 'left_nursery'::text, 'safeguarding_direction'::text, 'contact_update'::text, 'access_revoked'::text, 'other'::text])))
-);
-
-CREATE TABLE child_profiles (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    sex text,
-    religion text,
-    ethnic_origin text,
-    first_language text,
-    other_languages text,
-    home_address jsonb DEFAULT '{}'::jsonb NOT NULL,
-    home_postcode text,
-    home_telephone text,
-    disability_status text DEFAULT 'unknown'::text NOT NULL,
-    disability_notes text,
-    access_requirements text,
-    routine_care_notes text,
-    gdpr_declared_by_name text,
-    gdpr_declared_at timestamp with time zone,
-    gdpr_declaration_date date,
-    registration_date date,
-    demographics_home_reviewed boolean DEFAULT false NOT NULL,
-    medical_dietary_reviewed boolean DEFAULT false NOT NULL,
-    health_contacts_reviewed boolean DEFAULT false NOT NULL,
-    social_development_reviewed boolean DEFAULT false NOT NULL,
-    parent_responsibility_reviewed boolean DEFAULT false NOT NULL,
-    emergency_collection_reviewed boolean DEFAULT false NOT NULL,
-    routine_care_reviewed boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_profiles_address_is_object CHECK ((jsonb_typeof(home_address) = 'object'::text))
+    funding_enabled boolean NOT NULL DEFAULT false,
+    funding_type text NOT NULL DEFAULT 'unknown',
+    funding_model text NOT NULL DEFAULT 'unknown',
+    funded_hours_per_week numeric(5,2),
+    funding_start_date date,
+    funding_end_date date,
+    eligibility_code text,
+    eligibility_code_validated boolean NOT NULL DEFAULT false,
+    evidence_received boolean NOT NULL DEFAULT false,
+    benefits_status text NOT NULL DEFAULT 'unknown',
+    benefit_notes text,
+    manager_notes text,
+    CONSTRAINT child_funding_records_funding_type_check CHECK (funding_type IN ('none','fifteen_hours','thirty_hours','two_year_old','custom','unknown')),
+    CONSTRAINT child_funding_records_funding_model_check CHECK (funding_model IN ('term_time_only','stretched','unknown')),
+    CONSTRAINT child_funding_records_benefits_status_check CHECK (benefits_status IN ('no','yes','unknown')),
+    CONSTRAINT child_funding_records_end_after_start CHECK (funding_end_date IS NULL OR funding_start_date IS NULL OR funding_end_date > funding_start_date)
+);
+
+CREATE TABLE child_billing_profiles (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    billing_basis text DEFAULT 'site_rate'::text NOT NULL,
+    custom_rate_minor integer,
+    effective_from date DEFAULT CURRENT_DATE NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_billing_profiles_basis_check CHECK ((billing_basis = ANY (ARRAY['site_rate'::text, 'custom'::text]))),
+    CONSTRAINT child_billing_profiles_custom_rate_consistency CHECK ((((billing_basis = 'site_rate'::text) AND (custom_rate_minor IS NULL)) OR ((billing_basis = 'custom'::text) AND (custom_rate_minor IS NOT NULL) AND (custom_rate_minor > 0))))
+);
+
+CREATE TABLE child_collection_settings (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    over_18_collection_acknowledged boolean DEFAULT false CONSTRAINT child_collection_settings_over_18_collection_acknowled_not_null NOT NULL,
+    collection_password_hash text,
+    collection_password_updated_at timestamp with time zone,
+    collection_password_updated_by_user_id uuid,
+    collection_password_updated_by_membership_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_collection_settings_password_consistency CHECK ((((collection_password_hash IS NULL) AND (collection_password_updated_at IS NULL) AND (collection_password_updated_by_user_id IS NULL) AND (collection_password_updated_by_membership_id IS NULL)) OR ((collection_password_hash IS NOT NULL) AND (collection_password_updated_at IS NOT NULL) AND (collection_password_updated_by_user_id IS NOT NULL) AND (collection_password_updated_by_membership_id IS NOT NULL))))
 );
 
 CREATE TABLE child_room_assignments (
@@ -501,45 +500,75 @@ CREATE TABLE child_room_assignments (
     CONSTRAINT child_room_assignments_dates_check CHECK (((end_date IS NULL) OR (end_date >= start_date)))
 );
 
-CREATE TABLE child_safeguarding_profiles (
+CREATE TABLE child_leaving_records (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
-    social_services_status text DEFAULT 'unknown'::text NOT NULL,
-    social_services_notes text,
-    social_worker_name text,
-    social_worker_phone text,
-    social_worker_email text,
-    concern_walking text DEFAULT 'unknown'::text NOT NULL,
-    concern_speech_language text DEFAULT 'unknown'::text NOT NULL,
-    concern_hearing text DEFAULT 'unknown'::text NOT NULL,
-    concern_sight text DEFAULT 'unknown'::text NOT NULL,
-    concern_emotional_wellbeing text DEFAULT 'unknown'::text CONSTRAINT child_safeguarding_profiles_concern_emotional_wellbein_not_null NOT NULL,
-    concern_behaviour text DEFAULT 'unknown'::text NOT NULL,
-    professional_referrals jsonb DEFAULT '[]'::jsonb NOT NULL,
-    restricted_notes text,
+    left_at timestamp with time zone DEFAULT now() NOT NULL,
+    reason_code text NOT NULL,
+    reason_note text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_safeguarding_profiles_referrals_is_array CHECK ((jsonb_typeof(professional_referrals) = 'array'::text))
+    CONSTRAINT child_leaving_records_reason_check CHECK ((reason_code = ANY (ARRAY['duplicate_record'::text, 'entered_in_error'::text, 'left_nursery'::text, 'safeguarding_direction'::text, 'contact_update'::text, 'access_revoked'::text, 'other'::text])))
 );
 
-CREATE TABLE children (
+CREATE TABLE attendance_sessions (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    date_of_birth date NOT NULL,
-    start_date date NOT NULL,
-    end_date date,
-    is_active boolean DEFAULT true NOT NULL,
-    notes text,
+    child_id uuid NOT NULL,
+    status text NOT NULL,
+    check_in_at timestamp with time zone NOT NULL,
+    check_out_at timestamp with time zone,
+    check_in_local_date date NOT NULL,
+    check_out_local_date date,
+    check_in_event_id uuid,
+    check_out_event_id uuid,
+    corrected_by_event_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    first_name text NOT NULL,
-    middle_name text,
-    last_name text,
-    CONSTRAINT children_enrollment_dates_check CHECK (((end_date IS NULL) OR (start_date <= end_date))),
-    CONSTRAINT children_first_name_not_blank_check CHECK ((btrim(first_name) <> ''::text))
+    CONSTRAINT attendance_sessions_open_shape_check CHECK ((((status = 'open'::text) AND (check_out_at IS NULL) AND (check_out_local_date IS NULL)) OR ((status = ANY (ARRAY['complete'::text, 'corrected'::text])) AND (check_out_at IS NOT NULL) AND (check_out_local_date IS NOT NULL)))),
+    CONSTRAINT attendance_sessions_status_check CHECK ((status = ANY (ARRAY['open'::text, 'complete'::text, 'corrected'::text]))),
+    CONSTRAINT attendance_sessions_time_order_check CHECK (((check_out_at IS NULL) OR (check_out_at > check_in_at)))
+);
+
+CREATE TABLE attendance_events (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    session_id uuid NOT NULL,
+    event_type text NOT NULL,
+    occurred_at timestamp with time zone NOT NULL,
+    local_date date NOT NULL,
+    recorded_by_user_id uuid NOT NULL,
+    recorded_by_membership_id uuid NOT NULL,
+    request_id text,
+    reason_code text,
+    reason_note text,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT attendance_events_reason_shape_check CHECK ((((event_type = ANY (ARRAY['check_in'::text, 'check_out'::text])) AND (reason_code IS NULL) AND (reason_note IS NULL)) OR ((event_type = 'correction'::text) AND (reason_code = ANY (ARRAY['missed_check_in'::text, 'missed_check_out'::text, 'incorrect_time'::text, 'duplicate_entry'::text, 'other'::text])) AND ((reason_code <> 'other'::text) OR (NULLIF(btrim(reason_note), ''::text) IS NOT NULL))))),
+    CONSTRAINT attendance_events_type_check CHECK ((event_type = ANY (ARRAY['check_in'::text, 'check_out'::text, 'correction'::text])))
+);
+
+CREATE TABLE absence_markers (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    local_date date NOT NULL,
+    marked_at timestamp with time zone DEFAULT now() NOT NULL,
+    marked_by_user_id uuid NOT NULL,
+    marked_by_membership_id uuid NOT NULL,
+    cleared_at timestamp with time zone,
+    cleared_by_user_id uuid,
+    cleared_by_membership_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT absence_markers_cleared_at_gte_marked_at CHECK (((cleared_at IS NULL) OR (cleared_at >= marked_at))),
+    CONSTRAINT absence_markers_cleared_at_null_implies_membership_null CHECK (((cleared_at IS NULL) = (cleared_by_membership_id IS NULL))),
+    CONSTRAINT absence_markers_cleared_at_null_implies_user_null CHECK (((cleared_at IS NULL) = (cleared_by_user_id IS NULL)))
 );
 
 CREATE TABLE funding_profiles (
@@ -555,69 +584,172 @@ CREATE TABLE funding_profiles (
     CONSTRAINT funding_profiles_billing_month_first_day_check CHECK ((billing_month = (date_trunc('month'::text, (billing_month)::timestamp with time zone))::date))
 );
 
-CREATE TABLE guardian_child_links (
+CREATE TABLE session_types (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    guardian_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    ended_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    ended_reason_code lifecycle_reason_code,
-    ended_reason_note text,
-    CONSTRAINT guardian_child_links_end_reason_check CHECK ((((ended_at IS NULL) AND (ended_reason_code IS NULL) AND (ended_reason_note IS NULL)) OR ((ended_at IS NOT NULL) AND (ended_reason_code IS NOT NULL) AND ((ended_reason_code <> 'other'::lifecycle_reason_code) OR ((ended_reason_note IS NOT NULL) AND (btrim(ended_reason_note) <> ''::text))))))
-);
-
-CREATE TABLE guardians (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    full_name text NOT NULL,
-    email text,
-    phone text,
-    notes text,
+    name text NOT NULL,
+    start_time time NOT NULL,
+    end_time time NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
-    deactivated_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deactivation_reason_code lifecycle_reason_code,
-    deactivation_reason_note text,
-    CONSTRAINT guardians_active_consistency_check CHECK ((((is_active = true) AND (deactivated_at IS NULL) AND (deactivation_reason_code IS NULL) AND (deactivation_reason_note IS NULL)) OR ((is_active = false) AND (deactivated_at IS NOT NULL) AND (deactivation_reason_code IS NOT NULL) AND ((deactivation_reason_code <> 'other'::lifecycle_reason_code) OR ((deactivation_reason_note IS NOT NULL) AND (btrim(deactivation_reason_note) <> ''::text))))))
+    CONSTRAINT session_types_time_check CHECK ((start_time < end_time))
 );
 
-CREATE TABLE invoice_lines (
+CREATE TABLE child_booking_patterns (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    invoice_id uuid NOT NULL,
-    line_kind text NOT NULL,
-    description text NOT NULL,
-    sort_order integer DEFAULT 0 NOT NULL,
-    quantity_minutes integer,
-    unit_amount_minor integer,
-    line_amount_minor integer NOT NULL,
-    raw_attended_minutes integer,
-    rounded_attended_minutes integer,
-    funded_allowance_minutes integer,
-    funded_deduction_minutes integer,
-    core_billable_minutes integer,
-    session_count integer,
+    child_id uuid NOT NULL,
+    effective_from date NOT NULL,
+    effective_to date,
+    is_current boolean GENERATED ALWAYS AS ((effective_to IS NULL)) STORED NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_booking_patterns_dates_check CHECK (((effective_to IS NULL) OR (effective_to >= effective_from)))
+);
+
+CREATE TABLE child_booking_pattern_entries (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    pattern_id uuid NOT NULL,
+    day_of_week integer NOT NULL,
+    session_type_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT child_booking_pattern_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))
+);
+
+CREATE TABLE session_templates (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    name text NOT NULL,
+    description text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE session_template_entries (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    template_id uuid NOT NULL,
+    day_of_week integer NOT NULL,
+    session_type_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT session_template_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))
+);
+
+CREATE TABLE term (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    term_start_date date NOT NULL,
+    term_end_date date NOT NULL,
+    booking_pattern_id uuid NOT NULL,
+    site_hourly_rate_minor integer NOT NULL,
+    status text NOT NULL,
+    termination_reason_code text,
+    termination_reason_note text,
+    terminated_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_by_membership_id uuid NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT term_dates_first_of_month CHECK ((term_start_date = date_trunc('month', term_start_date)::date)),
+    CONSTRAINT term_end_after_start CHECK ((term_end_date >= term_start_date)),
+    CONSTRAINT term_end_minus_start_is_12_months_minus_one_day CHECK ((term_end_date = ((term_start_date + interval '12 months') - interval '1 day')::date)),
+    CONSTRAINT term_status_valid CHECK ((status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text, 'ended'::text, 'terminated'::text]))),
+    CONSTRAINT term_hourly_rate_nonneg CHECK ((site_hourly_rate_minor >= 0)),
+    CONSTRAINT term_terminated_shape CHECK (
+        ((status = 'terminated') AND (terminated_at IS NOT NULL) AND (termination_reason_code IS NOT NULL) AND (btrim(termination_reason_code) <> ''::text))
+        OR (status <> 'terminated')
+    )
+);
+
+CREATE TABLE term_schedule_change (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    term_id uuid NOT NULL,
+    previous_booking_pattern_id uuid NOT NULL,
+    new_booking_pattern_id uuid NOT NULL,
+    change_kind text NOT NULL,
+    requested_at timestamp with time zone DEFAULT now() NOT NULL,
+    effective_from date NOT NULL,
+    approved_by_membership_id uuid,
+    approval_decision text,
+    rejected_at timestamp with time zone,
+    request_id text NOT NULL,
+    CONSTRAINT term_schedule_change_kind_valid CHECK ((change_kind = ANY (ARRAY['decrease'::text, 'increase'::text]))),
+    CONSTRAINT term_schedule_change_decision_valid CHECK (
+        (approval_decision IS NULL)
+        OR (approval_decision = ANY (ARRAY['approved'::text, 'rejected'::text]))
+    ),
+    CONSTRAINT term_schedule_change_first_of_month CHECK ((effective_from = date_trunc('month', effective_from)::date))
+);
+
+CREATE TABLE invoice_run_advance (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    billing_month date NOT NULL,
+    generated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated_invoice_count integer NOT NULL,
+    skipped_term_count integer NOT NULL,
+    exception_count integer NOT NULL,
+    triggered_by text NOT NULL,
+    request_id text,
+    CONSTRAINT invoice_run_advance_triggered_by_valid CHECK ((triggered_by = ANY (ARRAY['scheduler'::text, 'manager_regenerate'::text]))),
+    CONSTRAINT invoice_run_advance_first_of_month CHECK ((billing_month = date_trunc('month', billing_month)::date)),
+    CONSTRAINT invoice_run_advance_counts_nonneg CHECK (
+        (generated_invoice_count >= 0)
+        AND (skipped_term_count >= 0)
+        AND (exception_count >= 0)
+    )
+);
+
+CREATE TABLE audit_logs (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    actor_user_id uuid,
+    action_type text NOT NULL,
+    action_entity_type text NOT NULL,
+    action_entity_id uuid,
+    reason text,
     details jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    request_id text,
+    actor_membership_id uuid,
+    reason_code lifecycle_reason_code,
+    reason_note text,
+    CONSTRAINT audit_logs_reason_other_note_check CHECK (((reason_code IS DISTINCT FROM 'other'::lifecycle_reason_code) OR ((reason_note IS NOT NULL) AND (btrim(reason_note) <> ''::text)))),
+    CONSTRAINT audit_logs_reason_shape_check CHECK (((reason_code IS NOT NULL) OR (reason_note IS NULL)))
+);
+
+CREATE TABLE parent_membership_children (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    membership_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT invoice_lines_core_amount_nonneg CHECK (((line_kind <> 'core_childcare'::text) OR (line_amount_minor >= 0))),
-    CONSTRAINT invoice_lines_core_billable_nonneg CHECK (((core_billable_minutes IS NULL) OR (core_billable_minutes >= 0))),
-    CONSTRAINT invoice_lines_extra_amount_nonneg CHECK (((line_kind <> 'extra'::text) OR (line_amount_minor >= 0))),
-    CONSTRAINT invoice_lines_funded_allowance_nonneg CHECK (((funded_allowance_minutes IS NULL) OR (funded_allowance_minutes >= 0))),
-    CONSTRAINT invoice_lines_funded_deduction_nonneg CHECK (((funded_deduction_minutes IS NULL) OR (funded_deduction_minutes >= 0))),
-    CONSTRAINT invoice_lines_funded_deduction_nonpos CHECK (((line_kind <> 'funded_deduction'::text) OR (line_amount_minor <= 0))),
-    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text]))),
-    CONSTRAINT invoice_lines_quantity_nonneg CHECK (((quantity_minutes IS NULL) OR (quantity_minutes >= 0))),
-    CONSTRAINT invoice_lines_raw_attended_nonneg CHECK (((raw_attended_minutes IS NULL) OR (raw_attended_minutes >= 0))),
-    CONSTRAINT invoice_lines_rounded_attended_nonneg CHECK (((rounded_attended_minutes IS NULL) OR (rounded_attended_minutes >= 0))),
-    CONSTRAINT invoice_lines_session_count_nonneg CHECK (((session_count IS NULL) OR (session_count >= 0))),
-    CONSTRAINT invoice_lines_unit_amount_nonneg CHECK (((unit_amount_minor IS NULL) OR (unit_amount_minor >= 0)))
+    ended_at timestamp with time zone,
+    ended_reason_code lifecycle_reason_code,
+    ended_reason_note text,
+    CONSTRAINT parent_membership_children_end_reason_check CHECK (
+        (((ended_at IS NULL) AND (ended_reason_code IS NULL) AND (ended_reason_note IS NULL)) OR
+         ((ended_at IS NOT NULL) AND (ended_reason_code IS NOT NULL) AND
+          ((ended_reason_code <> 'other'::lifecycle_reason_code) OR
+           ((ended_reason_note IS NOT NULL) AND (btrim(ended_reason_note) <> ''::text)))))
+    )
 );
 
 CREATE TABLE invoice_number_sequences (
@@ -714,75 +846,38 @@ CREATE TABLE invoices (
     CONSTRAINT invoices_total_due_nonneg CHECK ((total_due_minor >= 0))
 );
 
-CREATE TABLE manager_invites (
+CREATE TABLE invoice_lines (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    email text NOT NULL,
-    email_normalized text NOT NULL,
-    role text NOT NULL,
-    token_hash text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    accepted_at timestamp with time zone,
-    accepted_user_id uuid,
-    accepted_membership_id uuid,
-    revoked_at timestamp with time zone,
-    revoked_by_user_id uuid,
-    revoked_by_membership_id uuid,
-    created_by_user_id uuid NOT NULL,
-    created_by_membership_id uuid NOT NULL,
-    resent_at timestamp with time zone,
-    resent_by_user_id uuid,
-    resent_by_membership_id uuid,
-    send_count integer DEFAULT 1 NOT NULL,
+    invoice_id uuid NOT NULL,
+    line_kind text NOT NULL,
+    description text NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    quantity_minutes integer,
+    unit_amount_minor integer,
+    line_amount_minor integer NOT NULL,
+    raw_attended_minutes integer,
+    rounded_attended_minutes integer,
+    funded_allowance_minutes integer,
+    funded_deduction_minutes integer,
+    core_billable_minutes integer,
+    session_count integer,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT manager_invites_accept_shape_check CHECK ((((accepted_at IS NULL) AND (accepted_user_id IS NULL) AND (accepted_membership_id IS NULL)) OR ((accepted_at IS NOT NULL) AND (accepted_user_id IS NOT NULL) AND (accepted_membership_id IS NOT NULL)))),
-    CONSTRAINT manager_invites_revoke_shape_check CHECK ((((revoked_at IS NULL) AND (revoked_by_user_id IS NULL) AND (revoked_by_membership_id IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by_user_id IS NOT NULL) AND (revoked_by_membership_id IS NOT NULL)))),
-    CONSTRAINT manager_invites_role_check CHECK ((role = ANY (ARRAY['manager'::text, 'practitioner'::text, 'parent'::text]))),
-    CONSTRAINT manager_invites_send_count_check CHECK ((send_count >= 1)),
-    CONSTRAINT manager_invites_terminal_state_check CHECK (((accepted_at IS NULL) OR (revoked_at IS NULL)))
-);
-
-CREATE TABLE memberships (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid,
-    user_id uuid NOT NULL,
-    role text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
-    ended_at timestamp with time zone,
-    CONSTRAINT memberships_active_consistency_check CHECK ((((is_active = true) AND (ended_at IS NULL)) OR ((is_active = false) AND (ended_at IS NOT NULL)))),
-    CONSTRAINT memberships_owner_branch_check CHECK ((((role = 'owner'::text) AND (branch_id IS NULL)) OR ((role = ANY (ARRAY['manager'::text, 'practitioner'::text, 'parent'::text])) AND (branch_id IS NOT NULL)))),
-    CONSTRAINT memberships_role_check CHECK ((role = ANY (ARRAY['owner'::text, 'manager'::text, 'practitioner'::text, 'parent'::text])))
-);
-
-CREATE TABLE parent_membership_guardians (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    membership_id uuid NOT NULL,
-    guardian_id uuid NOT NULL,
-    ended_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    ended_reason_code lifecycle_reason_code,
-    ended_reason_note text,
-    CONSTRAINT parent_membership_guardians_end_reason_check CHECK ((((ended_at IS NULL) AND (ended_reason_code IS NULL) AND (ended_reason_note IS NULL)) OR ((ended_at IS NOT NULL) AND (ended_reason_code IS NOT NULL) AND ((ended_reason_code <> 'other'::lifecycle_reason_code) OR ((ended_reason_note IS NOT NULL) AND (btrim(ended_reason_note) <> ''::text))))))
-);
-
-CREATE TABLE password_reset_tokens (
-    id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    token_hash text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    used_at timestamp with time zone,
-    superseded_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT password_reset_tokens_consumed_shape_check CHECK (((used_at IS NULL) OR (superseded_at IS NULL)))
+    CONSTRAINT invoice_lines_core_amount_nonneg CHECK (((line_kind <> 'core_childcare'::text) OR (line_amount_minor >= 0))),
+    CONSTRAINT invoice_lines_core_billable_nonneg CHECK (((core_billable_minutes IS NULL) OR (core_billable_minutes >= 0))),
+    CONSTRAINT invoice_lines_extra_amount_nonneg CHECK (((line_kind <> 'extra'::text) OR (line_amount_minor >= 0))),
+    CONSTRAINT invoice_lines_funded_allowance_nonneg CHECK (((funded_allowance_minutes IS NULL) OR (funded_allowance_minutes >= 0))),
+    CONSTRAINT invoice_lines_funded_deduction_nonneg CHECK (((funded_deduction_minutes IS NULL) OR (funded_deduction_minutes >= 0))),
+    CONSTRAINT invoice_lines_funded_deduction_nonpos CHECK (((line_kind <> 'funded_deduction'::text) OR (line_amount_minor <= 0))),
+    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text]))),
+    CONSTRAINT invoice_lines_quantity_nonneg CHECK (((quantity_minutes IS NULL) OR (quantity_minutes >= 0))),
+    CONSTRAINT invoice_lines_raw_attended_nonneg CHECK (((raw_attended_minutes IS NULL) OR (raw_attended_minutes >= 0))),
+    CONSTRAINT invoice_lines_rounded_attended_nonneg CHECK (((rounded_attended_minutes IS NULL) OR (rounded_attended_minutes >= 0))),
+    CONSTRAINT invoice_lines_session_count_nonneg CHECK (((session_count IS NULL) OR (session_count >= 0))),
+    CONSTRAINT invoice_lines_unit_amount_nonneg CHECK (((unit_amount_minor IS NULL) OR (unit_amount_minor >= 0)))
 );
 
 CREATE TABLE payment_attempts (
@@ -836,33 +931,6 @@ CREATE TABLE payment_reconciliation_records (
     CONSTRAINT chk_reconciliation_outcome CHECK ((outcome = ANY (ARRAY['paid'::text, 'payment_failed'::text, 'expired'::text, 'ignored'::text, 'rejected'::text])))
 );
 
-CREATE TABLE refresh_tokens (
-    id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    token_hash text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    revoked_at timestamp with time zone,
-    user_agent text,
-    ip_address text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    membership_id uuid NOT NULL,
-    remember_me boolean DEFAULT true NOT NULL
-);
-
-CREATE TABLE rooms (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    name text NOT NULL,
-    description text,
-    age_group text NOT NULL,
-    capacity integer NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
 CREATE TABLE stripe_webhook_events (
     id uuid NOT NULL,
     stripe_event_id text NOT NULL,
@@ -882,37 +950,64 @@ CREATE TABLE stripe_webhook_events (
     CONSTRAINT chk_webhook_events_processing_status CHECK ((processing_status = ANY (ARRAY['received'::text, 'processed'::text, 'ignored'::text, 'rejected'::text])))
 );
 
-CREATE TABLE tenants (
+CREATE TABLE manager_invites (
     id uuid NOT NULL,
-    name text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE TABLE users (
-    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
     email text NOT NULL,
     email_normalized text NOT NULL,
-    password_hash text NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
+    role text NOT NULL,
+    token_hash text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    accepted_at timestamp with time zone,
+    accepted_user_id uuid,
+    accepted_membership_id uuid,
+    revoked_at timestamp with time zone,
+    revoked_by_user_id uuid,
+    revoked_by_membership_id uuid,
+    created_by_user_id uuid NOT NULL,
+    created_by_membership_id uuid NOT NULL,
+    resent_at timestamp with time zone,
+    resent_by_user_id uuid,
+    resent_by_membership_id uuid,
+    send_count integer DEFAULT 1 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT manager_invites_accept_shape_check CHECK ((((accepted_at IS NULL) AND (accepted_user_id IS NULL) AND (accepted_membership_id IS NULL)) OR ((accepted_at IS NOT NULL) AND (accepted_user_id IS NOT NULL) AND (accepted_membership_id IS NOT NULL)))),
+    CONSTRAINT manager_invites_revoke_shape_check CHECK ((((revoked_at IS NULL) AND (revoked_by_user_id IS NULL) AND (revoked_by_membership_id IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by_user_id IS NOT NULL) AND (revoked_by_membership_id IS NOT NULL)))),
+    CONSTRAINT manager_invites_role_check CHECK ((role = ANY (ARRAY['manager'::text, 'practitioner'::text, 'parent'::text]))),
+    CONSTRAINT manager_invites_send_count_check CHECK ((send_count >= 1)),
+    CONSTRAINT manager_invites_terminal_state_check CHECK (((accepted_at IS NULL) OR (revoked_at IS NULL)))
 );
 
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_pkey PRIMARY KEY (id);
+CREATE TABLE refresh_tokens (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    token_hash text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    revoked_at timestamp with time zone,
+    user_agent text,
+    ip_address text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    membership_id uuid NOT NULL,
+    remember_me boolean DEFAULT true NOT NULL
+);
 
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_pkey PRIMARY KEY (id);
+CREATE TABLE password_reset_tokens (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    token_hash text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    used_at timestamp with time zone,
+    superseded_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT password_reset_tokens_consumed_shape_check CHECK (((used_at IS NULL) OR (superseded_at IS NULL)))
+);
 
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_scope_id_unique UNIQUE (tenant_id, branch_id, id);
-
-ALTER TABLE ONLY audit_logs
-    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY tenants
+    ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_pkey PRIMARY KEY (id);
@@ -923,62 +1018,20 @@ ALTER TABLE ONLY branches
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_tenant_id_name_key UNIQUE (tenant_id, name);
 
-ALTER TABLE ONLY child_billing_profiles
-    ADD CONSTRAINT child_billing_profiles_child_id_key UNIQUE (child_id);
+ALTER TABLE ONLY users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY child_billing_profiles
-    ADD CONSTRAINT child_billing_profiles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY users
+    ADD CONSTRAINT users_email_normalized_key UNIQUE (email_normalized);
 
-ALTER TABLE ONLY child_collection_settings
-    ADD CONSTRAINT child_collection_settings_child_id_key UNIQUE (child_id);
+ALTER TABLE ONLY memberships
+    ADD CONSTRAINT memberships_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY child_collection_settings
-    ADD CONSTRAINT child_collection_settings_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY memberships
+    ADD CONSTRAINT memberships_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_contacts
-    ADD CONSTRAINT child_contacts_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_contacts
-    ADD CONSTRAINT child_contacts_type_sort_unique UNIQUE (tenant_id, branch_id, child_id, contact_type, sort_order);
-
-ALTER TABLE ONLY child_funding_records
-    ADD CONSTRAINT child_funding_records_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_funding_records
-    ADD CONSTRAINT child_funding_records_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_health_profiles
-    ADD CONSTRAINT child_health_profiles_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_health_profiles
-    ADD CONSTRAINT child_health_profiles_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_leaving_records
-    ADD CONSTRAINT child_leaving_records_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_leaving_records
-    ADD CONSTRAINT child_leaving_records_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_profiles
-    ADD CONSTRAINT child_profiles_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_profiles
-    ADD CONSTRAINT child_profiles_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_room_assignments
-    ADD CONSTRAINT child_room_assignments_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_safeguarding_profiles
-    ADD CONSTRAINT child_safeguarding_profiles_child_id_key UNIQUE (child_id);
-
-ALTER TABLE ONLY child_safeguarding_profiles
-    ADD CONSTRAINT child_safeguarding_profiles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY rooms
+    ADD CONSTRAINT rooms_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY children
     ADD CONSTRAINT children_pkey PRIMARY KEY (id);
@@ -986,26 +1039,134 @@ ALTER TABLE ONLY children
 ALTER TABLE ONLY children
     ADD CONSTRAINT children_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
+ALTER TABLE ONLY child_profiles
+    ADD CONSTRAINT child_profiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_profiles
+    ADD CONSTRAINT child_profiles_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_contacts
+    ADD CONSTRAINT child_contacts_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_contacts
+    ADD CONSTRAINT child_contacts_type_sort_unique UNIQUE (tenant_id, branch_id, child_id, contact_type, sort_order);
+
+ALTER TABLE ONLY child_health_profiles
+    ADD CONSTRAINT child_health_profiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_health_profiles
+    ADD CONSTRAINT child_health_profiles_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_safeguarding_profiles
+    ADD CONSTRAINT child_safeguarding_profiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_safeguarding_profiles
+    ADD CONSTRAINT child_safeguarding_profiles_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_funding_records
+    ADD CONSTRAINT child_funding_records_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_funding_records
+    ADD CONSTRAINT child_funding_records_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_billing_profiles
+    ADD CONSTRAINT child_billing_profiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_billing_profiles
+    ADD CONSTRAINT child_billing_profiles_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_collection_settings
+    ADD CONSTRAINT child_collection_settings_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_collection_settings
+    ADD CONSTRAINT child_collection_settings_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY child_room_assignments
+    ADD CONSTRAINT child_room_assignments_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_leaving_records
+    ADD CONSTRAINT child_leaving_records_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_leaving_records
+    ADD CONSTRAINT child_leaving_records_child_id_key UNIQUE (child_id);
+
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY funding_profiles
     ADD CONSTRAINT funding_profiles_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY funding_profiles
     ADD CONSTRAINT funding_profiles_scope_child_month_unique UNIQUE (tenant_id, branch_id, child_id, billing_month);
 
-ALTER TABLE ONLY guardian_child_links
-    ADD CONSTRAINT guardian_child_links_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY session_types
+    ADD CONSTRAINT session_types_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY guardians
-    ADD CONSTRAINT guardians_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY session_types
+    ADD CONSTRAINT session_types_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY guardians
-    ADD CONSTRAINT guardians_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+ALTER TABLE ONLY child_booking_patterns
+    ADD CONSTRAINT child_booking_patterns_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY invoice_lines
-    ADD CONSTRAINT invoice_lines_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY child_booking_patterns
+    ADD CONSTRAINT child_booking_patterns_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY invoice_lines
-    ADD CONSTRAINT invoice_lines_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+ALTER TABLE ONLY child_booking_pattern_entries
+    ADD CONSTRAINT child_booking_pattern_entries_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY child_booking_pattern_entries
+    ADD CONSTRAINT child_booking_pattern_entries_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY session_templates
+    ADD CONSTRAINT session_templates_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY session_templates
+    ADD CONSTRAINT session_templates_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY session_template_entries
+    ADD CONSTRAINT session_template_entries_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY session_template_entries
+    ADD CONSTRAINT session_template_entries_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term_schedule_change
+    ADD CONSTRAINT term_schedule_change_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY term_schedule_change
+    ADD CONSTRAINT term_schedule_change_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY invoice_run_advance
+    ADD CONSTRAINT invoice_run_advance_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY invoice_run_advance
+    ADD CONSTRAINT invoice_run_advance_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY audit_logs
+    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY parent_membership_children
+    ADD CONSTRAINT parent_membership_children_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY invoice_number_sequences
     ADD CONSTRAINT invoice_number_sequences_pkey PRIMARY KEY (tenant_id, branch_id, billing_year, billing_month);
@@ -1022,41 +1183,20 @@ ALTER TABLE ONLY invoices
 ALTER TABLE ONLY invoices
     ADD CONSTRAINT invoices_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY invoice_lines
+    ADD CONSTRAINT invoice_lines_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_token_hash_key UNIQUE (token_hash);
-
-ALTER TABLE ONLY memberships
-    ADD CONSTRAINT memberships_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY memberships
-    ADD CONSTRAINT memberships_scope_id_unique UNIQUE (tenant_id, branch_id, id);
-
-ALTER TABLE ONLY parent_membership_guardians
-    ADD CONSTRAINT parent_membership_guardians_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY password_reset_tokens
-    ADD CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY password_reset_tokens
-    ADD CONSTRAINT password_reset_tokens_token_hash_key UNIQUE (token_hash);
+ALTER TABLE ONLY invoice_lines
+    ADD CONSTRAINT invoice_lines_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
 ALTER TABLE ONLY payment_attempts
     ADD CONSTRAINT payment_attempts_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY payment_attempts
+    ADD CONSTRAINT uq_payment_attempts_scoped_id UNIQUE (tenant_id, branch_id, id);
+
 ALTER TABLE ONLY payment_reconciliation_records
     ADD CONSTRAINT payment_reconciliation_records_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY refresh_tokens
-    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY refresh_tokens
-    ADD CONSTRAINT refresh_tokens_token_hash_key UNIQUE (token_hash);
-
-ALTER TABLE ONLY rooms
-    ADD CONSTRAINT rooms_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY stripe_webhook_events
     ADD CONSTRAINT stripe_webhook_events_pkey PRIMARY KEY (id);
@@ -1064,17 +1204,23 @@ ALTER TABLE ONLY stripe_webhook_events
 ALTER TABLE ONLY stripe_webhook_events
     ADD CONSTRAINT stripe_webhook_events_stripe_event_id_key UNIQUE (stripe_event_id);
 
-ALTER TABLE ONLY tenants
-    ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY manager_invites
+    ADD CONSTRAINT manager_invites_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY payment_attempts
-    ADD CONSTRAINT uq_payment_attempts_scoped_id UNIQUE (tenant_id, branch_id, id);
+ALTER TABLE ONLY manager_invites
+    ADD CONSTRAINT manager_invites_token_hash_key UNIQUE (token_hash);
 
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_email_normalized_key UNIQUE (email_normalized);
+ALTER TABLE ONLY refresh_tokens
+    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY refresh_tokens
+    ADD CONSTRAINT refresh_tokens_token_hash_key UNIQUE (token_hash);
+
+ALTER TABLE ONLY password_reset_tokens
+    ADD CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY password_reset_tokens
+    ADD CONSTRAINT password_reset_tokens_token_hash_key UNIQUE (token_hash);
 
 CREATE UNIQUE INDEX attendance_events_scope_id_unique ON attendance_events USING btree (tenant_id, branch_id, id);
 
@@ -1138,16 +1284,6 @@ CREATE INDEX idx_funding_profiles_child_month ON funding_profiles USING btree (t
 
 CREATE INDEX idx_funding_profiles_scope_month ON funding_profiles USING btree (tenant_id, branch_id, billing_month);
 
-CREATE UNIQUE INDEX idx_guardian_child_links_active_pair ON guardian_child_links USING btree (tenant_id, branch_id, guardian_id, child_id) WHERE (ended_at IS NULL);
-
-CREATE INDEX idx_guardian_child_links_child_active ON guardian_child_links USING btree (child_id) WHERE (ended_at IS NULL);
-
-CREATE INDEX idx_guardian_child_links_guardian_active ON guardian_child_links USING btree (guardian_id) WHERE (ended_at IS NULL);
-
-CREATE INDEX idx_guardians_active ON guardians USING btree (tenant_id, branch_id, is_active);
-
-CREATE INDEX idx_guardians_scope ON guardians USING btree (tenant_id, branch_id);
-
 CREATE INDEX idx_invoice_lines_invoice_order ON invoice_lines USING btree (tenant_id, branch_id, invoice_id, sort_order);
 
 CREATE INDEX idx_invoice_runs_billing_scope ON invoice_runs USING btree (tenant_id, branch_id, billing_month, run_type, started_at DESC);
@@ -1190,12 +1326,6 @@ CREATE INDEX idx_memberships_user_active ON memberships USING btree (user_id, is
 
 CREATE INDEX idx_memberships_user_id ON memberships USING btree (user_id);
 
-CREATE UNIQUE INDEX idx_parent_membership_guardians_active_membership ON parent_membership_guardians USING btree (membership_id) WHERE (ended_at IS NULL);
-
-CREATE UNIQUE INDEX idx_parent_membership_guardians_active_pair ON parent_membership_guardians USING btree (membership_id, guardian_id) WHERE (ended_at IS NULL);
-
-CREATE INDEX idx_parent_membership_guardians_guardian_active ON parent_membership_guardians USING btree (guardian_id) WHERE (ended_at IS NULL);
-
 CREATE INDEX idx_password_reset_tokens_active_user ON password_reset_tokens USING btree (user_id, created_at DESC) WHERE ((used_at IS NULL) AND (superseded_at IS NULL));
 
 CREATE INDEX idx_password_reset_tokens_expires_at ON password_reset_tokens USING btree (expires_at);
@@ -1232,11 +1362,74 @@ CREATE UNIQUE INDEX uq_payment_attempts_stripe_session_id ON payment_attempts US
 
 CREATE UNIQUE INDEX uq_reconciliation_stripe_event_id ON payment_reconciliation_records USING btree (stripe_event_id);
 
-CREATE TRIGGER memberships_role_guardian_mapping_check BEFORE UPDATE OF role ON memberships FOR EACH ROW EXECUTE FUNCTION prevent_non_parent_with_active_guardian_mapping();
+CREATE UNIQUE INDEX session_types_active_name_unique ON session_types USING btree (tenant_id, branch_id, name) WHERE (is_active = true);
 
-CREATE TRIGGER parent_membership_guardians_active_entity_check BEFORE INSERT OR UPDATE OF membership_id, guardian_id, ended_at ON parent_membership_guardians FOR EACH ROW EXECUTE FUNCTION enforce_parent_mapping_active_entities();
+CREATE INDEX session_types_active_by_branch ON session_types USING btree (tenant_id, branch_id) WHERE (is_active = true);
 
-CREATE TRIGGER parent_membership_guardians_role_check BEFORE INSERT OR UPDATE ON parent_membership_guardians FOR EACH ROW EXECUTE FUNCTION enforce_parent_membership_guardian_role();
+CREATE INDEX session_types_branch_id ON session_types USING btree (branch_id);
+
+CREATE INDEX session_types_tenant_id ON session_types USING btree (tenant_id);
+
+CREATE UNIQUE INDEX child_booking_patterns_one_open_per_child ON child_booking_patterns USING btree (tenant_id, branch_id, child_id) WHERE is_current;
+
+CREATE INDEX child_booking_patterns_by_child ON child_booking_patterns USING btree (tenant_id, branch_id, child_id, effective_from DESC);
+
+CREATE INDEX child_booking_patterns_branch_id ON child_booking_patterns USING btree (branch_id);
+
+CREATE INDEX child_booking_patterns_tenant_id ON child_booking_patterns USING btree (tenant_id);
+
+CREATE UNIQUE INDEX child_booking_pattern_entries_unique_day_session ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week, session_type_id);
+
+CREATE INDEX child_booking_pattern_entries_by_pattern ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week);
+
+CREATE INDEX child_booking_pattern_entries_branch_id ON child_booking_pattern_entries USING btree (branch_id);
+
+CREATE INDEX child_booking_pattern_entries_tenant_id ON child_booking_pattern_entries USING btree (tenant_id);
+
+CREATE UNIQUE INDEX session_templates_active_name_unique
+    ON session_templates USING btree (tenant_id, branch_id, name)
+    WHERE (is_active = true);
+
+CREATE INDEX session_templates_active_by_branch
+    ON session_templates USING btree (tenant_id, branch_id)
+    WHERE (is_active = true);
+
+CREATE UNIQUE INDEX session_template_entries_unique_day_session
+    ON session_template_entries USING btree (tenant_id, branch_id, template_id, day_of_week, session_type_id);
+
+CREATE INDEX session_template_entries_by_template
+    ON session_template_entries USING btree (tenant_id, branch_id, template_id, day_of_week);
+
+CREATE UNIQUE INDEX term_one_active_per_child ON term USING btree (tenant_id, branch_id, child_id)
+    WHERE (status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text]));
+
+CREATE INDEX term_by_child ON term USING btree (tenant_id, branch_id, child_id, term_start_date DESC);
+
+CREATE INDEX term_active_by_branch ON term USING btree (tenant_id, branch_id)
+    WHERE (status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text]));
+
+CREATE INDEX term_ending_soon ON term USING btree (tenant_id, branch_id, term_end_date)
+    WHERE (status = ANY (ARRAY['active'::text, 'pending_renewal'::text]));
+
+CREATE INDEX term_branch_id ON term USING btree (branch_id);
+
+CREATE INDEX term_tenant_id ON term USING btree (tenant_id);
+
+CREATE UNIQUE INDEX invoice_run_advance_one_per_month ON invoice_run_advance USING btree (tenant_id, branch_id, billing_month);
+
+CREATE INDEX invoice_run_advance_branch_id ON invoice_run_advance USING btree (branch_id);
+
+CREATE INDEX invoice_run_advance_tenant_id ON invoice_run_advance USING btree (tenant_id);
+
+CREATE UNIQUE INDEX idx_parent_membership_children_active_pair
+    ON parent_membership_children USING btree (tenant_id, branch_id, membership_id, child_id)
+    WHERE (ended_at IS NULL);
+
+CREATE INDEX idx_parent_membership_children_child_active
+    ON parent_membership_children USING btree (child_id) WHERE (ended_at IS NULL);
+
+CREATE INDEX idx_parent_membership_children_membership_active
+    ON parent_membership_children USING btree (membership_id) WHERE (ended_at IS NULL);
 
 CREATE TRIGGER trg_invoice_immutability BEFORE UPDATE ON invoices FOR EACH ROW EXECUTE FUNCTION protect_issued_invoice_immutability();
 
@@ -1244,65 +1437,83 @@ CREATE TRIGGER trg_invoice_lines_immutability BEFORE INSERT OR DELETE OR UPDATE 
 
 CREATE TRIGGER trg_invoice_status_transition BEFORE UPDATE OF status ON invoices FOR EACH ROW EXECUTE FUNCTION enforce_invoice_status_transition();
 
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+CREATE TRIGGER parent_membership_children_role_check
+    BEFORE INSERT OR UPDATE ON parent_membership_children
+    FOR EACH ROW EXECUTE FUNCTION enforce_parent_membership_child_role();
 
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+CREATE TRIGGER parent_membership_children_scope_check
+    BEFORE INSERT OR UPDATE OF membership_id, child_id, ended_at ON parent_membership_children
+    FOR EACH ROW EXECUTE FUNCTION enforce_parent_membership_child_scope();
 
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_cleared_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, cleared_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_marked_by_user_id_fkey FOREIGN KEY (marked_by_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY absence_markers
-    ADD CONSTRAINT absence_markers_marked_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, marked_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, recorded_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_recorded_by_user_id_fkey FOREIGN KEY (recorded_by_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY attendance_events
-    ADD CONSTRAINT attendance_events_session_scope_fkey FOREIGN KEY (tenant_id, branch_id, session_id) REFERENCES attendance_sessions(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_check_in_event_fkey FOREIGN KEY (tenant_id, branch_id, check_in_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_check_out_event_fkey FOREIGN KEY (tenant_id, branch_id, check_out_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY attendance_sessions
-    ADD CONSTRAINT attendance_sessions_corrected_by_event_fkey FOREIGN KEY (tenant_id, branch_id, corrected_by_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY audit_logs
-    ADD CONSTRAINT audit_logs_actor_membership_fkey FOREIGN KEY (actor_membership_id) REFERENCES memberships(id);
-
-ALTER TABLE ONLY audit_logs
-    ADD CONSTRAINT audit_logs_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY audit_logs
-    ADD CONSTRAINT audit_logs_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
-
-ALTER TABLE ONLY audit_logs
-    ADD CONSTRAINT audit_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+CREATE TRIGGER memberships_end_cascade_children
+    AFTER UPDATE OF ended_at ON memberships
+    FOR EACH ROW EXECUTE FUNCTION cascade_parent_membership_child_end();
 
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY memberships
+    ADD CONSTRAINT memberships_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY memberships
+    ADD CONSTRAINT memberships_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
+
+ALTER TABLE ONLY memberships
+    ADD CONSTRAINT memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY rooms
+    ADD CONSTRAINT rooms_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY rooms
+    ADD CONSTRAINT rooms_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
+
+ALTER TABLE ONLY children
+    ADD CONSTRAINT children_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY children
+    ADD CONSTRAINT children_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY children
+    ADD CONSTRAINT children_current_term_fkey FOREIGN KEY (tenant_id, branch_id, current_term_id) REFERENCES term(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_profiles
+    ADD CONSTRAINT child_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY child_profiles
+    ADD CONSTRAINT child_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_contacts
+    ADD CONSTRAINT child_contacts_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_health_profiles
+    ADD CONSTRAINT child_health_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY child_health_profiles
+    ADD CONSTRAINT child_health_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_safeguarding_profiles
+    ADD CONSTRAINT child_safeguarding_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY child_safeguarding_profiles
+    ADD CONSTRAINT child_safeguarding_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_entered_by_membership_id_fkey FOREIGN KEY (entered_by_membership_id) REFERENCES memberships(id);
+
+ALTER TABLE ONLY child_consent_records
+    ADD CONSTRAINT child_consent_records_entered_by_user_id_fkey FOREIGN KEY (entered_by_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY child_funding_records
+    ADD CONSTRAINT child_funding_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY child_funding_records
+    ADD CONSTRAINT child_funding_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY child_billing_profiles
     ADD CONSTRAINT child_billing_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
@@ -1322,45 +1533,6 @@ ALTER TABLE ONLY child_collection_settings
 ALTER TABLE ONLY child_collection_settings
     ADD CONSTRAINT child_collection_settings_collection_password_updated_by_u_fkey FOREIGN KEY (collection_password_updated_by_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_entered_by_membership_id_fkey FOREIGN KEY (entered_by_membership_id) REFERENCES memberships(id);
-
-ALTER TABLE ONLY child_consent_records
-    ADD CONSTRAINT child_consent_records_entered_by_user_id_fkey FOREIGN KEY (entered_by_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY child_contacts
-    ADD CONSTRAINT child_contacts_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_funding_records
-    ADD CONSTRAINT child_funding_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_funding_records
-    ADD CONSTRAINT child_funding_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_health_profiles
-    ADD CONSTRAINT child_health_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_health_profiles
-    ADD CONSTRAINT child_health_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_leaving_records
-    ADD CONSTRAINT child_leaving_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_leaving_records
-    ADD CONSTRAINT child_leaving_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_profiles
-    ADD CONSTRAINT child_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_profiles
-    ADD CONSTRAINT child_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
 ALTER TABLE ONLY child_room_assignments
     ADD CONSTRAINT child_room_assignments_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
@@ -1370,38 +1542,56 @@ ALTER TABLE ONLY child_room_assignments
 ALTER TABLE ONLY child_room_assignments
     ADD CONSTRAINT child_room_assignments_room_id_fkey FOREIGN KEY (room_id) REFERENCES rooms(id);
 
-ALTER TABLE ONLY child_safeguarding_profiles
-    ADD CONSTRAINT child_safeguarding_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY child_leaving_records
+    ADD CONSTRAINT child_leaving_records_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
-ALTER TABLE ONLY child_safeguarding_profiles
-    ADD CONSTRAINT child_safeguarding_profiles_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+ALTER TABLE ONLY child_leaving_records
+    ADD CONSTRAINT child_leaving_records_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY children
-    ADD CONSTRAINT children_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
-ALTER TABLE ONLY children
-    ADD CONSTRAINT children_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_attempts
-    ADD CONSTRAINT fk_payment_attempts_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_check_in_event_fkey FOREIGN KEY (tenant_id, branch_id, check_in_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_attempts
-    ADD CONSTRAINT fk_payment_attempts_invoice FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_check_out_event_fkey FOREIGN KEY (tenant_id, branch_id, check_out_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_attempts
-    ADD CONSTRAINT fk_payment_attempts_membership FOREIGN KEY (tenant_id, branch_id, initiated_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+ALTER TABLE ONLY attendance_sessions
+    ADD CONSTRAINT attendance_sessions_corrected_by_event_fkey FOREIGN KEY (tenant_id, branch_id, corrected_by_event_id) REFERENCES attendance_events(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_reconciliation_records
-    ADD CONSTRAINT fk_reconciliation_attempt FOREIGN KEY (tenant_id, branch_id, payment_attempt_id) REFERENCES payment_attempts(tenant_id, branch_id, id);
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
-ALTER TABLE ONLY payment_reconciliation_records
-    ADD CONSTRAINT fk_reconciliation_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_reconciliation_records
-    ADD CONSTRAINT fk_reconciliation_invoice FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_session_scope_fkey FOREIGN KEY (tenant_id, branch_id, session_id) REFERENCES attendance_sessions(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY payment_reconciliation_records
-    ADD CONSTRAINT fk_reconciliation_webhook_event FOREIGN KEY (stripe_webhook_event_id) REFERENCES stripe_webhook_events(id);
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_recorded_by_user_id_fkey FOREIGN KEY (recorded_by_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY attendance_events
+    ADD CONSTRAINT attendance_events_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, recorded_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_marked_by_user_id_fkey FOREIGN KEY (marked_by_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_marked_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, marked_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY absence_markers
+    ADD CONSTRAINT absence_markers_cleared_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, cleared_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY funding_profiles
     ADD CONSTRAINT funding_profiles_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
@@ -1409,26 +1599,92 @@ ALTER TABLE ONLY funding_profiles
 ALTER TABLE ONLY funding_profiles
     ADD CONSTRAINT funding_profiles_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY guardian_child_links
-    ADD CONSTRAINT guardian_child_links_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY session_types
+    ADD CONSTRAINT session_types_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
-ALTER TABLE ONLY guardian_child_links
-    ADD CONSTRAINT guardian_child_links_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+ALTER TABLE ONLY session_types
+    ADD CONSTRAINT session_types_branch_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
 
-ALTER TABLE ONLY guardian_child_links
-    ADD CONSTRAINT guardian_child_links_guardian_scope_fkey FOREIGN KEY (tenant_id, branch_id, guardian_id) REFERENCES guardians(tenant_id, branch_id, id);
+ALTER TABLE ONLY child_booking_patterns
+    ADD CONSTRAINT child_booking_patterns_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
-ALTER TABLE ONLY guardians
-    ADD CONSTRAINT guardians_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY child_booking_patterns
+    ADD CONSTRAINT child_booking_patterns_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
-ALTER TABLE ONLY guardians
-    ADD CONSTRAINT guardians_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+ALTER TABLE ONLY child_booking_patterns
+    ADD CONSTRAINT child_booking_patterns_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY invoice_lines
-    ADD CONSTRAINT invoice_lines_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY child_booking_pattern_entries
+    ADD CONSTRAINT child_booking_pattern_entries_pattern_fkey FOREIGN KEY (tenant_id, branch_id, pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY invoice_lines
-    ADD CONSTRAINT invoice_lines_invoice_scope_fkey FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+ALTER TABLE ONLY child_booking_pattern_entries
+    ADD CONSTRAINT child_booking_pattern_entries_session_type_fkey FOREIGN KEY (tenant_id, branch_id, session_type_id) REFERENCES session_types(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY session_templates
+    ADD CONSTRAINT session_templates_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY session_templates
+    ADD CONSTRAINT session_templates_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY session_template_entries
+    ADD CONSTRAINT session_template_entries_template_fkey FOREIGN KEY (tenant_id, branch_id, template_id) REFERENCES session_templates(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY session_template_entries
+    ADD CONSTRAINT session_template_entries_session_type_fkey FOREIGN KEY (tenant_id, branch_id, session_type_id) REFERENCES session_types(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_booking_pattern_fkey FOREIGN KEY (tenant_id, branch_id, booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term
+    ADD CONSTRAINT term_created_by_membership_fkey FOREIGN KEY (tenant_id, branch_id, created_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term_schedule_change
+    ADD CONSTRAINT term_schedule_change_term_fkey FOREIGN KEY (tenant_id, branch_id, term_id) REFERENCES term(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term_schedule_change
+    ADD CONSTRAINT term_schedule_change_previous_pattern_fkey FOREIGN KEY (tenant_id, branch_id, previous_booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY term_schedule_change
+    ADD CONSTRAINT term_schedule_change_new_pattern_fkey FOREIGN KEY (tenant_id, branch_id, new_booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY invoice_run_advance
+    ADD CONSTRAINT invoice_run_advance_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY invoice_run_advance
+    ADD CONSTRAINT invoice_run_advance_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY audit_logs
+    ADD CONSTRAINT audit_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY audit_logs
+    ADD CONSTRAINT audit_logs_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
+
+ALTER TABLE ONLY audit_logs
+    ADD CONSTRAINT audit_logs_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY audit_logs
+    ADD CONSTRAINT audit_logs_actor_membership_fkey FOREIGN KEY (actor_membership_id) REFERENCES memberships(id);
+
+ALTER TABLE ONLY parent_membership_children
+    ADD CONSTRAINT parent_membership_children_branch_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY parent_membership_children
+    ADD CONSTRAINT parent_membership_children_membership_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id, membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY parent_membership_children
+    ADD CONSTRAINT parent_membership_children_child_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY invoice_number_sequences
     ADD CONSTRAINT invoice_number_sequences_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
@@ -1437,13 +1693,10 @@ ALTER TABLE ONLY invoice_runs
     ADD CONSTRAINT invoice_runs_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
 ALTER TABLE ONLY invoice_runs
-    ADD CONSTRAINT invoice_runs_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, requested_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY invoice_runs
     ADD CONSTRAINT invoice_runs_requested_by_user_id_fkey FOREIGN KEY (requested_by_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY invoices
-    ADD CONSTRAINT invoices_adjusts_invoice_scope_fkey FOREIGN KEY (tenant_id, branch_id, adjusts_invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+ALTER TABLE ONLY invoice_runs
+    ADD CONSTRAINT invoice_runs_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, requested_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY invoices
     ADD CONSTRAINT invoices_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
@@ -1455,73 +1708,79 @@ ALTER TABLE ONLY invoices
     ADD CONSTRAINT invoices_generated_run_scope_fkey FOREIGN KEY (tenant_id, branch_id, generated_run_id) REFERENCES invoice_runs(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY invoices
-    ADD CONSTRAINT invoices_issued_by_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, issued_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+    ADD CONSTRAINT invoices_issued_run_scope_fkey FOREIGN KEY (tenant_id, branch_id, issued_run_id) REFERENCES invoice_runs(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY invoices
+    ADD CONSTRAINT invoices_adjusts_invoice_scope_fkey FOREIGN KEY (tenant_id, branch_id, adjusts_invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY invoices
     ADD CONSTRAINT invoices_issued_by_user_id_fkey FOREIGN KEY (issued_by_user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY invoices
-    ADD CONSTRAINT invoices_issued_run_scope_fkey FOREIGN KEY (tenant_id, branch_id, issued_run_id) REFERENCES invoice_runs(tenant_id, branch_id, id);
+    ADD CONSTRAINT invoices_issued_by_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, issued_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_accepted_membership_id_fkey FOREIGN KEY (accepted_membership_id) REFERENCES memberships(id);
+ALTER TABLE ONLY invoice_lines
+    ADD CONSTRAINT invoice_lines_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
-ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_accepted_user_id_fkey FOREIGN KEY (accepted_user_id) REFERENCES users(id);
+ALTER TABLE ONLY invoice_lines
+    ADD CONSTRAINT invoice_lines_invoice_scope_fkey FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY payment_attempts
+    ADD CONSTRAINT fk_payment_attempts_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY payment_attempts
+    ADD CONSTRAINT fk_payment_attempts_invoice FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY payment_attempts
+    ADD CONSTRAINT fk_payment_attempts_membership FOREIGN KEY (tenant_id, branch_id, initiated_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY payment_attempts
+    ADD CONSTRAINT payment_attempts_initiated_by_user_id_fkey FOREIGN KEY (initiated_by_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY payment_reconciliation_records
+    ADD CONSTRAINT fk_reconciliation_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+
+ALTER TABLE ONLY payment_reconciliation_records
+    ADD CONSTRAINT fk_reconciliation_invoice FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY payment_reconciliation_records
+    ADD CONSTRAINT fk_reconciliation_attempt FOREIGN KEY (tenant_id, branch_id, payment_attempt_id) REFERENCES payment_attempts(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY payment_reconciliation_records
+    ADD CONSTRAINT fk_reconciliation_webhook_event FOREIGN KEY (stripe_webhook_event_id) REFERENCES stripe_webhook_events(id);
 
 ALTER TABLE ONLY manager_invites
     ADD CONSTRAINT manager_invites_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
 
 ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_created_by_membership_id_fkey FOREIGN KEY (created_by_membership_id) REFERENCES memberships(id);
+    ADD CONSTRAINT manager_invites_accepted_user_id_fkey FOREIGN KEY (accepted_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY manager_invites
+    ADD CONSTRAINT manager_invites_accepted_membership_id_fkey FOREIGN KEY (accepted_membership_id) REFERENCES memberships(id);
 
 ALTER TABLE ONLY manager_invites
     ADD CONSTRAINT manager_invites_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_resent_by_membership_id_fkey FOREIGN KEY (resent_by_membership_id) REFERENCES memberships(id);
+    ADD CONSTRAINT manager_invites_created_by_membership_id_fkey FOREIGN KEY (created_by_membership_id) REFERENCES memberships(id);
 
 ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_resent_by_user_id_fkey FOREIGN KEY (resent_by_user_id) REFERENCES users(id);
+    ADD CONSTRAINT manager_invites_revoked_by_user_id_fkey FOREIGN KEY (revoked_by_user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY manager_invites
     ADD CONSTRAINT manager_invites_revoked_by_membership_id_fkey FOREIGN KEY (revoked_by_membership_id) REFERENCES memberships(id);
 
 ALTER TABLE ONLY manager_invites
-    ADD CONSTRAINT manager_invites_revoked_by_user_id_fkey FOREIGN KEY (revoked_by_user_id) REFERENCES users(id);
+    ADD CONSTRAINT manager_invites_resent_by_user_id_fkey FOREIGN KEY (resent_by_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY memberships
-    ADD CONSTRAINT memberships_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
-
-ALTER TABLE ONLY memberships
-    ADD CONSTRAINT memberships_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
-
-ALTER TABLE ONLY memberships
-    ADD CONSTRAINT memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY parent_membership_guardians
-    ADD CONSTRAINT parent_membership_guardians_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY parent_membership_guardians
-    ADD CONSTRAINT parent_membership_guardians_guardian_scope_fkey FOREIGN KEY (tenant_id, branch_id, guardian_id) REFERENCES guardians(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY parent_membership_guardians
-    ADD CONSTRAINT parent_membership_guardians_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, membership_id) REFERENCES memberships(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY password_reset_tokens
-    ADD CONSTRAINT password_reset_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY payment_attempts
-    ADD CONSTRAINT payment_attempts_initiated_by_user_id_fkey FOREIGN KEY (initiated_by_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY refresh_tokens
-    ADD CONSTRAINT refresh_tokens_membership_id_fkey FOREIGN KEY (membership_id) REFERENCES memberships(id);
+ALTER TABLE ONLY manager_invites
+    ADD CONSTRAINT manager_invites_resent_by_membership_id_fkey FOREIGN KEY (resent_by_membership_id) REFERENCES memberships(id);
 
 ALTER TABLE ONLY refresh_tokens
     ADD CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY rooms
-    ADD CONSTRAINT rooms_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
+ALTER TABLE ONLY refresh_tokens
+    ADD CONSTRAINT refresh_tokens_membership_id_fkey FOREIGN KEY (membership_id) REFERENCES memberships(id);
 
-ALTER TABLE ONLY rooms
-    ADD CONSTRAINT rooms_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+ALTER TABLE ONLY password_reset_tokens
+    ADD CONSTRAINT password_reset_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
