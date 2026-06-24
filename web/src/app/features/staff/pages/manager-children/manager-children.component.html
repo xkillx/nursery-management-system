@@ -95,28 +95,7 @@
     </section>
   }
 
-  <app-drawer
-    [isOpen]="showForm"
-    position="right"
-    size="lg"
-    title="Edit Child Record"
-    ariaLabel="Edit child record"
-    (close)="closeForm()"
-  >
-    <app-child-form
-      mode="edit"
-      [selectedChild]="selectedChild"
-      [submitting]="isSaving"
-      [fieldErrors]="fieldErrors"
-      [serverError]="errorMessage"
-      [roomOptions]="roomOptions"
-      [primaryRoomRequired]="false"
-      (saved)="save($event)"
-      (cancelled)="closeForm()"
-    />
-  </app-drawer>
-
-  @if (errorMessage && !showForm) {
+  @if (errorMessage) {
     <app-alert variant="error" [message]="errorMessage"></app-alert>
   }
 

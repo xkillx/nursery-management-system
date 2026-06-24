@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { ManagerChildrenComponent } from './manager-children.component';
 
@@ -135,5 +135,12 @@ last_name: 'Hopper',
 
     expect(component.children[0].hasBookingPattern).toBe(false);
     expect(component.children[1].hasBookingPattern).toBe(true);
+  });
+
+  it('navigates to the edit stepper route when openEdit is called', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo();
+    component.openEdit({ ...childApi } as any);
+    expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'child-1', 'edit']);
   });
 });

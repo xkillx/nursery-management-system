@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCheckCircle,
@@ -15,15 +15,13 @@ import {
   heroPencilSquare,
 } from '@ng-icons/heroicons/outline';
 import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
-import { ChildFormComponent } from '../../components/child-form/child-form.component';
 import { StaffApiService } from '../../data/staff-api.service';
-import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ChildRecord, ChildWritePayload, StatusFilter } from '../../models/children.models';
+import { ChildRecord, StatusFilter } from '../../models/children.models';
 import { missingRequirementLabel, statusFilterLabel } from '../../utils/manager-list-formatters';
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -31,7 +29,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
-import { DrawerComponent } from '../../../../shared/components/ui/modal/drawer.component';
 import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -44,13 +41,11 @@ type SortDirection = 'asc' | 'desc';
     CommonModule,
     RouterLink,
     SelectComponent,
-    ChildFormComponent,
     AlertComponent,
     StatusBadgeComponent,
     EmptyStateComponent,
     LoadingStateComponent,
     AvatarTextComponent,
-    DrawerComponent,
     TablePaginationComponent,
     NgIcon,
   ],
@@ -72,8 +67,8 @@ type SortDirection = 'asc' | 'desc';
 })
 export class ManagerChildrenComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
-  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly toast = inject(ToastService);
   private readonly searchSubject = new Subject<string>();
@@ -87,8 +82,6 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
   }
   readonly requirementLabel = missingRequirementLabel;
 
-  roomOptions: Option[] = [];
-
   children: ChildRecord[] = [];
   totalCount = 0;
   status: StatusFilter = 'active';
@@ -97,16 +90,11 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
   offset = 0;
   isLoading = false;
   isLoadingCards = true;
-  isSaving = false;
 
   sortColumn: SortColumn | null = null;
   sortDirection: SortDirection = 'asc';
 
-  selectedChild: ChildRecord | null = null;
-  showForm = false;
-
   errorMessage: string | null = null;
-  fieldErrors: Record<string, string> = {};
 
   get isSearchActive(): boolean {
     return this.searchTerm.trim().length > 0;
@@ -154,32 +142,20 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
     });
 
     this.loadChildren();
-    this.loadRoomOptions();
+
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      takeUntil(this.destroy$),
+    ).subscribe((event) => {
+      if (event.urlAfterRedirects.split('?')[0] === '/manager/children') {
+        this.loadChildren();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  private loadRoomOptions(): void {
-    const branchId = this.auth.activeMembership()?.branch_id;
-    if (!branchId) {
-      this.roomOptions = [];
-      return;
-    }
-    this.roomsApi
-      .listRooms(branchId, { includeArchived: false })
-      .subscribe({
-        next: (rooms) => {
-          this.roomOptions = rooms
-            .filter((room) => room.isActive)
-            .map((room) => ({ value: room.id, label: room.name }));
-        },
-        error: () => {
-          this.roomOptions = [];
-        },
-      });
   }
 
   loadChildren(): void {
@@ -266,38 +242,7 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
   }
 
   openEdit(child: ChildRecord): void {
-    this.selectedChild = child;
-    this.fieldErrors = {};
-    this.errorMessage = null;
-    this.showForm = true;
-  }
-
-  closeForm(): void {
-    this.showForm = false;
-    this.selectedChild = null;
-    this.fieldErrors = {};
-    this.errorMessage = null;
-  }
-
-  save(payload: ChildWritePayload): void {
-    this.isSaving = true;
-    this.fieldErrors = {};
-    this.errorMessage = null;
-
-    this.staffApi.updateChild(this.selectedChild!.id, payload).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.closeForm();
-        this.toast.success('Child record updated successfully');
-        this.loadChildren();
-      },
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
-      },
-    });
+    this.router.navigate(['/manager/children', child.id, 'edit']);
   }
 
   formatMissingRequirements(child: ChildRecord): string {

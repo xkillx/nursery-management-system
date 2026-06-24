@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import {
@@ -12,6 +12,7 @@ import {
   heroCamera,
   heroChartBarSquare,
   heroCheck,
+  heroChevronLeft,
   heroClipboardDocument,
   heroClipboardDocumentCheck,
   heroClipboardDocumentList,
@@ -299,6 +300,7 @@ type RegistrationDraft = {
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     NgIcon,
     AlertComponent,
     ButtonComponent,
@@ -322,6 +324,7 @@ type RegistrationDraft = {
       heroCamera,
       heroChartBarSquare,
       heroCheck,
+      heroChevronLeft,
       heroClipboardDocument,
       heroClipboardDocumentCheck,
       heroClipboardDocumentList,
@@ -942,6 +945,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   get childFullNameDraft(): string {
     return [this.step1.first_name.trim(), this.step1.middle_name.trim(), this.step1.last_name.trim()].filter(Boolean).join(' ');
+  }
+
+  get editHeadingName(): string {
+    const c = this.child;
+    if (!c) return '';
+    const first = (c.firstName ?? '').trim();
+    const last = (c.lastName ?? '').trim();
+    return [first, last].filter(Boolean).join(' ').trim() || c.fullName.trim();
   }
 
   get currentStepNumber(): number {
