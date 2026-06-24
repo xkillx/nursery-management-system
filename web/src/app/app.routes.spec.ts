@@ -86,21 +86,21 @@ describe('app.routes', () => {
   }
 
   const mvpPaths = [
-    'staff/manager/dashboard',
-    'staff/manager/children',
-    'staff/manager/invites',
-    'staff/manager/funding',
-    'staff/manager/invoice-run',
-    'staff/manager/invoices',
-    'staff/manager/rooms',
-    'staff/manager/rooms/new',
-    'staff/practitioner/attendance',
-    'staff/practitioner/attendance-children',
+    'manager/dashboard',
+    'manager/children',
+    'manager/invites',
+    'manager/funding',
+    'manager/invoice-run',
+    'manager/invoices',
+    'manager/rooms',
+    'manager/rooms/new',
+    'practitioner/attendance',
+    'practitioner/attendance-children',
     'owner',
     'owner/manager-access',
     'owner/rooms',
     'owner/rooms/new',
-    'app/invoices',
+    'parent/invoices',
     'signin',
     'signup',
     'forgot-password',
@@ -109,11 +109,11 @@ describe('app.routes', () => {
   ];
 
   const dynamicPaths = [
-    'staff/manager/children/:childId',
-    'staff/manager/invoices/:invoiceId',
-    'staff/manager/rooms/:roomId/edit',
+    'manager/children/:childId',
+    'manager/invoices/:invoiceId',
+    'manager/rooms/:roomId/edit',
     'owner/rooms/:roomId/edit',
-    'app/invoices/:invoiceId',
+    'parent/invoices/:invoiceId',
   ];
 
   for (const mvp of mvpPaths) {
@@ -133,7 +133,7 @@ describe('app.routes', () => {
 
   it('child detail route is a child of the children list and inherits its role guard', () => {
     const listParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/children');
+      .find(r => r.path === 'manager/children');
     const detailLeaf = allDescendantRoutes(routes)
       .find(r => r.path === ':childId' && r.data?.['breadcrumb']?.resolve);
 
@@ -144,7 +144,7 @@ describe('app.routes', () => {
 
   it('new child route is a child of the children list and inherits its role guard', () => {
     const listParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/children');
+      .find(r => r.path === 'manager/children');
     const newLeaf = allDescendantRoutes(routes)
       .find(r => r.path === 'new' && r.data?.['breadcrumb']?.label === 'Add child');
 
@@ -155,7 +155,7 @@ describe('app.routes', () => {
 
   it('children list child routes declare "new" before ":childId" so the static segment wins', () => {
     const listParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/children');
+      .find(r => r.path === 'manager/children');
 
     expect(listParent).toBeDefined();
     const childPaths = (listParent!.children ?? []).map((c: any) => c.path);
@@ -169,17 +169,17 @@ describe('app.routes', () => {
   it('legacy attendance-children route is a redirect, not a component route', () => {
     const legacyRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/practitioner/attendance-children');
+      .find(r => r.path === 'practitioner/attendance-children');
 
     expect(legacyRoute).toBeDefined();
-    expect(legacyRoute!.redirectTo).toBe('staff/practitioner/attendance');
+    expect(legacyRoute!.redirectTo).toBe('practitioner/attendance');
     expect(legacyRoute!.component).toBeUndefined();
   });
 
   it('manager invites route requires manager role only', () => {
     const invitesRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/manager/invites');
+      .find(r => r.path === 'manager/invites');
 
     expect(invitesRoute).toBeDefined();
     expect(invitesRoute!.data?.['roles']).toEqual(['manager']);
@@ -188,7 +188,7 @@ describe('app.routes', () => {
   it('funding overview route requires manager role only', () => {
     const fundingRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/manager/funding');
+      .find(r => r.path === 'manager/funding');
 
     expect(fundingRoute).toBeDefined();
     expect(fundingRoute!.data?.['roles']).toEqual(['manager']);
@@ -197,7 +197,7 @@ describe('app.routes', () => {
   it('invoice run route requires manager role only', () => {
     const invoiceRunRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/manager/invoice-run');
+      .find(r => r.path === 'manager/invoice-run');
 
     expect(invoiceRunRoute).toBeDefined();
     expect(invoiceRunRoute!.data?.['roles']).toEqual(['manager']);
@@ -205,7 +205,7 @@ describe('app.routes', () => {
 
   it('invoices list route requires manager role only', () => {
     const invoicesRoute = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/invoices');
+      .find(r => r.path === 'manager/invoices');
 
     expect(invoicesRoute).toBeDefined();
     expect(invoicesRoute!.data?.['roles']).toEqual(['manager']);
@@ -213,7 +213,7 @@ describe('app.routes', () => {
 
   it('invoice detail route is a child of the invoices list and inherits its role guard', () => {
     const listParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/invoices');
+      .find(r => r.path === 'manager/invoices');
     const detailLeaf = allDescendantRoutes(routes)
       .find(r => r.path === ':invoiceId' && r.data?.['breadcrumb']?.resolve);
 
@@ -250,21 +250,21 @@ describe('app.routes', () => {
 
   it('manager room routes require manager role only', () => {
     const managerRoomParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'staff/manager/rooms');
+      .find(r => r.path === 'manager/rooms');
 
     expect(managerRoomParent).toBeDefined();
     expect(managerRoomParent!.data?.['roles']).toEqual(['manager']);
   });
 
   it('does not register practitioner room routes', () => {
-    expect(paths).not.toContain('staff/practitioner/rooms');
-    expect(paths).not.toContain('staff/practitioner/rooms/new');
+    expect(paths).not.toContain('practitioner/rooms');
+    expect(paths).not.toContain('practitioner/rooms/new');
   });
 
   it('canonical parent invoices list route requires parent role only', () => {
     const parentRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'app/invoices');
+      .find(r => r.path === 'parent/invoices');
 
     expect(parentRoute).toBeDefined();
     expect(parentRoute!.data?.['roles']).toEqual(['parent']);
@@ -272,7 +272,7 @@ describe('app.routes', () => {
 
   it('canonical parent invoice detail route is a child of the parent invoices list and inherits its role guard', () => {
     const listParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'app/invoices');
+      .find(r => r.path === 'parent/invoices');
     const detailLeaf = allDescendantRoutes(routes)
       .find(r => r.path === ':invoiceId' && r.data?.['breadcrumb']?.resolve);
 
@@ -281,21 +281,7 @@ describe('app.routes', () => {
     expect(listParent!.data?.['roles']).toEqual(['parent']);
   });
 
-  it('legacy /parent/invoices redirects to /app/invoices', () => {
-    const redirect = routes.find(r => r.path === 'parent/invoices');
-    expect(redirect).toBeDefined();
-    expect(redirect!.redirectTo).toBe('app/invoices');
-    expect(redirect!.component).toBeUndefined();
-  });
-
-  it('legacy /parent/invoices/:invoiceId redirects to /app/invoices/:invoiceId', () => {
-    const redirect = routes.find(r => r.path === 'parent/invoices/:invoiceId');
-    expect(redirect).toBeDefined();
-    expect(redirect!.redirectTo).toBe('app/invoices/:invoiceId');
-    expect(redirect!.component).toBeUndefined();
-  });
-
-  it('root path includes authGuard and roleDefaultRedirectGuard', () => {
+it('root path includes authGuard and roleDefaultRedirectGuard', () => {
     const rootRoute = routes.find(r => r.path === '' && r.pathMatch === 'full');
 
     expect(rootRoute).toBeDefined();
@@ -306,7 +292,7 @@ describe('app.routes', () => {
   it('protected manager routes include both authGuard and roleGuard', () => {
     const managerRoutes = routes
       .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('staff/manager'));
+      .filter(r => r.path?.startsWith('manager'));
 
     for (const route of managerRoutes) {
       if (route.redirectTo) continue;
@@ -329,7 +315,7 @@ describe('app.routes', () => {
   it('protected parent routes include both authGuard and roleGuard', () => {
     const parentRoutes = routes
       .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('app/invoices'));
+      .filter(r => r.path?.startsWith('parent/invoices'));
 
     for (const route of parentRoutes) {
       expect(route.canActivate).toContain(authGuard);
@@ -340,16 +326,16 @@ describe('app.routes', () => {
   it('practitioner attendance route allows both manager and practitioner', () => {
     const attendanceRoute = routes
       .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'staff/practitioner/attendance');
+      .find(r => r.path === 'practitioner/attendance');
 
     expect(attendanceRoute).toBeDefined();
     expect(attendanceRoute!.data?.['roles']).toEqual(['manager', 'practitioner']);
   });
 
-  it('staff routes do not include parent or owner roles', () => {
+  it('manager and practitioner routes do not include parent or owner roles', () => {
     const staffRoutes = routes
       .flatMap(r => r.children ?? [])
-      .filter(r => r.path?.startsWith('staff') && r.data?.['roles']);
+      .filter(r => (r.path?.startsWith('manager') || r.path?.startsWith('practitioner')) && r.data?.['roles']);
 
     for (const route of staffRoutes) {
       expect((route.data?.['roles'] as string[])).not.toContain('parent');
@@ -372,28 +358,28 @@ describe('app.routes', () => {
 
 describe('app.routes breadcrumb wiring', () => {
   const breadcrumbPaths = [
-    'staff/manager/dashboard',
-    'staff/manager/children',
-    'staff/manager/children/new',
-    'staff/manager/children/:childId',
-    'staff/manager/children/:childId/edit',
-    'staff/manager/invites',
-    'staff/manager/attendance-corrections',
-    'staff/manager/rooms',
-    'staff/manager/rooms/new',
-    'staff/manager/rooms/:roomId/edit',
-    'staff/manager/funding',
-    'staff/manager/invoice-run',
-    'staff/manager/invoices',
-    'staff/manager/invoices/:invoiceId',
-    'staff/practitioner/attendance',
+    'manager/dashboard',
+    'manager/children',
+    'manager/children/new',
+    'manager/children/:childId',
+    'manager/children/:childId/edit',
+    'manager/invites',
+    'manager/attendance-corrections',
+    'manager/rooms',
+    'manager/rooms/new',
+    'manager/rooms/:roomId/edit',
+    'manager/funding',
+    'manager/invoice-run',
+    'manager/invoices',
+    'manager/invoices/:invoiceId',
+    'practitioner/attendance',
     'owner',
     'owner/manager-access',
     'owner/rooms',
     'owner/rooms/new',
     'owner/rooms/:roomId/edit',
-    'app/invoices',
-    'app/invoices/:invoiceId',
+    'parent/invoices',
+    'parent/invoices/:invoiceId',
   ];
 
   for (const path of breadcrumbPaths) {
@@ -420,13 +406,13 @@ describe('app.routes breadcrumb wiring', () => {
   });
 
   it('uses a resolve function for dynamic child-name and invoice-number segments', () => {
-    const childDetail = findLeafRoute(routes, 'staff/manager/children/:childId');
+    const childDetail = findLeafRoute(routes, 'manager/children/:childId');
     expect(typeof childDetail!.data.breadcrumb.resolve).toBe('function');
 
-    const managerInvoice = findLeafRoute(routes, 'staff/manager/invoices/:invoiceId');
+    const managerInvoice = findLeafRoute(routes, 'manager/invoices/:invoiceId');
     expect(typeof managerInvoice!.data.breadcrumb.resolve).toBe('function');
 
-    const parentInvoice = findLeafRoute(routes, 'app/invoices/:invoiceId');
+    const parentInvoice = findLeafRoute(routes, 'parent/invoices/:invoiceId');
     expect(typeof parentInvoice!.data.breadcrumb.resolve).toBe('function');
 
     const ownerRoomEdit = findLeafRoute(routes, 'owner/rooms/:roomId/edit');

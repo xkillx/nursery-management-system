@@ -11,7 +11,7 @@
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
       <a
-        routerLink="/staff/manager/children/new"
+        routerLink="/manager/children/new"
         class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
         aria-label="Start a new child registration"
       >
@@ -205,7 +205,7 @@
                   Edit
                 </button>
                 <a
-                  [routerLink]="['/staff/manager/children', child.id]"
+                  [routerLink]="['/manager/children', child.id]"
                   class="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
                   [attr.aria-label]="'View child record for ' + child.fullName"
                 >
@@ -284,7 +284,7 @@
                       <ng-icon name="heroPencilSquare" size="20" aria-hidden="true" />
                     </button>
                     <a
-                      [routerLink]="['/staff/manager/children', child.id]"
+                      [routerLink]="['/manager/children', child.id]"
                       class="inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10"
                       [attr.aria-label]="'View child record for ' + child.fullName"
                     >

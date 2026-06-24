@@ -161,7 +161,7 @@ child_last_name: null,
     createComponent();
     flushInitialOverview();
     component.selectedBillingMonth = '2026-06';
-    expect(component.reviewLink('child-1')).toEqual(['/staff/manager/children', 'child-1']);
+    expect(component.reviewLink('child-1')).toEqual(['/manager/children', 'child-1']);
     expect(component.reviewQueryParams()).toEqual({ billing_month: '2026-06' });
   });
 

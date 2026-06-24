@@ -18,7 +18,7 @@ describe('roleDefaultRedirectGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  it('redirects manager to /staff/manager/dashboard', () => {
+  it('redirects manager to /manager/dashboard', () => {
     spyOn(authService, 'currentRole').and.returnValue(ROLES.manager);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -26,10 +26,10 @@ describe('roleDefaultRedirectGuard', () => {
     );
 
     expect(result instanceof UrlTree).toBeTrue();
-    expect(router.serializeUrl(result as UrlTree)).toBe('/staff/manager/dashboard');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/manager/dashboard');
   });
 
-  it('redirects practitioner to /staff/practitioner/attendance', () => {
+  it('redirects practitioner to /practitioner/attendance', () => {
     spyOn(authService, 'currentRole').and.returnValue(ROLES.practitioner);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -37,10 +37,10 @@ describe('roleDefaultRedirectGuard', () => {
     );
 
     expect(result instanceof UrlTree).toBeTrue();
-    expect(router.serializeUrl(result as UrlTree)).toBe('/staff/practitioner/attendance');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/practitioner/attendance');
   });
 
-  it('redirects parent to /app/invoices', () => {
+  it('redirects parent to /parent/invoices', () => {
     spyOn(authService, 'currentRole').and.returnValue(ROLES.parent);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -48,7 +48,7 @@ describe('roleDefaultRedirectGuard', () => {
     );
 
     expect(result instanceof UrlTree).toBeTrue();
-    expect(router.serializeUrl(result as UrlTree)).toBe('/app/invoices');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/parent/invoices');
   });
 
   it('redirects owner to /owner', () => {

@@ -408,7 +408,7 @@ describe('ManagerInvoiceDetailComponent', () => {
     const links: HTMLAnchorElement[] = fixture.nativeElement.querySelectorAll('a');
     const backLink = Array.from(links).find((a) => a.textContent?.includes('Back to invoices'));
     expect(backLink).toBeTruthy();
-    expect(backLink!.href).toContain('/staff/manager/invoices');
+    expect(backLink!.href).toContain('/manager/invoices');
   });
 
   it('shows payment review section for issued invoice', () => {

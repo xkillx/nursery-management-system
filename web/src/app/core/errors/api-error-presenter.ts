@@ -274,7 +274,7 @@ function presentKnownError(
     // Child
     case 'child_not_found':
       base.message = 'This child could not be found. Return to the children list.';
-      base.action = { label: 'View children', route: ['/staff/manager/children'] };
+      base.action = { label: 'View children', route: ['/manager/children'] };
       break;
     case 'parent_child_mapping_not_found':
       base.message = 'This mapping no longer exists. Refresh the page.';
@@ -312,10 +312,10 @@ function presentKnownError(
     case 'invoice_not_found':
       if (context.startsWith('payment.parent') || context.startsWith('invoice.')) {
         base.message = 'This invoice is no longer available. Return to your invoices.';
-        base.action = { label: 'View invoices', route: [context.startsWith('payment.parent') ? '/parent/invoices' : '/staff/manager/invoices'] };
+        base.action = { label: 'View invoices', route: [context.startsWith('payment.parent') ? '/parent/invoices' : '/manager/invoices'] };
       } else {
         base.message = 'This invoice could not be found. Return to the invoice list.';
-        base.action = { label: 'View invoices', route: ['/staff/manager/invoices'] };
+        base.action = { label: 'View invoices', route: ['/manager/invoices'] };
       }
       break;
     case 'invoice_not_draft':
@@ -339,7 +339,7 @@ function presentKnownError(
     // Invoice run blockers
     case 'incomplete_attendance':
       base.message = 'Attendance data is incomplete. Correct attendance before generating invoices.';
-      base.action = { label: 'Go to attendance corrections', route: ['/staff/manager/attendance-corrections'] };
+      base.action = { label: 'Go to attendance corrections', route: ['/manager/attendance-corrections'] };
       break;
     case 'missing_funding_profile':
       base.message = 'Funding profile is missing for one or more children.';

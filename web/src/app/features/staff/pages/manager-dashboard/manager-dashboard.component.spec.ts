@@ -103,8 +103,8 @@ describe('ManagerDashboardComponent', () => {
     const links = quickActionSection!.querySelectorAll('a');
     const hrefs = Array.from(links).map((a) => a.getAttribute('href') ?? '');
 
-    expect(hrefs.some((h) => h.includes('/staff/practitioner/attendance'))).toBe(true);
-    expect(hrefs.some((h) => h.includes('/staff/manager/children'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/practitioner/attendance'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/manager/children'))).toBe(true);
   });
 
   it('renders disabled future actions with aria-disabled and no navigation', () => {
@@ -126,7 +126,7 @@ describe('ManagerDashboardComponent', () => {
 
     const links = quickActionSection!.querySelectorAll('a');
     const invoiceRunLink = Array.from(links).find((a) =>
-      a.getAttribute('href')?.includes('/staff/manager/invoice-run'),
+      a.getAttribute('href')?.includes('/manager/invoice-run'),
     );
     expect(invoiceRunLink).toBeTruthy();
     expect(invoiceRunLink!.textContent).toContain('Start invoice run');

@@ -74,7 +74,7 @@ describe('SigninFormComponent', () => {
     tick();
 
     expect(authServiceMock.login).toHaveBeenCalledWith('user@test.com', 'password1', undefined, true);
-    expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/staff/manager/dashboard');
+    expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/manager/dashboard');
   }));
 
   it('challenge response renders choices by labels and not IDs', fakeAsync(() => {
@@ -134,7 +134,7 @@ describe('SigninFormComponent', () => {
     expect(authServiceMock.login).toHaveBeenCalledWith(
       'user@test.com', 'password1', mockMembership.membership_id, true,
     );
-    expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/staff/manager/dashboard');
+    expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/manager/dashboard');
   }));
 
   it('editing email clears the picker', fakeAsync(() => {

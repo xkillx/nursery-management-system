@@ -1,11 +1,11 @@
 <div class="space-y-6 p-6">
   <div class="flex items-center justify-between">
-    <a routerLink="/staff/manager/children" class="text-sm text-gray-600 hover:underline">← Back to children</a>
+    <a routerLink="/manager/children" class="text-sm text-gray-600 hover:underline">← Back to children</a>
     <div class="flex gap-2">
-      <a [routerLink]="['/staff/manager/children', childId, 'booking-pattern']">
+      <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
         <app-button variant="secondary">Session pattern</app-button>
       </a>
-      <a [routerLink]="['/staff/manager/children', childId, 'edit']">
+      <a [routerLink]="['/manager/children', childId, 'edit']">
         <app-button variant="primary">Edit</app-button>
       </a>
     </div>
@@ -25,7 +25,7 @@
           </p>
         </div>
       </div>
-      <a [routerLink]="['/staff/manager/children', childId, 'booking-pattern']">
+      <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
         <app-button variant="secondary">Set up session pattern</app-button>
       </a>
     </div>
@@ -158,7 +158,7 @@
           }
         </dl>
       } @else {
-        <p class="mt-2 text-sm text-gray-600">No funding record. <a [routerLink]="['/staff/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Add funding details</a>.</p>
+        <p class="mt-2 text-sm text-gray-600">No funding record. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Add funding details</a>.</p>
       }
     </section>
 

@@ -83,40 +83,40 @@ describe('AppSidebarComponent', () => {
       expect(labels.length).toBe(5);
     });
 
-    it('dashboard link points to /staff/manager/dashboard', () => {
+    it('dashboard link points to /manager/dashboard', () => {
       fixture.detectChanges();
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
-      expect(dashboard.getAttribute('href')).toContain('/staff/manager/dashboard');
+      expect(dashboard.getAttribute('href')).toContain('/manager/dashboard');
     });
 
-    it('invites link points to /staff/manager/invites', () => {
+    it('invites link points to /manager/invites', () => {
       fixture.detectChanges();
 
       const invites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       expect(invites).toBeTruthy();
-      expect(invites.getAttribute('href')).toContain('/staff/manager/invites');
+      expect(invites.getAttribute('href')).toContain('/manager/invites');
     });
 
-    it('invoices link points to /staff/manager/invoices', () => {
+    it('invoices link points to /manager/invoices', () => {
       fixture.detectChanges();
 
       const invoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
       expect(invoices).toBeTruthy();
-      expect(invoices.getAttribute('href')).toContain('/staff/manager/invoices');
+      expect(invoices.getAttribute('href')).toContain('/manager/invoices');
     });
 
-    it('rooms link points to /staff/manager/rooms', () => {
+    it('rooms link points to /manager/rooms', () => {
       fixture.detectChanges();
 
       const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
       expect(rooms).toBeTruthy();
-      expect(rooms.getAttribute('href')).toContain('/staff/manager/rooms');
+      expect(rooms.getAttribute('href')).toContain('/manager/rooms');
     });
 
     it('sets aria-current="page" on the active link', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/dashboard');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/dashboard');
       fixture.detectChanges();
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
@@ -128,7 +128,7 @@ describe('AppSidebarComponent', () => {
 
     it('highlights Children when on a child detail route', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/children/abc-123');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/children/abc-123');
       fixture.detectChanges();
 
       const children = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
@@ -140,7 +140,7 @@ describe('AppSidebarComponent', () => {
 
     it('highlights Invoices when on an invoice detail route', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/invoices/inv-456');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/invoices/inv-456');
       fixture.detectChanges();
 
       const invoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
@@ -149,7 +149,7 @@ describe('AppSidebarComponent', () => {
 
     it('highlights Rooms when on a manager room child route', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/rooms/new');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/rooms/new');
       fixture.detectChanges();
 
       const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
@@ -158,7 +158,7 @@ describe('AppSidebarComponent', () => {
 
     it('highlights Attendance corrections with query params', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/staff/manager/attendance-corrections?childId=abc');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/attendance-corrections?childId=abc');
       fixture.detectChanges();
 
       const corrections = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance-corrections"]');
@@ -222,11 +222,11 @@ describe('AppSidebarComponent', () => {
       expect(labels.length).toBe(1);
     });
 
-    it('attendance link points to /staff/practitioner/attendance', () => {
+    it('attendance link points to /practitioner/attendance', () => {
       fixture.detectChanges();
 
       const attendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
-      expect(attendance.getAttribute('href')).toContain('/staff/practitioner/attendance');
+      expect(attendance.getAttribute('href')).toContain('/practitioner/attendance');
     });
   });
 
@@ -382,16 +382,16 @@ describe('AppSidebarComponent', () => {
       expect(labels.length).toBe(1);
     });
 
-    it('invoices link points to /app/invoices', () => {
+    it('invoices link points to /parent/invoices', () => {
       fixture.detectChanges();
 
       const invoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
-      expect(invoices.getAttribute('href')).toContain('/app/invoices');
+      expect(invoices.getAttribute('href')).toContain('/parent/invoices');
     });
 
-    it('highlights invoices when on /app/invoices', () => {
+    it('highlights invoices when on /parent/invoices', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/app/invoices');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/parent/invoices');
       fixture.detectChanges();
 
       const invoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
@@ -400,7 +400,7 @@ describe('AppSidebarComponent', () => {
 
     it('highlights invoices when on invoice detail route', () => {
       const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/app/invoices/inv-789');
+      spyOnProperty(router, 'url', 'get').and.returnValue('/parent/invoices/inv-789');
       fixture.detectChanges();
 
       const invoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');

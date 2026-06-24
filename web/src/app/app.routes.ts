@@ -52,7 +52,7 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     children: [
           {
-            path: 'staff/manager/dashboard',
+            path: 'manager/dashboard',
             component: ManagerDashboardComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -62,11 +62,11 @@ export const routes: Routes = [
             title: 'Manager Dashboard | Nursery Management',
           },
           {
-            path: 'staff/manager/children',
+            path: 'manager/children',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Children', link: ['/staff/manager/children'] },
+              breadcrumb: { label: 'Children', link: ['/manager/children'] },
             },
             children: [
               {
@@ -109,22 +109,22 @@ export const routes: Routes = [
             ],
           },
           {
-            path: 'staff/manager/registrations',
-            redirectTo: 'staff/manager/children',
+            path: 'manager/registrations',
+            redirectTo: 'manager/children',
             pathMatch: 'full',
           },
           {
-            path: 'staff/manager/registrations/new',
-            redirectTo: 'staff/manager/children/new',
+            path: 'manager/registrations/new',
+            redirectTo: 'manager/children/new',
             pathMatch: 'full',
           },
           {
-            path: 'staff/manager/registrations/:childId/intake',
-            redirectTo: 'staff/manager/children/:childId/edit',
+            path: 'manager/registrations/:childId/intake',
+            redirectTo: 'manager/children/:childId/edit',
             pathMatch: 'full',
           },
           {
-            path: 'staff/manager/invites',
+            path: 'manager/invites',
             component: ManagerInvitesComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -134,7 +134,7 @@ export const routes: Routes = [
             title: 'User Invites | Nursery Management',
           },
           {
-            path: 'staff/manager/attendance-corrections',
+            path: 'manager/attendance-corrections',
             component: ManagerAttendanceCorrectionsComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -144,11 +144,11 @@ export const routes: Routes = [
             title: 'Attendance Corrections | Nursery Management',
           },
           {
-            path: 'staff/manager/rooms',
+            path: 'manager/rooms',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Rooms', link: ['/staff/manager/rooms'] },
+              breadcrumb: { label: 'Rooms', link: ['/manager/rooms'] },
             },
             children: [
               {
@@ -175,11 +175,11 @@ export const routes: Routes = [
             ],
           },
           {
-            path: 'staff/manager/session-types',
+            path: 'manager/session-types',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Session types', link: ['/staff/manager/session-types'] },
+              breadcrumb: { label: 'Session types', link: ['/manager/session-types'] },
             },
             children: [
               {
@@ -202,7 +202,7 @@ export const routes: Routes = [
             ],
           },
           {
-            path: 'staff/manager/session-templates',
+            path: 'manager/session-templates',
             component: ManagerSessionTemplatesComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -212,7 +212,7 @@ export const routes: Routes = [
             title: 'Session templates | Nursery Management',
           },
           {
-            path: 'staff/manager/funding',
+            path: 'manager/funding',
             component: ManagerFundingOverviewComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -222,7 +222,7 @@ export const routes: Routes = [
             title: 'Funding Overview | Nursery Management',
           },
           {
-            path: 'staff/manager/invoice-run',
+            path: 'manager/invoice-run',
             component: ManagerInvoiceRunComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -232,11 +232,11 @@ export const routes: Routes = [
             title: 'Invoice Run | Nursery Management',
           },
           {
-            path: 'staff/manager/invoices',
+            path: 'manager/invoices',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Invoices', link: ['/staff/manager/invoices'] },
+              breadcrumb: { label: 'Invoices', link: ['/manager/invoices'] },
             },
             children: [
               {
@@ -255,7 +255,7 @@ export const routes: Routes = [
             ],
           },
           {
-            path: 'staff/practitioner/attendance',
+            path: 'practitioner/attendance',
             component: PractitionerAttendanceChildrenComponent,
             canActivate: [authGuard, roleGuard],
             data: {
@@ -265,9 +265,9 @@ export const routes: Routes = [
             title: 'Attendance | Nursery Management',
           },
           {
-            path: 'staff/practitioner/attendance-children',
+            path: 'practitioner/attendance-children',
             pathMatch: 'full',
-            redirectTo: 'staff/practitioner/attendance',
+            redirectTo: 'practitioner/attendance',
           },
           {
             path: 'owner/rooms',
@@ -348,11 +348,11 @@ export const routes: Routes = [
             title: 'Manager Access | Nursery Management',
           },
           {
-            path: 'app/invoices',
+            path: 'parent/invoices',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['parent'],
-              breadcrumb: { label: 'Billing', link: ['/app/invoices'] },
+              breadcrumb: { label: 'Billing', link: ['/parent/invoices'] },
             },
             children: [
               {
@@ -371,16 +371,6 @@ export const routes: Routes = [
             ],
           },
     ],
-  },
-  {
-    path: 'parent/invoices/:invoiceId',
-    pathMatch: 'full',
-    redirectTo: 'app/invoices/:invoiceId',
-  },
-  {
-    path: 'parent/invoices',
-    pathMatch: 'full',
-    redirectTo: 'app/invoices',
   },
   {
     path: 'signin',

@@ -21,7 +21,7 @@ describe('authGuard', () => {
     spyOn(authService, 'isAuthenticated').and.returnValue(true);
 
     const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/staff/manager/children' } as never),
+      authGuard({} as never, { url: '/manager/children' } as never),
     );
 
     expect(result).toBeTrue();
@@ -31,7 +31,7 @@ describe('authGuard', () => {
     spyOn(authService, 'isAuthenticated').and.returnValue(false);
 
     const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/staff/manager/children' } as never),
+      authGuard({} as never, { url: '/manager/children' } as never),
     );
 
     expect(result instanceof UrlTree).toBeTrue();
@@ -42,9 +42,9 @@ describe('authGuard', () => {
     spyOn(authService, 'isAuthenticated').and.returnValue(false);
 
     const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/staff/manager/children' } as never),
+      authGuard({} as never, { url: '/manager/children' } as never),
     );
 
-    expect(router.serializeUrl(result as UrlTree)).toBe('/signin?redirect=%2Fstaff%2Fmanager%2Fchildren');
+    expect(router.serializeUrl(result as UrlTree)).toBe('/signin?redirect=%2Fmanager%2Fchildren');
   });
 });

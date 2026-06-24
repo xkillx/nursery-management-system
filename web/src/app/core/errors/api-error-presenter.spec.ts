@@ -202,7 +202,7 @@ describe('presentApiError', () => {
   describe('people codes', () => {
     it('child_not_found shows return-to-list action', () => {
       const result = presentApiError(mapped({ code: 'child_not_found' }), 'people.child');
-      expect(result.action?.route).toEqual(['/staff/manager/children']);
+      expect(result.action?.route).toEqual(['/manager/children']);
       expect(result.showRequestId).toBe(false);
     });
 
@@ -241,7 +241,7 @@ describe('presentApiError', () => {
 
     it('invoice_not_found for manager shows manager message', () => {
       const result = presentApiError(mapped({ code: 'invoice_not_found' }), 'invoice.managerDetail');
-      expect(result.action?.route).toEqual(['/staff/manager/invoices']);
+      expect(result.action?.route).toEqual(['/manager/invoices']);
       expect(result.showRequestId).toBe(false);
     });
 
@@ -260,7 +260,7 @@ describe('presentApiError', () => {
 
     it('incomplete_attendance shows corrections link', () => {
       const result = presentApiError(mapped({ code: 'incomplete_attendance' }), 'invoice.run');
-      expect(result.action?.route).toEqual(['/staff/manager/attendance-corrections']);
+      expect(result.action?.route).toEqual(['/manager/attendance-corrections']);
       expect(result.showRequestId).toBe(false);
     });
   });

@@ -79,19 +79,19 @@ export function blockerNextAction(
     case 'incomplete_attendance':
       return {
         label: 'Correct attendance',
-        route: ['/staff/manager/attendance-corrections'],
+        route: ['/manager/attendance-corrections'],
       };
     case 'missing_funding_profile':
       if (childId) {
         return {
           label: 'Review funding',
-          route: ['/staff/manager/children', childId],
+          route: ['/manager/children', childId],
           queryParams: billingMonth ? { billing_month: billingMonth } : undefined,
         };
       }
       return {
         label: 'Funding overview',
-        route: ['/staff/manager/funding'],
+        route: ['/manager/funding'],
       };
     case 'missing_billing_rate':
     case 'missing_child_name':
@@ -100,7 +100,7 @@ export function blockerNextAction(
     case 'missing_parent_carer_contact':
       return {
         label: 'Review child',
-        route: childId ? ['/staff/manager/children', childId] : ['/staff/manager/children'],
+        route: childId ? ['/manager/children', childId] : ['/manager/children'],
       };
     case 'invoice_already_issued':
     case 'invoice_not_draft':

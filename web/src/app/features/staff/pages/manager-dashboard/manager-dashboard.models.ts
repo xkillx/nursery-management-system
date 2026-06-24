@@ -176,22 +176,22 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
     {
       label: 'Open attendance',
       description: 'Check-in and check-out for today',
-      route: '/staff/practitioner/attendance',
+      route: '/practitioner/attendance',
     },
     {
       label: 'Attendance corrections',
       description: 'Review and correct attendance records',
-      route: '/staff/manager/attendance-corrections',
+      route: '/manager/attendance-corrections',
     },
     {
       label: 'Manage children',
       description: 'Add, edit, and manage child records',
-      route: '/staff/manager/children',
+      route: '/manager/children',
     },
     {
       label: 'Start invoice run',
       description: 'Generate invoices for the current billing month',
-      route: '/staff/manager/invoice-run',
+      route: '/manager/invoice-run',
     },
     {
       label: 'Review payment follow-up',

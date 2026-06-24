@@ -123,7 +123,7 @@ describe('ManagerInvoicesComponent', () => {
 
     const viewLinks = Array.from(links).filter((a) => a.textContent?.trim() === 'View');
     expect(viewLinks.length).toBeGreaterThanOrEqual(1);
-    expect(viewLinks[0].href).toContain('/staff/manager/invoices/');
+    expect(viewLinks[0].href).toContain('/manager/invoices/');
   });
 
   it('reloads and resets offset when status changes', () => {

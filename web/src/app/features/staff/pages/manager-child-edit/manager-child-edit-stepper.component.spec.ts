@@ -781,7 +781,7 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(payload.booking_pattern.effective_from).toBe('2026-09-01');
       expect(payload.booking_pattern.entries).toEqual([{ day_of_week: 1, session_type_id: 'st-1' }]);
       expect(bookingPatternSpy).not.toHaveBeenCalled();
-      expect(navigateSpy).toHaveBeenCalledWith(['/staff/manager/children', 'new-child-1']);
+      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
       expect(localStorage.getItem('nursery.registration_intake.draft')).toBeNull();
     });
 
@@ -937,6 +937,6 @@ describe('ManagerChildEditStepperComponent', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = spyOn(router, 'navigate').and.callThrough();
     component.goToSessionTypes();
-    expect(navigateSpy).toHaveBeenCalledWith(['/staff/manager/session-types']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/manager/session-types']);
   });
 });

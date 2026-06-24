@@ -8,17 +8,17 @@ describe('roles constants', () => {
 
   it('maps manager to managerDashboard route', () => {
     expect(defaultRouteForRole(ROLES.manager)).toBe(ROLE_ROUTES.managerDashboard);
-    expect(defaultRouteForRole(ROLES.manager)).toBe('/staff/manager/dashboard');
+    expect(defaultRouteForRole(ROLES.manager)).toBe('/manager/dashboard');
   });
 
   it('maps practitioner to practitionerAttendance route', () => {
     expect(defaultRouteForRole(ROLES.practitioner)).toBe(ROLE_ROUTES.practitionerAttendance);
-    expect(defaultRouteForRole(ROLES.practitioner)).toBe('/staff/practitioner/attendance');
+    expect(defaultRouteForRole(ROLES.practitioner)).toBe('/practitioner/attendance');
   });
 
   it('maps parent to parentInvoices route', () => {
     expect(defaultRouteForRole(ROLES.parent)).toBe(ROLE_ROUTES.parentInvoices);
-    expect(defaultRouteForRole(ROLES.parent)).toBe('/app/invoices');
+    expect(defaultRouteForRole(ROLES.parent)).toBe('/parent/invoices');
   });
 
   it('maps null role to signIn route', () => {

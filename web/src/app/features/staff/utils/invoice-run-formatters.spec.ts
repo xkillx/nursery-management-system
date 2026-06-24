@@ -76,36 +76,36 @@ describe('invoice-run-formatters', () => {
     it('routes incomplete attendance to corrections', () => {
       const action = blockerNextAction('incomplete_attendance');
       expect(action.label).toBe('Correct attendance');
-      expect(action.route).toEqual(['/staff/manager/attendance-corrections']);
+      expect(action.route).toEqual(['/manager/attendance-corrections']);
     });
 
     it('routes missing funding profile with child id to child detail', () => {
       const action = blockerNextAction('missing_funding_profile', 'child-1', '2026-05');
       expect(action.label).toBe('Review funding');
-      expect(action.route).toEqual(['/staff/manager/children', 'child-1']);
+      expect(action.route).toEqual(['/manager/children', 'child-1']);
       expect(action.queryParams).toEqual({ billing_month: '2026-05' });
     });
 
     it('routes missing funding profile without child id to funding overview', () => {
       const action = blockerNextAction('missing_funding_profile');
       expect(action.label).toBe('Funding overview');
-      expect(action.route).toEqual(['/staff/manager/funding']);
+      expect(action.route).toEqual(['/manager/funding']);
     });
 
     it('routes missing site billing rate to child detail', () => {
       const action = blockerNextAction('missing_billing_rate', 'child-2');
       expect(action.label).toBe('Review child');
-      expect(action.route).toEqual(['/staff/manager/children', 'child-2']);
+      expect(action.route).toEqual(['/manager/children', 'child-2']);
     });
 
     it('routes missing parent carer contact to child detail', () => {
       const action = blockerNextAction('missing_parent_carer_contact', 'child-3');
-      expect(action.route).toEqual(['/staff/manager/children', 'child-3']);
+      expect(action.route).toEqual(['/manager/children', 'child-3']);
     });
 
     it('routes missing child name to child detail', () => {
       const action = blockerNextAction('missing_child_name', 'child-4');
-      expect(action.route).toEqual(['/staff/manager/children', 'child-4']);
+      expect(action.route).toEqual(['/manager/children', 'child-4']);
     });
 
     it('invoice already issued has no route', () => {

@@ -159,7 +159,7 @@ export class AppSidebarComponent {
         {
           label: 'People',
           items: [
-            { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/staff/manager/children/'] },
+            { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/manager/children/'] },
             { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites', icon: 'invites' },
           ],
         },
@@ -175,14 +175,14 @@ export class AppSidebarComponent {
           items: [
             { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding', icon: 'funding' },
             { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run', icon: 'invoice-run' },
-            { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/staff/manager/invoices/'] },
+            { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },
         {
           label: 'Setup',
           items: [
-            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/staff/manager/rooms/'] },
-            { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/staff/manager/session-types/'] },
+            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/manager/rooms/'] },
+            { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/manager/session-types/'] },
           ],
         },
       ];
@@ -228,7 +228,7 @@ export class AppSidebarComponent {
         {
           label: 'Billing',
           items: [
-            { label: 'Invoices', path: ROLE_ROUTES.parentInvoices, testId: 'parent-link-invoices', icon: 'invoices', matchPaths: ['/app/invoices/'] },
+            { label: 'Invoices', path: ROLE_ROUTES.parentInvoices, testId: 'parent-link-invoices', icon: 'invoices', matchPaths: ['/parent/invoices/'] },
           ],
         },
       ];

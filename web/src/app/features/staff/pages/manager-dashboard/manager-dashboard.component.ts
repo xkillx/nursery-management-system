@@ -167,7 +167,7 @@ interface AttendanceTile {
                         @if (item.childId && item.localDate) {
                           <a
                             class="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-medium text-brand-600 transition hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-brand-400 dark:hover:bg-brand-500/15"
-                            [routerLink]="['/staff/manager/attendance-corrections']"
+                            [routerLink]="['/manager/attendance-corrections']"
                             [queryParams]="{ child_id: item.childId, local_date: item.localDate, session_id: item.sessionId || undefined }"
                             [attr.aria-label]="'Correct attendance for ' + item.childName"
                           >
@@ -265,8 +265,8 @@ interface AttendanceTile {
 })
 export class ManagerDashboardComponent {
   readonly snapshot: ManagerDashboardSnapshot = MANAGER_DASHBOARD_MOCK;
-  readonly attendanceRoute = '/staff/practitioner/attendance';
-  readonly invoiceRunRoute = '/staff/manager/invoice-run';
+  readonly attendanceRoute = '/practitioner/attendance';
+  readonly invoiceRunRoute = '/manager/invoice-run';
 
   get attendanceTiles(): AttendanceTile[] {
     const s = this.snapshot.attendanceSummary;

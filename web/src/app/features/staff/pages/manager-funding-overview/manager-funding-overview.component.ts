@@ -80,7 +80,7 @@ export class ManagerFundingOverviewComponent implements OnInit {
   }
 
   reviewLink(childId: string): string[] {
-    return ['/staff/manager/children', childId];
+    return ['/manager/children', childId];
   }
 
   reviewQueryParams(): Record<string, string> {
