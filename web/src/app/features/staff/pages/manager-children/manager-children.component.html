@@ -120,8 +120,8 @@
     <app-alert variant="error" [message]="errorMessage"></app-alert>
   }
 
-  <app-table-shell>
-    <div class="flex flex-col gap-4 border-b border-gray-200 pb-4 lg:flex-row lg:items-center lg:justify-between dark:border-gray-800">
+  <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Children records">
+    <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
       <div class="grid flex-1 gap-3 lg:max-w-4xl lg:grid-cols-[minmax(260px,1fr)_190px]">
         <label for="children-search" class="sr-only">Filter by child name or record details</label>
         <div class="relative">
@@ -218,7 +218,7 @@
     </div>
 
     <div class="hidden lg:block">
-      <table class="w-full min-w-[800px] border-collapse text-left">
+      <table class="w-full min-w-[960px] border-collapse text-left">
         <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-white/[0.04]">
           <tr class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:text-gray-400">
             <th
@@ -324,7 +324,7 @@
     </div>
 
     @if (!isLoading && filteredChildren.length > 0) {
-      <div shell-footer>
+      <div class="border-t border-gray-200 px-4 py-4 dark:border-gray-800">
         <app-table-pagination
           [offset]="offset"
           [limit]="limit"
@@ -335,5 +335,5 @@
         />
       </div>
     }
-  </app-table-shell>
+  </section>
 </div>

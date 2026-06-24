@@ -32,7 +32,6 @@ import { EmptyStateComponent } from '../../../../shared/components/common/empty-
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
 import { DrawerComponent } from '../../../../shared/components/ui/modal/drawer.component';
-import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -52,7 +51,6 @@ type SortDirection = 'asc' | 'desc';
     LoadingStateComponent,
     AvatarTextComponent,
     DrawerComponent,
-    TableShellComponent,
     TablePaginationComponent,
     NgIcon,
   ],

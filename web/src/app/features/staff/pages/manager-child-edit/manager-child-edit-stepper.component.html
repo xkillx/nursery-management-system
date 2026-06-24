@@ -255,25 +255,36 @@
                     />
                   </app-form-field>
 
-                  <app-form-field
-                    label="Primary room"
-                    labelFor="child-primary-room"
-                    [required]="true"
-                    errorId="child-primary-room-error"
-                    [error]="step1VisibleError('primary_room_id')"
-                  >
-                    <app-select
-                      id="child-primary-room"
-                      name="primary_room_id"
-                      [(ngModel)]="step1.primary_room_id"
-                      (blurred)="markStep1Touched('primary_room_id')"
-                      [error]="shouldShowStep1Error('primary_room_id')"
-                      [describedBy]="shouldShowStep1Error('primary_room_id') ? 'child-primary-room-error' : undefined"
-                      [options]="roomOptions"
-                      placeholder="Select a room..."
-                      [placeholderDisabled]="false"
+                  @if (roomOptions.length) {
+                    <app-form-field
+                      label="Primary room"
+                      labelFor="child-primary-room"
+                      [required]="true"
+                      errorId="child-primary-room-error"
+                      [error]="step1VisibleError('primary_room_id')"
+                    >
+                      <app-select
+                        id="child-primary-room"
+                        name="primary_room_id"
+                        [(ngModel)]="step1.primary_room_id"
+                        (blurred)="markStep1Touched('primary_room_id')"
+                        [error]="shouldShowStep1Error('primary_room_id')"
+                        [describedBy]="shouldShowStep1Error('primary_room_id') ? 'child-primary-room-error' : undefined"
+                        [options]="roomOptions"
+                        placeholder="Select a room..."
+                        [placeholderDisabled]="false"
+                      />
+                    </app-form-field>
+                  } @else {
+                    <app-alert
+                      variant="info"
+                      title="No rooms available"
+                      message="You need to create a room before you can register a child."
+                      [showLink]="true"
+                      linkHref="/manager/rooms/new"
+                      linkText="Create a room"
                     />
-                  </app-form-field>
+                  }
                 </div>
               </section>
 
