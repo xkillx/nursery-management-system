@@ -34,8 +34,10 @@ import {
   heroUserGroup,
   heroXMark,
   heroCalendar,
+  heroBanknotes,
   heroCurrencyPound,
   heroPencilSquare,
+  heroXCircle,
 } from '@ng-icons/heroicons/outline';
 
 import { environment } from '../../../../../environments/environment';
@@ -315,6 +317,7 @@ type RegistrationDraft = {
       heroAcademicCap,
       heroArrowLeft,
       heroArrowRight,
+      heroBanknotes,
       heroCalendarDays,
       heroCamera,
       heroChartBarSquare,
@@ -343,6 +346,7 @@ type RegistrationDraft = {
       heroCalendar,
       heroCurrencyPound,
       heroPencilSquare,
+      heroXCircle,
     }),
   ],
   templateUrl: './manager-child-edit-stepper.component.html',
@@ -1559,7 +1563,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.isDraftRestoredBannerVisible = false;
         this.isSaving = false;
         this.toast.success('Child created.');
-        this.router.navigate(['/staff/manager/children', result.id]);
+        this.router.navigate(['/manager/children', result.id]);
       },
       error: (error) => {
         this.isSaving = false;
@@ -1596,7 +1600,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   goToSessionTypes(): void {
-    this.router.navigate(['/staff/manager/session-types']);
+    this.router.navigate(['/manager/session-types']);
   }
 
   togglePatternEntry(day: number, sessionTypeId: string): void {
@@ -1744,7 +1748,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   navigateToChildDetail(): void {
     if (this.childId) {
-      this.router.navigate(['/staff/manager/children', this.childId]);
+      this.router.navigate(['/manager/children', this.childId]);
     }
   }
 
