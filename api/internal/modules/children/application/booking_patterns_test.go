@@ -187,7 +187,7 @@ func (f *fakeChildBPRepo) GetByID(ctx context.Context, tenantID, branchID, id uu
 	}
 	return domain.Child{ID: id}, true, nil
 }
-func (f *fakeChildBPRepo) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+func (f *fakeChildBPRepo) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
 	return nil
 }
 func (f *fakeChildBPRepo) Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {

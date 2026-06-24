@@ -1,11 +1,26 @@
 package httpserver
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+// errorChain walks the Unwrap chain and returns each level's message.
+// The first element is the outermost error; the last is the root cause.
+func errorChain(err error) []string {
+	var chain []string
+	for e := err; e != nil; e = errors.Unwrap(e) {
+		chain = append(chain, e.Error())
+		// Guard against self-unwrapping sentinels to avoid infinite loops.
+		if u := errors.Unwrap(e); u == e {
+			break
+		}
+	}
+	return chain
+}
 
 // LogMappedError emits a single request_failed diagnostics entry for mapped
 // internal errors. It is silent for status < 500 and when logger is nil so
@@ -53,6 +68,7 @@ func LogMappedError(c *gin.Context, logger *slog.Logger, status int, code string
 
 	if err != nil {
 		args = append(args, "error", err.Error())
+		args = append(args, "error_chain", errorChain(err))
 	}
 
 	logger.Error("request_failed", args...)

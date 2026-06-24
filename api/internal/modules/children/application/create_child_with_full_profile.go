@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -259,7 +258,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 
 		notes := strings.TrimSpace(input.Child.Notes)
-		if err := uc.repo.Create(ctx, child, notes, actor.TenantID, actor.BranchID); err != nil {
+		if err := uc.repo.Create(ctx, tx, child, notes, actor.TenantID, actor.BranchID); err != nil {
 			return fmt.Errorf("create child: %w", err)
 		}
 
@@ -450,11 +449,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		return nil
 	})
 	if err != nil {
-		var de *domainerrors.DomainError
-		if errors.As(err, &de) {
-			return nil, de
-		}
-		return nil, domainerrors.Internal(err)
+		return nil, mapExecTxError(err)
 	}
 
 	return result, nil

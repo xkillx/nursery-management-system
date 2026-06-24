@@ -25,7 +25,7 @@ type fakeChildRepository struct {
 	insertPatternCnt     int
 }
 
-func (f *fakeChildRepository) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+func (f *fakeChildRepository) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
 	f.createCallCount++
 	return nil
 }

@@ -118,19 +118,26 @@ func TestChildList_FilterActive(t *testing.T) {
 }
 
 func TestChildCreate(t *testing.T) {
-	repo, _ := setupChildRepo(t)
+	repo, pool := setupChildRepo(t)
 	ctx := context.Background()
 
 	childID := uuid.New()
-	err := repo.Create(ctx, childdomain.Child{
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Begin tx: %v", err)
+	}
+	defer tx.Rollback(ctx)
+	if err := repo.Create(ctx, tx, childdomain.Child{
 		ID:          childID,
 		FirstName:   "Bob",
 		DateOfBirth: dbtest.DateAt(2021, 5, 1),
 		StartDate:   dbtest.DateAt(2024, 9, 1),
 		IsActive:    true,
-	}, "my notes", childTenantID, childBranchID)
-	if err != nil {
+	}, "my notes", childTenantID, childBranchID); err != nil {
 		t.Fatalf("Create: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Commit: %v", err)
 	}
 
 	got, found, err := repo.GetByID(ctx, childTenantID, childBranchID, childID)

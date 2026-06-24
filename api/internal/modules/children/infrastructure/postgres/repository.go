@@ -72,8 +72,8 @@ func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uu
 	return mapChildRow(row), true, nil
 }
 
-func (r *ChildRepository) Create(ctx context.Context, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
-	q := sqlc.New(r.pool)
+func (r *ChildRepository) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+	q := sqlc.New(tx)
 	return q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
 		ID:          uuidToPgtype(child.ID),
 		TenantID:    uuidToPgtype(tenantID),
