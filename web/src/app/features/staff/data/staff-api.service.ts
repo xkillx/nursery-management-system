@@ -249,11 +249,19 @@ export class StaffApiService {
         authorised_collectors: ChildContact[];
       }>(apiUrl(`/children/${childId}/contacts`))
       .pipe(map((r) => ({
-        parentCarers: r.parent_carers ?? [],
-        emergencyContacts: r.emergency_contacts ?? [],
-        authorisedCollectors: r.authorised_collectors ?? [],
+        parentCarers: (r.parent_carers ?? []).map(this.normalizeChildContact),
+        emergencyContacts: (r.emergency_contacts ?? []).map(this.normalizeChildContact),
+        authorisedCollectors: (r.authorised_collectors ?? []).map(this.normalizeChildContact),
       })));
   }
+
+  private readonly normalizeChildContact = (c: ChildContact): ChildContact => ({
+    ...c,
+    fullName: c.fullName ?? c.full_name ?? '',
+    relationshipToChild: c.relationshipToChild ?? c.relationship_to_child ?? null,
+    workAddress: c.workAddress ?? c.work_address ?? null,
+    hasParentalResponsibility: c.hasParentalResponsibility ?? c.has_parental_responsibility ?? null,
+  });
 
   putChildContacts(childId: string, payload: {
     parentCarers?: unknown[];
