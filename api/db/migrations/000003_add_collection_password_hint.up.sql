@@ -1,1 +1,0 @@
-ALTER TABLE child_collection_settings ADD COLUMN collection_password_hint text;

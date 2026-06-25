@@ -1,6 +1,5 @@
--- Baseline schema (squashed).
--- Replaces migrations 000001..000006. No production data; rebuilt from scratch.
--- Derived from the final schema state after all 6 historic migrations.
+-- Baseline schema (squashed — single migration for fresh builds).
+-- No production data; rebuilt from scratch.
 
 CREATE TYPE child_contact_type AS ENUM (
     'parent_carer',
@@ -427,6 +426,7 @@ CREATE TABLE child_consent_records (
     signer_name text NOT NULL,
     signed_date date NOT NULL,
     paper_form_on_file boolean NOT NULL,
+    information_truthfulness_declaration boolean NOT NULL DEFAULT false,
     entered_by_user_id uuid NOT NULL,
     entered_by_membership_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -478,13 +478,14 @@ CREATE TABLE child_collection_settings (
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
     over_18_collection_acknowledged boolean DEFAULT false CONSTRAINT child_collection_settings_over_18_collection_acknowled_not_null NOT NULL,
-    collection_password_hash text,
+    collection_password text,
+    collection_password_hint text,
     collection_password_updated_at timestamp with time zone,
     collection_password_updated_by_user_id uuid,
     collection_password_updated_by_membership_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_collection_settings_password_consistency CHECK ((((collection_password_hash IS NULL) AND (collection_password_updated_at IS NULL) AND (collection_password_updated_by_user_id IS NULL) AND (collection_password_updated_by_membership_id IS NULL)) OR ((collection_password_hash IS NOT NULL) AND (collection_password_updated_at IS NOT NULL) AND (collection_password_updated_by_user_id IS NOT NULL) AND (collection_password_updated_by_membership_id IS NOT NULL))))
+    CONSTRAINT child_collection_settings_password_consistency CHECK ((((collection_password IS NULL) AND (collection_password_updated_at IS NULL) AND (collection_password_updated_by_user_id IS NULL) AND (collection_password_updated_by_membership_id IS NULL)) OR ((collection_password IS NOT NULL) AND (collection_password_updated_at IS NOT NULL) AND (collection_password_updated_by_user_id IS NOT NULL) AND (collection_password_updated_by_membership_id IS NOT NULL))))
 );
 
 CREATE TABLE child_room_assignments (
