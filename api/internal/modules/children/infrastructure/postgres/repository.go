@@ -258,6 +258,7 @@ func mapChildRow(row interface{}) domain.Child {
 		SiteCoreHourlyRateMinor pgtype.Int4
 		Notes                   pgtype.Text
 		IsActive                bool
+		PrimaryRoomID           pgtype.UUID
 		HasCurrentRoom          bool
 		HasParentCarerContact   bool
 		HasBookingPattern       bool
@@ -271,7 +272,8 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
@@ -280,7 +282,8 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
@@ -289,7 +292,8 @@ func mapChildRow(row interface{}) domain.Child {
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
 			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
-			IsActive: v.IsActive, HasCurrentRoom: v.HasCurrentRoom, HasParentCarerContact: v.HasParentCarerContact,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern: v.HasBookingPattern,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
@@ -307,6 +311,7 @@ func mapChildRow(row interface{}) domain.Child {
 		SiteCoreHourlyRateMinor: pgtypeInt4ToIntPtr(f.SiteCoreHourlyRateMinor),
 		Notes:                   pgtypeTextToStringPtr(f.Notes),
 		IsActive:                f.IsActive,
+		PrimaryRoomID:           pgtypeUUIDToUUIDPtr(f.PrimaryRoomID),
 		HasCurrentRoom:          f.HasCurrentRoom,
 		HasParentCarerContact:   f.HasParentCarerContact,
 		HasBookingPattern:       f.HasBookingPattern,

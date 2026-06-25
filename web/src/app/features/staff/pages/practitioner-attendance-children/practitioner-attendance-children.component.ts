@@ -2,31 +2,49 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, OnDestroy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroArrowPath,
+  heroCheckBadge,
+  heroClock,
+      heroFunnel,
+      heroMagnifyingGlass,
+      heroUsers,
+  heroXCircle,
+} from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
-type StatusFilter = 'all' | 'not_checked_in' | 'checked_in';
+type StatusFilter = 'all' | 'not_checked_in' | 'checked_in' | 'absent';
 type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
 
 @Component({
   selector: 'app-practitioner-attendance-children',
   imports: [
     CommonModule,
-    PageHeaderComponent,
+    NgIcon,
     ButtonComponent,
     AlertComponent,
-    StatusBadgeComponent,
     EmptyStateComponent,
     LoadingStateComponent,
+  ],
+  providers: [
+    provideIcons({
+      heroArrowPath,
+      heroCheckBadge,
+      heroClock,
+      heroFunnel,
+  heroMagnifyingGlass,
+      heroUsers,
+      heroXCircle,
+    }),
   ],
   templateUrl: './practitioner-attendance-children.component.html',
 })
@@ -51,6 +69,10 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
   rowErrors: Record<string, string> = {};
   pendingChildIds = new Set<string>();
 
+  clockTime = '';
+  currentDate = '';
+  private clockInterval: ReturnType<typeof setInterval> | null = null;
+
   get checkedInCount(): number {
     return this.children.filter((c) => this.isCheckedIn(c)).length;
   }
@@ -59,10 +81,19 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
     return this.children.filter((c) => !this.isCheckedIn(c)).length;
   }
 
+  get absentCount(): number {
+    return this.children.filter((c) => this.isAbsent(c)).length;
+  }
+
+  get expectedSoonCount(): number {
+    return this.children.filter(c => !this.isCheckedIn(c) && !this.isAbsent(c)).length;
+  }
+
   get filteredChildren(): AttendanceChildRecord[] {
     return this.children.filter((child) => {
       if (this.statusFilter === 'checked_in' && !this.isCheckedIn(child)) return false;
       if (this.statusFilter === 'not_checked_in' && this.isCheckedIn(child)) return false;
+      if (this.statusFilter === 'absent' && !this.isAbsent(child)) return false;
       if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase();
         if (!child.fullName.toLowerCase().includes(term)) return false;
@@ -84,10 +115,15 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
   ngOnInit(): void {
     this.loadChildren('initial');
     this.startPolling();
+    this.updateClock();
+    this.clockInterval = setInterval(() => this.updateClock(), 1000);
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval);
+    }
   }
 
   toggleAutoRefresh(): void {
@@ -219,6 +255,12 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
       hour12: false,
       timeZone: 'Europe/London',
     }).format(new Date(iso));
+  }
+
+  private updateClock(): void {
+    const now = new Date();
+    this.clockTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.currentDate = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
   }
 
   private isForegroundLoading(): boolean {

@@ -104,6 +104,14 @@ SELECT c.id,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
+       (
+           SELECT cra.room_id
+           FROM child_room_assignments cra
+           WHERE cra.tenant_id = c.tenant_id
+             AND cra.branch_id = c.branch_id
+             AND cra.child_id = c.id
+             AND cra.is_current
+       ) AS primary_room_id,
        EXISTS (
            SELECT 1
            FROM child_room_assignments cra
@@ -154,6 +162,7 @@ type ChildrenGetByIDRow struct {
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
@@ -175,6 +184,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
+		&i.PrimaryRoomID,
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
 		&i.HasBookingPattern,
@@ -195,6 +205,14 @@ SELECT c.id,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
        c.notes,
        c.is_active,
+       (
+           SELECT cra.room_id
+           FROM child_room_assignments cra
+           WHERE cra.tenant_id = c.tenant_id
+             AND cra.branch_id = c.branch_id
+             AND cra.child_id = c.id
+             AND cra.is_current
+       ) AS primary_room_id,
        EXISTS (
            SELECT 1
            FROM child_room_assignments cra
@@ -246,6 +264,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
@@ -267,6 +286,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.SiteCoreHourlyRateMinor,
 		&i.Notes,
 		&i.IsActive,
+		&i.PrimaryRoomID,
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
 		&i.HasBookingPattern,
@@ -312,34 +332,42 @@ SELECT c.id,
        c.start_date,
        c.end_date,
        b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
-       c.notes,
-       c.is_active,
-       EXISTS (
-           SELECT 1
-           FROM child_room_assignments cra
-           WHERE cra.tenant_id = c.tenant_id
-             AND cra.branch_id = c.branch_id
-             AND cra.child_id = c.id
-             AND cra.is_current
-       ) AS has_current_room,
+        c.notes,
+        c.is_active,
+        (
+            SELECT cra.room_id
+            FROM child_room_assignments cra
+            WHERE cra.tenant_id = c.tenant_id
+              AND cra.branch_id = c.branch_id
+              AND cra.child_id = c.id
+              AND cra.is_current
+        ) AS primary_room_id,
         EXISTS (
             SELECT 1
-            FROM child_contacts cc
-            WHERE cc.tenant_id = c.tenant_id
-              AND cc.branch_id = c.branch_id
-              AND cc.child_id = c.id
-              AND cc.contact_type = 'parent_carer'
-        ) AS has_parent_carer_contact,
-        EXISTS (
-            SELECT 1
-            FROM child_booking_patterns cbp
-            WHERE cbp.tenant_id = c.tenant_id
-              AND cbp.branch_id = c.branch_id
-              AND cbp.child_id = c.id
-              AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
-        ) AS has_booking_pattern,
-        c.created_at,
-        c.updated_at
+            FROM child_room_assignments cra
+            WHERE cra.tenant_id = c.tenant_id
+              AND cra.branch_id = c.branch_id
+              AND cra.child_id = c.id
+              AND cra.is_current
+        ) AS has_current_room,
+         EXISTS (
+             SELECT 1
+             FROM child_contacts cc
+             WHERE cc.tenant_id = c.tenant_id
+               AND cc.branch_id = c.branch_id
+               AND cc.child_id = c.id
+               AND cc.contact_type = 'parent_carer'
+         ) AS has_parent_carer_contact,
+         EXISTS (
+             SELECT 1
+             FROM child_booking_patterns cbp
+             WHERE cbp.tenant_id = c.tenant_id
+               AND cbp.branch_id = c.branch_id
+               AND cbp.child_id = c.id
+               AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
+         ) AS has_booking_pattern,
+         c.created_at,
+         c.updated_at
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
 WHERE c.tenant_id = $1
@@ -372,6 +400,7 @@ type ChildrenListRow struct {
 	SiteCoreHourlyRateMinor pgtype.Int4
 	Notes                   pgtype.Text
 	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
@@ -405,6 +434,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.SiteCoreHourlyRateMinor,
 			&i.Notes,
 			&i.IsActive,
+			&i.PrimaryRoomID,
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,

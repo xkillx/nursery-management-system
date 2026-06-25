@@ -17,6 +17,7 @@ type Child struct {
 	SiteCoreHourlyRateMinor *int
 	Notes                   *string
 	IsActive                bool
+	PrimaryRoomID           *uuid.UUID
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool

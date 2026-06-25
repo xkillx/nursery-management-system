@@ -259,8 +259,18 @@ export const routes: Routes = [
             component: PractitionerAttendanceChildrenComponent,
             canActivate: [authGuard, roleGuard],
             data: {
-              roles: ['manager', 'practitioner'],
+              roles: ['practitioner'],
               breadcrumb: { label: 'Practitioner' },
+            },
+            title: 'Attendance | Nursery Management',
+          },
+          {
+            path: 'manager/attendance',
+            component: PractitionerAttendanceChildrenComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Manager' },
             },
             title: 'Attendance | Nursery Management',
           },

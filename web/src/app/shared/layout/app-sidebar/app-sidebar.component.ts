@@ -166,7 +166,7 @@ export class AppSidebarComponent {
         {
           label: 'Attendance',
           items: [
-            { label: 'Attendance', path: ROLE_ROUTES.practitionerAttendance, testId: 'staff-link-practitioner-attendance', icon: 'attendance' },
+            { label: 'Attendance', path: ROLE_ROUTES.managerAttendance, testId: 'staff-link-manager-attendance', icon: 'attendance' },
             { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections', icon: 'attendance-corrections' },
           ],
         },

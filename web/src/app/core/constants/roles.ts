@@ -22,6 +22,7 @@ export const ROLE_ROUTES = {
   managerAttendanceCorrections: '/manager/attendance-corrections',
   managerInvoiceRun: '/manager/invoice-run',
   managerInvoices: '/manager/invoices',
+  managerAttendance: '/manager/attendance',
   practitionerAttendance: '/practitioner/attendance',
   practitionerAttendanceLegacy: '/practitioner/attendance-children',
   parentInvoices: '/parent/invoices',

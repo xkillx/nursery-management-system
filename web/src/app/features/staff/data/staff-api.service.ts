@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
@@ -39,6 +40,7 @@ interface ChildApiModel {
   site_core_hourly_rate_minor?: number | null;
   notes?: string;
   is_active: boolean;
+  primary_room_id?: string | null;
   has_current_room: boolean;
   has_booking_pattern?: boolean;
   enrollment_complete: boolean;
@@ -375,29 +377,46 @@ export class StaffApiService {
       .pipe(map((r) => r.leaving_record));
   }
 
+  static readonly LOAD_ERROR = { __loadError: true };
+
+  static isLoadError<T>(value: T | typeof StaffApiService.LOAD_ERROR): value is typeof StaffApiService.LOAD_ERROR {
+    return value === StaffApiService.LOAD_ERROR || (value !== null && typeof value === 'object' && '__loadError' in (value as any));
+  }
+
   // Aggregated loader used by the manager-child-edit stepper. Fans out to
   // every per-resource endpoint in parallel and combines the results.
+  // Each property is null when the resource doesn't exist;
+  // a LOAD_ERROR sentinel when the request failed.
   getStepperView(childId: string): Observable<{
-    profile: ChildProfile | null;
-    health: ChildHealthProfile | null;
-    safeguarding: ChildSafeguardingProfile | null;
+    profile: ChildProfile | null | typeof StaffApiService.LOAD_ERROR;
+    health: ChildHealthProfile | null | typeof StaffApiService.LOAD_ERROR;
+    safeguarding: ChildSafeguardingProfile | null | typeof StaffApiService.LOAD_ERROR;
     contacts: {
       parentCarers: ChildContact[];
       emergencyContacts: ChildContact[];
       authorisedCollectors: ChildContact[];
-    };
-    collection: ChildCollectionSettings | null;
-    funding: ChildFundingRecord | null;
-    consent: ChildConsent | null;
+    } | typeof StaffApiService.LOAD_ERROR;
+    collection: ChildCollectionSettings | null | typeof StaffApiService.LOAD_ERROR;
+    funding: ChildFundingRecord | null | typeof StaffApiService.LOAD_ERROR;
+    consent: ChildConsent | null | typeof StaffApiService.LOAD_ERROR;
   }> {
+    const guard = <T>(obs: Observable<T | null>) =>
+      obs.pipe(catchError(() => of(StaffApiService.LOAD_ERROR as unknown as T)));
+
     return forkJoin({
-      profile: this.getChildProfile(childId),
-      health: this.getChildHealth(childId),
-      safeguarding: this.getChildSafeguarding(childId),
-      contacts: this.getChildContacts(childId),
-      collection: this.getChildCollectionSettings(childId),
-      funding: this.getChildFunding(childId),
-      consent: this.getChildConsent(childId),
+      profile: guard(this.getChildProfile(childId)),
+      health: guard(this.getChildHealth(childId)),
+      safeguarding: guard(this.getChildSafeguarding(childId)),
+      contacts: this.getChildContacts(childId).pipe(
+        catchError(() => of(StaffApiService.LOAD_ERROR as unknown as {
+          parentCarers: ChildContact[];
+          emergencyContacts: ChildContact[];
+          authorisedCollectors: ChildContact[];
+        })),
+      ),
+      collection: guard(this.getChildCollectionSettings(childId)),
+      funding: guard(this.getChildFunding(childId)),
+      consent: guard(this.getChildConsent(childId)),
     });
   }
 
@@ -566,6 +585,7 @@ export class StaffApiService {
       siteCoreHourlyRateMinor: child.site_core_hourly_rate_minor ?? null,
       notes: child.notes ?? null,
       isActive: child.is_active,
+      primaryRoomId: child.primary_room_id ?? null,
       hasCurrentRoom: child.has_current_room,
       hasBookingPattern: child.has_booking_pattern ?? false,
       enrollmentComplete: child.enrollment_complete,

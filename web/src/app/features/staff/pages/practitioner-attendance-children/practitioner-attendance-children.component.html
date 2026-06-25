@@ -1,19 +1,25 @@
-<div class="space-y-5">
-  <!-- Header -->
-  <app-page-header
-    title="Today's attendance"
-    [hasActions]="true"
-  >
-    <div class="flex flex-wrap items-center gap-2" actions>
-      <label class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+<div class="space-y-6">
+  <!-- Header Section -->
+  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="attendance-title">
+    <div class="max-w-3xl">
+      <h1 id="attendance-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        Today's Attendance
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        {{ currentDate }} — <span class="font-medium">{{ clockTime }}</span>
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <label class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
         <input
           type="checkbox"
           data-testid="auto-refresh-toggle"
           [checked]="autoRefreshEnabled"
           (change)="toggleAutoRefresh()"
-          class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
+          class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
         />
-        Auto refresh
+        Auto-refresh
       </label>
       @if (isBackgroundRefreshing) {
         <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="refreshing-indicator">Refreshing...</span>
@@ -21,181 +27,445 @@
       @if (lastUpdatedLabel) {
         <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="last-updated">Updated {{ lastUpdatedLabel }}</span>
       }
-      <app-button variant="outline" size="sm" [disabled]="isLoading" (btnClick)="loadChildren()">Refresh</app-button>
-    </div>
-  </app-page-header>
-
-  <!-- Controls -->
-  <div class="space-y-3 sm:flex sm:items-center sm:gap-3">
-    <input
-      type="text"
-      data-testid="attendance-search"
-      placeholder="Search by name..."
-      class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:flex-1 sm:max-w-xs"
-      [value]="searchTerm"
-      (input)="onSearchChange($any($event.target).value)"
-    />
-    <div class="flex flex-wrap gap-2">
       <button
-        data-testid="attendance-filter-all"
         type="button"
-        class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [ngClass]="{
-          'bg-blue-600 text-white': statusFilter === 'all',
-          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'all'
-        }"
-        (click)="setStatusFilter('all')"
+        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        (click)="loadChildren()"
       >
-        All ({{ children.length }})
-      </button>
-      <button
-        data-testid="attendance-filter-not-in"
-        type="button"
-        class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [ngClass]="{
-          'bg-blue-600 text-white': statusFilter === 'not_checked_in',
-          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'not_checked_in'
-        }"
-        (click)="setStatusFilter('not_checked_in')"
-      >
-        Not in ({{ notInCount }})
-      </button>
-      <button
-        data-testid="attendance-filter-checked-in"
-        type="button"
-        class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-        [ngClass]="{
-          'bg-blue-600 text-white': statusFilter === 'checked_in',
-          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': statusFilter !== 'checked_in'
-        }"
-        (click)="setStatusFilter('checked_in')"
-      >
-        Checked in ({{ checkedInCount }})
+        <ng-icon name="heroArrowPath" size="18" aria-hidden="true" />
+        Refresh
       </button>
     </div>
-  </div>
+  </section>
 
-  <!-- Global error -->
   @if (errorMessage) {
-    <app-alert variant="error" [message]="errorMessage"></app-alert>
+    <app-alert variant="error" title="Error" [message]="errorMessage"></app-alert>
   }
 
-  <!-- Loading -->
+  <!-- Stats Cards -->
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Attendance summary">
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroUsers" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-success-600 dark:text-success-400">Daily Plan</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Expected</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ children.length }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+          <ng-icon name="heroCheckBadge" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-success-600 dark:text-success-400">
+          @if (children.length > 0) {
+            {{ (checkedInCount / children.length * 100) | number:'1.0-0' }}%
+          } @else {
+            0%
+          }
+        </span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Checked In</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ checkedInCount }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300">
+          <ng-icon name="heroXCircle" size="24" aria-hidden="true" />
+        </div>
+        <span class="text-xs font-semibold text-error-600 dark:text-error-400">{{ absentCount }} Sick</span>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Absent Today</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ absentCount }}</p>
+    </article>
+
+    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex size-12 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300">
+          <ng-icon name="heroClock" size="24" aria-hidden="true" />
+        </div>
+      </div>
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Expected Soon</p>
+      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ expectedSoonCount }}</p>
+    </article>
+  </section>
+
+  <!-- Loading / Empty states -->
   @if (isLoading && children.length === 0) {
     <app-loading-state label="Loading attendance..."></app-loading-state>
-  }
-
-  <!-- Empty - no children -->
-  @else if (children.length === 0) {
+  } @else if (children.length === 0) {
     <app-empty-state title="No children available for today's attendance."></app-empty-state>
-  }
+  } @else {
+    <!-- Records Section -->
+    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Attendance records">
+      <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            data-testid="attendance-filter-all"
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            [ngClass]="{
+              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'all',
+              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'all'
+            }"
+            (click)="setStatusFilter('all')"
+          >
+            All ({{ children.length }})
+          </button>
+          <button
+            data-testid="attendance-filter-not-in"
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            [ngClass]="{
+              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'not_checked_in',
+              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'not_checked_in'
+            }"
+            (click)="setStatusFilter('not_checked_in')"
+          >
+            Not in ({{ notInCount }})
+          </button>
+          <button
+            data-testid="attendance-filter-checked-in"
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            [ngClass]="{
+              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'checked_in',
+              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'checked_in'
+            }"
+            (click)="setStatusFilter('checked_in')"
+          >
+            Checked in ({{ checkedInCount }})
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            [ngClass]="{
+              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'absent',
+              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'absent'
+            }"
+            (click)="setStatusFilter('absent')"
+          >
+            Absent ({{ absentCount }})
+          </button>
+        </div>
 
-  <!-- Empty - filtered -->
-  @else if (filteredChildren.length === 0) {
-    <app-empty-state title="No children match the current filters."></app-empty-state>
-  }
-
-  <!-- Child cards -->
-  @else {
-    <div class="space-y-2">
-      @for (child of filteredChildren; track child.id) {
-        <div
-          [attr.data-testid]="'attendance-row-' + child.id"
-          class="rounded-lg border border-gray-200 bg-white p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-          <!-- Left: name + badge + supporting text -->
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ child.fullName }}</span>
-              <app-status-badge [status]="child.attendanceState"></app-status-badge>
-            </div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              @if (isCheckedIn(child) && child.checkedInAt) {
-                <span>Checked in at {{ formatLondonTime(child.checkedInAt) }}</span>
-              }
-              @if (isAbsent(child)) {
-                <span>Marked absent today</span>
-              }
-              @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
-                <span class="text-amber-600 dark:text-amber-400">Enrollment incomplete</span>
-              }
-              @if (showIncompleteSessionWarning(child)) {
-                <span class="block text-amber-600 dark:text-amber-400">Incomplete session needs manager correction</span>
-              }
-            </div>
+        <div class="flex flex-1 lg:max-w-md">
+          <label for="attendance-search" class="sr-only">Filter by name</label>
+          <div class="relative w-full">
+            <ng-icon
+              name="heroMagnifyingGlass"
+              size="18"
+              class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              id="attendance-search"
+              type="search"
+              data-testid="attendance-search"
+              class="h-12 w-full rounded-lg border border-gray-300 bg-white py-3 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-400 dark:focus:border-brand-800"
+              placeholder="Search children by name..."
+              [value]="searchTerm"
+              (input)="onSearchChange($any($event.target).value)"
+            />
           </div>
+        </div>
+      </div>
 
-          <!-- Right: action -->
-          <div class="mt-2.5 flex flex-col gap-2 sm:mt-0 sm:flex-shrink-0 sm:flex-row sm:items-center">
-            @if (isCheckedIn(child)) {
-              <button
-                type="button"
-                [attr.data-testid]="'attendance-action-' + child.id"
-                class="w-full rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 active:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20 sm:w-auto sm:py-2.5"
-                [disabled]="!canCheckOut(child)"
-                (click)="checkOut(child)"
-              >
-                @if (isPending(child.id)) {
-                  Checking out...
-                } @else {
-                  Check out
+      <!-- Filtered empty -->
+      @if (filteredChildren.length === 0) {
+        <app-empty-state
+          title="No children match the current filters."
+          message="Try adjusting the status filter or search term."
+        ></app-empty-state>
+      } @else {
+        <!-- Mobile cards -->
+        <div class="lg:hidden">
+          <div class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (child of filteredChildren; track child.id) {
+              <div>
+                <article
+                  class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                  [class.opacity-60]="isAbsent(child)"
+                >
+                  <div class="flex items-start gap-3">
+                    <div
+                      class="flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                      [ngClass]="{
+                        'bg-gray-300 dark:bg-gray-600': isAbsent(child),
+                        'bg-brand-200 text-brand-700 dark:bg-brand-800 dark:text-brand-200': !isCheckedIn(child) && !isAbsent(child),
+                        'bg-success-200 text-success-700 dark:bg-success-800 dark:text-success-200': isCheckedIn(child)
+                      }"
+                    >
+                      {{ child.fullName | slice:0:2 | uppercase }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
+                        @if (isCheckedIn(child)) {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-success-500"></span>
+                            {{ formatLondonTime(child.checkedInAt) }}
+                          </span>
+                        } @else if (isAbsent(child)) {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-0.5 text-xs font-medium text-error-700 dark:bg-error-500/15 dark:text-error-400">
+                            Absent
+                          </span>
+                        } @else {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-white/[0.08] dark:text-gray-300">
+                            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400"></span>
+                            Not in
+                          </span>
+                        }
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
+                          <span class="text-warning-600 dark:text-warning-400">Enrollment incomplete</span>
+                        } @else if (showIncompleteSessionWarning(child)) {
+                          <span class="text-warning-600 dark:text-warning-400">Incomplete session needs manager correction</span>
+                        } @else if (isAbsent(child)) {
+                          <span class="text-error-600 dark:text-error-400">Marked absent today</span>
+                        } @else {
+                          Full Day
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-4 flex gap-2">
+                    @if (isCheckedIn(child)) {
+                      <button
+                        type="button"
+                        class="flex-1 rounded-lg border border-brand-200 px-3 py-2 text-sm font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                        [disabled]="!canCheckOut(child)"
+                        (click)="checkOut(child)"
+                      >
+                        @if (isPending(child.id)) {
+                          Checking out...
+                        } @else {
+                          Check out
+                        }
+                      </button>
+                    } @else if (isAbsent(child) && child.absenceMarkerId) {
+                      <button
+                        type="button"
+                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                        [disabled]="!canClearAbsence(child)"
+                        (click)="clearAbsence(child)"
+                      >
+                        @if (isPending(child.id)) {
+                          Clearing...
+                        } @else {
+                          Clear absence
+                        }
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="flex-1 rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 disabled:opacity-50"
+                        [disabled]="!canCheckIn(child)"
+                        (click)="checkIn(child)"
+                      >
+                        @if (isPending(child.id)) {
+                          Checking in...
+                        } @else {
+                          Check in
+                        }
+                      </button>
+                      <button
+                        type="button"
+                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                        [disabled]="!canMarkAbsent(child)"
+                        (click)="markAbsent(child)"
+                      >
+                        @if (isPending(child.id)) {
+                          Marking...
+                        } @else {
+                          Mark absent
+                        }
+                      </button>
+                    }
+                  </div>
+                </article>
+                @if (rowErrors[child.id]) {
+                  <div class="mx-4 mb-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-500/10 dark:text-red-400">
+                    {{ rowErrors[child.id] }}
+                  </div>
                 }
-              </button>
-            } @else if (isAbsent(child) && child.absenceMarkerId) {
-              <button
-                type="button"
-                [attr.data-testid]="'attendance-clear-absence-' + child.id"
-                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:py-2.5"
-                [disabled]="!canClearAbsence(child)"
-                (click)="clearAbsence(child)"
-              >
-                @if (isPending(child.id)) {
-                  Clearing...
-                } @else {
-                  Clear absence
-                }
-              </button>
-            } @else {
-              <button
-                type="button"
-                [attr.data-testid]="'attendance-action-' + child.id"
-                class="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600 sm:w-auto sm:py-2.5"
-                [disabled]="!canCheckIn(child)"
-                (click)="checkIn(child)"
-              >
-                @if (isPending(child.id)) {
-                  Checking in...
-                } @else {
-                  Check in
-                }
-              </button>
-              <button
-                type="button"
-                [attr.data-testid]="'attendance-mark-absent-' + child.id"
-                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:py-2.5"
-                [disabled]="!canMarkAbsent(child)"
-                (click)="markAbsent(child)"
-              >
-                @if (isPending(child.id)) {
-                  Marking...
-                } @else {
-                  Mark absent
-                }
-              </button>
+              </div>
             }
           </div>
         </div>
 
-        <!-- Row error below affected card -->
-        @if (rowErrors[child.id]) {
-          <div
-            [attr.data-testid]="'attendance-row-error-' + child.id"
-            class="-mt-1 rounded-b-lg border border-t-0 border-gray-200 bg-red-50 px-3 pb-2 pt-1 text-xs text-red-600 dark:border-gray-800 dark:bg-red-500/5 dark:text-red-400"
-          >
-            {{ rowErrors[child.id] }}
-          </div>
-        }
+        <!-- Desktop table -->
+        <div class="hidden overflow-x-auto lg:block">
+          <table class="w-full min-w-[960px] border-collapse text-left">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+                <th class="px-6 py-4">Child</th>
+                <th class="px-6 py-4">Room / Session</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+              @for (child of filteredChildren; track child.id) {
+                <tr
+                  [attr.data-testid]="'attendance-row-' + child.id"
+                  class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                  [class.opacity-60]="isAbsent(child)"
+                >
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-4">
+                      <div
+                        class="flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                        [ngClass]="{
+                          'bg-gray-300 dark:bg-gray-600': isAbsent(child),
+                          'bg-brand-200 text-brand-700 dark:bg-brand-800 dark:text-brand-200': !isCheckedIn(child) && !isAbsent(child),
+                          'bg-success-200 text-success-700 dark:bg-success-800 dark:text-success-200': isCheckedIn(child)
+                        }"
+                      >
+                        {{ child.fullName | slice:0:2 | uppercase }}
+                      </div>
+                      <div class="min-w-0">
+                        <p class="font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</p>
+                        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">ID: #{{ child.id | slice:0:8 | uppercase }}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                      @if (isCheckedIn(child)) {
+                        @if (child.checkedInAt) {
+                          From {{ formatLondonTime(child.checkedInAt) }}
+                        } @else {
+                          Today
+                        }
+                      } @else {
+                        —
+                      }
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
+                        <span class="text-warning-600 dark:text-warning-400">Enrollment incomplete</span>
+                      } @else if (showIncompleteSessionWarning(child)) {
+                        <span class="text-warning-600 dark:text-warning-400">Incomplete session needs manager correction</span>
+                      } @else if (isAbsent(child)) {
+                        <span class="text-error-600 dark:text-error-400">Marked absent today</span>
+                      } @else {
+                        Full Day
+                      }
+                    </p>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    @if (isCheckedIn(child)) {
+                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="h-2.5 w-2.5 rounded-full bg-success-500"></span>
+                        Checked in at
+                        @if (child.checkedInAt) {
+                          {{ formatLondonTime(child.checkedInAt) }}
+                        }
+                      </span>
+                    } @else if (isAbsent(child)) {
+                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <ng-icon name="heroXCircle" size="18" class="text-error-500" aria-hidden="true" />
+                        Absent
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-gray-400"></span>
+                        Not in
+                      </span>
+                    }
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-2">
+                      @if (isCheckedIn(child)) {
+                        <button
+                          type="button"
+                          [attr.data-testid]="'attendance-action-' + child.id"
+                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-brand-200 px-3 text-sm font-medium text-brand-700 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-brand-700 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                          [disabled]="!canCheckOut(child)"
+                          (click)="checkOut(child)"
+                        >
+                          @if (isPending(child.id)) {
+                            Checking out...
+                          } @else {
+                            Check out
+                          }
+                        </button>
+                      } @else if (isAbsent(child) && child.absenceMarkerId) {
+                        <button
+                          type="button"
+                          [attr.data-testid]="'attendance-clear-absence-' + child.id"
+                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                          [disabled]="!canClearAbsence(child)"
+                          (click)="clearAbsence(child)"
+                        >
+                          @if (isPending(child.id)) {
+                            Clearing...
+                          } @else {
+                            Clear absence
+                          }
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          [attr.data-testid]="'attendance-action-' + child.id"
+                          class="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-500 px-3 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
+                          [disabled]="!canCheckIn(child)"
+                          (click)="checkIn(child)"
+                        >
+                          @if (isPending(child.id)) {
+                            Checking in...
+                          } @else {
+                            Check in
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          [attr.data-testid]="'attendance-mark-absent-' + child.id"
+                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                          [disabled]="!canMarkAbsent(child)"
+                          (click)="markAbsent(child)"
+                        >
+                          @if (isPending(child.id)) {
+                            Marking...
+                          } @else {
+                            Mark absent
+                          }
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+
+                @if (rowErrors[child.id]) {
+                  <tr [attr.data-testid]="'attendance-row-error-' + child.id">
+                    <td colspan="4" class="px-6 pb-3 pt-0">
+                      <div class="rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-500/10 dark:text-red-400">
+                        {{ rowErrors[child.id] }}
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination / summary -->
+        <div class="border-t border-gray-200 px-6 py-4 text-center dark:border-gray-800">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Showing {{ filteredChildren.length }} of {{ children.length }} children
+          </p>
+        </div>
       }
-    </div>
+    </section>
   }
 </div>

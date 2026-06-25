@@ -265,7 +265,7 @@ interface AttendanceTile {
 })
 export class ManagerDashboardComponent {
   readonly snapshot: ManagerDashboardSnapshot = MANAGER_DASHBOARD_MOCK;
-  readonly attendanceRoute = '/practitioner/attendance';
+  readonly attendanceRoute = '/manager/attendance';
   readonly invoiceRunRoute = '/manager/invoice-run';
 
   get attendanceTiles(): AttendanceTile[] {

@@ -176,7 +176,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
     {
       label: 'Open attendance',
       description: 'Check-in and check-out for today',
-      route: '/practitioner/attendance',
+      route: '/manager/attendance',
     },
     {
       label: 'Attendance corrections',

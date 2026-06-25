@@ -3,6 +3,8 @@ package httpchild
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/children/domain"
 )
 
@@ -17,6 +19,7 @@ type childResponse struct {
 	SiteCoreHourlyRateMinor *int     `json:"site_core_hourly_rate_minor"`
 	Notes                   *string  `json:"notes,omitempty"`
 	IsActive                bool     `json:"is_active"`
+	PrimaryRoomID           *string  `json:"primary_room_id,omitempty"`
 	HasCurrentRoom          bool     `json:"has_current_room"`
 	HasBookingPattern       bool     `json:"has_booking_pattern"`
 	EnrollmentComplete      bool     `json:"enrollment_complete"`
@@ -66,6 +69,7 @@ func toChildResponse(child domain.Child) childResponse {
 		SiteCoreHourlyRateMinor: child.SiteCoreHourlyRateMinor,
 		Notes:                   child.Notes,
 		IsActive:                child.IsActive,
+		PrimaryRoomID:           uuidPtrToStringPtr(child.PrimaryRoomID),
 		HasCurrentRoom:          child.HasCurrentRoom,
 		HasBookingPattern:       child.HasBookingPattern,
 		EnrollmentComplete:      child.EnrollmentComplete(),
@@ -109,5 +113,13 @@ func formatDatePtr(t *time.Time) *string {
 		return nil
 	}
 	s := t.Format("2006-01-02")
+	return &s
+}
+
+func uuidPtrToStringPtr(u *uuid.UUID) *string {
+	if u == nil {
+		return nil
+	}
+	s := u.String()
 	return &s
 }

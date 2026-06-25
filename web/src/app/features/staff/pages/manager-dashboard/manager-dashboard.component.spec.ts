@@ -103,7 +103,7 @@ describe('ManagerDashboardComponent', () => {
     const links = quickActionSection!.querySelectorAll('a');
     const hrefs = Array.from(links).map((a) => a.getAttribute('href') ?? '');
 
-    expect(hrefs.some((h) => h.includes('/practitioner/attendance'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/manager/attendance'))).toBe(true);
     expect(hrefs.some((h) => h.includes('/manager/children'))).toBe(true);
   });
 

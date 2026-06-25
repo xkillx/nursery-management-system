@@ -48,7 +48,7 @@ describe('AppSidebarComponent', () => {
       const managerInvoiceRun = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoice-run"]');
       const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
       const managerRooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
-      const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
+      const managerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance"]');
       const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
       expect(dashboard).toBeTruthy();
@@ -58,7 +58,7 @@ describe('AppSidebarComponent', () => {
       expect(managerInvoiceRun).toBeTruthy();
       expect(managerInvoices).toBeTruthy();
       expect(managerRooms).toBeTruthy();
-      expect(practitionerAttendance).toBeTruthy();
+      expect(managerAttendance).toBeTruthy();
       expect(parentInvoices).toBeFalsy();
     });
 
@@ -112,6 +112,14 @@ describe('AppSidebarComponent', () => {
       const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
       expect(rooms).toBeTruthy();
       expect(rooms.getAttribute('href')).toContain('/manager/rooms');
+    });
+
+    it('attendance link points to /manager/attendance', () => {
+      fixture.detectChanges();
+
+      const attendance = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance"]');
+      expect(attendance).toBeTruthy();
+      expect(attendance.getAttribute('href')).toContain('/manager/attendance');
     });
 
     it('sets aria-current="page" on the active link', () => {

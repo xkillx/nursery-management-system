@@ -598,6 +598,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   child: ChildRecord | null = null;
   workflowStatus: StepperCompletionStatus | null = null;
   isNewRegistration = true;
+  loadedSections = new Set<string>();
 
   isLoading = false;
   isSaving = false;
@@ -1177,7 +1178,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     };
 
     if (this.childId) {
-      this.saveStep1Profile(this.childId, advance);
+      this.staffApi.updateChild(this.childId, payload).subscribe({
+        next: () => this.saveStep1Profile(this.childId!, advance),
+        error: (error) => {
+          this.isSaving = false;
+          const mapped = this.errorMapper.mapAndHandle(error);
+          this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
+        },
+      });
       return;
     }
 
@@ -1217,10 +1225,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.errorMessage = null;
 
+    if (!this.loadedSections.has('health')) {
+      this.isSaving = false;
+      this.errorMessage = 'Health data unavailable — could not save. Please reload the page.';
+      return;
+    }
+
     const medicationNotes = [
       this.step2.medication_name && `Medication: ${this.step2.medication_name}`,
       this.step2.medication_dosage && `Dosage: ${this.step2.medication_dosage}`,
       this.step2.medication_storage && `Storage: ${this.step2.medication_storage}`,
+      this.step2.medication_side_effects && `Side effects: ${this.step2.medication_side_effects}`,
     ].filter(Boolean).join('\n');
 
     const dietaryNotes = [
@@ -1267,6 +1282,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private saveStep2Safeguarding(childId: string, referrals: any[]): void {
+    if (!this.loadedSections.has('safeguarding')) {
+      this.isSaving = false;
+      this.errorMessage = 'Safeguarding data unavailable — could not save. Please reload the page.';
+      return;
+    }
     this.staffApi.patchChildSafeguarding(childId, {
       social_services_status: (this.step2.social_services_status || 'unknown') as any,
       social_services_notes: this.step2.social_services_details.trim() || null,
@@ -1292,6 +1312,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private saveStep2RoutineCare(childId: string): void {
+    if (!this.loadedSections.has('profile')) {
+      this.isSaving = false;
+      this.errorMessage = 'Profile data unavailable — could not save. Please reload the page.';
+      return;
+    }
     this.staffApi.patchChildProfile(childId, {
       routine_care_notes: this.step2.routine_care_notes.trim() || null,
       routine_care_reviewed: true,
@@ -1332,6 +1357,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.isSaving = true;
     this.errorMessage = null;
+
+    if (!this.loadedSections.has('contacts')) {
+      this.isSaving = false;
+      this.errorMessage = 'Contacts data unavailable — could not save. Please reload the page.';
+      return;
+    }
 
     const parent1 = this.parentCarersDraft[0]
       ? {
@@ -1383,9 +1414,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }));
 
     this.staffApi.putChildContacts(this.childId!, {
-      parentCarers: parentCarers as any,
-      emergencyContacts: emergencyContacts as any,
-      authorisedCollectors: authorisedCollectors as any,
+      parentCarers: parentCarers.map(c => this.toContactWire(c as ChildContact)),
+      emergencyContacts: emergencyContacts.map(c => this.toContactWire(c as ChildContact)),
+      authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
     }).subscribe({
       next: () => this.saveStep3Collection(this.childId!),
       error: (error) => {
@@ -1397,6 +1428,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private saveStep3Collection(childId: string): void {
+    if (!this.loadedSections.has('collection')) {
+      this.isSaving = false;
+      this.errorMessage = 'Collection settings data unavailable — could not save. Please reload the page.';
+      return;
+    }
     const password = this.step3.collection_password;
     this.staffApi.putChildCollectionSettings(childId, { password: password || '' } as any).subscribe({
       next: () => {
@@ -1428,6 +1464,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.isSaving = true;
     this.errorMessage = null;
+
+    if (!this.loadedSections.has('consent')) {
+      this.isSaving = false;
+      this.errorMessage = 'Consent data unavailable — could not save. Please reload the page.';
+      return;
+    }
 
     const { social_media_channel_notes: _ignored, ...step4Base } = this.step4;
     const signedDate = this.step4.signed_date || this.todayIso;
@@ -1468,7 +1510,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
             currentConsent: saved,
           };
         }
-        this.loadStatus();
+        this.loadStatus(saved);
       },
       error: (error) => {
         this.isSaving = false;
@@ -2098,6 +2140,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       address: c.address ?? null,
       telephone: c.telephone?.trim() || null,
       email: c.email?.trim() || null,
+      work_address: c.workAddress ?? null,
       has_parental_responsibility: c.hasParentalResponsibility ?? null,
     };
   }
@@ -2421,6 +2464,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private saveStep1Profile(childId: string, advance: boolean): void {
+    if (!this.loadedSections.has('profile')) {
+      this.isSaving = false;
+      this.errorMessage = 'Profile data unavailable — could not save. Please reload the page.';
+      return;
+    }
     this.staffApi.patchChildProfile(childId, {
       sex: this.step1.sex || null,
       first_language: this.step1.first_language || null,
@@ -2441,6 +2489,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       parent_responsibility_reviewed: true,
       emergency_collection_reviewed: true,
       routine_care_reviewed: true,
+      routine_care_notes: this.step2.routine_care_notes.trim() || null,
     } as any).subscribe({
       next: () => {
         this.isSaving = false;
@@ -2482,27 +2531,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.getStepperView(this.childId).subscribe({
       next: (view) => {
         this.populateDraftsFromView(view);
-        this.loadRegistrationConsents();
-        this.loadStatus();
+        this.applyConsent(view.consent);
+        this.loadStatus(StaffApiService.isLoadError(view.consent) ? undefined : view.consent);
       },
       error: () => {
-        this.loadStatus();
+        this.loadStatus(undefined);
       },
     });
   }
 
-  private loadRegistrationConsents(): void {
-    if (!this.childId) return;
-    this.staffApi.getChildConsent(this.childId).subscribe({
-      next: (consent) => {
-        if (consent) {
-          this.populateStep4FromConsent(consent);
-        }
-      },
-      error: () => {
-        // Consents not yet recorded for this child; defaults remain.
-      },
-    });
+  private applyConsent(consent: ConsentRecord | null | typeof StaffApiService.LOAD_ERROR): void {
+    if (consent && !StaffApiService.isLoadError(consent)) {
+      this.populateStep4FromConsent(consent);
+    }
   }
 
   private populateStep4FromConsent(record: ConsentRecord): void {
@@ -2536,11 +2577,24 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.markAllConsentsReviewed();
   }
 
-  private loadStatus(): void {
+  private loadStatus(existingConsent: ConsentRecord | null | undefined): void {
     if (!this.childId) {
       this.isLoading = false;
       return;
     }
+
+    if (existingConsent !== undefined) {
+      this.workflowStatus = {
+        isReviewedComplete: !!existingConsent?.safeguarding_reporting_acknowledgement,
+        canMarkComplete: !!existingConsent?.safeguarding_reporting_acknowledgement,
+        needsReview: !existingConsent,
+        missingGroups: existingConsent ? [] : ['safeguarding_reporting_acknowledgement'],
+        currentConsent: existingConsent,
+      };
+      this.isLoading = false;
+      return;
+    }
+
     this.staffApi.getChildConsent(this.childId).subscribe({
       next: (consent) => {
         this.workflowStatus = {
@@ -2570,19 +2624,28 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private populateDraftsFromView(view: {
-    profile: ChildProfile | null;
-    health: ChildHealthProfile | null;
-    safeguarding: ChildSafeguardingProfile | null;
+    profile: ChildProfile | null | typeof StaffApiService.LOAD_ERROR;
+    health: ChildHealthProfile | null | typeof StaffApiService.LOAD_ERROR;
+    safeguarding: ChildSafeguardingProfile | null | typeof StaffApiService.LOAD_ERROR;
     contacts: {
       parentCarers: RegistrationContactEntry[];
       emergencyContacts: RegistrationContactEntry[];
       authorisedCollectors: RegistrationContactEntry[];
-    };
-    collection: ChildCollectionSettings | null;
-    funding: ChildFundingRecord | null;
-    consent: ConsentRecord | null;
+    } | typeof StaffApiService.LOAD_ERROR;
+    collection: ChildCollectionSettings | null | typeof StaffApiService.LOAD_ERROR;
+    funding: ChildFundingRecord | null | typeof StaffApiService.LOAD_ERROR;
+    consent: ConsentRecord | null | typeof StaffApiService.LOAD_ERROR;
   }): void {
-    if (view.profile) {
+    this.loadedSections.clear();
+    if (!StaffApiService.isLoadError(view.profile)) this.loadedSections.add('profile');
+    if (!StaffApiService.isLoadError(view.health)) this.loadedSections.add('health');
+    if (!StaffApiService.isLoadError(view.safeguarding)) this.loadedSections.add('safeguarding');
+    if (!StaffApiService.isLoadError(view.contacts)) this.loadedSections.add('contacts');
+    if (!StaffApiService.isLoadError(view.collection)) this.loadedSections.add('collection');
+    if (!StaffApiService.isLoadError(view.funding)) this.loadedSections.add('funding');
+    if (!StaffApiService.isLoadError(view.consent)) this.loadedSections.add('consent');
+
+    if (view.profile && !StaffApiService.isLoadError(view.profile)) {
       const p = view.profile;
       if (p.registration_date) {
         this.step1.registration_date = p.registration_date;
@@ -2601,7 +2664,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.routine_care_notes = p.routine_care_notes ?? '';
     }
 
-    if (view.health) {
+    if (view.health && !StaffApiService.isLoadError(view.health)) {
       const h = view.health;
       this.step2.allergy_status = this.coerceYesNoUnknown(h.medical_conditions_status);
       const notes = h.dietary_requirements_notes ?? h.medical_conditions_notes ?? '';
@@ -2609,7 +2672,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.allergy_details = parts[0] ?? '';
       this.step2.special_dietary_requirements = parts[1] ?? '';
       this.step2.medication_status = this.coerceYesNoUnknown(h.prescribed_medication_status);
-      this.step2.medication_name = h.medication_notes ?? '';
+      const medNotes = h.medication_notes ?? '';
+      this.step2.medication_name = '';
+      this.step2.medication_dosage = '';
+      this.step2.medication_storage = '';
+      this.step2.medication_side_effects = '';
+      for (const line of medNotes.split('\n')) {
+        if (line.startsWith('Medication: ')) this.step2.medication_name = line.slice('Medication: '.length);
+        else if (line.startsWith('Dosage: ')) this.step2.medication_dosage = line.slice('Dosage: '.length);
+        else if (line.startsWith('Storage: ')) this.step2.medication_storage = line.slice('Storage: '.length);
+        else if (line.startsWith('Side effects: ')) this.step2.medication_side_effects = line.slice('Side effects: '.length);
+      }
       this.step2.immunisation_status = h.immunisation_status ?? '';
       this.step2.immunisation_country = h.immunisation_country ?? '';
       this.step2.illness_diagnosis_history = h.illness_diagnosis_history ?? '';
@@ -2628,7 +2701,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.health_visitor_phone = h.health_visitor_phone ?? '';
     }
 
-    if (view.safeguarding) {
+    if (view.safeguarding && !StaffApiService.isLoadError(view.safeguarding)) {
       const s = view.safeguarding;
       this.step2.social_services_status = this.coerceYesNoUnknown(s.social_services_status);
       this.step2.social_services_details = s.social_services_notes ?? '';
@@ -2652,33 +2725,40 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         : [];
     }
 
-    this.parentCarersDraft = view.contacts.parentCarers.length
-      ? view.contacts.parentCarers.map(contact => ({ ...contact }))
-      : [this.emptyContact('Mother')];
-    if (view.contacts.parentCarers.length > 1) {
-      this.step3.show_second_parent = true;
-      this.step3.second_parent_name = view.contacts.parentCarers[1].fullName ?? '';
-      this.step3.second_parent_relationship = view.contacts.parentCarers[1].relationship_to_child ?? '';
-      this.step3.second_parent_telephone = view.contacts.parentCarers[1].telephone ?? '';
-      this.step3.second_parent_email = view.contacts.parentCarers[1].email ?? '';
-      this.step3.second_parent_address = this.addressToString(view.contacts.parentCarers[1].address as any);
-      this.step3.second_parent_has_responsibility = view.contacts.parentCarers[1].has_parental_responsibility ?? null;
-    }
-    this.step3.parent1_has_responsibility = view.contacts.parentCarers[0]?.has_parental_responsibility ?? null;
+    if (view.contacts && !StaffApiService.isLoadError(view.contacts)) {
+      const raw = view.contacts as {
+        parentCarers: RegistrationContactEntry[];
+        emergencyContacts: RegistrationContactEntry[];
+        authorisedCollectors: RegistrationContactEntry[];
+      };
+      this.parentCarersDraft = raw.parentCarers.length
+        ? raw.parentCarers.map(contact => ({ ...contact }))
+        : [this.emptyContact('Mother')];
+      if (raw.parentCarers.length > 1) {
+        this.step3.show_second_parent = true;
+        this.step3.second_parent_name = raw.parentCarers[1].fullName ?? '';
+        this.step3.second_parent_relationship = raw.parentCarers[1].relationship_to_child ?? '';
+        this.step3.second_parent_telephone = raw.parentCarers[1].telephone ?? '';
+        this.step3.second_parent_email = raw.parentCarers[1].email ?? '';
+        this.step3.second_parent_address = this.addressToString(raw.parentCarers[1].address as any);
+        this.step3.second_parent_has_responsibility = raw.parentCarers[1].has_parental_responsibility ?? null;
+      }
+      this.step3.parent1_has_responsibility = raw.parentCarers[0]?.has_parental_responsibility ?? null;
 
-    this.emergencyContactsDraft = view.contacts.emergencyContacts.length
-      ? view.contacts.emergencyContacts.map(contact => ({ ...contact }))
-      : [this.emptyContact('Grandparent')];
-    this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
-      view.contacts.authorisedCollectors.some(
-        (collector) => collector.fullName === contact.fullName && !!contact.fullName,
-      ),
-    );
-    if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
-      this.emergencyAuthorisedFlags[0] = true;
+      this.emergencyContactsDraft = raw.emergencyContacts.length
+        ? raw.emergencyContacts.map(contact => ({ ...contact }))
+        : [this.emptyContact('Grandparent')];
+      this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
+        raw.authorisedCollectors.some(
+          (collector: any) => collector.fullName === contact.fullName && !!contact.fullName,
+        ),
+      );
+      if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
+        this.emergencyAuthorisedFlags[0] = true;
+      }
     }
 
-    if (view.funding) {
+    if (view.funding && !StaffApiService.isLoadError(view.funding)) {
       const f = view.funding;
       this.step6 = {
         no_funding: !f.funding_enabled,

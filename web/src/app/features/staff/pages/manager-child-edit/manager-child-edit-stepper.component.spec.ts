@@ -562,6 +562,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.childId = 'child-1';
       component.currentStep = 'consents-evidence';
       component.originalStep4Snapshot = { ...component.step4 };
+      component.loadedSections.add('consent');
       component.step4.social_media = !component.originalStep4Snapshot.social_media;
       component.step4.consent_change_reason = 'Parent called to withdraw social media consent';
 
@@ -583,6 +584,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.childId = 'child-1';
       component.currentStep = 'consents-evidence';
       component.originalStep4Snapshot = { ...component.step4 };
+      component.loadedSections.add('consent');
       component.step4.consent_change_reason = 'Should not be sent';
 
       const staffApi = TestBed.inject(StaffApiService);
@@ -671,6 +673,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.isNewRegistration = false;
       component.childId = 'child-1';
       component.currentStep = 'consents-evidence';
+      component.loadedSections.add('consent');
 
       spyOn(component['staffApi'], 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
       component.saveConsentsEvidence();
