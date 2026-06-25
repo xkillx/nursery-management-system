@@ -323,6 +323,7 @@ type ChildConsentRecord struct {
 	EnteredByMembershipID                pgtype.UUID
 	CreatedAt                            pgtype.Timestamptz
 	UpdatedAt                            pgtype.Timestamptz
+	InformationTruthfulnessDeclaration   bool
 }
 
 type ChildContact struct {

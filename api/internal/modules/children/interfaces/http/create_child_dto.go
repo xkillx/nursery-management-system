@@ -118,8 +118,9 @@ type childConsentPayload struct {
 	Plasters                             bool    `json:"plasters"`
 	SafeguardingReportingAcknowledgement bool    `json:"safeguarding_reporting_acknowledgement"`
 	InformationSharingConsent            bool    `json:"information_sharing_consent"`
-	GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
-	AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
+		GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
+		InformationTruthfulnessDeclaration   bool    `json:"information_truthfulness_declaration"`
+		AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
 	HealthVisitorLiaison                 bool    `json:"health_visitor_liaison"`
 	TransitionDocuments                  bool    `json:"transition_documents"`
 	LocalOutings                         bool    `json:"local_outings"`

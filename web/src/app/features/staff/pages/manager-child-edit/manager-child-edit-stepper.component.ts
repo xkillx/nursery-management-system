@@ -2612,6 +2612,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       face_painting: record.face_painting,
       parent_supplied_sun_cream: record.parent_supplied_sun_cream,
       parent_supplied_nappy_cream: record.parent_supplied_nappy_cream,
+      gdpr_data_processing_consent: record.gdpr_data_processing_consent,
+      information_sharing_consent: record.information_sharing_consent,
       development_profile_photos: record.development_profile_photos,
       nursery_display_boards: record.nursery_display_boards,
       promotional_literature: record.promotional_literature,

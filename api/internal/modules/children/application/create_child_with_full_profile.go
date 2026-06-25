@@ -105,6 +105,7 @@ type ChildConsentInput struct {
 	SafeguardingReportingAcknowledgement bool
 	InformationSharingConsent            bool
 	GDPRDataProcessingConsent            bool
+	InformationTruthfulnessDeclaration   bool
 	AreaSENCOLiaison                     bool
 	HealthVisitorLiaison                 bool
 	TransitionDocuments                  bool
@@ -349,8 +350,9 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			Plasters:                             consent.Plasters,
 			SafeguardingReportingAcknowledgement: consent.SafeguardingReportingAcknowledgement,
 			InformationSharingConsent:            consent.InformationSharingConsent,
-			GDPRDataProcessingConsent:            consent.GDPRDataProcessingConsent,
-			AreaSENCOLiaison:                     consent.AreaSENCOLiaison,
+		GDPRDataProcessingConsent:            consent.GDPRDataProcessingConsent,
+		InformationTruthfulnessDeclaration:   consent.InformationTruthfulnessDeclaration,
+		AreaSENCOLiaison:                     consent.AreaSENCOLiaison,
 			HealthVisitorLiaison:                 consent.HealthVisitorLiaison,
 			TransitionDocuments:                  consent.TransitionDocuments,
 			LocalOutings:                         consent.LocalOutings,

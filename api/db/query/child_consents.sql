@@ -11,7 +11,8 @@ SELECT id, tenant_id, branch_id, child_id,
        staff_student_coursework, social_media, social_media_channel_notes,
        notes_exceptions, signer_name, signed_date, paper_form_on_file,
        entered_by_user_id, entered_by_membership_id,
-       created_at, updated_at
+       created_at, updated_at,
+       information_truthfulness_declaration
 FROM child_consent_records
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
 
@@ -28,7 +29,8 @@ INSERT INTO child_consent_records (
     promotional_literature, nursery_website,
     staff_student_coursework, social_media, social_media_channel_notes,
     notes_exceptions, signer_name, signed_date, paper_form_on_file,
-    entered_by_user_id, entered_by_membership_id
+    entered_by_user_id, entered_by_membership_id,
+    information_truthfulness_declaration
 )
 VALUES (
     $1, $2, $3, $4,
@@ -42,7 +44,8 @@ VALUES (
     $20, $21,
     $22, $23, NULLIF($24, ''),
     NULLIF($25, ''), $26, $27, $28,
-    $29, $30
+    $29, $30,
+    $31
 )
 RETURNING id, tenant_id, branch_id, child_id,
           urgent_medical_treatment, urgent_medical_treatment_exceptions,
@@ -56,7 +59,8 @@ RETURNING id, tenant_id, branch_id, child_id,
           staff_student_coursework, social_media, social_media_channel_notes,
           notes_exceptions, signer_name, signed_date, paper_form_on_file,
           entered_by_user_id, entered_by_membership_id,
-          created_at, updated_at;
+          created_at, updated_at,
+          information_truthfulness_declaration;
 
 -- name: ChildConsentUpdate :one
 UPDATE child_consent_records SET
@@ -86,6 +90,7 @@ UPDATE child_consent_records SET
     paper_form_on_file = $28,
     entered_by_user_id = $29,
     entered_by_membership_id = $30,
+    information_truthfulness_declaration = $31,
     updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND id = $4
 RETURNING id, tenant_id, branch_id, child_id,
@@ -100,4 +105,5 @@ RETURNING id, tenant_id, branch_id, child_id,
           staff_student_coursework, social_media, social_media_channel_notes,
           notes_exceptions, signer_name, signed_date, paper_form_on_file,
           entered_by_user_id, entered_by_membership_id,
-          created_at, updated_at;
+          created_at, updated_at,
+          information_truthfulness_declaration;

@@ -18,6 +18,7 @@ type ChildConsent struct {
 	SafeguardingReportingAcknowledgement bool
 	InformationSharingConsent            bool
 	GDPRDataProcessingConsent            bool
+	InformationTruthfulnessDeclaration   bool
 	AreaSENCOLiaison                     bool
 	HealthVisitorLiaison                 bool
 	TransitionDocuments                  bool
