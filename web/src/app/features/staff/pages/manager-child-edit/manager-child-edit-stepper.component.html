@@ -1715,6 +1715,13 @@
 
             <div class="space-y-12 p-5 md:p-6">
 
+              @if (errorMessage) {
+                <app-alert variant="error" [message]="errorMessage" />
+              }
+              @if (successMessage) {
+                <app-alert variant="success" [message]="successMessage" />
+              }
+
               <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
                 <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
                 <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly while the parent/carer and manager or staff member complete the registration together.</p>

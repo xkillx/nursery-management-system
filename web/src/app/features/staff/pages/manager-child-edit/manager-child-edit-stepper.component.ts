@@ -881,7 +881,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (childIdParam) {
       this.isNewRegistration = false;
       this.childId = childIdParam;
-      this.markAllConsentsReviewed();
       this.loadChildAndStatus();
       this.loadRoomOptions();
       return;
@@ -1509,6 +1508,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (!this.loadedSections.has('consent')) {
       this.isSaving = false;
       this.errorMessage = 'Consent data unavailable — could not save. Please reload the page.';
+      this.toast.error(this.errorMessage);
       return;
     }
 
