@@ -281,15 +281,6 @@
                         [placeholderDisabled]="false"
                       />
                     </app-form-field>
-                  } @else {
-                    <app-alert
-                      variant="info"
-                      title="No rooms available"
-                      message="You need to create a room before you can register a child."
-                      [showLink]="true"
-                      linkHref="/manager/rooms/new"
-                      linkText="Create a room"
-                    />
                   }
                 </div>
               </section>
@@ -1715,13 +1706,6 @@
 
             <div class="space-y-12 p-5 md:p-6">
 
-              @if (errorMessage) {
-                <app-alert variant="error" [message]="errorMessage" />
-              }
-              @if (successMessage) {
-                <app-alert variant="success" [message]="successMessage" />
-              }
-
               <div class="flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
                 <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
                 <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Every consent decision must be recorded explicitly while the parent/carer and manager or staff member complete the registration together.</p>
@@ -2114,8 +2098,6 @@
             <div class="space-y-8 p-5 md:p-6">
               @if (sessionPatternLoading) {
                 <app-loading-state variant="inline" label="Loading session types..." />
-              } @else if (sessionPatternLoadError) {
-                <app-alert variant="error" [message]="sessionPatternLoadError" />
               } @else {
                 @if (patternError) {
                   <div class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300" role="alert">

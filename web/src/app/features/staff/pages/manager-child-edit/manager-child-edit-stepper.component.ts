@@ -46,7 +46,6 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { SwitchComponent } from '../../../../shared/components/form/input/switch.component';
@@ -302,7 +301,6 @@ type RegistrationDraft = {
     FormsModule,
     RouterLink,
     NgIcon,
-    AlertComponent,
     ButtonComponent,
     CheckboxComponent,
     SwitchComponent,
@@ -1685,6 +1683,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       error: () => {
         this.sessionPatternLoadError = 'Failed to load session types.';
         this.sessionPatternLoading = false;
+        this.toast.error('Failed to load session types.');
       },
     });
   }
