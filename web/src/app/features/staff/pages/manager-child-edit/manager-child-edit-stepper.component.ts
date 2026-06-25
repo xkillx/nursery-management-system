@@ -370,7 +370,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private dismissTimeout: ReturnType<typeof setTimeout> | null = null;
   private hasRestoredDraft = false;
 
-  readonly steps: readonly IntakeStep[] = [
+  private readonly _steps: readonly IntakeStep[] = [
     {
       key: 'child-basics',
       label: 'Child Details',
@@ -408,6 +408,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       description: 'Funding eligibility and benefits',
     },
   ];
+
+  get steps(): readonly IntakeStep[] {
+    return this.isNewRegistration ? this._steps : this._steps.slice(0, 4);
+  }
 
   readonly languageOptions = [
     'English',
@@ -597,6 +601,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   childId: string | null = null;
   child: ChildRecord | null = null;
   workflowStatus: StepperCompletionStatus | null = null;
+  loadedProfile: ChildProfile | null = null;
   isNewRegistration = true;
   loadedSections = new Set<string>();
 
@@ -1190,6 +1195,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           this.isSaving = false;
           const mapped = this.errorMapper.mapAndHandle(error);
           this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.child'));
+          this.toast.error(this.errorMessage);
         },
       });
       return;
@@ -1283,6 +1289,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         const mapped = this.errorMapper.mapAndHandle(error);
         this.fieldErrors = mapped.fieldErrors;
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -1313,6 +1320,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         const mapped = this.errorMapper.mapAndHandle(error);
         this.fieldErrors = mapped.fieldErrors;
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -1324,6 +1332,18 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     this.staffApi.patchChildProfile(childId, {
+      sex: this.step1.sex || null,
+      first_language: this.step1.first_language || null,
+      home_address: this.stringToAddress(this.step1.home_address) as any,
+      home_postcode: this.step1.home_postcode.trim() || null,
+      home_telephone: this.step1.home_telephone.trim() || null,
+      religion: this.step1.religion.trim() || null,
+      ethnic_origin: this.step1.ethnic_origin.trim() || null,
+      other_languages: this.step1.other_languages || null,
+      disability_status: this.parseYesNoUnknown(this.step1.disability_status) as any,
+      disability_notes: this.step1.disability_notes.trim() || null,
+      access_requirements: this.step1.access_requirements.trim() || null,
+      registration_date: this.step1.registration_date || null,
       routine_care_notes: this.step2.routine_care_notes.trim() || null,
       routine_care_reviewed: true,
       demographics_home_reviewed: true,
@@ -1332,6 +1352,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       social_development_reviewed: true,
       parent_responsibility_reviewed: true,
       emergency_collection_reviewed: true,
+      gdpr_declared_by_name: this.loadedProfile?.gdpr_declared_by_name || null,
+      gdpr_declared_at: this.loadedProfile?.gdpr_declared_at || null,
+      gdpr_declaration_date: this.loadedProfile?.gdpr_declaration_date || null,
     } as any).subscribe({
       next: () => {
         this.isSaving = false;
@@ -1339,12 +1362,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           this.nextStep();
         } else {
           this.successMessage = 'Medical & health saved.';
+          this.toast.success(this.successMessage);
         }
       },
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -1433,6 +1458,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -1445,19 +1471,21 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     const password = this.step3.collection_password;
     this.staffApi.putChildCollectionSettings(childId, { password: password || '' } as any).subscribe({
-      next: () => {
-        this.step3.collection_password = '';
+      next: (res) => {
+        this.step3.collection_password = res?.collection_password ?? '';
         this.isSaving = false;
         if (advance) {
           this.nextStep();
         } else {
           this.successMessage = 'Contacts & security saved.';
+          this.toast.success(this.successMessage);
         }
       },
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -1505,6 +1533,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       next: (saved) => {
         this.isSaving = false;
         this.successMessage = 'Consents & evidence saved.';
+        this.toast.success(this.successMessage);
         this.originalStep4Snapshot = {
           ...this.step4,
           consent_change_reason: null,
@@ -1531,6 +1560,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         const mapped = this.errorMapper.mapAndHandle(error);
         this.fieldErrors = mapped.fieldErrors;
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -2504,6 +2534,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       emergency_collection_reviewed: true,
       routine_care_reviewed: true,
       routine_care_notes: this.step2.routine_care_notes.trim() || null,
+      gdpr_declared_by_name: this.loadedProfile?.gdpr_declared_by_name || null,
+      gdpr_declared_at: this.loadedProfile?.gdpr_declared_at || null,
+      gdpr_declaration_date: this.loadedProfile?.gdpr_declaration_date || null,
     } as any).subscribe({
       next: () => {
         this.isSaving = false;
@@ -2511,12 +2544,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           this.nextStep();
         } else {
           this.successMessage = 'Child details saved.';
+          this.toast.success(this.successMessage);
         }
       },
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
       },
     });
   }
@@ -2661,6 +2696,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     if (view.profile && !StaffApiService.isLoadError(view.profile)) {
       const p = view.profile;
+      this.loadedProfile = p;
       if (p.registration_date) {
         this.step1.registration_date = p.registration_date;
       }
@@ -2770,6 +2806,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
         this.emergencyAuthorisedFlags[0] = true;
       }
+    }
+
+    if (view.collection && !StaffApiService.isLoadError(view.collection)) {
+      this.step3.collection_password = view.collection.collection_password ?? '';
     }
 
     if (view.funding && !StaffApiService.isLoadError(view.funding)) {
@@ -2886,14 +2926,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.dismissTimeout = null;
     }
     this.isDraftRestoredBannerVisible = false;
-  }
-
-  protected dismissErrorMessage(): void {
-    this.errorMessage = null;
-  }
-
-  protected dismissSuccessMessage(): void {
-    this.successMessage = null;
   }
 
   protected formatDraftTimestamp(value: string | null): string {

@@ -982,14 +982,14 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 	return mapCollectionSettingRow(row), nil
 }
 
-func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	q := sqlc.New(tx)
 	_, err := q.ChildCollectionSettingSetPassword(ctx, sqlc.ChildCollectionSettingSetPasswordParams{
 		TenantID:                                uuidToPgtype(tenantID),
 		BranchID:                                uuidToPgtype(branchID),
 		ChildID:                                 uuidToPgtype(childID),
 		ID:                                      uuidToPgtype(id),
-		CollectionPasswordHash:                  pgtype.Text{String: hash, Valid: true},
+		CollectionPassword:                      pgtype.Text{String: password, Valid: true},
 		CollectionPasswordUpdatedAt:             pgtype.Timestamptz{Time: updatedAt, Valid: true},
 		CollectionPasswordUpdatedByUserID:       uuidToPgtype(userID),
 		CollectionPasswordUpdatedByMembershipID: uuidToPgtype(membershipID),
@@ -1007,7 +1007,7 @@ func mapCollectionSettingRow(row sqlc.ChildCollectionSetting) *domain.ChildColle
 		BranchID:                          pgtypeUUIDToUUID(row.BranchID),
 		ChildID:                           pgtypeUUIDToUUID(row.ChildID),
 		Over18CollectionAcknowledged:      row.Over18CollectionAcknowledged,
-		CollectionPasswordIsSet:           row.CollectionPasswordHash.String != "",
+		CollectionPassword:                row.CollectionPassword.String,
 		CollectionPasswordUpdatedAt:       pgtypeTimestamptzToTimePtr(row.CollectionPasswordUpdatedAt),
 		CollectionPasswordUpdatedByUserID: pgtypeUUIDToUUIDPtr(row.CollectionPasswordUpdatedByUserID),
 		CollectionPasswordUpdatedByMembershipID: pgtypeUUIDToUUIDPtr(row.CollectionPasswordUpdatedByMembershipID),

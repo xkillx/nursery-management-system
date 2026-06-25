@@ -7,9 +7,6 @@
       <ng-icon name="heroChevronLeft" size="18" aria-hidden="true" />
       Back to children
     </a>
-    @if (errorMessage) {
-      <app-alert variant="error" [message]="errorMessage" [dismissible]="true" (dismissed)="dismissErrorMessage()" class="mb-6" />
-    }
     @if (isLoading) {
       <app-loading-state variant="block" label="Loading registration..." />
     } @else {

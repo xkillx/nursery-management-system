@@ -494,6 +494,7 @@ type childCollectionSettingsResponse struct {
 	ChildID                           string  `json:"child_id"`
 	Over18CollectionAcknowledged      bool    `json:"over_18_collection_acknowledged"`
 	CollectionPasswordSet             bool    `json:"collection_password_set"`
+	CollectionPassword                string  `json:"collection_password"`
 	CollectionPasswordUpdatedAt       *string `json:"collection_password_updated_at,omitempty"`
 	CollectionPasswordUpdatedByUserID *string `json:"collection_password_updated_by_user_id,omitempty"`
 	CollectionPasswordUpdatedByMembershipID *string `json:"collection_password_updated_by_membership_id,omitempty"`
@@ -505,7 +506,8 @@ func toChildCollectionSettingsResponse(p *domain.ChildCollectionSetting) childCo
 	resp := childCollectionSettingsResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
 		Over18CollectionAcknowledged: p.Over18CollectionAcknowledged,
-		CollectionPasswordSet: p.CollectionPasswordIsSet,
+		CollectionPasswordSet: p.CollectionPassword != "",
+		CollectionPassword: p.CollectionPassword,
 		CollectionPasswordUpdatedAt: timeStringPtr(p.CollectionPasswordUpdatedAt),
 		CollectionPasswordUpdatedByUserID: uuidStringPtr(p.CollectionPasswordUpdatedByUserID),
 		CollectionPasswordUpdatedByMembershipID: uuidStringPtr(p.CollectionPasswordUpdatedByMembershipID),

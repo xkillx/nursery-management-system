@@ -222,13 +222,9 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		return nil, domainerrors.Validation("Invalid request payload.", "consents.signed_date")
 	}
 
-	var collectionHash string
+	var collectionPassword string
 	if input.CollectionSettings != nil && strings.TrimSpace(input.CollectionSettings.Password) != "" {
-		h, hashErr := bcryptGeneratePassword(strings.TrimSpace(input.CollectionSettings.Password))
-		if hashErr != nil {
-			return nil, domainerrors.Internal(fmt.Errorf("hash collection password: %w", hashErr))
-		}
-		collectionHash = h
+		collectionPassword = strings.TrimSpace(input.CollectionSettings.Password)
 	}
 
 	var resolvedEntries []domain.BookingPatternEntry
@@ -279,8 +275,8 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 		created = append(created, "collection_settings")
 
-		if collectionHash != "" {
-			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, cs.ID, collectionHash, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
+		if collectionPassword != "" {
+			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, cs.ID, collectionPassword, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
 				return fmt.Errorf("set collection password: %w", err)
 			}
 		}

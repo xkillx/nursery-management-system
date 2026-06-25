@@ -14,7 +14,7 @@ import (
 const childCollectionSettingGetByChild = `-- name: ChildCollectionSettingGetByChild :one
 SELECT id, tenant_id, branch_id, child_id,
        over_18_collection_acknowledged,
-       collection_password_hash, collection_password_updated_at,
+       collection_password, collection_password_updated_at,
        collection_password_updated_by_user_id, collection_password_updated_by_membership_id,
        created_at, updated_at
 FROM child_collection_settings
@@ -36,7 +36,7 @@ func (q *Queries) ChildCollectionSettingGetByChild(ctx context.Context, arg Chil
 		&i.BranchID,
 		&i.ChildID,
 		&i.Over18CollectionAcknowledged,
-		&i.CollectionPasswordHash,
+		&i.CollectionPassword,
 		&i.CollectionPasswordUpdatedAt,
 		&i.CollectionPasswordUpdatedByUserID,
 		&i.CollectionPasswordUpdatedByMembershipID,
@@ -48,7 +48,7 @@ func (q *Queries) ChildCollectionSettingGetByChild(ctx context.Context, arg Chil
 
 const childCollectionSettingSetPassword = `-- name: ChildCollectionSettingSetPassword :one
 UPDATE child_collection_settings SET
-    collection_password_hash = $5,
+    collection_password = $5,
     collection_password_updated_at = $6,
     collection_password_updated_by_user_id = $7,
     collection_password_updated_by_membership_id = $8,
@@ -56,7 +56,7 @@ UPDATE child_collection_settings SET
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND id = $4
 RETURNING id, tenant_id, branch_id, child_id,
           over_18_collection_acknowledged,
-          collection_password_hash, collection_password_updated_at,
+          collection_password, collection_password_updated_at,
           collection_password_updated_by_user_id, collection_password_updated_by_membership_id,
           created_at, updated_at
 `
@@ -66,7 +66,7 @@ type ChildCollectionSettingSetPasswordParams struct {
 	BranchID                                pgtype.UUID
 	ChildID                                 pgtype.UUID
 	ID                                      pgtype.UUID
-	CollectionPasswordHash                  pgtype.Text
+	CollectionPassword                      pgtype.Text
 	CollectionPasswordUpdatedAt             pgtype.Timestamptz
 	CollectionPasswordUpdatedByUserID       pgtype.UUID
 	CollectionPasswordUpdatedByMembershipID pgtype.UUID
@@ -78,7 +78,7 @@ func (q *Queries) ChildCollectionSettingSetPassword(ctx context.Context, arg Chi
 		arg.BranchID,
 		arg.ChildID,
 		arg.ID,
-		arg.CollectionPasswordHash,
+		arg.CollectionPassword,
 		arg.CollectionPasswordUpdatedAt,
 		arg.CollectionPasswordUpdatedByUserID,
 		arg.CollectionPasswordUpdatedByMembershipID,
@@ -90,7 +90,7 @@ func (q *Queries) ChildCollectionSettingSetPassword(ctx context.Context, arg Chi
 		&i.BranchID,
 		&i.ChildID,
 		&i.Over18CollectionAcknowledged,
-		&i.CollectionPasswordHash,
+		&i.CollectionPassword,
 		&i.CollectionPasswordUpdatedAt,
 		&i.CollectionPasswordUpdatedByUserID,
 		&i.CollectionPasswordUpdatedByMembershipID,
@@ -111,7 +111,7 @@ ON CONFLICT (child_id) DO UPDATE SET
     updated_at = now()
 RETURNING id, tenant_id, branch_id, child_id,
           over_18_collection_acknowledged,
-          collection_password_hash, collection_password_updated_at,
+          collection_password, collection_password_updated_at,
           collection_password_updated_by_user_id, collection_password_updated_by_membership_id,
           created_at, updated_at
 `
@@ -139,7 +139,7 @@ func (q *Queries) ChildCollectionSettingUpsert(ctx context.Context, arg ChildCol
 		&i.BranchID,
 		&i.ChildID,
 		&i.Over18CollectionAcknowledged,
-		&i.CollectionPasswordHash,
+		&i.CollectionPassword,
 		&i.CollectionPasswordUpdatedAt,
 		&i.CollectionPasswordUpdatedByUserID,
 		&i.CollectionPasswordUpdatedByMembershipID,

@@ -365,6 +365,7 @@ func TestChildFunding_Upsert(t *testing.T) {
 		FundingEnabled: true,
 		FundingType:    childdomain.FundingTypeThirtyHours,
 		FundingModel:   childdomain.FundingModelTermTimeOnly,
+		BenefitsStatus: childdomain.BenefitsStatusUnknown,
 		ManagerNotes:   &notes,
 	}
 
@@ -412,8 +413,9 @@ func TestChildCollectionSettings_SetPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpsertCollectionSetting: %v", err)
 	}
+	plainPassword := "super-secure-collection-123"
 	if err := repo.SetCollectionPassword(ctx, tx, childTenantID, childBranchID, childID, created.ID,
-		"$2a$10$abcdefghijklmnopqrstuv", time.Now().UTC(), childUserID, membershipID); err != nil {
+		plainPassword, time.Now().UTC(), childUserID, membershipID); err != nil {
 		t.Fatalf("SetCollectionPassword: %v", err)
 	}
 	dbtest.CommitTx(t, tx)
@@ -425,8 +427,8 @@ func TestChildCollectionSettings_SetPassword(t *testing.T) {
 	if got == nil {
 		t.Fatal("got = nil after set")
 	}
-	if !got.CollectionPasswordIsSet {
-		t.Error("CollectionPasswordIsSet = false after set, want true")
+	if got.CollectionPassword != plainPassword {
+		t.Errorf("got.CollectionPassword = %q, want %q", got.CollectionPassword, plainPassword)
 	}
 	if got.CollectionPasswordUpdatedAt == nil {
 		t.Error("CollectionPasswordUpdatedAt nil after set")

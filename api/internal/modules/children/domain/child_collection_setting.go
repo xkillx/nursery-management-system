@@ -12,7 +12,7 @@ type ChildCollectionSetting struct {
 	BranchID                          uuid.UUID
 	ChildID                           uuid.UUID
 	Over18CollectionAcknowledged      bool
-	CollectionPasswordIsSet           bool
+	CollectionPassword                string
 	CollectionPasswordUpdatedAt       *time.Time
 	CollectionPasswordUpdatedByUserID *uuid.UUID
 	CollectionPasswordUpdatedByMembershipID *uuid.UUID

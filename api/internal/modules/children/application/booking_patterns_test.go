@@ -262,7 +262,7 @@ func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tenan
 func (f *fakeChildBPRepo) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, hash string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (f *fakeChildBPRepo) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	return nil
 }
 func (f *fakeChildBPRepo) ListRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.ChildRoomAssignment, error) {

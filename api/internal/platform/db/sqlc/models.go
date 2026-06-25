@@ -281,7 +281,7 @@ type ChildCollectionSetting struct {
 	BranchID                                pgtype.UUID
 	ChildID                                 pgtype.UUID
 	Over18CollectionAcknowledged            bool
-	CollectionPasswordHash                  pgtype.Text
+	CollectionPassword                      pgtype.Text
 	CollectionPasswordUpdatedAt             pgtype.Timestamptz
 	CollectionPasswordUpdatedByUserID       pgtype.UUID
 	CollectionPasswordUpdatedByMembershipID pgtype.UUID

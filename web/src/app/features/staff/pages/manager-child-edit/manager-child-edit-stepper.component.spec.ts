@@ -759,6 +759,18 @@ describe('ManagerChildEditStepperComponent', () => {
         'funding-benefits',
       ]);
     });
+
+    it('edit-registration step list has four entries with the expected keys', () => {
+      component.isNewRegistration = false;
+      const keys = component.steps.map(s => s.key);
+      expect(component.steps.length).toBe(4);
+      expect(keys).toEqual([
+        'child-basics',
+        'medical-health',
+        'contacts-collection',
+        'consents-evidence',
+      ]);
+    });
   });
 
   describe('createChildFromSessionPatternStep', () => {
