@@ -992,6 +992,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   goToStep(step: StepperStep): void {
+    if (!this.isNewRegistration) {
+      this.currentStep = step;
+      this.errorMessage = null;
+      return;
+    }
     if (!this.canOpenStep(step)) {
       const requestedIdx = this.steps.findIndex(s => s.key === step);
       for (let i = 0; i < requestedIdx; i++) {
@@ -1019,6 +1024,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   canOpenStep(step: StepperStep): boolean {
+    if (!this.isNewRegistration) return true;
     const requestedIdx = this.steps.findIndex(s => s.key === step);
     if (requestedIdx <= this.stepIndex) return true;
     if (!this.isNewRegistration && step !== 'child-basics' && !this.childId) return false;
@@ -1206,7 +1212,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.errorMessage = 'Please complete the wizard as a new registration.';
   }
 
-  saveMedicalHealth(): void {
+  saveMedicalHealth(advance = true): void {
     this.step2Submitted = true;
     if (!this.childId && !this.isNewRegistration) {
       this.errorMessage = 'Create the child record before saving medical information.';
@@ -1218,7 +1224,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     if (this.isNewRegistration) {
-      this.nextStep();
+      if (advance) this.nextStep();
       return;
     }
 
@@ -1271,7 +1277,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       health_visitor_address: this.step2.health_visitor_clinic.trim() || null,
       health_visitor_phone: this.step2.health_visitor_phone.trim() || null,
     }).subscribe({
-      next: () => this.saveStep2Safeguarding(this.childId!, referrals),
+      next: () => this.saveStep2Safeguarding(this.childId!, referrals, advance),
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
@@ -1281,7 +1287,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  private saveStep2Safeguarding(childId: string, referrals: any[]): void {
+  private saveStep2Safeguarding(childId: string, referrals: any[], advance: boolean): void {
     if (!this.loadedSections.has('safeguarding')) {
       this.isSaving = false;
       this.errorMessage = 'Safeguarding data unavailable — could not save. Please reload the page.';
@@ -1301,7 +1307,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       concern_behaviour: (this.step2.concern_behaviour ? 'yes' : 'no') as any,
       professional_referrals: referrals.length > 0 ? referrals : [],
     }).subscribe({
-      next: () => this.saveStep2RoutineCare(this.childId!),
+      next: () => this.saveStep2RoutineCare(this.childId!, advance),
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
@@ -1311,7 +1317,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  private saveStep2RoutineCare(childId: string): void {
+  private saveStep2RoutineCare(childId: string, advance: boolean): void {
     if (!this.loadedSections.has('profile')) {
       this.isSaving = false;
       this.errorMessage = 'Profile data unavailable — could not save. Please reload the page.';
@@ -1329,7 +1335,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     } as any).subscribe({
       next: () => {
         this.isSaving = false;
-        this.nextStep();
+        if (advance) {
+          this.nextStep();
+        } else {
+          this.successMessage = 'Medical & health saved.';
+        }
       },
       error: (error) => {
         this.isSaving = false;
@@ -1339,7 +1349,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveContactsCollection(): void {
+  saveContactsCollection(advance = true): void {
     if (!this.childId && !this.isNewRegistration) {
       this.errorMessage = 'Create the child record before saving contacts.';
       return;
@@ -1351,7 +1361,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     if (this.isNewRegistration) {
-      this.nextStep();
+      if (advance) this.nextStep();
       return;
     }
 
@@ -1418,7 +1428,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       emergencyContacts: emergencyContacts.map(c => this.toContactWire(c as ChildContact)),
       authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
     }).subscribe({
-      next: () => this.saveStep3Collection(this.childId!),
+      next: () => this.saveStep3Collection(this.childId!, advance),
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
@@ -1427,7 +1437,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  private saveStep3Collection(childId: string): void {
+  private saveStep3Collection(childId: string, advance: boolean): void {
     if (!this.loadedSections.has('collection')) {
       this.isSaving = false;
       this.errorMessage = 'Collection settings data unavailable — could not save. Please reload the page.';
@@ -1438,7 +1448,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       next: () => {
         this.step3.collection_password = '';
         this.isSaving = false;
-        this.nextStep();
+        if (advance) {
+          this.nextStep();
+        } else {
+          this.successMessage = 'Contacts & security saved.';
+        }
       },
       error: (error) => {
         this.isSaving = false;

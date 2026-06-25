@@ -113,7 +113,7 @@
               </div>
             </div>
 
-            <form class="space-y-12 p-5 md:p-6" (ngSubmit)="saveChildBasics()" novalidate>
+            <form class="space-y-12 p-5 md:p-6" (ngSubmit)="saveChildBasics(isNewRegistration)" novalidate>
               <section class="space-y-6" aria-labelledby="child-identity-heading">
                 <div>
                   <div class="flex items-center gap-2">
@@ -525,8 +525,12 @@
 
               <div class="flex flex-col gap-3 border-t border-gray-200 pt-8 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-end">
                 <app-button type="submit" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md">
-                  {{ isSaving ? 'Saving...' : 'Continue' }}
-                  <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                  {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
+                  @if (isNewRegistration) {
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                  } @else {
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  }
                 </app-button>
               </div>
             </form>
@@ -1270,9 +1274,13 @@
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back
                 </app-button>
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveMedicalHealth()">
-                  {{ isSaving ? 'Saving...' : 'Continue' }}
-                  <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveMedicalHealth(isNewRegistration)">
+                  {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
+                  @if (isNewRegistration) {
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                  } @else {
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  }
                 </app-button>
               </div>
             </div>
@@ -1680,9 +1688,13 @@
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back
                 </app-button>
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveContactsCollection()">
-                  {{ isSaving ? 'Saving...' : 'Continue' }}
-                  <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveContactsCollection(isNewRegistration)">
+                  {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
+                  @if (isNewRegistration) {
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                  } @else {
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  }
                 </app-button>
               </div>
             </div>
