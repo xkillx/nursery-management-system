@@ -951,8 +951,11 @@ func mapFundingUpsertRow(row sqlc.ChildFundingRecordUpsertRow) *domain.ChildFund
 
 // --- Child Collection Settings ---
 
-func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
+func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
 	q := sqlc.New(r.pool)
+	if tx != nil {
+		q = q.WithTx(tx)
+	}
 	row, err := q.ChildCollectionSettingGetByChild(ctx, sqlc.ChildCollectionSettingGetByChildParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),

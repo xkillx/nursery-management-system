@@ -420,7 +420,7 @@ func TestChildCollectionSettings_SetPassword(t *testing.T) {
 	}
 	dbtest.CommitTx(t, tx)
 
-	got, err := repo.GetCollectionSettingByChild(ctx, childTenantID, childBranchID, childID)
+	got, err := repo.GetCollectionSettingByChild(ctx, nil, childTenantID, childBranchID, childID)
 	if err != nil {
 		t.Fatalf("GetCollectionSettingByChild: %v", err)
 	}

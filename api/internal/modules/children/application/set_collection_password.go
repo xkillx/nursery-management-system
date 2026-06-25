@@ -35,7 +35,7 @@ func (uc *GetCollectionSetting) Execute(ctx context.Context, actor tenant.ActorC
 	if !found {
 		return nil, domainerrors.NotFound("child", "Resource not found.")
 	}
-	cs, err := uc.repo.GetCollectionSettingByChild(ctx, actor.TenantID, actor.BranchID, id)
+	cs, err := uc.repo.GetCollectionSettingByChild(ctx, nil, actor.TenantID, actor.BranchID, id)
 	if err != nil {
 		return nil, domainerrors.Internal(fmt.Errorf("get child collection setting: %w", err))
 	}
@@ -74,7 +74,7 @@ func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.Actor
 			return domainerrors.NotFound("child", "Resource not found.")
 		}
 
-		existing, eerr := uc.repo.GetCollectionSettingByChild(ctx, actor.TenantID, actor.BranchID, id)
+		existing, eerr := uc.repo.GetCollectionSettingByChild(ctx, tx, actor.TenantID, actor.BranchID, id)
 		if eerr != nil {
 			return domainerrors.Internal(fmt.Errorf("get child collection setting: %w", eerr))
 		}
@@ -137,7 +137,7 @@ func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.Actor
 			return domainerrors.Internal(fmt.Errorf("audit child_collection_password_set: %w", aerr))
 		}
 
-		fresh, eerr := uc.repo.GetCollectionSettingByChild(ctx, actor.TenantID, actor.BranchID, id)
+		fresh, eerr := uc.repo.GetCollectionSettingByChild(ctx, tx, actor.TenantID, actor.BranchID, id)
 		if eerr != nil {
 			return domainerrors.Internal(fmt.Errorf("reload child collection setting: %w", eerr))
 		}

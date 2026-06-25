@@ -256,7 +256,7 @@ func (f *fakeChildBPRepo) GetFundingByChild(ctx context.Context, tenantID, branc
 func (f *fakeChildBPRepo) UpsertFunding(ctx context.Context, tx pgx.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
+func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
