@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Multi-tenant nursery mgmt (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQL. Clean Architecture. MVP done; Post-MVP roadmap in `docs/POST-MVP-ROADMAP.md`.
+Multi-tenant nursery mgmt (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQL. Clean Architecture. MVP done; Post-MVP roadmap in [`docs/POST-MVP-ROADMAP.md`](docs/POST-MVP-ROADMAP.md). Domain glossary: [`CONTEXT.md`](CONTEXT.md) (200+ entries).
 
 ## Commands
 
@@ -50,15 +50,30 @@ api/internal/
 
 **New module checklist:** domain (entities+repo interface, zero framework imports) → application (one use case per file) → postgres repo → handler → wire in `bootstrap.go` → add route.
 
-## Modules (14)
+## Modules (16)
 
-`authentication children guardians guardianlinks parentmappings passwordreset invites attendance absence funding billing payments owner registrationprofiles`
+- `authentication`
+- `children`
+- `parentchildmappings`
+- `attendance`
+- `absence`
+- `funding`
+- `billing`
+- `payments`
+- `invites`
+- `passwordreset`
+- `owner`
+- `rooms`
+- `sessiontypes`
+- `sessiontemplates`
+- `term`
+- `invoicerun` (scheduler/batch only, no HTTP routes)
 
-CLAUDE.md route table is stale — see actual code in `bootstrap.go` for current routes.
+Routes are registered per-module in [`api/internal/app/bootstrap/bootstrap.go`](api/internal/app/bootstrap/bootstrap.go).
 
 ## Post-MVP Context
 
-Owner cross-site oversight done (API-PM-08). Pilot readiness gate next. Registration/consent is current active work. See `docs/POST-MVP-ROADMAP.md` and `CONTEXT.md` (domain glossary, 200+ entries).
+Owner cross-site oversight done (API-PM-08). Pilot readiness gate next. Registration/consent is current active work. See [`docs/POST-MVP-ROADMAP.md`](docs/POST-MVP-ROADMAP.md) and [`CONTEXT.md`](CONTEXT.md) (domain glossary, 200+ entries).
 
 ## Testing
 
