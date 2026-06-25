@@ -303,6 +303,7 @@ export interface ChildCollectionSettings {
   over_18_collection_acknowledged: boolean;
   collection_password_set: boolean;
   collection_password?: string | null;
+  collection_password_hint?: string | null;
   collection_password_updated_at?: string | null;
   collection_password_updated_by_user_id?: string | null;
   collection_password_updated_by_membership_id?: string | null;
@@ -312,6 +313,7 @@ export interface ChildCollectionSettings {
 
 export interface ChildCollectionSettingsInput {
   password?: string;
+  password_hint?: string;
   over_18_collection_acknowledged?: boolean;
 }
 

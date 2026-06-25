@@ -143,6 +143,7 @@ type ChildFundingRecordInput struct {
 type ChildCollectionSettingsInput struct {
 	Over18CollectionAcknowledged bool
 	Password                     string
+	PasswordHint                 string
 }
 
 type ChildRoomAssignmentInput struct {
@@ -222,9 +223,10 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		return nil, domainerrors.Validation("Invalid request payload.", "consents.signed_date")
 	}
 
-	var collectionPassword string
-	if input.CollectionSettings != nil && strings.TrimSpace(input.CollectionSettings.Password) != "" {
+	var collectionPassword, collectionPasswordHint string
+	if input.CollectionSettings != nil {
 		collectionPassword = strings.TrimSpace(input.CollectionSettings.Password)
+		collectionPasswordHint = strings.TrimSpace(input.CollectionSettings.PasswordHint)
 	}
 
 	var resolvedEntries []domain.BookingPatternEntry
@@ -275,8 +277,8 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 		created = append(created, "collection_settings")
 
-		if collectionPassword != "" {
-			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, cs.ID, collectionPassword, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
+		if collectionPassword != "" || collectionPasswordHint != "" {
+			if err := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, childID, cs.ID, collectionPassword, collectionPasswordHint, time.Now().UTC(), actor.UserID, actor.MembershipID); err != nil {
 				return fmt.Errorf("set collection password: %w", err)
 			}
 		}

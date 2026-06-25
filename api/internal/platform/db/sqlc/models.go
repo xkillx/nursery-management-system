@@ -287,6 +287,7 @@ type ChildCollectionSetting struct {
 	CollectionPasswordUpdatedByMembershipID pgtype.UUID
 	CreatedAt                               pgtype.Timestamptz
 	UpdatedAt                               pgtype.Timestamptz
+	CollectionPasswordHint                  pgtype.Text
 }
 
 type ChildConsentRecord struct {

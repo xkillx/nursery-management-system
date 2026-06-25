@@ -39,7 +39,7 @@ func (f *fakeChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *d
 func (f *fakeChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
 	return p, nil
 }
-func (f *fakeChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (f *fakeChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	return nil
 }
 func (f *fakeChildRepository) InsertRoomAssignment(ctx context.Context, tx pgx.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {

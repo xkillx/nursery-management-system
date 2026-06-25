@@ -280,8 +280,8 @@ export class StaffApiService {
 
   getChildConsent(childId: string): Observable<ChildConsent | null> {
     return this.http
-      .get<{ consent: ChildConsent | null }>(apiUrl(`/children/${childId}/consent`))
-      .pipe(map((r) => r.consent));
+      .get<any>(apiUrl(`/children/${childId}/consent`))
+      .pipe(map((r) => (r && r.consent !== undefined) ? r.consent : r));
   }
 
   updateChildConsent(childId: string, payload: ChildConsentInput): Observable<ChildConsent> {
@@ -291,20 +291,20 @@ export class StaffApiService {
 
   getChildFunding(childId: string): Observable<ChildFundingRecord | null> {
     return this.http
-      .get<{ funding: ChildFundingRecord | null }>(apiUrl(`/children/${childId}/funding`))
-      .pipe(map((r) => r.funding));
+      .get<any>(apiUrl(`/children/${childId}/funding`))
+      .pipe(map((r) => (r && r.funding !== undefined) ? r.funding : r));
   }
 
   patchChildFunding(childId: string, payload: ChildFundingRecordInput): Observable<ChildFundingRecord> {
     return this.http
-      .patch<{ funding: ChildFundingRecord }>(apiUrl(`/children/${childId}/funding`), payload)
-      .pipe(map((r) => r.funding));
+      .patch<any>(apiUrl(`/children/${childId}/funding`), payload)
+      .pipe(map((r) => (r && r.funding !== undefined) ? r.funding : r));
   }
 
   getChildCollectionSettings(childId: string): Observable<ChildCollectionSettings | null> {
     return this.http
-      .get<{ collection_settings: ChildCollectionSettings | null }>(apiUrl(`/children/${childId}/collection-settings`))
-      .pipe(map((r) => r.collection_settings));
+      .get<any>(apiUrl(`/children/${childId}/collection-settings`))
+      .pipe(map((r) => (r && r.collection_settings !== undefined) ? r.collection_settings : r));
   }
 
   putChildCollectionSettings(childId: string, payload: ChildCollectionSettingsInput): Observable<ChildCollectionSettings> {
@@ -362,8 +362,8 @@ export class StaffApiService {
 
   getChildBillingProfile(childId: string): Observable<ChildBillingProfile | null> {
     return this.http
-      .get<{ billing_profile: ChildBillingProfile | null }>(apiUrl(`/children/${childId}/billing-profile`))
-      .pipe(map((r) => r.billing_profile));
+      .get<any>(apiUrl(`/children/${childId}/billing-profile`))
+      .pipe(map((r) => (r && r.billing_profile !== undefined) ? r.billing_profile : r));
   }
 
   patchChildBillingProfile(childId: string, payload: ChildBillingProfileInput): Observable<ChildBillingProfile> {
@@ -373,8 +373,8 @@ export class StaffApiService {
 
   getChildLeavingRecord(childId: string): Observable<ChildLeavingRecord | null> {
     return this.http
-      .get<{ leaving_record: ChildLeavingRecord | null }>(apiUrl(`/children/${childId}/leaving-record`))
-      .pipe(map((r) => r.leaving_record));
+      .get<any>(apiUrl(`/children/${childId}/leaving-record`))
+      .pipe(map((r) => (r && r.leaving_record !== undefined) ? r.leaving_record : r));
   }
 
   static readonly LOAD_ERROR = { __loadError: true };

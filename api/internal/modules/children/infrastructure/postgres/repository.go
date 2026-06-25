@@ -975,6 +975,7 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 		BranchID:                    uuidToPgtype(p.BranchID),
 		ChildID:                     uuidToPgtype(p.ChildID),
 		Over18CollectionAcknowledged: p.Over18CollectionAcknowledged,
+		CollectionPasswordHint:      pgtype.Text{String: p.CollectionPasswordHint, Valid: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert child collection setting: %w", err)
@@ -982,7 +983,7 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 	return mapCollectionSettingRow(row), nil
 }
 
-func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	q := sqlc.New(tx)
 	_, err := q.ChildCollectionSettingSetPassword(ctx, sqlc.ChildCollectionSettingSetPasswordParams{
 		TenantID:                                uuidToPgtype(tenantID),
@@ -990,6 +991,7 @@ func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, 
 		ChildID:                                 uuidToPgtype(childID),
 		ID:                                      uuidToPgtype(id),
 		CollectionPassword:                      pgtype.Text{String: password, Valid: true},
+		CollectionPasswordHint:                  pgtype.Text{String: passwordHint, Valid: true},
 		CollectionPasswordUpdatedAt:             pgtype.Timestamptz{Time: updatedAt, Valid: true},
 		CollectionPasswordUpdatedByUserID:       uuidToPgtype(userID),
 		CollectionPasswordUpdatedByMembershipID: uuidToPgtype(membershipID),
@@ -1008,6 +1010,7 @@ func mapCollectionSettingRow(row sqlc.ChildCollectionSetting) *domain.ChildColle
 		ChildID:                           pgtypeUUIDToUUID(row.ChildID),
 		Over18CollectionAcknowledged:      row.Over18CollectionAcknowledged,
 		CollectionPassword:                row.CollectionPassword.String,
+		CollectionPasswordHint:            row.CollectionPasswordHint.String,
 		CollectionPasswordUpdatedAt:       pgtypeTimestamptzToTimePtr(row.CollectionPasswordUpdatedAt),
 		CollectionPasswordUpdatedByUserID: pgtypeUUIDToUUIDPtr(row.CollectionPasswordUpdatedByUserID),
 		CollectionPasswordUpdatedByMembershipID: pgtypeUUIDToUUIDPtr(row.CollectionPasswordUpdatedByMembershipID),

@@ -13,6 +13,7 @@ type ChildCollectionSetting struct {
 	ChildID                           uuid.UUID
 	Over18CollectionAcknowledged      bool
 	CollectionPassword                string
+	CollectionPasswordHint            string
 	CollectionPasswordUpdatedAt       *time.Time
 	CollectionPasswordUpdatedByUserID *uuid.UUID
 	CollectionPasswordUpdatedByMembershipID *uuid.UUID

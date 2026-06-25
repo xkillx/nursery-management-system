@@ -486,6 +486,7 @@ func toChildFundingResponse(p *domain.ChildFundingRecord) childFundingResponse {
 
 type childCollectionSettingsRequest struct {
 	Password                     *string `json:"password"`
+	PasswordHint                 *string `json:"password_hint"`
 	Over18CollectionAcknowledged *bool   `json:"over_18_collection_acknowledged"`
 }
 
@@ -495,6 +496,7 @@ type childCollectionSettingsResponse struct {
 	Over18CollectionAcknowledged      bool    `json:"over_18_collection_acknowledged"`
 	CollectionPasswordSet             bool    `json:"collection_password_set"`
 	CollectionPassword                string  `json:"collection_password"`
+	CollectionPasswordHint            string  `json:"collection_password_hint"`
 	CollectionPasswordUpdatedAt       *string `json:"collection_password_updated_at,omitempty"`
 	CollectionPasswordUpdatedByUserID *string `json:"collection_password_updated_by_user_id,omitempty"`
 	CollectionPasswordUpdatedByMembershipID *string `json:"collection_password_updated_by_membership_id,omitempty"`
@@ -508,6 +510,7 @@ func toChildCollectionSettingsResponse(p *domain.ChildCollectionSetting) childCo
 		Over18CollectionAcknowledged: p.Over18CollectionAcknowledged,
 		CollectionPasswordSet: p.CollectionPassword != "",
 		CollectionPassword: p.CollectionPassword,
+		CollectionPasswordHint: p.CollectionPasswordHint,
 		CollectionPasswordUpdatedAt: timeStringPtr(p.CollectionPasswordUpdatedAt),
 		CollectionPasswordUpdatedByUserID: uuidStringPtr(p.CollectionPasswordUpdatedByUserID),
 		CollectionPasswordUpdatedByMembershipID: uuidStringPtr(p.CollectionPasswordUpdatedByMembershipID),

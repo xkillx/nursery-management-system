@@ -91,7 +91,7 @@ describe('ManagerChildEditStepperComponent', () => {
       relationshipToChild: 'Mother',
       address: null,
       telephone: '020 1234 5678',
-      email: null,
+      email: 'sarah.johnson@example.com',
       workAddress: null,
       hasParentalResponsibility: null,
     }];
@@ -956,41 +956,25 @@ describe('ManagerChildEditStepperComponent', () => {
   });
 
   describe('page heading — edit vs new registration', () => {
-    it('renders the edit-mode heading with the loaded child name in edit mode', () => {
+    it('renders "Child registration" heading in edit mode', () => {
       component.isNewRegistration = false;
-      component.child = {
-        id: 'child-1',
-        firstName: 'Ada',
-        lastName: 'Lovelace',
-        fullName: 'Ada Lovelace',
-        dateOfBirth: '2022-01-15',
-        startDate: '2024-09-01',
-        endDate: null,
-        siteCoreHourlyRateMinor: null,
-        notes: null,
-        isActive: true,
-        enrollmentComplete: false,
-        missingRequirements: [],
-        createdAt: '2024-08-01T00:00:00Z',
-        updatedAt: '2024-08-01T00:00:00Z',
-      } as any;
       component.currentStep = 'child-basics';
       fixture.detectChanges();
 
       const headings: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('h2'));
       const text = headings.map(h => (h.textContent || '').trim()).join('|');
-      expect(text).toContain('Edit child');
-      expect(text).toContain('Ada Lovelace');
+      expect(text).toContain('Child Profile');
+      expect(text).not.toContain('Edit child');
     });
 
-    it('renders "Child registration" in new-registration mode', () => {
+    it('renders "Child registration" heading in new-registration mode', () => {
       component.isNewRegistration = true;
       component.currentStep = 'child-basics';
       fixture.detectChanges();
 
       const headings: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('h2'));
       const text = headings.map(h => (h.textContent || '').trim()).join('|');
-      expect(text).toContain('Child registration');
+      expect(text).toContain('Child Profile');
       expect(text).not.toContain('Edit child');
     });
   });

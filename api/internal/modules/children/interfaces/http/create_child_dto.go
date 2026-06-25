@@ -157,6 +157,7 @@ type childFundingPayload struct {
 type collectionSettingsPayload struct {
 	Over18CollectionAcknowledged bool    `json:"over_18_collection_acknowledged"`
 	Password                     *string `json:"password"`
+	PasswordHint                 *string `json:"password_hint"`
 }
 
 type roomAssignmentPayload struct {
@@ -209,6 +210,9 @@ func mapCreateChildRequest(req createChildRequest) (application.CreateChildFullI
 		}
 		if req.CollectionSettings.Password != nil {
 			in.CollectionSettings.Password = *req.CollectionSettings.Password
+		}
+		if req.CollectionSettings.PasswordHint != nil {
+			in.CollectionSettings.PasswordHint = *req.CollectionSettings.PasswordHint
 		}
 	}
 	if req.Room != nil {

@@ -575,6 +575,7 @@ func (h *Handler) setCollectionSettingHandler(c *gin.Context) {
 	p, err := h.setCollectionPassword.Execute(c.Request.Context(), actor, c.Param("child_id"), application.SetCollectionPasswordInput{
 		Over18CollectionAcknowledged: req.Over18CollectionAcknowledged,
 		Password:                     req.Password,
+		PasswordHint:                 req.PasswordHint,
 	})
 	if err != nil {
 		h.handleError(c, err)

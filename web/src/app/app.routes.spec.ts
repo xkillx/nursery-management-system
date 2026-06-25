@@ -323,13 +323,13 @@ it('root path includes authGuard and roleDefaultRedirectGuard', () => {
     }
   });
 
-  it('practitioner attendance route allows both manager and practitioner', () => {
+  it('practitioner attendance route allows practitioner role', () => {
     const attendanceRoute = routes
       .flatMap(r => r.children ?? [])
       .find(r => r.path === 'practitioner/attendance');
 
     expect(attendanceRoute).toBeDefined();
-    expect(attendanceRoute!.data?.['roles']).toEqual(['manager', 'practitioner']);
+    expect(attendanceRoute!.data?.['roles']).toEqual(['practitioner']);
   });
 
   it('manager and practitioner routes do not include parent or owner roles', () => {

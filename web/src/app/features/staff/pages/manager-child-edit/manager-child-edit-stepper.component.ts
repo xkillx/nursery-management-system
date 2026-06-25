@@ -953,13 +953,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return [this.step1.first_name.trim(), this.step1.middle_name.trim(), this.step1.last_name.trim()].filter(Boolean).join(' ');
   }
 
-  get editHeadingName(): string {
-    const c = this.child;
-    if (!c) return '';
-    const first = (c.firstName ?? '').trim();
-    const last = (c.lastName ?? '').trim();
-    return [first, last].filter(Boolean).join(' ').trim() || c.fullName.trim();
-  }
 
   get currentStepNumber(): number {
     return this.stepIndex + 1;
@@ -1470,9 +1463,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     const password = this.step3.collection_password;
-    this.staffApi.putChildCollectionSettings(childId, { password: password || '' } as any).subscribe({
+    const passwordHint = this.step3.collection_password_hint;
+    this.staffApi.putChildCollectionSettings(childId, {
+      password: password || '',
+      password_hint: passwordHint || '',
+      over_18_collection_acknowledged: true
+    }).subscribe({
       next: (res) => {
         this.step3.collection_password = res?.collection_password ?? '';
+        this.step3.collection_password_hint = res?.collection_password_hint ?? '';
         this.isSaving = false;
         if (advance) {
           this.nextStep();
@@ -2140,6 +2139,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (this.step3.collection_password) {
       collectionSettings.password = this.step3.collection_password;
     }
+    if (this.step3.collection_password_hint) {
+      collectionSettings.password_hint = this.step3.collection_password_hint;
+    }
 
     const payload: CreateChildPayload = {
       child,
@@ -2784,20 +2786,37 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.parentCarersDraft = raw.parentCarers.length
         ? raw.parentCarers.map(contact => ({ ...contact }))
         : [this.emptyContact('Mother')];
+      if (raw.parentCarers.length > 0) {
+        this.step3.parent1_address = this.addressToString(raw.parentCarers[0].address as any);
+        this.step3.parent1_work_address = this.addressToString(raw.parentCarers[0].workAddress as any);
+        this.step3.parent1_has_responsibility = raw.parentCarers[0].hasParentalResponsibility ?? null;
+      }
       if (raw.parentCarers.length > 1) {
         this.step3.show_second_parent = true;
         this.step3.second_parent_name = raw.parentCarers[1].fullName ?? '';
-        this.step3.second_parent_relationship = raw.parentCarers[1].relationship_to_child ?? '';
+        this.step3.second_parent_relationship = raw.parentCarers[1].relationshipToChild ?? '';
         this.step3.second_parent_telephone = raw.parentCarers[1].telephone ?? '';
         this.step3.second_parent_email = raw.parentCarers[1].email ?? '';
         this.step3.second_parent_address = this.addressToString(raw.parentCarers[1].address as any);
-        this.step3.second_parent_has_responsibility = raw.parentCarers[1].has_parental_responsibility ?? null;
+        this.step3.second_parent_work_address = this.addressToString(raw.parentCarers[1].workAddress as any);
+        this.step3.second_parent_has_responsibility = raw.parentCarers[1].hasParentalResponsibility ?? null;
+      } else {
+        this.step3.show_second_parent = false;
+        this.step3.second_parent_name = '';
+        this.step3.second_parent_relationship = '';
+        this.step3.second_parent_telephone = '';
+        this.step3.second_parent_email = '';
+        this.step3.second_parent_address = '';
+        this.step3.second_parent_work_address = '';
+        this.step3.second_parent_has_responsibility = null;
       }
-      this.step3.parent1_has_responsibility = raw.parentCarers[0]?.has_parental_responsibility ?? null;
 
       this.emergencyContactsDraft = raw.emergencyContacts.length
         ? raw.emergencyContacts.map(contact => ({ ...contact }))
         : [this.emptyContact('Grandparent')];
+      this.emergencyContactAddresses = raw.emergencyContacts.length
+        ? raw.emergencyContacts.map(contact => this.addressToString(contact.address as any))
+        : [''];
       this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
         raw.authorisedCollectors.some(
           (collector: any) => collector.fullName === contact.fullName && !!contact.fullName,
@@ -2810,6 +2829,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     if (view.collection && !StaffApiService.isLoadError(view.collection)) {
       this.step3.collection_password = view.collection.collection_password ?? '';
+      this.step3.collection_password_hint = view.collection.collection_password_hint ?? '';
     }
 
     if (view.funding && !StaffApiService.isLoadError(view.funding)) {

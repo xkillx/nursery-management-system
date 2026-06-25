@@ -415,7 +415,7 @@ func TestChildCollectionSettings_SetPassword(t *testing.T) {
 	}
 	plainPassword := "super-secure-collection-123"
 	if err := repo.SetCollectionPassword(ctx, tx, childTenantID, childBranchID, childID, created.ID,
-		plainPassword, time.Now().UTC(), childUserID, membershipID); err != nil {
+		plainPassword, "hint-text", time.Now().UTC(), childUserID, membershipID); err != nil {
 		t.Fatalf("SetCollectionPassword: %v", err)
 	}
 	dbtest.CommitTx(t, tx)

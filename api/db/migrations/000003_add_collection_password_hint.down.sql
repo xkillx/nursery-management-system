@@ -1,0 +1,1 @@
+ALTER TABLE child_collection_settings DROP COLUMN collection_password_hint;

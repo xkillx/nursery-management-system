@@ -55,6 +55,7 @@ func NewSetCollectionPassword(repo domain.Repository, auditWriter *audit.Writer,
 type SetCollectionPasswordInput struct {
 	Over18CollectionAcknowledged *bool
 	Password                     *string
+	PasswordHint                 *string
 }
 
 func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.ActorContext, childID string, in SetCollectionPasswordInput) (*domain.ChildCollectionSetting, error) {
@@ -103,8 +104,26 @@ func (uc *SetCollectionPassword) Execute(ctx context.Context, actor tenant.Actor
 			cs = existing
 		}
 
-		if in.Password != nil && *in.Password != "" {
-			if perr := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, id, cs.ID, *in.Password, time.Now().UTC(), actor.UserID, actor.MembershipID); perr != nil {
+		var passwordToSet string
+		var hintToSet string
+		var shouldUpdatePassword bool
+
+		if in.Password != nil {
+			passwordToSet = *in.Password
+			shouldUpdatePassword = true
+		} else if existing != nil {
+			passwordToSet = existing.CollectionPassword
+		}
+
+		if in.PasswordHint != nil {
+			hintToSet = *in.PasswordHint
+			shouldUpdatePassword = true
+		} else if existing != nil {
+			hintToSet = existing.CollectionPasswordHint
+		}
+
+		if shouldUpdatePassword {
+			if perr := uc.repo.SetCollectionPassword(ctx, tx, actor.TenantID, actor.BranchID, id, cs.ID, passwordToSet, hintToSet, time.Now().UTC(), actor.UserID, actor.MembershipID); perr != nil {
 				return domainerrors.Internal(fmt.Errorf("set collection password: %w", perr))
 			}
 		}
