@@ -2245,53 +2245,63 @@
                   <ng-icon name="heroCurrencyPound" size="20" class="shrink-0 text-brand-600" aria-hidden="true" />
                   <h4 id="funding-question-heading" class="text-lg font-bold">Funding Status</h4>
                 </div>
-                <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-white/[0.03]">
+                <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-5">
                   <fieldset>
-                    <legend class="mb-4 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
                       Does this child receive government-funded childcare hours?
                     </legend>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <!-- Yes -->
+
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <label
-                        class="flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all"
+                        for="funding-yes"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
                         [class.border-brand-500]="!step6.no_funding"
                         [class.bg-brand-50]="!step6.no_funding"
+                        [class.text-brand-700]="!step6.no_funding"
                         [class.border-gray-200]="step6.no_funding"
-                        [class.hover:border-brand-500]="step6.no_funding"
+                        [class.text-gray-800]="step6.no_funding"
                         [class.dark:border-brand-500]="!step6.no_funding"
                         [class.dark:bg-brand-500/10]="!step6.no_funding"
-                        [class.dark:border-gray-600]="step6.no_funding"
-                        [class.dark:hover:border-brand-400]="step6.no_funding"
+                        [class.dark:text-brand-300]="!step6.no_funding"
+                        [class.dark:border-gray-700]="step6.no_funding"
+                        [class.dark:text-gray-200]="step6.no_funding"
                       >
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-900">
-                          <ng-icon name="heroBanknotes" size="22" class="text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        </div>
-                        <div>
-                          <p class="font-semibold text-gray-900 dark:text-white/90">Yes</p>
-                          <p class="text-sm text-gray-500 dark:text-gray-400">Record funding entitlement and hours</p>
-                        </div>
-                        <input type="radio" name="receives_funding" [value]="false" [checked]="!step6.no_funding" (change)="step6.no_funding = false" class="sr-only" />
+                        <input
+                          id="funding-yes"
+                          type="radio"
+                          name="receives_funding"
+                          [value]="false"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="!step6.no_funding"
+                          (change)="step6.no_funding = false"
+                        />
+                        <span>Yes</span>
                       </label>
-                      <!-- No -->
+
                       <label
-                        class="flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all"
+                        for="funding-no"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
                         [class.border-brand-500]="step6.no_funding"
                         [class.bg-brand-50]="step6.no_funding"
+                        [class.text-brand-700]="step6.no_funding"
                         [class.border-gray-200]="!step6.no_funding"
-                        [class.hover:border-brand-500]="!step6.no_funding"
+                        [class.text-gray-800]="!step6.no_funding"
                         [class.dark:border-brand-500]="step6.no_funding"
                         [class.dark:bg-brand-500/10]="step6.no_funding"
-                        [class.dark:border-gray-600]="!step6.no_funding"
-                        [class.dark:hover:border-brand-400]="!step6.no_funding"
+                        [class.dark:text-brand-300]="step6.no_funding"
+                        [class.dark:border-gray-700]="!step6.no_funding"
+                        [class.dark:text-gray-200]="!step6.no_funding"
                       >
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-900">
-                          <ng-icon name="heroXCircle" size="22" class="text-gray-400 dark:text-gray-500" aria-hidden="true" />
-                        </div>
-                        <div>
-                          <p class="font-semibold text-gray-900 dark:text-white/90">No</p>
-                          <p class="text-sm text-gray-500 dark:text-gray-400">Parent pays full fees — no funding claimed</p>
-                        </div>
-                        <input type="radio" name="receives_funding" [value]="true" [checked]="step6.no_funding" (change)="step6.no_funding = true" class="sr-only" />
+                        <input
+                          id="funding-no"
+                          type="radio"
+                          name="receives_funding"
+                          [value]="true"
+                          class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="step6.no_funding"
+                          (change)="step6.no_funding = true"
+                        />
+                        <span>No</span>
                       </label>
                     </div>
                   </fieldset>
@@ -2610,14 +2620,14 @@
                   <app-form-field
                     label="Internal notes"
                     labelFor="manager_notes"
-                    hint="Private notes visible only to staff. Not shared with parents or carers."
+
                   >
                     <textarea
                       id="manager_notes"
                       name="manager_notes"
                       rows="4"
                       [(ngModel)]="step6.manager_notes"
-                      placeholder="Enter internal manager notes…"
+                      placeholder="e.g. Funding type, funded hours, benefit eligibility, hours breakdown"
                       class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-theme-xs transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-brand-400"
                     ></textarea>
                   </app-form-field>
