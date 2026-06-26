@@ -2409,11 +2409,10 @@
 
                     <!-- Stretched funding warning -->
                     @if (step6.funding_model === 'stretched') {
-                      <app-alert
-                        variant="info"
-                        message="Stretched funding spreads annual funded hours across the year. Calculation is based on 570/1140 total annual hours divided by 51 weeks."
-                        class="mt-6"
-                      />
+                      <div class="mt-6 flex gap-3 border-l-4 border-brand-600 bg-brand-50 p-4 dark:border-brand-400 dark:bg-brand-500/10">
+                        <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
+                        <p class="text-sm leading-6 text-gray-700 dark:text-gray-300">Stretched funding spreads annual funded hours across the year. Calculation is based on 570/1140 total annual hours divided by 51 weeks.</p>
+                      </div>
                     }
                   </div>
                 </section>

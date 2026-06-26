@@ -1502,6 +1502,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.isSaving = true;
     this.errorMessage = null;
+    this.fieldErrors = {};
 
     if (!this.loadedSections.has('consent')) {
       this.isSaving = false;
@@ -1764,12 +1765,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   protected hasFieldIssue(field: string): boolean {
-    return this.finalCompletionIssues.some(issue => issue.field === field);
+    return this.finalCompletionIssues.some(issue => issue.field === field) || !!this.fieldErrors[field];
   }
 
   protected fieldIssueMessage(field: string): string {
     const issue = this.finalCompletionIssues.find(i => i.field === field);
-    return issue ? issue.message : '';
+    return issue ? issue.message : (this.fieldErrors[field] || '');
   }
 
   private handleValidationFailure(issue: FinalCompletionIssue): void {
@@ -1905,6 +1906,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     (this.step4[key] as boolean) = checked;
     this.consentsReviewed[key] = true;
     this.consentAdvisories = this.collectConsentAdvisories();
+    this.finalCompletionIssues = this.collectFinalCompletionIssues();
     this.notifyDraftChanged();
   }
 
@@ -1913,6 +1915,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     (this.step4[key] as boolean) = next;
     this.consentsReviewed[key] = true;
     this.consentAdvisories = this.collectConsentAdvisories();
+    this.finalCompletionIssues = this.collectFinalCompletionIssues();
     this.notifyDraftChanged();
   }
 
