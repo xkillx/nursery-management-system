@@ -1571,19 +1571,24 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   saveSessionPattern(advance = true): void {
+    this.fieldErrors = {};
+    this.patternError = null;
+
     if (this.patternEntries.length === 0) {
-      this.patternError = 'Add at least one booked session.';
-      this.handleValidationFailure({ stepKey: 'session-pattern', field: 'entries', message: 'Add at least one booked session.' });
+      this.fieldErrors['pattern_entries'] = 'Add at least one booked session.';
+      this.focusIssueField('pattern_entries');
       return;
     }
 
     if (this.patternEffectiveFrom && !/^\d{4}-\d{2}-\d{2}$/.test(this.patternEffectiveFrom)) {
-      this.patternError = 'Effective date must be in YYYY-MM-DD format.';
+      this.fieldErrors['pattern_effective_from'] = 'Effective date must be in YYYY-MM-DD format.';
+      this.focusIssueField('pattern_effective_from');
       return;
     }
 
     if (this.patternEffectiveFrom && this.patternEffectiveFrom < this.todayIso) {
-      this.patternError = 'Effective date must be today or later.';
+      this.fieldErrors['pattern_effective_from'] = 'Effective date must be today or later.';
+      this.focusIssueField('pattern_effective_from');
       return;
     }
 
@@ -1927,6 +1932,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       funded_hours_per_week: 'funded_hours_per_week',
       funding_end_date: 'funding_end_date',
       benefits: 'benefits-yes',
+      pattern_effective_from: 'pattern-effective-from',
+      pattern_entries: 'pattern-entries-grid',
     };
     return map[field] ?? field;
   }

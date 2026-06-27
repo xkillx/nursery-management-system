@@ -1058,7 +1058,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
       component.saveSessionPattern(false);
 
-      expect(toastErrorSpy).toHaveBeenCalled();
+      expect(component.fieldErrors['pattern_entries']).toBe('Add at least one booked session.');
       expect(updateSpy).not.toHaveBeenCalled();
     });
 
