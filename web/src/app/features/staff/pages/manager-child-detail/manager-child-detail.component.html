@@ -86,30 +86,35 @@
     </div>
 
     <!-- Tabs Navigation -->
-    <div class="flex border-b border-gray-200/80 mb-6 gap-6 overflow-x-auto no-scrollbar scroll-smooth">
+    <div class="grid grid-cols-5 border-b border-gray-200/80 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
       <button (click)="selectTab('overview')"
         [ngClass]="activeTab === 'overview' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
+        <ng-icon name="heroHome" size="18"></ng-icon>
         Overview
       </button>
       <button (click)="selectTab('attendance')"
         [ngClass]="activeTab === 'attendance' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
+        <ng-icon name="heroCalendarDays" size="18"></ng-icon>
         Attendance
       </button>
       <button (click)="selectTab('funding')"
         [ngClass]="activeTab === 'funding' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
+        <ng-icon name="heroDocumentText" size="18"></ng-icon>
         Funding &amp; Billing
       </button>
       <button (click)="selectTab('health')"
         [ngClass]="activeTab === 'health' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
+        <ng-icon name="heroHeart" size="18"></ng-icon>
         Health &amp; Medical
       </button>
       <button (click)="selectTab('contacts')"
         [ngClass]="activeTab === 'contacts' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
+        <ng-icon name="heroUserGroup" size="18"></ng-icon>
         Contacts
       </button>
     </div>
