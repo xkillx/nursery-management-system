@@ -2701,14 +2701,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.bookingPatternLoading = true;
     this.bookingPatternLoadError = null;
 
-    this.staffApi.getCurrentChildBookingPattern(this.childId).subscribe({
-      next: (pattern) => {
-        this.editablePattern = pattern;
-        if (pattern) {
-          this.loadedSections.add('booking-pattern');
-          this.patternEffectiveFrom = pattern.effectiveFrom;
-          this.patternEffectiveTo = pattern.effectiveTo ?? '';
-          this.patternEntries = pattern.entries.map((e) => ({
+    this.staffApi.listChildBookingPatterns(this.childId).subscribe({
+      next: (patterns) => {
+        const current = patterns.find((p) => p.isCurrent) ?? null;
+        this.editablePattern = current;
+        this.loadedSections.add('booking-pattern');
+        if (current) {
+          this.patternEffectiveFrom = current.effectiveFrom;
+          this.patternEffectiveTo = current.effectiveTo ?? '';
+          this.patternEntries = current.entries.map((e) => ({
             dayOfWeek: e.dayOfWeek,
             sessionTypeId: e.sessionType.id,
           }));
