@@ -2098,8 +2098,8 @@
             </div>
 
             <div class="space-y-8 p-5 md:p-6">
-              @if (sessionPatternLoading) {
-                <app-loading-state variant="inline" label="Loading session types..." />
+              @if (sessionPatternLoading || (!isNewRegistration && bookingPatternLoading)) {
+                <app-loading-state variant="inline" [label]="bookingPatternLoading ? 'Loading booking pattern...' : 'Loading session types...'" />
               } @else {
                 @if (patternError) {
                   <div class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300" role="alert">
