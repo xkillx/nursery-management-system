@@ -194,19 +194,27 @@ export class ManagerInvoicesApiService {
   private readonly http = inject(HttpClient);
 
   listInvoices(params: {
-    billingMonth: string;
+    billingMonth?: string;
     status: ManagerInvoiceStatusFilter;
+    childId?: string;
     limit: number;
     offset: number;
   }): Observable<ManagerInvoiceListResult> {
     const queryObj: Record<string, string> = {
-      billing_month: params.billingMonth,
       limit: String(params.limit),
       offset: String(params.offset),
     };
 
+    if (params.billingMonth) {
+      queryObj['billing_month'] = params.billingMonth;
+    }
+
     if (params.status !== 'all') {
       queryObj['status'] = params.status;
+    }
+
+    if (params.childId) {
+      queryObj['child_id'] = params.childId;
     }
 
     return this.http

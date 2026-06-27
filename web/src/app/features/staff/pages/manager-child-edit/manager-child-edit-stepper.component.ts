@@ -1825,6 +1825,25 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return this.patternSelectedTypeByDay[day] === sessionTypeId;
   }
 
+  get patternEntries(): { dayOfWeek: number; sessionTypeId: string }[] {
+    const entries: { dayOfWeek: number; sessionTypeId: string }[] = [];
+    for (const [day, stId] of Object.entries(this.patternSelectedTypeByDay)) {
+      if (stId !== null) {
+        entries.push({ dayOfWeek: Number(day), sessionTypeId: stId });
+      }
+    }
+    return entries;
+  }
+
+  set patternEntries(val: { dayOfWeek: number; sessionTypeId: string }[]) {
+    this.patternSelectedTypeByDay = {};
+    if (val) {
+      for (const e of val) {
+        this.patternSelectedTypeByDay[e.dayOfWeek] = e.sessionTypeId;
+      }
+    }
+  }
+
   get hasPatternEntries(): boolean {
     return Object.values(this.patternSelectedTypeByDay).some((v) => v !== null);
   }

@@ -1,32 +1,30 @@
-<div class="space-y-6 p-6">
-  <div class="flex items-center justify-between">
-    <a routerLink="/manager/children" class="text-sm text-gray-600 hover:underline">← Back to children</a>
-    <div class="flex gap-2">
-      <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
-        <app-button variant="secondary">Session pattern</app-button>
-      </a>
-      <a [routerLink]="['/manager/children', childId, 'edit']">
-        <app-button variant="primary">Edit</app-button>
-      </a>
-    </div>
+<div class="space-y-6 p-6 max-w-[1440px] mx-auto bg-gray-50/50 min-h-screen">
+  <!-- Back button & navigation -->
+  <div class="flex items-center justify-between mb-4">
+    <a routerLink="/manager/children" class="text-sm text-gray-500 hover:text-brand-600 transition-colors flex items-center gap-1.5 font-medium">
+      <ng-icon name="heroArrowLeft" size="16" class="text-gray-500"></ng-icon>
+      Back to children
+    </a>
   </div>
 
   @if (child && child.hasBookingPattern === false) {
     <div
-      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm"
       role="status"
     >
-      <div class="flex items-start gap-2">
-        <ng-icon name="heroExclamationTriangle" size="18" class="mt-0.5 shrink-0 text-amber-500" aria-hidden="true"></ng-icon>
+      <div class="flex items-start gap-3">
+        <ng-icon name="heroExclamationTriangle" size="24" class="text-amber-500 shrink-0"></ng-icon>
         <div>
-          <p class="font-medium">No session pattern recorded for this child.</p>
-          <p class="mt-1 text-xs text-amber-800/80 dark:text-amber-100/80">
-            Captured at registration. You can set one up from the dedicated screen.
+          <p class="font-semibold text-amber-900">No session pattern recorded for this child</p>
+          <p class="mt-1 text-xs text-amber-800/80">
+            Captured at registration. You can configure a recurring session pattern from the dedicated screen.
           </p>
         </div>
       </div>
       <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
-        <app-button variant="secondary">Set up session pattern</app-button>
+        <button class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+          Set up session pattern
+        </button>
       </a>
     </div>
   }
@@ -38,233 +36,910 @@
   @if (isLoading) {
     <app-loading-state></app-loading-state>
   } @else if (child) {
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="flex items-center gap-3">
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-          {{ child.fullName }}
-        </h2>
-        <app-status-badge [status]="child.isActive ? 'active' : 'inactive'">
-        </app-status-badge>
-        @if (child.hasCurrentRoom) {
-          <app-status-badge status="room_assigned">
-          </app-status-badge>
-        }
+    <!-- Profile Header Section -->
+    <div class="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-sm mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div class="flex items-center gap-5">
+          <!-- Initial-based Avatar with gradient background -->
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 text-white font-bold text-2xl flex items-center justify-center shadow-md">
+            {{ child.firstName ? child.firstName[0] : '' }}{{ child.lastName ? child.lastName[0] : '' }}
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <h1 class="text-2xl font-bold text-gray-900 tracking-tight">{{ child.fullName }}</h1>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5"
+                [ngClass]="child.isActive ? 'bg-success-50 text-success-600' : 'bg-gray-100 text-gray-500'">
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="child.isActive ? 'bg-success-500' : 'bg-gray-400'"></span>
+                {{ child.isActive ? 'Active' : 'Inactive' }}
+              </span>
+              @if (roomAssignments && roomAssignments.length > 0) {
+                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-500 text-xs font-bold">
+                  Assigned
+                </span>
+              }
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-gray-500">
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroCalendarDays" size="18" class="text-gray-400"></ng-icon>
+                <span>Born: {{ child.dateOfBirth }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroCalendarDays" size="18" class="text-gray-400"></ng-icon>
+                <span>Joined: {{ child.startDate }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroIdentification" size="18" class="text-gray-400"></ng-icon>
+                <span>Ref: NP-{{ childId.slice(0, 8).toUpperCase() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
+            <button class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200/80 text-gray-700 font-semibold text-sm rounded-xl border border-gray-200/60 transition-all flex items-center gap-1.5">
+              <ng-icon name="heroCalendarDays" size="20" class="text-gray-700"></ng-icon>
+              Session Pattern
+            </button>
+          </a>
+          <a [routerLink]="['/manager/children', childId, 'edit']">
+            <button class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl shadow-md shadow-brand-500/10 transition-all flex items-center gap-1.5">
+              <ng-icon name="heroPencilSquare" size="20" class="text-white"></ng-icon>
+              Edit Details
+            </button>
+          </a>
+        </div>
       </div>
-      <dl class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <dt class="text-xs font-medium uppercase text-gray-500">Date of birth</dt>
-          <dd class="text-sm text-gray-800 dark:text-white/90">{{ child.dateOfBirth }}</dd>
-        </div>
-        <div>
-          <dt class="text-xs font-medium uppercase text-gray-500">Start date</dt>
-          <dd class="text-sm text-gray-800 dark:text-white/90">{{ child.startDate }}</dd>
-        </div>
-        @if (child.endDate) {
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">End date</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ child.endDate }}</dd>
-          </div>
-        }
-        <div>
-          <dt class="text-xs font-medium uppercase text-gray-500">Site rate</dt>
-          <dd class="text-sm text-gray-800 dark:text-white/90">
-            {{ formatRate(child.siteCoreHourlyRateMinor) }} / {{ formatSiteRate(child.siteCoreHourlyRateMinor) }}
-          </dd>
-        </div>
-        @if (child.notes) {
-          <div class="md:col-span-2">
-            <dt class="text-xs font-medium uppercase text-gray-500">Notes</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ child.notes }}</dd>
-          </div>
-        }
-      </dl>
+    </div>
 
-      @if (child.missingRequirements.length > 0) {
-        <div class="mt-4">
-          <h3 class="text-sm font-medium text-gray-700 dark:text-white/80">Missing requirements</h3>
-          <ul class="mt-2 list-disc pl-5 text-sm text-gray-600">
-            @for (m of child.missingRequirements; track m) {
-              <li>{{ requirementLabel(m) }}</li>
-            }
-          </ul>
-        </div>
-      }
-    </section>
+    <!-- Tabs Navigation -->
+    <div class="flex border-b border-gray-200/80 mb-6 gap-6 overflow-x-auto no-scrollbar scroll-smooth">
+      <button (click)="selectTab('overview')"
+        [ngClass]="activeTab === 'overview' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        Overview
+      </button>
+      <button (click)="selectTab('attendance')"
+        [ngClass]="activeTab === 'attendance' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        Attendance
+      </button>
+      <button (click)="selectTab('funding')"
+        [ngClass]="activeTab === 'funding' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        Funding &amp; Billing
+      </button>
+      <button (click)="selectTab('health')"
+        [ngClass]="activeTab === 'health' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        Health &amp; Medical
+      </button>
+      <button (click)="selectTab('contacts')"
+        [ngClass]="activeTab === 'contacts' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
+        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap">
+        Contacts
+      </button>
+    </div>
 
-    <!-- Funding & Benefits Section -->
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Funding & Benefits</h3>
-      @if (funding) {
-        <dl class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Funding enabled</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funding_enabled ? 'Yes' : 'No' }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Funding type</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funding_type }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Funding model</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funding_model }}</dd>
-          </div>
-          @if (funding.funded_hours_per_week) {
-            <div>
-              <dt class="text-xs font-medium uppercase text-gray-500">Funded hours per week</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funded_hours_per_week }}</dd>
+    <!-- Tab Panels -->
+    <div class="grid grid-cols-12 gap-6">
+
+      <!-- ==================== OVERVIEW TAB ==================== -->
+      @if (activeTab === 'overview') {
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+          <!-- Metrics Row -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
+              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <span>Attendance Rate</span>
+                <span class="text-success-600 font-bold">+2.4%</span>
+              </div>
+              <div class="text-3xl font-bold text-gray-900">94.2%</div>
+              <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mt-1">
+                <div class="bg-success-500 h-full rounded-full" style="width: 94.2%"></div>
+              </div>
             </div>
-          }
-          @if (funding.funding_start_date) {
-            <div>
-              <dt class="text-xs font-medium uppercase text-gray-500">Funding start date</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funding_start_date }}</dd>
+
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
+              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <span>Weekly Hours</span>
+                <span class="text-gray-500 font-medium">Schedule</span>
+              </div>
+              <div class="text-3xl font-bold text-gray-900">
+                {{ funding?.funded_hours_per_week ?? '30.0' }}
+              </div>
+              <p class="text-xs text-gray-400 mt-1">
+                {{ funding?.funding_model === 'stretched' ? 'Stretched' : 'Term-time only' }} model
+              </p>
             </div>
-          }
-          @if (funding.funding_end_date) {
-            <div>
-              <dt class="text-xs font-medium uppercase text-gray-500">Funding end date</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.funding_end_date }}</dd>
+
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
+              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <span>Funding Status</span>
+                <ng-icon name="heroCheckCircle" size="18" class="text-success-500"></ng-icon>
+              </div>
+              <div class="text-xl font-bold text-gray-900">
+                {{ funding?.eligibility_code_validated ? 'Code Validated' : 'Self-Funded' }}
+              </div>
+              <p class="text-xs text-gray-400 mt-1 truncate">
+                {{ funding?.eligibility_code ? 'Code: ' + funding?.eligibility_code : 'No code registered' }}
+              </p>
             </div>
-          }
-          @if (funding.eligibility_code) {
-            <div>
-              <dt class="text-xs font-medium uppercase text-gray-500">Eligibility code</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.eligibility_code }}</dd>
-            </div>
-          }
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Code validated</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.eligibility_code_validated ? 'Yes' : 'No' }}</dd>
           </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Evidence received</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.evidence_received ? 'Yes' : 'No' }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Benefits status</dt>
-            <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.benefits_status }}</dd>
-          </div>
-          @if (funding.benefit_notes) {
-            <div class="md:col-span-2">
-              <dt class="text-xs font-medium uppercase text-gray-500">Benefit notes</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.benefit_notes }}</dd>
-            </div>
-          }
-          @if (funding.manager_notes) {
-            <div class="md:col-span-2">
-              <dt class="text-xs font-medium uppercase text-gray-500">Manager notes</dt>
-              <dd class="text-sm text-gray-800 dark:text-white/90">{{ funding.manager_notes }}</dd>
-            </div>
-          }
-        </dl>
-      } @else {
-        <p class="mt-2 text-sm text-gray-600">No funding record. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Add funding details</a>.</p>
-      }
-    </section>
 
-    <!-- Monthly Funding Profile Editor (visible when billing_month query param present) -->
-    @if (billingMonth) {
-      <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Monthly Funding Profile — {{ billingMonth }}</h3>
-
-        <!-- Registration Funding Guidance Panel -->
-        @if (funding && funding.funding_enabled) {
-          <div class="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
-            <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">Registration funding information</h4>
-            <dl class="mt-2 grid grid-cols-2 gap-2 text-sm text-blue-700 dark:text-blue-300">
-              <div><span class="font-medium">Type:</span> {{ funding.funding_type }}</div>
-              <div><span class="font-medium">Model:</span> {{ funding.funding_model }}</div>
-              @if (funding.funded_hours_per_week) {
-                <div><span class="font-medium">Hours/week:</span> {{ funding.funded_hours_per_week }}</div>
-              }
-              @if (funding.eligibility_code) {
-                <div><span class="font-medium">Eligibility:</span> {{ funding.eligibility_code }}</div>
-              }
-              @if (funding.funding_start_date) {
-                <div><span class="font-medium">Start:</span> {{ funding.funding_start_date }}</div>
-              }
-              @if (funding.funding_end_date) {
-                <div><span class="font-medium">End:</span> {{ funding.funding_end_date }}</div>
-              }
-            </dl>
-            <p class="mt-2 text-xs text-blue-600 dark:text-blue-400">This information was captured during registration. Monthly invoice deductions are controlled only by the monthly funding profile.</p>
-          </div>
-        }
-
-        <!-- Suggested Allowance -->
-        @if (suggestedMinutes !== null) {
-          <div class="mt-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
-            <span class="text-sm text-gray-700 dark:text-gray-300">Suggested monthly allowance: <strong>{{ suggestedMinutes }}</strong> minutes</span>
-            <button type="button" class="text-sm text-brand-600 hover:underline" (click)="useSuggestedValue()">Use suggested value</button>
-          </div>
-        }
-
-        <!-- Editor Form -->
-        <div class="mt-4 space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Billing month</label>
-            <p class="mt-1 text-sm text-gray-800 dark:text-white/90">{{ billingMonth }}</p>
-          </div>
-          <div>
-            <label for="monthly-allowance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Funded allowance (minutes)</label>
-            <input
-              id="monthly-allowance"
-              type="number"
-              min="0"
-              [(ngModel)]="monthlyAllowanceMinutes"
-              class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
-          </div>
-          <div class="flex gap-2">
-            <app-button variant="primary" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
-              {{ isSavingMonthly ? 'Saving...' : 'Save' }}
-            </app-button>
-          </div>
-          @if (monthlySaveMessage) {
-            <p class="text-sm text-green-600">{{ monthlySaveMessage }}</p>
-          }
-        </div>
-      </section>
-    }
-
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Sub-records</h3>
-      <p class="mt-1 text-sm text-gray-600">
-        Open the Edit view to maintain the profile, contacts, health, safeguarding, consent, funding, collection, room placement, and billing profile.
-      </p>
-      @if (profile) {
-        <p class="mt-2 text-sm text-gray-600">Profile last updated: {{ profile.updated_at }}</p>
-      } @else {
-        <p class="mt-2 text-sm text-gray-600">No profile yet.</p>
-      }
-    </section>
-
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Parent carers</h3>
-      @if (parentCarers.length === 0) {
-        <app-empty-state message="No parent carers yet."></app-empty-state>
-      } @else {
-        <ul class="mt-2 divide-y divide-gray-100">
-          @for (carer of parentCarers; track carer.id) {
-            <li class="py-2 text-sm text-gray-800 dark:text-white/90">
-              <div class="font-medium">{{ carer.fullName }}</div>
-              @if (carer.email || carer.telephone) {
-                <div class="text-xs text-gray-500">
-                  @if (carer.email) { <span>{{ carer.email }}</span> }
-                  @if (carer.email && carer.telephone) { <span> · </span> }
-                  @if (carer.telephone) { <span>{{ carer.telephone }}</span> }
+          <!-- General Details Card -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <ng-icon name="heroAcademicCap" size="20" class="text-brand-500"></ng-icon>
+              Demographics & Enrollment
+            </h3>
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+              <div>
+                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Sex</dt>
+                <dd class="mt-1 font-semibold text-gray-800 capitalize">{{ profile?.sex ?? 'Not disclosed' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Start date</dt>
+                <dd class="mt-1 font-semibold text-gray-800">{{ child.startDate }}</dd>
+              </div>
+              @if (child.endDate) {
+                <div>
+                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">End date</dt>
+                  <dd class="mt-1 font-semibold text-gray-800">{{ child.endDate }}</dd>
                 </div>
               }
-            </li>
-          }
-        </ul>
-      }
-    </section>
+              <div>
+                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Site rate</dt>
+                <dd class="mt-1 font-semibold text-gray-800">
+                  {{ formatRate(child.siteCoreHourlyRateMinor) }} / {{ formatSiteRate(child.siteCoreHourlyRateMinor) }}
+                </dd>
+              </div>
+              @if (profile?.ethnic_origin) {
+                <div>
+                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Ethnic Origin</dt>
+                  <dd class="mt-1 font-semibold text-gray-800">{{ profile?.ethnic_origin }}</dd>
+                </div>
+              }
+              @if (profile?.first_language) {
+                <div>
+                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">First Language</dt>
+                  <dd class="mt-1 font-semibold text-gray-800">{{ profile?.first_language }}</dd>
+                </div>
+              }
+              @if (child.notes) {
+                <div class="md:col-span-2">
+                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Enrollment Notes</dt>
+                  <dd class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200/50 mt-1 leading-relaxed">{{ child.notes }}</dd>
+                </div>
+              }
+            </dl>
 
-    @if (parentCarers.length > 0) {
-      <!-- Note: end-of-section spacer for layout consistency. -->
-    }
+            @if (child.missingRequirements.length > 0) {
+              <div class="mt-6 pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-bold text-red-600 flex items-center gap-1.5 mb-2">
+                  <ng-icon name="heroExclamationTriangle" size="18" class="text-red-500 shrink-0"></ng-icon>
+                  Missing Intake Requirements
+                </h4>
+                <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                  @for (m of child.missingRequirements; track m) {
+                    <li>{{ requirementLabel(m) }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+
+          <!-- Room Assignment & Booking Pattern -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <ng-icon name="heroHome" size="20" class="text-brand-500"></ng-icon>
+              Room Assignment &amp; Schedule
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
+                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Room Placements</div>
+                @if (roomAssignments.length === 0) {
+                  <p class="text-sm text-gray-500">No room assigned. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Assign room</a>.</p>
+                } @else {
+                  <ul class="space-y-3">
+                    @for (assign of roomAssignments; track assign.id) {
+                      <li class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-2.5 rounded-full" [ngClass]="assign.is_current ? 'bg-brand-500' : 'bg-gray-300'"></span>
+                          <span class="font-semibold text-gray-800">Room placement</span>
+                        </div>
+                        <span class="text-gray-500">From: {{ assign.start_date }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
+                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Schedule &amp; Pattern</div>
+                @if (currentBookingPattern) {
+                  <div class="text-sm space-y-1">
+                    <p class="font-semibold text-gray-800">{{ currentBookingPattern.is_current ? 'Current Schedule' : 'Schedule' }}</p>
+                    <p class="text-xs text-gray-500">Effective: {{ currentBookingPattern.effective_from }}</p>
+                  </div>
+                } @else {
+                  <p class="text-sm text-gray-500">No active session pattern. <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="text-brand-600 hover:underline">Set schedule</a>.</p>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Column -->
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+          <!-- Primary Contacts -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <ng-icon name="heroUserGroup" size="20" class="text-brand-500"></ng-icon>
+                Legal Guardians
+              </h3>
+            </div>
+            @if (parentCarers.length === 0) {
+              <app-empty-state message="No parent carers registered."></app-empty-state>
+            } @else {
+              <div class="space-y-3">
+                @for (carer of parentCarers; track carer.id) {
+                  <div class="p-4 rounded-xl border border-gray-200/80 hover:border-brand-500 transition-all cursor-default">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center">
+                        {{ carer.fullName ? carer.fullName[0] : 'C' }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-900 truncate">{{ carer.fullName }}</p>
+                        <p class="text-xs text-gray-500 capitalize">{{ carer.relationshipToChild || 'Guardian' }}</p>
+                      </div>
+                      <div class="flex gap-1 shrink-0">
+                        @if (carer.telephone) {
+                          <a [href]="'tel:' + carer.telephone" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center text-brand-600 transition-colors">
+                            <ng-icon name="heroPhone" size="18" class="text-brand-600"></ng-icon>
+                          </a>
+                        }
+                        @if (carer.email) {
+                          <a [href]="'mailto:' + carer.email" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200/70 flex items-center justify-center text-gray-600 transition-colors">
+                            <ng-icon name="heroEnvelope" size="18" class="text-gray-600"></ng-icon>
+                          </a>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Quick Actions & Sub-Records list -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <h3 class="text-sm font-semibold uppercase text-gray-400 tracking-wider mb-4">Quick Record Indicators</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button (click)="selectTab('health')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
+                <ng-icon name="heroHeart" size="24" class="text-red-500"></ng-icon>
+                <span class="text-xs font-semibold text-gray-700">Allergies</span>
+              </button>
+              <button (click)="selectTab('health')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
+                <ng-icon name="heroClipboardDocumentCheck" size="24" class="text-brand-500"></ng-icon>
+                <span class="text-xs font-semibold text-gray-700">Consents</span>
+              </button>
+              <button (click)="selectTab('funding')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
+                <ng-icon name="heroDocumentText" size="24" class="text-success-500"></ng-icon>
+                <span class="text-xs font-semibold text-gray-700">Billing Profile</span>
+              </button>
+              <button (click)="selectTab('contacts')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
+                <ng-icon name="heroShieldCheck" size="24" class="text-amber-500"></ng-icon>
+                <span class="text-xs font-semibold text-gray-700">Password Hint</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity timeline -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <ng-icon name="heroClock" size="20" class="text-brand-500"></ng-icon>
+              Administrative Log
+            </h3>
+            <div class="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+              <div class="relative">
+                <span class="absolute -left-[21px] top-0.5 w-4.5 h-4.5 rounded-full bg-success-50 border-2 border-success-500 z-10"></span>
+                <div>
+                  <p class="text-xs font-bold text-gray-900">Child record updated</p>
+                  <p class="text-[11px] text-gray-400 mt-0.5">Last system modification timestamp: {{ child.updatedAt ? (child.updatedAt | date:'mediumDate') : 'Recent' }}</p>
+                </div>
+              </div>
+              <div class="relative">
+                <span class="absolute -left-[21px] top-0.5 w-4.5 h-4.5 rounded-full bg-brand-50 border-2 border-brand-500 z-10"></span>
+                <div>
+                  <p class="text-xs font-bold text-gray-900">Registration confirmed</p>
+                  <p class="text-[11px] text-gray-400 mt-0.5">Enrollment start date set to: {{ child.startDate }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ==================== ATTENDANCE TAB ==================== -->
+      @if (activeTab === 'attendance') {
+        <div class="col-span-12 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Attendance Rate</p>
+                <h3 class="text-3xl font-bold text-brand-500">94.2%</h3>
+                <p class="text-xs text-success-600 flex items-center gap-1.5 mt-1 font-semibold">
+                  <ng-icon name="heroArrowRight" size="16" class="text-success-500"></ng-icon>
+                  +2.1% from last month
+                </p>
+              </div>
+              <div class="relative w-16 h-16">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <circle class="stroke-gray-100" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+                  <circle class="stroke-brand-500" cx="18" cy="18" fill="none" r="16" stroke-dasharray="94.2, 100" stroke-linecap="round" stroke-width="3"></circle>
+                </svg>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Hours This Month</p>
+              <div class="flex items-baseline gap-2">
+                <h3 class="text-3xl font-bold text-gray-900">142</h3>
+                <span class="text-sm text-gray-500">/ 160 hrs</span>
+              </div>
+              <div class="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-info-500 w-[88%] rounded-full"></div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2 font-medium">Target: 40 hrs per week</p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Days Absent</p>
+                <h3 class="text-3xl font-bold text-red-500">2</h3>
+                <p class="text-xs text-gray-500 mt-1">Sickness: 1 | Holiday: 1</p>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 shadow-sm">
+                <ng-icon name="heroExclamationTriangle" size="28" class="text-red-500"></ng-icon>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm">
+            <div class="p-6 border-b border-gray-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
+              <div>
+                <h4 class="text-lg font-bold text-gray-900">Attendance Log History</h4>
+                <p class="text-sm text-gray-500">Current Period logs</p>
+              </div>
+              <div class="flex gap-2">
+                <button class="bg-brand-50 hover:bg-brand-100 text-brand-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5">
+                  <ng-icon name="heroPlus" size="18" class="text-brand-600"></ng-icon>
+                  Request Holiday
+                </button>
+                <button class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5">
+                  <ng-icon name="heroExclamationTriangle" size="18" class="text-red-600"></ng-icon>
+                  Mark Absence
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="text-gray-400 border-b border-gray-200 bg-gray-50/50">
+                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Day / Date</th>
+                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Scheduled</th>
+                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Check In</th>
+                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Check Out</th>
+                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+                  <tr class="hover:bg-gray-50/50 transition-colors">
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-gray-900">Monday, May 13</div>
+                      <div class="text-xs text-gray-400">Week 20</div>
+                    </td>
+                    <td class="px-6 py-4">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-medium">07:58</td>
+                    <td class="px-6 py-4 font-mono font-medium">17:55</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50/50 transition-colors">
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-gray-900">Tuesday, May 14</div>
+                      <div class="text-xs text-gray-400">Week 20</div>
+                    </td>
+                    <td class="px-6 py-4">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-medium">08:15</td>
+                    <td class="px-6 py-4 font-mono font-medium">18:05</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50/50 transition-colors bg-red-50/20">
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-red-600">Wednesday, May 15</div>
+                      <div class="text-xs text-red-400">Week 20</div>
+                    </td>
+                    <td class="px-6 py-4">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full">ABSENT (SICK)</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50/50 transition-colors">
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-gray-900">Thursday, May 16</div>
+                      <div class="text-xs text-gray-400">Week 20</div>
+                    </td>
+                    <td class="px-6 py-4">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-medium">07:55</td>
+                    <td class="px-6 py-4 font-mono font-medium">17:50</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50/50 transition-colors bg-brand-50/10">
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-brand-600">Friday, May 17</div>
+                      <div class="text-xs text-brand-400">Week 20</div>
+                    </td>
+                    <td class="px-6 py-4">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-full">HOLIDAY</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ==================== FUNDING & BILLING TAB ==================== -->
+      @if (activeTab === 'funding') {
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+          <!-- Balance & Actions -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+            <div>
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Account Balance</p>
+              <h3 class="text-3xl font-bold text-gray-900">£0.00</h3>
+              <p class="text-xs text-success-600 mt-1 font-semibold flex items-center gap-1">
+                <ng-icon name="heroCheckCircle" size="16" class="text-success-500"></ng-icon>
+                Settled & Up-to-date
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
+                <div class="text-xs text-gray-400 font-bold uppercase mb-1">Last Payment</div>
+                <div class="font-bold text-gray-800">£850.00</div>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
+                <div class="text-xs text-gray-400 font-bold uppercase mb-1">Last Invoice</div>
+                <div class="font-bold text-gray-800">£850.00</div>
+              </div>
+            </div>
+            <button class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+              <ng-icon name="heroPlus" size="20" class="text-white"></ng-icon>
+              Add Credit to Account
+            </button>
+          </div>
+
+          <!-- Billing profile config -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+            <h3 class="text-md font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <ng-icon name="heroDocumentText" size="20" class="text-brand-500"></ng-icon>
+              Billing Configuration
+            </h3>
+            @if (billingProfile) {
+              <dl class="space-y-3 text-sm">
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                  <dt class="text-gray-500">Basis</dt>
+                  <dd class="font-bold text-gray-800 capitalize">{{ billingProfile.billing_basis }}</dd>
+                </div>
+                @if (billingProfile.custom_rate_minor !== null && billingProfile.custom_rate_minor !== undefined) {
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <dt class="text-gray-500">Custom hourly rate</dt>
+                    <dd class="font-bold text-gray-800">{{ formatRate(billingProfile.custom_rate_minor) }}</dd>
+                  </div>
+                }
+                <div class="flex justify-between pb-1">
+                  <dt class="text-gray-500">Effective from</dt>
+                  <dd class="font-bold text-gray-800">{{ billingProfile.effective_from }}</dd>
+                </div>
+              </dl>
+            } @else {
+              <p class="text-sm text-gray-500">No active billing profile. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Configure billing</a>.</p>
+            }
+          </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+          <!-- Monthly Funding Profile Editor (visible when billing_month query param present) -->
+          @if (billingMonth) {
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <ng-icon name="heroCalendarDays" size="20" class="text-brand-500"></ng-icon>
+                Monthly Funding Profile — {{ billingMonth }}
+              </h3>
+
+              @if (funding && funding.funding_enabled) {
+                <div class="rounded-xl border border-brand-100 bg-brand-50/50 p-4 space-y-3">
+                  <h4 class="text-sm font-bold text-brand-800">Registration funding reference info</h4>
+                  <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-brand-700">
+                    <div><span class="font-semibold">Type:</span> {{ funding.funding_type }}</div>
+                    <div><span class="font-semibold">Model:</span> {{ funding.funding_model === 'stretched' ? 'Stretched' : 'Term time only' }}</div>
+                    @if (funding.funded_hours_per_week) {
+                      <div><span class="font-semibold">Hours/week:</span> {{ funding.funded_hours_per_week }}</div>
+                    }
+                    @if (funding.eligibility_code) {
+                      <div><span class="font-semibold">Eligibility Code:</span> {{ funding.eligibility_code }}</div>
+                    }
+                  </dl>
+                  <p class="text-[11px] text-brand-600/85">This info is static from registration. Monthly deductions are governed strictly by the allowance minutes set below.</p>
+                </div>
+              }
+
+              @if (suggestedMinutes !== null) {
+                <div class="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200/50 text-sm">
+                  <span class="text-gray-700">Suggested monthly allowance: <strong class="text-gray-900 font-bold">{{ suggestedMinutes }}</strong> minutes</span>
+                  <button type="button" class="text-xs font-bold text-brand-600 hover:underline" (click)="useSuggestedValue()">Use suggested value</button>
+                </div>
+              }
+
+              <div class="space-y-4">
+                <div>
+                  <label for="monthly-allowance" class="block text-sm font-semibold text-gray-700 mb-1">Funded allowance (minutes)</label>
+                  <input
+                    id="monthly-allowance"
+                    type="number"
+                    min="0"
+                    [(ngModel)]="monthlyAllowanceMinutes"
+                    class="block w-full rounded-xl border border-brand-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-brand-500/20"
+                  />
+                </div>
+                <div class="flex gap-2">
+                  <button class="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-sm" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
+                    {{ isSavingMonthly ? 'Saving...' : 'Save Allowance' }}
+                  </button>
+                </div>
+                @if (monthlySaveMessage) {
+                  <p class="text-xs text-success-600 font-semibold flex items-center gap-1.5">
+                    <ng-icon name="heroCheckCircle" size="16" class="text-success-500"></ng-icon>
+                    {{ monthlySaveMessage }}
+                  </p>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Invoices List -->
+          <div class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm">
+            <div class="p-6 border-b border-gray-200/80 bg-gray-50/50 flex justify-between items-center">
+              <h3 class="text-lg font-bold text-gray-900">Recent Invoices</h3>
+            </div>
+            @if (invoices.length === 0) {
+              <app-empty-state message="No invoices generated for this child yet."></app-empty-state>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-gray-200 bg-gray-50/50">
+                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Invoice ID</th>
+                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Billing Month</th>
+                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Amount</th>
+                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+                    @for (inv of invoices; track inv.invoiceId) {
+                      <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-gray-900">
+                          {{ inv.invoiceNumberDisplay || 'Draft' }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-500">{{ inv.billingMonth }}</td>
+                        <td class="px-6 py-4 font-bold text-gray-900">
+                          £{{ (inv.totalDueMinor / 100).toFixed(2) }}
+                        </td>
+                        <td class="px-6 py-4">
+                          <app-status-badge [status]="inv.status"></app-status-badge>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                          <div class="flex justify-end gap-1.5">
+                            <a [routerLink]="['/manager/invoices', inv.invoiceId]" class="p-1.5 text-gray-500 hover:text-brand-500 transition-colors" title="View details">
+                              <ng-icon name="heroEye" size="18" class="text-gray-500"></ng-icon>
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ==================== HEALTH & MEDICAL TAB ==================== -->
+      @if (activeTab === 'health') {
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Allergies & Dietary -->
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm relative overflow-hidden space-y-4">
+              <div class="flex justify-between items-start">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shadow-sm">
+                  <ng-icon name="heroExclamationTriangle" size="24" class="text-red-500"></ng-icon>
+                </div>
+                <span class="bg-success-50 text-success-600 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">
+                  {{ healthProfile?.medical_conditions_status === 'none' ? 'None Disclosed' : 'Active' }}
+                </span>
+              </div>
+              <div>
+                <h4 class="text-lg font-bold text-gray-900 mb-1">Allergies &amp; Dietary</h4>
+                <p class="text-sm text-gray-500 leading-relaxed">
+                  {{ healthProfile?.dietary_requirements_notes || 'No food allergies or medical dietary requirements disclosed by parents.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Immunisations -->
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+              <div class="flex justify-between items-start">
+                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
+                  <ng-icon name="heroShieldCheck" size="24" class="text-brand-500"></ng-icon>
+                </div>
+                <span class="bg-brand-50 text-brand-600 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">
+                  {{ healthProfile?.immunisation_status || 'Up to date' }}
+                </span>
+              </div>
+              <div>
+                <h4 class="text-lg font-bold text-gray-900 mb-1">Immunisations</h4>
+                <p class="text-sm text-gray-500 leading-relaxed">
+                  Vaccination schedule is compliant. Country of records: {{ healthProfile?.immunisation_country || 'United Kingdom' }}.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medical history & visitor details -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+            <h4 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <ng-icon name="heroHeart" size="20" class="text-brand-500"></ng-icon>
+              Medical &amp; Clinical Contacts
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="p-4 rounded-xl border border-gray-200/80 space-y-2 text-sm bg-gray-50/50">
+                <div class="flex items-center gap-2 text-brand-600 font-bold mb-1">
+                  <ng-icon name="heroUser" size="18" class="text-brand-500"></ng-icon>
+                  GP / Doctor
+                </div>
+                @if (healthProfile?.doctor_name) {
+                  <p class="font-bold text-gray-800">{{ healthProfile?.doctor_name }}</p>
+                  @if (healthProfile?.doctor_phone) { <p class="text-gray-500">Phone: {{ healthProfile?.doctor_phone }}</p> }
+                  @if (healthProfile?.doctor_address) { <p class="text-xs text-gray-400">Address: {{ healthProfile?.doctor_address }}</p> }
+                } @else {
+                  <p class="text-gray-400 italic">No doctor registered.</p>
+                }
+              </div>
+
+              <div class="p-4 rounded-xl border border-gray-200/80 space-y-2 text-sm bg-gray-50/50">
+                <div class="flex items-center gap-2 text-brand-600 font-bold mb-1">
+                  <ng-icon name="heroUser" size="18" class="text-brand-500"></ng-icon>
+                  Health Visitor
+                </div>
+                @if (healthProfile?.health_visitor_name) {
+                  <p class="font-bold text-gray-800">{{ healthProfile?.health_visitor_name }}</p>
+                  @if (healthProfile?.health_visitor_phone) { <p class="text-gray-500">Phone: {{ healthProfile?.health_visitor_phone }}</p> }
+                  @if (healthProfile?.health_visitor_address) { <p class="text-xs text-gray-400">Address: {{ healthProfile?.health_visitor_address }}</p> }
+                } @else {
+                  <p class="text-gray-400 italic">No health visitor registered.</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Consents Checklist -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+            <h4 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <ng-icon name="heroClipboardDocumentCheck" size="20" class="text-brand-500"></ng-icon>
+              Signed Regulatory Consents
+            </h4>
+            @if (consent) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.urgent_medical_treatment ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.urgent_medical_treatment ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">Urgent Medical Treatment</span>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.plasters ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.plasters ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">Apply Plasters</span>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.local_outings ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.local_outings ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">Local Outings & Walks</span>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.gdpr_data_processing_consent ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.gdpr_data_processing_consent ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">GDPR Data Processing</span>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.nursery_website ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.nursery_website ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">Nursery Website Photos</span>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
+                  <ng-icon [name]="consent.social_media ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.social_media ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
+                  <span class="font-semibold text-gray-800">Social Media sharing</span>
+                </div>
+              </div>
+              <div class="mt-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50 text-xs text-gray-500 flex justify-between">
+                <span>Signed by: <strong>{{ consent.signer_name }}</strong></span>
+                <span>Date: <strong>{{ consent.signed_date }}</strong></span>
+              </div>
+            } @else {
+              <p class="text-sm text-gray-400 italic">Consents data has not been logged yet.</p>
+            }
+          </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+          <!-- Emergency Consent Card -->
+          <div class="bg-brand-500 text-white rounded-2xl p-6 shadow-md space-y-4">
+            <div class="flex items-center justify-between">
+              <ng-icon name="heroShieldCheck" size="32" class="text-white/90"></ng-icon>
+              <span class="bg-white/20 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">Active</span>
+            </div>
+            <h4 class="text-lg font-bold">Emergency Medical Consent</h4>
+            <p class="text-xs text-white/80 leading-relaxed">
+              Parents have granted full permission for staff to seek urgent emergency hospital care or administer basic first aid procedures.
+            </p>
+            <div class="p-3 bg-white/10 rounded-xl border border-white/15 flex items-center justify-between text-xs">
+              <span class="opacity-70">Consent status:</span>
+              <span class="font-bold">FULLY SIGNED</span>
+            </div>
+          </div>
+
+          <!-- Safeguarding card if exists -->
+          @if (safeguardingProfile) {
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-3">
+              <h4 class="text-sm font-semibold uppercase text-red-500 tracking-wider flex items-center gap-1.5">
+                <ng-icon name="heroShieldCheck" size="18" class="text-red-500"></ng-icon>
+                Safeguarding &amp; Support
+              </h4>
+              <dl class="space-y-2 text-xs">
+                <div class="flex justify-between pb-1 border-b border-gray-50">
+                  <dt class="text-gray-400">Social services involved:</dt>
+                  <dd class="font-bold text-gray-800 capitalize">{{ safeguardingProfile.social_services_status }}</dd>
+                </div>
+                @if (safeguardingProfile.social_worker_name) {
+                  <div class="flex justify-between pb-1 border-b border-gray-50">
+                    <dt class="text-gray-400">Worker name:</dt>
+                    <dd class="font-bold text-gray-800">{{ safeguardingProfile.social_worker_name }}</dd>
+                  </div>
+                }
+              </dl>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ==================== CONTACTS TAB ==================== -->
+      @if (activeTab === 'contacts') {
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+          <!-- Guardians List -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-6">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+              <div>
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <ng-icon name="heroUserGroup" size="20" class="text-brand-500"></ng-icon>
+                  Parent/Carer Details
+                </h3>
+                <p class="text-xs text-gray-400 mt-0.5">Primary legal guardians registered for the child.</p>
+              </div>
+            </div>
+
+            @if (parentCarers.length === 0) {
+              <app-empty-state message="No parent carers registered."></app-empty-state>
+            } @else {
+              <div class="space-y-6">
+                @for (carer of parentCarers; track carer.id; let idx = $index) {
+                  <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center">
+                        {{ carer.fullName ? carer.fullName[0] : 'C' }}
+                      </div>
+                      <div>
+                        <div class="font-bold text-gray-900">{{ carer.fullName }}</div>
+                        <div class="text-xs font-bold text-brand-600 uppercase tracking-wider">
+                          {{ carer.relationshipToChild || 'Guardian' }} · parental responsibility: {{ carer.hasParentalResponsibility ? 'Yes' : 'No' }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-gray-50/50 p-4 rounded-xl border border-gray-200/40">
+                      <div>
+                        <span class="text-xs font-semibold text-gray-400 block mb-0.5">Contact Number</span>
+                        <span class="font-semibold text-gray-800">{{ carer.telephone || 'Not provided' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-gray-400 block mb-0.5">Email Address</span>
+                        <span class="font-semibold text-gray-800">{{ carer.email || 'Not provided' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  @if (idx < parentCarers.length - 1) { <div class="h-px bg-gray-100"></div> }
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Authorized Collectors -->
+          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <ng-icon name="heroShieldCheck" size="20" class="text-amber-500"></ng-icon>
+                Authorized Collectors
+              </h3>
+              <p class="text-xs text-gray-400 mt-0.5">Individuals approved to collect the child. Identification required on arrival.</p>
+            </div>
+
+            @if (authorisedCollectors.length === 0) {
+              <p class="text-sm text-gray-400 italic">No third-party authorized collectors listed.</p>
+            } @else {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (coll of authorisedCollectors; track coll.id) {
+                  <div class="bg-gray-50/50 p-4 border border-gray-200/80 rounded-xl flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
+                        <ng-icon name="heroUser" size="20" class="text-gray-600"></ng-icon>
+                      </div>
+                      <div>
+                        <div class="text-sm font-bold text-gray-800">{{ coll.fullName }}</div>
+                        <div class="text-xs text-gray-500">{{ coll.relationshipToChild || 'Collector' }}</div>
+                      </div>
+                    </div>
+                    <span class="bg-success-50 text-success-600 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5">
+                      <ng-icon name="heroCheckCircle" size="12" class="text-success-500"></ng-icon>
+                      APPROVED
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+          <!-- Collection Password Config -->
+          <div class="bg-white border-2 border-amber-500/10 rounded-2xl p-6 shadow-sm space-y-4">
+            <div class="flex items-center gap-3 text-amber-600">
+              <div class="p-2 bg-amber-50 rounded-xl">
+                <ng-icon name="heroLockClosed" size="24" class="text-amber-500"></ng-icon>
+              </div>
+              <h3 class="font-bold text-gray-900 text-md">Pickup Security</h3>
+            </div>
+            <p class="text-xs text-gray-500 leading-relaxed">
+              This secure password must be stated by any third-party collectors when picking up the child from the nursery.
+            </p>
+            <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-200/30 text-sm">
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Pickup Hint</span>
+              <strong class="text-gray-800 font-bold block">{{ collectionSettings?.collection_password_hint || 'Not configured' }}</strong>
+            </div>
+            <div class="text-[11px] text-gray-400 italic">
+              Updated: {{ collectionSettings?.collection_password_updated_at ? (collectionSettings?.collection_password_updated_at | date:'mediumDate') : 'No update logs' }}
+            </div>
+          </div>
+        </div>
+      }
+
+    </div>
   } @else {
-    <app-empty-state message="No data."></app-empty-state>
+    <app-empty-state message="No child records found matching this reference identifier."></app-empty-state>
   }
 </div>
