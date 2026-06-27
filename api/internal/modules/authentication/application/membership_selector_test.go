@@ -20,7 +20,7 @@ func TestSelectLoginMembership(t *testing.T) {
 		wantMembership domain.Membership
 	}{
 		{
-			name:    "zero memberships returns invalid credentials",
+			name:        "zero memberships returns invalid credentials",
 			memberships: nil,
 			selectedID:  "",
 			wantErr:     domain.ErrInvalidCredentials,

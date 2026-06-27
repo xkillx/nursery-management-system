@@ -91,18 +91,18 @@ func toChildContactsResponse(contacts []domain.ChildContact) gin.H {
 	authorisedCollectors := make([]contactResponse, 0)
 	for _, c := range contacts {
 		cr := contactResponse{
-			ID: c.ID.String(),
-			ContactType: string(c.ContactType),
-			SortOrder: c.SortOrder,
-			FullName: c.FullName,
-			RelationshipToChild: c.RelationshipToChild,
-			Address: c.Address,
-			Telephone: c.Telephone,
-			Email: c.Email,
-			WorkAddress: c.WorkAddress,
+			ID:                        c.ID.String(),
+			ContactType:               string(c.ContactType),
+			SortOrder:                 c.SortOrder,
+			FullName:                  c.FullName,
+			RelationshipToChild:       c.RelationshipToChild,
+			Address:                   c.Address,
+			Telephone:                 c.Telephone,
+			Email:                     c.Email,
+			WorkAddress:               c.WorkAddress,
 			HasParentalResponsibility: c.HasParentalResponsibility,
-			CreatedAt: c.CreatedAt.UTC().Format(time.RFC3339),
-			UpdatedAt: c.UpdatedAt.UTC().Format(time.RFC3339),
+			CreatedAt:                 c.CreatedAt.UTC().Format(time.RFC3339),
+			UpdatedAt:                 c.UpdatedAt.UTC().Format(time.RFC3339),
 		}
 		switch c.ContactType {
 		case domain.ContactTypeParentCarer:
@@ -140,8 +140,8 @@ type childHealthRequest struct {
 }
 
 type childHealthResponse struct {
-	ID          string  `json:"id"`
-	ChildID     string  `json:"child_id"`
+	ID                         string  `json:"id"`
+	ChildID                    string  `json:"child_id"`
 	MedicalConditionsStatus    string  `json:"medical_conditions_status"`
 	MedicalConditionsNotes     *string `json:"medical_conditions_notes"`
 	PrescribedMedicationStatus string  `json:"prescribed_medication_status"`
@@ -158,8 +158,8 @@ type childHealthResponse struct {
 	HealthVisitorName          *string `json:"health_visitor_name"`
 	HealthVisitorAddress       *string `json:"health_visitor_address"`
 	HealthVisitorPhone         *string `json:"health_visitor_phone"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	CreatedAt                  string  `json:"created_at"`
+	UpdatedAt                  string  `json:"updated_at"`
 }
 
 func mapChildHealthRequest(req childHealthRequest) *application.ChildHealthProfileInput {
@@ -189,17 +189,17 @@ func toChildHealthResponse(p *domain.ChildHealthProfile) gin.H {
 	}
 	return gin.H{"health": childHealthResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		MedicalConditionsStatus: string(p.MedicalConditionsStatus),
-		MedicalConditionsNotes: p.MedicalConditionsNotes,
+		MedicalConditionsStatus:    string(p.MedicalConditionsStatus),
+		MedicalConditionsNotes:     p.MedicalConditionsNotes,
 		PrescribedMedicationStatus: string(p.PrescribedMedicationStatus),
-		MedicationNotes: p.MedicationNotes,
-		ImmunisationStatus: string(p.ImmunisationStatus),
-		ImmunisationCountry: p.ImmunisationCountry,
-		IllnessDiagnosisHistory: p.IllnessDiagnosisHistory,
-		DietaryRequirementsStatus: string(p.DietaryRequirementsStatus),
-		DietaryRequirementsNotes: p.DietaryRequirementsNotes,
-		DietarySideEffects: p.DietarySideEffects,
-		DoctorName: p.DoctorName, DoctorAddress: p.DoctorAddress, DoctorPhone: p.DoctorPhone,
+		MedicationNotes:            p.MedicationNotes,
+		ImmunisationStatus:         string(p.ImmunisationStatus),
+		ImmunisationCountry:        p.ImmunisationCountry,
+		IllnessDiagnosisHistory:    p.IllnessDiagnosisHistory,
+		DietaryRequirementsStatus:  string(p.DietaryRequirementsStatus),
+		DietaryRequirementsNotes:   p.DietaryRequirementsNotes,
+		DietarySideEffects:         p.DietarySideEffects,
+		DoctorName:                 p.DoctorName, DoctorAddress: p.DoctorAddress, DoctorPhone: p.DoctorPhone,
 		HealthVisitorName: p.HealthVisitorName, HealthVisitorAddress: p.HealthVisitorAddress, HealthVisitorPhone: p.HealthVisitorPhone,
 		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
@@ -207,56 +207,56 @@ func toChildHealthResponse(p *domain.ChildHealthProfile) gin.H {
 }
 
 type childSafeguardingRequest struct {
-	SocialServicesStatus      string  `json:"social_services_status"`
-	SocialServicesNotes       *string `json:"social_services_notes"`
-	SocialWorkerName          *string `json:"social_worker_name"`
-	SocialWorkerPhone         *string `json:"social_worker_phone"`
-	SocialWorkerEmail         *string `json:"social_worker_email"`
-	ConcernWalking            string  `json:"concern_walking"`
-	ConcernSpeechLanguage     string  `json:"concern_speech_language"`
-	ConcernHearing            string  `json:"concern_hearing"`
-	ConcernSight              string  `json:"concern_sight"`
-	ConcernEmotionalWellbeing string  `json:"concern_emotional_wellbeing"`
-	ConcernBehaviour          string  `json:"concern_behaviour"`
+	SocialServicesStatus      string                        `json:"social_services_status"`
+	SocialServicesNotes       *string                       `json:"social_services_notes"`
+	SocialWorkerName          *string                       `json:"social_worker_name"`
+	SocialWorkerPhone         *string                       `json:"social_worker_phone"`
+	SocialWorkerEmail         *string                       `json:"social_worker_email"`
+	ConcernWalking            string                        `json:"concern_walking"`
+	ConcernSpeechLanguage     string                        `json:"concern_speech_language"`
+	ConcernHearing            string                        `json:"concern_hearing"`
+	ConcernSight              string                        `json:"concern_sight"`
+	ConcernEmotionalWellbeing string                        `json:"concern_emotional_wellbeing"`
+	ConcernBehaviour          string                        `json:"concern_behaviour"`
 	ProfessionalReferrals     []domain.ProfessionalReferral `json:"professional_referrals"`
-	RestrictedNotes           *string `json:"restricted_notes"`
+	RestrictedNotes           *string                       `json:"restricted_notes"`
 }
 
 type childSafeguardingResponse struct {
-	ID          string  `json:"id"`
-	ChildID     string  `json:"child_id"`
-	SocialServicesStatus      string  `json:"social_services_status"`
-	SocialServicesNotes       *string `json:"social_services_notes"`
-	SocialWorkerName          *string `json:"social_worker_name"`
-	SocialWorkerPhone         *string `json:"social_worker_phone"`
-	SocialWorkerEmail         *string `json:"social_worker_email"`
-	ConcernWalking            string  `json:"concern_walking"`
-	ConcernSpeechLanguage     string  `json:"concern_speech_language"`
-	ConcernHearing            string  `json:"concern_hearing"`
-	ConcernSight              string  `json:"concern_sight"`
-	ConcernEmotionalWellbeing string  `json:"concern_emotional_wellbeing"`
-	ConcernBehaviour          string  `json:"concern_behaviour"`
+	ID                        string                        `json:"id"`
+	ChildID                   string                        `json:"child_id"`
+	SocialServicesStatus      string                        `json:"social_services_status"`
+	SocialServicesNotes       *string                       `json:"social_services_notes"`
+	SocialWorkerName          *string                       `json:"social_worker_name"`
+	SocialWorkerPhone         *string                       `json:"social_worker_phone"`
+	SocialWorkerEmail         *string                       `json:"social_worker_email"`
+	ConcernWalking            string                        `json:"concern_walking"`
+	ConcernSpeechLanguage     string                        `json:"concern_speech_language"`
+	ConcernHearing            string                        `json:"concern_hearing"`
+	ConcernSight              string                        `json:"concern_sight"`
+	ConcernEmotionalWellbeing string                        `json:"concern_emotional_wellbeing"`
+	ConcernBehaviour          string                        `json:"concern_behaviour"`
 	ProfessionalReferrals     []domain.ProfessionalReferral `json:"professional_referrals"`
-	RestrictedNotes           *string `json:"restricted_notes"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	RestrictedNotes           *string                       `json:"restricted_notes"`
+	CreatedAt                 string                        `json:"created_at"`
+	UpdatedAt                 string                        `json:"updated_at"`
 }
 
 func mapChildSafeguardingRequest(req childSafeguardingRequest) *application.ChildSafeguardingProfileInput {
 	return &application.ChildSafeguardingProfileInput{
-		SocialServicesStatus: req.SocialServicesStatus,
-		SocialServicesNotes: req.SocialServicesNotes,
-		SocialWorkerName: req.SocialWorkerName,
-		SocialWorkerPhone: req.SocialWorkerPhone,
-		SocialWorkerEmail: req.SocialWorkerEmail,
-		ConcernWalking: req.ConcernWalking,
-		ConcernSpeechLanguage: req.ConcernSpeechLanguage,
-		ConcernHearing: req.ConcernHearing,
-		ConcernSight: req.ConcernSight,
+		SocialServicesStatus:      req.SocialServicesStatus,
+		SocialServicesNotes:       req.SocialServicesNotes,
+		SocialWorkerName:          req.SocialWorkerName,
+		SocialWorkerPhone:         req.SocialWorkerPhone,
+		SocialWorkerEmail:         req.SocialWorkerEmail,
+		ConcernWalking:            req.ConcernWalking,
+		ConcernSpeechLanguage:     req.ConcernSpeechLanguage,
+		ConcernHearing:            req.ConcernHearing,
+		ConcernSight:              req.ConcernSight,
 		ConcernEmotionalWellbeing: req.ConcernEmotionalWellbeing,
-		ConcernBehaviour: req.ConcernBehaviour,
-		ProfessionalReferrals: req.ProfessionalReferrals,
-		RestrictedNotes: req.RestrictedNotes,
+		ConcernBehaviour:          req.ConcernBehaviour,
+		ProfessionalReferrals:     req.ProfessionalReferrals,
+		RestrictedNotes:           req.RestrictedNotes,
 	}
 }
 
@@ -266,21 +266,21 @@ func toChildSafeguardingResponse(p *domain.ChildSafeguardingProfile) gin.H {
 	}
 	return gin.H{"safeguarding": childSafeguardingResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		SocialServicesStatus: string(p.SocialServicesStatus),
-		SocialServicesNotes: p.SocialServicesNotes,
-		SocialWorkerName: p.SocialWorkerName,
-		SocialWorkerPhone: p.SocialWorkerPhone,
-		SocialWorkerEmail: p.SocialWorkerEmail,
-		ConcernWalking: string(p.ConcernWalking),
-		ConcernSpeechLanguage: string(p.ConcernSpeechLanguage),
-		ConcernHearing: string(p.ConcernHearing),
-		ConcernSight: string(p.ConcernSight),
+		SocialServicesStatus:      string(p.SocialServicesStatus),
+		SocialServicesNotes:       p.SocialServicesNotes,
+		SocialWorkerName:          p.SocialWorkerName,
+		SocialWorkerPhone:         p.SocialWorkerPhone,
+		SocialWorkerEmail:         p.SocialWorkerEmail,
+		ConcernWalking:            string(p.ConcernWalking),
+		ConcernSpeechLanguage:     string(p.ConcernSpeechLanguage),
+		ConcernHearing:            string(p.ConcernHearing),
+		ConcernSight:              string(p.ConcernSight),
 		ConcernEmotionalWellbeing: string(p.ConcernEmotionalWellbeing),
-		ConcernBehaviour: string(p.ConcernBehaviour),
-		ProfessionalReferrals: p.ProfessionalReferrals,
-		RestrictedNotes: p.RestrictedNotes,
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
+		ConcernBehaviour:          string(p.ConcernBehaviour),
+		ProfessionalReferrals:     p.ProfessionalReferrals,
+		RestrictedNotes:           p.RestrictedNotes,
+		CreatedAt:                 p.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:                 p.UpdatedAt.UTC().Format(time.RFC3339),
 	}}
 }
 
@@ -340,70 +340,70 @@ type childConsentResponse struct {
 	SignerName                           string  `json:"signer_name"`
 	SignedDate                           string  `json:"signed_date"`
 	PaperFormOnFile                      bool    `json:"paper_form_on_file"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	CreatedAt                            string  `json:"created_at"`
+	UpdatedAt                            string  `json:"updated_at"`
 }
 
 func mapChildConsentRequest(req childConsentRequest) *application.ChildConsentInput {
 	return &application.ChildConsentInput{
-		UrgentMedicalTreatment: req.UrgentMedicalTreatment,
-		UrgentMedicalTreatmentExceptions: req.UrgentMedicalTreatmentExceptions,
-		Plasters: req.Plasters,
+		UrgentMedicalTreatment:               req.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions:     req.UrgentMedicalTreatmentExceptions,
+		Plasters:                             req.Plasters,
 		SafeguardingReportingAcknowledgement: req.SafeguardingReportingAcknowledgement,
-		InformationSharingConsent: req.InformationSharingConsent,
-		GDPRDataProcessingConsent: req.GDPRDataProcessingConsent,
-		InformationTruthfulnessDeclaration: req.InformationTruthfulnessDeclaration,
-		AreaSENCOLiaison: req.AreaSENCOLiaison,
-		HealthVisitorLiaison: req.HealthVisitorLiaison,
-		TransitionDocuments: req.TransitionDocuments,
-		LocalOutings: req.LocalOutings,
-		FacePainting: req.FacePainting,
-		ParentSuppliedSunCream: req.ParentSuppliedSunCream,
-		ParentSuppliedNappyCream: req.ParentSuppliedNappyCream,
-		DevelopmentProfilePhotos: req.DevelopmentProfilePhotos,
-		NurseryDisplayBoards: req.NurseryDisplayBoards,
-		PromotionalLiterature: req.PromotionalLiterature,
-		NurseryWebsite: req.NurseryWebsite,
-		StaffStudentCoursework: req.StaffStudentCoursework,
-		SocialMedia: req.SocialMedia,
-		SocialMediaChannelNotes: req.SocialMediaChannelNotes,
-		NotesExceptions: req.NotesExceptions,
-		SignerName: req.SignerName,
-		SignedDate: req.SignedDate,
-		PaperFormOnFile: req.PaperFormOnFile,
+		InformationSharingConsent:            req.InformationSharingConsent,
+		GDPRDataProcessingConsent:            req.GDPRDataProcessingConsent,
+		InformationTruthfulnessDeclaration:   req.InformationTruthfulnessDeclaration,
+		AreaSENCOLiaison:                     req.AreaSENCOLiaison,
+		HealthVisitorLiaison:                 req.HealthVisitorLiaison,
+		TransitionDocuments:                  req.TransitionDocuments,
+		LocalOutings:                         req.LocalOutings,
+		FacePainting:                         req.FacePainting,
+		ParentSuppliedSunCream:               req.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:             req.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:             req.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:                 req.NurseryDisplayBoards,
+		PromotionalLiterature:                req.PromotionalLiterature,
+		NurseryWebsite:                       req.NurseryWebsite,
+		StaffStudentCoursework:               req.StaffStudentCoursework,
+		SocialMedia:                          req.SocialMedia,
+		SocialMediaChannelNotes:              req.SocialMediaChannelNotes,
+		NotesExceptions:                      req.NotesExceptions,
+		SignerName:                           req.SignerName,
+		SignedDate:                           req.SignedDate,
+		PaperFormOnFile:                      req.PaperFormOnFile,
 	}
 }
 
 func toChildConsentResponse(p *domain.ChildConsent) childConsentResponse {
 	return childConsentResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		UrgentMedicalTreatment: p.UrgentMedicalTreatment,
-		UrgentMedicalTreatmentExceptions: p.UrgentMedicalTreatmentExceptions,
-		Plasters: p.Plasters,
+		UrgentMedicalTreatment:               p.UrgentMedicalTreatment,
+		UrgentMedicalTreatmentExceptions:     p.UrgentMedicalTreatmentExceptions,
+		Plasters:                             p.Plasters,
 		SafeguardingReportingAcknowledgement: p.SafeguardingReportingAcknowledgement,
-		InformationSharingConsent: p.InformationSharingConsent,
-		GDPRDataProcessingConsent: p.GDPRDataProcessingConsent,
-		InformationTruthfulnessDeclaration: p.InformationTruthfulnessDeclaration,
-		AreaSENCOLiaison: p.AreaSENCOLiaison,
-		HealthVisitorLiaison: p.HealthVisitorLiaison,
-		TransitionDocuments: p.TransitionDocuments,
-		LocalOutings: p.LocalOutings,
-		FacePainting: p.FacePainting,
-		ParentSuppliedSunCream: p.ParentSuppliedSunCream,
-		ParentSuppliedNappyCream: p.ParentSuppliedNappyCream,
-		DevelopmentProfilePhotos: p.DevelopmentProfilePhotos,
-		NurseryDisplayBoards: p.NurseryDisplayBoards,
-		PromotionalLiterature: p.PromotionalLiterature,
-		NurseryWebsite: p.NurseryWebsite,
-		StaffStudentCoursework: p.StaffStudentCoursework,
-		SocialMedia: p.SocialMedia,
-		SocialMediaChannelNotes: p.SocialMediaChannelNotes,
-		NotesExceptions: p.NotesExceptions,
-		SignerName: p.SignerName,
-		SignedDate: p.SignedDate.Format("2006-01-02"),
-		PaperFormOnFile: p.PaperFormOnFile,
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
+		InformationSharingConsent:            p.InformationSharingConsent,
+		GDPRDataProcessingConsent:            p.GDPRDataProcessingConsent,
+		InformationTruthfulnessDeclaration:   p.InformationTruthfulnessDeclaration,
+		AreaSENCOLiaison:                     p.AreaSENCOLiaison,
+		HealthVisitorLiaison:                 p.HealthVisitorLiaison,
+		TransitionDocuments:                  p.TransitionDocuments,
+		LocalOutings:                         p.LocalOutings,
+		FacePainting:                         p.FacePainting,
+		ParentSuppliedSunCream:               p.ParentSuppliedSunCream,
+		ParentSuppliedNappyCream:             p.ParentSuppliedNappyCream,
+		DevelopmentProfilePhotos:             p.DevelopmentProfilePhotos,
+		NurseryDisplayBoards:                 p.NurseryDisplayBoards,
+		PromotionalLiterature:                p.PromotionalLiterature,
+		NurseryWebsite:                       p.NurseryWebsite,
+		StaffStudentCoursework:               p.StaffStudentCoursework,
+		SocialMedia:                          p.SocialMedia,
+		SocialMediaChannelNotes:              p.SocialMediaChannelNotes,
+		NotesExceptions:                      p.NotesExceptions,
+		SignerName:                           p.SignerName,
+		SignedDate:                           p.SignedDate.Format("2006-01-02"),
+		PaperFormOnFile:                      p.PaperFormOnFile,
+		CreatedAt:                            p.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:                            p.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
 
@@ -522,31 +522,31 @@ type childCollectionSettingsRequest struct {
 }
 
 type childCollectionSettingsResponse struct {
-	ID                                string  `json:"id"`
-	ChildID                           string  `json:"child_id"`
-	Over18CollectionAcknowledged      bool    `json:"over_18_collection_acknowledged"`
-	CollectionPasswordSet             bool    `json:"collection_password_set"`
-	CollectionPassword                string  `json:"collection_password"`
-	CollectionPasswordHint            string  `json:"collection_password_hint"`
-	CollectionPasswordUpdatedAt       *string `json:"collection_password_updated_at,omitempty"`
-	CollectionPasswordUpdatedByUserID *string `json:"collection_password_updated_by_user_id,omitempty"`
+	ID                                      string  `json:"id"`
+	ChildID                                 string  `json:"child_id"`
+	Over18CollectionAcknowledged            bool    `json:"over_18_collection_acknowledged"`
+	CollectionPasswordSet                   bool    `json:"collection_password_set"`
+	CollectionPassword                      string  `json:"collection_password"`
+	CollectionPasswordHint                  string  `json:"collection_password_hint"`
+	CollectionPasswordUpdatedAt             *string `json:"collection_password_updated_at,omitempty"`
+	CollectionPasswordUpdatedByUserID       *string `json:"collection_password_updated_by_user_id,omitempty"`
 	CollectionPasswordUpdatedByMembershipID *string `json:"collection_password_updated_by_membership_id,omitempty"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	CreatedAt                               string  `json:"created_at"`
+	UpdatedAt                               string  `json:"updated_at"`
 }
 
 func toChildCollectionSettingsResponse(p *domain.ChildCollectionSetting) childCollectionSettingsResponse {
 	resp := childCollectionSettingsResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		Over18CollectionAcknowledged: p.Over18CollectionAcknowledged,
-		CollectionPasswordSet: p.CollectionPassword != "",
-		CollectionPassword: p.CollectionPassword,
-		CollectionPasswordHint: p.CollectionPasswordHint,
-		CollectionPasswordUpdatedAt: timeStringPtr(p.CollectionPasswordUpdatedAt),
-		CollectionPasswordUpdatedByUserID: uuidStringPtr(p.CollectionPasswordUpdatedByUserID),
+		Over18CollectionAcknowledged:            p.Over18CollectionAcknowledged,
+		CollectionPasswordSet:                   p.CollectionPassword != "",
+		CollectionPassword:                      p.CollectionPassword,
+		CollectionPasswordHint:                  p.CollectionPasswordHint,
+		CollectionPasswordUpdatedAt:             timeStringPtr(p.CollectionPasswordUpdatedAt),
+		CollectionPasswordUpdatedByUserID:       uuidStringPtr(p.CollectionPasswordUpdatedByUserID),
 		CollectionPasswordUpdatedByMembershipID: uuidStringPtr(p.CollectionPasswordUpdatedByMembershipID),
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
+		CreatedAt:                               p.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:                               p.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 	return resp
 }
@@ -558,8 +558,6 @@ func uuidStringPtr(u interface{ String() string }) *string {
 	s := u.String()
 	return &s
 }
-
-
 
 type roomAssignmentRequest struct {
 	RoomID    string `json:"room_id"`
@@ -578,11 +576,11 @@ type roomAssignmentResponse struct {
 
 func toRoomAssignmentResponse(a domain.ChildRoomAssignment) roomAssignmentResponse {
 	return roomAssignmentResponse{
-		ID: a.ID.String(),
-		ChildID: a.ChildID.String(),
-		RoomID: a.RoomID.String(),
+		ID:        a.ID.String(),
+		ChildID:   a.ChildID.String(),
+		RoomID:    a.RoomID.String(),
 		StartDate: a.StartDate.Format("2006-01-02"),
-		EndDate: dateStringPtr(a.EndDate),
+		EndDate:   dateStringPtr(a.EndDate),
 		IsCurrent: a.IsCurrent,
 		CreatedAt: a.CreatedAt.UTC().Format(time.RFC3339),
 	}
@@ -595,23 +593,23 @@ type childBillingProfileRequest struct {
 }
 
 type childBillingProfileResponse struct {
-	ID              string  `json:"id"`
-	ChildID         string  `json:"child_id"`
-	BillingBasis    string  `json:"billing_basis"`
-	CustomRateMinor *int    `json:"custom_rate_minor"`
-	EffectiveFrom   string  `json:"effective_from"`
-	CreatedAt       string  `json:"created_at"`
-	UpdatedAt       string  `json:"updated_at"`
+	ID              string `json:"id"`
+	ChildID         string `json:"child_id"`
+	BillingBasis    string `json:"billing_basis"`
+	CustomRateMinor *int   `json:"custom_rate_minor"`
+	EffectiveFrom   string `json:"effective_from"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
 }
 
 func toChildBillingProfileResponse(p *domain.ChildBillingProfile) childBillingProfileResponse {
 	return childBillingProfileResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		BillingBasis: string(p.BillingBasis),
+		BillingBasis:    string(p.BillingBasis),
 		CustomRateMinor: p.CustomRateMinor,
-		EffectiveFrom: p.EffectiveFrom.Format("2006-01-02"),
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.UTC().Format(time.RFC3339),
+		EffectiveFrom:   p.EffectiveFrom.Format("2006-01-02"),
+		CreatedAt:       p.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:       p.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
 
@@ -627,9 +625,9 @@ type childLeavingRecordResponse struct {
 func toChildLeavingRecordResponse(p *domain.ChildLeavingRecord) childLeavingRecordResponse {
 	return childLeavingRecordResponse{
 		ID: p.ID.String(), ChildID: p.ChildID.String(),
-		LeftAt: p.LeftAt.UTC().Format(time.RFC3339),
+		LeftAt:     p.LeftAt.UTC().Format(time.RFC3339),
 		ReasonCode: p.ReasonCode,
 		ReasonNote: p.ReasonNote,
-		CreatedAt: p.CreatedAt.UTC().Format(time.RFC3339),
+		CreatedAt:  p.CreatedAt.UTC().Format(time.RFC3339),
 	}
 }

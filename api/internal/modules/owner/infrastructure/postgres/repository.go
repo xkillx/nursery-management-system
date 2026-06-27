@@ -59,8 +59,8 @@ func (r *OwnerRepository) CountActiveManagers(ctx context.Context, tenantID uuid
 	}
 	q := sqlc.New(r.pool)
 	rows, err := q.OwnerCountActiveManagersByBranches(ctx, sqlc.OwnerCountActiveManagersByBranchesParams{
-		TenantID:  uuidToPgtype(tenantID),
-		Column2:   uuidsToPgtypeArray(branchIDs),
+		TenantID: uuidToPgtype(tenantID),
+		Column2:  uuidsToPgtypeArray(branchIDs),
 	})
 	if err != nil {
 		return nil, err
@@ -116,8 +116,8 @@ func (r *OwnerRepository) CountAttendanceToday(ctx context.Context, tenantID uui
 	}
 	q := sqlc.New(r.pool)
 	rows, err := q.OwnerCountAttendanceTodayByBranches(ctx, sqlc.OwnerCountAttendanceTodayByBranchesParams{
-		TenantID:  uuidToPgtype(tenantID),
-		Column2:   uuidsToPgtypeArray(branchIDs),
+		TenantID:         uuidToPgtype(tenantID),
+		Column2:          uuidsToPgtypeArray(branchIDs),
 		CheckInLocalDate: timeToPgtypeDate(localDate),
 	})
 	if err != nil {
@@ -136,8 +136,8 @@ func (r *OwnerRepository) CountIncompleteAttendance(ctx context.Context, tenantI
 	}
 	q := sqlc.New(r.pool)
 	rows, err := q.OwnerCountIncompleteAttendanceByBranches(ctx, sqlc.OwnerCountIncompleteAttendanceByBranchesParams{
-		TenantID:  uuidToPgtype(tenantID),
-		Column2:   uuidsToPgtypeArray(branchIDs),
+		TenantID:           uuidToPgtype(tenantID),
+		Column2:            uuidsToPgtypeArray(branchIDs),
 		CheckInLocalDate:   timeToPgtypeDate(periodStart),
 		CheckInLocalDate_2: timeToPgtypeDate(periodEnd),
 	})
@@ -388,11 +388,11 @@ func (r *OwnerRepository) CreateManagerInvite(ctx context.Context, id, tenantID,
 func (r *OwnerRepository) RefreshManagerInvite(ctx context.Context, id uuid.UUID, tokenHash string, expiresAt time.Time, resentByUserID, resentByMembershipID uuid.UUID) error {
 	q := sqlc.New(r.pool)
 	return q.OwnerRefreshManagerInvite(ctx, sqlc.OwnerRefreshManagerInviteParams{
-		ID:                    uuidToPgtype(id),
-		TokenHash:             tokenHash,
-		ExpiresAt:             timeToPgtypeTimestamptz(expiresAt),
-		ResentByUserID:        uuidToPgtype(resentByUserID),
-		ResentByMembershipID:  uuidToPgtype(resentByMembershipID),
+		ID:                   uuidToPgtype(id),
+		TokenHash:            tokenHash,
+		ExpiresAt:            timeToPgtypeTimestamptz(expiresAt),
+		ResentByUserID:       uuidToPgtype(resentByUserID),
+		ResentByMembershipID: uuidToPgtype(resentByMembershipID),
 	})
 }
 

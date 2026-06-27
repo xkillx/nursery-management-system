@@ -2205,9 +2205,9 @@
                     </div>
                   }
 
-                  @if (patternEntries.length > 0) {
+                  @if (hasPatternEntries) {
                     <div class="rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-300">
-                      {{ patternEntries.length }} booked session{{ patternEntries.length === 1 ? '' : 's' }} selected.
+                      {{ patternEntriesCount }} booked session{{ patternEntriesCount === 1 ? '' : 's' }} selected.
                     </div>
                   }
                 </section>
@@ -2217,7 +2217,7 @@
                     <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                     Back
                   </app-button>
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveSessionPattern(isNewRegistration)">
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || !hasPatternEntries" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveSessionPattern(isNewRegistration)">
                     {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
                   </app-button>
                 </div>
@@ -2665,7 +2665,7 @@
                   Back
                 </app-button>
                 @if (isNewRegistration) {
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || !hasPatternEntries" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
                     {{ isSaving ? 'Creating...' : 'Create child' }}
                     <ng-icon name="heroCheck" size="20" aria-hidden="true" />
                   </app-button>

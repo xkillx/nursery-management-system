@@ -17,22 +17,22 @@ import (
 // ── Fake repository ───────────────────────────────────────────────────────
 
 type fakeTemplateRepo struct {
-	templates           []domain.SessionTemplate
-	entriesByTemplate   map[uuid.UUID][]domain.SessionTemplateEntry
-	getErr              error
-	createErr           error
-	updateErr           error
-	updateRows          int64
-	archiveErr          error
-	reactivateErr       error
-	activeNameExists    bool
-	activeNameErr       error
-	exists              bool
-	getForUpdate        *domain.SessionTemplate
-	getForUpdateErr     error
-	insertEntryErr      error
-	deleteEntriesErr    error
-	entriesListErr      error
+	templates         []domain.SessionTemplate
+	entriesByTemplate map[uuid.UUID][]domain.SessionTemplateEntry
+	getErr            error
+	createErr         error
+	updateErr         error
+	updateRows        int64
+	archiveErr        error
+	reactivateErr     error
+	activeNameExists  bool
+	activeNameErr     error
+	exists            bool
+	getForUpdate      *domain.SessionTemplate
+	getForUpdateErr   error
+	insertEntryErr    error
+	deleteEntriesErr  error
+	entriesListErr    error
 }
 
 func newFakeTemplateRepo() *fakeTemplateRepo {
@@ -153,7 +153,7 @@ func (f *fakeSiteChecker) SiteExists(ctx context.Context, tenantID, siteID uuid.
 }
 
 type fakeSessionTypeLookup struct {
-	info application.SessionTypeInfo
+	info  application.SessionTypeInfo
 	found bool
 	err   error
 }

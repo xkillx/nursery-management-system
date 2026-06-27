@@ -17,7 +17,6 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -30,7 +29,6 @@ type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
   imports: [
     CommonModule,
     NgIcon,
-    ButtonComponent,
     AlertComponent,
     EmptyStateComponent,
     LoadingStateComponent,

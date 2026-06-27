@@ -16,14 +16,14 @@ import (
 )
 
 type Handler struct {
-	summaries       *application.GetSiteSummariesUseCase
-	listAccess      *application.ListManagerAccessUseCase
-	grant           *application.GrantManagerAccessUseCase
-	deactivate      *application.DeactivateManagerAccessUseCase
-	reactivate      *application.ReactivateManagerAccessUseCase
+	summaries          *application.GetSiteSummariesUseCase
+	listAccess         *application.ListManagerAccessUseCase
+	grant              *application.GrantManagerAccessUseCase
+	deactivate         *application.DeactivateManagerAccessUseCase
+	reactivate         *application.ReactivateManagerAccessUseCase
 	updateBillingSetup *application.UpdateSiteBillingSetupUseCase
-	logger          *slog.Logger
-	recorder        *metrics.Recorder
+	logger             *slog.Logger
+	recorder           *metrics.Recorder
 }
 
 func NewHandler(
@@ -551,8 +551,8 @@ type managerAccessResponse struct {
 }
 
 type grantManagerAccessResponse struct {
-	Outcome      string                    `json:"outcome"`
-	MembershipID *string                   `json:"membership_id,omitempty"`
+	Outcome      string                      `json:"outcome"`
+	MembershipID *string                     `json:"membership_id,omitempty"`
 	Invite       *grantInviteDetailsResponse `json:"invite,omitempty"`
 }
 

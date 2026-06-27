@@ -21,14 +21,14 @@ type Config struct {
 	JWTRefreshTTLHours      int
 	JWTRefreshShortTTLHours int
 
-	WebBaseURL                  string
-	EmailProvider               string
-	SMTPHost                    string
-	SMTPPort                    int
-	SMTPUser                    string
-	SMTPPass                    string
-	SMTPFrom                    string
-	PasswordResetTokenSecret    string
+	WebBaseURL                   string
+	EmailProvider                string
+	SMTPHost                     string
+	SMTPPort                     int
+	SMTPUser                     string
+	SMTPPass                     string
+	SMTPFrom                     string
+	PasswordResetTokenSecret     string
 	PasswordResetTokenTTLMinutes int
 	InviteTokenSecret            string
 	InviteTokenTTLHours          int
@@ -39,8 +39,8 @@ type Config struct {
 	StripeWebhookSecret  string
 	StripePublishableKey string
 
-	LogLevel        string
-	MetricsEnabled  bool
+	LogLevel       string
+	MetricsEnabled bool
 }
 
 func Load() (Config, error) {
@@ -81,17 +81,17 @@ func Load() (Config, error) {
 		JWTRefreshTTLHours:      refreshTTLHours,
 		JWTRefreshShortTTLHours: refreshShortTTLHours,
 
-		WebBaseURL:                  strings.TrimSpace(os.Getenv("WEB_BASE_URL")),
-		EmailProvider:               getEnv("EMAIL_PROVIDER", "smtp"),
-		SMTPHost:                    strings.TrimSpace(os.Getenv("SMTP_HOST")),
-		SMTPPort:                    smtpPort,
-		SMTPUser:                    strings.TrimSpace(os.Getenv("SMTP_USER")),
-		SMTPPass:                    strings.TrimSpace(os.Getenv("SMTP_PASS")),
-		SMTPFrom:                    strings.TrimSpace(os.Getenv("SMTP_FROM")),
-		PasswordResetTokenSecret:    strings.TrimSpace(os.Getenv("PASSWORD_RESET_TOKEN_SECRET")),
+		WebBaseURL:                   strings.TrimSpace(os.Getenv("WEB_BASE_URL")),
+		EmailProvider:                getEnv("EMAIL_PROVIDER", "smtp"),
+		SMTPHost:                     strings.TrimSpace(os.Getenv("SMTP_HOST")),
+		SMTPPort:                     smtpPort,
+		SMTPUser:                     strings.TrimSpace(os.Getenv("SMTP_USER")),
+		SMTPPass:                     strings.TrimSpace(os.Getenv("SMTP_PASS")),
+		SMTPFrom:                     strings.TrimSpace(os.Getenv("SMTP_FROM")),
+		PasswordResetTokenSecret:     strings.TrimSpace(os.Getenv("PASSWORD_RESET_TOKEN_SECRET")),
 		PasswordResetTokenTTLMinutes: resetTTLMin,
-		InviteTokenSecret:           strings.TrimSpace(os.Getenv("INVITE_TOKEN_SECRET")),
-		InviteTokenTTLHours:         inviteTTLMHours,
+		InviteTokenSecret:            strings.TrimSpace(os.Getenv("INVITE_TOKEN_SECRET")),
+		InviteTokenTTLHours:          inviteTTLMHours,
 
 		SchedulerOwner: strings.EqualFold(strings.TrimSpace(os.Getenv("SCHEDULER_OWNER")), "true"),
 

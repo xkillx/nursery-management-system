@@ -20,14 +20,14 @@ type BookingPattern struct {
 }
 
 type BookingPatternEntry struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	BranchID     uuid.UUID
-	PatternID    uuid.UUID
-	DayOfWeek    int
-	SessionType  *EntrySessionType
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID          uuid.UUID
+	TenantID    uuid.UUID
+	BranchID    uuid.UUID
+	PatternID   uuid.UUID
+	DayOfWeek   int
+	SessionType *EntrySessionType
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // EntrySessionType is the joined read-side view of a session type embedded

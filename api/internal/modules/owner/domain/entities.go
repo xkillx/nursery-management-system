@@ -13,18 +13,18 @@ type OwnerActor struct {
 }
 
 type Site struct {
-	ID                    uuid.UUID
-	Name                  string
-	CoreHourlyRateMinor   *int
+	ID                  uuid.UUID
+	Name                string
+	CoreHourlyRateMinor *int
 }
 
 type AttendanceSummary struct {
-	CheckedInTodayCount    int
+	CheckedInTodayCount       int
 	IncompleteAttendanceCount int
 }
 
 type FundingReadiness struct {
-	IncludedChildCount int
+	IncludedChildCount  int
 	MissingProfileCount int
 	ExplicitZeroCount   int
 	UnderOneHourCount   int
@@ -36,30 +36,30 @@ func (f FundingReadiness) FlaggedCount() int {
 }
 
 type InvoicePaymentHealth struct {
-	CurrencyCode          string
-	DraftCount            int
-	IssuedCount           int
-	OverdueCount          int
-	PaymentFailedCount    int
-	PaidCount             int
-	TotalIssuedMinor      int64
-	TotalPaidMinor        int64
-	OutstandingMinor      int64
+	CurrencyCode            string
+	DraftCount              int
+	IssuedCount             int
+	OverdueCount            int
+	PaymentFailedCount      int
+	PaidCount               int
+	TotalIssuedMinor        int64
+	TotalPaidMinor          int64
+	OutstandingMinor        int64
 	OverdueOutstandingMinor int64
 }
 
 type SiteSummary struct {
-	SiteID                     uuid.UUID
-	SiteName                   string
-	SetupStatus                string
-	SetupIssues                []string
-	SiteCoreHourlyRateMinor    *int
-	ActiveManagerCount         int
-	PendingManagerInviteCount  int
-	ActiveChildrenCount        int
-	Attendance                 AttendanceSummary
-	FundingReadiness           FundingReadiness
-	InvoicePaymentHealth       InvoicePaymentHealth
+	SiteID                    uuid.UUID
+	SiteName                  string
+	SetupStatus               string
+	SetupIssues               []string
+	SiteCoreHourlyRateMinor   *int
+	ActiveManagerCount        int
+	PendingManagerInviteCount int
+	ActiveChildrenCount       int
+	Attendance                AttendanceSummary
+	FundingReadiness          FundingReadiness
+	InvoicePaymentHealth      InvoicePaymentHealth
 }
 
 type SiteSummariesResult struct {

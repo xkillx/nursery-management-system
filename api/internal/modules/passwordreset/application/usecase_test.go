@@ -58,10 +58,10 @@ func (m *mockEmailSender) SendPasswordReset(_ context.Context, to string, resetU
 }
 
 type mockTokenGen struct {
-	raw      string
-	hash     string
+	raw       string
+	hash      string
 	expiresAt time.Time
-	err      error
+	err       error
 }
 
 func (m *mockTokenGen) Generate() (string, string, time.Time, error) {

@@ -22,17 +22,17 @@ type Room struct {
 type AgeGroup string
 
 const (
-	AgeGroupBaby     AgeGroup = "baby"
-	AgeGroupToddler  AgeGroup = "toddler"
+	AgeGroupBaby      AgeGroup = "baby"
+	AgeGroupToddler   AgeGroup = "toddler"
 	AgeGroupPreschool AgeGroup = "preschool"
-	AgeGroupMixed    AgeGroup = "mixed"
+	AgeGroupMixed     AgeGroup = "mixed"
 )
 
 var ValidAgeGroups = map[AgeGroup]struct{}{
-	AgeGroupBaby:     {},
-	AgeGroupToddler:  {},
+	AgeGroupBaby:      {},
+	AgeGroupToddler:   {},
 	AgeGroupPreschool: {},
-	AgeGroupMixed:    {},
+	AgeGroupMixed:     {},
 }
 
 func IsValidAgeGroup(s string) bool {

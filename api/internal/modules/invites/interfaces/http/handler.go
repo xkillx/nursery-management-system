@@ -18,14 +18,14 @@ import (
 )
 
 type Handler struct {
-	create     *application.CreateInviteUseCase
-	list       *application.ListInvitesUseCase
-	resend     *application.ResendInviteUseCase
-	revoke     *application.RevokeInviteUseCase
-	accept     *application.AcceptInviteUseCase
-	tokenMgr   *tokens.Manager
-	ipLimiter  *ratelimit.FixedWindowLimiter
-	logger     *slog.Logger
+	create    *application.CreateInviteUseCase
+	list      *application.ListInvitesUseCase
+	resend    *application.ResendInviteUseCase
+	revoke    *application.RevokeInviteUseCase
+	accept    *application.AcceptInviteUseCase
+	tokenMgr  *tokens.Manager
+	ipLimiter *ratelimit.FixedWindowLimiter
+	logger    *slog.Logger
 }
 
 func NewHandler(

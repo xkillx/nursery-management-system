@@ -56,7 +56,7 @@ func NewUpdateBillingProfile(repo domain.Repository, auditWriter *audit.Writer, 
 }
 
 type UpdateBillingProfileInput struct {
-	BillingBasis   string
+	BillingBasis    string
 	CustomRateMinor *int
 	EffectiveFrom   *string
 }
@@ -102,13 +102,13 @@ func (uc *UpdateBillingProfile) Execute(ctx context.Context, actor tenant.ActorC
 			return domainerrors.NotFound("child", "Resource not found.")
 		}
 		p := &domain.ChildBillingProfile{
-			ID:             uid.NewUUID(),
-			TenantID:       actor.TenantID,
-			BranchID:       actor.BranchID,
-			ChildID:        id,
-			BillingBasis:   basis,
+			ID:              uid.NewUUID(),
+			TenantID:        actor.TenantID,
+			BranchID:        actor.BranchID,
+			ChildID:         id,
+			BillingBasis:    basis,
 			CustomRateMinor: in.CustomRateMinor,
-			EffectiveFrom:  effectiveFrom,
+			EffectiveFrom:   effectiveFrom,
 		}
 		saved, eerr := uc.repo.UpsertBillingProfile(ctx, tx, p)
 		if eerr != nil {

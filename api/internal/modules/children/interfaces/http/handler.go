@@ -14,49 +14,49 @@ import (
 )
 
 type Handler struct {
-	logger                  *slog.Logger
-	listChildren            *application.ListChildren
-	getChild                *application.GetChild
-	createChildWithFull     *application.CreateChildWithFullProfile
-	updateChild             *application.UpdateChild
-	markInactive            *application.MarkInactive
-	listAttendance          *application.ListAttendance
+	logger              *slog.Logger
+	listChildren        *application.ListChildren
+	getChild            *application.GetChild
+	createChildWithFull *application.CreateChildWithFullProfile
+	updateChild         *application.UpdateChild
+	markInactive        *application.MarkInactive
+	listAttendance      *application.ListAttendance
 
-	getProfile              *application.GetProfile
-	updateProfile           *application.UpdateProfile
+	getProfile    *application.GetProfile
+	updateProfile *application.UpdateProfile
 
-	getContacts             *application.GetContacts
-	replaceContacts         *application.ReplaceContacts
+	getContacts     *application.GetContacts
+	replaceContacts *application.ReplaceContacts
 
-	getHealth               *application.GetHealth
-	updateHealth            *application.UpdateHealth
+	getHealth    *application.GetHealth
+	updateHealth *application.UpdateHealth
 
-	getSafeguarding         *application.GetSafeguarding
-	updateSafeguarding      *application.UpdateSafeguarding
+	getSafeguarding    *application.GetSafeguarding
+	updateSafeguarding *application.UpdateSafeguarding
 
-	getConsent              *application.GetConsent
-	updateConsent           *application.UpdateConsent
+	getConsent    *application.GetConsent
+	updateConsent *application.UpdateConsent
 
-	getFunding              *application.GetFunding
-	updateFunding           *application.UpdateFunding
+	getFunding    *application.GetFunding
+	updateFunding *application.UpdateFunding
 
-	getCollectionSetting    *application.GetCollectionSetting
-	setCollectionPassword   *application.SetCollectionPassword
+	getCollectionSetting  *application.GetCollectionSetting
+	setCollectionPassword *application.SetCollectionPassword
 
-	listRoomAssignments     *application.ListRoomAssignments
-	createRoomAssignment    *application.CreateRoomAssignment
-	closeRoomAssignment     *application.CloseRoomAssignment
+	listRoomAssignments  *application.ListRoomAssignments
+	createRoomAssignment *application.CreateRoomAssignment
+	closeRoomAssignment  *application.CloseRoomAssignment
 
-	getBillingProfile       *application.GetBillingProfile
-	updateBillingProfile    *application.UpdateBillingProfile
+	getBillingProfile    *application.GetBillingProfile
+	updateBillingProfile *application.UpdateBillingProfile
 
-	getLeavingRecord        *application.GetLeavingRecord
+	getLeavingRecord *application.GetLeavingRecord
 
-	listBookingPatterns     *application.ListBookingPatterns
-	getBookingPattern       *application.GetBookingPattern
+	listBookingPatterns      *application.ListBookingPatterns
+	getBookingPattern        *application.GetBookingPattern
 	getCurrentBookingPattern *application.GetCurrentBookingPattern
-	createBookingPattern    *application.CreateBookingPattern
-	updateBookingPattern    *application.UpdateBookingPattern
+	createBookingPattern     *application.CreateBookingPattern
+	updateBookingPattern     *application.UpdateBookingPattern
 }
 
 func NewHandler(
@@ -104,48 +104,48 @@ func NewHandler(
 		getCollectionSetting: getCollectionSetting, setCollectionPassword: setCollectionPassword,
 		listRoomAssignments: listRoomAssignments, createRoomAssignment: createRoomAssignment,
 		closeRoomAssignment: closeRoomAssignment,
-		getBillingProfile: getBillingProfile, updateBillingProfile: updateBillingProfile,
-		getLeavingRecord: getLeavingRecord,
+		getBillingProfile:   getBillingProfile, updateBillingProfile: updateBillingProfile,
+		getLeavingRecord:    getLeavingRecord,
 		listBookingPatterns: listBookingPatterns, getBookingPattern: getBookingPattern,
 		getCurrentBookingPattern: getCurrentBookingPattern,
-		createBookingPattern: createBookingPattern, updateBookingPattern: updateBookingPattern,
+		createBookingPattern:     createBookingPattern, updateBookingPattern: updateBookingPattern,
 	}
 }
 
 func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 	return &Handler{
-		logger:                  logger,
-		listChildren:            h.listChildren,
-		getChild:                h.getChild,
-		createChildWithFull:     h.createChildWithFull,
-		updateChild:             h.updateChild,
-		markInactive:            h.markInactive,
-		listAttendance:          h.listAttendance,
-		getProfile:              h.getProfile,
-		updateProfile:           h.updateProfile,
-		getContacts:             h.getContacts,
-		replaceContacts:         h.replaceContacts,
-		getHealth:               h.getHealth,
-		updateHealth:            h.updateHealth,
-		getSafeguarding:         h.getSafeguarding,
-		updateSafeguarding:      h.updateSafeguarding,
-		getConsent:              h.getConsent,
-		updateConsent:           h.updateConsent,
-		getFunding:              h.getFunding,
-		updateFunding:           h.updateFunding,
-		getCollectionSetting:    h.getCollectionSetting,
-		setCollectionPassword:   h.setCollectionPassword,
-		listRoomAssignments:     h.listRoomAssignments,
-		createRoomAssignment:    h.createRoomAssignment,
-		closeRoomAssignment:     h.closeRoomAssignment,
-		getBillingProfile:       h.getBillingProfile,
-		updateBillingProfile:    h.updateBillingProfile,
-		getLeavingRecord:        h.getLeavingRecord,
-		listBookingPatterns:     h.listBookingPatterns,
-		getBookingPattern:       h.getBookingPattern,
+		logger:                   logger,
+		listChildren:             h.listChildren,
+		getChild:                 h.getChild,
+		createChildWithFull:      h.createChildWithFull,
+		updateChild:              h.updateChild,
+		markInactive:             h.markInactive,
+		listAttendance:           h.listAttendance,
+		getProfile:               h.getProfile,
+		updateProfile:            h.updateProfile,
+		getContacts:              h.getContacts,
+		replaceContacts:          h.replaceContacts,
+		getHealth:                h.getHealth,
+		updateHealth:             h.updateHealth,
+		getSafeguarding:          h.getSafeguarding,
+		updateSafeguarding:       h.updateSafeguarding,
+		getConsent:               h.getConsent,
+		updateConsent:            h.updateConsent,
+		getFunding:               h.getFunding,
+		updateFunding:            h.updateFunding,
+		getCollectionSetting:     h.getCollectionSetting,
+		setCollectionPassword:    h.setCollectionPassword,
+		listRoomAssignments:      h.listRoomAssignments,
+		createRoomAssignment:     h.createRoomAssignment,
+		closeRoomAssignment:      h.closeRoomAssignment,
+		getBillingProfile:        h.getBillingProfile,
+		updateBillingProfile:     h.updateBillingProfile,
+		getLeavingRecord:         h.getLeavingRecord,
+		listBookingPatterns:      h.listBookingPatterns,
+		getBookingPattern:        h.getBookingPattern,
 		getCurrentBookingPattern: h.getCurrentBookingPattern,
-		createBookingPattern:    h.createBookingPattern,
-		updateBookingPattern:    h.updateBookingPattern,
+		createBookingPattern:     h.createBookingPattern,
+		updateBookingPattern:     h.updateBookingPattern,
 	}
 }
 

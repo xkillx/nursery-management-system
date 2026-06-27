@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	authpostgres "nursery-management-system/api/internal/modules/authentication/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/authentication/domain"
+	authpostgres "nursery-management-system/api/internal/modules/authentication/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/dbtest"
 )
 

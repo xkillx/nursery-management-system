@@ -16,24 +16,24 @@ type entrySessionTypeResponse struct {
 }
 
 type sessionTemplateEntryResponse struct {
-	ID          string                `json:"id"`
-	DayOfWeek   int                   `json:"day_of_week"`
+	ID          string                    `json:"id"`
+	DayOfWeek   int                       `json:"day_of_week"`
 	SessionType *entrySessionTypeResponse `json:"session_type"`
 }
 
 type sessionTemplateResponse struct {
-	ID          string                        `json:"id"`
-	BranchID    string                        `json:"branch_id"`
-	Name        string                        `json:"name"`
-	Description *string                       `json:"description,omitempty"`
-	IsActive    bool                          `json:"is_active"`
-	CreatedAt   string                        `json:"created_at"`
-	UpdatedAt   string                        `json:"updated_at"`
+	ID          string                         `json:"id"`
+	BranchID    string                         `json:"branch_id"`
+	Name        string                         `json:"name"`
+	Description *string                        `json:"description,omitempty"`
+	IsActive    bool                           `json:"is_active"`
+	CreatedAt   string                         `json:"created_at"`
+	UpdatedAt   string                         `json:"updated_at"`
 	Entries     []sessionTemplateEntryResponse `json:"entries"`
 }
 
 type createSessionTemplateRequest struct {
-	Name        string `json:"name" binding:"required"`
+	Name        string  `json:"name" binding:"required"`
 	Description *string `json:"description"`
 	Entries     []struct {
 		DayOfWeek     int    `json:"day_of_week" binding:"required"`

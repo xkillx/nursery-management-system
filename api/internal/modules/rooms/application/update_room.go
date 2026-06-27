@@ -18,8 +18,8 @@ type UpdateRoomParams struct {
 }
 
 type UpdateRoom struct {
-	repo         domain.Repository
-	siteChecker  SiteExistsChecker
+	repo        domain.Repository
+	siteChecker SiteExistsChecker
 }
 
 func NewUpdateRoom(repo domain.Repository, siteChecker SiteExistsChecker) *UpdateRoom {

@@ -12,10 +12,10 @@ import (
 )
 
 type ReactivateRoom struct {
-	repo     domain.Repository
-	txMgr    TxManager
-	audit    *audit.Writer
-	pool     *pgxpool.Pool
+	repo  domain.Repository
+	txMgr TxManager
+	audit *audit.Writer
+	pool  *pgxpool.Pool
 }
 
 func NewReactivateRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer, pool *pgxpool.Pool) *ReactivateRoom {

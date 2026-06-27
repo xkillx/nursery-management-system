@@ -23,16 +23,16 @@ type bookingPatternPayload struct {
 }
 
 type createChildRequest struct {
-	Child             childIdentityPayload       `json:"child"`
-	Profile           *childProfilePayload       `json:"profile"`
-	Health            *childHealthPayload        `json:"health"`
-	Safeguarding      *childSafeguardingPayload  `json:"safeguarding"`
-	Contacts          *childContactsPayload      `json:"contacts"`
-	Consent           *childConsentPayload       `json:"consent"`
-	Funding           *childFundingPayload       `json:"funding"`
+	Child              childIdentityPayload       `json:"child"`
+	Profile            *childProfilePayload       `json:"profile"`
+	Health             *childHealthPayload        `json:"health"`
+	Safeguarding       *childSafeguardingPayload  `json:"safeguarding"`
+	Contacts           *childContactsPayload      `json:"contacts"`
+	Consent            *childConsentPayload       `json:"consent"`
+	Funding            *childFundingPayload       `json:"funding"`
 	CollectionSettings *collectionSettingsPayload `json:"collection_settings"`
-	Room              *roomAssignmentPayload     `json:"room"`
-	BookingPattern    *bookingPatternPayload     `json:"booking_pattern"`
+	Room               *roomAssignmentPayload     `json:"room"`
+	BookingPattern     *bookingPatternPayload     `json:"booking_pattern"`
 }
 
 type childIdentityPayload struct {
@@ -46,29 +46,29 @@ type childIdentityPayload struct {
 }
 
 type childProfilePayload struct {
-	Sex                       *string                `json:"sex"`
-	Religion                  *string                `json:"religion"`
-	EthnicOrigin              *string                `json:"ethnic_origin"`
-	FirstLanguage             *string                `json:"first_language"`
-	OtherLanguages            *string                `json:"other_languages"`
-	HomeAddress               map[string]any         `json:"home_address"`
-	HomePostcode              *string                `json:"home_postcode"`
-	HomeTelephone             *string                `json:"home_telephone"`
-	DisabilityStatus          string                 `json:"disability_status"`
-	DisabilityNotes           *string                `json:"disability_notes"`
-	AccessRequirements        *string                `json:"access_requirements"`
-	RoutineCareNotes          *string                `json:"routine_care_notes"`
-	GDPRDeclaredByName        *string                `json:"gdpr_declared_by_name"`
-	GDPRDeclaredAt            *string                `json:"gdpr_declared_at"`
-	GDPRDeclarationDate       *string                `json:"gdpr_declaration_date"`
-	RegistrationDate          *string                `json:"registration_date"`
-	DemographicsHomeReviewed  bool                   `json:"demographics_home_reviewed"`
-	MedicalDietaryReviewed    bool                   `json:"medical_dietary_reviewed"`
-	HealthContactsReviewed    bool                   `json:"health_contacts_reviewed"`
-	SocialDevelopmentReviewed bool                   `json:"social_development_reviewed"`
-	ParentResponsibilityReviewed bool                 `json:"parent_responsibility_reviewed"`
-	EmergencyCollectionReviewed bool                  `json:"emergency_collection_reviewed"`
-	RoutineCareReviewed       bool                   `json:"routine_care_reviewed"`
+	Sex                          *string        `json:"sex"`
+	Religion                     *string        `json:"religion"`
+	EthnicOrigin                 *string        `json:"ethnic_origin"`
+	FirstLanguage                *string        `json:"first_language"`
+	OtherLanguages               *string        `json:"other_languages"`
+	HomeAddress                  map[string]any `json:"home_address"`
+	HomePostcode                 *string        `json:"home_postcode"`
+	HomeTelephone                *string        `json:"home_telephone"`
+	DisabilityStatus             string         `json:"disability_status"`
+	DisabilityNotes              *string        `json:"disability_notes"`
+	AccessRequirements           *string        `json:"access_requirements"`
+	RoutineCareNotes             *string        `json:"routine_care_notes"`
+	GDPRDeclaredByName           *string        `json:"gdpr_declared_by_name"`
+	GDPRDeclaredAt               *string        `json:"gdpr_declared_at"`
+	GDPRDeclarationDate          *string        `json:"gdpr_declaration_date"`
+	RegistrationDate             *string        `json:"registration_date"`
+	DemographicsHomeReviewed     bool           `json:"demographics_home_reviewed"`
+	MedicalDietaryReviewed       bool           `json:"medical_dietary_reviewed"`
+	HealthContactsReviewed       bool           `json:"health_contacts_reviewed"`
+	SocialDevelopmentReviewed    bool           `json:"social_development_reviewed"`
+	ParentResponsibilityReviewed bool           `json:"parent_responsibility_reviewed"`
+	EmergencyCollectionReviewed  bool           `json:"emergency_collection_reviewed"`
+	RoutineCareReviewed          bool           `json:"routine_care_reviewed"`
 }
 
 type childHealthPayload struct {
@@ -91,19 +91,19 @@ type childHealthPayload struct {
 }
 
 type childSafeguardingPayload struct {
-	SocialServicesStatus      string  `json:"social_services_status"`
-	SocialServicesNotes       *string `json:"social_services_notes"`
-	SocialWorkerName          *string `json:"social_worker_name"`
-	SocialWorkerPhone         *string `json:"social_worker_phone"`
-	SocialWorkerEmail         *string `json:"social_worker_email"`
-	ConcernWalking            string  `json:"concern_walking"`
-	ConcernSpeechLanguage     string  `json:"concern_speech_language"`
-	ConcernHearing            string  `json:"concern_hearing"`
-	ConcernSight              string  `json:"concern_sight"`
-	ConcernEmotionalWellbeing string  `json:"concern_emotional_wellbeing"`
-	ConcernBehaviour          string  `json:"concern_behaviour"`
+	SocialServicesStatus      string                        `json:"social_services_status"`
+	SocialServicesNotes       *string                       `json:"social_services_notes"`
+	SocialWorkerName          *string                       `json:"social_worker_name"`
+	SocialWorkerPhone         *string                       `json:"social_worker_phone"`
+	SocialWorkerEmail         *string                       `json:"social_worker_email"`
+	ConcernWalking            string                        `json:"concern_walking"`
+	ConcernSpeechLanguage     string                        `json:"concern_speech_language"`
+	ConcernHearing            string                        `json:"concern_hearing"`
+	ConcernSight              string                        `json:"concern_sight"`
+	ConcernEmotionalWellbeing string                        `json:"concern_emotional_wellbeing"`
+	ConcernBehaviour          string                        `json:"concern_behaviour"`
 	ProfessionalReferrals     []domain.ProfessionalReferral `json:"professional_referrals"`
-	RestrictedNotes           *string `json:"restricted_notes"`
+	RestrictedNotes           *string                       `json:"restricted_notes"`
 }
 
 type childContactsPayload struct {
@@ -118,9 +118,9 @@ type childConsentPayload struct {
 	Plasters                             bool    `json:"plasters"`
 	SafeguardingReportingAcknowledgement bool    `json:"safeguarding_reporting_acknowledgement"`
 	InformationSharingConsent            bool    `json:"information_sharing_consent"`
-		GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
-		InformationTruthfulnessDeclaration   bool    `json:"information_truthfulness_declaration"`
-		AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
+	GDPRDataProcessingConsent            bool    `json:"gdpr_data_processing_consent"`
+	InformationTruthfulnessDeclaration   bool    `json:"information_truthfulness_declaration"`
+	AreaSENCOLiaison                     bool    `json:"area_senco_liaison"`
 	HealthVisitorLiaison                 bool    `json:"health_visitor_liaison"`
 	TransitionDocuments                  bool    `json:"transition_documents"`
 	LocalOutings                         bool    `json:"local_outings"`
@@ -171,7 +171,7 @@ type roomAssignmentPayload struct {
 func mapCreateChildRequest(req createChildRequest) (application.CreateChildFullInput, error) {
 	in := application.CreateChildFullInput{
 		Child: application.CreateChildIdentityInput{
-			FirstName: req.Child.FirstName,
+			FirstName:   req.Child.FirstName,
 			DateOfBirth: req.Child.DateOfBirth,
 			StartDate:   req.Child.StartDate,
 		},
@@ -248,7 +248,7 @@ func mapCreateChildRequest(req createChildRequest) (application.CreateChildFullI
 				return in, domainerrors.Validation("Invalid request payload.", fmt.Sprintf("booking_pattern.entries[%d].session_type_id", i))
 			}
 			bp.Entries[i] = application.BookingPatternEntryInput{
-				DayOfWeek:    e.DayOfWeek,
+				DayOfWeek:     e.DayOfWeek,
 				SessionTypeID: stID,
 			}
 		}
@@ -263,9 +263,9 @@ func mapChildProfilePayloadToInput(p *childProfilePayload) *application.ChildPro
 		FirstLanguage: p.FirstLanguage, OtherLanguages: p.OtherLanguages,
 		HomeAddress: p.HomeAddress, HomePostcode: p.HomePostcode, HomeTelephone: p.HomeTelephone,
 		DisabilityStatus: p.DisabilityStatus, DisabilityNotes: p.DisabilityNotes, AccessRequirements: p.AccessRequirements,
-		RoutineCareNotes: p.RoutineCareNotes,
+		RoutineCareNotes:   p.RoutineCareNotes,
 		GDPRDeclaredByName: p.GDPRDeclaredByName, GDPRDeclaredAt: p.GDPRDeclaredAt, GDPRDeclarationDate: p.GDPRDeclarationDate,
-		RegistrationDate: p.RegistrationDate,
+		RegistrationDate:         p.RegistrationDate,
 		DemographicsHomeReviewed: p.DemographicsHomeReviewed, MedicalDietaryReviewed: p.MedicalDietaryReviewed,
 		HealthContactsReviewed: p.HealthContactsReviewed, SocialDevelopmentReviewed: p.SocialDevelopmentReviewed,
 		ParentResponsibilityReviewed: p.ParentResponsibilityReviewed, EmergencyCollectionReviewed: p.EmergencyCollectionReviewed,
@@ -278,10 +278,10 @@ func mapChildHealthPayloadToInput(p *childHealthPayload) *application.ChildHealt
 		MedicalConditionsStatus: p.MedicalConditionsStatus, MedicalConditionsNotes: p.MedicalConditionsNotes,
 		PrescribedMedicationStatus: p.PrescribedMedicationStatus, MedicationNotes: p.MedicationNotes,
 		ImmunisationStatus: p.ImmunisationStatus, ImmunisationCountry: p.ImmunisationCountry,
-		IllnessDiagnosisHistory: p.IllnessDiagnosisHistory,
+		IllnessDiagnosisHistory:   p.IllnessDiagnosisHistory,
 		DietaryRequirementsStatus: p.DietaryRequirementsStatus, DietaryRequirementsNotes: p.DietaryRequirementsNotes,
 		DietarySideEffects: p.DietarySideEffects,
-		DoctorName: p.DoctorName, DoctorAddress: p.DoctorAddress, DoctorPhone: p.DoctorPhone,
+		DoctorName:         p.DoctorName, DoctorAddress: p.DoctorAddress, DoctorPhone: p.DoctorPhone,
 		HealthVisitorName: p.HealthVisitorName, HealthVisitorAddress: p.HealthVisitorAddress, HealthVisitorPhone: p.HealthVisitorPhone,
 	}
 }
@@ -362,12 +362,12 @@ func mapChildFundingPayloadToInput(p *childFundingPayload) *application.ChildFun
 }
 
 type childCreationResponse struct {
-	ID                 string   `json:"id"`
-	FirstName          string   `json:"first_name"`
-	MiddleName         *string  `json:"middle_name"`
-	LastName           *string  `json:"last_name"`
-	StartDate          string   `json:"start_date"`
-	CreatedSubRecords  []string `json:"created_sub_records"`
+	ID                string   `json:"id"`
+	FirstName         string   `json:"first_name"`
+	MiddleName        *string  `json:"middle_name"`
+	LastName          *string  `json:"last_name"`
+	StartDate         string   `json:"start_date"`
+	CreatedSubRecords []string `json:"created_sub_records"`
 }
 
 func toChildCreationResponse(r *application.ChildCreationResult) childCreationResponse {

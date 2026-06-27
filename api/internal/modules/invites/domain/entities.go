@@ -7,28 +7,28 @@ import (
 )
 
 type Invite struct {
-	ID                     uuid.UUID
-	TenantID               uuid.UUID
-	BranchID               uuid.UUID
-	Email                  string
-	EmailNormalized        string
-	Role                   string
-	TokenHash              string
-	ExpiresAt              time.Time
-	AcceptedAt             *time.Time
-	AcceptedUserID         uuid.UUID
-	AcceptedMembershipID   uuid.UUID
-	RevokedAt              *time.Time
-	RevokedByUserID        uuid.UUID
-	RevokedByMembershipID  uuid.UUID
-	CreatedByUserID        uuid.UUID
-	CreatedByMembershipID  uuid.UUID
-	ResentAt               *time.Time
-	ResentByUserID         uuid.UUID
-	ResentByMembershipID   uuid.UUID
-	SendCount              int
-	CreatedAt              time.Time
-	UpdatedAt              time.Time
+	ID                    uuid.UUID
+	TenantID              uuid.UUID
+	BranchID              uuid.UUID
+	Email                 string
+	EmailNormalized       string
+	Role                  string
+	TokenHash             string
+	ExpiresAt             time.Time
+	AcceptedAt            *time.Time
+	AcceptedUserID        uuid.UUID
+	AcceptedMembershipID  uuid.UUID
+	RevokedAt             *time.Time
+	RevokedByUserID       uuid.UUID
+	RevokedByMembershipID uuid.UUID
+	CreatedByUserID       uuid.UUID
+	CreatedByMembershipID uuid.UUID
+	ResentAt              *time.Time
+	ResentByUserID        uuid.UUID
+	ResentByMembershipID  uuid.UUID
+	SendCount             int
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 type InviteStatus string

@@ -26,14 +26,14 @@ type fakeChildBPRepo struct {
 	existsInScope      bool
 
 	// errs
-	getByIDErr        error
-	existsErr         error
-	listErr           error
-	insertErr         error
-	closeCurrentErr   error
-	closeByIDErr      error
-	replaceErr        error
-	updateEffFromErr  error
+	getByIDErr       error
+	existsErr        error
+	listErr          error
+	insertErr        error
+	closeCurrentErr  error
+	closeByIDErr     error
+	replaceErr       error
+	updateEffFromErr error
 }
 
 func newFakeRepo() *fakeChildBPRepo {
@@ -557,12 +557,48 @@ func TestCreateBookingPattern_DuplicateDayAndSessionRejected(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	if err.Error() != "booking_pattern_duplicate_entry: Invalid request payload." {
+	if err.Error() != "booking_pattern_duplicate_day: Invalid request payload." {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
 
-func TestCreateBookingPattern_MultipleSessionsSameDayAllowed(t *testing.T) {
+func TestCreateBookingPattern_DuplicateDayRejected(t *testing.T) {
+	tenantID := uuid.New()
+	branchID := uuid.New()
+	childID := uuid.New()
+	stID1 := uuid.New()
+	stID2 := uuid.New()
+
+	repo := newFakeRepo()
+	lookup := &fakeSessionTypeLookup{byID: map[uuid.UUID]application.SessionTypeInfo{
+		stID1: {ID: stID1, Name: "Morning", StartMinutes: 480, EndMinutes: 720, IsActive: true},
+		stID2: {ID: stID2, Name: "Afternoon", StartMinutes: 780, EndMinutes: 1020, IsActive: true},
+	}}
+	txm := &noopTxm{}
+	clock := func() time.Time { return time.Date(2026, 6, 19, 12, 0, 0, 0, time.UTC) }
+	uc := application.NewCreateBookingPattern(repo, nil, txm, lookup, clock)
+
+	effective := time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC)
+	_, err := uc.Execute(context.Background(), managerActorContext(tenantID, branchID), childID.String(), application.CreateBookingPatternInput{
+		EffectiveFrom: effective,
+		Entries: []application.BookingPatternEntryInput{
+			{DayOfWeek: 1, SessionTypeID: stID1},
+			{DayOfWeek: 1, SessionTypeID: stID2},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	domainErr, ok := err.(*domainerrors.DomainError)
+	if !ok {
+		t.Fatalf("expected *DomainError, got %T", err)
+	}
+	if domainErr.Code != "booking_pattern_duplicate_day" {
+		t.Errorf("got code %q, want booking_pattern_duplicate_day", domainErr.Code)
+	}
+}
+
+func TestCreateBookingPattern_SingleEntryPerDaySuccess(t *testing.T) {
 	tenantID := uuid.New()
 	branchID := uuid.New()
 	childID := uuid.New()
@@ -583,7 +619,7 @@ func TestCreateBookingPattern_MultipleSessionsSameDayAllowed(t *testing.T) {
 		EffectiveFrom: effective,
 		Entries: []application.BookingPatternEntryInput{
 			{DayOfWeek: 1, SessionTypeID: stID1},
-			{DayOfWeek: 1, SessionTypeID: stID2},
+			{DayOfWeek: 2, SessionTypeID: stID2},
 		},
 	})
 	if err != nil {

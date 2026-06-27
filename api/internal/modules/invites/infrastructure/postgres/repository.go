@@ -107,7 +107,7 @@ func (r *Repository) CreateInvite(ctx context.Context, actor tenant.ActorContext
 		Role:                  inv.Role,
 		TokenHash:             inv.TokenHash,
 		ExpiresAt:             pgTimestamptz(inv.ExpiresAt),
-		CreatedByUserID:      pgUUID(inv.CreatedByUserID),
+		CreatedByUserID:       pgUUID(inv.CreatedByUserID),
 		CreatedByMembershipID: pgUUID(inv.CreatedByMembershipID),
 	}); err != nil {
 		return domain.Invite{}, false, err
@@ -293,7 +293,7 @@ func (r *Repository) RevokeInvite(ctx context.Context, actor tenant.ActorContext
 
 	if err := q.InviteRevoke(ctx, sqlc.InviteRevokeParams{
 		ID:                    pgUUID(inviteID),
-		RevokedByUserID:      pgUUID(actor.UserID),
+		RevokedByUserID:       pgUUID(actor.UserID),
 		RevokedByMembershipID: pgUUID(actor.MembershipID),
 	}); err != nil {
 		return domain.Invite{}, err

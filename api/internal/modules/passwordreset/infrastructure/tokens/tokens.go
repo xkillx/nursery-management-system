@@ -10,9 +10,9 @@ import (
 )
 
 type Manager struct {
-	secret   []byte
-	ttl      time.Duration
-	nowFunc  func() time.Time
+	secret  []byte
+	ttl     time.Duration
+	nowFunc func() time.Time
 }
 
 func NewManager(secret string, ttlMinutes int) *Manager {
@@ -32,8 +32,8 @@ func NewManagerWithClock(secret string, ttlMinutes int, nowFunc func() time.Time
 }
 
 type Token struct {
-	Raw      string
-	Hash     string
+	Raw       string
+	Hash      string
 	ExpiresAt time.Time
 }
 
@@ -48,8 +48,8 @@ func (m *Manager) Generate() (Token, error) {
 	expiresAt := m.nowFunc().Add(m.ttl)
 
 	return Token{
-		Raw:      raw,
-		Hash:     hash,
+		Raw:       raw,
+		Hash:      hash,
 		ExpiresAt: expiresAt,
 	}, nil
 }

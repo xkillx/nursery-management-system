@@ -158,9 +158,9 @@ func TestPeopleWriteRoleGuards(t *testing.T) {
 		wantStatus int
 	}{
 		{
-			name:       "create child",
-			method:     http.MethodPost,
-			path:       "/api/v1/children",
+			name:   "create child",
+			method: http.MethodPost,
+			path:   "/api/v1/children",
 			body: `{"child":{"first_name":"New Child","date_of_birth":"2021-05-01","start_date":"2024-01-01"},` +
 				`"room":{"room_id":"` + h.scopeA.roomID.String() + `","start_date":"2024-01-01"},` +
 				`"consent":{"urgent_medical_treatment":true,"plasters":true,"safeguarding_reporting_acknowledgement":true,` +
@@ -493,7 +493,7 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		requireStatus(t, w, http.StatusOK)
 
 		var resp struct {
-			IsActive   bool `json:"is_active"`
+			IsActive bool `json:"is_active"`
 		}
 		decodeJSON(t, w, &resp)
 		if resp.IsActive {
@@ -643,8 +643,8 @@ func TestPeopleIdempotentChildMarkInactive(t *testing.T) {
 	w = doRequest(t, h.router, http.MethodGet, lrPath, h.managerToken, "")
 	requireStatus(t, w, http.StatusOK)
 	var first struct {
-		LeftAt       *string `json:"left_at"`
-		ReasonCode   *string `json:"reason_code"`
+		LeftAt     *string `json:"left_at"`
+		ReasonCode *string `json:"reason_code"`
 	}
 	decodeJSON(t, w, &first)
 
@@ -654,8 +654,8 @@ func TestPeopleIdempotentChildMarkInactive(t *testing.T) {
 	w = doRequest(t, h.router, http.MethodGet, lrPath, h.managerToken, "")
 	requireStatus(t, w, http.StatusOK)
 	var second struct {
-		LeftAt       *string `json:"left_at"`
-		ReasonCode   *string `json:"reason_code"`
+		LeftAt     *string `json:"left_at"`
+		ReasonCode *string `json:"reason_code"`
 	}
 	decodeJSON(t, w, &second)
 

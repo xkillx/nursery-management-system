@@ -18,11 +18,11 @@ import (
 
 type fakeChildRepository struct {
 	domain.Repository
-	createCallCount      int
-	insertPatternCalled  bool
-	insertPatternFrom    time.Time
-	insertPatternTo      *time.Time
-	insertPatternCnt     int
+	createCallCount     int
+	insertPatternCalled bool
+	insertPatternFrom   time.Time
+	insertPatternTo     *time.Time
+	insertPatternCnt    int
 }
 
 func (f *fakeChildRepository) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {

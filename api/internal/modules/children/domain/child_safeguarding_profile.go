@@ -15,10 +15,10 @@ type ProfessionalReferral struct {
 }
 
 type ChildSafeguardingProfile struct {
-	ID        uuid.UUID
-	TenantID  uuid.UUID
-	BranchID  uuid.UUID
-	ChildID   uuid.UUID
+	ID       uuid.UUID
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	ChildID  uuid.UUID
 
 	SocialServicesStatus      YesNoUnknown
 	SocialServicesNotes       *string

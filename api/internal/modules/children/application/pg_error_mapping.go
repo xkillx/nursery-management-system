@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	pgCodeFKViolation      = "23503"
-	pgCodeUniqueViolation  = "23505"
-	pgCodeCheckViolation   = "23514"
-	pgCodeNotNullViolation = "23502"
+	pgCodeFKViolation               = "23503"
+	pgCodeUniqueViolation           = "23505"
+	pgCodeCheckViolation            = "23514"
+	pgCodeNotNullViolation          = "23502"
 	pgCodeStringTruncation          = "22001"
 	pgCodeInvalidTextRepresentation = "22P02"
 )

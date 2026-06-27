@@ -224,7 +224,33 @@ func TestBookingPattern_DuplicateDayAndSession(t *testing.T) {
 	tx.Rollback(ctx)
 }
 
-func TestBookingPattern_MultipleSessionsSameDayAllowed(t *testing.T) {
+func TestBookingPattern_DuplicateDayRejected(t *testing.T) {
+	repo, pool := setupChildRepo(t)
+	ctx := context.Background()
+
+	childID := newBookingPatternChildID(t, pool)
+	stID1 := uuid.New()
+	stID2 := uuid.New()
+	insertSessionTypesForBP(t, pool, stID1, stID2)
+
+	tx := dbtest.BeginTx(t, pool)
+	_, err := repo.InsertPattern(ctx, tx, &childdomain.BookingPattern{
+		ID:            uuid.New(),
+		TenantID:      childTenantID,
+		BranchID:      childBranchID,
+		ChildID:       childID,
+		EffectiveFrom: time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
+	}, []childdomain.BookingPatternEntry{
+		{ID: uuid.New(), DayOfWeek: 1, SessionType: &childdomain.EntrySessionType{ID: stID1}},
+		{ID: uuid.New(), DayOfWeek: 1, SessionType: &childdomain.EntrySessionType{ID: stID2}},
+	})
+	if err == nil {
+		t.Fatal("expected unique constraint violation, got nil")
+	}
+	tx.Rollback(ctx)
+}
+
+func TestBookingPattern_SingleEntryPerDaySuccess(t *testing.T) {
 	repo, pool := setupChildRepo(t)
 	ctx := context.Background()
 
@@ -242,7 +268,7 @@ func TestBookingPattern_MultipleSessionsSameDayAllowed(t *testing.T) {
 		EffectiveFrom: time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
 	}, []childdomain.BookingPatternEntry{
 		{ID: uuid.New(), DayOfWeek: 1, SessionType: &childdomain.EntrySessionType{ID: stID1}},
-		{ID: uuid.New(), DayOfWeek: 1, SessionType: &childdomain.EntrySessionType{ID: stID2}},
+		{ID: uuid.New(), DayOfWeek: 2, SessionType: &childdomain.EntrySessionType{ID: stID2}},
 	})
 	if err != nil {
 		t.Fatalf("InsertPattern: %v", err)

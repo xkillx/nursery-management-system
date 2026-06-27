@@ -34,10 +34,10 @@ type InviteDetails struct {
 }
 
 type GrantManagerAccessUseCase struct {
-	repo          domain.ManagerAccessRepository
-	tokenGen      domain.InviteTokenGenerator
-	emailSender   domain.ManagerInviteSender
-	webBaseURL    string
+	repo        domain.ManagerAccessRepository
+	tokenGen    domain.InviteTokenGenerator
+	emailSender domain.ManagerInviteSender
+	webBaseURL  string
 }
 
 func NewGrantManagerAccessUseCase(

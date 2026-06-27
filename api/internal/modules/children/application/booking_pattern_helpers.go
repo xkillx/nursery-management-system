@@ -28,6 +28,7 @@ type BookingPatternInput struct {
 // types for a set of booking pattern entries.
 func resolveBookingPatternEntries(ctx context.Context, lookup SessionTypeLookup, actor tenant.ActorContext, entries []BookingPatternEntryInput) ([]domain.BookingPatternEntry, error) {
 	seen := make(map[BookingPatternEntryInput]struct{}, len(entries))
+	seenDays := make(map[int]struct{}, len(entries))
 	resolved := make([]domain.BookingPatternEntry, 0, len(entries))
 	for _, e := range entries {
 		if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
@@ -36,6 +37,10 @@ func resolveBookingPatternEntries(ctx context.Context, lookup SessionTypeLookup,
 		if e.SessionTypeID == uuid.Nil {
 			return nil, domainerrors.Validation("Invalid request payload.", "session_type_id")
 		}
+		if _, dup := seenDays[e.DayOfWeek]; dup {
+			return nil, domainerrors.New("booking_pattern_duplicate_day", "Invalid request payload.", "entries")
+		}
+		seenDays[e.DayOfWeek] = struct{}{}
 		key := BookingPatternEntryInput{DayOfWeek: e.DayOfWeek, SessionTypeID: e.SessionTypeID}
 		if _, dup := seen[key]; dup {
 			return nil, domainerrors.New("booking_pattern_duplicate_entry", "Invalid request payload.", "entries")

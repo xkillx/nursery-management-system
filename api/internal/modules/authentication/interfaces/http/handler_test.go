@@ -23,8 +23,8 @@ import (
 // --- HTTP test fakes ---
 
 type htFakeUserRepo struct {
-	ByEmail map[string]domain.User
-	Mships  map[uuid.UUID][]domain.Membership
+	ByEmail  map[string]domain.User
+	Mships   map[uuid.UUID][]domain.Membership
 	capEmail string
 }
 
@@ -118,7 +118,7 @@ func (htFakeTokens) GenerateAccessToken(_ uuid.UUID, _ string, _ domain.ScopeCla
 	return "fake-access-token", time.Now().UTC().Add(15 * time.Minute), nil
 }
 func (htFakeTokens) HashRefreshToken(raw string) string { return "hash:" + raw }
-func (htFakeTokens) AccessTTLSeconds() int64             { return 900 }
+func (htFakeTokens) AccessTTLSeconds() int64            { return 900 }
 
 // --- Fixtures ---
 

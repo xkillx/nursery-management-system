@@ -81,7 +81,7 @@ export class ManagerBookingPatternComponent implements OnInit {
   isCreating = false;
   isEditing = false;
   effectiveFrom = '';
-  entries: { dayOfWeek: number; sessionTypeId: string }[] = [];
+  selectedTypeByDay: Record<number, string | null> = {};
 
   ngOnInit(): void {
     this.childId = this.route.snapshot.paramMap.get('childId') ?? '';
@@ -117,7 +117,7 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.isEditing = false;
     this.editablePattern = null;
     this.effectiveFrom = this.todayString;
-    this.entries = [];
+    this.selectedTypeByDay = {};
     this.fieldError = null;
   }
 
@@ -126,10 +126,10 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.isEditing = true;
     this.editablePattern = p;
     this.effectiveFrom = p.effective_from;
-    this.entries = p.entries.map((e) => ({
-      dayOfWeek: e.day_of_week,
-      sessionTypeId: e.session_type.id,
-    }));
+    this.selectedTypeByDay = {};
+    for (const e of p.entries) {
+      this.selectedTypeByDay[e.day_of_week] = e.session_type.id;
+    }
     this.fieldError = null;
   }
 
@@ -137,35 +137,46 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.isCreating = false;
     this.isEditing = false;
     this.editablePattern = null;
-    this.entries = [];
+    this.selectedTypeByDay = {};
     this.fieldError = null;
   }
 
   toggleEntry(day: number, stID: string): void {
-    const idx = this.entries.findIndex((e) => e.dayOfWeek === day && e.sessionTypeId === stID);
-    if (idx >= 0) {
-      this.entries.splice(idx, 1);
+    if (this.selectedTypeByDay[day] === stID) {
+      this.selectedTypeByDay[day] = null;
     } else {
-      this.entries.push({ dayOfWeek: day, sessionTypeId: stID });
+      this.selectedTypeByDay[day] = stID;
     }
   }
 
   isEntrySelected(day: number, stID: string): boolean {
-    return this.entries.some((e) => e.dayOfWeek === day && e.sessionTypeId === stID);
+    return this.selectedTypeByDay[day] === stID;
+  }
+
+  get hasEntries(): boolean {
+    return Object.values(this.selectedTypeByDay).some((v) => v !== null);
   }
 
   entriesByDay(day: number) {
-    return this.entries
-      .filter((e) => e.dayOfWeek === day)
-      .map((e) => {
-        const st = this.sessionTypes.find((s) => s.id === e.sessionTypeId);
-        return { sessionType: st, dayOfWeek: e.dayOfWeek, sessionTypeId: e.sessionTypeId };
-      });
+    const stId = this.selectedTypeByDay[day];
+    if (!stId) return [];
+    const st = this.sessionTypes.find((s) => s.id === stId);
+    return st ? [{ sessionType: st, dayOfWeek: day, sessionTypeId: stId }] : [];
+  }
+
+  private entriesToPayload(): { day_of_week: number; session_type_id: string }[] {
+    const result: { day_of_week: number; session_type_id: string }[] = [];
+    for (const [day, stId] of Object.entries(this.selectedTypeByDay)) {
+      if (stId !== null) {
+        result.push({ day_of_week: Number(day), session_type_id: stId });
+      }
+    }
+    return result;
   }
 
   save(): void {
     if (!this.childId) return;
-    if (this.entries.length === 0) {
+    if (!this.hasEntries) {
       this.fieldError = 'Add at least one booked session.';
       return;
     }
@@ -179,7 +190,7 @@ export class ManagerBookingPatternComponent implements OnInit {
 
     const payload: BookingPatternInput = {
       effective_from: this.effectiveFrom,
-      entries: this.entries.map((e) => ({ day_of_week: e.dayOfWeek, session_type_id: e.sessionTypeId })),
+      entries: this.entriesToPayload(),
     };
 
     const op = this.isCreating

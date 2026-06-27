@@ -8,13 +8,13 @@ import (
 )
 
 type bookingPatternEntryInput struct {
-	DayOfWeek    int    `json:"day_of_week"`
+	DayOfWeek     int    `json:"day_of_week"`
 	SessionTypeID string `json:"session_type_id"`
 }
 
 type bookingPatternRequest struct {
-	EffectiveFrom string                       `json:"effective_from" binding:"required"`
-	Entries       []bookingPatternEntryInput   `json:"entries" binding:"required"`
+	EffectiveFrom string                     `json:"effective_from" binding:"required"`
+	Entries       []bookingPatternEntryInput `json:"entries" binding:"required"`
 }
 
 type bookingPatternUpdateRequest struct {
@@ -31,7 +31,7 @@ type sessionTypeRef struct {
 }
 
 type bookedSessionResponse struct {
-	DayOfWeek   int           `json:"day_of_week"`
+	DayOfWeek   int            `json:"day_of_week"`
 	SessionType sessionTypeRef `json:"session_type"`
 }
 

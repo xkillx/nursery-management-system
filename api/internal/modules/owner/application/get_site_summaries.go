@@ -96,7 +96,7 @@ func (uc *GetSiteSummariesUseCase) Execute(ctx context.Context, actor domain.Own
 			PendingManagerInviteCount: ic,
 			ActiveChildrenCount:       cc,
 			Attendance: domain.AttendanceSummary{
-				CheckedInTodayCount:      at,
+				CheckedInTodayCount:       at,
 				IncompleteAttendanceCount: ia,
 			},
 			FundingReadiness:     fr,

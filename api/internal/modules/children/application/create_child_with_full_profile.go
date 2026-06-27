@@ -27,29 +27,29 @@ type CreateChildIdentityInput struct {
 }
 
 type ChildProfileInput struct {
-	Sex                       *string
-	Religion                  *string
-	EthnicOrigin              *string
-	FirstLanguage             *string
-	OtherLanguages            *string
-	HomeAddress               map[string]any
-	HomePostcode              *string
-	HomeTelephone             *string
-	DisabilityStatus          string
-	DisabilityNotes           *string
-	AccessRequirements        *string
-	RoutineCareNotes          *string
-	GDPRDeclaredByName        *string
-	GDPRDeclaredAt            *string
-	GDPRDeclarationDate       *string
-	RegistrationDate          *string
-	DemographicsHomeReviewed  bool
-	MedicalDietaryReviewed    bool
-	HealthContactsReviewed    bool
-	SocialDevelopmentReviewed bool
+	Sex                          *string
+	Religion                     *string
+	EthnicOrigin                 *string
+	FirstLanguage                *string
+	OtherLanguages               *string
+	HomeAddress                  map[string]any
+	HomePostcode                 *string
+	HomeTelephone                *string
+	DisabilityStatus             string
+	DisabilityNotes              *string
+	AccessRequirements           *string
+	RoutineCareNotes             *string
+	GDPRDeclaredByName           *string
+	GDPRDeclaredAt               *string
+	GDPRDeclarationDate          *string
+	RegistrationDate             *string
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
 	ParentResponsibilityReviewed bool
-	EmergencyCollectionReviewed bool
-	RoutineCareReviewed       bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
 }
 
 type ChildHealthProfileInput struct {
@@ -168,12 +168,12 @@ type CreateChildFullInput struct {
 }
 
 type ChildCreationResult struct {
-	ChildID            uuid.UUID
-	FirstName          string
-	MiddleName         *string
-	LastName           *string
-	StartDate          string
-	CreatedSubRecords  []string
+	ChildID           uuid.UUID
+	FirstName         string
+	MiddleName        *string
+	LastName          *string
+	StartDate         string
+	CreatedSubRecords []string
 }
 
 type CreateChildWithFullProfile struct {
@@ -267,10 +267,10 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 
 		// collection settings row (always)
 		cs := &domain.ChildCollectionSetting{
-			ID:        uid.NewUUID(),
-			TenantID:  actor.TenantID,
-			BranchID:  actor.BranchID,
-			ChildID:   childID,
+			ID:       uid.NewUUID(),
+			TenantID: actor.TenantID,
+			BranchID: actor.BranchID,
+			ChildID:  childID,
 		}
 		if input.CollectionSettings != nil {
 			cs.Over18CollectionAcknowledged = input.CollectionSettings.Over18CollectionAcknowledged
@@ -352,9 +352,9 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			Plasters:                             consent.Plasters,
 			SafeguardingReportingAcknowledgement: consent.SafeguardingReportingAcknowledgement,
 			InformationSharingConsent:            consent.InformationSharingConsent,
-		GDPRDataProcessingConsent:            consent.GDPRDataProcessingConsent,
-		InformationTruthfulnessDeclaration:   consent.InformationTruthfulnessDeclaration,
-		AreaSENCOLiaison:                     consent.AreaSENCOLiaison,
+			GDPRDataProcessingConsent:            consent.GDPRDataProcessingConsent,
+			InformationTruthfulnessDeclaration:   consent.InformationTruthfulnessDeclaration,
+			AreaSENCOLiaison:                     consent.AreaSENCOLiaison,
 			HealthVisitorLiaison:                 consent.HealthVisitorLiaison,
 			TransitionDocuments:                  consent.TransitionDocuments,
 			LocalOutings:                         consent.LocalOutings,

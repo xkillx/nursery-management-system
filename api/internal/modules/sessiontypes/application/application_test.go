@@ -17,18 +17,18 @@ import (
 // ── Fake repository ───────────────────────────────────────────────────────
 
 type fakeSessionTypeRepo struct {
-	types             []domain.SessionType
-	getErr            error
-	createErr         error
-	updateErr         error
-	updateRows        int64
-	archiveErr        error
-	reactivateErr     error
-	activeNameExists  bool
-	activeNameErr     error
-	exists            bool
-	getForUpdate      *domain.SessionType
-	getForUpdateErr   error
+	types            []domain.SessionType
+	getErr           error
+	createErr        error
+	updateErr        error
+	updateRows       int64
+	archiveErr       error
+	reactivateErr    error
+	activeNameExists bool
+	activeNameErr    error
+	exists           bool
+	getForUpdate     *domain.SessionType
+	getForUpdateErr  error
 }
 
 func (f *fakeSessionTypeRepo) ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]domain.SessionType, error) {

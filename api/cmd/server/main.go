@@ -21,8 +21,8 @@ import (
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	invoicerun "nursery-management-system/api/internal/modules/invoicerun"
-	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termapp "nursery-management-system/api/internal/modules/term/application"
+	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/transaction"
 )
 

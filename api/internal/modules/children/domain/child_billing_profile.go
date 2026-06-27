@@ -14,14 +14,14 @@ const (
 )
 
 type ChildBillingProfile struct {
-	ID        uuid.UUID
-	TenantID  uuid.UUID
-	BranchID  uuid.UUID
-	ChildID   uuid.UUID
+	ID       uuid.UUID
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	ChildID  uuid.UUID
 
-	BillingBasis   BillingBasis
+	BillingBasis    BillingBasis
 	CustomRateMinor *int
-	EffectiveFrom  time.Time
+	EffectiveFrom   time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

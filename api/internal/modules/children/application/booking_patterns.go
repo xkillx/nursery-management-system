@@ -63,7 +63,7 @@ func LondonTodayDate(clock func() time.Time) time.Time {
 // ── Inputs ────────────────────────────────────────────────────────────────
 
 type BookingPatternEntryInput struct {
-	DayOfWeek    int
+	DayOfWeek     int
 	SessionTypeID uuid.UUID
 }
 
@@ -305,6 +305,7 @@ func (uc *UpdateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 				return domainerrors.Validation("Invalid request payload.", "entries")
 			}
 			seen := make(map[BookingPatternEntryInput]struct{}, len(*in.Entries))
+			seenDays := make(map[int]struct{}, len(*in.Entries))
 			resolved = make([]domain.BookingPatternEntry, 0, len(*in.Entries))
 			for _, e := range *in.Entries {
 				if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
@@ -313,6 +314,10 @@ func (uc *UpdateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 				if e.SessionTypeID == uuid.Nil {
 					return domainerrors.Validation("Invalid request payload.", "session_type_id")
 				}
+				if _, dup := seenDays[e.DayOfWeek]; dup {
+					return domainerrors.New("booking_pattern_duplicate_day", "Invalid request payload.", "entries")
+				}
+				seenDays[e.DayOfWeek] = struct{}{}
 				key := BookingPatternEntryInput{DayOfWeek: e.DayOfWeek, SessionTypeID: e.SessionTypeID}
 				if _, dup := seen[key]; dup {
 					return domainerrors.New("booking_pattern_duplicate_entry", "Invalid request payload.", "entries")

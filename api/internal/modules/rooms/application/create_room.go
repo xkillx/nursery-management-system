@@ -19,8 +19,8 @@ type CreateRoomParams struct {
 }
 
 type CreateRoom struct {
-	repo         domain.Repository
-	siteChecker  SiteExistsChecker
+	repo        domain.Repository
+	siteChecker SiteExistsChecker
 }
 
 func NewCreateRoom(repo domain.Repository, siteChecker SiteExistsChecker) *CreateRoom {

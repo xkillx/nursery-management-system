@@ -14,13 +14,13 @@ import (
 
 // Deterministic UUID fixtures.
 var (
-	fixtureUserID       = uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	fixtureTenantID     = uuid.MustParse("00000000-0000-0000-0000-000000000010")
-	fixtureBranchID     = uuid.MustParse("00000000-0000-0000-0000-000000000100")
-	fixtureMembership1  = uuid.MustParse("00000000-0000-0000-0000-000000001001")
-	fixtureMembership2  = uuid.MustParse("00000000-0000-0000-0000-000000001002")
-	fixtureMembership3  = uuid.MustParse("00000000-0000-0000-0000-000000001003")
-	fixtureTokenID      = uuid.MustParse("00000000-0000-0000-0000-000000002001")
+	fixtureUserID         = uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	fixtureTenantID       = uuid.MustParse("00000000-0000-0000-0000-000000000010")
+	fixtureBranchID       = uuid.MustParse("00000000-0000-0000-0000-000000000100")
+	fixtureMembership1    = uuid.MustParse("00000000-0000-0000-0000-000000001001")
+	fixtureMembership2    = uuid.MustParse("00000000-0000-0000-0000-000000001002")
+	fixtureMembership3    = uuid.MustParse("00000000-0000-0000-0000-000000001003")
+	fixtureTokenID        = uuid.MustParse("00000000-0000-0000-0000-000000002001")
 	fixtureReplaceTokenID = uuid.MustParse("00000000-0000-0000-0000-000000002002")
 )
 
@@ -74,12 +74,12 @@ func makeInactiveMembership(id, tenantID, branchID uuid.UUID, role string) domai
 // --- fakeUserRepo ---
 
 type fakeUserRepo struct {
-	mu           sync.Mutex
-	userByEmail  map[string]domain.User
-	memberships  map[uuid.UUID][]domain.Membership
+	mu            sync.Mutex
+	userByEmail   map[string]domain.User
+	memberships   map[uuid.UUID][]domain.Membership
 	capturedEmail string
-	findErr      error
-	listErr      error
+	findErr       error
+	listErr       error
 }
 
 func newFakeUserRepo() *fakeUserRepo {
@@ -123,16 +123,16 @@ func (r *fakeUserRepo) setMemberships(userID uuid.UUID, ms []domain.Membership) 
 // --- fakeSessionRepo ---
 
 type sessionRepoCall struct {
-	Method       string
-	TokenHash    string
-	OldTokenID   uuid.UUID
-	Replacement  domain.RefreshToken
-	UserAgent    string
-	IPAddress    string
-	ActorUserID  uuid.UUID
+	Method         string
+	TokenHash      string
+	OldTokenID     uuid.UUID
+	Replacement    domain.RefreshToken
+	UserAgent      string
+	IPAddress      string
+	ActorUserID    uuid.UUID
 	FromMembership domain.Membership
 	ToMembership   domain.Membership
-	RequestID    string
+	RequestID      string
 }
 
 type fakeSessionRepo struct {
@@ -269,11 +269,11 @@ func (r *fakeSessionRepo) callsByMethod(method string) []sessionRepoCall {
 const fakeAccessToken = "fake-access-token"
 
 type fakeTokens struct {
-	mu           sync.Mutex
-	accessTTL    int64
-	generated    []domain.ScopeClaims
-	hashFunc     func(raw string) string
-	genErr       error
+	mu        sync.Mutex
+	accessTTL int64
+	generated []domain.ScopeClaims
+	hashFunc  func(raw string) string
+	genErr    error
 }
 
 func newFakeTokens() *fakeTokens {

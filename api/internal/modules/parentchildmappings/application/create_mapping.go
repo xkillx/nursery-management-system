@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrMembershipNotFound = errors.New("membership not found")
+	ErrMembershipNotFound  = errors.New("membership not found")
 	ErrMembershipNotParent = errors.New("membership not parent role")
 	ErrMembershipNotActive = errors.New("membership not active")
 	ErrChildNotFound       = errors.New("child not found")

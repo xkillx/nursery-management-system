@@ -221,8 +221,8 @@ func (m *mockHandlerEmail) SendPasswordReset(_ context.Context, to string, reset
 }
 
 type mockHandlerTokenGen struct {
-	raw      string
-	hash     string
+	raw       string
+	hash      string
 	expiresAt time.Time
 }
 

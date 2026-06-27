@@ -272,7 +272,8 @@ type RegistrationDraft = {
   step5?: {
     patternEffectiveFrom: string;
     patternEffectiveTo?: string;
-    patternEntries: { dayOfWeek: number; sessionTypeId: string }[];
+    patternEntries?: { dayOfWeek: number; sessionTypeId: string }[];
+    patternSelectedTypeByDay?: Record<number, string | null>;
   };
   step6?: {
     no_funding: boolean;
@@ -732,7 +733,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   patternEffectiveFrom = '';
   patternEffectiveTo = '';
-  patternEntries: { dayOfWeek: number; sessionTypeId: string }[] = [];
+  patternSelectedTypeByDay: Record<number, string | null> = {};
   patternError: string | null = null;
   availableSessionTypes: StaffSessionType[] = [];
   editablePattern: BookingPattern | null = null;
@@ -784,15 +785,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   get totalBookedHoursPerWeek(): number {
-    if (!this.patternEntries.length || !this.availableSessionTypes.length) return 0;
+    if (!this.hasPatternEntries || !this.availableSessionTypes.length) return 0;
     const typeMap = new Map(this.availableSessionTypes.map(st => [st.id, st]));
     let total = 0;
-    for (const entry of this.patternEntries) {
-      const st = typeMap.get(entry.sessionTypeId);
-      if (st) {
-        const [sh, sm] = st.startTime.split(':').map(Number);
-        const [eh, em] = st.endTime.split(':').map(Number);
-        total += (eh + em / 60) - (sh + sm / 60);
+    for (const stId of Object.values(this.patternSelectedTypeByDay)) {
+      if (stId) {
+        const st = typeMap.get(stId);
+        if (st) {
+          const [sh, sm] = st.startTime.split(':').map(Number);
+          const [eh, em] = st.endTime.split(':').map(Number);
+          total += (eh + em / 60) - (sh + sm / 60);
+        }
       }
     }
     return Math.round(total * 10) / 10;
@@ -1574,7 +1577,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.fieldErrors = {};
     this.patternError = null;
 
-    if (this.patternEntries.length === 0) {
+    if (this.patternEntriesCount === 0) {
       this.fieldErrors['pattern_entries'] = 'Add at least one booked session.';
       this.focusIssueField('pattern_entries');
       return;
@@ -1603,10 +1606,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     const payload: BookingPatternInput = {
       effective_from: this.patternEffectiveFrom,
-      entries: this.patternEntries.map((e) => ({
-        day_of_week: e.dayOfWeek,
-        session_type_id: e.sessionTypeId,
-      })),
+      entries: this.patternEntriesToPayload(),
     };
 
     const isEditable = !!(this.editablePattern?.is_current && this.editablePattern.effective_from >= this.todayIso);
@@ -1719,7 +1719,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   advanceFromSessionPattern(): void {
     this.patternError = null;
 
-    if (this.patternEntries.length === 0) {
+    if (!this.hasPatternEntries) {
       this.patternError = 'Add at least one booked session.';
       return;
     }
@@ -1730,7 +1730,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   createChildFromSessionPatternStep(): void {
     this.patternError = null;
 
-    if (this.patternEntries.length === 0) {
+    if (!this.hasPatternEntries) {
       this.patternError = 'Add at least one booked session.';
       return;
     }
@@ -1814,29 +1814,33 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   togglePatternEntry(day: number, sessionTypeId: string): void {
-    const idx = this.patternEntries.findIndex(
-      (e) => e.dayOfWeek === day && e.sessionTypeId === sessionTypeId,
-    );
-    if (idx >= 0) {
-      this.patternEntries.splice(idx, 1);
+    if (this.patternSelectedTypeByDay[day] === sessionTypeId) {
+      this.patternSelectedTypeByDay[day] = null;
     } else {
-      this.patternEntries.push({ dayOfWeek: day, sessionTypeId });
+      this.patternSelectedTypeByDay[day] = sessionTypeId;
     }
   }
 
   isPatternEntrySelected(day: number, sessionTypeId: string): boolean {
-    return this.patternEntries.some(
-      (e) => e.dayOfWeek === day && e.sessionTypeId === sessionTypeId,
-    );
+    return this.patternSelectedTypeByDay[day] === sessionTypeId;
   }
 
-  patternEntriesForDay(day: number): { sessionTypeId: string; sessionType?: StaffSessionType }[] {
-    return this.patternEntries
-      .filter((e) => e.dayOfWeek === day)
-      .map((e) => ({
-        sessionTypeId: e.sessionTypeId,
-        sessionType: this.availableSessionTypes.find((s) => s.id === e.sessionTypeId),
-      }));
+  get hasPatternEntries(): boolean {
+    return Object.values(this.patternSelectedTypeByDay).some((v) => v !== null);
+  }
+
+  get patternEntriesCount(): number {
+    return Object.values(this.patternSelectedTypeByDay).filter((v) => v !== null).length;
+  }
+
+  private patternEntriesToPayload(): { day_of_week: number; session_type_id: string }[] {
+    const entries: { day_of_week: number; session_type_id: string }[] = [];
+    for (const [day, stId] of Object.entries(this.patternSelectedTypeByDay)) {
+      if (stId !== null) {
+        entries.push({ day_of_week: Number(day), session_type_id: stId });
+      }
+    }
+    return entries;
   }
 
   protected toggleDebugPanel(): void {
@@ -1857,7 +1861,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step4: this.step4,
       step5: {
         patternEffectiveFrom: this.patternEffectiveFrom,
-        patternEntries: this.patternEntries,
+        patternEntries: this.patternEntriesToPayload(),
       },
       step6: this.step6,
       consentsReviewed: this.consentsReviewed,
@@ -2275,13 +2279,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       },
     };
 
-    if (this.patternEntries.length > 0) {
+    if (this.patternEntriesCount > 0) {
       const bp: any = {
         effective_from: this.patternEffectiveFrom || this.step1.start_date,
-        entries: this.patternEntries.map(e => ({
-          day_of_week: e.dayOfWeek,
-          session_type_id: e.sessionTypeId,
-        })),
+        entries: this.patternEntriesToPayload(),
       };
       if (this.patternEffectiveTo) {
         bp.effective_to = this.patternEffectiveTo;
@@ -2521,7 +2522,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private collectSessionPatternIssues(issues: FinalCompletionIssue[]): void {
-    if (this.isNewRegistration && this.currentStep === 'session-pattern' && this.patternEntries.length === 0) {
+    if (this.isNewRegistration && this.currentStep === 'session-pattern' && !this.hasPatternEntries) {
       issues.push({
         stepKey: 'session-pattern',
         field: 'pattern_entries',
@@ -2717,10 +2718,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.loadedSections.add('booking-pattern');
         if (current) {
           this.patternEffectiveTo = current.effective_to ?? '';
-          this.patternEntries = current.entries.map((e) => ({
-            dayOfWeek: e.day_of_week,
-            sessionTypeId: e.session_type.id,
-          }));
+          this.patternSelectedTypeByDay = {};
+          for (const e of current.entries) {
+            this.patternSelectedTypeByDay[e.day_of_week] = e.session_type.id;
+          }
           if (current.effective_from >= this.todayIso) {
             this.patternEffectiveFrom = current.effective_from;
           } else {
@@ -3115,7 +3116,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step5: {
         patternEffectiveFrom: this.patternEffectiveFrom,
         patternEffectiveTo: this.patternEffectiveTo,
-        patternEntries: [...this.patternEntries],
+        patternSelectedTypeByDay: { ...this.patternSelectedTypeByDay },
       },
       step6: { ...this.step6 },
       consentsReviewed: { ...this.consentsReviewed },
@@ -3185,7 +3186,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (draft.step5) {
       this.patternEffectiveFrom = draft.step5.patternEffectiveFrom ?? '';
       this.patternEffectiveTo = draft.step5.patternEffectiveTo ?? '';
-      this.patternEntries = draft.step5.patternEntries ? draft.step5.patternEntries.map(e => ({ ...e })) : [];
+      if (draft.step5.patternSelectedTypeByDay) {
+        this.patternSelectedTypeByDay = { ...draft.step5.patternSelectedTypeByDay };
+      } else if (draft.step5.patternEntries) {
+        this.patternSelectedTypeByDay = {};
+        for (const e of draft.step5.patternEntries) {
+          this.patternSelectedTypeByDay[e.dayOfWeek] = e.sessionTypeId;
+        }
+      }
     }
     if (draft.step6) {
       this.step6 = { ...this.step6, ...draft.step6 };
@@ -3332,7 +3340,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step4NoReasons = {};
     this.patternEffectiveFrom = '';
     this.patternEffectiveTo = '';
-    this.patternEntries = [];
+    this.patternSelectedTypeByDay = {};
     this.patternError = null;
     this.availableSessionTypes = [];
     this.sessionPatternLoading = false;

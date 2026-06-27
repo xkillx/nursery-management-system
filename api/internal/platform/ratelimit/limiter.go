@@ -6,7 +6,7 @@ import (
 )
 
 type entry struct {
-	count    int
+	count       int
 	windowStart time.Time
 }
 

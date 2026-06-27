@@ -9,12 +9,12 @@ import (
 type FundingType string
 
 const (
-	FundingTypeNone        FundingType = "none"
+	FundingTypeNone         FundingType = "none"
 	FundingTypeFifteenHours FundingType = "fifteen_hours"
-	FundingTypeThirtyHours FundingType = "thirty_hours"
-	FundingTypeTwoYearOld  FundingType = "two_year_old"
-	FundingTypeCustom      FundingType = "custom"
-	FundingTypeUnknown     FundingType = "unknown"
+	FundingTypeThirtyHours  FundingType = "thirty_hours"
+	FundingTypeTwoYearOld   FundingType = "two_year_old"
+	FundingTypeCustom       FundingType = "custom"
+	FundingTypeUnknown      FundingType = "unknown"
 )
 
 var validFundingTypes = map[FundingType]bool{
@@ -59,29 +59,29 @@ func (bs BenefitsStatus) Valid() bool {
 }
 
 type ChildFundingRecord struct {
-	ID                       uuid.UUID
-	TenantID                 uuid.UUID
-	BranchID                 uuid.UUID
-	ChildID                  uuid.UUID
-	FundingEnabled           bool
-	FundingType              FundingType
-	FundingModel             FundingModel
-	FundedHoursPerWeek       *float64
-	FundingStartDate         *time.Time
-	FundingEndDate           *time.Time
-	EligibilityCode          *string
-	EligibilityCodeValidated bool
-	EvidenceReceived         bool
-	BenefitsStatus           BenefitsStatus
-	BenefitUniversalCredit   bool
-	BenefitIncomeSupport     bool
+	ID                         uuid.UUID
+	TenantID                   uuid.UUID
+	BranchID                   uuid.UUID
+	ChildID                    uuid.UUID
+	FundingEnabled             bool
+	FundingType                FundingType
+	FundingModel               FundingModel
+	FundedHoursPerWeek         *float64
+	FundingStartDate           *time.Time
+	FundingEndDate             *time.Time
+	EligibilityCode            *string
+	EligibilityCodeValidated   bool
+	EvidenceReceived           bool
+	BenefitsStatus             BenefitsStatus
+	BenefitUniversalCredit     bool
+	BenefitIncomeSupport       bool
 	BenefitJobseekersAllowance bool
-	BenefitESAIncomeRelated  bool
-	BenefitChildTaxCredit    bool
-	BenefitOtherSupport      bool
-	OtherBenefitName         *string
-	BenefitNotes             *string
-	ManagerNotes             *string
-	CreatedAt                time.Time
-	UpdatedAt                time.Time
+	BenefitESAIncomeRelated    bool
+	BenefitChildTaxCredit      bool
+	BenefitOtherSupport        bool
+	OtherBenefitName           *string
+	BenefitNotes               *string
+	ManagerNotes               *string
+	CreatedAt                  time.Time
+	UpdatedAt                  time.Time
 }
