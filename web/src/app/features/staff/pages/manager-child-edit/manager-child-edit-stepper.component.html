@@ -2615,6 +2615,21 @@
                       </app-form-field>
                     }
                   }
+
+                  <app-form-field
+                    label="Benefit notes"
+                    labelFor="benefit_notes"
+                    hint="Notes about the child's benefit or fee support eligibility."
+                  >
+                    <textarea
+                      id="benefit_notes"
+                      name="benefit_notes"
+                      rows="3"
+                      [(ngModel)]="step6.benefit_notes"
+                      placeholder="e.g. Universal Credit awarded, pending confirmation"
+                      class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-theme-xs transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-brand-400"
+                    ></textarea>
+                  </app-form-field>
                 </div>
               </section>
 
