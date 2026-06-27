@@ -18,8 +18,9 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
-import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+
 
 type StatusFilter = 'all' | 'not_checked_in' | 'checked_in' | 'absent';
 type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
@@ -30,8 +31,8 @@ type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
     CommonModule,
     NgIcon,
     AlertComponent,
+    BadgeComponent,
     EmptyStateComponent,
-    LoadingStateComponent,
   ],
   providers: [
     provideIcons({
