@@ -160,14 +160,12 @@ export class AppSidebarComponent {
           label: 'People',
           items: [
             { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/manager/children/'] },
-            { label: 'Invites', path: ROLE_ROUTES.managerInvites, testId: 'staff-link-manager-invites', icon: 'invites' },
           ],
         },
         {
           label: 'Attendance',
           items: [
             { label: 'Attendance', path: ROLE_ROUTES.managerAttendance, testId: 'staff-link-manager-attendance', icon: 'attendance' },
-            { label: 'Attendance corrections', path: ROLE_ROUTES.managerAttendanceCorrections, testId: 'staff-link-manager-attendance-corrections', icon: 'attendance-corrections' },
           ],
         },
         {
