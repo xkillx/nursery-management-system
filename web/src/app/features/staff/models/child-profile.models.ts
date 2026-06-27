@@ -276,6 +276,8 @@ export interface ChildFundingRecord {
   eligibility_code_validated: boolean;
   evidence_received: boolean;
   benefits_status: BenefitsStatus;
+  benefits: string[];
+  other_benefit_name: string | null;
   benefit_notes: string | null;
   manager_notes: string | null;
   created_at: string;
@@ -293,6 +295,8 @@ export interface ChildFundingRecordInput {
   eligibility_code_validated: boolean;
   evidence_received: boolean;
   benefits_status: BenefitsStatus;
+  benefits: string[];
+  other_benefit_name: string | null;
   benefit_notes: string | null;
   manager_notes: string | null;
 }

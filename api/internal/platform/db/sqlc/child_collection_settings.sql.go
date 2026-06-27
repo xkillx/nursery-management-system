@@ -27,9 +27,24 @@ type ChildCollectionSettingGetByChildParams struct {
 	ChildID  pgtype.UUID
 }
 
-func (q *Queries) ChildCollectionSettingGetByChild(ctx context.Context, arg ChildCollectionSettingGetByChildParams) (ChildCollectionSetting, error) {
+type ChildCollectionSettingGetByChildRow struct {
+	ID                                      pgtype.UUID
+	TenantID                                pgtype.UUID
+	BranchID                                pgtype.UUID
+	ChildID                                 pgtype.UUID
+	Over18CollectionAcknowledged            bool
+	CollectionPassword                      pgtype.Text
+	CollectionPasswordUpdatedAt             pgtype.Timestamptz
+	CollectionPasswordUpdatedByUserID       pgtype.UUID
+	CollectionPasswordUpdatedByMembershipID pgtype.UUID
+	CreatedAt                               pgtype.Timestamptz
+	UpdatedAt                               pgtype.Timestamptz
+	CollectionPasswordHint                  pgtype.Text
+}
+
+func (q *Queries) ChildCollectionSettingGetByChild(ctx context.Context, arg ChildCollectionSettingGetByChildParams) (ChildCollectionSettingGetByChildRow, error) {
 	row := q.db.QueryRow(ctx, childCollectionSettingGetByChild, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildCollectionSetting
+	var i ChildCollectionSettingGetByChildRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -75,7 +90,22 @@ type ChildCollectionSettingSetPasswordParams struct {
 	CollectionPasswordUpdatedByMembershipID pgtype.UUID
 }
 
-func (q *Queries) ChildCollectionSettingSetPassword(ctx context.Context, arg ChildCollectionSettingSetPasswordParams) (ChildCollectionSetting, error) {
+type ChildCollectionSettingSetPasswordRow struct {
+	ID                                      pgtype.UUID
+	TenantID                                pgtype.UUID
+	BranchID                                pgtype.UUID
+	ChildID                                 pgtype.UUID
+	Over18CollectionAcknowledged            bool
+	CollectionPassword                      pgtype.Text
+	CollectionPasswordUpdatedAt             pgtype.Timestamptz
+	CollectionPasswordUpdatedByUserID       pgtype.UUID
+	CollectionPasswordUpdatedByMembershipID pgtype.UUID
+	CreatedAt                               pgtype.Timestamptz
+	UpdatedAt                               pgtype.Timestamptz
+	CollectionPasswordHint                  pgtype.Text
+}
+
+func (q *Queries) ChildCollectionSettingSetPassword(ctx context.Context, arg ChildCollectionSettingSetPasswordParams) (ChildCollectionSettingSetPasswordRow, error) {
 	row := q.db.QueryRow(ctx, childCollectionSettingSetPassword,
 		arg.TenantID,
 		arg.BranchID,
@@ -87,7 +117,7 @@ func (q *Queries) ChildCollectionSettingSetPassword(ctx context.Context, arg Chi
 		arg.CollectionPasswordUpdatedByUserID,
 		arg.CollectionPasswordUpdatedByMembershipID,
 	)
-	var i ChildCollectionSetting
+	var i ChildCollectionSettingSetPasswordRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -132,7 +162,22 @@ type ChildCollectionSettingUpsertParams struct {
 	CollectionPasswordHint       pgtype.Text
 }
 
-func (q *Queries) ChildCollectionSettingUpsert(ctx context.Context, arg ChildCollectionSettingUpsertParams) (ChildCollectionSetting, error) {
+type ChildCollectionSettingUpsertRow struct {
+	ID                                      pgtype.UUID
+	TenantID                                pgtype.UUID
+	BranchID                                pgtype.UUID
+	ChildID                                 pgtype.UUID
+	Over18CollectionAcknowledged            bool
+	CollectionPassword                      pgtype.Text
+	CollectionPasswordUpdatedAt             pgtype.Timestamptz
+	CollectionPasswordUpdatedByUserID       pgtype.UUID
+	CollectionPasswordUpdatedByMembershipID pgtype.UUID
+	CreatedAt                               pgtype.Timestamptz
+	UpdatedAt                               pgtype.Timestamptz
+	CollectionPasswordHint                  pgtype.Text
+}
+
+func (q *Queries) ChildCollectionSettingUpsert(ctx context.Context, arg ChildCollectionSettingUpsertParams) (ChildCollectionSettingUpsertRow, error) {
 	row := q.db.QueryRow(ctx, childCollectionSettingUpsert,
 		arg.ID,
 		arg.TenantID,
@@ -141,7 +186,7 @@ func (q *Queries) ChildCollectionSettingUpsert(ctx context.Context, arg ChildCol
 		arg.Over18CollectionAcknowledged,
 		arg.CollectionPasswordHint,
 	)
-	var i ChildCollectionSetting
+	var i ChildCollectionSettingUpsertRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,

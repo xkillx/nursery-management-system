@@ -151,6 +151,8 @@ type childFundingPayload struct {
 	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
 	EvidenceReceived         bool     `json:"evidence_received"`
 	BenefitsStatus           string   `json:"benefits_status"`
+	Benefits                 []string `json:"benefits"`
+	OtherBenefitName         *string  `json:"other_benefit_name"`
 	BenefitNotes             *string  `json:"benefit_notes"`
 	ManagerNotes             *string  `json:"manager_notes"`
 }
@@ -352,6 +354,8 @@ func mapChildFundingPayloadToInput(p *childFundingPayload) *application.ChildFun
 		EligibilityCodeValidated: p.EligibilityCodeValidated,
 		EvidenceReceived:         p.EvidenceReceived,
 		BenefitsStatus:           p.BenefitsStatus,
+		Benefits:                 p.Benefits,
+		OtherBenefitName:         p.OtherBenefitName,
 		BenefitNotes:             p.BenefitNotes,
 		ManagerNotes:             p.ManagerNotes,
 	}

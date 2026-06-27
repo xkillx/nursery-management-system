@@ -137,6 +137,8 @@ type ChildFundingRecordInput struct {
 	EligibilityCodeValidated bool
 	EvidenceReceived         bool
 	BenefitsStatus           string
+	Benefits                 []string
+	OtherBenefitName         *string
 	BenefitNotes             *string
 	ManagerNotes             *string
 }

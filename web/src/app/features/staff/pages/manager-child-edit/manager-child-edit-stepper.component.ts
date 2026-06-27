@@ -1654,6 +1654,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       eligibility_code_validated: false,
       evidence_received: false,
       benefits_status: this.step6.benefits_status as ChildFundingRecordInput['benefits_status'],
+      benefits: this.step6.benefits,
+      other_benefit_name: this.step6.other_benefit_name || null,
       benefit_notes: this.step6.benefit_notes || null,
       manager_notes: this.step6.manager_notes || null,
     };
@@ -2072,13 +2074,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (!this.step6) {
       return undefined;
     }
-    // TODO: Backend wiring — new fields (benefits array, other_benefit_name)
-    // may be ignored until the API type is updated.
-    const benefitParts = [
-      this.step6.benefit_notes,
-      this.step6.benefits.length ? `Benefits: ${this.step6.benefits.join(', ')}` : '',
-      this.step6.other_benefit_name ? `Other: ${this.step6.other_benefit_name}` : '',
-    ].filter(Boolean).join(' | ');
     return {
       funding_enabled: !this.step6.no_funding,
       funding_type: (this.step6?.funding_type ?? 'none') as any,
@@ -2090,7 +2085,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       eligibility_code_validated: false,
       evidence_received: false,
       benefits_status: (this.step6?.benefits_status ?? 'unknown') as any,
-      benefit_notes: benefitParts || null,
+      benefits: this.step6.benefits,
+      other_benefit_name: this.step6.other_benefit_name || null,
+      benefit_notes: this.step6.benefit_notes || null,
       manager_notes: this.step6?.manager_notes || null,
     };
   }
@@ -2992,8 +2989,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         funding_start_date: f.funding_start_date ?? '',
         funding_end_date: f.funding_end_date ?? '',
         benefits_status: f.benefits_status,
-        benefits: [],
-        other_benefit_name: '',
+        benefits: f.benefits ?? [],
+        other_benefit_name: f.other_benefit_name ?? '',
         benefit_notes: f.benefit_notes ?? '',
         manager_notes: f.manager_notes ?? '',
       };

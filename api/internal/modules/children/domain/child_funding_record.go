@@ -73,6 +73,13 @@ type ChildFundingRecord struct {
 	EligibilityCodeValidated bool
 	EvidenceReceived         bool
 	BenefitsStatus           BenefitsStatus
+	BenefitUniversalCredit   bool
+	BenefitIncomeSupport     bool
+	BenefitJobseekersAllowance bool
+	BenefitESAIncomeRelated  bool
+	BenefitChildTaxCredit    bool
+	BenefitOtherSupport      bool
+	OtherBenefitName         *string
 	BenefitNotes             *string
 	ManagerNotes             *string
 	CreatedAt                time.Time

@@ -739,7 +739,8 @@ func (r *ChildRepository) GetConsentByChild(ctx context.Context, tenantID, branc
 	if err != nil {
 		return nil, false, fmt.Errorf("get child consent: %w", err)
 	}
-	return mapConsentRow(row), true, nil
+	r2 := sqlc.ChildConsentGetByChildRow(row)
+	return mapConsentRow(r2), true, nil
 }
 
 func (r *ChildRepository) InsertConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
@@ -780,7 +781,8 @@ func (r *ChildRepository) InsertConsent(ctx context.Context, tx pgx.Tx, p *domai
 	if err != nil {
 		return nil, fmt.Errorf("insert child consent: %w", err)
 	}
-	return mapConsentRow(row), nil
+	r2 := sqlc.ChildConsentGetByChildRow(row)
+	return mapConsentRow(r2), nil
 }
 
 func (r *ChildRepository) UpdateConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
@@ -821,10 +823,11 @@ func (r *ChildRepository) UpdateConsent(ctx context.Context, tx pgx.Tx, p *domai
 	if err != nil {
 		return nil, fmt.Errorf("update child consent: %w", err)
 	}
-	return mapConsentRow(row), nil
+	r2 := sqlc.ChildConsentGetByChildRow(row)
+	return mapConsentRow(r2), nil
 }
 
-func mapConsentRow(row sqlc.ChildConsentRecord) *domain.ChildConsent {
+func mapConsentRow(row sqlc.ChildConsentGetByChildRow) *domain.ChildConsent {
 	return &domain.ChildConsent{
 		ID:                                   pgtypeUUIDToUUID(row.ID),
 		TenantID:                             pgtypeUUIDToUUID(row.TenantID),
@@ -883,22 +886,29 @@ func (r *ChildRepository) GetFundingByChild(ctx context.Context, tenantID, branc
 func (r *ChildRepository) UpsertFunding(ctx context.Context, tx pgx.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
 	q := sqlc.New(tx)
 	row, err := q.ChildFundingRecordUpsert(ctx, sqlc.ChildFundingRecordUpsertParams{
-		ID:                       uuidToPgtype(p.ID),
-		TenantID:                 uuidToPgtype(p.TenantID),
-		BranchID:                 uuidToPgtype(p.BranchID),
-		ChildID:                  uuidToPgtype(p.ChildID),
-		FundingEnabled:           p.FundingEnabled,
-		FundingType:              string(p.FundingType),
-		FundingModel:             string(p.FundingModel),
-		Column8:                  float64ToPgtypeNumeric(p.FundedHoursPerWeek),
-		Column9:                  timeToPgtypeDateStr(p.FundingStartDate),
-		Column10:                 timeToPgtypeDateStr(p.FundingEndDate),
-		Column11:                 stringPtrToText(p.EligibilityCode),
-		EligibilityCodeValidated: p.EligibilityCodeValidated,
-		EvidenceReceived:         p.EvidenceReceived,
-		BenefitsStatus:           string(p.BenefitsStatus),
-		Column15:                 stringPtrToText(p.BenefitNotes),
-		Column16:                 stringPtrToText(p.ManagerNotes),
+		ID:                         uuidToPgtype(p.ID),
+		TenantID:                   uuidToPgtype(p.TenantID),
+		BranchID:                   uuidToPgtype(p.BranchID),
+		ChildID:                    uuidToPgtype(p.ChildID),
+		FundingEnabled:             p.FundingEnabled,
+		FundingType:                string(p.FundingType),
+		FundingModel:               string(p.FundingModel),
+		Column8:                    float64ToPgtypeNumeric(p.FundedHoursPerWeek),
+		Column9:                    timeToPgtypeDateStr(p.FundingStartDate),
+		Column10:                   timeToPgtypeDateStr(p.FundingEndDate),
+		Column11:                   stringPtrToText(p.EligibilityCode),
+		EligibilityCodeValidated:   p.EligibilityCodeValidated,
+		EvidenceReceived:           p.EvidenceReceived,
+		BenefitsStatus:             string(p.BenefitsStatus),
+		BenefitUniversalCredit:     p.BenefitUniversalCredit,
+		BenefitIncomeSupport:       p.BenefitIncomeSupport,
+		BenefitJobseekersAllowance: p.BenefitJobseekersAllowance,
+		BenefitEsaIncomeRelated:    p.BenefitESAIncomeRelated,
+		BenefitChildTaxCredit:      p.BenefitChildTaxCredit,
+		BenefitOtherSupport:        p.BenefitOtherSupport,
+		Column21:                   stringPtrToText(p.OtherBenefitName),
+		Column22:                   stringPtrToText(p.BenefitNotes),
+		Column23:                   stringPtrToText(p.ManagerNotes),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert child funding: %w", err)
@@ -908,47 +918,61 @@ func (r *ChildRepository) UpsertFunding(ctx context.Context, tx pgx.Tx, p *domai
 
 func mapFundingGetRow(row sqlc.ChildFundingRecordGetByChildRow) *domain.ChildFundingRecord {
 	return &domain.ChildFundingRecord{
-		ID:                       pgtypeUUIDToUUID(row.ID),
-		TenantID:                 pgtypeUUIDToUUID(row.TenantID),
-		BranchID:                 pgtypeUUIDToUUID(row.BranchID),
-		ChildID:                  pgtypeUUIDToUUID(row.ChildID),
-		FundingEnabled:           row.FundingEnabled,
-		FundingType:              domain.FundingType(row.FundingType),
-		FundingModel:             domain.FundingModel(row.FundingModel),
-		FundedHoursPerWeek:       pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
-		FundingStartDate:         pgtypeDateToTimePtr(row.FundingStartDate),
-		FundingEndDate:           pgtypeDateToTimePtr(row.FundingEndDate),
-		EligibilityCode:          pgtypeTextToPtr(row.EligibilityCode),
-		EligibilityCodeValidated: row.EligibilityCodeValidated,
-		EvidenceReceived:         row.EvidenceReceived,
-		BenefitsStatus:           domain.BenefitsStatus(row.BenefitsStatus),
-		BenefitNotes:             pgtypeTextToPtr(row.BenefitNotes),
-		ManagerNotes:             pgtypeTextToPtr(row.ManagerNotes),
-		CreatedAt:                pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:                pgtypeTimestamptzToTime(row.UpdatedAt),
+		ID:                        pgtypeUUIDToUUID(row.ID),
+		TenantID:                  pgtypeUUIDToUUID(row.TenantID),
+		BranchID:                  pgtypeUUIDToUUID(row.BranchID),
+		ChildID:                   pgtypeUUIDToUUID(row.ChildID),
+		FundingEnabled:            row.FundingEnabled,
+		FundingType:               domain.FundingType(row.FundingType),
+		FundingModel:              domain.FundingModel(row.FundingModel),
+		FundedHoursPerWeek:        pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
+		FundingStartDate:          pgtypeDateToTimePtr(row.FundingStartDate),
+		FundingEndDate:            pgtypeDateToTimePtr(row.FundingEndDate),
+		EligibilityCode:           pgtypeTextToPtr(row.EligibilityCode),
+		EligibilityCodeValidated:  row.EligibilityCodeValidated,
+		EvidenceReceived:          row.EvidenceReceived,
+		BenefitsStatus:            domain.BenefitsStatus(row.BenefitsStatus),
+		BenefitUniversalCredit:    row.BenefitUniversalCredit,
+		BenefitIncomeSupport:      row.BenefitIncomeSupport,
+		BenefitJobseekersAllowance: row.BenefitJobseekersAllowance,
+		BenefitESAIncomeRelated:   row.BenefitEsaIncomeRelated,
+		BenefitChildTaxCredit:     row.BenefitChildTaxCredit,
+		BenefitOtherSupport:       row.BenefitOtherSupport,
+		OtherBenefitName:          pgtypeTextToPtr(row.OtherBenefitName),
+		BenefitNotes:              pgtypeTextToPtr(row.BenefitNotes),
+		ManagerNotes:              pgtypeTextToPtr(row.ManagerNotes),
+		CreatedAt:                 pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:                 pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 }
 
 func mapFundingUpsertRow(row sqlc.ChildFundingRecordUpsertRow) *domain.ChildFundingRecord {
 	return &domain.ChildFundingRecord{
-		ID:                       pgtypeUUIDToUUID(row.ID),
-		TenantID:                 pgtypeUUIDToUUID(row.TenantID),
-		BranchID:                 pgtypeUUIDToUUID(row.BranchID),
-		ChildID:                  pgtypeUUIDToUUID(row.ChildID),
-		FundingEnabled:           row.FundingEnabled,
-		FundingType:              domain.FundingType(row.FundingType),
-		FundingModel:             domain.FundingModel(row.FundingModel),
-		FundedHoursPerWeek:       pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
-		FundingStartDate:         pgtypeDateToTimePtr(row.FundingStartDate),
-		FundingEndDate:           pgtypeDateToTimePtr(row.FundingEndDate),
-		EligibilityCode:          pgtypeTextToPtr(row.EligibilityCode),
-		EligibilityCodeValidated: row.EligibilityCodeValidated,
-		EvidenceReceived:         row.EvidenceReceived,
-		BenefitsStatus:           domain.BenefitsStatus(row.BenefitsStatus),
-		BenefitNotes:             pgtypeTextToPtr(row.BenefitNotes),
-		ManagerNotes:             pgtypeTextToPtr(row.ManagerNotes),
-		CreatedAt:                pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:                pgtypeTimestamptzToTime(row.UpdatedAt),
+		ID:                        pgtypeUUIDToUUID(row.ID),
+		TenantID:                  pgtypeUUIDToUUID(row.TenantID),
+		BranchID:                  pgtypeUUIDToUUID(row.BranchID),
+		ChildID:                   pgtypeUUIDToUUID(row.ChildID),
+		FundingEnabled:            row.FundingEnabled,
+		FundingType:               domain.FundingType(row.FundingType),
+		FundingModel:              domain.FundingModel(row.FundingModel),
+		FundedHoursPerWeek:        pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
+		FundingStartDate:          pgtypeDateToTimePtr(row.FundingStartDate),
+		FundingEndDate:            pgtypeDateToTimePtr(row.FundingEndDate),
+		EligibilityCode:           pgtypeTextToPtr(row.EligibilityCode),
+		EligibilityCodeValidated:  row.EligibilityCodeValidated,
+		EvidenceReceived:          row.EvidenceReceived,
+		BenefitsStatus:            domain.BenefitsStatus(row.BenefitsStatus),
+		BenefitUniversalCredit:    row.BenefitUniversalCredit,
+		BenefitIncomeSupport:      row.BenefitIncomeSupport,
+		BenefitJobseekersAllowance: row.BenefitJobseekersAllowance,
+		BenefitESAIncomeRelated:   row.BenefitEsaIncomeRelated,
+		BenefitChildTaxCredit:     row.BenefitChildTaxCredit,
+		BenefitOtherSupport:       row.BenefitOtherSupport,
+		OtherBenefitName:          pgtypeTextToPtr(row.OtherBenefitName),
+		BenefitNotes:              pgtypeTextToPtr(row.BenefitNotes),
+		ManagerNotes:              pgtypeTextToPtr(row.ManagerNotes),
+		CreatedAt:                 pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:                 pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 }
 
@@ -970,7 +994,8 @@ func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tx pg
 	if err != nil {
 		return nil, fmt.Errorf("get child collection setting: %w", err)
 	}
-	return mapCollectionSettingRow(row), nil
+	r2 := sqlc.ChildCollectionSettingGetByChildRow(row)
+	return mapCollectionSettingRow(r2), nil
 }
 
 func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
@@ -986,7 +1011,8 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 	if err != nil {
 		return nil, fmt.Errorf("upsert child collection setting: %w", err)
 	}
-	return mapCollectionSettingRow(row), nil
+	r2 := sqlc.ChildCollectionSettingGetByChildRow(row)
+	return mapCollectionSettingRow(r2), nil
 }
 
 func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
@@ -1008,7 +1034,7 @@ func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
-func mapCollectionSettingRow(row sqlc.ChildCollectionSetting) *domain.ChildCollectionSetting {
+func mapCollectionSettingRow(row sqlc.ChildCollectionSettingGetByChildRow) *domain.ChildCollectionSetting {
 	return &domain.ChildCollectionSetting{
 		ID:                                pgtypeUUIDToUUID(row.ID),
 		TenantID:                          pgtypeUUIDToUUID(row.TenantID),

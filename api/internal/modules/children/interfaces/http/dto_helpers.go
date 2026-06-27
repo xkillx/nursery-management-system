@@ -418,6 +418,8 @@ type childFundingRequest struct {
 	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
 	EvidenceReceived         bool     `json:"evidence_received"`
 	BenefitsStatus           string   `json:"benefits_status"`
+	Benefits                 []string `json:"benefits"`
+	OtherBenefitName         *string  `json:"other_benefit_name"`
 	BenefitNotes             *string  `json:"benefit_notes"`
 	ManagerNotes             *string  `json:"manager_notes"`
 }
@@ -435,6 +437,8 @@ type childFundingResponse struct {
 	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
 	EvidenceReceived         bool     `json:"evidence_received"`
 	BenefitsStatus           string   `json:"benefits_status"`
+	Benefits                 []string `json:"benefits"`
+	OtherBenefitName         *string  `json:"other_benefit_name"`
 	BenefitNotes             *string  `json:"benefit_notes"`
 	ManagerNotes             *string  `json:"manager_notes"`
 	CreatedAt                string   `json:"created_at"`
@@ -453,6 +457,8 @@ func mapChildFundingRequest(req childFundingRequest) *application.ChildFundingRe
 		EligibilityCodeValidated: req.EligibilityCodeValidated,
 		EvidenceReceived:         req.EvidenceReceived,
 		BenefitsStatus:           req.BenefitsStatus,
+		Benefits:                 req.Benefits,
+		OtherBenefitName:         req.OtherBenefitName,
 		BenefitNotes:             req.BenefitNotes,
 		ManagerNotes:             req.ManagerNotes,
 	}
@@ -468,6 +474,25 @@ func toChildFundingResponse(p *domain.ChildFundingRecord) childFundingResponse {
 		s := p.FundingEndDate.Format("2006-01-02")
 		endDate = &s
 	}
+	benefits := make([]string, 0, 6)
+	if p.BenefitUniversalCredit {
+		benefits = append(benefits, "universal_credit")
+	}
+	if p.BenefitIncomeSupport {
+		benefits = append(benefits, "income_support")
+	}
+	if p.BenefitJobseekersAllowance {
+		benefits = append(benefits, "jobseekers_allowance")
+	}
+	if p.BenefitESAIncomeRelated {
+		benefits = append(benefits, "esa_income_related")
+	}
+	if p.BenefitChildTaxCredit {
+		benefits = append(benefits, "child_tax_credit")
+	}
+	if p.BenefitOtherSupport {
+		benefits = append(benefits, "other_support")
+	}
 	return childFundingResponse{
 		ID:                       p.ID.String(),
 		ChildID:                  p.ChildID.String(),
@@ -481,6 +506,8 @@ func toChildFundingResponse(p *domain.ChildFundingRecord) childFundingResponse {
 		EligibilityCodeValidated: p.EligibilityCodeValidated,
 		EvidenceReceived:         p.EvidenceReceived,
 		BenefitsStatus:           string(p.BenefitsStatus),
+		Benefits:                 benefits,
+		OtherBenefitName:         p.OtherBenefitName,
 		BenefitNotes:             p.BenefitNotes,
 		ManagerNotes:             p.ManagerNotes,
 		CreatedAt:                p.CreatedAt.UTC().Format(time.RFC3339),

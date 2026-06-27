@@ -282,12 +282,12 @@ type ChildCollectionSetting struct {
 	ChildID                                 pgtype.UUID
 	Over18CollectionAcknowledged            bool
 	CollectionPassword                      pgtype.Text
+	CollectionPasswordHint                  pgtype.Text
 	CollectionPasswordUpdatedAt             pgtype.Timestamptz
 	CollectionPasswordUpdatedByUserID       pgtype.UUID
 	CollectionPasswordUpdatedByMembershipID pgtype.UUID
 	CreatedAt                               pgtype.Timestamptz
 	UpdatedAt                               pgtype.Timestamptz
-	CollectionPasswordHint                  pgtype.Text
 }
 
 type ChildConsentRecord struct {
@@ -319,11 +319,11 @@ type ChildConsentRecord struct {
 	SignerName                           string
 	SignedDate                           pgtype.Date
 	PaperFormOnFile                      bool
+	InformationTruthfulnessDeclaration   bool
 	EnteredByUserID                      pgtype.UUID
 	EnteredByMembershipID                pgtype.UUID
 	CreatedAt                            pgtype.Timestamptz
 	UpdatedAt                            pgtype.Timestamptz
-	InformationTruthfulnessDeclaration   bool
 }
 
 type ChildContact struct {
@@ -345,24 +345,31 @@ type ChildContact struct {
 }
 
 type ChildFundingRecord struct {
-	ID                       pgtype.UUID
-	TenantID                 pgtype.UUID
-	BranchID                 pgtype.UUID
-	ChildID                  pgtype.UUID
-	CreatedAt                pgtype.Timestamptz
-	UpdatedAt                pgtype.Timestamptz
-	FundingEnabled           bool
-	FundingType              string
-	FundingModel             string
-	FundedHoursPerWeek       pgtype.Numeric
-	FundingStartDate         pgtype.Date
-	FundingEndDate           pgtype.Date
-	EligibilityCode          pgtype.Text
-	EligibilityCodeValidated bool
-	EvidenceReceived         bool
-	BenefitsStatus           string
-	BenefitNotes             pgtype.Text
-	ManagerNotes             pgtype.Text
+	ID                         pgtype.UUID
+	TenantID                   pgtype.UUID
+	BranchID                   pgtype.UUID
+	ChildID                    pgtype.UUID
+	CreatedAt                  pgtype.Timestamptz
+	UpdatedAt                  pgtype.Timestamptz
+	FundingEnabled             bool
+	FundingType                string
+	FundingModel               string
+	FundedHoursPerWeek         pgtype.Numeric
+	FundingStartDate           pgtype.Date
+	FundingEndDate             pgtype.Date
+	EligibilityCode            pgtype.Text
+	EligibilityCodeValidated   bool
+	EvidenceReceived           bool
+	BenefitsStatus             string
+	BenefitNotes               pgtype.Text
+	ManagerNotes               pgtype.Text
+	BenefitUniversalCredit     bool
+	BenefitIncomeSupport       bool
+	BenefitJobseekersAllowance bool
+	BenefitEsaIncomeRelated    bool
+	BenefitChildTaxCredit      bool
+	BenefitOtherSupport        bool
+	OtherBenefitName           pgtype.Text
 }
 
 type ChildHealthProfile struct {

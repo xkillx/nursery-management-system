@@ -4,6 +4,10 @@ SELECT id, tenant_id, branch_id, child_id,
        funded_hours_per_week, funding_start_date, funding_end_date,
        eligibility_code, eligibility_code_validated,
        evidence_received, benefits_status,
+       benefit_universal_credit, benefit_income_support,
+       benefit_jobseekers_allowance, benefit_esa_income_related,
+       benefit_child_tax_credit, benefit_other_support,
+       other_benefit_name,
        benefit_notes, manager_notes,
        created_at, updated_at
 FROM child_funding_records
@@ -16,6 +20,10 @@ INSERT INTO child_funding_records (
     funded_hours_per_week, funding_start_date, funding_end_date,
     eligibility_code, eligibility_code_validated,
     evidence_received, benefits_status,
+    benefit_universal_credit, benefit_income_support,
+    benefit_jobseekers_allowance, benefit_esa_income_related,
+    benefit_child_tax_credit, benefit_other_support,
+    other_benefit_name,
     benefit_notes, manager_notes
 )
 VALUES (
@@ -24,7 +32,11 @@ VALUES (
     $8::numeric, $9::date, $10::date,
     NULLIF($11, ''), $12,
     $13, $14,
-    NULLIF($15, ''), NULLIF($16, '')
+    $15, $16,
+    $17, $18,
+    $19, $20,
+    NULLIF($21, ''),
+    NULLIF($22, ''), NULLIF($23, '')
 )
 ON CONFLICT (child_id) DO UPDATE SET
     funding_enabled = EXCLUDED.funding_enabled,
@@ -37,6 +49,13 @@ ON CONFLICT (child_id) DO UPDATE SET
     eligibility_code_validated = EXCLUDED.eligibility_code_validated,
     evidence_received = EXCLUDED.evidence_received,
     benefits_status = EXCLUDED.benefits_status,
+    benefit_universal_credit = EXCLUDED.benefit_universal_credit,
+    benefit_income_support = EXCLUDED.benefit_income_support,
+    benefit_jobseekers_allowance = EXCLUDED.benefit_jobseekers_allowance,
+    benefit_esa_income_related = EXCLUDED.benefit_esa_income_related,
+    benefit_child_tax_credit = EXCLUDED.benefit_child_tax_credit,
+    benefit_other_support = EXCLUDED.benefit_other_support,
+    other_benefit_name = EXCLUDED.other_benefit_name,
     benefit_notes = EXCLUDED.benefit_notes,
     manager_notes = EXCLUDED.manager_notes,
     updated_at = now()
@@ -45,5 +64,9 @@ RETURNING id, tenant_id, branch_id, child_id,
           funded_hours_per_week, funding_start_date, funding_end_date,
           eligibility_code, eligibility_code_validated,
           evidence_received, benefits_status,
+          benefit_universal_credit, benefit_income_support,
+          benefit_jobseekers_allowance, benefit_esa_income_related,
+          benefit_child_tax_credit, benefit_other_support,
+          other_benefit_name,
           benefit_notes, manager_notes,
           created_at, updated_at;

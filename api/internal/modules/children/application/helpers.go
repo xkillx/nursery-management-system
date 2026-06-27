@@ -177,7 +177,7 @@ func buildChildFundingFromInput(tenantID, branchID, childID uuid.UUID, in *Child
 		}
 	}
 
-	return &domain.ChildFundingRecord{
+	r := &domain.ChildFundingRecord{
 		ID:                       uuid.New(),
 		TenantID:                 tenantID,
 		BranchID:                 branchID,
@@ -194,7 +194,25 @@ func buildChildFundingFromInput(tenantID, branchID, childID uuid.UUID, in *Child
 		BenefitsStatus:           bs,
 		BenefitNotes:             trimEmptyToNil(in.BenefitNotes),
 		ManagerNotes:             trimEmptyToNil(in.ManagerNotes),
+		OtherBenefitName:         trimEmptyToNil(in.OtherBenefitName),
 	}
+	for _, b := range in.Benefits {
+		switch b {
+		case "universal_credit":
+			r.BenefitUniversalCredit = true
+		case "income_support":
+			r.BenefitIncomeSupport = true
+		case "jobseekers_allowance":
+			r.BenefitJobseekersAllowance = true
+		case "esa_income_related":
+			r.BenefitESAIncomeRelated = true
+		case "child_tax_credit":
+			r.BenefitChildTaxCredit = true
+		case "other_support":
+			r.BenefitOtherSupport = true
+		}
+	}
+	return r
 }
 
 func trimEmptyToNil(s *string) *string {
@@ -250,6 +268,11 @@ func validateFundingInput(in *ChildFundingRecordInput, prefix string) []domainer
 		if err1 == nil && err2 == nil && !end.After(start) {
 			errs = append(errs, domainerrors.FieldError{Field: prefix + "funding_end_date", Message: "Must be after start date."})
 		}
+	}
+
+	bs := domain.BenefitsStatus(in.BenefitsStatus)
+	if bs == domain.BenefitsStatusYes && (len(in.Benefits) == 0) {
+		errs = append(errs, domainerrors.FieldError{Field: prefix + "benefits", Message: "Select at least one benefit type."})
 	}
 
 	return errs

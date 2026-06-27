@@ -36,9 +36,45 @@ type ChildConsentGetByChildParams struct {
 	ChildID  pgtype.UUID
 }
 
-func (q *Queries) ChildConsentGetByChild(ctx context.Context, arg ChildConsentGetByChildParams) (ChildConsentRecord, error) {
+type ChildConsentGetByChildRow struct {
+	ID                                   pgtype.UUID
+	TenantID                             pgtype.UUID
+	BranchID                             pgtype.UUID
+	ChildID                              pgtype.UUID
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     pgtype.Text
+	Plasters                             bool
+	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent            bool
+	GdprDataProcessingConsent            bool
+	AreaSencoLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              pgtype.Text
+	NotesExceptions                      pgtype.Text
+	SignerName                           string
+	SignedDate                           pgtype.Date
+	PaperFormOnFile                      bool
+	EnteredByUserID                      pgtype.UUID
+	EnteredByMembershipID                pgtype.UUID
+	CreatedAt                            pgtype.Timestamptz
+	UpdatedAt                            pgtype.Timestamptz
+	InformationTruthfulnessDeclaration   bool
+}
+
+func (q *Queries) ChildConsentGetByChild(ctx context.Context, arg ChildConsentGetByChildParams) (ChildConsentGetByChildRow, error) {
 	row := q.db.QueryRow(ctx, childConsentGetByChild, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildConsentRecord
+	var i ChildConsentGetByChildRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -158,7 +194,43 @@ type ChildConsentInsertParams struct {
 	InformationTruthfulnessDeclaration   bool
 }
 
-func (q *Queries) ChildConsentInsert(ctx context.Context, arg ChildConsentInsertParams) (ChildConsentRecord, error) {
+type ChildConsentInsertRow struct {
+	ID                                   pgtype.UUID
+	TenantID                             pgtype.UUID
+	BranchID                             pgtype.UUID
+	ChildID                              pgtype.UUID
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     pgtype.Text
+	Plasters                             bool
+	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent            bool
+	GdprDataProcessingConsent            bool
+	AreaSencoLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              pgtype.Text
+	NotesExceptions                      pgtype.Text
+	SignerName                           string
+	SignedDate                           pgtype.Date
+	PaperFormOnFile                      bool
+	EnteredByUserID                      pgtype.UUID
+	EnteredByMembershipID                pgtype.UUID
+	CreatedAt                            pgtype.Timestamptz
+	UpdatedAt                            pgtype.Timestamptz
+	InformationTruthfulnessDeclaration   bool
+}
+
+func (q *Queries) ChildConsentInsert(ctx context.Context, arg ChildConsentInsertParams) (ChildConsentInsertRow, error) {
 	row := q.db.QueryRow(ctx, childConsentInsert,
 		arg.ID,
 		arg.TenantID,
@@ -192,7 +264,7 @@ func (q *Queries) ChildConsentInsert(ctx context.Context, arg ChildConsentInsert
 		arg.EnteredByMembershipID,
 		arg.InformationTruthfulnessDeclaration,
 	)
-	var i ChildConsentRecord
+	var i ChildConsentInsertRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -312,7 +384,43 @@ type ChildConsentUpdateParams struct {
 	InformationTruthfulnessDeclaration   bool
 }
 
-func (q *Queries) ChildConsentUpdate(ctx context.Context, arg ChildConsentUpdateParams) (ChildConsentRecord, error) {
+type ChildConsentUpdateRow struct {
+	ID                                   pgtype.UUID
+	TenantID                             pgtype.UUID
+	BranchID                             pgtype.UUID
+	ChildID                              pgtype.UUID
+	UrgentMedicalTreatment               bool
+	UrgentMedicalTreatmentExceptions     pgtype.Text
+	Plasters                             bool
+	SafeguardingReportingAcknowledgement bool
+	InformationSharingConsent            bool
+	GdprDataProcessingConsent            bool
+	AreaSencoLiaison                     bool
+	HealthVisitorLiaison                 bool
+	TransitionDocuments                  bool
+	LocalOutings                         bool
+	FacePainting                         bool
+	ParentSuppliedSunCream               bool
+	ParentSuppliedNappyCream             bool
+	DevelopmentProfilePhotos             bool
+	NurseryDisplayBoards                 bool
+	PromotionalLiterature                bool
+	NurseryWebsite                       bool
+	StaffStudentCoursework               bool
+	SocialMedia                          bool
+	SocialMediaChannelNotes              pgtype.Text
+	NotesExceptions                      pgtype.Text
+	SignerName                           string
+	SignedDate                           pgtype.Date
+	PaperFormOnFile                      bool
+	EnteredByUserID                      pgtype.UUID
+	EnteredByMembershipID                pgtype.UUID
+	CreatedAt                            pgtype.Timestamptz
+	UpdatedAt                            pgtype.Timestamptz
+	InformationTruthfulnessDeclaration   bool
+}
+
+func (q *Queries) ChildConsentUpdate(ctx context.Context, arg ChildConsentUpdateParams) (ChildConsentUpdateRow, error) {
 	row := q.db.QueryRow(ctx, childConsentUpdate,
 		arg.TenantID,
 		arg.BranchID,
@@ -346,7 +454,7 @@ func (q *Queries) ChildConsentUpdate(ctx context.Context, arg ChildConsentUpdate
 		arg.EnteredByMembershipID,
 		arg.InformationTruthfulnessDeclaration,
 	)
-	var i ChildConsentRecord
+	var i ChildConsentUpdateRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
