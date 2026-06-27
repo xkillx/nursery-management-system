@@ -2098,9 +2098,14 @@
             </div>
 
             <div class="space-y-8 p-5 md:p-6">
-              @if (sessionPatternLoading) {
-                <app-loading-state variant="inline" label="Loading session types..." />
+              @if (sessionPatternLoading || (!isNewRegistration && bookingPatternLoading)) {
+                <app-loading-state variant="inline" [label]="bookingPatternLoading ? 'Loading booking pattern...' : 'Loading session types...'" />
               } @else {
+                @if (bookingPatternLoadError) {
+                  <div class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300" role="alert">
+                    {{ bookingPatternLoadError }}
+                  </div>
+                }
                 @if (patternError) {
                   <div class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300" role="alert">
                     {{ patternError }}
@@ -2114,8 +2119,9 @@
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">The date this pattern starts. Defaults to the child's start date. Add an optional end date if the pattern is fixed-term.</p>
                   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <app-form-field label="Effective from">
+                    <app-form-field label="Effective from" [error]="hasFieldIssue('pattern_effective_from') ? fieldIssueMessage('pattern_effective_from') : ''">
                       <app-date-picker
+                        id="pattern-effective-from"
                         name="patternEffectiveFrom"
                         [(ngModel)]="patternEffectiveFrom"
                       />
@@ -2129,12 +2135,15 @@
                   </div>
                 </section>
 
-                <section class="space-y-4 border-t border-gray-200 pt-8 dark:border-gray-800">
+                <section class="space-y-4 border-t border-gray-200 pt-8 dark:border-gray-800" data-focus-target="pattern-entries-grid">
                   <div class="flex items-center gap-3">
                     <ng-icon name="heroCalendarDays" size="20" class="shrink-0 text-brand-600" />
                     <h3 class="text-lg font-bold">Weekly Attendance</h3>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">Toggle each day and session type to set the weekly pattern.</p>
+                  @if (hasFieldIssue('pattern_entries')) {
+                    <p class="text-sm text-error-500" role="alert">{{ fieldIssueMessage('pattern_entries') }}</p>
+                  }
 
                   @if (availableSessionTypes.length === 0) {
                     <div class="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center dark:border-gray-800 dark:bg-gray-900/40">
@@ -2208,9 +2217,8 @@
                     <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                     Back
                   </app-button>
-                  <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="advanceFromSessionPattern()">
-                    Continue
-                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveSessionPattern(isNewRegistration)">
+                    {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
                   </app-button>
                 </div>
               }
@@ -2607,6 +2615,22 @@
                       </app-form-field>
                     }
                   }
+
+                  <app-form-field
+                    label="Benefit notes"
+                    labelFor="benefit_notes"
+                    hint="Notes about the child's benefit or fee support eligibility."
+                    className="mt-4"
+                  >
+                    <textarea
+                      id="benefit_notes"
+                      name="benefit_notes"
+                      rows="3"
+                      [(ngModel)]="step6.benefit_notes"
+                      placeholder="e.g. Universal Credit awarded, pending confirmation"
+                      class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-theme-xs transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-brand-400"
+                    ></textarea>
+                  </app-form-field>
                 </div>
               </section>
 
@@ -2640,10 +2664,16 @@
                   <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
                   Back
                 </app-button>
-                <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
-                  {{ isSaving ? 'Creating...' : 'Create child' }}
-                  <ng-icon name="heroCheck" size="20" aria-hidden="true" />
-                </app-button>
+                @if (isNewRegistration) {
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || patternEntries.length === 0" className="min-h-12 px-8 shadow-theme-md" (btnClick)="createChildFromSessionPatternStep()">
+                    {{ isSaving ? 'Creating...' : 'Create child' }}
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  </app-button>
+                } @else {
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveFundingBenefits()">
+                    {{ isSaving ? 'Saving...' : 'Save changes' }}
+                  </app-button>
+                }
               </div>
             </div>
           </div>

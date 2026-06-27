@@ -14,6 +14,7 @@ Multi-tenant nursery management (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQ
 - **Transactions:** always `txMgr.ExecTx(ctx, func(tx pgx.Tx) error{...})`. Never Begin/Commit/Rollback directly.
 - **Auth:** actor from `tenant.ActorFromGinContext(c)`. Never parse JWT manually.
 - **Error flow:** DomainError → MapDomainError() → HTTP. Auth: generic "Invalid credentials or session" only.
+- **Post-test Angular build:** After `npm test` in `web/`, run `ng build` (production) to confirm zero errors and zero warnings. Fail the task if any build diagnostic is emitted.
 
 ---
 
@@ -25,3 +26,5 @@ Multi-tenant nursery management (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQ
 | [Git Workflow](docs/agents/GIT-WORKFLOW.md) | FF-only merge, rebase conventions |
 | [Project Context](docs/agents/PROJECT-CONTEXT.md) | Post-MVP roadmap, current active work |
 | [Gotchas & Setup](docs/agents/GOTCHAS.md) | Environment prerequisites, common pitfalls |
+| [Documented Solutions](docs/solutions/) | Past bug fixes, best practices, and workflow patterns — search by category (e.g., `integration-issues/`) or YAML frontmatter (`module`, `tags`, `problem_type`) |
+| [Shared Vocabulary](CONCEPTS.md) | Domain entities, named processes, and status concepts with project-specific meaning |

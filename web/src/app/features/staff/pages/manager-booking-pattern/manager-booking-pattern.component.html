@@ -131,7 +131,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-base font-medium text-gray-900 dark:text-white">
-              {{ p.effectiveFrom }} → {{ p.effectiveTo ?? 'open' }}
+              {{ p.effective_from }} → {{ p.effective_to ?? 'open' }}
             </h3>
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ p.entries.length }} booked session{{ p.entries.length === 1 ? '' : 's' }}
@@ -139,7 +139,7 @@
             </p>
           </div>
           <button
-            *ngIf="isManager() && p.isCurrent && p.effectiveFrom >= todayString"
+            *ngIf="isManager() && p.is_current && p.effective_from >= todayString"
             type="button"
             (click)="startEdit(p)"
             class="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
@@ -159,11 +159,11 @@
             <ul *ngIf="entriesByDay(day.value).length > 0" class="mt-1 space-y-1">
               <li
                 *ngFor="let e of p.entries | slice:0"
-                [hidden]="e.dayOfWeek !== day.value"
+                [hidden]="e.day_of_week !== day.value"
                 class="flex items-center gap-1 text-gray-700 dark:text-gray-300"
               >
                 <ng-icon name="heroClock" class="h-3 w-3 text-gray-400"></ng-icon>
-                {{ e.sessionType.name }} ({{ e.sessionType.startTime }}–{{ e.sessionType.endTime }})
+                {{ e.session_type.name }} ({{ e.session_type.start_time }}–{{ e.session_type.end_time }})
               </li>
             </ul>
           </div>

@@ -108,8 +108,8 @@ export class ManagerBookingPatternComponent implements OnInit {
 
   get isEditable(): boolean {
     if (!this.editablePattern) return false;
-    if (!this.editablePattern.isCurrent) return false;
-    return this.editablePattern.effectiveFrom >= this.todayString;
+    if (!this.editablePattern.is_current) return false;
+    return this.editablePattern.effective_from >= this.todayString;
   }
 
   startCreate(): void {
@@ -125,10 +125,10 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.isCreating = false;
     this.isEditing = true;
     this.editablePattern = p;
-    this.effectiveFrom = p.effectiveFrom;
+    this.effectiveFrom = p.effective_from;
     this.entries = p.entries.map((e) => ({
-      dayOfWeek: e.dayOfWeek,
-      sessionTypeId: e.sessionType.id,
+      dayOfWeek: e.day_of_week,
+      sessionTypeId: e.session_type.id,
     }));
     this.fieldError = null;
   }
@@ -178,8 +178,8 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.pageError = null;
 
     const payload: BookingPatternInput = {
-      effectiveFrom: this.effectiveFrom,
-      entries: this.entries.map((e) => ({ dayOfWeek: e.dayOfWeek, sessionTypeId: e.sessionTypeId })),
+      effective_from: this.effectiveFrom,
+      entries: this.entries.map((e) => ({ day_of_week: e.dayOfWeek, session_type_id: e.sessionTypeId })),
     };
 
     const op = this.isCreating
@@ -222,7 +222,7 @@ export class ManagerBookingPatternComponent implements OnInit {
     this.staffApi.listChildBookingPatterns(this.childId).subscribe({
       next: (patterns) => {
         this.patterns = patterns;
-        this.current = patterns.find((p) => p.isCurrent) ?? null;
+        this.current = patterns.find((p) => p.is_current) ?? null;
         this.loading = false;
       },
       error: (err) => {
