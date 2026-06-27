@@ -1592,14 +1592,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
 
     const payload: BookingPatternInput = {
-      effectiveFrom: this.patternEffectiveFrom,
+      effective_from: this.patternEffectiveFrom,
       entries: this.patternEntries.map((e) => ({
-        dayOfWeek: e.dayOfWeek,
-        sessionTypeId: e.sessionTypeId,
+        day_of_week: e.dayOfWeek,
+        session_type_id: e.sessionTypeId,
       })),
     };
 
-    const isEditable = this.editablePattern?.isCurrent && this.editablePattern.effectiveFrom >= this.todayIso;
+    const isEditable = !!(this.editablePattern?.is_current && this.editablePattern.effective_from >= this.todayIso);
 
     const op = isEditable
       ? this.staffApi.updateChildBookingPattern(this.childId!, this.editablePattern!.id, payload)
@@ -2703,15 +2703,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     this.staffApi.listChildBookingPatterns(this.childId).subscribe({
       next: (patterns) => {
-        const current = patterns.find((p) => p.isCurrent) ?? null;
+        const current = patterns.find((p) => p.is_current) ?? null;
         this.editablePattern = current;
         this.loadedSections.add('booking-pattern');
         if (current) {
-          this.patternEffectiveFrom = current.effectiveFrom;
-          this.patternEffectiveTo = current.effectiveTo ?? '';
+          this.patternEffectiveFrom = current.effective_from;
+          this.patternEffectiveTo = current.effective_to ?? '';
           this.patternEntries = current.entries.map((e) => ({
-            dayOfWeek: e.dayOfWeek,
-            sessionTypeId: e.sessionType.id,
+            dayOfWeek: e.day_of_week,
+            sessionTypeId: e.session_type.id,
           }));
         }
         this.bookingPatternLoading = false;

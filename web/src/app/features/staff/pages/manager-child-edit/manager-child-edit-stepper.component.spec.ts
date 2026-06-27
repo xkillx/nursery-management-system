@@ -988,14 +988,14 @@ describe('ManagerChildEditStepperComponent', () => {
     function mockBookingPattern(overrides: Partial<BookingPattern> = {}): BookingPattern {
       return {
         id: 'pattern-1',
-        childId: 'child-1',
-        effectiveFrom: '2026-09-01',
-        effectiveTo: null,
-        isCurrent: true,
-        createdAt: '2026-06-01T00:00:00Z',
+        child_id: 'child-1',
+        effective_from: '2026-09-01',
+        effective_to: null,
+        is_current: true,
+        created_at: '2026-06-01T00:00:00Z',
         entries: [
-          { dayOfWeek: 1, sessionType: { id: 'st-1', name: 'Morning', startTime: '08:00', endTime: '13:00', isActive: true } },
-          { dayOfWeek: 3, sessionType: { id: 'st-2', name: 'Afternoon', startTime: '13:00', endTime: '18:00', isActive: true } },
+          { day_of_week: 1, session_type: { id: 'st-1', name: 'Morning', start_time: '08:00', end_time: '13:00', is_active: true } },
+          { day_of_week: 3, session_type: { id: 'st-2', name: 'Afternoon', start_time: '13:00', end_time: '18:00', is_active: true } },
         ],
         ...overrides,
       };
@@ -1026,8 +1026,8 @@ describe('ManagerChildEditStepperComponent', () => {
       component.saveSessionPattern(false);
 
       expect(updateSpy).toHaveBeenCalledWith('child-1', 'pattern-1', jasmine.objectContaining({
-        effectiveFrom: '2026-09-01',
-        entries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }],
+        effective_from: '2026-09-01',
+        entries: [{ day_of_week: 1, session_type_id: 'st-1' }],
       }));
     });
 
@@ -1044,7 +1044,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.saveSessionPattern(false);
 
       expect(createSpy).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-        effectiveFrom: '2026-10-01',
+        effective_from: '2026-10-01',
       }));
     });
 
