@@ -1582,6 +1582,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.patternEffectiveFrom && this.patternEffectiveFrom < this.todayIso) {
+      this.patternError = 'Effective date must be today or later.';
+      return;
+    }
+
     if (this.isNewRegistration) {
       if (advance) this.nextStep();
       return;
@@ -2707,12 +2712,16 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.editablePattern = current;
         this.loadedSections.add('booking-pattern');
         if (current) {
-          this.patternEffectiveFrom = current.effective_from;
           this.patternEffectiveTo = current.effective_to ?? '';
           this.patternEntries = current.entries.map((e) => ({
             dayOfWeek: e.day_of_week,
             sessionTypeId: e.session_type.id,
           }));
+          if (current.effective_from >= this.todayIso) {
+            this.patternEffectiveFrom = current.effective_from;
+          } else {
+            this.patternEffectiveFrom = this.todayIso;
+          }
         }
         this.bookingPatternLoading = false;
       },
