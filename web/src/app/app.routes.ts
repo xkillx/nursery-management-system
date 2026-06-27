@@ -270,7 +270,7 @@ export const routes: Routes = [
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Manager' },
+              breadcrumb: { label: 'Attendance' },
             },
             title: 'Attendance | Nursery Management',
           },
