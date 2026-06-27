@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 import { StaffApiService } from '../../data/staff-api.service';
@@ -11,6 +12,8 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ConsentWritePayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { BookingPattern } from '../../models/booking-pattern.models';
+import { ChildFundingRecordInput } from '../../models/child-profile.models';
 
 describe('ManagerChildEditStepperComponent', () => {
   let fixture: ComponentFixture<ManagerChildEditStepperComponent>;
@@ -760,15 +763,17 @@ describe('ManagerChildEditStepperComponent', () => {
       ]);
     });
 
-    it('edit-registration step list has four entries with the expected keys', () => {
+    it('edit-registration step list has six entries with the expected keys', () => {
       component.isNewRegistration = false;
       const keys = component.steps.map(s => s.key);
-      expect(component.steps.length).toBe(4);
+      expect(component.steps.length).toBe(6);
       expect(keys).toEqual([
         'child-basics',
         'medical-health',
         'contacts-collection',
         'consents-evidence',
+        'session-pattern',
+        'funding-benefits',
       ]);
     });
   });
@@ -976,6 +981,140 @@ describe('ManagerChildEditStepperComponent', () => {
       const text = headings.map(h => (h.textContent || '').trim()).join('|');
       expect(text).toContain('Child Profile');
       expect(text).not.toContain('Edit child');
+    });
+  });
+
+  describe('edit mode — steps 5-6', () => {
+    function mockBookingPattern(overrides: Partial<BookingPattern> = {}): BookingPattern {
+      return {
+        id: 'pattern-1',
+        childId: 'child-1',
+        effectiveFrom: '2026-09-01',
+        effectiveTo: null,
+        isCurrent: true,
+        createdAt: '2026-06-01T00:00:00Z',
+        entries: [
+          { dayOfWeek: 1, sessionType: { id: 'st-1', name: 'Morning', startTime: '08:00', endTime: '13:00', isActive: true } },
+          { dayOfWeek: 3, sessionType: { id: 'st-2', name: 'Afternoon', startTime: '13:00', endTime: '18:00', isActive: true } },
+        ],
+        ...overrides,
+      };
+    }
+
+    it('returns all 6 steps when isNewRegistration is false', () => {
+      component.isNewRegistration = false;
+      expect(component.steps.length).toBe(6);
+      expect(component.steps[4].key).toBe('session-pattern');
+      expect(component.steps[5].key).toBe('funding-benefits');
+    });
+
+    it('returns all 6 steps when isNewRegistration is true', () => {
+      component.isNewRegistration = true;
+      expect(component.steps.length).toBe(6);
+    });
+
+    it('saveSessionPattern with existing editable pattern calls updateChildBookingPattern', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.editablePattern = mockBookingPattern();
+      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
+      component.patternEffectiveFrom = '2026-09-01';
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const updateSpy = spyOn(staffApi, 'updateChildBookingPattern').and.returnValue(of(mockBookingPattern()));
+
+      component.saveSessionPattern(false);
+
+      expect(updateSpy).toHaveBeenCalledWith('child-1', 'pattern-1', jasmine.objectContaining({
+        effectiveFrom: '2026-09-01',
+        entries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }],
+      }));
+    });
+
+    it('saveSessionPattern without editable pattern calls createChildBookingPattern', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.editablePattern = null;
+      component.patternEntries = [{ dayOfWeek: 2, sessionTypeId: 'st-2' }];
+      component.patternEffectiveFrom = '2026-10-01';
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const createSpy = spyOn(staffApi, 'createChildBookingPattern').and.returnValue(of(mockBookingPattern()));
+
+      component.saveSessionPattern(false);
+
+      expect(createSpy).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+        effectiveFrom: '2026-10-01',
+      }));
+    });
+
+    it('saveSessionPattern with empty entries shows validation error and does not call API', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.patternEntries = [];
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const updateSpy = spyOn(staffApi, 'updateChildBookingPattern').and.stub();
+
+      component.saveSessionPattern(false);
+
+      expect(toastErrorSpy).toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('saveFundingBenefits calls patchChildFunding with correct payload', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.step6 = {
+        no_funding: false,
+        funding_type: 'fifteen_hours',
+        funding_model: 'term_time_only',
+        funded_hours_per_week: 15,
+        funding_start_date: '2026-09-01',
+        funding_end_date: '',
+        benefits_status: 'no',
+        benefits: [],
+        other_benefit_name: '',
+        benefit_notes: '',
+        manager_notes: 'Test note',
+      };
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const fundingSpy = spyOn(staffApi, 'patchChildFunding').and.returnValue(of({} as any));
+
+      component.saveFundingBenefits(false);
+
+      expect(fundingSpy).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
+        funding_enabled: true,
+        funding_type: 'fifteen_hours',
+      }));
+    });
+
+    it('saveFundingBenefits handles API error', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.step6 = {
+        no_funding: true,
+        funding_type: 'none',
+        funding_model: 'term_time_only',
+        funded_hours_per_week: null,
+        funding_start_date: '',
+        funding_end_date: '',
+        benefits_status: 'unknown',
+        benefits: [],
+        other_benefit_name: '',
+        benefit_notes: '',
+        manager_notes: '',
+      };
+
+      const staffApi = TestBed.inject(StaffApiService);
+      spyOn(staffApi, 'patchChildFunding').and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: { code: 'validation_error', message: 'Invalid funding type' } })),
+      );
+
+      component.saveFundingBenefits(false);
+
+      expect(toastErrorSpy).toHaveBeenCalled();
     });
   });
 });
