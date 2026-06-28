@@ -452,6 +452,13 @@ CREATE TABLE child_funding_records (
     benefits_status text NOT NULL DEFAULT 'unknown',
     benefit_notes text,
     manager_notes text,
+    benefit_universal_credit boolean NOT NULL DEFAULT false,
+    benefit_income_support boolean NOT NULL DEFAULT false,
+    benefit_jobseekers_allowance boolean NOT NULL DEFAULT false,
+    benefit_esa_income_related boolean NOT NULL DEFAULT false,
+    benefit_child_tax_credit boolean NOT NULL DEFAULT false,
+    benefit_other_support boolean NOT NULL DEFAULT false,
+    other_benefit_name text,
     CONSTRAINT child_funding_records_funding_type_check CHECK (funding_type IN ('none','fifteen_hours','thirty_hours','two_year_old','custom','unknown')),
     CONSTRAINT child_funding_records_funding_model_check CHECK (funding_model IN ('term_time_only','stretched','unknown')),
     CONSTRAINT child_funding_records_benefits_status_check CHECK (benefits_status IN ('no','yes','unknown')),
@@ -1379,7 +1386,7 @@ CREATE INDEX child_booking_patterns_branch_id ON child_booking_patterns USING bt
 
 CREATE INDEX child_booking_patterns_tenant_id ON child_booking_patterns USING btree (tenant_id);
 
-CREATE UNIQUE INDEX child_booking_pattern_entries_unique_day_session ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week, session_type_id);
+CREATE UNIQUE INDEX child_booking_pattern_entries_unique_day ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week);
 
 CREATE INDEX child_booking_pattern_entries_by_pattern ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week);
 
