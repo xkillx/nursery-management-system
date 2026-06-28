@@ -39,16 +39,16 @@ func AsHandler[T DomainEvent](handler TypedHandler[T]) Handler {
 	return &typedAdapter[T]{inner: handler}
 }
 
+type Emitter interface {
+	Emit(event DomainEvent)
+}
+
 type emitter struct {
 	events []DomainEvent
 }
 
 func (e *emitter) Emit(event DomainEvent) {
 	e.events = append(e.events, event)
-}
-
-type Emitter interface {
-	Emit(event DomainEvent)
 }
 
 type txManager interface {
@@ -71,11 +71,11 @@ func NewEventDispatcher(txMgr interface {
 	return &EventDispatcher{txMgr: txMgr, entries: make([]handlerEntry, 0)}
 }
 
-func (d *EventDispatcher) DispatchInTx(ctx context.Context, fn func(emitter Emitter) error) error {
+func (d *EventDispatcher) DispatchInTx(ctx context.Context, fn func(tx pgx.Tx, emitter Emitter) error) error {
 	em := &emitter{events: make([]DomainEvent, 0)}
 
 	err := d.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
-		if err := fn(em); err != nil {
+		if err := fn(tx, em); err != nil {
 			return err
 		}
 

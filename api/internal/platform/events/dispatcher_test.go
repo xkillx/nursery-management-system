@@ -53,7 +53,7 @@ func TestEventDispatcher_EmitsToRegisteredHandler(t *testing.T) {
 		return nil
 	}))
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "hello", At: time.Now()})
 		return nil
 	})
@@ -71,7 +71,7 @@ func TestEventDispatcher_NoRegisteredHandlerIsNoOp(t *testing.T) {
 
 	dispatcher := events.NewEventDispatcher(mgr)
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "no handler", At: time.Now()})
 		return nil
 	})
@@ -92,7 +92,7 @@ func TestEventDispatcher_HandlerFailureReturnsError(t *testing.T) {
 		return expectedErr
 	}))
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "fail", At: time.Now()})
 		return nil
 	})
@@ -118,7 +118,7 @@ func TestEventDispatcher_MultipleHandlersInOrder(t *testing.T) {
 		return nil
 	}))
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "multi", At: time.Now()})
 		return nil
 	})
@@ -141,7 +141,7 @@ func TestEventDispatcher_MainWorkFailureSkipsHandlers(t *testing.T) {
 		return nil
 	}))
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "fail", At: time.Now()})
 		return errors.New("main work failed")
 	})
@@ -168,7 +168,7 @@ func TestEventDispatcher_DifferentEventTypes(t *testing.T) {
 		return nil
 	}))
 
-	err := dispatcher.DispatchInTx(context.Background(), func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(context.Background(), func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "type1", At: time.Now()})
 		emitter.Emit(testEvent2{Count: 42, At: time.Now()})
 		return nil
@@ -221,7 +221,7 @@ func TestEventDispatcher_IntegrationTransactionalRollback(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := dispatcher.DispatchInTx(ctx, func(emitter events.Emitter) error {
+	err := dispatcher.DispatchInTx(ctx, func(tx pgx.Tx, emitter events.Emitter) error {
 		emitter.Emit(testEvent{Value: "integration", At: time.Now()})
 		return nil
 	})

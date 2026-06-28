@@ -11,8 +11,8 @@ import (
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
+	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/tenant"
-	"nursery-management-system/api/internal/platform/transaction"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
@@ -22,13 +22,13 @@ type MarkInactiveParams struct {
 }
 
 type MarkInactive struct {
-	repo  domain.Repository
-	txm   *transaction.Manager
-	audit *audit.Writer
+	repo       domain.Repository
+	dispatcher *events.EventDispatcher
+	audit      *audit.Writer
 }
 
-func NewMarkInactive(repo domain.Repository, txm *transaction.Manager, auditWriter *audit.Writer) *MarkInactive {
-	return &MarkInactive{repo: repo, txm: txm, audit: auditWriter}
+func NewMarkInactive(repo domain.Repository, dispatcher *events.EventDispatcher, auditWriter *audit.Writer) *MarkInactive {
+	return &MarkInactive{repo: repo, dispatcher: dispatcher, audit: auditWriter}
 }
 
 func (uc *MarkInactive) Execute(ctx context.Context, actor tenant.ActorContext, childID string, params MarkInactiveParams) (domain.Child, error) {
@@ -39,7 +39,7 @@ func (uc *MarkInactive) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	var result domain.Child
 
-	err = uc.txm.ExecTx(ctx, func(tx pgx.Tx) error {
+	err = uc.dispatcher.DispatchInTx(ctx, func(tx pgx.Tx, emitter events.Emitter) error {
 		child, found, fetchErr := uc.repo.GetByIDForUpdate(ctx, tx, actor.TenantID, actor.BranchID, id)
 		if fetchErr != nil {
 			return domainerrors.Internal(fmt.Errorf("fetch child for update: %w", fetchErr))
@@ -92,6 +92,12 @@ func (uc *MarkInactive) Execute(ctx context.Context, actor tenant.ActorContext, 
 		}); auditErr != nil {
 			return domainerrors.Internal(fmt.Errorf("audit child_marked_inactive: %w", auditErr))
 		}
+
+		emitter.Emit(domain.ChildDeactivated{
+			ChildID:    id,
+			ReasonCode: params.ReasonCode,
+			Occurred:   deactivatedAt,
+		})
 
 		updated, found, fetchErr := uc.repo.GetByIDForUpdate(ctx, tx, actor.TenantID, actor.BranchID, id)
 		if fetchErr != nil || !found {

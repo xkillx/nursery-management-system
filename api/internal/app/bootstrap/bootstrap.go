@@ -56,6 +56,7 @@ import (
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
+	"nursery-management-system/api/internal/platform/events"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
@@ -82,6 +83,7 @@ import (
 	sessiontemplatepostgres "nursery-management-system/api/internal/modules/sessiontemplates/infrastructure/postgres"
 	sessiontemplatehttphandler "nursery-management-system/api/internal/modules/sessiontemplates/interfaces/http"
 
+	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	termdomain "nursery-management-system/api/internal/modules/term/domain"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
@@ -162,6 +164,12 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	// Shared infrastructure
 	txManager := transaction.NewManager(pool)
 	auditWriter := audit.NewWriter()
+	eventDispatcher := events.NewEventDispatcher(txManager)
+
+	// Register no-op event handlers (ready for future side effects).
+	events.Register(eventDispatcher, events.TypedHandlerFunc[childdomain.ChildDeactivated](func(ctx context.Context, tx pgx.Tx, event childdomain.ChildDeactivated) error {
+		return nil
+	}))
 
 	// Children module
 	childRepo := childpostgres.NewChildRepository(pool)
@@ -174,7 +182,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewGetChild(childRepo),
 		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
 		childapp.NewUpdateChild(childRepo, auditWriter, txManager),
-		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
+		childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
 		childapp.NewGetProfile(childRepo),
 		childapp.NewUpdateProfile(childRepo, auditWriter, txManager),
@@ -411,7 +419,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	rejectChangeUC := termapp.NewRejectScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
 	terminateUC := termapp.NewTerminateTermUseCase(termRepo, txManager, auditWriter)
 	expireTermsUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txManager).
-		WithDeactivator(&childDeactivatorAdapter{markInactiveUC: childapp.NewMarkInactive(childRepo, txManager, auditWriter)})
+		WithDeactivator(&childDeactivatorAdapter{markInactiveUC: childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter)})
 	markPendingRenewalUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txManager)
 	_ = expireTermsUC
 	_ = markPendingRenewalUC
