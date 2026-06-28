@@ -177,7 +177,6 @@ export class AppSidebarComponent {
           items: [
             { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding', icon: 'funding' },
             { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run', icon: 'invoice-run' },
-            { label: 'Billing setup', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'billing-setup' },
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },
@@ -186,6 +185,7 @@ export class AppSidebarComponent {
           items: [
             { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/manager/rooms/'] },
             { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/manager/session-types/'] },
+            { label: 'Billing setup', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'billing-setup' },
           ],
         },
       ];
