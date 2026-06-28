@@ -19,17 +19,8 @@ type Handler struct {
 	overview *application.ListOverview
 }
 
-func NewHandler(get *application.GetProfile, upsert *application.UpsertProfile, overview *application.ListOverview) *Handler {
-	return &Handler{get: get, upsert: upsert, overview: overview}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		get:      h.get,
-		upsert:   h.upsert,
-		overview: h.overview,
-		logger:   logger,
-	}
+func NewHandler(get *application.GetProfile, upsert *application.UpsertProfile, overview *application.ListOverview, logger *slog.Logger) *Handler {
+	return &Handler{logger: logger, get: get, upsert: upsert, overview: overview}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {

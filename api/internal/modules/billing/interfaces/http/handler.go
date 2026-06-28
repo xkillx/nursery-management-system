@@ -42,8 +42,10 @@ func NewHandler(
 	listParentInvoices *application.ListParentInvoices,
 	getParentInvoice *application.GetParentInvoice,
 	updateSiteRate *application.UpdateSiteRateUseCase,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
+		logger:                logger,
 		preflight:             preflight,
 		generation:            generation,
 		listInvoices:          listInvoices,
@@ -54,22 +56,6 @@ func NewHandler(
 		listParentInvoices:    listParentInvoices,
 		getParentInvoice:      getParentInvoice,
 		updateSiteRate:        updateSiteRate,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		preflight:             h.preflight,
-		generation:            h.generation,
-		listInvoices:          h.listInvoices,
-		getInvoice:            h.getInvoice,
-		issueInvoice:          h.issueInvoice,
-		bulkIssueInvoices:     h.bulkIssueInvoices,
-		overrideAttendanceBlk: h.overrideAttendanceBlk,
-		listParentInvoices:    h.listParentInvoices,
-		getParentInvoice:      h.getParentInvoice,
-		updateSiteRate:        h.updateSiteRate,
-		logger:                logger,
 	}
 }
 

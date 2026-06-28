@@ -38,25 +38,17 @@ func NewHandler(
 	logout *application.LogoutUseCase,
 	switch_ *application.SwitchMembershipUseCase,
 	cfg config.Config,
+	recorder *metrics.Recorder,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
-		login:   login,
-		refresh: refresh,
-		logout:  logout,
-		switch_: switch_,
-		cfg:     cfg,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
-	return &Handler{
-		login:    h.login,
-		refresh:  h.refresh,
-		logout:   h.logout,
-		switch_:  h.switch_,
-		cfg:      h.cfg,
-		logger:   logger,
+		login:    login,
+		refresh:  refresh,
+		logout:   logout,
+		switch_:  switch_,
+		cfg:      cfg,
 		recorder: recorder,
+		logger:   logger,
 	}
 }
 

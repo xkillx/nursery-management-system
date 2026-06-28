@@ -21,16 +21,8 @@ type Handler struct {
 	logger        *slog.Logger
 }
 
-func NewHandler(createMapping *app.CreateMappingUseCase, endMapping *app.EndMappingUseCase) *Handler {
-	return &Handler{createMapping: createMapping, endMapping: endMapping}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		createMapping: h.createMapping,
-		endMapping:    h.endMapping,
-		logger:        logger,
-	}
+func NewHandler(createMapping *app.CreateMappingUseCase, endMapping *app.EndMappingUseCase, logger *slog.Logger) *Handler {
+	return &Handler{logger: logger, createMapping: createMapping, endMapping: endMapping}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {

@@ -46,6 +46,8 @@ func NewHandler(
 	handleWebhook *application.HandleStripeWebhook,
 	getManagerStatus *application.GetManagerPaymentStatus,
 	listManagerEvents *application.ListManagerPaymentEvents,
+	recorder *metrics.Recorder,
+	logger *slog.Logger,
 ) *Handler {
 	var hw HandleWebhookUseCase
 	if handleWebhook != nil {
@@ -56,17 +58,8 @@ func NewHandler(
 		handleWebhook:         hw,
 		getManagerStatus:      getManagerStatus,
 		listManagerEvents:     listManagerEvents,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
-	return &Handler{
-		createCheckoutSession: h.createCheckoutSession,
-		handleWebhook:         h.handleWebhook,
-		getManagerStatus:      h.getManagerStatus,
-		listManagerEvents:     h.listManagerEvents,
-		logger:                logger,
 		recorder:              recorder,
+		logger:                logger,
 	}
 }
 

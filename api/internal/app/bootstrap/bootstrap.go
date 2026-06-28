@@ -135,7 +135,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	refreshUC := authapp.NewRefreshUseCase(authRepo, authRepo, tokenManager)
 	logoutUC := authapp.NewLogoutUseCase(authRepo, tokenManager)
 	switchUC := authapp.NewSwitchMembershipUseCase(authRepo, authRepo, tokenManager)
-	authHandler := authhandler.NewHandler(loginUC, refreshUC, logoutUC, switchUC, cfg).WithObservability(logger, recorder)
+	authHandler := authhandler.NewHandler(loginUC, refreshUC, logoutUC, switchUC, cfg, recorder, logger)
 	authHandler.RegisterRoutes(api)
 
 	// Password reset module
@@ -151,7 +151,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	setPasswordUC := resetapp.NewSetNewPasswordUseCase(resetRepo, logger)
 	resetEmailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
 	resetIPLimiter := ratelimit.NewFixedWindowLimiter(20, 15*time.Minute)
-	resetHandler := resethandler.NewHandler(requestResetUC, setPasswordUC, resetEmailLimiter, resetIPLimiter).WithObservability(logger, recorder)
+	resetHandler := resethandler.NewHandler(requestResetUC, setPasswordUC, resetEmailLimiter, resetIPLimiter, recorder, logger)
 	resetHandler.RegisterRoutes(api)
 
 	// Middleware
@@ -201,7 +201,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewGetCurrentBookingPattern(childRepo, func() time.Time { return time.Now().UTC() }),
 		childapp.NewCreateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
 		childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-	).WithObservability(logger)
+		logger,
+	)
 
 	// Parent-Child Mappings module
 	mappingRepo := parentchildpostgres.NewParentChildMappingRepository(pool)
@@ -210,7 +211,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	mappingsHandler := parentchildhandler.NewHandler(
 		parentchildapp.NewCreateMappingUseCase(mappingRepo, auditWriter, txManager, membershipChecker, childScopeChecker),
 		parentchildapp.NewEndMappingUseCase(mappingRepo, auditWriter, txManager),
-	).WithObservability(logger)
+		logger,
+	)
 
 	// Attendance module
 	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
@@ -231,9 +233,10 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewListCorrectionSessions(attendanceRepo),
 		attendanceapp.NewListCorrectionHistory(attendanceRepo),
-	).WithObservability(logger)
+		logger,
+	)
 
-	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC).WithObservability(logger)
+	absenceHandler := absencehandler.NewHandler(markAbsentUC, clearMarkerUC, logger)
 
 	// Register people routes
 	childrenHandler.RegisterRoutes(protected)
@@ -254,7 +257,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		fundingapp.NewGetProfile(fundingRepo),
 		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter),
 		fundingapp.NewListOverview(fundingRepo),
-	).WithObservability(logger)
+		logger,
+	)
 	fundingHandler.RegisterRoutes(manager)
 
 	// Billing module
@@ -264,7 +268,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 	billingHandler := billinghandler.NewHandler(
 		billingapp.NewPreflightDraftInvoices(billingRepo),
-		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter).WithObservability(logger, recorder),
+		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
 		billingapp.NewListInvoices(billingRepo),
 		billingapp.NewGetInvoice(billingRepo),
 		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter),
@@ -273,7 +277,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		billingapp.NewListParentInvoices(billingRepo),
 		billingapp.NewGetParentInvoice(billingRepo),
 		updateSiteRateUC,
-	).WithObservability(logger)
+		logger,
+	)
 	billingHandler.RegisterRoutes(manager)
 
 	// Parent route group
@@ -316,7 +321,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		handleWebhookUC,
 		paymentsapp.NewGetManagerPaymentStatus(paymentsRepo.ManagerRepo()),
 		paymentsapp.NewListManagerPaymentEvents(paymentsRepo.ManagerRepo()),
-	).WithObservability(logger, recorder)
+		recorder,
+		logger,
+	)
 	paymentsHandler.RegisterParentRoutes(parent)
 	paymentsHandler.RegisterStripeRoutes(api)
 	paymentsHandler.RegisterManagerRoutes(manager)
@@ -332,7 +339,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	revokeInviteUC := inviteapp.NewRevokeInviteUseCase(inviteRepo, logger)
 	acceptInviteUC := inviteapp.NewAcceptInviteUseCase(inviteRepo, logger)
 	inviteIPLimiter := ratelimit.NewFixedWindowLimiter(10, 15*time.Minute)
-	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter).WithObservability(logger)
+	inviteHandler := invitehandler.NewHandler(createInviteUC, listInvitesUC, resendInviteUC, revokeInviteUC, acceptInviteUC, inviteTokenMgr, inviteIPLimiter, logger)
 	inviteHandler.RegisterPublicRoutes(api)
 	inviteHandler.RegisterManagerRoutes(manager)
 
@@ -346,8 +353,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	ownerDeactivateUC := ownerapp.NewDeactivateManagerAccessUseCase(ownerRepo)
 	ownerReactivateUC := ownerapp.NewReactivateManagerAccessUseCase(ownerRepo)
 	ownerUpdateBillingSetupUC := ownerapp.NewUpdateSiteBillingSetupUseCase(ownerRepo, auditWriter, txManager)
-	ownerHandler := ownerhandler.NewHandler(ownerSummariesUC, ownerListAccessUC, ownerGrantUC, ownerDeactivateUC, ownerReactivateUC).
-		WithObservability(logger, recorder).
+	ownerHandler := ownerhandler.NewHandler(ownerSummariesUC, ownerListAccessUC, ownerGrantUC, ownerDeactivateUC, ownerReactivateUC, recorder, logger).
 		WithUpdateBillingSetup(ownerUpdateBillingSetupUC)
 	owner := protected.Group("/owner")
 	owner.Use(httpserver.RequireRolesWithObservability(logger, recorder, "owner"))
@@ -362,7 +368,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	roomsGetUC := roomsapp.NewGetRoom(roomsRepo)
 	roomsArchiveUC := roomsapp.NewArchiveRoom(roomsRepo, txManager, auditWriter)
 	roomsReactivateUC := roomsapp.NewReactivateRoom(roomsRepo, txManager, auditWriter)
-	roomsHandler := roomshttphandler.NewHandler(roomsCreateUC, roomsUpdateUC, roomsListUC, roomsGetUC, roomsArchiveUC, roomsReactivateUC).WithObservability(logger)
+	roomsHandler := roomshttphandler.NewHandler(roomsCreateUC, roomsUpdateUC, roomsListUC, roomsGetUC, roomsArchiveUC, roomsReactivateUC, logger)
 	roomsHandler.RegisterRoutes(protected)
 
 	// Session types module
@@ -373,7 +379,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTypesGetUC := sessiontypeapp.NewGetSessionType(sessionTypeRepo)
 	sessionTypesArchiveUC := sessiontypeapp.NewArchiveSessionType(sessionTypeRepo, txManager, auditWriter)
 	sessionTypesReactivateUC := sessiontypeapp.NewReactivateSessionType(sessionTypeRepo, txManager, auditWriter)
-	sessionTypesHandler := sessiontypehttphandler.NewHandler(sessionTypesCreateUC, sessionTypesUpdateUC, sessionTypesListUC, sessionTypesGetUC, sessionTypesArchiveUC, sessionTypesReactivateUC).WithObservability(logger)
+	sessionTypesHandler := sessiontypehttphandler.NewHandler(sessionTypesCreateUC, sessionTypesUpdateUC, sessionTypesListUC, sessionTypesGetUC, sessionTypesArchiveUC, sessionTypesReactivateUC, logger)
 	sessionTypesHandler.RegisterRoutes(protected)
 
 	// Session templates module
@@ -386,7 +392,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTemplatesGetUC := sessiontemplateapp.NewGetSessionTemplate(sessionTemplateRepo)
 	sessionTemplatesArchiveUC := sessiontemplateapp.NewArchiveSessionTemplate(sessionTemplateRepo, txManager, auditWriter)
 	sessionTemplatesReactivateUC := sessiontemplateapp.NewReactivateSessionTemplate(sessionTemplateRepo, txManager, auditWriter)
-	sessionTemplatesHandler := sessiontemplatehttphandler.NewHandler(sessionTemplatesCreateUC, sessionTemplatesUpdateUC, sessionTemplatesListUC, sessionTemplatesGetUC, sessionTemplatesArchiveUC, sessionTemplatesReactivateUC).WithObservability(logger)
+	sessionTemplatesHandler := sessiontemplatehttphandler.NewHandler(sessionTemplatesCreateUC, sessionTemplatesUpdateUC, sessionTemplatesListUC, sessionTemplatesGetUC, sessionTemplatesArchiveUC, sessionTemplatesReactivateUC, logger)
 	sessionTemplatesHandler.RegisterRoutes(protected)
 
 	// Term module
@@ -413,7 +419,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	termHandler := termhttphandler.NewHandler(
 		createTermUC, getTermUC, getCurrentTermUC, listTermsUC, listExpiringUC,
 		requestChangeUC, approveChangeUC, rejectChangeUC, terminateUC,
-	).WithObservability(logger)
+		logger,
+	)
 	termHandler.RegisterManagerRoutes(manager)
 
 	return router

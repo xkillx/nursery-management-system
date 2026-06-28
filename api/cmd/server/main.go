@@ -69,7 +69,7 @@ func main() {
 		auditWriter := audit.NewWriter()
 		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
 		markPendingUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txMgr)
-		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter)
+		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter, logger, recorder)
 		lister := invoicerun.NewSystemTenantBranchLister(pool)
 		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
 		generateRunner := invoicerun.NewGenerateAdvanceInvoicesRunner(generateUC, lister)

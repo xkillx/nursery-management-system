@@ -34,7 +34,7 @@ func setupRouter() (*gin.Engine, *mockHandlerRepo, *mockHandlerEmail) {
 	emailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
 	ipLimiter := ratelimit.NewFixedWindowLimiter(20, 15*time.Minute)
 
-	handler := NewHandler(requestReset, setPassword, emailLimiter, ipLimiter)
+	handler := NewHandler(requestReset, setPassword, emailLimiter, ipLimiter, nil, nil)
 	api := r.Group("/api/v1")
 	handler.RegisterRoutes(api)
 

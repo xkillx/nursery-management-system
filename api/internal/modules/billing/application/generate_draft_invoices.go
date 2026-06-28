@@ -35,15 +35,13 @@ func NewGenerateDraftInvoices(
 	repo domain.BillingRepository,
 	txMgr *transaction.Manager,
 	auditW *audit.Writer,
+	logger *slog.Logger,
+	recorder *metrics.Recorder,
 ) *GenerateDraftInvoicesUseCase {
-	return &GenerateDraftInvoicesUseCase{repo: repo, txMgr: txMgr, auditW: auditW}
-}
-
-func (uc *GenerateDraftInvoicesUseCase) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *GenerateDraftInvoicesUseCase {
 	return &GenerateDraftInvoicesUseCase{
-		repo:     uc.repo,
-		txMgr:    uc.txMgr,
-		auditW:   uc.auditW,
+		repo:     repo,
+		txMgr:    txMgr,
+		auditW:   auditW,
 		logger:   logger,
 		recorder: recorder,
 	}

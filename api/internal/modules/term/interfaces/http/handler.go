@@ -38,8 +38,10 @@ func NewHandler(
 	approveChange *application.ApproveScheduleChangeUseCase,
 	rejectChange *application.RejectScheduleChangeUseCase,
 	terminate *application.TerminateTermUseCase,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
+		logger:         logger,
 		createTerm:     createTerm,
 		getTerm:        getTerm,
 		getCurrentTerm: getCurrentTerm,
@@ -49,21 +51,6 @@ func NewHandler(
 		approveChange:  approveChange,
 		rejectChange:   rejectChange,
 		terminate:      terminate,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		logger:         logger,
-		createTerm:     h.createTerm,
-		getTerm:        h.getTerm,
-		getCurrentTerm: h.getCurrentTerm,
-		listTerms:      h.listTerms,
-		listExpiring:   h.listExpiring,
-		requestChange:  h.requestChange,
-		approveChange:  h.approveChange,
-		rejectChange:   h.rejectChange,
-		terminate:      h.terminate,
 	}
 }
 

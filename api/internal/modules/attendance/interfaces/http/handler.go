@@ -29,19 +29,9 @@ func NewHandler(
 	correct *application.CorrectAttendance,
 	listSessions *application.ListCorrectionSessions,
 	listHistory *application.ListCorrectionHistory,
+	logger *slog.Logger,
 ) *Handler {
-	return &Handler{checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		checkIn:      h.checkIn,
-		checkOut:     h.checkOut,
-		correct:      h.correct,
-		listSessions: h.listSessions,
-		listHistory:  h.listHistory,
-		logger:       logger,
-	}
+	return &Handler{logger: logger, checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {

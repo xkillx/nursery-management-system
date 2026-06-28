@@ -28,23 +28,16 @@ func NewHandler(
 	setPassword *application.SetNewPasswordUseCase,
 	emailLimiter *ratelimit.FixedWindowLimiter,
 	ipLimiter *ratelimit.FixedWindowLimiter,
+	recorder *metrics.Recorder,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
 		requestReset: requestReset,
 		setPassword:  setPassword,
 		emailLimiter: emailLimiter,
 		ipLimiter:    ipLimiter,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
-	return &Handler{
-		requestReset: h.requestReset,
-		setPassword:  h.setPassword,
-		emailLimiter: h.emailLimiter,
-		ipLimiter:    h.ipLimiter,
-		logger:       logger,
 		recorder:     recorder,
+		logger:       logger,
 	}
 }
 

@@ -160,7 +160,7 @@ func htRouter(ur *htFakeUserRepo, sr *htFakeSessionRepo) *gin.Engine {
 	logout := application.NewLogoutUseCase(sr, tk)
 	sw := application.NewSwitchMembershipUseCase(ur, sr, tk)
 	cfg := config.Config{AppEnv: "local", JWTAccessTTLMin: 15, JWTRefreshTTLHours: 720}
-	h := NewHandler(login, refresh, logout, sw, cfg)
+	h := NewHandler(login, refresh, logout, sw, cfg, nil, nil)
 	h.RegisterRoutes(r.Group("/api/v1"))
 	return r
 }

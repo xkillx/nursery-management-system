@@ -36,8 +36,10 @@ func NewHandler(
 	accept *application.AcceptInviteUseCase,
 	tokenMgr *tokens.Manager,
 	ipLimiter *ratelimit.FixedWindowLimiter,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
+		logger:    logger,
 		create:    create,
 		list:      list,
 		resend:    resend,
@@ -45,19 +47,6 @@ func NewHandler(
 		accept:    accept,
 		tokenMgr:  tokenMgr,
 		ipLimiter: ipLimiter,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		create:    h.create,
-		list:      h.list,
-		resend:    h.resend,
-		revoke:    h.revoke,
-		accept:    h.accept,
-		tokenMgr:  h.tokenMgr,
-		ipLimiter: h.ipLimiter,
-		logger:    logger,
 	}
 }
 

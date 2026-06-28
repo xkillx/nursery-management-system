@@ -32,6 +32,8 @@ func NewHandler(
 	grant *application.GrantManagerAccessUseCase,
 	deactivate *application.DeactivateManagerAccessUseCase,
 	reactivate *application.ReactivateManagerAccessUseCase,
+	recorder *metrics.Recorder,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
 		summaries:  summaries,
@@ -39,19 +41,8 @@ func NewHandler(
 		grant:      grant,
 		deactivate: deactivate,
 		reactivate: reactivate,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *Handler {
-	return &Handler{
-		summaries:          h.summaries,
-		listAccess:         h.listAccess,
-		grant:              h.grant,
-		deactivate:         h.deactivate,
-		reactivate:         h.reactivate,
-		updateBillingSetup: h.updateBillingSetup,
-		logger:             logger,
-		recorder:           recorder,
+		recorder:   recorder,
+		logger:     logger,
 	}
 }
 

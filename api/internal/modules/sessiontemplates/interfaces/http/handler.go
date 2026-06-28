@@ -29,26 +29,16 @@ func NewHandler(
 	get *application.GetSessionTemplate,
 	archive *application.ArchiveSessionTemplate,
 	reactivate *application.ReactivateSessionTemplate,
+	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
+		logger:     logger,
 		create:     create,
 		update:     update,
 		list:       list,
 		get:        get,
 		archive:    archive,
 		reactivate: reactivate,
-	}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		create:     h.create,
-		update:     h.update,
-		list:       h.list,
-		get:        h.get,
-		archive:    h.archive,
-		reactivate: h.reactivate,
-		logger:     logger,
 	}
 }
 

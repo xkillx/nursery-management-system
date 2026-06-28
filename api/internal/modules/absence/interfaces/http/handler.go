@@ -18,16 +18,8 @@ type Handler struct {
 	clearMarker *application.ClearMarker
 }
 
-func NewHandler(markAbsent *application.MarkAbsent, clearMarker *application.ClearMarker) *Handler {
-	return &Handler{markAbsent: markAbsent, clearMarker: clearMarker}
-}
-
-func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
-	return &Handler{
-		markAbsent:  h.markAbsent,
-		clearMarker: h.clearMarker,
-		logger:      logger,
-	}
+func NewHandler(markAbsent *application.MarkAbsent, clearMarker *application.ClearMarker, logger *slog.Logger) *Handler {
+	return &Handler{logger: logger, markAbsent: markAbsent, clearMarker: clearMarker}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
