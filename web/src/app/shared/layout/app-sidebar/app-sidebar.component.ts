@@ -66,6 +66,7 @@ export type SidebarNavGroup = {
       heroBanknotes,
       heroBuildingOffice2,
       heroClock,
+      heroCurrencyPound,
       heroDocumentPlus,
       heroDocumentText,
     }),
