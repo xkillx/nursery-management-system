@@ -3,12 +3,30 @@ package domain
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type Tx = any
+
+var ErrSiteNotFound = errors.New("site not found")
+
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func (e *ValidationError) Error() string { return e.Message }
+
+// SiteRateRepository is the interface for updating a site's core hourly rate.
+// It follows the adapter pattern (KTD-2): defined in billing domain, implemented
+// in bootstrap by wrapping the owner module's repository.
+type SiteRateRepository interface {
+	UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error
+}
 
 type BillingRepository interface {
 	// Advance-pay generation: list active terms covering the billing month,

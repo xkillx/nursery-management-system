@@ -2,6 +2,7 @@ package httpbilling
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -27,6 +28,7 @@ type Handler struct {
 	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
 	listParentInvoices    *application.ListParentInvoices
 	getParentInvoice      *application.GetParentInvoice
+	updateSiteRate        *application.UpdateSiteRateUseCase
 }
 
 func NewHandler(
@@ -39,6 +41,7 @@ func NewHandler(
 	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase,
 	listParentInvoices *application.ListParentInvoices,
 	getParentInvoice *application.GetParentInvoice,
+	updateSiteRate *application.UpdateSiteRateUseCase,
 ) *Handler {
 	return &Handler{
 		preflight:             preflight,
@@ -50,6 +53,7 @@ func NewHandler(
 		overrideAttendanceBlk: overrideAttendanceBlk,
 		listParentInvoices:    listParentInvoices,
 		getParentInvoice:      getParentInvoice,
+		updateSiteRate:        updateSiteRate,
 	}
 }
 
@@ -64,6 +68,7 @@ func (h *Handler) WithObservability(logger *slog.Logger) *Handler {
 		overrideAttendanceBlk: h.overrideAttendanceBlk,
 		listParentInvoices:    h.listParentInvoices,
 		getParentInvoice:      h.getParentInvoice,
+		updateSiteRate:        h.updateSiteRate,
 		logger:                logger,
 	}
 }
@@ -76,6 +81,7 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
+	manager.PUT("/billing-setup", h.updateSiteRateHandler)
 }
 
 func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
@@ -252,6 +258,47 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toBulkIssueResponse(result))
+}
+
+func (h *Handler) updateSiteRateHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req struct {
+		CoreHourlyRateMinor int `json:"core_hourly_rate_minor"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		return
+	}
+
+	err := h.updateSiteRate.Execute(c.Request.Context(), actor, req.CoreHourlyRateMinor)
+	if err != nil {
+		var valErr *domain.ValidationError
+		switch {
+		case errors.As(err, &valErr):
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code":       "validation_error",
+				"message":    "Invalid request parameters.",
+				"request_id": httpserver.RequestIDFromContext(c),
+				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
+			})
+		case errors.Is(err, domain.ErrSiteNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+				"code":       "site_not_found",
+				"message":    "Site not found.",
+				"request_id": httpserver.RequestIDFromContext(c),
+			})
+		default:
+			h.handleError(c, err)
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func (h *Handler) listParentInvoicesHandler(c *gin.Context) {

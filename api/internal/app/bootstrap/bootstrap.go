@@ -259,6 +259,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Billing module
 	billingRepo := billingpostgres.NewRepository(pool)
+	ownerRepo := ownerpostgres.NewRepository(pool)
+	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
+	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 	billingHandler := billinghandler.NewHandler(
 		billingapp.NewPreflightDraftInvoices(billingRepo),
 		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter).WithObservability(logger, recorder),
@@ -269,6 +272,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
 		billingapp.NewListParentInvoices(billingRepo),
 		billingapp.NewGetParentInvoice(billingRepo),
+		updateSiteRateUC,
 	).WithObservability(logger)
 	billingHandler.RegisterRoutes(manager)
 
@@ -333,7 +337,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	inviteHandler.RegisterManagerRoutes(manager)
 
 	// Owner module (after invites for token infrastructure)
-	ownerRepo := ownerpostgres.NewRepository(pool)
+	// ownerRepo already declared above (before billing module)
 	ownerSummariesUC := ownerapp.NewGetSiteSummariesUseCase(ownerRepo)
 	ownerListAccessUC := ownerapp.NewListManagerAccessUseCase(ownerRepo)
 	ownerTokenAdapter := &ownerInviteTokenAdapter{gen: inviteTokenMgr}

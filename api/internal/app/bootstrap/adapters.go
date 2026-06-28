@@ -12,6 +12,7 @@ import (
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
+	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -103,6 +104,24 @@ func (a *absenceMarkerCheckerAdapter) HasActiveAbsenceMarker(ctx context.Context
 }
 
 var _ absencedomain.Repository = (*postgresabsence.AbsenceRepository)(nil)
+
+// siteRateUpdateAdapter wraps ownerpostgres.OwnerRepository as billingdomain.SiteRateRepository.
+// This avoids duplicating the SQL update in the billing postgres repo (KTD-2).
+type siteRateUpdateAdapter struct {
+	repo *ownerpostgres.OwnerRepository
+}
+
+func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error {
+	prev, _, err := a.repo.UpdateSiteCoreHourlyRate(ctx, tx, tenantID, branchID, rateMinor)
+	if err != nil {
+		return err
+	}
+	_ = prev
+	// The adapter already handles site-not-found via domain.ErrSiteNotFound.
+	return nil
+}
+
+var _ billingdomain.SiteRateRepository = (*siteRateUpdateAdapter)(nil)
 
 // ── Owner adapters ──────────────────────────────────────────────────────────
 
