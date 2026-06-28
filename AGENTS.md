@@ -13,6 +13,7 @@ Multi-tenant nursery management (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQ
 **Static analysis (Angular):** After any Angular file change, run `npm run lint` in `web/` and fix all lint errors. After `npm test`, run `ng build` (production) to confirm zero errors and warnings — fail the task if any build diagnostic is emitted.
 
 **Cross-cutting rules (applies to every task):**
+- **Plan first:** Before writing or modifying any code, create an implementation plan covering the approach, files affected, and any design decisions.
 - **Forbidden imports:** `domain` → postgres/gin/http/sql; `application` → sql/http/framework types; handler → direct DB
 - **Cross-module:** never import another module directly. Define interface in consumer, wire adapter in `bootstrap/adapters.go`.
 - **Transactions:** always `txMgr.ExecTx(ctx, func(tx pgx.Tx) error{...})`. Never Begin/Commit/Rollback directly.
