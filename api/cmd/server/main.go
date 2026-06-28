@@ -16,9 +16,7 @@ import (
 	"nursery-management-system/api/internal/platform/db"
 	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/logging"
-	"nursery-management-system/api/internal/platform/metrics"
 
-	"github.com/prometheus/client_golang/prometheus"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	invoicerun "nursery-management-system/api/internal/modules/invoicerun"
@@ -43,13 +41,6 @@ func main() {
 	}
 	logger = logging.NewJSONLogger(os.Stdout, logLevel)
 
-	var registry *prometheus.Registry
-	var recorder *metrics.Recorder
-	if cfg.MetricsEnabled {
-		registry = metrics.NewRegistry()
-		recorder = metrics.NewRecorder(registry)
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -71,23 +62,24 @@ func main() {
 		auditWriter := audit.NewWriter()
 		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
 		markPendingUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txMgr)
-		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter, logger, recorder)
+		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter, logger, nil)
 		lister := invoicerun.NewSystemTenantBranchLister(pool)
 		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
 		generateRunner := invoicerun.NewGenerateAdvanceInvoicesRunner(generateUC, lister)
 
 		var schedErr error
-		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, generateRunner, recorder)
+		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, generateRunner, nil)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)
 		}
 	}
 
-	router := bootstrap.BootstrapWithOptions(cfg, logger, pool, bootstrap.BootstrapOptions{
-		MetricsRegistry: registry,
-		MetricsRecorder: recorder,
-	})
+	router, err := bootstrap.InitializeApp(cfg, logger, pool)
+	if err != nil {
+		logger.Error("failed to initialize app", "error", err)
+		os.Exit(1)
+	}
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.APIPort,

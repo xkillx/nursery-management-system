@@ -56,6 +56,12 @@ migrate-create:
 sqlc-generate:
 	@cd "$(API_DIR)" && go tool sqlc generate
 
+wire-generate:
+	@cd "$(API_DIR)" && go tool wire gen ./internal/app/bootstrap/...
+
+.PHONY: generate
+generate: sqlc-generate wire-generate
+
 test-api-repositories:
 	@test -n "$$TEST_DATABASE_URL" || (echo "TEST_DATABASE_URL is required (use a disposable database)" && exit 1)
 	cd "$(API_DIR)" && go test \
