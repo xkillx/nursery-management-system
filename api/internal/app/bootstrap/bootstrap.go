@@ -83,6 +83,7 @@ import (
 	sessiontemplatepostgres "nursery-management-system/api/internal/modules/sessiontemplates/infrastructure/postgres"
 	sessiontemplatehttphandler "nursery-management-system/api/internal/modules/sessiontemplates/interfaces/http"
 
+	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	termdomain "nursery-management-system/api/internal/modules/term/domain"
@@ -168,6 +169,12 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	// Register no-op event handlers (ready for future side effects).
 	events.Register(eventDispatcher, events.TypedHandlerFunc[childdomain.ChildDeactivated](func(ctx context.Context, tx pgx.Tx, event childdomain.ChildDeactivated) error {
+		return nil
+	}))
+	events.Register(eventDispatcher, events.TypedHandlerFunc[billingdomain.InvoiceIssued](func(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceIssued) error {
+		return nil
+	}))
+	events.Register(eventDispatcher, events.TypedHandlerFunc[billingdomain.InvoiceMarkedOverdue](func(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceMarkedOverdue) error {
 		return nil
 	}))
 
@@ -279,7 +286,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
 		billingapp.NewListInvoices(billingRepo),
 		billingapp.NewGetInvoice(billingRepo),
-		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter),
+		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 		billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
 		billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
 		billingapp.NewListParentInvoices(billingRepo),

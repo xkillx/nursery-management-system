@@ -14,6 +14,7 @@ import (
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
+	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/logging"
 	"nursery-management-system/api/internal/platform/metrics"
 
@@ -63,7 +64,8 @@ func main() {
 	if cfg.SchedulerOwner {
 		billingRepo := billingpostgres.NewRepository(pool)
 		txMgr := transaction.NewManager(pool)
-		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, txMgr, func() time.Time { return time.Now().UTC() })
+		eventDispatcher := events.NewEventDispatcher(txMgr)
+		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
 
 		termRepo := termpostgres.NewTermRepository(pool)
 		auditWriter := audit.NewWriter()

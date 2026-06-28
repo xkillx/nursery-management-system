@@ -8,25 +8,22 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
+	"nursery-management-system/api/internal/platform/events"
 )
 
-type txManager interface {
-	ExecTx(ctx context.Context, fn func(tx pgx.Tx) error) error
-}
-
 type MarkOverdueInvoices struct {
-	repo   domain.BillingRepository
-	txMgr  txManager
-	now    func() time.Time
-	london *time.Location
+	repo       domain.BillingRepository
+	dispatcher *events.EventDispatcher
+	now        func() time.Time
+	london     *time.Location
 }
 
-func NewMarkOverdueInvoices(repo domain.BillingRepository, txMgr txManager, now func() time.Time) *MarkOverdueInvoices {
+func NewMarkOverdueInvoices(repo domain.BillingRepository, dispatcher *events.EventDispatcher, now func() time.Time) *MarkOverdueInvoices {
 	london, err := time.LoadLocation("Europe/London")
 	if err != nil {
 		panic(fmt.Sprintf("failed to load Europe/London timezone: %v", err))
 	}
-	return &MarkOverdueInvoices{repo: repo, txMgr: txMgr, now: now, london: london}
+	return &MarkOverdueInvoices{repo: repo, dispatcher: dispatcher, now: now, london: london}
 }
 
 func (uc *MarkOverdueInvoices) Execute(ctx context.Context) (domain.OverdueTransitionResult, error) {
@@ -46,7 +43,7 @@ func (uc *MarkOverdueInvoices) Execute(ctx context.Context) (domain.OverdueTrans
 	result.CurrentLondonDate = londonMidnight
 	result.CutoffUTC = cutoffUTC
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+	txErr := uc.dispatcher.DispatchInTx(ctx, func(tx pgx.Tx, emitter events.Emitter) error {
 		acquired, lockErr := uc.repo.TryAcquireOverdueTransitionJobLock(ctx, tx)
 		if lockErr != nil {
 			return fmt.Errorf("acquire overdue job lock: %w", lockErr)
@@ -62,6 +59,13 @@ func (uc *MarkOverdueInvoices) Execute(ctx context.Context) (domain.OverdueTrans
 			return fmt.Errorf("mark invoices overdue: %w", markErr)
 		}
 		result.Transitioned = transitioned
+
+		if len(transitioned) > 0 {
+			emitter.Emit(domain.InvoiceMarkedOverdue{
+				Transitioned: transitioned,
+				Occurred:     nowUTC,
+			})
+		}
 		return nil
 	})
 

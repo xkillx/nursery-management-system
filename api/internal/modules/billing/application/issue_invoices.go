@@ -13,23 +13,26 @@ import (
 	"nursery-management-system/api/internal/modules/billing/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
+	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/transaction"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
 type IssueInvoice struct {
-	repo   domain.BillingRepository
-	txMgr  *transaction.Manager
-	auditW *audit.Writer
+	repo       domain.BillingRepository
+	txMgr      *transaction.Manager
+	auditW     *audit.Writer
+	dispatcher *events.EventDispatcher
 }
 
 func NewIssueInvoice(
 	repo domain.BillingRepository,
 	txMgr *transaction.Manager,
 	auditW *audit.Writer,
+	dispatcher *events.EventDispatcher,
 ) *IssueInvoice {
-	return &IssueInvoice{repo: repo, txMgr: txMgr, auditW: auditW}
+	return &IssueInvoice{repo: repo, txMgr: txMgr, auditW: auditW, dispatcher: dispatcher}
 }
 
 func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, confirm bool) (domain.IssueInvoiceResult, error) {
@@ -46,7 +49,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	var result domain.IssueInvoiceResult
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+	txErr := uc.dispatcher.DispatchInTx(ctx, func(tx pgx.Tx, emitter events.Emitter) error {
 		candidate, found, lockErr := uc.repo.GetInvoiceForIssueForUpdate(ctx, tx, actor.TenantID, actor.BranchID, invoiceID)
 		if lockErr != nil {
 			return fmt.Errorf("lock invoice for issue: %w", lockErr)
@@ -140,6 +143,11 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 		}); compErr != nil {
 			return fmt.Errorf("complete issue run: %w", compErr)
 		}
+
+		emitter.Emit(domain.InvoiceIssued{
+			InvoiceID: invoiceID,
+			Occurred:  issueTime,
+		})
 
 		result = domain.IssueInvoiceResult{
 			InvoiceID:     invoiceID,
