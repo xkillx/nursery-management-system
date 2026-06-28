@@ -17,6 +17,7 @@ import {
   heroBanknotes,
   heroBuildingOffice2,
   heroClock,
+  heroCurrencyPound,
   heroDocumentPlus,
   heroDocumentText,
 } from '@ng-icons/heroicons/outline';
@@ -31,7 +32,8 @@ export type SidebarIcon =
   | 'invoice-run'
   | 'invoices'
   | 'rooms'
-  | 'session-types';
+  | 'session-types'
+  | 'billing-setup';
 
 export type SidebarNavItem = {
   label: string;
@@ -87,6 +89,7 @@ export class AppSidebarComponent {
     invoices: 'heroDocumentText',
     rooms: 'heroBuildingOffice2',
     'session-types': 'heroClock',
+    'billing-setup': 'heroCurrencyPound',
   };
 
   private subscription: Subscription = new Subscription();
@@ -173,6 +176,7 @@ export class AppSidebarComponent {
           items: [
             { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding', icon: 'funding' },
             { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run', icon: 'invoice-run' },
+            { label: 'Billing setup', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'billing-setup' },
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },
