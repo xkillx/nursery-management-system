@@ -699,11 +699,11 @@ export class StaffApiService {
   }
 
   getSiteRate(): Observable<{ core_hourly_rate_minor: number; has_rate: boolean }> {
-    return this.http.get<{ core_hourly_rate_minor: number; has_rate: boolean }>(apiUrl('/manager/billing-setup'));
+    return this.http.get<{ core_hourly_rate_minor: number; has_rate: boolean }>(apiUrl('/billing-setup'));
   }
 
   updateSiteRate(coreHourlyRateMinor: number): Observable<void> {
-    return this.http.put<void>(apiUrl('/manager/billing-setup'), {
+    return this.http.put<void>(apiUrl('/billing-setup'), {
       core_hourly_rate_minor: coreHourlyRateMinor,
     });
   }
