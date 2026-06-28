@@ -2050,3 +2050,133 @@ type invoiceRunExceptionResponseTest struct {
 	ChildFirstName string   `json:"child_first_name"`
 	BlockerCodes   []string `json:"blocker_codes"`
 }
+
+// ── Billing Setup Tests ────────────────────────────────────────────────────
+
+type billingSetupResponse struct {
+	CoreHourlyRateMinor int  `json:"core_hourly_rate_minor"`
+	HasRate             bool `json:"has_rate"`
+}
+
+func TestBillingSetupRouteInventory(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	have := make(map[string]struct{})
+	for _, route := range h.router.Routes() {
+		have[route.Method+" "+route.Path] = struct{}{}
+	}
+
+	for _, want := range []string{
+		"GET /api/v1/billing-setup",
+		"PUT /api/v1/billing-setup",
+	} {
+		if _, ok := have[want]; !ok {
+			t.Fatalf("expected route %s to be registered", want)
+		}
+	}
+}
+
+func TestBillingSetupUnauthenticated(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/billing-setup", "", "")
+	requireStatus(t, w, http.StatusUnauthorized)
+
+	w = doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", "", `{"core_hourly_rate_minor":1500}`)
+	requireStatus(t, w, http.StatusUnauthorized)
+}
+
+func TestBillingSetupRoleGuards(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	for _, token := range []string{h.practitionerToken, h.parentToken} {
+		w := doRequest(t, h.router, http.MethodGet, "/api/v1/billing-setup", token, "")
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+
+		w = doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", token, `{"core_hourly_rate_minor":1500}`)
+		requireStatus(t, w, http.StatusForbidden)
+		requireErrorCode(t, w, "forbidden_role")
+	}
+}
+
+func TestBillingSetupGetInitialNoRate(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodGet, "/api/v1/billing-setup", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp billingSetupResponse
+	decodeJSON(t, w, &resp)
+	if resp.HasRate {
+		t.Fatal("expected has_rate=false when no rate is set")
+	}
+	if resp.CoreHourlyRateMinor != 0 {
+		t.Fatalf("expected core_hourly_rate_minor=0, got %d", resp.CoreHourlyRateMinor)
+	}
+}
+
+func TestBillingSetupPutValidRate(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":1500}`)
+	requireStatus(t, w, http.StatusNoContent)
+}
+
+func TestBillingSetupPutZeroRate(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":0}`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+
+	w = doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":-100}`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+}
+
+func TestBillingSetupPutInvalidJSON(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `not-json`)
+	requireStatus(t, w, http.StatusBadRequest)
+	requireErrorCode(t, w, "validation_error")
+}
+
+func TestBillingSetupGetAfterPutReturnsRate(t *testing.T) {
+	h := setupBillingHarness(t)
+
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":2500}`)
+	requireStatus(t, w, http.StatusNoContent)
+
+	w = doRequest(t, h.router, http.MethodGet, "/api/v1/billing-setup", h.managerToken, "")
+	requireStatus(t, w, http.StatusOK)
+
+	var resp billingSetupResponse
+	decodeJSON(t, w, &resp)
+	if !resp.HasRate {
+		t.Fatal("expected has_rate=true after setting rate")
+	}
+	if resp.CoreHourlyRateMinor != 2500 {
+		t.Fatalf("expected core_hourly_rate_minor=2500, got %d", resp.CoreHourlyRateMinor)
+	}
+}
+
+func TestBillingSetupAuditLogged(t *testing.T) {
+	h := setupBillingHarness(t)
+	ctx := context.Background()
+
+	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":3000}`)
+	requireStatus(t, w, http.StatusNoContent)
+
+	var auditCount int
+	err := h.pool.QueryRow(ctx,
+		"SELECT count(*) FROM audit_logs WHERE tenant_id = $1 AND action_type = 'site_core_hourly_rate_updated'",
+		h.tenantID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("query audit logs: %v", err)
+	}
+	if auditCount != 1 {
+		t.Fatalf("expected 1 audit log entry, got %d", auditCount)
+	}
+}
