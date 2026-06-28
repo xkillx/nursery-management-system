@@ -173,7 +173,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		childapp.NewListChildren(childRepo),
 		childapp.NewGetChild(childRepo),
 		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-		childapp.NewUpdateChild(childRepo, auditWriter, pool),
+		childapp.NewUpdateChild(childRepo, auditWriter, txManager),
 		childapp.NewMarkInactive(childRepo, txManager, auditWriter),
 		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
 		childapp.NewGetProfile(childRepo),
@@ -356,8 +356,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	roomsUpdateUC := roomsapp.NewUpdateRoom(roomsRepo, roomsSiteChecker)
 	roomsListUC := roomsapp.NewListRooms(roomsRepo)
 	roomsGetUC := roomsapp.NewGetRoom(roomsRepo)
-	roomsArchiveUC := roomsapp.NewArchiveRoom(roomsRepo, txManager, auditWriter, pool)
-	roomsReactivateUC := roomsapp.NewReactivateRoom(roomsRepo, txManager, auditWriter, pool)
+	roomsArchiveUC := roomsapp.NewArchiveRoom(roomsRepo, txManager, auditWriter)
+	roomsReactivateUC := roomsapp.NewReactivateRoom(roomsRepo, txManager, auditWriter)
 	roomsHandler := roomshttphandler.NewHandler(roomsCreateUC, roomsUpdateUC, roomsListUC, roomsGetUC, roomsArchiveUC, roomsReactivateUC).WithObservability(logger)
 	roomsHandler.RegisterRoutes(protected)
 

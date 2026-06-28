@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/rooms/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -17,11 +16,10 @@ type ArchiveRoom struct {
 	repo  domain.Repository
 	txMgr TxManager
 	audit *audit.Writer
-	pool  *pgxpool.Pool
 }
 
-func NewArchiveRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer, pool *pgxpool.Pool) *ArchiveRoom {
-	return &ArchiveRoom{repo: repo, txMgr: txMgr, audit: auditWriter, pool: pool}
+func NewArchiveRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer) *ArchiveRoom {
+	return &ArchiveRoom{repo: repo, txMgr: txMgr, audit: auditWriter}
 }
 
 func (uc *ArchiveRoom) Execute(ctx context.Context, actor RoomActor, siteID, roomID uuid.UUID) error {

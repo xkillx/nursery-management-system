@@ -139,6 +139,56 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 	return ct, nil
 }
 
+func (r *ChildRepository) UpdateWithTx(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
+	if len(fields) == 0 {
+		return 0, nil
+	}
+
+	params := sqlc.ChildrenUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	}
+
+	if v, ok := fields["first_name"]; ok {
+		params.SetFirstName = int32(1)
+		params.FirstName = v.(string)
+	}
+	if v, ok := fields["middle_name"]; ok {
+		params.SetMiddleName = int32(1)
+		params.MiddleName = v.(string)
+	}
+	if v, ok := fields["last_name"]; ok {
+		params.SetLastName = int32(1)
+		params.LastName = v.(string)
+	}
+	if v, ok := fields["date_of_birth"]; ok {
+		params.SetDateOfBirth = int32(1)
+		params.DateOfBirth = timeToPgtypeDate(v.(time.Time))
+	}
+	if v, ok := fields["start_date"]; ok {
+		params.SetStartDate = int32(1)
+		params.StartDate = timeToPgtypeDate(v.(time.Time))
+	}
+	if v, ok := fields["end_date"]; ok {
+		params.SetEndDate = int32(1)
+		if t, ok := v.(time.Time); ok {
+			params.EndDate = timeToPgtypeDate(t)
+		}
+	}
+	if v, ok := fields["notes"]; ok {
+		params.SetNotes = int32(1)
+		params.Notes = v.(string)
+	}
+
+	q := sqlc.New(tx.(pgx.Tx))
+	ct, err := q.ChildrenUpdate(ctx, params)
+	if err != nil {
+		return 0, fmt.Errorf("update child with tx: %w", err)
+	}
+	return ct, nil
+}
+
 func (r *ChildRepository) MarkInactive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	q := sqlc.New(tx.(pgx.Tx))
 	return q.ChildrenMarkInactive(ctx, sqlc.ChildrenMarkInactiveParams{

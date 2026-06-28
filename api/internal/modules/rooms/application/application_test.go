@@ -292,7 +292,7 @@ func TestArchiveRoom_Success(t *testing.T) {
 	}
 	txMgr := &fakeTxManager{}
 
-	uc := application.NewArchiveRoom(repo, txMgr, nil, nil)
+	uc := application.NewArchiveRoom(repo, txMgr, nil)
 	err := uc.Execute(context.Background(), ownerActor(tenantID), siteID, roomID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -309,7 +309,7 @@ func TestArchiveRoom_HasChildren(t *testing.T) {
 	}
 	txMgr := &fakeTxManager{}
 
-	uc := application.NewArchiveRoom(repo, txMgr, nil, nil)
+	uc := application.NewArchiveRoom(repo, txMgr, nil)
 	err := uc.Execute(context.Background(), ownerActor(tenantID), siteID, roomID)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -335,7 +335,7 @@ func TestArchiveRoom_AlreadyArchived(t *testing.T) {
 	}
 	txMgr := &fakeTxManager{}
 
-	uc := application.NewArchiveRoom(repo, txMgr, nil, nil)
+	uc := application.NewArchiveRoom(repo, txMgr, nil)
 	err := uc.Execute(context.Background(), ownerActor(tenantID), siteID, roomID)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -351,7 +351,7 @@ func TestReactivateRoom_Success(t *testing.T) {
 	}
 	txMgr := &fakeTxManager{}
 
-	uc := application.NewReactivateRoom(repo, txMgr, nil, nil)
+	uc := application.NewReactivateRoom(repo, txMgr, nil)
 	room, err := uc.Execute(context.Background(), ownerActor(tenantID), siteID, roomID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -370,7 +370,7 @@ func TestReactivateRoom_AlreadyActive(t *testing.T) {
 	}
 	txMgr := &fakeTxManager{}
 
-	uc := application.NewReactivateRoom(repo, txMgr, nil, nil)
+	uc := application.NewReactivateRoom(repo, txMgr, nil)
 	room, err := uc.Execute(context.Background(), ownerActor(tenantID), siteID, roomID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

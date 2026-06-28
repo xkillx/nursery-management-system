@@ -29,6 +29,7 @@ type ChildIdentityRepository interface {
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	Create(ctx context.Context, tx Tx, child Child, notes string, tenantID, branchID uuid.UUID) error
 	Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error)
+	UpdateWithTx(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error)
 	MarkInactive(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
 	GetByIDForUpdate(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	ExistsInScope(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (bool, error)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/rooms/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -15,11 +14,10 @@ type ReactivateRoom struct {
 	repo  domain.Repository
 	txMgr TxManager
 	audit *audit.Writer
-	pool  *pgxpool.Pool
 }
 
-func NewReactivateRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer, pool *pgxpool.Pool) *ReactivateRoom {
-	return &ReactivateRoom{repo: repo, txMgr: txMgr, audit: auditWriter, pool: pool}
+func NewReactivateRoom(repo domain.Repository, txMgr TxManager, auditWriter *audit.Writer) *ReactivateRoom {
+	return &ReactivateRoom{repo: repo, txMgr: txMgr, audit: auditWriter}
 }
 
 func (uc *ReactivateRoom) Execute(ctx context.Context, actor RoomActor, siteID, roomID uuid.UUID) (domain.Room, error) {

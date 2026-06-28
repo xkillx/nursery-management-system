@@ -193,6 +193,9 @@ func (f *fakeChildBPRepo) Create(ctx context.Context, tx domain.Tx, child domain
 func (f *fakeChildBPRepo) Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
 	return 0, nil
 }
+func (f *fakeChildBPRepo) UpdateWithTx(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
+	return 0, nil
+}
 func (f *fakeChildBPRepo) MarkInactive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	return nil
 }

@@ -6,12 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
+	"nursery-management-system/api/internal/platform/transaction"
 )
 
 type UpdateChildParams struct {
@@ -27,11 +28,11 @@ type UpdateChildParams struct {
 type UpdateChild struct {
 	repo  domain.Repository
 	audit *audit.Writer
-	pool  *pgxpool.Pool
+	txMgr *transaction.Manager
 }
 
-func NewUpdateChild(repo domain.Repository, auditWriter *audit.Writer, pool *pgxpool.Pool) *UpdateChild {
-	return &UpdateChild{repo: repo, audit: auditWriter, pool: pool}
+func NewUpdateChild(repo domain.Repository, auditWriter *audit.Writer, txMgr *transaction.Manager) *UpdateChild {
+	return &UpdateChild{repo: repo, audit: auditWriter, txMgr: txMgr}
 }
 
 func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, childID string, params UpdateChildParams) (domain.Child, error) {
@@ -91,26 +92,35 @@ func (uc *UpdateChild) Execute(ctx context.Context, actor tenant.ActorContext, c
 		return domain.Child{}, domainerrors.Validation("Invalid request payload.", "body")
 	}
 
-	rowsAffected, err := uc.repo.Update(ctx, actor.TenantID, actor.BranchID, id, fields)
+	var updated domain.Child
+
+	err = uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+		rowsAffected, err := uc.repo.UpdateWithTx(ctx, tx, actor.TenantID, actor.BranchID, id, fields)
+		if err != nil {
+			return domainerrors.Internal(fmt.Errorf("update child: %w", err))
+		}
+		if rowsAffected == 0 {
+			return domainerrors.NotFound("child", "Resource not found.")
+		}
+
+		if err := uc.audit.Write(ctx, tx, actor, audit.WriteParams{
+			ActionType: "child_updated",
+			EntityType: "child",
+			EntityID:   id,
+			Details:    map[string]any{},
+		}); err != nil {
+			return domainerrors.Internal(fmt.Errorf("audit child_updated: %w", err))
+		}
+
+		return nil
+	})
 	if err != nil {
-		return domain.Child{}, domainerrors.Internal(fmt.Errorf("update child: %w", err))
-	}
-	if rowsAffected == 0 {
-		return domain.Child{}, domainerrors.NotFound("child", "Resource not found.")
+		return domain.Child{}, err
 	}
 
 	updated, found, err := uc.repo.GetByID(ctx, actor.TenantID, actor.BranchID, id)
 	if err != nil || !found {
 		return domain.Child{}, domainerrors.Internal(fmt.Errorf("fetch updated child: %w", err))
-	}
-
-	if err := uc.audit.Write(ctx, uc.pool, actor, audit.WriteParams{
-		ActionType: "child_updated",
-		EntityType: "child",
-		EntityID:   id,
-		Details:    map[string]any{},
-	}); err != nil {
-		return domain.Child{}, domainerrors.Internal(fmt.Errorf("audit child_updated: %w", err))
 	}
 
 	return updated, nil
