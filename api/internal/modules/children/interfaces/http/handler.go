@@ -13,6 +13,86 @@ import (
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
+type (
+	CoreUseCases struct {
+		List           *application.ListChildren
+		Get            *application.GetChild
+		Create         *application.CreateChildWithFullProfile
+		Update         *application.UpdateChild
+		MarkInactive   *application.MarkInactive
+		ListAttendance *application.ListAttendance
+	}
+
+	ProfileUseCases struct {
+		Get    *application.GetProfile
+		Update *application.UpdateProfile
+	}
+
+	ContactsUseCases struct {
+		Get     *application.GetContacts
+		Replace *application.ReplaceContacts
+	}
+
+	HealthUseCases struct {
+		Get    *application.GetHealth
+		Update *application.UpdateHealth
+	}
+
+	SafeguardingUseCases struct {
+		Get    *application.GetSafeguarding
+		Update *application.UpdateSafeguarding
+	}
+
+	ConsentUseCases struct {
+		Get    *application.GetConsent
+		Update *application.UpdateConsent
+	}
+
+	FundingUseCases struct {
+		Get    *application.GetFunding
+		Update *application.UpdateFunding
+	}
+
+	CollectionUseCases struct {
+		GetSetting  *application.GetCollectionSetting
+		SetPassword *application.SetCollectionPassword
+	}
+
+	RoomAssignmentUseCases struct {
+		List   *application.ListRoomAssignments
+		Create *application.CreateRoomAssignment
+		Close  *application.CloseRoomAssignment
+	}
+
+	BillingProfileUseCases struct {
+		Get    *application.GetBillingProfile
+		Update *application.UpdateBillingProfile
+	}
+
+	BookingPatternUseCases struct {
+		List       *application.ListBookingPatterns
+		Get        *application.GetBookingPattern
+		GetCurrent *application.GetCurrentBookingPattern
+		Create     *application.CreateBookingPattern
+		Update     *application.UpdateBookingPattern
+	}
+
+	ChildrenHandlerConfig struct {
+		Core            CoreUseCases
+		Profile         ProfileUseCases
+		Contacts        ContactsUseCases
+		Health          HealthUseCases
+		Safeguarding    SafeguardingUseCases
+		Consent         ConsentUseCases
+		Funding         FundingUseCases
+		Collection      CollectionUseCases
+		RoomAssignments RoomAssignmentUseCases
+		BillingProfile  BillingProfileUseCases
+		LeavingRecord   *application.GetLeavingRecord
+		BookingPatterns BookingPatternUseCases
+	}
+)
+
 type Handler struct {
 	logger              *slog.Logger
 	listChildren        *application.ListChildren
@@ -59,73 +139,40 @@ type Handler struct {
 	updateBookingPattern     *application.UpdateBookingPattern
 }
 
-func NewHandler(
-	listChildren *application.ListChildren,
-	getChild *application.GetChild,
-	createChildWithFull *application.CreateChildWithFullProfile,
-	updateChild *application.UpdateChild,
-	markInactive *application.MarkInactive,
-	listAttendance *application.ListAttendance,
-	getProfile *application.GetProfile,
-	updateProfile *application.UpdateProfile,
-	getContacts *application.GetContacts,
-	replaceContacts *application.ReplaceContacts,
-	getHealth *application.GetHealth,
-	updateHealth *application.UpdateHealth,
-	getSafeguarding *application.GetSafeguarding,
-	updateSafeguarding *application.UpdateSafeguarding,
-	getConsent *application.GetConsent,
-	updateConsent *application.UpdateConsent,
-	getFunding *application.GetFunding,
-	updateFunding *application.UpdateFunding,
-	getCollectionSetting *application.GetCollectionSetting,
-	setCollectionPassword *application.SetCollectionPassword,
-	listRoomAssignments *application.ListRoomAssignments,
-	createRoomAssignment *application.CreateRoomAssignment,
-	closeRoomAssignment *application.CloseRoomAssignment,
-	getBillingProfile *application.GetBillingProfile,
-	updateBillingProfile *application.UpdateBillingProfile,
-	getLeavingRecord *application.GetLeavingRecord,
-	listBookingPatterns *application.ListBookingPatterns,
-	getBookingPattern *application.GetBookingPattern,
-	getCurrentBookingPattern *application.GetCurrentBookingPattern,
-	createBookingPattern *application.CreateBookingPattern,
-	updateBookingPattern *application.UpdateBookingPattern,
-	logger *slog.Logger,
-) *Handler {
+func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
 		logger:                   logger,
-		listChildren:             listChildren,
-		getChild:                 getChild,
-		createChildWithFull:      createChildWithFull,
-		updateChild:              updateChild,
-		markInactive:             markInactive,
-		listAttendance:           listAttendance,
-		getProfile:               getProfile,
-		updateProfile:            updateProfile,
-		getContacts:              getContacts,
-		replaceContacts:          replaceContacts,
-		getHealth:                getHealth,
-		updateHealth:             updateHealth,
-		getSafeguarding:          getSafeguarding,
-		updateSafeguarding:       updateSafeguarding,
-		getConsent:               getConsent,
-		updateConsent:            updateConsent,
-		getFunding:               getFunding,
-		updateFunding:            updateFunding,
-		getCollectionSetting:     getCollectionSetting,
-		setCollectionPassword:    setCollectionPassword,
-		listRoomAssignments:      listRoomAssignments,
-		createRoomAssignment:     createRoomAssignment,
-		closeRoomAssignment:      closeRoomAssignment,
-		getBillingProfile:        getBillingProfile,
-		updateBillingProfile:     updateBillingProfile,
-		getLeavingRecord:         getLeavingRecord,
-		listBookingPatterns:      listBookingPatterns,
-		getBookingPattern:        getBookingPattern,
-		getCurrentBookingPattern: getCurrentBookingPattern,
-		createBookingPattern:     createBookingPattern,
-		updateBookingPattern:     updateBookingPattern,
+		listChildren:             cfg.Core.List,
+		getChild:                 cfg.Core.Get,
+		createChildWithFull:      cfg.Core.Create,
+		updateChild:              cfg.Core.Update,
+		markInactive:             cfg.Core.MarkInactive,
+		listAttendance:           cfg.Core.ListAttendance,
+		getProfile:               cfg.Profile.Get,
+		updateProfile:            cfg.Profile.Update,
+		getContacts:              cfg.Contacts.Get,
+		replaceContacts:          cfg.Contacts.Replace,
+		getHealth:                cfg.Health.Get,
+		updateHealth:             cfg.Health.Update,
+		getSafeguarding:          cfg.Safeguarding.Get,
+		updateSafeguarding:       cfg.Safeguarding.Update,
+		getConsent:               cfg.Consent.Get,
+		updateConsent:            cfg.Consent.Update,
+		getFunding:               cfg.Funding.Get,
+		updateFunding:            cfg.Funding.Update,
+		getCollectionSetting:     cfg.Collection.GetSetting,
+		setCollectionPassword:    cfg.Collection.SetPassword,
+		listRoomAssignments:      cfg.RoomAssignments.List,
+		createRoomAssignment:     cfg.RoomAssignments.Create,
+		closeRoomAssignment:      cfg.RoomAssignments.Close,
+		getBillingProfile:        cfg.BillingProfile.Get,
+		updateBillingProfile:     cfg.BillingProfile.Update,
+		getLeavingRecord:         cfg.LeavingRecord,
+		listBookingPatterns:      cfg.BookingPatterns.List,
+		getBookingPattern:        cfg.BookingPatterns.Get,
+		getCurrentBookingPattern: cfg.BookingPatterns.GetCurrent,
+		createBookingPattern:     cfg.BookingPatterns.Create,
+		updateBookingPattern:     cfg.BookingPatterns.Update,
 	}
 }
 

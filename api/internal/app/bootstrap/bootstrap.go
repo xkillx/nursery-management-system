@@ -184,40 +184,62 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	// Session types repo (declared early so children handler can use the
 	// sessionTypeLookupAdapter for booking pattern entry validation).
 	sessionTypeRepo := sessiontypepostgres.NewRepository(pool)
-	childrenHandler := childhandler.NewHandler(
-		childapp.NewListChildren(childRepo),
-		childapp.NewGetChild(childRepo),
-		childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-		childapp.NewUpdateChild(childRepo, auditWriter, txManager),
-		childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
-		childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
-		childapp.NewGetProfile(childRepo),
-		childapp.NewUpdateProfile(childRepo, auditWriter, txManager),
-		childapp.NewGetContacts(childRepo),
-		childapp.NewReplaceContacts(childRepo, auditWriter, txManager),
-		childapp.NewGetHealth(childRepo),
-		childapp.NewUpdateHealth(childRepo, auditWriter, txManager),
-		childapp.NewGetSafeguarding(childRepo),
-		childapp.NewUpdateSafeguarding(childRepo, auditWriter, txManager),
-		childapp.NewGetConsent(childRepo),
-		childapp.NewUpdateConsent(childRepo, auditWriter, txManager),
-		childapp.NewGetFunding(childRepo),
-		childapp.NewUpdateFunding(childRepo, auditWriter, txManager),
-		childapp.NewGetCollectionSetting(childRepo),
-		childapp.NewSetCollectionPassword(childRepo, auditWriter, txManager),
-		childapp.NewListRoomAssignments(childRepo),
-		childapp.NewCreateRoomAssignment(childRepo, auditWriter, txManager),
-		childapp.NewCloseRoomAssignment(childRepo, auditWriter, txManager),
-		childapp.NewGetBillingProfile(childRepo),
-		childapp.NewUpdateBillingProfile(childRepo, auditWriter, txManager),
-		childapp.NewGetLeavingRecord(childRepo),
-		childapp.NewListBookingPatterns(childRepo),
-		childapp.NewGetBookingPattern(childRepo),
-		childapp.NewGetCurrentBookingPattern(childRepo, func() time.Time { return time.Now().UTC() }),
-		childapp.NewCreateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-		childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-		logger,
-	)
+	childConfig := childhandler.ChildrenHandlerConfig{
+		Core: childhandler.CoreUseCases{
+			List:           childapp.NewListChildren(childRepo),
+			Get:            childapp.NewGetChild(childRepo),
+			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
+			Update:         childapp.NewUpdateChild(childRepo, auditWriter, txManager),
+			MarkInactive:   childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
+			ListAttendance: childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
+		},
+		Profile: childhandler.ProfileUseCases{
+			Get:    childapp.NewGetProfile(childRepo),
+			Update: childapp.NewUpdateProfile(childRepo, auditWriter, txManager),
+		},
+		Contacts: childhandler.ContactsUseCases{
+			Get:     childapp.NewGetContacts(childRepo),
+			Replace: childapp.NewReplaceContacts(childRepo, auditWriter, txManager),
+		},
+		Health: childhandler.HealthUseCases{
+			Get:    childapp.NewGetHealth(childRepo),
+			Update: childapp.NewUpdateHealth(childRepo, auditWriter, txManager),
+		},
+		Safeguarding: childhandler.SafeguardingUseCases{
+			Get:    childapp.NewGetSafeguarding(childRepo),
+			Update: childapp.NewUpdateSafeguarding(childRepo, auditWriter, txManager),
+		},
+		Consent: childhandler.ConsentUseCases{
+			Get:    childapp.NewGetConsent(childRepo),
+			Update: childapp.NewUpdateConsent(childRepo, auditWriter, txManager),
+		},
+		Funding: childhandler.FundingUseCases{
+			Get:    childapp.NewGetFunding(childRepo),
+			Update: childapp.NewUpdateFunding(childRepo, auditWriter, txManager),
+		},
+		Collection: childhandler.CollectionUseCases{
+			GetSetting:  childapp.NewGetCollectionSetting(childRepo),
+			SetPassword: childapp.NewSetCollectionPassword(childRepo, auditWriter, txManager),
+		},
+		RoomAssignments: childhandler.RoomAssignmentUseCases{
+			List:   childapp.NewListRoomAssignments(childRepo),
+			Create: childapp.NewCreateRoomAssignment(childRepo, auditWriter, txManager),
+			Close:  childapp.NewCloseRoomAssignment(childRepo, auditWriter, txManager),
+		},
+		BillingProfile: childhandler.BillingProfileUseCases{
+			Get:    childapp.NewGetBillingProfile(childRepo),
+			Update: childapp.NewUpdateBillingProfile(childRepo, auditWriter, txManager),
+		},
+		LeavingRecord: childapp.NewGetLeavingRecord(childRepo),
+		BookingPatterns: childhandler.BookingPatternUseCases{
+			List:       childapp.NewListBookingPatterns(childRepo),
+			Get:        childapp.NewGetBookingPattern(childRepo),
+			GetCurrent: childapp.NewGetCurrentBookingPattern(childRepo, func() time.Time { return time.Now().UTC() }),
+			Create:     childapp.NewCreateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
+			Update:     childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
+		},
+	}
+	childrenHandler := childhandler.NewHandler(childConfig, logger)
 
 	// Parent-Child Mappings module
 	mappingRepo := parentchildpostgres.NewParentChildMappingRepository(pool)
@@ -281,19 +303,27 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	ownerRepo := ownerpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
-	billingHandler := billinghandler.NewHandler(
-		billingapp.NewPreflightDraftInvoices(billingRepo),
-		billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
-		billingapp.NewListInvoices(billingRepo),
-		billingapp.NewGetInvoice(billingRepo),
-		billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
-		billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
-		billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
-		billingapp.NewListParentInvoices(billingRepo),
-		billingapp.NewGetParentInvoice(billingRepo),
-		updateSiteRateUC,
-		logger,
-	)
+	billingCfg := billinghandler.BillingHandlerConfig{
+		Drafting: billinghandler.DraftUseCases{
+			Preflight:  billingapp.NewPreflightDraftInvoices(billingRepo),
+			Generation: billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
+		},
+		Lifecycle: billinghandler.LifecycleUseCases{
+			ListInvoices:          billingapp.NewListInvoices(billingRepo),
+			GetInvoice:            billingapp.NewGetInvoice(billingRepo),
+			IssueInvoice:          billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
+			BulkIssueInvoices:     billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
+			OverrideAttendanceBlk: billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
+		},
+		Parent: billinghandler.ParentInvoiceUseCases{
+			List: billingapp.NewListParentInvoices(billingRepo),
+			Get:  billingapp.NewGetParentInvoice(billingRepo),
+		},
+		Admin: billinghandler.AdminUseCases{
+			UpdateSiteRate: updateSiteRateUC,
+		},
+	}
+	billingHandler := billinghandler.NewHandler(billingCfg, logger)
 	billingHandler.RegisterRoutes(manager)
 
 	// Parent route group
@@ -431,11 +461,22 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	_ = expireTermsUC
 	_ = markPendingRenewalUC
 	_ = termdomain.ErrTermAlreadyExists
-	termHandler := termhttphandler.NewHandler(
-		createTermUC, getTermUC, getCurrentTermUC, listTermsUC, listExpiringUC,
-		requestChangeUC, approveChangeUC, rejectChangeUC, terminateUC,
-		logger,
-	)
+	termCfg := termhttphandler.TermHandlerConfig{
+		Core: termhttphandler.CoreTermUseCases{
+			Create:       createTermUC,
+			Get:          getTermUC,
+			GetCurrent:   getCurrentTermUC,
+			List:         listTermsUC,
+			ListExpiring: listExpiringUC,
+			Terminate:    terminateUC,
+		},
+		Changes: termhttphandler.ScheduleChangeUseCases{
+			Request: requestChangeUC,
+			Approve: approveChangeUC,
+			Reject:  rejectChangeUC,
+		},
+	}
+	termHandler := termhttphandler.NewHandler(termCfg, logger)
 	termHandler.RegisterManagerRoutes(manager)
 
 	return router

@@ -17,6 +17,37 @@ import (
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
+type (
+	DraftUseCases struct {
+		Preflight  *application.PreflightDraftInvoices
+		Generation *application.GenerateDraftInvoicesUseCase
+	}
+
+	LifecycleUseCases struct {
+		ListInvoices          *application.ListInvoices
+		GetInvoice            *application.GetInvoice
+		IssueInvoice          *application.IssueInvoice
+		BulkIssueInvoices     *application.BulkIssueInvoices
+		OverrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
+	}
+
+	ParentInvoiceUseCases struct {
+		List *application.ListParentInvoices
+		Get  *application.GetParentInvoice
+	}
+
+	AdminUseCases struct {
+		UpdateSiteRate *application.UpdateSiteRateUseCase
+	}
+
+	BillingHandlerConfig struct {
+		Drafting  DraftUseCases
+		Lifecycle LifecycleUseCases
+		Parent    ParentInvoiceUseCases
+		Admin     AdminUseCases
+	}
+)
+
 type Handler struct {
 	logger                *slog.Logger
 	preflight             *application.PreflightDraftInvoices
@@ -31,31 +62,19 @@ type Handler struct {
 	updateSiteRate        *application.UpdateSiteRateUseCase
 }
 
-func NewHandler(
-	preflight *application.PreflightDraftInvoices,
-	generation *application.GenerateDraftInvoicesUseCase,
-	listInvoices *application.ListInvoices,
-	getInvoice *application.GetInvoice,
-	issueInvoice *application.IssueInvoice,
-	bulkIssueInvoices *application.BulkIssueInvoices,
-	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase,
-	listParentInvoices *application.ListParentInvoices,
-	getParentInvoice *application.GetParentInvoice,
-	updateSiteRate *application.UpdateSiteRateUseCase,
-	logger *slog.Logger,
-) *Handler {
+func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
 		logger:                logger,
-		preflight:             preflight,
-		generation:            generation,
-		listInvoices:          listInvoices,
-		getInvoice:            getInvoice,
-		issueInvoice:          issueInvoice,
-		bulkIssueInvoices:     bulkIssueInvoices,
-		overrideAttendanceBlk: overrideAttendanceBlk,
-		listParentInvoices:    listParentInvoices,
-		getParentInvoice:      getParentInvoice,
-		updateSiteRate:        updateSiteRate,
+		preflight:             cfg.Drafting.Preflight,
+		generation:            cfg.Drafting.Generation,
+		listInvoices:          cfg.Lifecycle.ListInvoices,
+		getInvoice:            cfg.Lifecycle.GetInvoice,
+		issueInvoice:          cfg.Lifecycle.IssueInvoice,
+		bulkIssueInvoices:     cfg.Lifecycle.BulkIssueInvoices,
+		overrideAttendanceBlk: cfg.Lifecycle.OverrideAttendanceBlk,
+		listParentInvoices:    cfg.Parent.List,
+		getParentInvoice:      cfg.Parent.Get,
+		updateSiteRate:        cfg.Admin.UpdateSiteRate,
 	}
 }
 

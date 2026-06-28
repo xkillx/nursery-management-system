@@ -15,6 +15,28 @@ import (
 	httpserver "nursery-management-system/api/internal/platform/http"
 )
 
+type (
+	CoreTermUseCases struct {
+		Create       *application.CreateTermUseCase
+		Get          *application.GetTermUseCase
+		GetCurrent   *application.GetCurrentTermForChildUseCase
+		List         *application.ListTermsForChildUseCase
+		ListExpiring *application.ListExpiringTermsUseCase
+		Terminate    *application.TerminateTermUseCase
+	}
+
+	ScheduleChangeUseCases struct {
+		Request *application.RequestScheduleChangeUseCase
+		Approve *application.ApproveScheduleChangeUseCase
+		Reject  *application.RejectScheduleChangeUseCase
+	}
+
+	TermHandlerConfig struct {
+		Core    CoreTermUseCases
+		Changes ScheduleChangeUseCases
+	}
+)
+
 type Handler struct {
 	logger         *slog.Logger
 	createTerm     *application.CreateTermUseCase
@@ -28,29 +50,18 @@ type Handler struct {
 	terminate      *application.TerminateTermUseCase
 }
 
-func NewHandler(
-	createTerm *application.CreateTermUseCase,
-	getTerm *application.GetTermUseCase,
-	getCurrentTerm *application.GetCurrentTermForChildUseCase,
-	listTerms *application.ListTermsForChildUseCase,
-	listExpiring *application.ListExpiringTermsUseCase,
-	requestChange *application.RequestScheduleChangeUseCase,
-	approveChange *application.ApproveScheduleChangeUseCase,
-	rejectChange *application.RejectScheduleChangeUseCase,
-	terminate *application.TerminateTermUseCase,
-	logger *slog.Logger,
-) *Handler {
+func NewHandler(cfg TermHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
 		logger:         logger,
-		createTerm:     createTerm,
-		getTerm:        getTerm,
-		getCurrentTerm: getCurrentTerm,
-		listTerms:      listTerms,
-		listExpiring:   listExpiring,
-		requestChange:  requestChange,
-		approveChange:  approveChange,
-		rejectChange:   rejectChange,
-		terminate:      terminate,
+		createTerm:     cfg.Core.Create,
+		getTerm:        cfg.Core.Get,
+		getCurrentTerm: cfg.Core.GetCurrent,
+		listTerms:      cfg.Core.List,
+		listExpiring:   cfg.Core.ListExpiring,
+		terminate:      cfg.Core.Terminate,
+		requestChange:  cfg.Changes.Request,
+		approveChange:  cfg.Changes.Approve,
+		rejectChange:   cfg.Changes.Reject,
 	}
 }
 
