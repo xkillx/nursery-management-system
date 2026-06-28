@@ -51,7 +51,7 @@ type EligibleChild struct {
 	ChildFirstName         string              `json:"child_first_name"`
 	ChildMiddleName        *string             `json:"child_middle_name"`
 	ChildLastName          *string             `json:"child_last_name"`
-	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
+	CoreHourlyRate         Money               `json:"core_hourly_rate_minor"`
 	FundingProfileID       *uuid.UUID          `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
 	ExistingInvoice        *ExistingInvoiceRef `json:"existing_invoice,omitempty"`

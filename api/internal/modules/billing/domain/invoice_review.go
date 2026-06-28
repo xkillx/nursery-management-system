@@ -30,10 +30,10 @@ type InvoiceReviewRow struct {
 	PeriodStartDate         time.Time
 	PeriodEndDate           time.Time
 	CurrencyCode            string
-	SubtotalMinor           int
-	FundedDeductionMinor    int
-	TotalDueMinor           int
-	AmountPaidMinor         int
+	Subtotal                Money
+	FundedDeduction         Money
+	TotalDue                Money
+	AmountPaid              Money
 	DueAt                   *time.Time
 	IssuedAt                *time.Time
 	LockedAt                *time.Time
@@ -60,8 +60,8 @@ type InvoiceReviewLineRow struct {
 	Description            string
 	SortOrder              int
 	QuantityMinutes        *int
-	UnitAmountMinor        *int
-	LineAmountMinor        int
+	UnitAmount             *Money
+	LineAmount             Money
 	FundedAllowanceMinutes *int
 	FundedDeductionMinutes *int
 	CoreBillableMinutes    *int
@@ -71,14 +71,14 @@ type InvoiceReviewLineRow struct {
 // InvoiceReviewCalculation is the curated calculation object for the API response.
 // Under advance-pay this reflects the booking-driven inputs.
 type InvoiceReviewCalculation struct {
-	CoreHourlyRateMinor    int                    `json:"core_hourly_rate_minor"`
+	CoreHourlyRate         Money                  `json:"core_hourly_rate_minor"`
 	BookedCoreMinutes      int                    `json:"booked_core_minutes"`
 	BookedSessionCount     int                    `json:"booked_session_count"`
 	FundedAllowanceMinutes int                    `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int                    `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int                    `json:"core_billable_minutes"`
-	CoreSubtotalMinor      int                    `json:"core_subtotal_minor"`
-	ExtrasTotalMinor       int                    `json:"extras_total_minor"`
+	CoreSubtotal           Money                  `json:"core_subtotal_minor"`
+	ExtrasTotal            Money                  `json:"extras_total_minor"`
 	TermID                 uuid.UUID              `json:"term_id"`
 	BookingPatternID       uuid.UUID              `json:"booking_pattern_id"`
 	BookedSessions         []BookedSession        `json:"booked_sessions"`

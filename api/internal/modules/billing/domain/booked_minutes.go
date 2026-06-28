@@ -36,7 +36,7 @@ type BookedSession struct {
 type BookedCoreCalculation struct {
 	BookingPatternID string
 	TotalMinutes     int
-	SubtotalMinor    int
+	Subtotal         Money
 	PerEntry         []BookedEntryBreakdown
 	Sessions         []BookedSession
 }
@@ -136,7 +136,7 @@ func CalculateBookedCoreMinutesInMonth(
 	if err != nil {
 		return BookedCoreCalculation{}, err
 	}
-	calc.SubtotalMinor = subtotal
+	calc.Subtotal = Money{minor: subtotal}
 	return calc, nil
 }
 

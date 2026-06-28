@@ -31,10 +31,10 @@ type ParentInvoiceRow struct {
 	PeriodStartDate        time.Time
 	PeriodEndDate          time.Time
 	CurrencyCode           string
-	SubtotalMinor          int
-	FundedDeductionMinor   int
-	TotalDueMinor          int
-	AmountPaidMinor        int
+	Subtotal               Money
+	FundedDeduction        Money
+	TotalDue               Money
+	AmountPaid             Money
 	DueAt                  *time.Time
 	IssuedAt               *time.Time
 	PaidAt                 *time.Time
@@ -50,8 +50,8 @@ type ParentInvoiceLineRow struct {
 	Description     string
 	SortOrder       int
 	QuantityMinutes *int
-	UnitAmountMinor *int
-	LineAmountMinor int
+	UnitAmount      *Money
+	LineAmount      Money
 }
 
 // ParentInvoiceDetail is the full detail response for a parent invoice.

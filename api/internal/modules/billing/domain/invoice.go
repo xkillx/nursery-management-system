@@ -64,15 +64,15 @@ type GenerateDraftInvoicesParams struct {
 
 // DraftGenerationChildResult is the per-child outcome of draft generation.
 type DraftGenerationChildResult struct {
-	ChildID              uuid.UUID
-	ChildFirstName       string
-	ChildMiddleName      *string
-	ChildLastName        *string
-	Action               DraftInvoiceAction
-	InvoiceID            uuid.UUID
-	SubtotalMinor        int
-	FundedDeductionMinor int
-	TotalDueMinor        int
+	ChildID         uuid.UUID
+	ChildFirstName  string
+	ChildMiddleName *string
+	ChildLastName   *string
+	Action          DraftInvoiceAction
+	InvoiceID       uuid.UUID
+	Subtotal        Money
+	FundedDeduction Money
+	TotalDue        Money
 }
 
 // DraftGenerationBlockedChild represents a child-month that could not be generated.
@@ -99,7 +99,7 @@ type DraftGenerationSummary struct {
 	EligibleCount int
 	SuccessCount  int
 	BlockedCount  int
-	TotalDueMinor int
+	TotalDue      Money
 }
 
 // InvoiceCalculationDetails is stored as JSON in invoice.calculation_details.
@@ -116,9 +116,9 @@ type DraftGenerationSummary struct {
 type InvoiceCalculationDetails struct {
 	BillingMonth           string     `json:"billing_month"`
 	ChildID                uuid.UUID  `json:"child_id"`
-	CoreHourlyRateMinor    int        `json:"core_hourly_rate_minor"`
-	CoreSubtotalMinor      int        `json:"core_subtotal_minor"`
-	ExtrasTotalMinor       int        `json:"extras_total_minor"`
+	CoreHourlyRate         Money      `json:"core_hourly_rate_minor"`
+	CoreSubtotal           Money      `json:"core_subtotal_minor"`
+	ExtrasTotal            Money      `json:"extras_total_minor"`
 	ManualExtrasSupported  bool       `json:"manual_extras_supported"`
 	FundingProfileID       *uuid.UUID `json:"funding_profile_id,omitempty"`
 	FundedAllowanceMinutes int        `json:"funded_allowance_minutes"`
@@ -190,7 +190,7 @@ type IssueInvoiceResult struct {
 	LockedAt      time.Time
 	DueAt         time.Time
 	IssuedRunID   uuid.UUID
-	TotalDueMinor int
+	TotalDue      Money
 }
 
 // IssuedInvoiceResult is the per-invoice outcome of a bulk issue.
@@ -203,7 +203,7 @@ type IssuedInvoiceResult struct {
 	InvoiceNumber   string
 	IssuedAt        time.Time
 	DueAt           time.Time
-	TotalDueMinor   int
+	TotalDue        Money
 }
 
 // InvoiceIssueBlocked represents an invoice that could not be issued.
@@ -237,7 +237,7 @@ type InvoiceIssueSummary struct {
 	EligibleCount int
 	SuccessCount  int
 	BlockedCount  int
-	TotalDueMinor int
+	TotalDue      Money
 }
 
 // InvoiceIssueCandidateRow maps a row from the invoices table for issue.
@@ -250,7 +250,7 @@ type InvoiceIssueCandidateRow struct {
 	BillingMonth    time.Time
 	InvoiceKind     string
 	Status          string
-	TotalDueMinor   int
+	TotalDue        Money
 }
 
 // IssueInvoiceUpdateParams holds fields needed to mark an invoice as issued.
@@ -294,31 +294,31 @@ type InvoiceRunCompleteParams struct {
 
 // DraftInvoiceCreateParams holds fields needed to create a draft invoice.
 type DraftInvoiceCreateParams struct {
-	ID                   uuid.UUID
-	TenantID             uuid.UUID
-	BranchID             uuid.UUID
-	ChildID              uuid.UUID
-	BillingMonth         time.Time
-	GeneratedRunID       uuid.UUID
-	CurrencyCode         string
-	SubtotalMinor        int
-	FundedDeductionMinor int
-	TotalDueMinor        int
-	PeriodStartDate      time.Time
-	PeriodEndDate        time.Time
-	CalculationDetails   []byte
+	ID                 uuid.UUID
+	TenantID           uuid.UUID
+	BranchID           uuid.UUID
+	ChildID            uuid.UUID
+	BillingMonth       time.Time
+	GeneratedRunID     uuid.UUID
+	CurrencyCode       string
+	Subtotal           Money
+	FundedDeduction    Money
+	TotalDue           Money
+	PeriodStartDate    time.Time
+	PeriodEndDate      time.Time
+	CalculationDetails []byte
 }
 
 // DraftInvoiceUpdateParams holds fields needed to update a draft invoice header.
 type DraftInvoiceUpdateParams struct {
-	ID                   uuid.UUID
-	TenantID             uuid.UUID
-	BranchID             uuid.UUID
-	GeneratedRunID       uuid.UUID
-	SubtotalMinor        int
-	FundedDeductionMinor int
-	TotalDueMinor        int
-	CalculationDetails   []byte
+	ID                 uuid.UUID
+	TenantID           uuid.UUID
+	BranchID           uuid.UUID
+	GeneratedRunID     uuid.UUID
+	Subtotal           Money
+	FundedDeduction    Money
+	TotalDue           Money
+	CalculationDetails []byte
 }
 
 // InvoiceLineCreateParams holds fields needed to insert an invoice line.
@@ -331,8 +331,8 @@ type InvoiceLineCreateParams struct {
 	Description            string
 	SortOrder              int
 	QuantityMinutes        int
-	UnitAmountMinor        int
-	LineAmountMinor        int
+	UnitAmount             Money
+	LineAmount             Money
 	RawAttendedMinutes     int
 	RoundedAttendedMinutes int
 	FundedAllowanceMinutes int
@@ -344,8 +344,8 @@ type InvoiceLineCreateParams struct {
 
 // ExtraLineSnapshot represents a preserved extra line for regeneration totals.
 type ExtraLineSnapshot struct {
-	LineID          uuid.UUID
-	LineAmountMinor int
+	LineID     uuid.UUID
+	LineAmount Money
 }
 
 // OverdueTransitionedInvoice represents an invoice transitioned to overdue.

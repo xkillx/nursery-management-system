@@ -28,8 +28,8 @@ func TestCalculateBookedCoreMinutesInMonth(t *testing.T) {
 		t.Errorf("expected 4 sessions, got %d", len(calc.Sessions))
 	}
 	wantSubtotal, _ := CalculateHourlyAmountMinor(4*300, 750)
-	if calc.SubtotalMinor != wantSubtotal {
-		t.Errorf("subtotal: got %d, want %d", calc.SubtotalMinor, wantSubtotal)
+	if calc.Subtotal.Minor() != wantSubtotal {
+		t.Errorf("subtotal: got %d, want %d", calc.Subtotal.Minor(), wantSubtotal)
 	}
 }
 
