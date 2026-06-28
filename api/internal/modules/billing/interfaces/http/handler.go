@@ -81,6 +81,7 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
+	manager.GET("/billing-setup", h.getSiteRateHandler)
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
 }
 
@@ -258,6 +259,25 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toBulkIssueResponse(result))
+}
+
+func (h *Handler) getSiteRateHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	rateMinor, found, err := h.updateSiteRate.GetCurrentRate(c.Request.Context(), actor)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"core_hourly_rate_minor": rateMinor,
+		"has_rate":               found,
+	})
 }
 
 func (h *Handler) updateSiteRateHandler(c *gin.Context) {

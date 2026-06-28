@@ -29,6 +29,10 @@ func NewUpdateSiteRateUseCase(
 	}
 }
 
+func (uc *UpdateSiteRateUseCase) GetCurrentRate(ctx context.Context, actor tenant.ActorContext) (int, bool, error) {
+	return uc.repo.GetCoreHourlyRate(ctx, actor.TenantID, actor.BranchID)
+}
+
 func (uc *UpdateSiteRateUseCase) Execute(ctx context.Context, actor tenant.ActorContext, coreHourlyRateMinor int) error {
 	if coreHourlyRateMinor <= 0 {
 		return &domain.ValidationError{

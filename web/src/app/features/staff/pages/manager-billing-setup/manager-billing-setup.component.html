@@ -1,0 +1,55 @@
+<div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div class="max-w-3xl">
+    <nav class="mb-2 flex flex-wrap items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+      <span>Settings</span>
+      <span>/</span>
+      <span class="text-brand-600 dark:text-brand-400">Billing setup</span>
+    </nav>
+    <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">Billing setup</h1>
+    <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">View and update your site's core hourly billing rate.</p>
+  </div>
+</div>
+
+@if (loading) {
+  <app-loading-state label="Loading billing setup..." />
+} @else if (error) {
+  <app-alert variant="error" title="Error" [message]="error" />
+} @else {
+  <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex items-center gap-4">
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Core hourly rate:</span>
+      @if (editing) {
+        <span class="inline-flex items-center gap-2">
+          <span class="text-sm text-gray-500">&pound;</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            [(ngModel)]="editValue"
+            class="h-8 w-28 rounded-lg border border-gray-300 px-2 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          />
+          <button
+            (click)="save()"
+            [disabled]="saving"
+            class="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+          >
+            {{ saving ? 'Saving...' : 'Save' }}
+          </button>
+          <button
+            (click)="cancelEdit()"
+            [disabled]="saving"
+            class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </span>
+        @if (editError) {
+          <p class="text-xs text-red-600">{{ editError }}</p>
+        }
+      } @else {
+        <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ displayRate }}</span>
+        <button (click)="startEdit()" class="text-sm text-blue-600 hover:underline dark:text-blue-400">Edit</button>
+      }
+    </div>
+  </div>
+}

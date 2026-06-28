@@ -25,6 +25,7 @@ func (e *ValidationError) Error() string { return e.Message }
 // It follows the adapter pattern (KTD-2): defined in billing domain, implemented
 // in bootstrap by wrapping the owner module's repository.
 type SiteRateRepository interface {
+	GetCoreHourlyRate(ctx context.Context, tenantID, branchID uuid.UUID) (int, bool, error)
 	UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error
 }
 

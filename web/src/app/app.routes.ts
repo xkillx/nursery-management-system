@@ -16,6 +16,7 @@ import { ManagerBookingPatternComponent } from './features/staff/pages/manager-b
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
+import { ManagerBillingSetupComponent } from './features/staff/pages/manager-billing-setup/manager-billing-setup.component';
 import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-invoice-detail/manager-invoice-detail.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
@@ -263,6 +264,16 @@ export const routes: Routes = [
               breadcrumb: { label: 'Practitioner' },
             },
             title: 'Attendance | Nursery Management',
+          },
+          {
+            path: 'manager/billing-setup',
+            component: ManagerBillingSetupComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Billing setup' },
+            },
+            title: 'Billing Setup | Nursery Management',
           },
           {
             path: 'manager/attendance',

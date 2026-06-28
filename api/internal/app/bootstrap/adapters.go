@@ -111,13 +111,26 @@ type siteRateUpdateAdapter struct {
 	repo *ownerpostgres.OwnerRepository
 }
 
+func (a *siteRateUpdateAdapter) GetCoreHourlyRate(ctx context.Context, tenantID, branchID uuid.UUID) (int, bool, error) {
+	site, err := a.repo.GetActiveSite(ctx, tenantID, branchID)
+	if err != nil {
+		if err == ownerdomain.ErrSiteNotFound {
+			return 0, false, nil
+		}
+		return 0, false, err
+	}
+	if site.CoreHourlyRateMinor == nil {
+		return 0, false, nil
+	}
+	return *site.CoreHourlyRateMinor, true, nil
+}
+
 func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error {
 	prev, _, err := a.repo.UpdateSiteCoreHourlyRate(ctx, tx, tenantID, branchID, rateMinor)
 	if err != nil {
 		return err
 	}
 	_ = prev
-	// The adapter already handles site-not-found via domain.ErrSiteNotFound.
 	return nil
 }
 
