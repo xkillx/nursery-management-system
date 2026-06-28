@@ -23,7 +23,10 @@ type ChildCorrectionInfo struct {
 	EndDate   *time.Time
 }
 
-type ChildIdentityRepository interface {
+// Repository defines all data access methods for the children module.
+// The postgres implementation struct satisfies all methods.
+type Repository interface {
+	// Identity
 	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int) ([]Child, error)
 	Count(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
@@ -35,67 +38,56 @@ type ChildIdentityRepository interface {
 	ExistsInScope(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (bool, error)
 	ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID, localDate time.Time) ([]AttendanceChild, error)
 	GetChildForCorrection(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (ChildCorrectionInfo, bool, error)
-}
 
-type ChildProfileRepository interface {
+	// Profile
 	GetProfileByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildProfile, error)
 	GetProfileForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*ChildProfile, error)
 	InsertProfile(ctx context.Context, tx Tx, p *ChildProfile) (*ChildProfile, error)
 	UpdateProfile(ctx context.Context, tx Tx, p *ChildProfile) (*ChildProfile, error)
-}
 
-type ChildContactRepository interface {
+	// Contacts
 	ListContactsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]ChildContact, error)
 	ReplaceContactsForTypes(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, contactTypes []ContactType, entries []ChildContact) error
-}
 
-type ChildHealthProfileRepository interface {
+	// Health
 	GetHealthByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildHealthProfile, error)
 	UpsertHealth(ctx context.Context, tx Tx, p *ChildHealthProfile) (*ChildHealthProfile, error)
-}
 
-type ChildSafeguardingProfileRepository interface {
+	// Safeguarding
 	GetSafeguardingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildSafeguardingProfile, error)
 	UpsertSafeguarding(ctx context.Context, tx Tx, p *ChildSafeguardingProfile) (*ChildSafeguardingProfile, error)
-}
 
-type ChildConsentRepository interface {
+	// Consent
 	GetConsentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildConsent, bool, error)
 	InsertConsent(ctx context.Context, tx Tx, p *ChildConsent) (*ChildConsent, error)
 	UpdateConsent(ctx context.Context, tx Tx, p *ChildConsent) (*ChildConsent, error)
-}
 
-type ChildFundingRepository interface {
+	// Funding
 	GetFundingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildFundingRecord, bool, error)
 	UpsertFunding(ctx context.Context, tx Tx, p *ChildFundingRecord) (*ChildFundingRecord, error)
-}
 
-type ChildCollectionSettingsRepository interface {
+	// Collection Settings
 	GetCollectionSettingByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*ChildCollectionSetting, error)
 	UpsertCollectionSetting(ctx context.Context, tx Tx, p *ChildCollectionSetting) (*ChildCollectionSetting, error)
 	SetCollectionPassword(ctx context.Context, tx Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error
-}
 
-type ChildRoomAssignmentsRepository interface {
+	// Room Assignments
 	ListRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]ChildRoomAssignment, error)
 	GetCurrentRoomAssignmentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildRoomAssignment, bool, error)
 	InsertRoomAssignment(ctx context.Context, tx Tx, a *ChildRoomAssignment) (*ChildRoomAssignment, error)
 	CloseCurrentRoomAssignment(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error
 	GetRoomAssignmentByID(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (*ChildRoomAssignment, bool, error)
 	CloseRoomAssignmentByID(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID, endDate time.Time) (bool, error)
-}
 
-type ChildBillingProfileRepository interface {
+	// Billing Profile
 	GetBillingProfileByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildBillingProfile, bool, error)
 	UpsertBillingProfile(ctx context.Context, tx Tx, p *ChildBillingProfile) (*ChildBillingProfile, error)
-}
 
-type ChildLeavingRepository interface {
+	// Leaving Records
 	GetLeavingRecordByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildLeavingRecord, bool, error)
 	InsertLeavingRecord(ctx context.Context, tx Tx, p *ChildLeavingRecord) error
-}
 
-type ChildBookingPatternsRepository interface {
+	// Booking Patterns
 	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]BookingPattern, error)
 	GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*BookingPattern, bool, error)
 	GetActiveForDate(ctx context.Context, tenantID, branchID, childID uuid.UUID, date time.Time) (*BookingPattern, bool, error)
@@ -106,21 +98,4 @@ type ChildBookingPatternsRepository interface {
 	ClosePatternByID(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error
 	ReplaceEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, entries []BookingPatternEntry) error
 	UpdateEffectiveFrom(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error
-}
-
-// Repository composes the per-concept repositories. The postgres implementation
-// file implements all of them on one struct.
-type Repository interface {
-	ChildIdentityRepository
-	ChildProfileRepository
-	ChildContactRepository
-	ChildHealthProfileRepository
-	ChildSafeguardingProfileRepository
-	ChildConsentRepository
-	ChildFundingRepository
-	ChildCollectionSettingsRepository
-	ChildRoomAssignmentsRepository
-	ChildBillingProfileRepository
-	ChildLeavingRepository
-	ChildBookingPatternsRepository
 }
