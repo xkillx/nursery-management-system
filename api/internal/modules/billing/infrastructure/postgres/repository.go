@@ -23,7 +23,7 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]domain.PreflightChildRow, error) {
+func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]PreflightChildRow, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.PreflightListChildren(ctx, sqlc.PreflightListChildrenParams{
 		TenantID:     uuidToPgtype(tenantID),
@@ -35,9 +35,9 @@ func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branch
 		return nil, err
 	}
 
-	result := make([]domain.PreflightChildRow, 0, len(rows))
+	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.PreflightChildRow{
+		result = append(result, PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
 			FirstName:              row.FirstName,
 			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
@@ -56,7 +56,7 @@ func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branch
 	return result, nil
 }
 
-func (r *Repository) ListPreflightAttendanceSessions(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]domain.PreflightAttendanceSessionRow, error) {
+func (r *Repository) ListPreflightAttendanceSessions(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]PreflightAttendanceSessionRow, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.PreflightListAttendanceSessions(ctx, sqlc.PreflightListAttendanceSessionsParams{
 		TenantID:           uuidToPgtype(tenantID),
@@ -68,12 +68,12 @@ func (r *Repository) ListPreflightAttendanceSessions(ctx context.Context, tenant
 		return nil, err
 	}
 
-	result := make([]domain.PreflightAttendanceSessionRow, 0, len(rows))
+	result := make([]PreflightAttendanceSessionRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.PreflightAttendanceSessionRow{
+		result = append(result, PreflightAttendanceSessionRow{
 			SessionID:         pgtypeUUIDToUUID(row.ID),
 			ChildID:           pgtypeUUIDToUUID(row.ChildID),
-			Status:            domain.AttendanceSessionStatus(row.Status),
+			Status:            row.Status,
 			CheckInAt:         pgtypeTimestamptzToTime(row.CheckInAt),
 			CheckOutAt:        pgtypeTimestamptzToTimePtr(row.CheckOutAt),
 			CheckInLocalDate:  pgtypeDateToTime(row.CheckInLocalDate),
@@ -178,7 +178,7 @@ func (r *Repository) queriesTx(tx domain.Tx) *sqlc.Queries {
 	return sqlc.New(tx.(pgx.Tx))
 }
 
-func (r *Repository) ListCandidateChildrenForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]domain.PreflightChildRow, error) {
+func (r *Repository) ListCandidateChildrenForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]PreflightChildRow, error) {
 	rows, err := r.queriesTx(tx).ListCandidateChildrenForUpdate(ctx, sqlc.ListCandidateChildrenForUpdateParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
@@ -191,7 +191,7 @@ func (r *Repository) ListCandidateChildrenForUpdate(ctx context.Context, tx doma
 	return mapCandidateRows(rows), nil
 }
 
-func (r *Repository) ListSelectedChildrenForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, childIDs []uuid.UUID) ([]domain.PreflightChildRow, error) {
+func (r *Repository) ListSelectedChildrenForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, childIDs []uuid.UUID) ([]PreflightChildRow, error) {
 	pgIDs := make([]pgtype.UUID, len(childIDs))
 	for i, id := range childIDs {
 		pgIDs[i] = uuidToPgtype(id)
@@ -207,7 +207,7 @@ func (r *Repository) ListSelectedChildrenForUpdate(ctx context.Context, tx domai
 	return mapSelectedRows(rows), nil
 }
 
-func (r *Repository) ListAttendanceSessions(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, periodStart, periodEndExclusive time.Time) ([]domain.PreflightAttendanceSessionRow, error) {
+func (r *Repository) ListAttendanceSessions(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, periodStart, periodEndExclusive time.Time) ([]PreflightAttendanceSessionRow, error) {
 	rows, err := r.queriesTx(tx).ListAttendanceSessionsForGeneration(ctx, sqlc.ListAttendanceSessionsForGenerationParams{
 		TenantID:           uuidToPgtype(tenantID),
 		BranchID:           uuidToPgtype(branchID),
@@ -218,12 +218,12 @@ func (r *Repository) ListAttendanceSessions(ctx context.Context, tx domain.Tx, t
 		return nil, err
 	}
 
-	result := make([]domain.PreflightAttendanceSessionRow, 0, len(rows))
+	result := make([]PreflightAttendanceSessionRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.PreflightAttendanceSessionRow{
+		result = append(result, PreflightAttendanceSessionRow{
 			SessionID:         pgtypeUUIDToUUID(row.ID),
 			ChildID:           pgtypeUUIDToUUID(row.ChildID),
-			Status:            domain.AttendanceSessionStatus(row.Status),
+			Status:            row.Status,
 			CheckInAt:         pgtypeTimestamptzToTime(row.CheckInAt),
 			CheckOutAt:        pgtypeTimestamptzToTimePtr(row.CheckOutAt),
 			CheckInLocalDate:  pgtypeDateToTime(row.CheckInLocalDate),
@@ -763,10 +763,10 @@ func mapSelectedIssueCandidateRows(rows []sqlc.ListSelectedInvoicesForIssueForUp
 
 // --- Helpers ---
 
-func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []domain.PreflightChildRow {
-	result := make([]domain.PreflightChildRow, 0, len(rows))
+func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []PreflightChildRow {
+	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.PreflightChildRow{
+		result = append(result, PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
 			FirstName:              row.FirstName,
 			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
@@ -785,10 +785,10 @@ func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []domain.Pr
 	return result
 }
 
-func mapSelectedRows(rows []sqlc.ListSelectedChildrenForUpdateRow) []domain.PreflightChildRow {
-	result := make([]domain.PreflightChildRow, 0, len(rows))
+func mapSelectedRows(rows []sqlc.ListSelectedChildrenForUpdateRow) []PreflightChildRow {
+	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.PreflightChildRow{
+		result = append(result, PreflightChildRow{
 			ChildID:                pgtypeUUIDToUUID(row.ChildID),
 			FirstName:              row.FirstName,
 			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),

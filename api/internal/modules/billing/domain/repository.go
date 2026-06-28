@@ -11,15 +11,6 @@ import (
 type Tx = any
 
 type BillingRepository interface {
-	// Preflight (API-16) — read-only, no transaction required.
-	ListPreflightChildren(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]PreflightChildRow, error)
-	ListPreflightAttendanceSessions(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]PreflightAttendanceSessionRow, error)
-
-	// Generation (API-17) — transactional methods using Tx.
-	ListCandidateChildrenForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]PreflightChildRow, error)
-	ListSelectedChildrenForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, childIDs []uuid.UUID) ([]PreflightChildRow, error)
-	ListAttendanceSessions(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, periodStart, periodEndExclusive time.Time) ([]PreflightAttendanceSessionRow, error)
-
 	// Advance-pay generation: list active terms covering the billing month,
 	// joined with child + funding data, locked FOR UPDATE.
 	ListActiveTermsForGeneration(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
