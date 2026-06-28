@@ -68,7 +68,7 @@ func (uc *CreateTermUseCase) Execute(ctx context.Context, actor tenant.ActorCont
 		return nil, domainerrors.Validation("Invalid request payload.", "booking_pattern_id")
 	}
 	if err := domain.ValidateTermStartDate(in.TermStartDate); err != nil {
-		return nil, domainerrors.New(domain.ErrInvalidStartDate.Error(), "Invalid request payload.", "term_start_date")
+		return nil, domainerrors.New("term_invalid_start_date", "Invalid request payload.", "term_start_date")
 	}
 
 	var result *domain.Term
@@ -79,7 +79,7 @@ func (uc *CreateTermUseCase) Execute(ctx context.Context, actor tenant.ActorCont
 			return domainerrors.Internal(fmt.Errorf("check existing term: %w", err))
 		}
 		if found {
-			return domainerrors.Conflict(domain.ErrTermAlreadyExists.Error(), "An active term already exists for this child.")
+			return domainerrors.Conflict("term_already_exists", "An active term already exists for this child.")
 		}
 
 		// 2. Validate the booking pattern exists in scope.

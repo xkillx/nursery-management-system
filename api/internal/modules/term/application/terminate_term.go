@@ -59,7 +59,7 @@ func (uc *TerminateTermUseCase) Execute(ctx context.Context, actor tenant.ActorC
 			return domainerrors.NotFound("term", "Resource not found.")
 		}
 		if term.Status != domain.TermStatusActive && term.Status != domain.TermStatusPendingRenewal && term.Status != domain.TermStatusPreTerm {
-			return domainerrors.Conflict(domain.ErrTermNotActive.Error(), "Term is not active.")
+			return domainerrors.Conflict("term_not_active", "Term is not active.")
 		}
 
 		// 1-month notice: terminated_at is end-of-notice-month.
@@ -67,7 +67,7 @@ func (uc *TerminateTermUseCase) Execute(ctx context.Context, actor tenant.ActorC
 		var noticeMonth time.Time
 		if !in.EffectiveMonth.IsZero() {
 			if err := domain.ValidateTermStartDate(in.EffectiveMonth); err != nil {
-				return domainerrors.New(domain.ErrInvalidStartDate.Error(), "Invalid request payload.", "effective_month")
+				return domainerrors.New("term_invalid_start_date", "Invalid request payload.", "effective_month")
 			}
 			noticeMonth = in.EffectiveMonth.UTC()
 			earliestNoticeMonth := today.AddDate(0, 1, 0)
@@ -89,7 +89,7 @@ func (uc *TerminateTermUseCase) Execute(ctx context.Context, actor tenant.ActorC
 			return domainerrors.Internal(fmt.Errorf("terminate term: %w", err))
 		}
 		if rows == 0 {
-			return domainerrors.Conflict(domain.ErrTermNotActive.Error(), "Term is not active.")
+			return domainerrors.Conflict("term_not_active", "Term is not active.")
 		}
 
 		// Clear child denormalisation since no active term remains.

@@ -1,11 +1,11 @@
 package domain
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
 
 // TermStatus is the lifecycle state of a Term. Derived from dates and lifecycle actions.
@@ -192,14 +192,14 @@ func (t *Term) ShouldBeEnded(today time.Time) bool {
 
 // Errors
 var (
-	ErrTermNotFound                  = errors.New("term not found")
-	ErrTermAlreadyExists             = errors.New("an active term already exists for this child")
-	ErrInvalidStartDate              = errors.New("term_start_date must be the 1st of a calendar month")
-	ErrInvalidEffectiveFrom          = errors.New("effective_from must be the 1st of a calendar month")
-	ErrInvalidRate                   = errors.New("site_hourly_rate_minor must be >= 0")
-	ErrTermNotActive                 = errors.New("term is not active")
-	ErrScheduleChangeNotFound        = errors.New("schedule change not found")
-	ErrScheduleChangeAlreadyDecided  = errors.New("schedule change already decided")
-	ErrScheduleChangeEffectiveInPast = errors.New("schedule change effective_from is in the past")
-	ErrDecreaseAutoApproved          = errors.New("decrease schedule changes are auto-approved; use mark_applied flow")
+	ErrTermNotFound                  = domainerrors.NotFound("term", "Term not found")
+	ErrTermAlreadyExists             = domainerrors.Conflict("term_already_exists", "An active term already exists for this child")
+	ErrInvalidStartDate              = domainerrors.New("term_invalid_start_date", "Invalid start date")
+	ErrInvalidEffectiveFrom          = domainerrors.New("term_invalid_effective_from", "Invalid effective from date")
+	ErrInvalidRate                   = domainerrors.New("term_invalid_rate", "Rate must be >= 0")
+	ErrTermNotActive                 = domainerrors.Conflict("term_not_active", "Term is not active")
+	ErrScheduleChangeNotFound        = domainerrors.NotFound("term_schedule_change", "Schedule change not found")
+	ErrScheduleChangeAlreadyDecided  = domainerrors.Conflict("schedule_change_already_decided", "Schedule change already decided")
+	ErrScheduleChangeEffectiveInPast = domainerrors.New("schedule_change_effective_in_past", "Effective from is in the past")
+	ErrDecreaseAutoApproved          = domainerrors.New("decrease_auto_approved", "Decrease changes are auto-approved")
 )

@@ -1,12 +1,12 @@
 package domain
 
-import "errors"
+import domainerrors "nursery-management-system/api/internal/platform/errors"
 
 var (
-	ErrNotFound           = errors.New("not found")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrInvalidMembership  = errors.New("invalid membership")
+	ErrNotFound           = domainerrors.NotFound("not_found", "Not found")
+	ErrInvalidCredentials = domainerrors.Unauthorized("Invalid credentials or session.")
+	ErrInvalidToken       = domainerrors.Unauthorized("Invalid credentials or session.")
+	ErrInvalidMembership  = domainerrors.Forbidden("forbidden_scope_selection", "Invalid membership selection.")
 )
 
 var ErrMalformedMembershipID = ValidationError{Field: "membership_id", Message: "membership_id must be a valid UUID"}

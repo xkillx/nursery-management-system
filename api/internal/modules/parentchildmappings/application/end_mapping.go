@@ -2,16 +2,16 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	"nursery-management-system/api/internal/platform/audit"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
 
-var ErrMappingNotFound = errors.New("parent mapping not found")
+var ErrMappingNotFound = domainerrors.NotFound("parent_child_mapping", "Parent-child mapping not found")
 
 type EndMappingUseCase struct {
 	repo  domain.Repository

@@ -1,11 +1,11 @@
 package domain
 
-import "errors"
+import domainerrors "nursery-management-system/api/internal/platform/errors"
 
 var (
-	ErrTokenInvalid = errors.New("password reset token is invalid")
-	ErrTokenExpired = errors.New("password reset token has expired")
-	ErrTokenUsed    = errors.New("password reset token has already been used")
-	ErrUserNotFound = errors.New("user not found")
-	ErrUserInactive = errors.New("user is inactive")
+	ErrTokenInvalid = domainerrors.New("password_reset_token_invalid", "Password reset token is invalid")
+	ErrTokenExpired = domainerrors.New("password_reset_token_expired", "Password reset token has expired")
+	ErrTokenUsed    = domainerrors.New("password_reset_token_used", "Password reset token has already been used")
+	ErrUserNotFound = domainerrors.NotFound("password_reset_user", "User not found")
+	ErrUserInactive = domainerrors.New("password_reset_user_inactive", "User is inactive")
 )

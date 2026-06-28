@@ -2,21 +2,21 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	"nursery-management-system/api/internal/platform/audit"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/uid"
 )
 
 var (
-	ErrMembershipNotFound  = errors.New("membership not found")
-	ErrMembershipNotParent = errors.New("membership not parent role")
-	ErrMembershipNotActive = errors.New("membership not active")
-	ErrChildNotFound       = errors.New("child not found")
+	ErrMembershipNotFound  = domainerrors.NotFound("membership", "Membership not found")
+	ErrMembershipNotParent = domainerrors.New("membership_not_parent", "Membership is not a parent role")
+	ErrMembershipNotActive = domainerrors.New("membership_not_active", "Membership is not active")
+	ErrChildNotFound       = domainerrors.NotFound("child_map", "Child not found")
 )
 
 type CreateMappingUseCase struct {

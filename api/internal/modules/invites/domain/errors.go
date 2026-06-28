@@ -1,16 +1,16 @@
 package domain
 
-import "errors"
+import domainerrors "nursery-management-system/api/internal/platform/errors"
 
 var (
-	ErrRoleNotAllowed         = errors.New("invite role not allowed")
-	ErrEmailAlreadyRegistered = errors.New("invite email already registered")
-	ErrScopeConflict          = errors.New("invite scope conflict")
-	ErrInviteNotFound         = errors.New("invite not found")
-	ErrInviteNotPending       = errors.New("invite not pending")
-	ErrInviteAccepted         = errors.New("invite already accepted")
-	ErrTokenInvalid           = errors.New("invite token invalid")
-	ErrTokenExpired           = errors.New("invite token expired")
-	ErrTokenRevoked           = errors.New("invite token revoked")
-	ErrTokenAccepted          = errors.New("invite token already accepted")
+	ErrRoleNotAllowed         = domainerrors.New("invite_role_not_allowed", "Role not allowed for this invite")
+	ErrEmailAlreadyRegistered = domainerrors.Conflict("invite_email_already_registered", "Email already registered")
+	ErrScopeConflict          = domainerrors.Conflict("invite_scope_conflict", "Invite scope conflict")
+	ErrInviteNotFound         = domainerrors.NotFound("invite", "Invite not found")
+	ErrInviteNotPending       = domainerrors.Conflict("invite_not_pending", "Invite is not pending")
+	ErrInviteAccepted         = domainerrors.Conflict("invite_already_accepted", "Invite already accepted")
+	ErrTokenInvalid           = domainerrors.New("invite_token_invalid", "Invite token invalid")
+	ErrTokenExpired           = domainerrors.New("invite_token_expired", "Invite token expired")
+	ErrTokenRevoked           = domainerrors.New("invite_token_revoked", "Invite token revoked")
+	ErrTokenAccepted          = domainerrors.New("invite_token_accepted", "Invite token already accepted")
 )

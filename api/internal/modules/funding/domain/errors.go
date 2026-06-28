@@ -1,9 +1,9 @@
 package domain
 
-import "errors"
+import domainerrors "nursery-management-system/api/internal/platform/errors"
 
 var (
-	ErrFundingProfileNotFound = errors.New("funding profile not found")
-	ErrChildNotFound          = errors.New("child not found")
-	ErrMonthOutsideEnrollment = errors.New("billing month outside child enrollment window")
+	ErrFundingProfileNotFound = domainerrors.NotFound("funding_profile", "funding profile not found")
+	ErrChildNotFound          = domainerrors.NotFound("funding_child", "child not found")
+	ErrMonthOutsideEnrollment = domainerrors.Conflict("funding_month_outside_enrollment_window", "billing month outside child enrollment window")
 )

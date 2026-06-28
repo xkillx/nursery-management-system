@@ -61,7 +61,7 @@ func (uc *RequestScheduleChangeUseCase) Execute(ctx context.Context, actor tenan
 		return nil, domainerrors.Validation("Invalid request payload.", "change_kind")
 	}
 	if err := domain.ValidateEffectiveFrom(in.EffectiveFrom); err != nil {
-		return nil, domainerrors.New(domain.ErrInvalidEffectiveFrom.Error(), "Invalid request payload.", "effective_from")
+		return nil, domainerrors.New("term_invalid_effective_from", "Invalid request payload.", "effective_from")
 	}
 
 	var result *domain.TermScheduleChange
@@ -74,7 +74,7 @@ func (uc *RequestScheduleChangeUseCase) Execute(ctx context.Context, actor tenan
 			return domainerrors.NotFound("term", "Resource not found.")
 		}
 		if term.Status != domain.TermStatusActive && term.Status != domain.TermStatusPendingRenewal {
-			return domainerrors.Conflict(domain.ErrTermNotActive.Error(), "Term is not active.")
+			return domainerrors.Conflict("term_not_active", "Term is not active.")
 		}
 		if in.EffectiveFrom.Before(term.TermStartDate) {
 			return domainerrors.New("schedule_change_before_term", "Invalid request payload.", "effective_from")

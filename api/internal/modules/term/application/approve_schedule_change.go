@@ -49,10 +49,10 @@ func (uc *approveOrRejectScheduleChangeDeps) approveOrReject(
 			return domainerrors.NotFound("term_schedule_change", "Resource not found.")
 		}
 		if change.ApprovalDecision != nil {
-			return domainerrors.Conflict(domain.ErrScheduleChangeAlreadyDecided.Error(), "Schedule change already decided.")
+			return domainerrors.Conflict("schedule_change_already_decided", "Schedule change already decided.")
 		}
 		if change.ChangeKind != domain.ScheduleChangeIncrease {
-			return domainerrors.New(domain.ErrDecreaseAutoApproved.Error(), "Only increase changes require approval.", "change_kind")
+			return domainerrors.New("decrease_auto_approved", "Only increase changes require approval.", "change_kind")
 		}
 
 		var rows int64
@@ -66,7 +66,7 @@ func (uc *approveOrRejectScheduleChangeDeps) approveOrReject(
 			return domainerrors.Internal(fmt.Errorf("apply decision: %w", actErr))
 		}
 		if rows == 0 {
-			return domainerrors.Conflict(domain.ErrScheduleChangeAlreadyDecided.Error(), "Schedule change already decided.")
+			return domainerrors.Conflict("schedule_change_already_decided", "Schedule change already decided.")
 		}
 
 		reloaded, found, err := uc.scheduleRepo.GetByID(ctx, actor.TenantID, actor.BranchID, change.ID)
