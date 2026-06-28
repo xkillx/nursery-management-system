@@ -59,17 +59,11 @@ func (a *childEnrollmentCheckerAdapter) CheckEnrollmentForAttendance(ctx context
 	if !found {
 		return attendancedomain.ErrChildNotFound
 	}
-	if !child.IsActive {
-		return attendancedomain.ErrChildNotFound
-	}
 	if !child.EnrollmentComplete() {
 		return attendancedomain.ErrChildEnrollmentIncomplete
 	}
-	if localDate.Before(child.StartDate) {
-		return attendancedomain.ErrChildEnrollmentIncomplete
-	}
-	if child.EndDate != nil && localDate.After(*child.EndDate) {
-		return attendancedomain.ErrChildEnrollmentIncomplete
+	if !child.IsEligibleForAttendance(localDate) {
+		return attendancedomain.ErrChildNotFound
 	}
 	return nil
 }

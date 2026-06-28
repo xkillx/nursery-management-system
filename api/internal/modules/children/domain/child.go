@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,6 +67,68 @@ func (c Child) MissingRequirements() []string {
 
 func (c Child) EnrollmentComplete() bool {
 	return len(c.MissingRequirements()) == 0
+}
+
+func (c *Child) Activate(startDate time.Time, hourlyRateMinor int) error {
+	if c.IsActive {
+		return fmt.Errorf("child is already active")
+	}
+	now := time.Now().UTC()
+	if startDate.Before(now.Truncate(24 * time.Hour)) {
+		return fmt.Errorf("start date must not be in the past")
+	}
+	c.StartDate = startDate
+	c.SiteCoreHourlyRateMinor = &hourlyRateMinor
+	c.IsActive = true
+	c.EndDate = nil
+	return nil
+}
+
+func (c *Child) Deactivate(reasonCode ReasonCode, deactivatedAt time.Time) error {
+	if !c.IsActive {
+		return fmt.Errorf("child is already inactive")
+	}
+	if _, ok := ValidReasonCodes[reasonCode]; !ok {
+		return fmt.Errorf("invalid reason code: %s", reasonCode)
+	}
+	c.EndDate = &deactivatedAt
+	c.IsActive = false
+	return nil
+}
+
+func (c *Child) ChangeName(firstName string, lastName *string) error {
+	if firstName == "" {
+		return fmt.Errorf("first name must not be empty")
+	}
+	if c.FirstName == firstName && stringPtrEqual(c.LastName, lastName) {
+		return fmt.Errorf("no change in name")
+	}
+	c.FirstName = firstName
+	c.LastName = lastName
+	return nil
+}
+
+func (c Child) IsEligibleForAttendance(localDate time.Time) bool {
+	if !c.IsActive {
+		return false
+	}
+	if localDate.Before(c.StartDate) {
+		return false
+	}
+	if c.EndDate != nil && !localDate.Before(*c.EndDate) {
+		return false
+	}
+	return true
+}
+
+func stringPtrEqual(a, b *string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
 }
 
 type AttendanceChild struct {
