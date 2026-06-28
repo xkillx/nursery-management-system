@@ -16,6 +16,11 @@ A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 
 ### Benefits Status
 Tracks whether a child receives benefits that contribute towards nursery fees. Values: `yes`, `no`, `unknown`. Separate from the specific benefit types or amounts.
 
+## Billing
+
+### Money
+A value object representing a monetary amount in GBP. Wraps a non-negative integer of pence with immutable arithmetic (`Add`, `Multiply`), safe construction via `GBP()` constructor that validates non-negative, and backward-compatible JSON serialization as a raw integer. Replaces raw `int` fields across the billing module to enforce type safety at domain boundaries.
+
 ## Registration
 
 ### Stepper (Intake Wizard)
