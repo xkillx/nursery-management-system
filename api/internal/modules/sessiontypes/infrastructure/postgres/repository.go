@@ -97,8 +97,8 @@ func (r *SessionTypeRepository) Update(ctx context.Context, tenantID, branchID, 
 	return q.SessionTypesUpdate(ctx, params)
 }
 
-func (r *SessionTypeRepository) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *SessionTypeRepository) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTypesArchive(ctx, sqlc.SessionTypesArchiveParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -106,8 +106,8 @@ func (r *SessionTypeRepository) Archive(ctx context.Context, tx pgx.Tx, tenantID
 	})
 }
 
-func (r *SessionTypeRepository) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *SessionTypeRepository) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTypesReactivate(ctx, sqlc.SessionTypesReactivateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -129,8 +129,8 @@ func (r *SessionTypeRepository) ActiveNameExists(ctx context.Context, tenantID, 
 	return q.SessionTypesCheckActiveNameExists(ctx, params)
 }
 
-func (r *SessionTypeRepository) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
-	q := sqlc.New(tx)
+func (r *SessionTypeRepository) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTypesExists(ctx, sqlc.SessionTypesExistsParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -138,8 +138,8 @@ func (r *SessionTypeRepository) Exists(ctx context.Context, tx pgx.Tx, tenantID,
 	})
 }
 
-func (r *SessionTypeRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
-	q := sqlc.New(tx)
+func (r *SessionTypeRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.SessionTypesGetByIDForUpdate(ctx, sqlc.SessionTypesGetByIDForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),

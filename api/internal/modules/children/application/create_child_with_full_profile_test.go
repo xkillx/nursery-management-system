@@ -25,42 +25,42 @@ type fakeChildRepository struct {
 	insertPatternCnt    int
 }
 
-func (f *fakeChildRepository) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+func (f *fakeChildRepository) Create(ctx context.Context, tx domain.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
 	f.createCallCount++
 	return nil
 }
-func (f *fakeChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
+func (f *fakeChildRepository) InsertPattern(ctx context.Context, tx domain.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
 	f.insertPatternCalled = true
 	f.insertPatternFrom = p.EffectiveFrom
 	f.insertPatternTo = p.EffectiveTo
 	f.insertPatternCnt = len(entries)
 	return p, nil
 }
-func (f *fakeChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
+func (f *fakeChildRepository) UpsertCollectionSetting(ctx context.Context, tx domain.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
 	return p, nil
 }
-func (f *fakeChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (f *fakeChildRepository) SetCollectionPassword(ctx context.Context, tx domain.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	return nil
 }
-func (f *fakeChildRepository) InsertRoomAssignment(ctx context.Context, tx pgx.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
+func (f *fakeChildRepository) InsertRoomAssignment(ctx context.Context, tx domain.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
 	return a, nil
 }
-func (f *fakeChildRepository) InsertConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
+func (f *fakeChildRepository) InsertConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
 	return p, nil
 }
-func (f *fakeChildRepository) UpsertBillingProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
+func (f *fakeChildRepository) UpsertBillingProfile(ctx context.Context, tx domain.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
 	return p, nil
 }
 func (f *fakeChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
 	return domain.Child{}, false, nil
 }
-func (f *fakeChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+func (f *fakeChildRepository) ExistsInScope(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
 	return true, nil
 }
-func (f *fakeChildRepository) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+func (f *fakeChildRepository) GetCurrentOpenByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildRepository) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
+func (f *fakeChildRepository) CloseCurrentPattern(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
 	return nil
 }
 

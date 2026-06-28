@@ -25,14 +25,14 @@ func newMockTermRepo() *mockTermRepo {
 	return &mockTermRepo{terms: map[uuid.UUID]*domain.Term{}}
 }
 
-func (m *mockTermRepo) Insert(_ context.Context, _ pgx.Tx, t *domain.Term) (*domain.Term, error) {
+func (m *mockTermRepo) Insert(_ context.Context, _ domain.Tx, t *domain.Term) (*domain.Term, error) {
 	clone := *t
 	clone.CreatedAt = time.Now().UTC()
 	clone.UpdatedAt = clone.CreatedAt
 	m.terms[t.ID] = &clone
 	return &clone, nil
 }
-func (m *mockTermRepo) Terminate(_ context.Context, _ pgx.Tx, _, _, id uuid.UUID, terminatedAt time.Time, code, note string) (int64, error) {
+func (m *mockTermRepo) Terminate(_ context.Context, _ domain.Tx, _, _, id uuid.UUID, terminatedAt time.Time, code, note string) (int64, error) {
 	t, ok := m.terms[id]
 	if !ok {
 		return 0, nil
@@ -49,7 +49,7 @@ func (m *mockTermRepo) Terminate(_ context.Context, _ pgx.Tx, _, _, id uuid.UUID
 	t.UpdatedAt = time.Now().UTC()
 	return 1, nil
 }
-func (m *mockTermRepo) UpdateStatus(_ context.Context, _ pgx.Tx, _, _, id uuid.UUID, status domain.TermStatus) (int64, error) {
+func (m *mockTermRepo) UpdateStatus(_ context.Context, _ domain.Tx, _, _, id uuid.UUID, status domain.TermStatus) (int64, error) {
 	t, ok := m.terms[id]
 	if !ok {
 		return 0, nil
@@ -75,10 +75,10 @@ func (m *mockTermRepo) GetActiveForChild(_ context.Context, _, _, childID uuid.U
 	}
 	return nil, false, nil
 }
-func (m *mockTermRepo) GetActiveForChildInTx(ctx context.Context, tx pgx.Tx, t, b, c uuid.UUID) (*domain.Term, bool, error) {
+func (m *mockTermRepo) GetActiveForChildInTx(ctx context.Context, tx domain.Tx, t, b, c uuid.UUID) (*domain.Term, bool, error) {
 	return m.GetActiveForChild(ctx, t, b, c)
 }
-func (m *mockTermRepo) GetByIDInTx(ctx context.Context, tx pgx.Tx, t, b, id uuid.UUID) (*domain.Term, bool, error) {
+func (m *mockTermRepo) GetByIDInTx(ctx context.Context, tx domain.Tx, t, b, id uuid.UUID) (*domain.Term, bool, error) {
 	return m.GetByID(ctx, t, b, id)
 }
 func (m *mockTermRepo) ListByChild(_ context.Context, _, _, childID uuid.UUID) ([]domain.Term, error) {
@@ -108,13 +108,13 @@ func (m *mockTermRepo) ListEndingOnOrBefore(_ context.Context, _, _ uuid.UUID, _
 func (m *mockTermRepo) ListActiveInBillingMonth(_ context.Context, _, _ uuid.UUID, _, _ time.Time) ([]domain.Term, error) {
 	return nil, nil
 }
-func (m *mockTermRepo) ListActiveForChildUpdate(_ context.Context, _ pgx.Tx, _, _, childID uuid.UUID) ([]domain.Term, error) {
+func (m *mockTermRepo) ListActiveForChildUpdate(_ context.Context, _ domain.Tx, _, _, childID uuid.UUID) ([]domain.Term, error) {
 	return m.ListByChild(context.Background(), uuid.Nil, uuid.Nil, childID)
 }
-func (m *mockTermRepo) SetChildCurrentTermID(_ context.Context, _ pgx.Tx, _, _, _, _ uuid.UUID) error {
+func (m *mockTermRepo) SetChildCurrentTermID(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) error {
 	return nil
 }
-func (m *mockTermRepo) ClearChildCurrentTermID(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID) error {
+func (m *mockTermRepo) ClearChildCurrentTermID(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) error {
 	return nil
 }
 

@@ -102,8 +102,8 @@ func (r *SessionTemplateRepository) Update(ctx context.Context, tenantID, branch
 	return q.SessionTemplatesUpdate(ctx, params)
 }
 
-func (r *SessionTemplateRepository) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTemplatesArchive(ctx, sqlc.SessionTemplatesArchiveParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -111,8 +111,8 @@ func (r *SessionTemplateRepository) Archive(ctx context.Context, tx pgx.Tx, tena
 	})
 }
 
-func (r *SessionTemplateRepository) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTemplatesReactivate(ctx, sqlc.SessionTemplatesReactivateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -134,8 +134,8 @@ func (r *SessionTemplateRepository) ActiveNameExists(ctx context.Context, tenant
 	return q.SessionTemplatesCheckActiveNameExists(ctx, params)
 }
 
-func (r *SessionTemplateRepository) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTemplatesExists(ctx, sqlc.SessionTemplatesExistsParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -143,8 +143,8 @@ func (r *SessionTemplateRepository) Exists(ctx context.Context, tx pgx.Tx, tenan
 	})
 }
 
-func (r *SessionTemplateRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.SessionTemplatesGetByIDForUpdate(ctx, sqlc.SessionTemplatesGetByIDForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -159,8 +159,8 @@ func (r *SessionTemplateRepository) GetByIDForUpdate(ctx context.Context, tx pgx
 	return mapSessionTemplate(row), nil
 }
 
-func (r *SessionTemplateRepository) InsertEntry(ctx context.Context, tx pgx.Tx, entry domain.SessionTemplateEntry) error {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) InsertEntry(ctx context.Context, tx domain.Tx, entry domain.SessionTemplateEntry) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTemplateEntriesInsert(ctx, sqlc.SessionTemplateEntriesInsertParams{
 		ID:            uuidToPgtype(entry.ID),
 		TenantID:      uuidToPgtype(entry.TenantID),
@@ -171,8 +171,8 @@ func (r *SessionTemplateRepository) InsertEntry(ctx context.Context, tx pgx.Tx, 
 	})
 }
 
-func (r *SessionTemplateRepository) DeleteEntriesByTemplate(ctx context.Context, tx pgx.Tx, tenantID, branchID, templateID uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) DeleteEntriesByTemplate(ctx context.Context, tx domain.Tx, tenantID, branchID, templateID uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.SessionTemplateEntriesDeleteByTemplate(ctx, sqlc.SessionTemplateEntriesDeleteByTemplateParams{
 		TenantID:   uuidToPgtype(tenantID),
 		BranchID:   uuidToPgtype(branchID),
@@ -197,8 +197,8 @@ func (r *SessionTemplateRepository) EntriesListByTemplate(ctx context.Context, t
 	return out, nil
 }
 
-func (r *SessionTemplateRepository) EntriesListByTemplateTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, templateID uuid.UUID) ([]domain.SessionTemplateEntry, error) {
-	q := sqlc.New(tx)
+func (r *SessionTemplateRepository) EntriesListByTemplateTx(ctx context.Context, tx domain.Tx, tenantID, branchID, templateID uuid.UUID) ([]domain.SessionTemplateEntry, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	rows, err := q.SessionTemplateEntriesListByTemplate(ctx, sqlc.SessionTemplateEntriesListByTemplateParams{
 		TenantID:   uuidToPgtype(tenantID),
 		BranchID:   uuidToPgtype(branchID),

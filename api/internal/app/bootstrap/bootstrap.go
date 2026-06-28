@@ -424,7 +424,7 @@ type txManagerAdapter struct {
 }
 
 func (a *txManagerAdapter) ExecTx(ctx context.Context, fn func(tx paymentsdomain.Tx) error) error {
-	return a.mgr.ExecTx(ctx, fn)
+	return a.mgr.ExecTx(ctx, func(tx pgx.Tx) error { return fn(tx) })
 }
 
 func registerHealthRoutes(router *gin.Engine, basePath string, pinger healthPinger) *gin.RouterGroup {
@@ -456,12 +456,12 @@ type auditSystemWriterAdapter struct {
 	w *audit.Writer
 }
 
-func (a *auditSystemWriterAdapter) WriteSystemWithTx(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, requestID string, params paymentsapp.SystemAuditParams) error {
+func (a *auditSystemWriterAdapter) WriteSystemWithTx(ctx context.Context, tx paymentsdomain.Tx, tenantID, branchID uuid.UUID, requestID string, params paymentsapp.SystemAuditParams) error {
 	var reasonCode *string
 	if params.ReasonCode != nil {
 		reasonCode = params.ReasonCode
 	}
-	return a.w.WriteSystemWithTx(ctx, tx, tenantID, branchID, requestID, audit.WriteParams{
+	return a.w.WriteSystemWithTx(ctx, tx.(pgx.Tx), tenantID, branchID, requestID, audit.WriteParams{
 		ActionType: params.ActionType,
 		EntityType: params.EntityType,
 		EntityID:   params.EntityID,

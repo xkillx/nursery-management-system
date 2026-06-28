@@ -23,8 +23,8 @@ func NewAbsenceRepository(pool *pgxpool.Pool) *AbsenceRepository {
 	return &AbsenceRepository{pool: pool}
 }
 
-func (r *AbsenceRepository) Create(ctx context.Context, tx pgx.Tx, marker domain.AbsenceMarker) (domain.AbsenceMarker, error) {
-	q := sqlc.New(tx)
+func (r *AbsenceRepository) Create(ctx context.Context, tx domain.Tx, marker domain.AbsenceMarker) (domain.AbsenceMarker, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AbsenceMarkersCreate(ctx, sqlc.AbsenceMarkersCreateParams{
 		ID:                   uuidToPgtype(marker.ID),
 		TenantID:             uuidToPgtype(marker.TenantID),
@@ -41,8 +41,8 @@ func (r *AbsenceRepository) Create(ctx context.Context, tx pgx.Tx, marker domain
 	return mapAbsenceMarker(row), nil
 }
 
-func (r *AbsenceRepository) FindActiveByChildDate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.AbsenceMarker, bool, error) {
-	q := sqlc.New(tx)
+func (r *AbsenceRepository) FindActiveByChildDate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.AbsenceMarker, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AbsenceMarkersFindActiveByChildDate(ctx, sqlc.AbsenceMarkersFindActiveByChildDateParams{
 		TenantID:  uuidToPgtype(tenantID),
 		BranchID:  uuidToPgtype(branchID),
@@ -58,8 +58,8 @@ func (r *AbsenceRepository) FindActiveByChildDate(ctx context.Context, tx pgx.Tx
 	return mapAbsenceMarker(row), true, nil
 }
 
-func (r *AbsenceRepository) GetByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.AbsenceMarker, bool, error) {
-	q := sqlc.New(tx)
+func (r *AbsenceRepository) GetByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.AbsenceMarker, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AbsenceMarkersGetByID(ctx, sqlc.AbsenceMarkersGetByIDParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -74,8 +74,8 @@ func (r *AbsenceRepository) GetByID(ctx context.Context, tx pgx.Tx, tenantID, br
 	return mapAbsenceMarker(row), true, nil
 }
 
-func (r *AbsenceRepository) Clear(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, clearedAt time.Time, clearedByUserID, clearedByMembershipID uuid.UUID) (domain.AbsenceMarker, bool, error) {
-	q := sqlc.New(tx)
+func (r *AbsenceRepository) Clear(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, clearedAt time.Time, clearedByUserID, clearedByMembershipID uuid.UUID) (domain.AbsenceMarker, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AbsenceMarkersClear(ctx, sqlc.AbsenceMarkersClearParams{
 		TenantID:              uuidToPgtype(tenantID),
 		BranchID:              uuidToPgtype(branchID),
@@ -93,8 +93,8 @@ func (r *AbsenceRepository) Clear(ctx context.Context, tx pgx.Tx, tenantID, bran
 	return mapAbsenceMarker(row), true, nil
 }
 
-func (r *AbsenceRepository) HasAttendanceForChildDate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
-	q := sqlc.New(tx)
+func (r *AbsenceRepository) HasAttendanceForChildDate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.AbsenceMarkersHasAttendanceForChildDate(ctx, sqlc.AbsenceMarkersHasAttendanceForChildDateParams{
 		TenantID:         uuidToPgtype(tenantID),
 		BranchID:         uuidToPgtype(branchID),

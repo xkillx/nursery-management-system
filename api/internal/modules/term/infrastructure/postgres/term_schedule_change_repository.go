@@ -21,10 +21,10 @@ func NewScheduleChangeRepository(pool *pgxpool.Pool) *ScheduleChangeRepository {
 	return &ScheduleChangeRepository{pool: pool}
 }
 
-func (r *ScheduleChangeRepository) q() *sqlc.Queries            { return sqlc.New(r.pool) }
-func (r *ScheduleChangeRepository) qTx(tx pgx.Tx) *sqlc.Queries { return sqlc.New(tx) }
+func (r *ScheduleChangeRepository) q() *sqlc.Queries               { return sqlc.New(r.pool) }
+func (r *ScheduleChangeRepository) qTx(tx domain.Tx) *sqlc.Queries { return sqlc.New(tx.(pgx.Tx)) }
 
-func (r *ScheduleChangeRepository) Insert(ctx context.Context, tx pgx.Tx, c *domain.TermScheduleChange) (*domain.TermScheduleChange, error) {
+func (r *ScheduleChangeRepository) Insert(ctx context.Context, tx domain.Tx, c *domain.TermScheduleChange) (*domain.TermScheduleChange, error) {
 	row, err := r.qTx(tx).TermScheduleChangeInsert(ctx, sqlc.TermScheduleChangeInsertParams{
 		ID:                       pgtypeUUID(c.ID),
 		TenantID:                 pgtypeUUID(c.TenantID),
@@ -73,7 +73,7 @@ func (r *ScheduleChangeRepository) ListByTerm(ctx context.Context, tenantID, bra
 	return out, nil
 }
 
-func (r *ScheduleChangeRepository) Approve(ctx context.Context, tx pgx.Tx, tenantID, branchID, id, approverMembershipID uuid.UUID) (int64, error) {
+func (r *ScheduleChangeRepository) Approve(ctx context.Context, tx domain.Tx, tenantID, branchID, id, approverMembershipID uuid.UUID) (int64, error) {
 	rows, err := r.qTx(tx).TermScheduleChangeApprove(ctx, sqlc.TermScheduleChangeApproveParams{
 		TenantID:               pgtypeUUID(tenantID),
 		BranchID:               pgtypeUUID(branchID),
@@ -86,7 +86,7 @@ func (r *ScheduleChangeRepository) Approve(ctx context.Context, tx pgx.Tx, tenan
 	return rows, nil
 }
 
-func (r *ScheduleChangeRepository) Reject(ctx context.Context, tx pgx.Tx, tenantID, branchID, id, approverMembershipID uuid.UUID) (int64, error) {
+func (r *ScheduleChangeRepository) Reject(ctx context.Context, tx domain.Tx, tenantID, branchID, id, approverMembershipID uuid.UUID) (int64, error) {
 	rows, err := r.qTx(tx).TermScheduleChangeReject(ctx, sqlc.TermScheduleChangeRejectParams{
 		TenantID:               pgtypeUUID(tenantID),
 		BranchID:               pgtypeUUID(branchID),

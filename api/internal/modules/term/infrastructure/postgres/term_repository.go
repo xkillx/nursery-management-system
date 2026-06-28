@@ -22,10 +22,10 @@ func NewTermRepository(pool *pgxpool.Pool) *TermRepository {
 	return &TermRepository{pool: pool}
 }
 
-func (r *TermRepository) q() *sqlc.Queries            { return sqlc.New(r.pool) }
-func (r *TermRepository) qTx(tx pgx.Tx) *sqlc.Queries { return sqlc.New(tx) }
+func (r *TermRepository) q() *sqlc.Queries               { return sqlc.New(r.pool) }
+func (r *TermRepository) qTx(tx domain.Tx) *sqlc.Queries { return sqlc.New(tx.(pgx.Tx)) }
 
-func (r *TermRepository) Insert(ctx context.Context, tx pgx.Tx, t *domain.Term) (*domain.Term, error) {
+func (r *TermRepository) Insert(ctx context.Context, tx domain.Tx, t *domain.Term) (*domain.Term, error) {
 	row, err := r.qTx(tx).TermInsert(ctx, sqlc.TermInsertParams{
 		ID:                    pgtypeUUID(t.ID),
 		TenantID:              pgtypeUUID(t.TenantID),
@@ -44,7 +44,7 @@ func (r *TermRepository) Insert(ctx context.Context, tx pgx.Tx, t *domain.Term) 
 	return mapTermRow(row), nil
 }
 
-func (r *TermRepository) Terminate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, terminatedAt time.Time, reasonCode, reasonNote string) (int64, error) {
+func (r *TermRepository) Terminate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, terminatedAt time.Time, reasonCode, reasonNote string) (int64, error) {
 	rows, err := r.qTx(tx).TermTerminate(ctx, sqlc.TermTerminateParams{
 		TenantID:              pgtypeUUID(tenantID),
 		BranchID:              pgtypeUUID(branchID),
@@ -59,7 +59,7 @@ func (r *TermRepository) Terminate(ctx context.Context, tx pgx.Tx, tenantID, bra
 	return rows, nil
 }
 
-func (r *TermRepository) UpdateStatus(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, status domain.TermStatus) (int64, error) {
+func (r *TermRepository) UpdateStatus(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, status domain.TermStatus) (int64, error) {
 	rows, err := r.qTx(tx).TermUpdateStatus(ctx, sqlc.TermUpdateStatusParams{
 		TenantID: pgtypeUUID(tenantID),
 		BranchID: pgtypeUUID(branchID),
@@ -87,7 +87,7 @@ func (r *TermRepository) GetByID(ctx context.Context, tenantID, branchID, id uui
 	return mapTermRow(row), true, nil
 }
 
-func (r *TermRepository) GetByIDInTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (*domain.Term, bool, error) {
+func (r *TermRepository) GetByIDInTx(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (*domain.Term, bool, error) {
 	row, err := r.qTx(tx).TermGetByID(ctx, sqlc.TermGetByIDParams{
 		TenantID: pgtypeUUID(tenantID),
 		BranchID: pgtypeUUID(branchID),
@@ -117,7 +117,7 @@ func (r *TermRepository) GetActiveForChild(ctx context.Context, tenantID, branch
 	return mapTermRow(row), true, nil
 }
 
-func (r *TermRepository) GetActiveForChildInTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.Term, bool, error) {
+func (r *TermRepository) GetActiveForChildInTx(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.Term, bool, error) {
 	row, err := r.qTx(tx).TermGetActiveForChild(ctx, sqlc.TermGetActiveForChildParams{
 		TenantID: pgtypeUUID(tenantID),
 		BranchID: pgtypeUUID(branchID),
@@ -212,7 +212,7 @@ func (r *TermRepository) ListActiveInBillingMonth(ctx context.Context, tenantID,
 	return out, nil
 }
 
-func (r *TermRepository) ListActiveForChildUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) ([]domain.Term, error) {
+func (r *TermRepository) ListActiveForChildUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) ([]domain.Term, error) {
 	rows, err := r.qTx(tx).TermListForChildUpdateLock(ctx, sqlc.TermListForChildUpdateLockParams{
 		TenantID: pgtypeUUID(tenantID),
 		BranchID: pgtypeUUID(branchID),
@@ -228,7 +228,7 @@ func (r *TermRepository) ListActiveForChildUpdate(ctx context.Context, tx pgx.Tx
 	return out, nil
 }
 
-func (r *TermRepository) SetChildCurrentTermID(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, termID uuid.UUID) error {
+func (r *TermRepository) SetChildCurrentTermID(ctx context.Context, tx domain.Tx, tenantID, branchID, childID, termID uuid.UUID) error {
 	err := r.qTx(tx).ChildSetCurrentTermID(ctx, sqlc.ChildSetCurrentTermIDParams{
 		TenantID:      pgtypeUUID(tenantID),
 		BranchID:      pgtypeUUID(branchID),
@@ -241,7 +241,7 @@ func (r *TermRepository) SetChildCurrentTermID(ctx context.Context, tx pgx.Tx, t
 	return nil
 }
 
-func (r *TermRepository) ClearChildCurrentTermID(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) error {
+func (r *TermRepository) ClearChildCurrentTermID(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) error {
 	err := r.qTx(tx).ChildClearCurrentTermID(ctx, sqlc.ChildClearCurrentTermIDParams{
 		TenantID: pgtypeUUID(tenantID),
 		BranchID: pgtypeUUID(branchID),

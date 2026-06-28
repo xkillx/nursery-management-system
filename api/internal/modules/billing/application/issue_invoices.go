@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -45,7 +46,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	var result domain.IssueInvoiceResult
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
+	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		candidate, found, lockErr := uc.repo.GetInvoiceForIssueForUpdate(ctx, tx, actor.TenantID, actor.BranchID, invoiceID)
 		if lockErr != nil {
 			return fmt.Errorf("lock invoice for issue: %w", lockErr)
@@ -198,7 +199,7 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 
 	var result domain.BulkIssueInvoicesResult
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
+	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		if runErr := uc.repo.CreateInvoiceRun(ctx, tx, domain.InvoiceRunCreateParams{
 			ID:                      runID,
 			TenantID:                actor.TenantID,

@@ -3,8 +3,6 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // Webhook event processing statuses
@@ -78,15 +76,15 @@ type WebhookProcessResult struct {
 }
 
 type WebhookRepository interface {
-	InsertWebhookEvent(ctx context.Context, tx pgx.Tx, event StripeWebhookEvent, requestID string, processingStatus, processingReason string) (string, bool, error)
-	UpdateWebhookEventStatus(ctx context.Context, tx pgx.Tx, eventID string, status, reason, errorMsg string) error
-	GetPaymentAttemptAndInvoiceForWebhook(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID, attemptID, sessionID string) (*WebhookAttemptInvoice, error)
-	MarkPaymentAttemptPaid(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error
-	MarkPaymentAttemptFailed(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error
-	MarkPaymentAttemptExpired(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error
-	MarkInvoicePaid(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID string) error
-	MarkInvoicePaymentFailed(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID string) error
-	InsertReconciliationRecord(ctx context.Context, tx pgx.Tx, params ReconciliationRecordParams) error
+	InsertWebhookEvent(ctx context.Context, tx Tx, event StripeWebhookEvent, requestID string, processingStatus, processingReason string) (string, bool, error)
+	UpdateWebhookEventStatus(ctx context.Context, tx Tx, eventID string, status, reason, errorMsg string) error
+	GetPaymentAttemptAndInvoiceForWebhook(ctx context.Context, tx Tx, tenantID, branchID, invoiceID, attemptID, sessionID string) (*WebhookAttemptInvoice, error)
+	MarkPaymentAttemptPaid(ctx context.Context, tx Tx, tenantID, branchID, attemptID string) error
+	MarkPaymentAttemptFailed(ctx context.Context, tx Tx, tenantID, branchID, attemptID string) error
+	MarkPaymentAttemptExpired(ctx context.Context, tx Tx, tenantID, branchID, attemptID string) error
+	MarkInvoicePaid(ctx context.Context, tx Tx, tenantID, branchID, invoiceID string) error
+	MarkInvoicePaymentFailed(ctx context.Context, tx Tx, tenantID, branchID, invoiceID string) error
+	InsertReconciliationRecord(ctx context.Context, tx Tx, params ReconciliationRecordParams) error
 }
 
 type WebhookAttemptInvoice struct {

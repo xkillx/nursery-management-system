@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
-// Tx is a transaction interface matching pgx.Tx for dependency injection.
-type Tx = pgx.Tx
+type Tx = any
 
 type Repository interface {
 	ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]SessionTemplate, error)

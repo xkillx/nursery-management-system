@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/attendance/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -289,7 +288,7 @@ type fakeChildCorrectionChecker struct {
 	err   error
 }
 
-func (f *fakeChildCorrectionChecker) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
+func (f *fakeChildCorrectionChecker) GetChildForCorrection(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
 	if f.err != nil {
 		return domain.ChildCorrectionInfo{}, false, f.err
 	}

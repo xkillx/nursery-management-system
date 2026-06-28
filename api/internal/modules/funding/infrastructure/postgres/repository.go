@@ -41,7 +41,7 @@ func (r *Repository) Get(ctx context.Context, tenantID, branchID, childID uuid.U
 }
 
 func (r *Repository) GetForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (domain.FundingProfile, bool, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.FundingProfileGetForUpdate(ctx, sqlc.FundingProfileGetForUpdateParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
@@ -58,7 +58,7 @@ func (r *Repository) GetForUpdate(ctx context.Context, tx domain.Tx, tenantID, b
 }
 
 func (r *Repository) Create(ctx context.Context, tx domain.Tx, profile domain.FundingProfile) (domain.FundingProfile, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.FundingProfileCreate(ctx, sqlc.FundingProfileCreateParams{
 		ID:                     uuidToPgtype(profile.ID),
 		TenantID:               uuidToPgtype(profile.TenantID),
@@ -74,7 +74,7 @@ func (r *Repository) Create(ctx context.Context, tx domain.Tx, profile domain.Fu
 }
 
 func (r *Repository) UpdateAllowance(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time, minutes int) (domain.FundingProfile, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.FundingProfileUpdateAllowance(ctx, sqlc.FundingProfileUpdateAllowanceParams{
 		FundedAllowanceMinutes: int32(minutes),
 		TenantID:               uuidToPgtype(tenantID),
@@ -89,7 +89,7 @@ func (r *Repository) UpdateAllowance(ctx context.Context, tx domain.Tx, tenantID
 }
 
 func (r *Repository) GetChildEnrollmentForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildEnrollment, bool, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.FundingChildEnrollmentGetForUpdate(ctx, sqlc.FundingChildEnrollmentGetForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),

@@ -24,25 +24,25 @@ type fakeAbsenceRepo struct {
 	clearOk       bool
 }
 
-func (f *fakeAbsenceRepo) Create(ctx context.Context, tx pgx.Tx, marker domain.AbsenceMarker) (domain.AbsenceMarker, error) {
+func (f *fakeAbsenceRepo) Create(ctx context.Context, tx domain.Tx, marker domain.AbsenceMarker) (domain.AbsenceMarker, error) {
 	return marker, nil
 }
 
-func (f *fakeAbsenceRepo) FindActiveByChildDate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.AbsenceMarker, bool, error) {
+func (f *fakeAbsenceRepo) FindActiveByChildDate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (domain.AbsenceMarker, bool, error) {
 	if f.activeMarker != nil {
 		return *f.activeMarker, true, nil
 	}
 	return domain.AbsenceMarker{}, false, nil
 }
 
-func (f *fakeAbsenceRepo) GetByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.AbsenceMarker, bool, error) {
+func (f *fakeAbsenceRepo) GetByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.AbsenceMarker, bool, error) {
 	if f.found {
 		return f.marker, true, nil
 	}
 	return domain.AbsenceMarker{}, false, nil
 }
 
-func (f *fakeAbsenceRepo) Clear(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, clearedAt time.Time, clearedByUserID, clearedByMembershipID uuid.UUID) (domain.AbsenceMarker, bool, error) {
+func (f *fakeAbsenceRepo) Clear(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, clearedAt time.Time, clearedByUserID, clearedByMembershipID uuid.UUID) (domain.AbsenceMarker, bool, error) {
 	if f.clearOk {
 		f.marker.ClearedAt = &clearedAt
 		return f.marker, true, nil
@@ -50,7 +50,7 @@ func (f *fakeAbsenceRepo) Clear(ctx context.Context, tx pgx.Tx, tenantID, branch
 	return domain.AbsenceMarker{}, false, nil
 }
 
-func (f *fakeAbsenceRepo) HasAttendanceForChildDate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
+func (f *fakeAbsenceRepo) HasAttendanceForChildDate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
 	return f.hasAttendance, nil
 }
 
@@ -58,7 +58,7 @@ type fakeAbsenceChildChecker struct {
 	err error
 }
 
-func (f *fakeAbsenceChildChecker) CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
+func (f *fakeAbsenceChildChecker) CheckEnrollmentForAttendance(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
 	return f.err
 }
 

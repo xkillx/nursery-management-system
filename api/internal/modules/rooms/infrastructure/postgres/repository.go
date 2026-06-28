@@ -102,8 +102,8 @@ func (r *RoomRepository) Update(ctx context.Context, tenantID, branchID, roomID 
 	return q.RoomsUpdate(ctx, params)
 }
 
-func (r *RoomRepository) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *RoomRepository) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.RoomsArchive(ctx, sqlc.RoomsArchiveParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -111,8 +111,8 @@ func (r *RoomRepository) Archive(ctx context.Context, tx pgx.Tx, tenantID, branc
 	})
 }
 
-func (r *RoomRepository) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *RoomRepository) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.RoomsReactivate(ctx, sqlc.RoomsReactivateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -134,8 +134,8 @@ func (r *RoomRepository) ActiveNameExists(ctx context.Context, tenantID, branchI
 	return q.RoomsCheckActiveNameExists(ctx, params)
 }
 
-func (r *RoomRepository) CountActiveChildren(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (int, error) {
-	q := sqlc.New(tx)
+func (r *RoomRepository) CountActiveChildren(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (int, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	count, err := q.RoomsCountActiveChildren(ctx, sqlc.RoomsCountActiveChildrenParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -147,8 +147,8 @@ func (r *RoomRepository) CountActiveChildren(ctx context.Context, tx pgx.Tx, ten
 	return int(count), nil
 }
 
-func (r *RoomRepository) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (bool, error) {
-	q := sqlc.New(tx)
+func (r *RoomRepository) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.RoomsExists(ctx, sqlc.RoomsExistsParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -156,8 +156,8 @@ func (r *RoomRepository) Exists(ctx context.Context, tx pgx.Tx, tenantID, branch
 	})
 }
 
-func (r *RoomRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
-	q := sqlc.New(tx)
+func (r *RoomRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.RoomsGetByIDForUpdate(ctx, sqlc.RoomsGetByIDForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),

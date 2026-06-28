@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
+
+type Tx = any
 
 type CorrectionParams struct {
 	SessionID  *uuid.UUID
@@ -18,20 +19,20 @@ type CorrectionParams struct {
 }
 
 type Repository interface {
-	CreateOpenSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
-	GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (Session, bool, error)
-	CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
-	GetSessionForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, sessionID uuid.UUID) (Session, bool, error)
-	CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
-	CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session Session, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
-	HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error)
+	CreateOpenSessionWithEvent(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	GetOpenSessionForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (Session, bool, error)
+	CompleteSessionWithEvent(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, session Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	GetSessionForCorrection(ctx context.Context, tx Tx, tenantID, branchID, sessionID uuid.UUID) (Session, bool, error)
+	CreateCorrectedSessionWithEvent(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	CorrectSessionWithEvent(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, session Session, params CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (Session, error)
+	HasOverlappingSession(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error)
 	ListIncompleteSessionsForPeriod(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]IncompleteSessionBlocker, error)
 	ListSessionsForCorrection(ctx context.Context, tenantID, branchID, childID uuid.UUID, localDate time.Time) (CorrectionSessionContext, error)
 	ListCorrectionHistory(ctx context.Context, tenantID, branchID, sessionID uuid.UUID) (Session, []CorrectionHistoryEvent, error)
 }
 
 type ChildCorrectionChecker interface {
-	GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (ChildCorrectionInfo, bool, error)
+	GetChildForCorrection(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (ChildCorrectionInfo, bool, error)
 }
 
 type ChildCorrectionInfo struct {
@@ -41,9 +42,9 @@ type ChildCorrectionInfo struct {
 }
 
 type ChildEnrollmentChecker interface {
-	CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error
+	CheckEnrollmentForAttendance(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error
 }
 
 type AbsenceMarkerChecker interface {
-	HasActiveAbsenceMarker(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error)
+	HasActiveAbsenceMarker(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error)
 }

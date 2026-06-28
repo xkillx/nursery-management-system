@@ -68,7 +68,7 @@ func (f *fakeSessionTypeRepo) Update(ctx context.Context, tenantID, branchID, id
 	return f.updateRows, nil
 }
 
-func (f *fakeSessionTypeRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
+func (f *fakeSessionTypeRepo) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	if f.archiveErr != nil {
 		return f.archiveErr
 	}
@@ -78,7 +78,7 @@ func (f *fakeSessionTypeRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, 
 	return nil
 }
 
-func (f *fakeSessionTypeRepo) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
+func (f *fakeSessionTypeRepo) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	if f.reactivateErr != nil {
 		return f.reactivateErr
 	}
@@ -92,11 +92,11 @@ func (f *fakeSessionTypeRepo) ActiveNameExists(ctx context.Context, tenantID, br
 	return f.activeNameExists, f.activeNameErr
 }
 
-func (f *fakeSessionTypeRepo) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+func (f *fakeSessionTypeRepo) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
 	return f.exists, nil
 }
 
-func (f *fakeSessionTypeRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
+func (f *fakeSessionTypeRepo) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
 	if f.getForUpdate != nil {
 		return *f.getForUpdate, f.getForUpdateErr
 	}

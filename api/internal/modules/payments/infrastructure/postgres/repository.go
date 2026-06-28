@@ -36,8 +36,8 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-func (r *Repository) queriesTx(tx pgx.Tx) *sqlc.Queries {
-	return sqlc.New(tx)
+func (r *Repository) queriesTx(tx domain.Tx) *sqlc.Queries {
+	return sqlc.New(tx.(pgx.Tx))
 }
 
 func (r *Repository) GetParentInvoiceForCheckoutForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, membershipID, invoiceID string) (domain.CheckoutInvoiceCandidate, bool, error) {
@@ -180,7 +180,7 @@ func int32ToPgtypeInt4Ptr(v int32) pgtype.Int4 {
 	return pgtype.Int4{Int32: v, Valid: true}
 }
 
-func (r *Repository) InsertWebhookEvent(ctx context.Context, tx pgx.Tx, event domain.StripeWebhookEvent, requestID string, processingStatus, processingReason string) (string, bool, error) {
+func (r *Repository) InsertWebhookEvent(ctx context.Context, tx domain.Tx, event domain.StripeWebhookEvent, requestID string, processingStatus, processingReason string) (string, bool, error) {
 	id, err := r.queriesTx(tx).InsertWebhookEvent(ctx, sqlc.InsertWebhookEventParams{
 		ID:                uuidToPgtype(mustParseUUID(event.ID)),
 		StripeEventID:     event.StripeEventID,
@@ -202,7 +202,7 @@ func (r *Repository) InsertWebhookEvent(ctx context.Context, tx pgx.Tx, event do
 	return pgtypeUUIDToStr(id), true, nil
 }
 
-func (r *Repository) UpdateWebhookEventStatus(ctx context.Context, tx pgx.Tx, eventID string, status, reason, errorMsg string) error {
+func (r *Repository) UpdateWebhookEventStatus(ctx context.Context, tx domain.Tx, eventID string, status, reason, errorMsg string) error {
 	_, err := r.queriesTx(tx).UpdateWebhookEventStatus(ctx, sqlc.UpdateWebhookEventStatusParams{
 		ID:               uuidToPgtype(mustParseUUID(eventID)),
 		ProcessingStatus: status,
@@ -212,7 +212,7 @@ func (r *Repository) UpdateWebhookEventStatus(ctx context.Context, tx pgx.Tx, ev
 	return err
 }
 
-func (r *Repository) GetPaymentAttemptAndInvoiceForWebhook(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID, attemptID, sessionID string) (*domain.WebhookAttemptInvoice, error) {
+func (r *Repository) GetPaymentAttemptAndInvoiceForWebhook(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID, attemptID, sessionID string) (*domain.WebhookAttemptInvoice, error) {
 	row, err := r.queriesTx(tx).GetPaymentAttemptAndInvoiceForWebhook(ctx, sqlc.GetPaymentAttemptAndInvoiceForWebhookParams{
 		TenantID:                uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID:                uuidToPgtype(mustParseUUID(branchID)),
@@ -249,7 +249,7 @@ func (r *Repository) GetPaymentAttemptAndInvoiceForWebhook(ctx context.Context, 
 	return result, nil
 }
 
-func (r *Repository) MarkPaymentAttemptPaid(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error {
+func (r *Repository) MarkPaymentAttemptPaid(ctx context.Context, tx domain.Tx, tenantID, branchID, attemptID string) error {
 	affected, err := r.queriesTx(tx).MarkPaymentAttemptPaid(ctx, sqlc.MarkPaymentAttemptPaidParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID: uuidToPgtype(mustParseUUID(branchID)),
@@ -264,7 +264,7 @@ func (r *Repository) MarkPaymentAttemptPaid(ctx context.Context, tx pgx.Tx, tena
 	return nil
 }
 
-func (r *Repository) MarkPaymentAttemptFailed(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error {
+func (r *Repository) MarkPaymentAttemptFailed(ctx context.Context, tx domain.Tx, tenantID, branchID, attemptID string) error {
 	affected, err := r.queriesTx(tx).MarkPaymentAttemptFailed(ctx, sqlc.MarkPaymentAttemptFailedParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID: uuidToPgtype(mustParseUUID(branchID)),
@@ -279,7 +279,7 @@ func (r *Repository) MarkPaymentAttemptFailed(ctx context.Context, tx pgx.Tx, te
 	return nil
 }
 
-func (r *Repository) MarkPaymentAttemptExpired(ctx context.Context, tx pgx.Tx, tenantID, branchID, attemptID string) error {
+func (r *Repository) MarkPaymentAttemptExpired(ctx context.Context, tx domain.Tx, tenantID, branchID, attemptID string) error {
 	affected, err := r.queriesTx(tx).MarkPaymentAttemptExpired(ctx, sqlc.MarkPaymentAttemptExpiredParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID: uuidToPgtype(mustParseUUID(branchID)),
@@ -294,7 +294,7 @@ func (r *Repository) MarkPaymentAttemptExpired(ctx context.Context, tx pgx.Tx, t
 	return nil
 }
 
-func (r *Repository) MarkInvoicePaid(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID string) error {
+func (r *Repository) MarkInvoicePaid(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID string) error {
 	affected, err := r.queriesTx(tx).MarkInvoicePaid(ctx, sqlc.MarkInvoicePaidParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID: uuidToPgtype(mustParseUUID(branchID)),
@@ -309,7 +309,7 @@ func (r *Repository) MarkInvoicePaid(ctx context.Context, tx pgx.Tx, tenantID, b
 	return nil
 }
 
-func (r *Repository) MarkInvoicePaymentFailed(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID string) error {
+func (r *Repository) MarkInvoicePaymentFailed(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID string) error {
 	affected, err := r.queriesTx(tx).MarkInvoicePaymentFailed(ctx, sqlc.MarkInvoicePaymentFailedParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
 		BranchID: uuidToPgtype(mustParseUUID(branchID)),
@@ -324,7 +324,7 @@ func (r *Repository) MarkInvoicePaymentFailed(ctx context.Context, tx pgx.Tx, te
 	return nil
 }
 
-func (r *Repository) InsertReconciliationRecord(ctx context.Context, tx pgx.Tx, params domain.ReconciliationRecordParams) error {
+func (r *Repository) InsertReconciliationRecord(ctx context.Context, tx domain.Tx, params domain.ReconciliationRecordParams) error {
 	return r.queriesTx(tx).InsertReconciliationRecord(ctx, sqlc.InsertReconciliationRecordParams{
 		ID:                      uuidToPgtype(mustParseUUID(params.ID)),
 		TenantID:                uuidToPgtype(mustParseUUID(params.TenantID)),

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/attendance/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -68,31 +67,31 @@ func (s *stubHistoryRepo) ListSessionsForCorrection(_ context.Context, _, _, _ u
 	return domain.CorrectionSessionContext{}, nil
 }
 
-func (s *stubHistoryRepo) CreateOpenSessionWithEvent(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
+func (s *stubHistoryRepo) CreateOpenSessionWithEvent(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (s *stubHistoryRepo) GetOpenSessionForUpdate(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID) (domain.Session, bool, error) {
+func (s *stubHistoryRepo) GetOpenSessionForUpdate(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (domain.Session, bool, error) {
 	return domain.Session{}, false, nil
 }
 
-func (s *stubHistoryRepo) CompleteSessionWithEvent(_ context.Context, _ pgx.Tx, _, _ uuid.UUID, _ domain.Session, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
+func (s *stubHistoryRepo) CompleteSessionWithEvent(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ domain.Session, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (s *stubHistoryRepo) GetSessionForCorrection(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID) (domain.Session, bool, error) {
+func (s *stubHistoryRepo) GetSessionForCorrection(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (domain.Session, bool, error) {
 	return domain.Session{}, false, nil
 }
 
-func (s *stubHistoryRepo) CreateCorrectedSessionWithEvent(_ context.Context, _ pgx.Tx, _, _ uuid.UUID, _ domain.CorrectionParams, _, _, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
+func (s *stubHistoryRepo) CreateCorrectedSessionWithEvent(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ domain.CorrectionParams, _, _, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (s *stubHistoryRepo) CorrectSessionWithEvent(_ context.Context, _ pgx.Tx, _, _ uuid.UUID, _ domain.Session, _ domain.CorrectionParams, _, _, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
+func (s *stubHistoryRepo) CorrectSessionWithEvent(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ domain.Session, _ domain.CorrectionParams, _, _, _ time.Time, _ time.Time, _, _ uuid.UUID, _ string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (s *stubHistoryRepo) HasOverlappingSession(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID, _ *uuid.UUID, _, _ time.Time) (bool, error) {
+func (s *stubHistoryRepo) HasOverlappingSession(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ *uuid.UUID, _, _ time.Time) (bool, error) {
 	return false, nil
 }
 

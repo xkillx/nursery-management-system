@@ -66,7 +66,7 @@ func (f *fakeRoomRepo) Update(ctx context.Context, tenantID, branchID, roomID uu
 	return 1, nil
 }
 
-func (f *fakeRoomRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) error {
+func (f *fakeRoomRepo) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) error {
 	if f.archiveErr != nil {
 		return f.archiveErr
 	}
@@ -76,7 +76,7 @@ func (f *fakeRoomRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchI
 	return nil
 }
 
-func (f *fakeRoomRepo) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) error {
+func (f *fakeRoomRepo) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) error {
 	if f.reactivateErr != nil {
 		return f.reactivateErr
 	}
@@ -90,15 +90,15 @@ func (f *fakeRoomRepo) ActiveNameExists(ctx context.Context, tenantID, branchID 
 	return f.activeNameExists, f.activeNameErr
 }
 
-func (f *fakeRoomRepo) CountActiveChildren(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (int, error) {
+func (f *fakeRoomRepo) CountActiveChildren(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (int, error) {
 	return f.countActive, f.countActiveErr
 }
 
-func (f *fakeRoomRepo) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (bool, error) {
+func (f *fakeRoomRepo) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (bool, error) {
 	return f.exists, f.existsErr
 }
 
-func (f *fakeRoomRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
+func (f *fakeRoomRepo) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
 	if f.getForUpdate != nil {
 		return *f.getForUpdate, f.getForUpdateErr
 	}

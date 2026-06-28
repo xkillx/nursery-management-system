@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"nursery-management-system/api/internal/modules/children/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -44,7 +46,7 @@ func (uc *MarkInactive) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	var result domain.Child
 
-	err = uc.txm.ExecTx(ctx, func(tx domain.Tx) error {
+	err = uc.txm.ExecTx(ctx, func(tx pgx.Tx) error {
 		child, found, fetchErr := uc.repo.GetByIDForUpdate(ctx, tx, actor.TenantID, actor.BranchID, id)
 		if fetchErr != nil {
 			return domainerrors.Internal(fmt.Errorf("fetch child for update: %w", fetchErr))

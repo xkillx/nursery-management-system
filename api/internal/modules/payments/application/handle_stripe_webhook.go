@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/payments/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -18,7 +17,7 @@ import (
 )
 
 type SystemAuditWriter interface {
-	WriteSystemWithTx(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, requestID string, params SystemAuditParams) error
+	WriteSystemWithTx(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, requestID string, params SystemAuditParams) error
 }
 
 type SystemAuditParams struct {
@@ -123,7 +122,7 @@ func (uc *HandleStripeWebhook) Execute(ctx context.Context, payload []byte, sign
 	}
 
 	var result WebhookResult
-	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
 		eventID := uc.newUUID().String()
 		event.ID = eventID
 
@@ -269,7 +268,7 @@ func (uc *HandleStripeWebhook) Execute(ctx context.Context, payload []byte, sign
 }
 
 func (uc *HandleStripeWebhook) handleSuccess(
-	ctx context.Context, tx pgx.Tx, event *domain.StripeWebhookEvent, row *domain.WebhookAttemptInvoice,
+	ctx context.Context, tx domain.Tx, event *domain.StripeWebhookEvent, row *domain.WebhookAttemptInvoice,
 	tenantID, branchID, invoiceID, attemptID, requestID string, cs *domain.CheckoutSessionWebhookData,
 ) (WebhookResult, error) {
 	prevInvoiceStatus := row.InvoiceStatus
@@ -387,7 +386,7 @@ func (uc *HandleStripeWebhook) handleSuccess(
 }
 
 func (uc *HandleStripeWebhook) handleFailure(
-	ctx context.Context, tx pgx.Tx, event *domain.StripeWebhookEvent, row *domain.WebhookAttemptInvoice,
+	ctx context.Context, tx domain.Tx, event *domain.StripeWebhookEvent, row *domain.WebhookAttemptInvoice,
 	tenantID, branchID, invoiceID, attemptID, requestID string, isExpired bool,
 ) (WebhookResult, error) {
 	prevInvoiceStatus := row.InvoiceStatus

@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
-type Tx = pgx.Tx
+type Tx = any
 
 type BillingRepository interface {
 	// Preflight (API-16) — read-only, no transaction required.

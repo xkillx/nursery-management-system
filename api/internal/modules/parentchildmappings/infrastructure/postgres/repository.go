@@ -22,8 +22,8 @@ func NewParentChildMappingRepository(pool *pgxpool.Pool) *ParentChildMappingRepo
 	return &ParentChildMappingRepository{pool: pool}
 }
 
-func (r *ParentChildMappingRepository) FindActiveByPair(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID, childID uuid.UUID) (domain.ParentChildMapping, bool, error) {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) FindActiveByPair(ctx context.Context, tx domain.Tx, tenantID, branchID, membershipID, childID uuid.UUID) (domain.ParentChildMapping, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ParentChildMappingsFindActiveByPair(ctx, sqlc.ParentChildMappingsFindActiveByPairParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
@@ -39,8 +39,8 @@ func (r *ParentChildMappingRepository) FindActiveByPair(ctx context.Context, tx 
 	return mapFindActiveByPairRow(row), true, nil
 }
 
-func (r *ParentChildMappingRepository) ListActiveByMembership(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) ([]domain.ParentChildMapping, error) {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) ListActiveByMembership(ctx context.Context, tx domain.Tx, tenantID, branchID, membershipID uuid.UUID) ([]domain.ParentChildMapping, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	rows, err := q.ParentChildMappingsListActiveByMembership(ctx, sqlc.ParentChildMappingsListActiveByMembershipParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
@@ -56,8 +56,8 @@ func (r *ParentChildMappingRepository) ListActiveByMembership(ctx context.Contex
 	return mappings, nil
 }
 
-func (r *ParentChildMappingRepository) Create(ctx context.Context, tx pgx.Tx, mapping domain.ParentChildMapping) error {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) Create(ctx context.Context, tx domain.Tx, mapping domain.ParentChildMapping) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.ParentChildMappingsCreate(ctx, sqlc.ParentChildMappingsCreateParams{
 		ID:           uuidToPgtype(mapping.ID),
 		TenantID:     uuidToPgtype(mapping.TenantID),
@@ -67,8 +67,8 @@ func (r *ParentChildMappingRepository) Create(ctx context.Context, tx pgx.Tx, ma
 	})
 }
 
-func (r *ParentChildMappingRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.ParentChildMapping, bool, error) {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.ParentChildMapping, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ParentChildMappingsGetByIDForUpdate(ctx, sqlc.ParentChildMappingsGetByIDForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -83,8 +83,8 @@ func (r *ParentChildMappingRepository) GetByIDForUpdate(ctx context.Context, tx 
 	return mapGetByIDForUpdateRow(row), true, nil
 }
 
-func (r *ParentChildMappingRepository) End(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) End(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, reasonCode, reasonNote string) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.ParentChildMappingsEnd(ctx, sqlc.ParentChildMappingsEndParams{
 		EndedReasonCode: nullLifecycleReasonCode(reasonCode),
 		Column2:         reasonNote,
@@ -94,8 +94,8 @@ func (r *ParentChildMappingRepository) End(ctx context.Context, tx pgx.Tx, tenan
 	})
 }
 
-func (r *ParentChildMappingRepository) GetMembershipForScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (domain.MembershipInfo, bool, error) {
-	q := sqlc.New(tx)
+func (r *ParentChildMappingRepository) GetMembershipForScope(ctx context.Context, tx domain.Tx, tenantID, branchID, membershipID uuid.UUID) (domain.MembershipInfo, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ParentChildMappingsGetMembershipForScope(ctx, sqlc.ParentChildMappingsGetMembershipForScopeParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),

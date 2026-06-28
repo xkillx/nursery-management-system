@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
-type Tx = pgx.Tx
+type Tx = any
 
 type Repository interface {
 	Get(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (FundingProfile, bool, error)

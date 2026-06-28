@@ -249,8 +249,8 @@ func pgtypeInt4ToPtr(v pgtype.Int4) *int {
 
 // ── ManagerAccessRepository ──────────────────────────────────────────────────
 
-func (r *OwnerRepository) UpdateSiteCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, siteID uuid.UUID, coreHourlyRateMinor int) (previous *int, current int, err error) {
-	q := sqlc.New(tx)
+func (r *OwnerRepository) UpdateSiteCoreHourlyRate(ctx context.Context, tx domain.Tx, tenantID uuid.UUID, siteID uuid.UUID, coreHourlyRateMinor int) (previous *int, current int, err error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.OwnerGetActiveSite(ctx, sqlc.OwnerGetActiveSiteParams{
 		TenantID: uuidToPgtype(tenantID),
 		ID:       uuidToPgtype(siteID),
@@ -264,7 +264,7 @@ func (r *OwnerRepository) UpdateSiteCoreHourlyRate(ctx context.Context, tx pgx.T
 	prev := pgtypeInt4ToPtr(row.CoreHourlyRateMinor)
 
 	const updateQ = `UPDATE branches SET core_hourly_rate_minor = $1 WHERE tenant_id = $2 AND id = $3 AND is_active = true`
-	tag, err := tx.Exec(ctx, updateQ, coreHourlyRateMinor, tenantID, siteID)
+	tag, err := tx.(pgx.Tx).Exec(ctx, updateQ, coreHourlyRateMinor, tenantID, siteID)
 	if err != nil {
 		return prev, 0, err
 	}

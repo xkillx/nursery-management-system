@@ -76,7 +76,7 @@ func (f *fakeChildBPRepo) GetActiveForDate(ctx context.Context, tenantID, branch
 	return nil, false, nil
 }
 
-func (f *fakeChildBPRepo) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+func (f *fakeChildBPRepo) GetCurrentOpenByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
 	p, ok := f.currentOpenByChild[childID]
 	if !ok {
 		return nil, false, nil
@@ -84,7 +84,7 @@ func (f *fakeChildBPRepo) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, 
 	return p, true, nil
 }
 
-func (f *fakeChildBPRepo) GetPreviousClosedByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+func (f *fakeChildBPRepo) GetPreviousClosedByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
 	p, ok := f.previousByChild[childID]
 	if !ok {
 		return nil, false, nil
@@ -92,7 +92,7 @@ func (f *fakeChildBPRepo) GetPreviousClosedByChild(ctx context.Context, tx pgx.T
 	return p, true, nil
 }
 
-func (f *fakeChildBPRepo) InsertPattern(ctx context.Context, tx pgx.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
+func (f *fakeChildBPRepo) InsertPattern(ctx context.Context, tx domain.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
 	if f.insertErr != nil {
 		return nil, f.insertErr
 	}
@@ -111,7 +111,7 @@ func (f *fakeChildBPRepo) InsertPattern(ctx context.Context, tx pgx.Tx, p *domai
 	return p, nil
 }
 
-func (f *fakeChildBPRepo) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
+func (f *fakeChildBPRepo) CloseCurrentPattern(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
 	if f.closeCurrentErr != nil {
 		return f.closeCurrentErr
 	}
@@ -125,7 +125,7 @@ func (f *fakeChildBPRepo) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, te
 	return nil
 }
 
-func (f *fakeChildBPRepo) ClosePatternByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error {
+func (f *fakeChildBPRepo) ClosePatternByID(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error {
 	if f.closeByIDErr != nil {
 		return f.closeByIDErr
 	}
@@ -145,7 +145,7 @@ func (f *fakeChildBPRepo) ClosePatternByID(ctx context.Context, tx pgx.Tx, tenan
 	return nil
 }
 
-func (f *fakeChildBPRepo) ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, entries []domain.BookingPatternEntry) error {
+func (f *fakeChildBPRepo) ReplaceEntries(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, entries []domain.BookingPatternEntry) error {
 	if f.replaceErr != nil {
 		return f.replaceErr
 	}
@@ -159,7 +159,7 @@ func (f *fakeChildBPRepo) ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantI
 	return nil
 }
 
-func (f *fakeChildBPRepo) UpdateEffectiveFrom(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error {
+func (f *fakeChildBPRepo) UpdateEffectiveFrom(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error {
 	if f.updateEffFromErr != nil {
 		return f.updateEffFromErr
 	}
@@ -187,82 +187,82 @@ func (f *fakeChildBPRepo) GetByID(ctx context.Context, tenantID, branchID, id uu
 	}
 	return domain.Child{ID: id}, true, nil
 }
-func (f *fakeChildBPRepo) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+func (f *fakeChildBPRepo) Create(ctx context.Context, tx domain.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
 	return nil
 }
 func (f *fakeChildBPRepo) Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error) {
 	return 0, nil
 }
-func (f *fakeChildBPRepo) MarkInactive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
+func (f *fakeChildBPRepo) MarkInactive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	return nil
 }
-func (f *fakeChildBPRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
+func (f *fakeChildBPRepo) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
 	return domain.Child{ID: id}, true, nil
 }
-func (f *fakeChildBPRepo) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+func (f *fakeChildBPRepo) ExistsInScope(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
 	return f.existsInScope, f.existsErr
 }
 func (f *fakeChildBPRepo) ListAttendance(ctx context.Context, tenantID, branchID uuid.UUID, localDate time.Time) ([]domain.AttendanceChild, error) {
 	return nil, nil
 }
-func (f *fakeChildBPRepo) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
+func (f *fakeChildBPRepo) GetChildForCorrection(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
 	return domain.ChildCorrectionInfo{}, false, nil
 }
-func (f *fakeChildBPRepo) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
+func (f *fakeChildBPRepo) GetForAttendanceCheck(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
 	return domain.Child{ID: childID}, true, nil
 }
 func (f *fakeChildBPRepo) GetProfileByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildProfile, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) GetProfileForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildProfile, error) {
+func (f *fakeChildBPRepo) GetProfileForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildProfile, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) InsertProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
+func (f *fakeChildBPRepo) InsertProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) UpdateProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
+func (f *fakeChildBPRepo) UpdateProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) ListContactsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.ChildContact, error) {
 	return nil, nil
 }
-func (f *fakeChildBPRepo) ReplaceContactsForTypes(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ChildContact) error {
+func (f *fakeChildBPRepo) ReplaceContactsForTypes(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ChildContact) error {
 	return nil
 }
 func (f *fakeChildBPRepo) GetHealthByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildHealthProfile, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) UpsertHealth(ctx context.Context, tx pgx.Tx, p *domain.ChildHealthProfile) (*domain.ChildHealthProfile, error) {
+func (f *fakeChildBPRepo) UpsertHealth(ctx context.Context, tx domain.Tx, p *domain.ChildHealthProfile) (*domain.ChildHealthProfile, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) GetSafeguardingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildSafeguardingProfile, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) UpsertSafeguarding(ctx context.Context, tx pgx.Tx, p *domain.ChildSafeguardingProfile) (*domain.ChildSafeguardingProfile, error) {
+func (f *fakeChildBPRepo) UpsertSafeguarding(ctx context.Context, tx domain.Tx, p *domain.ChildSafeguardingProfile) (*domain.ChildSafeguardingProfile, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) GetConsentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildConsent, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) InsertConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
+func (f *fakeChildBPRepo) InsertConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) UpdateConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
+func (f *fakeChildBPRepo) UpdateConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) GetFundingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildFundingRecord, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) UpsertFunding(ctx context.Context, tx pgx.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
+func (f *fakeChildBPRepo) UpsertFunding(ctx context.Context, tx domain.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
+func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
+func (f *fakeChildBPRepo) UpsertCollectionSetting(ctx context.Context, tx domain.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+func (f *fakeChildBPRepo) SetCollectionPassword(ctx context.Context, tx domain.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
 	return nil
 }
 func (f *fakeChildBPRepo) ListRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.ChildRoomAssignment, error) {
@@ -271,28 +271,28 @@ func (f *fakeChildBPRepo) ListRoomAssignmentsByChild(ctx context.Context, tenant
 func (f *fakeChildBPRepo) GetCurrentRoomAssignmentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) InsertRoomAssignment(ctx context.Context, tx pgx.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
+func (f *fakeChildBPRepo) InsertRoomAssignment(ctx context.Context, tx domain.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) CloseCurrentRoomAssignment(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error {
+func (f *fakeChildBPRepo) CloseCurrentRoomAssignment(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error {
 	return nil
 }
-func (f *fakeChildBPRepo) GetRoomAssignmentByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
+func (f *fakeChildBPRepo) GetRoomAssignmentByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) CloseRoomAssignmentByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, endDate time.Time) (bool, error) {
+func (f *fakeChildBPRepo) CloseRoomAssignmentByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, endDate time.Time) (bool, error) {
 	return false, nil
 }
 func (f *fakeChildBPRepo) GetBillingProfileByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildBillingProfile, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) UpsertBillingProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
+func (f *fakeChildBPRepo) UpsertBillingProfile(ctx context.Context, tx domain.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
 	return nil, errors.New("not implemented")
 }
 func (f *fakeChildBPRepo) GetLeavingRecordByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildLeavingRecord, bool, error) {
 	return nil, false, nil
 }
-func (f *fakeChildBPRepo) InsertLeavingRecord(ctx context.Context, tx pgx.Tx, p *domain.ChildLeavingRecord) error {
+func (f *fakeChildBPRepo) InsertLeavingRecord(ctx context.Context, tx domain.Tx, p *domain.ChildLeavingRecord) error {
 	return nil
 }
 

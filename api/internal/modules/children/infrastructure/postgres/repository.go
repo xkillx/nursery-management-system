@@ -72,8 +72,8 @@ func (r *ChildRepository) GetByID(ctx context.Context, tenantID, branchID, id uu
 	return mapChildRow(row), true, nil
 }
 
-func (r *ChildRepository) Create(ctx context.Context, tx pgx.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) Create(ctx context.Context, tx domain.Tx, child domain.Child, notes string, tenantID, branchID uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.ChildrenCreate(ctx, sqlc.ChildrenCreateParams{
 		ID:          uuidToPgtype(child.ID),
 		TenantID:    uuidToPgtype(tenantID),
@@ -139,8 +139,8 @@ func (r *ChildRepository) Update(ctx context.Context, tenantID, branchID, id uui
 	return ct, nil
 }
 
-func (r *ChildRepository) MarkInactive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) MarkInactive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	return q.ChildrenMarkInactive(ctx, sqlc.ChildrenMarkInactiveParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -148,8 +148,8 @@ func (r *ChildRepository) MarkInactive(ctx context.Context, tx pgx.Tx, tenantID,
 	})
 }
 
-func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildrenGetByIDForUpdate(ctx, sqlc.ChildrenGetByIDForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -164,8 +164,8 @@ func (r *ChildRepository) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenan
 	return mapChildRow(row), true, nil
 }
 
-func (r *ChildRepository) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) ExistsInScope(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	exists, err := q.ChildrenExistsInScope(ctx, sqlc.ChildrenExistsInScopeParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -210,8 +210,8 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 	return out, nil
 }
 
-func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.Child, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildrenGetByID(ctx, sqlc.ChildrenGetByIDParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -226,8 +226,8 @@ func (r *ChildRepository) GetForAttendanceCheck(ctx context.Context, tx pgx.Tx, 
 	return mapChildRow(row), true, nil
 }
 
-func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetChildForCorrection(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.ChildCorrectionInfo, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildrenGetForCorrection(ctx, sqlc.ChildrenGetForCorrectionParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -338,8 +338,8 @@ func (r *ChildRepository) GetProfileByChild(ctx context.Context, tenantID, branc
 	return mapChildProfileRow(row), nil
 }
 
-func (r *ChildRepository) GetProfileForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetProfileForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildProfileGetForUpdate(ctx, sqlc.ChildProfileGetForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -354,8 +354,8 @@ func (r *ChildRepository) GetProfileForUpdate(ctx context.Context, tx pgx.Tx, te
 	return mapChildProfileRow(row), nil
 }
 
-func (r *ChildRepository) InsertProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	homeAddr, _ := json.Marshal(p.HomeAddress)
 	if p.HomeAddress == nil {
 		homeAddr = []byte("{}")
@@ -395,8 +395,8 @@ func (r *ChildRepository) InsertProfile(ctx context.Context, tx pgx.Tx, p *domai
 	return mapChildProfileRow(row), nil
 }
 
-func (r *ChildRepository) UpdateProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	homeAddr, _ := json.Marshal(p.HomeAddress)
 	if p.HomeAddress == nil {
 		homeAddr = []byte("{}")
@@ -495,8 +495,8 @@ func (r *ChildRepository) ListContactsByChild(ctx context.Context, tenantID, bra
 	return out, nil
 }
 
-func (r *ChildRepository) ReplaceContactsForTypes(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ChildContact) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) ReplaceContactsForTypes(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, contactTypes []domain.ContactType, entries []domain.ChildContact) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	types := make([]string, len(contactTypes))
 	for i, t := range contactTypes {
 		types[i] = string(t)
@@ -588,8 +588,8 @@ func (r *ChildRepository) GetHealthByChild(ctx context.Context, tenantID, branch
 	return mapHealthProfileRow(row), nil
 }
 
-func (r *ChildRepository) UpsertHealth(ctx context.Context, tx pgx.Tx, p *domain.ChildHealthProfile) (*domain.ChildHealthProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpsertHealth(ctx context.Context, tx domain.Tx, p *domain.ChildHealthProfile) (*domain.ChildHealthProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildHealthProfileUpsert(ctx, sqlc.ChildHealthProfileUpsertParams{
 		ID:                         uuidToPgtype(p.ID),
 		TenantID:                   uuidToPgtype(p.TenantID),
@@ -663,8 +663,8 @@ func (r *ChildRepository) GetSafeguardingByChild(ctx context.Context, tenantID, 
 	return mapSafeguardingProfileRow(row), nil
 }
 
-func (r *ChildRepository) UpsertSafeguarding(ctx context.Context, tx pgx.Tx, p *domain.ChildSafeguardingProfile) (*domain.ChildSafeguardingProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpsertSafeguarding(ctx context.Context, tx domain.Tx, p *domain.ChildSafeguardingProfile) (*domain.ChildSafeguardingProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	referrals, _ := json.Marshal(p.ProfessionalReferrals)
 	if p.ProfessionalReferrals == nil {
 		referrals = []byte("[]")
@@ -743,8 +743,8 @@ func (r *ChildRepository) GetConsentByChild(ctx context.Context, tenantID, branc
 	return mapConsentRow(r2), true, nil
 }
 
-func (r *ChildRepository) InsertConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) InsertConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildConsentInsert(ctx, sqlc.ChildConsentInsertParams{
 		ID:                                   uuidToPgtype(p.ID),
 		TenantID:                             uuidToPgtype(p.TenantID),
@@ -785,8 +785,8 @@ func (r *ChildRepository) InsertConsent(ctx context.Context, tx pgx.Tx, p *domai
 	return mapConsentRow(r2), nil
 }
 
-func (r *ChildRepository) UpdateConsent(ctx context.Context, tx pgx.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpdateConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildConsentUpdate(ctx, sqlc.ChildConsentUpdateParams{
 		TenantID:                             uuidToPgtype(p.TenantID),
 		BranchID:                             uuidToPgtype(p.BranchID),
@@ -883,8 +883,8 @@ func (r *ChildRepository) GetFundingByChild(ctx context.Context, tenantID, branc
 	return mapFundingGetRow(row), true, nil
 }
 
-func (r *ChildRepository) UpsertFunding(ctx context.Context, tx pgx.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpsertFunding(ctx context.Context, tx domain.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildFundingRecordUpsert(ctx, sqlc.ChildFundingRecordUpsertParams{
 		ID:                         uuidToPgtype(p.ID),
 		TenantID:                   uuidToPgtype(p.TenantID),
@@ -978,10 +978,10 @@ func mapFundingUpsertRow(row sqlc.ChildFundingRecordUpsertRow) *domain.ChildFund
 
 // --- Child Collection Settings ---
 
-func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
+func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
 	q := sqlc.New(r.pool)
 	if tx != nil {
-		q = q.WithTx(tx)
+		q = q.WithTx(tx.(pgx.Tx))
 	}
 	row, err := q.ChildCollectionSettingGetByChild(ctx, sqlc.ChildCollectionSettingGetByChildParams{
 		TenantID: uuidToPgtype(tenantID),
@@ -998,8 +998,8 @@ func (r *ChildRepository) GetCollectionSettingByChild(ctx context.Context, tx pg
 	return mapCollectionSettingRow(r2), nil
 }
 
-func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx domain.Tx, p *domain.ChildCollectionSetting) (*domain.ChildCollectionSetting, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildCollectionSettingUpsert(ctx, sqlc.ChildCollectionSettingUpsertParams{
 		ID:                           uuidToPgtype(p.ID),
 		TenantID:                     uuidToPgtype(p.TenantID),
@@ -1015,8 +1015,8 @@ func (r *ChildRepository) UpsertCollectionSetting(ctx context.Context, tx pgx.Tx
 	return mapCollectionSettingRow(r2), nil
 }
 
-func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) SetCollectionPassword(ctx context.Context, tx domain.Tx, tenantID, branchID, childID, id uuid.UUID, password string, passwordHint string, updatedAt time.Time, userID, membershipID uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	_, err := q.ChildCollectionSettingSetPassword(ctx, sqlc.ChildCollectionSettingSetPasswordParams{
 		TenantID:                                uuidToPgtype(tenantID),
 		BranchID:                                uuidToPgtype(branchID),
@@ -1087,8 +1087,8 @@ func (r *ChildRepository) GetCurrentRoomAssignmentByChild(ctx context.Context, t
 	return &a, true, nil
 }
 
-func (r *ChildRepository) InsertRoomAssignment(ctx context.Context, tx pgx.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) InsertRoomAssignment(ctx context.Context, tx domain.Tx, a *domain.ChildRoomAssignment) (*domain.ChildRoomAssignment, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildRoomAssignmentsInsert(ctx, sqlc.ChildRoomAssignmentsInsertParams{
 		ID:        uuidToPgtype(a.ID),
 		TenantID:  uuidToPgtype(a.TenantID),
@@ -1104,8 +1104,8 @@ func (r *ChildRepository) InsertRoomAssignment(ctx context.Context, tx pgx.Tx, a
 	return &out, nil
 }
 
-func (r *ChildRepository) CloseCurrentRoomAssignment(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) CloseCurrentRoomAssignment(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	if err := q.ChildRoomAssignmentsCloseCurrent(ctx, sqlc.ChildRoomAssignmentsCloseCurrentParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -1117,8 +1117,8 @@ func (r *ChildRepository) CloseCurrentRoomAssignment(ctx context.Context, tx pgx
 	return nil
 }
 
-func (r *ChildRepository) GetRoomAssignmentByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetRoomAssignmentByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildRoomAssignmentsGetByID(ctx, sqlc.ChildRoomAssignmentsGetByIDParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -1134,8 +1134,8 @@ func (r *ChildRepository) GetRoomAssignmentByID(ctx context.Context, tx pgx.Tx, 
 	return &a, true, nil
 }
 
-func (r *ChildRepository) CloseRoomAssignmentByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID, endDate time.Time) (bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) CloseRoomAssignmentByID(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, endDate time.Time) (bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	err := q.ChildRoomAssignmentsCloseByID(ctx, sqlc.ChildRoomAssignmentsCloseByIDParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -1231,8 +1231,8 @@ func (r *ChildRepository) GetBillingProfileByChild(ctx context.Context, tenantID
 	return mapBillingProfileRow(row), true, nil
 }
 
-func (r *ChildRepository) UpsertBillingProfile(ctx context.Context, tx pgx.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpsertBillingProfile(ctx context.Context, tx domain.Tx, p *domain.ChildBillingProfile) (*domain.ChildBillingProfile, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	effectiveFrom := ""
 	if !p.EffectiveFrom.IsZero() {
 		effectiveFrom = p.EffectiveFrom.Format("2006-01-02")
@@ -1284,8 +1284,8 @@ func (r *ChildRepository) GetLeavingRecordByChild(ctx context.Context, tenantID,
 	return mapLeavingRecordRow(row), true, nil
 }
 
-func (r *ChildRepository) InsertLeavingRecord(ctx context.Context, tx pgx.Tx, p *domain.ChildLeavingRecord) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) InsertLeavingRecord(ctx context.Context, tx domain.Tx, p *domain.ChildLeavingRecord) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	_, err := q.ChildLeavingRecordInsert(ctx, sqlc.ChildLeavingRecordInsertParams{
 		ID:         uuidToPgtype(p.ID),
 		TenantID:   uuidToPgtype(p.TenantID),
@@ -1384,8 +1384,8 @@ func (r *ChildRepository) GetActiveForDate(ctx context.Context, tenantID, branch
 	return &bp, true, nil
 }
 
-func (r *ChildRepository) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetCurrentOpenByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildBookingPatternsGetCurrentOpenByChild(ctx, sqlc.ChildBookingPatternsGetCurrentOpenByChildParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -1402,8 +1402,8 @@ func (r *ChildRepository) GetCurrentOpenByChild(ctx context.Context, tx pgx.Tx, 
 	return &bp, true, nil
 }
 
-func (r *ChildRepository) GetPreviousClosedByChild(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) GetPreviousClosedByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.BookingPattern, bool, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildBookingPatternsGetPreviousClosedByChild(ctx, sqlc.ChildBookingPatternsGetPreviousClosedByChildParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -1419,8 +1419,8 @@ func (r *ChildRepository) GetPreviousClosedByChild(ctx context.Context, tx pgx.T
 	return &bp, true, nil
 }
 
-func (r *ChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) InsertPattern(ctx context.Context, tx domain.Tx, p *domain.BookingPattern, entries []domain.BookingPatternEntry) (*domain.BookingPattern, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.ChildBookingPatternsInsert(ctx, sqlc.ChildBookingPatternsInsertParams{
 		ID:            uuidToPgtype(p.ID),
 		TenantID:      uuidToPgtype(p.TenantID),
@@ -1458,8 +1458,8 @@ func (r *ChildRepository) InsertPattern(ctx context.Context, tx pgx.Tx, p *domai
 	return &bp, nil
 }
 
-func (r *ChildRepository) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) CloseCurrentPattern(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	if err := q.ChildBookingPatternsCloseCurrent(ctx, sqlc.ChildBookingPatternsCloseCurrentParams{
 		TenantID:    uuidToPgtype(tenantID),
 		BranchID:    uuidToPgtype(branchID),
@@ -1471,8 +1471,8 @@ func (r *ChildRepository) CloseCurrentPattern(ctx context.Context, tx pgx.Tx, te
 	return nil
 }
 
-func (r *ChildRepository) ClosePatternByID(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) ClosePatternByID(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	if err := q.ChildBookingPatternsCloseByID(ctx, sqlc.ChildBookingPatternsCloseByIDParams{
 		TenantID:    uuidToPgtype(tenantID),
 		BranchID:    uuidToPgtype(branchID),
@@ -1484,8 +1484,8 @@ func (r *ChildRepository) ClosePatternByID(ctx context.Context, tx pgx.Tx, tenan
 	return nil
 }
 
-func (r *ChildRepository) ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, entries []domain.BookingPatternEntry) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) ReplaceEntries(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, entries []domain.BookingPatternEntry) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	if err := q.ChildBookingPatternEntriesDeleteByPattern(ctx, sqlc.ChildBookingPatternEntriesDeleteByPatternParams{
 		TenantID:  uuidToPgtype(tenantID),
 		BranchID:  uuidToPgtype(branchID),
@@ -1512,8 +1512,8 @@ func (r *ChildRepository) ReplaceEntries(ctx context.Context, tx pgx.Tx, tenantI
 	return nil
 }
 
-func (r *ChildRepository) UpdateEffectiveFrom(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error {
-	q := sqlc.New(tx)
+func (r *ChildRepository) UpdateEffectiveFrom(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error {
+	q := sqlc.New(tx.(pgx.Tx))
 	if err := q.ChildBookingPatternsUpdateEffectiveFrom(ctx, sqlc.ChildBookingPatternsUpdateEffectiveFromParams{
 		TenantID:      uuidToPgtype(tenantID),
 		BranchID:      uuidToPgtype(branchID),
@@ -1542,8 +1542,8 @@ func (r *ChildRepository) entriesForPattern(ctx context.Context, tenantID, branc
 	return out, nil
 }
 
-func (r *ChildRepository) entriesForPatternTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntry, error) {
-	q := sqlc.New(tx)
+func (r *ChildRepository) entriesForPatternTx(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntry, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 	rows, err := q.ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
 		TenantID:  uuidToPgtype(tenantID),
 		BranchID:  uuidToPgtype(branchID),

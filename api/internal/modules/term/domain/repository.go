@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
-type Tx = pgx.Tx
+type Tx = any
 
 // Repository is the term domain's data-access port.
 // All read methods scope to (tenant_id, branch_id); the postgres implementation

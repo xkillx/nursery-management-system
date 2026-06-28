@@ -2,11 +2,9 @@ package domain
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5"
 )
 
-type Tx = pgx.Tx
+type Tx = any
 
 type PaymentRepository interface {
 	GetParentInvoiceForCheckoutForUpdate(ctx context.Context, tx Tx, tenantID, branchID, membershipID, invoiceID string) (CheckoutInvoiceCandidate, bool, error)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
 )
@@ -115,7 +116,7 @@ type stubTxMgr struct {
 	repo *stubBillingRepo
 }
 
-func (m *stubTxMgr) ExecTx(ctx context.Context, fn func(tx domain.Tx) error) error {
+func (m *stubTxMgr) ExecTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	return fn(nil)
 }
 

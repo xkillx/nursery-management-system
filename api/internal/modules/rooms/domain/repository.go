@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
-type Tx = pgx.Tx
+type Tx = any
 
 type Repository interface {
 	ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]Room, error)

@@ -174,8 +174,8 @@ func timeOfDayToMinutes(t pgtype.Time) int {
 	return int(t.Microseconds / (60 * 1_000_000))
 }
 
-func (r *Repository) queriesTx(tx pgx.Tx) *sqlc.Queries {
-	return sqlc.New(tx)
+func (r *Repository) queriesTx(tx domain.Tx) *sqlc.Queries {
+	return sqlc.New(tx.(pgx.Tx))
 }
 
 func (r *Repository) ListCandidateChildrenForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth, nextBillingMonth time.Time) ([]domain.PreflightChildRow, error) {

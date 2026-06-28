@@ -28,7 +28,7 @@ func NewAttendanceRepository(pool *pgxpool.Pool) *AttendanceRepository {
 
 func (r *AttendanceRepository) CreateOpenSessionWithEvent(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID, childID uuid.UUID,
 	occurredAt time.Time,
 	localDate time.Time,
@@ -37,7 +37,7 @@ func (r *AttendanceRepository) CreateOpenSessionWithEvent(
 ) (domain.Session, error) {
 	sessionID := uid.NewUUID()
 	eventID := uid.NewUUID()
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 
 	if err := q.AttendanceInsertOpenSession(ctx, sqlc.AttendanceInsertOpenSessionParams{
 		ID:               uuidToPgtype(sessionID),
@@ -90,10 +90,10 @@ func (r *AttendanceRepository) CreateOpenSessionWithEvent(
 
 func (r *AttendanceRepository) GetOpenSessionForUpdate(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID, childID uuid.UUID,
 ) (domain.Session, bool, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AttendanceGetOpenSessionForUpdate(ctx, sqlc.AttendanceGetOpenSessionForUpdateParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -118,7 +118,7 @@ func (r *AttendanceRepository) GetOpenSessionForUpdate(
 
 func (r *AttendanceRepository) CompleteSessionWithEvent(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID uuid.UUID,
 	session domain.Session,
 	occurredAt time.Time,
@@ -131,7 +131,7 @@ func (r *AttendanceRepository) CompleteSessionWithEvent(
 	}
 
 	eventID := uid.NewUUID()
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 
 	if err := q.AttendanceInsertCheckOutEvent(ctx, sqlc.AttendanceInsertCheckOutEventParams{
 		ID:                     uuidToPgtype(eventID),
@@ -186,10 +186,10 @@ func isOpenSessionUniqueViolation(err error) bool {
 
 func (r *AttendanceRepository) GetSessionForCorrection(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID, sessionID uuid.UUID,
 ) (domain.Session, bool, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	row, err := q.AttendanceGetSessionForCorrection(ctx, sqlc.AttendanceGetSessionForCorrectionParams{
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
@@ -216,12 +216,12 @@ func (r *AttendanceRepository) GetSessionForCorrection(
 
 func (r *AttendanceRepository) HasOverlappingSession(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID, childID uuid.UUID,
 	excludeSessionID *uuid.UUID,
 	checkInAt, checkOutAt time.Time,
 ) (bool, error) {
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 	var excludeID pgtype.UUID
 	if excludeSessionID != nil {
 		excludeID = uuidToPgtype(*excludeSessionID)
@@ -242,7 +242,7 @@ func (r *AttendanceRepository) HasOverlappingSession(
 
 func (r *AttendanceRepository) CorrectSessionWithEvent(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID uuid.UUID,
 	session domain.Session,
 	params domain.CorrectionParams,
@@ -252,7 +252,7 @@ func (r *AttendanceRepository) CorrectSessionWithEvent(
 	requestID string,
 ) (domain.Session, error) {
 	eventID := uid.NewUUID()
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 
 	reasonNote := params.ReasonNote
 	details := map[string]any{
@@ -320,7 +320,7 @@ func (r *AttendanceRepository) CorrectSessionWithEvent(
 
 func (r *AttendanceRepository) CreateCorrectedSessionWithEvent(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx domain.Tx,
 	tenantID, branchID uuid.UUID,
 	params domain.CorrectionParams,
 	checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time,
@@ -330,7 +330,7 @@ func (r *AttendanceRepository) CreateCorrectedSessionWithEvent(
 ) (domain.Session, error) {
 	sessionID := uid.NewUUID()
 	childID := *params.ChildID
-	q := sqlc.New(tx)
+	q := sqlc.New(tx.(pgx.Tx))
 
 	if err := q.AttendanceInsertCorrectedSession(ctx, sqlc.AttendanceInsertCorrectedSessionParams{
 		ID:                uuidToPgtype(sessionID),

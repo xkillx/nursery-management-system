@@ -33,7 +33,7 @@ type membershipCheckerAdapter struct {
 	repo *parentchildpostgres.ParentChildMappingRepository
 }
 
-func (a *membershipCheckerAdapter) GetForScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, membershipID uuid.UUID) (parentchilddomain.MembershipInfo, bool, error) {
+func (a *membershipCheckerAdapter) GetForScope(ctx context.Context, tx any, tenantID, branchID, membershipID uuid.UUID) (parentchilddomain.MembershipInfo, bool, error) {
 	return a.repo.GetMembershipForScope(ctx, tx, tenantID, branchID, membershipID)
 }
 
@@ -51,7 +51,7 @@ type childEnrollmentCheckerAdapter struct {
 	repo *postgreschild.ChildRepository
 }
 
-func (a *childEnrollmentCheckerAdapter) CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
+func (a *childEnrollmentCheckerAdapter) CheckEnrollmentForAttendance(ctx context.Context, tx any, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
 	child, found, err := a.repo.GetForAttendanceCheck(ctx, tx, tenantID, branchID, childID)
 	if err != nil {
 		return fmt.Errorf("check child enrollment: %w", err)
@@ -81,7 +81,7 @@ type childCorrectionCheckerAdapter struct {
 	repo *postgreschild.ChildRepository
 }
 
-func (a *childCorrectionCheckerAdapter) GetChildForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (attendancedomain.ChildCorrectionInfo, bool, error) {
+func (a *childCorrectionCheckerAdapter) GetChildForCorrection(ctx context.Context, tx any, tenantID, branchID, childID uuid.UUID) (attendancedomain.ChildCorrectionInfo, bool, error) {
 	info, found, err := a.repo.GetChildForCorrection(ctx, tx, tenantID, branchID, childID)
 	if err != nil {
 		return attendancedomain.ChildCorrectionInfo{}, false, err
@@ -100,7 +100,7 @@ type absenceMarkerCheckerAdapter struct {
 	repo *postgresabsence.AbsenceRepository
 }
 
-func (a *absenceMarkerCheckerAdapter) HasActiveAbsenceMarker(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
+func (a *absenceMarkerCheckerAdapter) HasActiveAbsenceMarker(ctx context.Context, tx any, tenantID, branchID, childID uuid.UUID, localDate time.Time) (bool, error) {
 	_, found, err := a.repo.FindActiveByChildDate(ctx, tx, tenantID, branchID, childID, localDate)
 	if err != nil {
 		return false, fmt.Errorf("check active absence marker: %w", err)

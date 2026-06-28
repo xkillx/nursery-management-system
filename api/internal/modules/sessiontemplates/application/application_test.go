@@ -76,7 +76,7 @@ func (f *fakeTemplateRepo) Update(ctx context.Context, tenantID, branchID, id uu
 	return f.updateRows, nil
 }
 
-func (f *fakeTemplateRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
+func (f *fakeTemplateRepo) Archive(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	if f.archiveErr != nil {
 		return f.archiveErr
 	}
@@ -86,7 +86,7 @@ func (f *fakeTemplateRepo) Archive(ctx context.Context, tx pgx.Tx, tenantID, bra
 	return nil
 }
 
-func (f *fakeTemplateRepo) Reactivate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) error {
+func (f *fakeTemplateRepo) Reactivate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) error {
 	if f.reactivateErr != nil {
 		return f.reactivateErr
 	}
@@ -100,11 +100,11 @@ func (f *fakeTemplateRepo) ActiveNameExists(ctx context.Context, tenantID, branc
 	return f.activeNameExists, f.activeNameErr
 }
 
-func (f *fakeTemplateRepo) Exists(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
+func (f *fakeTemplateRepo) Exists(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (bool, error) {
 	return f.exists, nil
 }
 
-func (f *fakeTemplateRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
+func (f *fakeTemplateRepo) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
 	if f.getForUpdateErr != nil {
 		return domain.SessionTemplate{}, f.getForUpdateErr
 	}
@@ -114,7 +114,7 @@ func (f *fakeTemplateRepo) GetByIDForUpdate(ctx context.Context, tx pgx.Tx, tena
 	return domain.SessionTemplate{}, domainerrors.NotFound("session_template", "Session template not found.")
 }
 
-func (f *fakeTemplateRepo) InsertEntry(ctx context.Context, tx pgx.Tx, entry domain.SessionTemplateEntry) error {
+func (f *fakeTemplateRepo) InsertEntry(ctx context.Context, tx domain.Tx, entry domain.SessionTemplateEntry) error {
 	if f.insertEntryErr != nil {
 		return f.insertEntryErr
 	}
@@ -122,7 +122,7 @@ func (f *fakeTemplateRepo) InsertEntry(ctx context.Context, tx pgx.Tx, entry dom
 	return nil
 }
 
-func (f *fakeTemplateRepo) DeleteEntriesByTemplate(ctx context.Context, tx pgx.Tx, tenantID, branchID, templateID uuid.UUID) error {
+func (f *fakeTemplateRepo) DeleteEntriesByTemplate(ctx context.Context, tx domain.Tx, tenantID, branchID, templateID uuid.UUID) error {
 	if f.deleteEntriesErr != nil {
 		return f.deleteEntriesErr
 	}
@@ -137,7 +137,7 @@ func (f *fakeTemplateRepo) EntriesListByTemplate(ctx context.Context, tenantID, 
 	return f.entriesByTemplate[templateID], nil
 }
 
-func (f *fakeTemplateRepo) EntriesListByTemplateTx(ctx context.Context, tx pgx.Tx, tenantID, branchID, templateID uuid.UUID) ([]domain.SessionTemplateEntry, error) {
+func (f *fakeTemplateRepo) EntriesListByTemplateTx(ctx context.Context, tx domain.Tx, tenantID, branchID, templateID uuid.UUID) ([]domain.SessionTemplateEntry, error) {
 	return f.entriesByTemplate[templateID], nil
 }
 

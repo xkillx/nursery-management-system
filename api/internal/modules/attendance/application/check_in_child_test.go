@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/attendance/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -19,14 +18,14 @@ type fakeRepository struct {
 	err     error
 }
 
-func (f *fakeRepository) CreateOpenSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (f *fakeRepository) CreateOpenSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	if f.err != nil {
 		return domain.Session{}, f.err
 	}
 	return f.session, nil
 }
 
-func (f *fakeRepository) GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Session, bool, error) {
+func (f *fakeRepository) GetOpenSessionForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.Session, bool, error) {
 	if f.err != nil {
 		return domain.Session{}, false, f.err
 	}
@@ -36,26 +35,26 @@ func (f *fakeRepository) GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx,
 	return f.session, true, nil
 }
 
-func (f *fakeRepository) CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session domain.Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (f *fakeRepository) CompleteSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, session domain.Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	if f.err != nil {
 		return domain.Session{}, f.err
 	}
 	return session, nil
 }
 
-func (f *fakeRepository) GetSessionForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, sessionID uuid.UUID) (domain.Session, bool, error) {
+func (f *fakeRepository) GetSessionForCorrection(ctx context.Context, tx domain.Tx, tenantID, branchID, sessionID uuid.UUID) (domain.Session, bool, error) {
 	return domain.Session{}, false, nil
 }
 
-func (f *fakeRepository) CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (f *fakeRepository) CreateCorrectedSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (f *fakeRepository) CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session domain.Session, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (f *fakeRepository) CorrectSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, session domain.Session, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	return domain.Session{}, nil
 }
 
-func (f *fakeRepository) HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
+func (f *fakeRepository) HasOverlappingSession(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
 	return false, nil
 }
 
@@ -100,7 +99,7 @@ type captureRepo struct {
 	err     error
 }
 
-func (c *captureRepo) CreateOpenSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (c *captureRepo) CreateOpenSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	c.createOpenSession.called = true
 	c.createOpenSession.occurredAt = occurredAt
 	c.createOpenSession.localDate = localDate
@@ -110,7 +109,7 @@ func (c *captureRepo) CreateOpenSessionWithEvent(ctx context.Context, tx pgx.Tx,
 	return c.session, nil
 }
 
-func (c *captureRepo) GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID) (domain.Session, bool, error) {
+func (c *captureRepo) GetOpenSessionForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (domain.Session, bool, error) {
 	if c.err != nil {
 		return domain.Session{}, false, c.err
 	}
@@ -120,7 +119,7 @@ func (c *captureRepo) GetOpenSessionForUpdate(ctx context.Context, tx pgx.Tx, te
 	return c.session, true, nil
 }
 
-func (c *captureRepo) CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session domain.Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (c *captureRepo) CompleteSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, session domain.Session, occurredAt time.Time, localDate time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	c.completeSession.called = true
 	c.completeSession.occurredAt = occurredAt
 	c.completeSession.localDate = localDate
@@ -130,11 +129,11 @@ func (c *captureRepo) CompleteSessionWithEvent(ctx context.Context, tx pgx.Tx, t
 	return session, nil
 }
 
-func (c *captureRepo) GetSessionForCorrection(ctx context.Context, tx pgx.Tx, tenantID, branchID, sessionID uuid.UUID) (domain.Session, bool, error) {
+func (c *captureRepo) GetSessionForCorrection(ctx context.Context, tx domain.Tx, tenantID, branchID, sessionID uuid.UUID) (domain.Session, bool, error) {
 	return domain.Session{}, false, nil
 }
 
-func (c *captureRepo) CreateCorrectedSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (c *captureRepo) CreateCorrectedSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	c.createCorrectedSession.called = true
 	c.createCorrectedSession.checkInLocalDate = checkInLocalDate
 	c.createCorrectedSession.checkOutLocalDate = checkOutLocalDate
@@ -143,7 +142,7 @@ func (c *captureRepo) CreateCorrectedSessionWithEvent(ctx context.Context, tx pg
 	return c.session, nil
 }
 
-func (c *captureRepo) CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, session domain.Session, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
+func (c *captureRepo) CorrectSessionWithEvent(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, session domain.Session, params domain.CorrectionParams, checkInLocalDate, checkOutLocalDate, correctionActionLocalDate time.Time, occurredAt time.Time, userID, membershipID uuid.UUID, requestID string) (domain.Session, error) {
 	c.correctSession.called = true
 	c.correctSession.checkInLocalDate = checkInLocalDate
 	c.correctSession.checkOutLocalDate = checkOutLocalDate
@@ -152,7 +151,7 @@ func (c *captureRepo) CorrectSessionWithEvent(ctx context.Context, tx pgx.Tx, te
 	return c.session, nil
 }
 
-func (c *captureRepo) HasOverlappingSession(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
+func (c *captureRepo) HasOverlappingSession(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, excludeSessionID *uuid.UUID, checkInAt, checkOutAt time.Time) (bool, error) {
 	return false, nil
 }
 
@@ -172,7 +171,7 @@ type fakeChildChecker struct {
 	err error
 }
 
-func (f *fakeChildChecker) CheckEnrollmentForAttendance(ctx context.Context, tx pgx.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
+func (f *fakeChildChecker) CheckEnrollmentForAttendance(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, localDate time.Time) error {
 	return f.err
 }
 

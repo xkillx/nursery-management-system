@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"nursery-management-system/api/internal/modules/billing/domain"
 )
 
 type txManager interface {
-	ExecTx(ctx context.Context, fn func(tx domain.Tx) error) error
+	ExecTx(ctx context.Context, fn func(tx pgx.Tx) error) error
 }
 
 type MarkOverdueInvoices struct {
@@ -44,7 +46,7 @@ func (uc *MarkOverdueInvoices) Execute(ctx context.Context) (domain.OverdueTrans
 	result.CurrentLondonDate = londonMidnight
 	result.CutoffUTC = cutoffUTC
 
-	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
+	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		acquired, lockErr := uc.repo.TryAcquireOverdueTransitionJobLock(ctx, tx)
 		if lockErr != nil {
 			return fmt.Errorf("acquire overdue job lock: %w", lockErr)
