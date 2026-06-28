@@ -84,7 +84,7 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 			ChildFirstName:         t.FirstName,
 			ChildMiddleName:        t.MiddleName,
 			ChildLastName:          t.LastName,
-			CoreHourlyRateMinor:    t.SiteHourlyRateMinor,
+			CoreHourlyRate:         domain.MustGBP(t.SiteHourlyRateMinor),
 			FundingProfileID:       t.FundingProfileID,
 			FundedAllowanceMinutes: fundedAllowance,
 		})

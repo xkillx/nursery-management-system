@@ -76,14 +76,14 @@ func parseCalculationDetails(raw json.RawMessage) (domain.InvoiceReviewCalculati
 	}
 
 	calc = domain.InvoiceReviewCalculation{
-		CoreHourlyRateMinor:    details.CoreHourlyRateMinor,
+		CoreHourlyRate:         details.CoreHourlyRate,
 		BookedCoreMinutes:      details.BookedCoreMinutes,
 		BookedSessionCount:     len(details.BookedSessions),
 		FundedAllowanceMinutes: details.FundedAllowanceMinutes,
 		FundedDeductionMinutes: details.FundedDeductionMinutes,
 		CoreBillableMinutes:    details.CoreBillableMinutes,
-		CoreSubtotalMinor:      details.CoreSubtotalMinor,
-		ExtrasTotalMinor:       details.ExtrasTotalMinor,
+		CoreSubtotal:           details.CoreSubtotal,
+		ExtrasTotal:            details.ExtrasTotal,
 		TermID:                 details.TermID,
 		BookingPatternID:       details.BookingPatternID,
 		BookedSessions:         details.BookedSessions,

@@ -212,12 +212,12 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 				return fmt.Errorf("compute funded deduction for term %s: %w", termRow.TermID, err)
 			}
 			fundedDeductionMinutes := minInt(calc.TotalMinutes, fundedAllowance)
-			fundedDeductionMinor := calc.SubtotalMinor - billableMinor
+			fundedDeductionMinor := calc.Subtotal.Minor() - billableMinor
 			if fundedDeductionMinor < 0 {
 				fundedDeductionMinor = 0
 			}
 
-			subtotalMinor := calc.SubtotalMinor
+			subtotalMinor := calc.Subtotal.Minor()
 			totalDueMinor := billableMinor
 
 			// 7. Pre-existing extra line items (if regenerating an existing draft).
@@ -236,9 +236,9 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 			calcDetails := domain.InvoiceCalculationDetails{
 				BillingMonth:           billingMonthRaw,
 				ChildID:                termRow.ChildID,
-				CoreHourlyRateMinor:    termRow.SiteHourlyRateMinor,
-				CoreSubtotalMinor:      subtotalMinor,
-				ExtrasTotalMinor:       extrasTotalMinor,
+				CoreHourlyRate:         domain.MustGBP(termRow.SiteHourlyRateMinor),
+				CoreSubtotal:           domain.MustGBP(subtotalMinor),
+				ExtrasTotal:            domain.MustGBP(extrasTotalMinor),
 				ManualExtrasSupported:  true,
 				FundingProfileID:       termRow.FundingProfileID,
 				FundedAllowanceMinutes: fundedAllowance,
@@ -264,14 +264,14 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 					return fmt.Errorf("delete system lines: %w", delErr)
 				}
 				if updErr := uc.repo.UpdateDraftInvoice(ctx, tx, domain.DraftInvoiceUpdateParams{
-					ID:                   invoiceID,
-					TenantID:             actor.TenantID,
-					BranchID:             actor.BranchID,
-					GeneratedRunID:       runID,
-					SubtotalMinor:        subtotalMinor + extrasTotalMinor,
-					FundedDeductionMinor: fundedDeductionMinor,
-					TotalDueMinor:        totalDueMinor + extrasTotalMinor,
-					CalculationDetails:   calcDetailsJSON,
+					ID:                 invoiceID,
+					TenantID:           actor.TenantID,
+					BranchID:           actor.BranchID,
+					GeneratedRunID:     runID,
+					Subtotal:           domain.MustGBP(subtotalMinor + extrasTotalMinor),
+					FundedDeduction:    domain.MustGBP(fundedDeductionMinor),
+					TotalDue:           domain.MustGBP(totalDueMinor + extrasTotalMinor),
+					CalculationDetails: calcDetailsJSON,
 				}); updErr != nil {
 					return fmt.Errorf("update draft invoice: %w", updErr)
 				}
@@ -279,19 +279,19 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 				invoiceID = uid.NewUUID()
 				action = domain.DraftCreated
 				if createErr := uc.repo.CreateDraftInvoice(ctx, tx, domain.DraftInvoiceCreateParams{
-					ID:                   invoiceID,
-					TenantID:             actor.TenantID,
-					BranchID:             actor.BranchID,
-					ChildID:              termRow.ChildID,
-					BillingMonth:         billingMonth,
-					GeneratedRunID:       runID,
-					CurrencyCode:         "GBP",
-					SubtotalMinor:        subtotalMinor + extrasTotalMinor,
-					FundedDeductionMinor: fundedDeductionMinor,
-					TotalDueMinor:        totalDueMinor + extrasTotalMinor,
-					PeriodStartDate:      period.StartLocal,
-					PeriodEndDate:        period.EndExclusiveLocal.AddDate(0, 0, -1),
-					CalculationDetails:   calcDetailsJSON,
+					ID:                 invoiceID,
+					TenantID:           actor.TenantID,
+					BranchID:           actor.BranchID,
+					ChildID:            termRow.ChildID,
+					BillingMonth:       billingMonth,
+					GeneratedRunID:     runID,
+					CurrencyCode:       "GBP",
+					Subtotal:           domain.MustGBP(subtotalMinor + extrasTotalMinor),
+					FundedDeduction:    domain.MustGBP(fundedDeductionMinor),
+					TotalDue:           domain.MustGBP(totalDueMinor + extrasTotalMinor),
+					PeriodStartDate:    period.StartLocal,
+					PeriodEndDate:      period.EndExclusiveLocal.AddDate(0, 0, -1),
+					CalculationDetails: calcDetailsJSON,
 				}); createErr != nil {
 					return fmt.Errorf("create draft invoice: %w", createErr)
 				}
@@ -316,8 +316,8 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 				Description:     "Core childcare",
 				SortOrder:       1,
 				QuantityMinutes: calc.TotalMinutes,
-				UnitAmountMinor: termRow.SiteHourlyRateMinor,
-				LineAmountMinor: subtotalMinor,
+				UnitAmount:      domain.MustGBP(termRow.SiteHourlyRateMinor),
+				LineAmount:      domain.MustGBP(subtotalMinor),
 				SessionCount:    len(calc.Sessions),
 				Details:         coreLineDetailsJSON,
 			}); insErr != nil {
@@ -339,6 +339,10 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 					return fmt.Errorf("marshal deduction line details: %w", jsonErr)
 				}
 			}
+			deductionLineAmountAbs := deductionLineAmount
+			if deductionLineAmountAbs < 0 {
+				deductionLineAmountAbs = -deductionLineAmountAbs
+			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
 				ID:                     uid.NewUUID(),
 				TenantID:               actor.TenantID,
@@ -350,7 +354,7 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 				FundedAllowanceMinutes: fundedAllowance,
 				FundedDeductionMinutes: fundedDeductionMinutes,
 				CoreBillableMinutes:    billableMinutes,
-				LineAmountMinor:        deductionLineAmount,
+				LineAmount:             domain.MustGBP(deductionLineAmountAbs),
 				Details:                deductionLineDetailsJSON,
 			}); insErr != nil {
 				return fmt.Errorf("insert deduction line: %w", insErr)
@@ -378,15 +382,15 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 			}
 
 			generated = append(generated, domain.DraftGenerationChildResult{
-				ChildID:              termRow.ChildID,
-				ChildFirstName:       termRow.FirstName,
-				ChildMiddleName:      termRow.MiddleName,
-				ChildLastName:        termRow.LastName,
-				Action:               action,
-				InvoiceID:            invoiceID,
-				SubtotalMinor:        subtotalMinor + extrasTotalMinor,
-				FundedDeductionMinor: fundedDeductionMinor,
-				TotalDueMinor:        totalDueMinor + extrasTotalMinor,
+				ChildID:         termRow.ChildID,
+				ChildFirstName:  termRow.FirstName,
+				ChildMiddleName: termRow.MiddleName,
+				ChildLastName:   termRow.LastName,
+				Action:          action,
+				InvoiceID:       invoiceID,
+				Subtotal:        domain.MustGBP(subtotalMinor + extrasTotalMinor),
+				FundedDeduction: domain.MustGBP(fundedDeductionMinor),
+				TotalDue:        domain.MustGBP(totalDueMinor + extrasTotalMinor),
 			})
 			totalDueSum += totalDueMinor + extrasTotalMinor
 		}
@@ -462,7 +466,7 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 				EligibleCount: len(generated) + len(blocked),
 				SuccessCount:  len(generated),
 				BlockedCount:  len(blocked),
-				TotalDueMinor: totalDueSum,
+				TotalDue:      domain.MustGBP(totalDueSum),
 			},
 		}
 		return nil
@@ -542,7 +546,7 @@ func (uc *GenerateDraftInvoicesUseCase) recordOutcome(mode, outcome string, star
 			"eligible_count", result.Summary.EligibleCount,
 			"success_count", result.Summary.SuccessCount,
 			"blocked_count", result.Summary.BlockedCount,
-			"total_due_minor", result.Summary.TotalDueMinor,
+			"total_due_minor", result.Summary.TotalDue.Minor(),
 			"latency_ms", time.Since(startedAt).Milliseconds(),
 			"request_id", actor.RequestID,
 			"correlation_id", actor.CorrelationID,

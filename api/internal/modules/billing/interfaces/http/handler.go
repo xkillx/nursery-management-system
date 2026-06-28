@@ -336,7 +336,7 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 			ChildFirstName:         ec.ChildFirstName,
 			ChildMiddleName:        ec.ChildMiddleName,
 			ChildLastName:          ec.ChildLastName,
-			CoreHourlyRateMinor:    ec.CoreHourlyRateMinor,
+			CoreHourlyRateMinor:    ec.CoreHourlyRate.Minor(),
 			FundingProfileID:       fundingProfileID,
 			FundedAllowanceMinutes: ec.FundedAllowanceMinutes,
 			ExistingInvoice:        existingInvoice,
@@ -418,9 +418,9 @@ func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResp
 			ChildLastName:        g.ChildLastName,
 			Action:               string(g.Action),
 			InvoiceID:            g.InvoiceID.String(),
-			SubtotalMinor:        g.SubtotalMinor,
-			FundedDeductionMinor: g.FundedDeductionMinor,
-			TotalDueMinor:        g.TotalDueMinor,
+			SubtotalMinor:        g.Subtotal.Minor(),
+			FundedDeductionMinor: g.FundedDeduction.Minor(),
+			TotalDueMinor:        g.TotalDue.Minor(),
 		})
 	}
 
@@ -450,7 +450,7 @@ func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResp
 			EligibleCount: r.Summary.EligibleCount,
 			SuccessCount:  r.Summary.SuccessCount,
 			BlockedCount:  r.Summary.BlockedCount,
-			TotalDueMinor: r.Summary.TotalDueMinor,
+			TotalDueMinor: r.Summary.TotalDue.Minor(),
 		},
 		Generated: generated,
 		Blocked:   blocked,
@@ -458,6 +458,14 @@ func toGenerateDraftsResponse(r domain.DraftGenerationResult) generateDraftsResp
 }
 
 func strPtr(s string) *string { return &s }
+
+func moneyPtrToIntPtr(m *domain.Money) *int {
+	if m == nil {
+		return nil
+	}
+	v := m.Minor()
+	return &v
+}
 
 func invoiceNumberDisplay(status string, invoiceNumber *string) string {
 	if invoiceNumber == nil || *invoiceNumber == "" {
@@ -531,10 +539,10 @@ func toInvoiceListResponse(r application.ListInvoicesResult) invoiceListResponse
 			Status:                     inv.Status,
 			DueStatus:                  dueStatus(inv.Status),
 			CurrencyCode:               inv.CurrencyCode,
-			SubtotalMinor:              inv.SubtotalMinor,
-			FundedDeductionMinor:       inv.FundedDeductionMinor,
-			TotalDueMinor:              inv.TotalDueMinor,
-			AmountPaidMinor:            inv.AmountPaidMinor,
+			SubtotalMinor:              inv.Subtotal.Minor(),
+			FundedDeductionMinor:       inv.FundedDeduction.Minor(),
+			TotalDueMinor:              inv.TotalDue.Minor(),
+			AmountPaidMinor:            inv.AmountPaid.Minor(),
 			DueAt:                      formatTimePtr(inv.DueAt),
 			IssuedAt:                   formatTimePtr(inv.IssuedAt),
 			PaidAt:                     formatTimePtr(inv.PaidAt),
@@ -574,10 +582,10 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 		Status:                     inv.Status,
 		DueStatus:                  dueStatus(inv.Status),
 		CurrencyCode:               inv.CurrencyCode,
-		SubtotalMinor:              inv.SubtotalMinor,
-		FundedDeductionMinor:       inv.FundedDeductionMinor,
-		TotalDueMinor:              inv.TotalDueMinor,
-		AmountPaidMinor:            inv.AmountPaidMinor,
+		SubtotalMinor:              inv.Subtotal.Minor(),
+		FundedDeductionMinor:       inv.FundedDeduction.Minor(),
+		TotalDueMinor:              inv.TotalDue.Minor(),
+		AmountPaidMinor:            inv.AmountPaid.Minor(),
 		IssuedAt:                   formatTimePtr(inv.IssuedAt),
 		LockedAt:                   formatTimePtr(inv.LockedAt),
 		DueAt:                      formatTimePtr(inv.DueAt),
@@ -618,8 +626,8 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			Description:            line.Description,
 			SortOrder:              line.SortOrder,
 			QuantityMinutes:        line.QuantityMinutes,
-			UnitAmountMinor:        line.UnitAmountMinor,
-			LineAmountMinor:        line.LineAmountMinor,
+			UnitAmountMinor:        moneyPtrToIntPtr(line.UnitAmount),
+			LineAmountMinor:        line.LineAmount.Minor(),
 			FundedAllowanceMinutes: line.FundedAllowanceMinutes,
 			FundedDeductionMinutes: line.FundedDeductionMinutes,
 			CoreBillableMinutes:    line.CoreBillableMinutes,
@@ -653,14 +661,14 @@ func toCalculationResponse(calc domain.InvoiceReviewCalculation) invoiceCalculat
 		})
 	}
 	return invoiceCalculationResponse{
-		CoreHourlyRateMinor:    calc.CoreHourlyRateMinor,
+		CoreHourlyRateMinor:    calc.CoreHourlyRate.Minor(),
 		BookedCoreMinutes:      calc.BookedCoreMinutes,
 		BookedSessionCount:     calc.BookedSessionCount,
 		FundedAllowanceMinutes: calc.FundedAllowanceMinutes,
 		FundedDeductionMinutes: calc.FundedDeductionMinutes,
 		CoreBillableMinutes:    calc.CoreBillableMinutes,
-		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
-		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
+		CoreSubtotalMinor:      calc.CoreSubtotal.Minor(),
+		ExtrasTotalMinor:       calc.ExtrasTotal.Minor(),
 		TermID:                 calc.TermID.String(),
 		BookingPatternID:       calc.BookingPatternID.String(),
 		BookedSessions:         sessions,
@@ -686,7 +694,7 @@ func toIssueInvoiceResponse(r domain.IssueInvoiceResult) issueInvoiceResponse {
 		LockedAt:      formatTime(r.LockedAt),
 		DueAt:         formatTime(r.DueAt),
 		IssuedRunID:   r.IssuedRunID.String(),
-		TotalDueMinor: r.TotalDueMinor,
+		TotalDueMinor: r.TotalDue.Minor(),
 	}
 }
 
@@ -702,7 +710,7 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 			InvoiceNumber:   inv.InvoiceNumber,
 			IssuedAt:        formatTime(inv.IssuedAt),
 			DueAt:           formatTime(inv.DueAt),
-			TotalDueMinor:   inv.TotalDueMinor,
+			TotalDueMinor:   inv.TotalDue.Minor(),
 		})
 	}
 
@@ -736,7 +744,7 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 			EligibleCount: r.Summary.EligibleCount,
 			SuccessCount:  r.Summary.SuccessCount,
 			BlockedCount:  r.Summary.BlockedCount,
-			TotalDueMinor: r.Summary.TotalDueMinor,
+			TotalDueMinor: r.Summary.TotalDue.Minor(),
 		},
 		Issued:  issued,
 		Blocked: blocked,
@@ -759,10 +767,10 @@ func toParentInvoiceListResponse(r application.ListParentInvoicesResult) parentI
 			Status:                 inv.Status,
 			DueStatus:              dueStatus(inv.Status),
 			CurrencyCode:           inv.CurrencyCode,
-			SubtotalMinor:          inv.SubtotalMinor,
-			FundedDeductionMinor:   inv.FundedDeductionMinor,
-			TotalDueMinor:          inv.TotalDueMinor,
-			AmountPaidMinor:        inv.AmountPaidMinor,
+			SubtotalMinor:          inv.Subtotal.Minor(),
+			FundedDeductionMinor:   inv.FundedDeduction.Minor(),
+			TotalDueMinor:          inv.TotalDue.Minor(),
+			AmountPaidMinor:        inv.AmountPaid.Minor(),
 			IssuedAt:               formatTimePtr(inv.IssuedAt),
 			DueAt:                  formatTimePtr(inv.DueAt),
 			PaidAt:                 formatTimePtr(inv.PaidAt),
@@ -795,10 +803,10 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 		Status:                 inv.Status,
 		DueStatus:              dueStatus(inv.Status),
 		CurrencyCode:           inv.CurrencyCode,
-		SubtotalMinor:          inv.SubtotalMinor,
-		FundedDeductionMinor:   inv.FundedDeductionMinor,
-		TotalDueMinor:          inv.TotalDueMinor,
-		AmountPaidMinor:        inv.AmountPaidMinor,
+		SubtotalMinor:          inv.Subtotal.Minor(),
+		FundedDeductionMinor:   inv.FundedDeduction.Minor(),
+		TotalDueMinor:          inv.TotalDue.Minor(),
+		AmountPaidMinor:        inv.AmountPaid.Minor(),
 		IssuedAt:               formatTimePtr(inv.IssuedAt),
 		DueAt:                  formatTimePtr(inv.DueAt),
 		PaidAt:                 formatTimePtr(inv.PaidAt),
@@ -816,8 +824,8 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 			Description:     line.Description,
 			SortOrder:       line.SortOrder,
 			QuantityMinutes: line.QuantityMinutes,
-			UnitAmountMinor: line.UnitAmountMinor,
-			LineAmountMinor: line.LineAmountMinor,
+			UnitAmountMinor: moneyPtrToIntPtr(line.UnitAmount),
+			LineAmountMinor: line.LineAmount.Minor(),
 		})
 	}
 
@@ -826,14 +834,14 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 
 func toParentCalculationResponse(calc domain.InvoiceReviewCalculation) parentInvoiceCalculationResponse {
 	return parentInvoiceCalculationResponse{
-		CoreHourlyRateMinor:    calc.CoreHourlyRateMinor,
+		CoreHourlyRateMinor:    calc.CoreHourlyRate.Minor(),
 		BookedCoreMinutes:      calc.BookedCoreMinutes,
 		BookedSessionCount:     calc.BookedSessionCount,
 		FundedAllowanceMinutes: calc.FundedAllowanceMinutes,
 		FundedDeductionMinutes: calc.FundedDeductionMinutes,
 		CoreBillableMinutes:    calc.CoreBillableMinutes,
-		CoreSubtotalMinor:      calc.CoreSubtotalMinor,
-		ExtrasTotalMinor:       calc.ExtrasTotalMinor,
+		CoreSubtotalMinor:      calc.CoreSubtotal.Minor(),
+		ExtrasTotalMinor:       calc.ExtrasTotal.Minor(),
 	}
 }
 

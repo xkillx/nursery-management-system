@@ -295,9 +295,9 @@ func (r *Repository) CreateDraftInvoice(ctx context.Context, tx domain.Tx, param
 		Status:               domain.InvoiceStatusDraft,
 		CurrencyCode:         params.CurrencyCode,
 		GeneratedRunID:       uuidToPgtype(params.GeneratedRunID),
-		SubtotalMinor:        int32(params.SubtotalMinor),
-		FundedDeductionMinor: int32(params.FundedDeductionMinor),
-		TotalDueMinor:        int32(params.TotalDueMinor),
+		SubtotalMinor:        int32(params.Subtotal.Minor()),
+		FundedDeductionMinor: int32(params.FundedDeduction.Minor()),
+		TotalDueMinor:        int32(params.TotalDue.Minor()),
 		PeriodStartDate:      timeToPgtypeDate(params.PeriodStartDate),
 		PeriodEndDate:        timeToPgtypeDate(params.PeriodEndDate),
 		CalculationDetails:   params.CalculationDetails,
@@ -310,9 +310,9 @@ func (r *Repository) UpdateDraftInvoice(ctx context.Context, tx domain.Tx, param
 		TenantID:             uuidToPgtype(params.TenantID),
 		BranchID:             uuidToPgtype(params.BranchID),
 		GeneratedRunID:       uuidToPgtype(params.GeneratedRunID),
-		SubtotalMinor:        int32(params.SubtotalMinor),
-		FundedDeductionMinor: int32(params.FundedDeductionMinor),
-		TotalDueMinor:        int32(params.TotalDueMinor),
+		SubtotalMinor:        int32(params.Subtotal.Minor()),
+		FundedDeductionMinor: int32(params.FundedDeduction.Minor()),
+		TotalDueMinor:        int32(params.TotalDue.Minor()),
 		CalculationDetails:   params.CalculationDetails,
 	})
 }
@@ -358,8 +358,8 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 		Description:            params.Description,
 		SortOrder:              int32(params.SortOrder),
 		QuantityMinutes:        pgtypeInt4OrNil(params.QuantityMinutes),
-		UnitAmountMinor:        pgtypeInt4OrNil(params.UnitAmountMinor),
-		LineAmountMinor:        int32(params.LineAmountMinor),
+		UnitAmountMinor:        pgtypeInt4OrNil(params.UnitAmount.Minor()),
+		LineAmountMinor:        int32(params.LineAmount.Minor()),
 		RawAttendedMinutes:     pgtypeInt4OrNil(params.RawAttendedMinutes),
 		RoundedAttendedMinutes: pgtypeInt4OrNil(params.RoundedAttendedMinutes),
 		FundedAllowanceMinutes: pgtypeInt4OrNil(params.FundedAllowanceMinutes),
@@ -429,8 +429,8 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 			Description:            row.Description,
 			SortOrder:              int(row.SortOrder),
 			QuantityMinutes:        pgtypeInt4ToIntPtr(row.QuantityMinutes),
-			UnitAmountMinor:        pgtypeInt4ToIntPtr(row.UnitAmountMinor),
-			LineAmountMinor:        int(row.LineAmountMinor),
+			UnitAmount:             pgtypeInt4ToMoneyPtr(row.UnitAmountMinor),
+			LineAmount:             domain.MustGBP(int(row.LineAmountMinor)),
 			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
 			FundedDeductionMinutes: pgtypeInt4ToIntPtr(row.FundedDeductionMinutes),
 			CoreBillableMinutes:    pgtypeInt4ToIntPtr(row.CoreBillableMinutes),
@@ -454,10 +454,10 @@ func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.Invoice
 		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
 		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
 		CurrencyCode:            row.CurrencyCode,
-		SubtotalMinor:           int(row.SubtotalMinor),
-		FundedDeductionMinor:    int(row.FundedDeductionMinor),
-		TotalDueMinor:           int(row.TotalDueMinor),
-		AmountPaidMinor:         int(row.AmountPaidMinor),
+		Subtotal:                domain.MustGBP(int(row.SubtotalMinor)),
+		FundedDeduction:         domain.MustGBP(int(row.FundedDeductionMinor)),
+		TotalDue:                domain.MustGBP(int(row.TotalDueMinor)),
+		AmountPaid:              domain.MustGBP(int(row.AmountPaidMinor)),
 		DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
 		IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
 		LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
@@ -492,10 +492,10 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
 		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
 		CurrencyCode:            row.CurrencyCode,
-		SubtotalMinor:           int(row.SubtotalMinor),
-		FundedDeductionMinor:    int(row.FundedDeductionMinor),
-		TotalDueMinor:           int(row.TotalDueMinor),
-		AmountPaidMinor:         int(row.AmountPaidMinor),
+		Subtotal:                domain.MustGBP(int(row.SubtotalMinor)),
+		FundedDeduction:         domain.MustGBP(int(row.FundedDeductionMinor)),
+		TotalDue:                domain.MustGBP(int(row.TotalDueMinor)),
+		AmountPaid:              domain.MustGBP(int(row.AmountPaidMinor)),
 		DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
 		IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
 		LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
@@ -577,8 +577,8 @@ func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, br
 			Description:     row.Description,
 			SortOrder:       int(row.SortOrder),
 			QuantityMinutes: pgtypeInt4ToIntPtr(row.QuantityMinutes),
-			UnitAmountMinor: pgtypeInt4ToIntPtr(row.UnitAmountMinor),
-			LineAmountMinor: int(row.LineAmountMinor),
+			UnitAmount:      pgtypeInt4ToMoneyPtr(row.UnitAmountMinor),
+			LineAmount:      domain.MustGBP(int(row.LineAmountMinor)),
 		})
 	}
 	return result, nil
@@ -598,10 +598,10 @@ func mapParentInvoiceRow(id pgtype.UUID, invoiceKind string, invoiceNumber pgtyp
 		PeriodStartDate:        pgtypeDateToTime(periodStartDate),
 		PeriodEndDate:          pgtypeDateToTime(periodEndDate),
 		CurrencyCode:           currencyCode,
-		SubtotalMinor:          int(subtotalMinor),
-		FundedDeductionMinor:   int(fundedDeductionMinor),
-		TotalDueMinor:          int(totalDueMinor),
-		AmountPaidMinor:        int(amountPaidMinor),
+		Subtotal:               domain.MustGBP(int(subtotalMinor)),
+		FundedDeduction:        domain.MustGBP(int(fundedDeductionMinor)),
+		TotalDue:               domain.MustGBP(int(totalDueMinor)),
+		AmountPaid:             domain.MustGBP(int(amountPaidMinor)),
 		DueAt:                  pgtypeTimestamptzToTimePtr(dueAt),
 		IssuedAt:               pgtypeTimestamptzToTimePtr(issuedAt),
 		PaidAt:                 pgtypeTimestamptzToTimePtr(paidAt),
@@ -721,7 +721,7 @@ func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.Invoic
 		BillingMonth:    pgtypeDateToTime(row.BillingMonth),
 		InvoiceKind:     row.InvoiceKind,
 		Status:          row.Status,
-		TotalDueMinor:   int(row.TotalDueMinor),
+		TotalDue:        domain.MustGBP(int(row.TotalDueMinor)),
 	}
 }
 
@@ -737,7 +737,7 @@ func mapIssueCandidateRows(rows []sqlc.ListDraftInvoicesForIssueForUpdateRow) []
 			BillingMonth:    pgtypeDateToTime(row.BillingMonth),
 			InvoiceKind:     row.InvoiceKind,
 			Status:          row.Status,
-			TotalDueMinor:   int(row.TotalDueMinor),
+			TotalDue:        domain.MustGBP(int(row.TotalDueMinor)),
 		})
 	}
 	return result
@@ -755,7 +755,7 @@ func mapSelectedIssueCandidateRows(rows []sqlc.ListSelectedInvoicesForIssueForUp
 			BillingMonth:    pgtypeDateToTime(row.BillingMonth),
 			InvoiceKind:     row.InvoiceKind,
 			Status:          row.Status,
-			TotalDueMinor:   int(row.TotalDueMinor),
+			TotalDue:        domain.MustGBP(int(row.TotalDueMinor)),
 		})
 	}
 	return result
@@ -855,6 +855,14 @@ func pgtypeInt4ToIntPtr(i pgtype.Int4) *int {
 	}
 	v := int(i.Int32)
 	return &v
+}
+
+func pgtypeInt4ToMoneyPtr(i pgtype.Int4) *domain.Money {
+	if !i.Valid {
+		return nil
+	}
+	m := domain.MustGBP(int(i.Int32))
+	return &m
 }
 
 func pgtypeTextToStrPtr(t pgtype.Text) *string {

@@ -115,7 +115,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 				"billing_month":   candidate.BillingMonth.Format("2006-01"),
 				"issued_run_id":   runID.String(),
 				"issue_mode":      "single",
-				"total_due_minor": candidate.TotalDueMinor,
+				"total_due_minor": candidate.TotalDue.Minor(),
 				"due_at":          issueTime.Format(time.RFC3339),
 			},
 		}); auditErr != nil {
@@ -149,7 +149,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 			LockedAt:      issueTime,
 			DueAt:         issueTime,
 			IssuedRunID:   runID,
-			TotalDueMinor: candidate.TotalDueMinor,
+			TotalDue:      candidate.TotalDue,
 		}
 
 		return nil
@@ -348,7 +348,7 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 					"billing_month":   billingMonthStr,
 					"issued_run_id":   runID.String(),
 					"issue_mode":      "bulk",
-					"total_due_minor": inv.TotalDueMinor,
+					"total_due_minor": inv.TotalDue.Minor(),
 					"due_at":          issueTime.Format(time.RFC3339),
 				},
 			}); auditErr != nil {
@@ -364,9 +364,9 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 				InvoiceNumber:   invoiceNumber,
 				IssuedAt:        issueTime,
 				DueAt:           issueTime,
-				TotalDueMinor:   inv.TotalDueMinor,
+				TotalDue:        inv.TotalDue,
 			})
-			totalDueSum += inv.TotalDueMinor
+			totalDueSum += inv.TotalDue.Minor()
 		}
 
 		runStatus := domain.InvoiceRunStatusCompleted
@@ -428,7 +428,7 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 				EligibleCount: len(issued) + len(blocked),
 				SuccessCount:  len(issued),
 				BlockedCount:  len(blocked),
-				TotalDueMinor: totalDueSum,
+				TotalDue:      domain.MustGBP(totalDueSum),
 			},
 			Issued:  issued,
 			Blocked: blocked,
