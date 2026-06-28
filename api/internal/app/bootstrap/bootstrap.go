@@ -392,8 +392,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	// ownerRepo already declared above (before billing module)
 	ownerSummariesUC := ownerapp.NewGetSiteSummariesUseCase(ownerRepo)
 	ownerListAccessUC := ownerapp.NewListManagerAccessUseCase(ownerRepo)
-	ownerTokenAdapter := &ownerInviteTokenAdapter{gen: inviteTokenMgr}
-	ownerEmailAdapter := &ownerEmailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
+	ownerTokenAdapter := &inviteTokenGeneratorAdapter{gen: inviteTokenMgr}
+	ownerEmailAdapter := &emailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
 	ownerGrantUC := ownerapp.NewGrantManagerAccessUseCase(ownerRepo, ownerTokenAdapter, ownerEmailAdapter, cfg.WebBaseURL)
 	ownerDeactivateUC := ownerapp.NewDeactivateManagerAccessUseCase(ownerRepo)
 	ownerReactivateUC := ownerapp.NewReactivateManagerAccessUseCase(ownerRepo)

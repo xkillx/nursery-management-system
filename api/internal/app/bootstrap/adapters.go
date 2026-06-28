@@ -138,11 +138,11 @@ var _ billingdomain.SiteRateRepository = (*siteRateUpdateAdapter)(nil)
 
 // ── Owner adapters ──────────────────────────────────────────────────────────
 
-type ownerInviteTokenAdapter struct {
+type inviteTokenGeneratorAdapter struct {
 	gen *invitetokens.Manager
 }
 
-func (a *ownerInviteTokenAdapter) Generate() (string, string, time.Time, error) {
+func (a *inviteTokenGeneratorAdapter) Generate() (string, string, time.Time, error) {
 	tok, err := a.gen.Generate()
 	if err != nil {
 		return "", "", time.Time{}, err
@@ -150,12 +150,12 @@ func (a *ownerInviteTokenAdapter) Generate() (string, string, time.Time, error) 
 	return tok.Raw, tok.Hash, tok.ExpiresAt, nil
 }
 
-type ownerEmailSenderAdapter struct {
+type emailSenderAdapter struct {
 	sender  email.Sender
 	baseURL string
 }
 
-func (a *ownerEmailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail, acceptURL string) error {
+func (a *emailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail, acceptURL string) error {
 	msg := email.Message{
 		To:      toEmail,
 		Subject: "You're invited to join as manager",
@@ -189,8 +189,8 @@ func (a *siteExistsCheckerAdapter) SiteExists(ctx context.Context, tenantID, sit
 }
 
 var (
-	_ ownerdomain.InviteTokenGenerator = (*ownerInviteTokenAdapter)(nil)
-	_ ownerdomain.ManagerInviteSender  = (*ownerEmailSenderAdapter)(nil)
+	_ ownerdomain.InviteTokenGenerator = (*inviteTokenGeneratorAdapter)(nil)
+	_ ownerdomain.ManagerInviteSender  = (*emailSenderAdapter)(nil)
 )
 
 // ── Session types adapters ───────────────────────────────────────────────
