@@ -1,150 +1,456 @@
-<div class="p-6 space-y-6">
+<div class="space-y-6">
   @if (isLoading) {
-    <app-loading-state />
+    <app-loading-state label="Loading invoice..." />
   }
 
   @if (errorMessage) {
-    <app-alert variant="error" [message]="errorMessage" />
+    <app-alert variant="error" title="Error" [message]="errorMessage" />
   }
 
   @if (detail && !isLoading) {
-    <!-- Back link -->
     <a
       routerLink="/manager/invoices"
-      class="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 transition hover:text-brand-700 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:text-brand-400 dark:hover:text-brand-300"
     >
+      <ng-icon name="heroArrowDownTray" class="hidden" aria-hidden="true" />
       &larr; Back to invoices
     </a>
 
-    <!-- Header -->
-    <app-page-header
-      [title]="displayTitle"
-      [description]="detail.childName + ' — ' + formatBillingMonthLabel(detail.billingMonth)"
-    />
+    <section
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]"
+      aria-labelledby="invoice-header"
+    >
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-4">
+          <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroReceiptPercent" size="28" aria-hidden="true" />
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 id="invoice-header" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+                {{ displayTitle }}
+              </h1>
+              <app-status-badge [status]="detail.status" size="md" />
+              <app-status-badge [status]="detail.dueStatus" size="md" />
+              @if (isImmutable) {
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                  <ng-icon name="heroLockClosed" size="14" aria-hidden="true" />
+                  Locked
+                  @if (detail.lockedAt) {
+                    — {{ formatInstant(detail.lockedAt) }}
+                  }
+                </span>
+              }
+            </div>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Billing for <span class="font-semibold text-gray-900 dark:text-white/90">{{ detail.childName }}</span>
+              · {{ formatBillingMonthLabel(detail.billingMonth) }}
+              @if (periodLabel) {
+                · {{ periodLabel }}
+              }
+            </p>
+          </div>
+        </div>
 
-    <!-- Status badges -->
-    <div class="flex flex-wrap items-center gap-3">
-      <app-status-badge [status]="detail.status" size="md" />
-      <app-status-badge [status]="detail.dueStatus" size="md" />
-      @if (isImmutable) {
-        <span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-          &#128274; Locked
-          @if (detail.lockedAt) {
-            — {{ formatInstant(detail.lockedAt) }}
-          }
-        </span>
-      }
-    </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05]"
+            [attr.aria-label]="'Download PDF for ' + displayTitle"
+          >
+            <ng-icon name="heroArrowDownTray" size="18" aria-hidden="true" />
+            Download PDF
+          </button>
+        </div>
+      </div>
 
-    <!-- Immutable notice -->
+      <dl class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+          <dt class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <ng-icon name="heroCalendarDays" size="14" aria-hidden="true" />
+            Issued
+          </dt>
+          <dd class="mt-2 text-sm font-semibold text-gray-900 dark:text-white/90">{{ formatInstant(detail.issuedAt) || '—' }}</dd>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+          <dt class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <ng-icon name="heroClock" size="14" aria-hidden="true" />
+            Due
+          </dt>
+          <dd class="mt-2 text-sm font-semibold" [class.text-error-600]="detail.dueStatus === 'overdue'" [class.dark:text-error-300]="detail.dueStatus === 'overdue'">
+            {{ formatInstant(detail.dueAt) || '—' }}
+          </dd>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Subtotal</dt>
+          <dd class="mt-2 text-sm font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.subtotalMinor) }}</dd>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-brand-50 p-4 dark:border-brand-500/10">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-300">Net due</dt>
+          <dd class="mt-2 text-base font-bold text-brand-700 dark:text-brand-300">{{ formatGbp(detail.totalDueMinor) }}</dd>
+        </div>
+      </dl>
+    </section>
+
     @if (isImmutable) {
-      <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-        <p class="text-sm font-medium text-blue-800 dark:text-blue-300">
-          Issued invoice locked
-          @if (detail.issuedAt) {
-            — issued {{ formatInstant(detail.issuedAt) }}
-          }
-        </p>
-        <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
-          This invoice cannot be edited. Changes require an adjustment invoice.
-        </p>
+      <div class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-light-50 p-4 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
+        <ng-icon name="heroLockClosed" size="20" class="mt-0.5 text-blue-light-600 dark:text-blue-light-300" aria-hidden="true" />
+        <div>
+          <p class="text-sm font-semibold text-blue-light-700 dark:text-blue-light-200">
+            Issued invoice locked
+            @if (detail.issuedAt) {
+              — issued {{ formatInstant(detail.issuedAt) }}
+            }
+          </p>
+          <p class="mt-1 text-xs text-blue-light-700/80 dark:text-blue-light-200/80">
+            This invoice cannot be edited. Changes require an adjustment invoice.
+          </p>
+        </div>
       </div>
     }
 
     @if (!isImmutable) {
-      <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Read-only review
-        </p>
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          This draft invoice is shown for review only. Use Invoice run to generate or issue.
-        </p>
+      <div class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/[0.03]">
+        <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 text-gray-500 dark:text-gray-300" aria-hidden="true" />
+        <div>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            Read-only review
+          </p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            This draft invoice is shown for review only. Use Invoice run to generate or issue.
+          </p>
+        </div>
       </div>
     }
 
-    <!-- Payment review section (issued-or-later only) -->
+    <section class="grid gap-4 lg:grid-cols-2" aria-label="Billing entities">
+      <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+          <ng-icon name="heroBuildingOffice2" size="20" aria-hidden="true" />
+          <h2 class="text-xs font-semibold uppercase tracking-wider">From · Nursery</h2>
+        </div>
+        <p class="mt-4 text-base font-semibold text-gray-900 dark:text-white/90">Nursery site</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Site details are populated by the active membership and used on the issued invoice document.
+        </p>
+        <dl class="mt-4 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Billing month</dt>
+            <dd class="mt-1">{{ formatBillingMonthLabel(detail.billingMonth) }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Currency</dt>
+            <dd class="mt-1 uppercase">{{ detail.currencyCode }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+          <ng-icon name="heroUserCircle" size="20" aria-hidden="true" />
+          <h2 class="text-xs font-semibold uppercase tracking-wider">To · Parent / Guardian</h2>
+        </div>
+        <p class="mt-4 text-base font-semibold text-gray-900 dark:text-white/90">{{ detail.childName }}</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Primary contact is pulled from the child record at issue time.
+        </p>
+        <dl class="mt-4 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Account ID</dt>
+            <dd class="mt-1 font-mono text-xs">{{ detail.childId }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Invoice number</dt>
+            <dd class="mt-1 font-mono text-xs">{{ detail.invoiceNumber || '—' }}</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Service breakdown">
+      <header class="flex flex-col gap-1 border-b border-gray-200 p-5 dark:border-gray-800">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Service breakdown</h2>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Line items grouped by kind, with funded deduction shown as a credit.</p>
+      </header>
+
+      @if (detail.lines.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[720px] border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+                <th class="px-6 py-4">Description</th>
+                <th class="px-6 py-4">Kind</th>
+                <th class="px-6 py-4 text-right">Quantity</th>
+                <th class="px-6 py-4 text-right">Unit amount</th>
+                <th class="px-6 py-4 text-right">Line amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              @for (line of detail.lines; track line.lineId) {
+                <tr class="transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                  <td class="px-6 py-4">
+                    <p class="font-semibold text-gray-900 dark:text-white/90">{{ line.description }}</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" [ngClass]="lineToneClasses(line.lineKind)">
+                      {{ lineKindLabel(line.lineKind) }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right text-sm text-gray-700 dark:text-gray-200">
+                    {{ lineQuantityLabel(line) }}
+                  </td>
+                  <td class="px-6 py-4 text-right text-sm text-gray-700 dark:text-gray-200">
+                    @if (line.unitAmountMinor !== null) {
+                      {{ formatGbp(line.unitAmountMinor) }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="px-6 py-4 text-right text-sm font-semibold" [class.text-warning-700]="line.lineKind === 'funded_deduction'" [class.dark:text-warning-300]="line.lineKind === 'funded_deduction'">
+                    @if (line.lineKind === 'funded_deduction' && line.lineAmountMinor > 0) {
+                      &minus;{{ formatGbp(line.lineAmountMinor) }}
+                    } @else {
+                      {{ formatGbp(line.lineAmountMinor) }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-end border-t border-gray-200 p-5 dark:border-gray-800">
+          <dl class="w-full max-w-xs space-y-2 text-sm">
+            <div class="flex justify-between text-gray-600 dark:text-gray-300">
+              <dt>Subtotal</dt>
+              <dd class="font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.subtotalMinor) }}</dd>
+            </div>
+            <div class="flex justify-between text-gray-600 dark:text-gray-300">
+              <dt>Funded deduction</dt>
+              <dd class="font-semibold text-warning-700 dark:text-warning-300">
+                @if (detail.fundedDeductionMinor > 0) {
+                  &minus;{{ formatGbp(detail.fundedDeductionMinor) }}
+                } @else {
+                  {{ formatGbp(0) }}
+                }
+              </dd>
+            </div>
+            <div class="flex justify-between border-t border-gray-200 pt-3 text-gray-900 dark:border-gray-700 dark:text-white/90">
+              <dt class="text-base font-semibold">Net due</dt>
+              <dd class="text-base font-bold">{{ formatGbp(detail.totalDueMinor) }}</dd>
+            </div>
+          </dl>
+        </div>
+      } @else {
+        <p class="p-5 text-sm text-gray-500 dark:text-gray-400">No line items have been generated yet.</p>
+      }
+    </section>
+
+    @if (detail.calculation) {
+      <section aria-labelledby="calculation-heading" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+          <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+          <h2 id="calculation-heading" class="text-xs font-semibold uppercase tracking-wider">Funded deduction calculation</h2>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          @if (detail.calculation.roundedAttendedMinutes !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatMinutes(detail.calculation.roundedAttendedMinutes!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Rounded attended</p>
+            </div>
+          }
+          @if (detail.calculation.fundedAllowanceMinutes !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatMinutes(detail.calculation.fundedAllowanceMinutes!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Funded allowance</p>
+            </div>
+          }
+          @if (detail.calculation.fundedDeductionMinutes !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatMinutes(detail.calculation.fundedDeductionMinutes!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Funded deduction</p>
+            </div>
+          }
+          @if (detail.calculation.coreBillableMinutes !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatMinutes(detail.calculation.coreBillableMinutes!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Core billable</p>
+            </div>
+          }
+          @if (detail.calculation.siteCoreHourlyRateMinor !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.calculation.siteCoreHourlyRateMinor!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Core hourly rate</p>
+            </div>
+          }
+          @if (detail.calculation.coreSubtotalMinor !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.calculation.coreSubtotalMinor!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Core subtotal</p>
+            </div>
+          }
+          @if (detail.calculation.extrasTotalMinor !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.calculation.extrasTotalMinor!) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Extras total</p>
+            </div>
+          }
+          @if (detail.calculation.includedSessionCount !== null) {
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ detail.calculation.includedSessionCount }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Sessions included</p>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="grid gap-4 lg:grid-cols-3" aria-label="Audit trail and payment context">
+      <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] lg:col-span-2">
+        <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+          <ng-icon name="heroShieldCheck" size="20" aria-hidden="true" />
+          <h2 class="text-xs font-semibold uppercase tracking-wider">Audit trail</h2>
+        </div>
+        <ol class="relative mt-5 space-y-5 border-l-2 border-dashed border-gray-200 pl-6 dark:border-gray-700">
+          @for (entry of auditTrail; track entry.key) {
+            <li class="relative">
+              <span class="absolute -left-[34px] flex size-7 items-center justify-center rounded-full ring-4 ring-white dark:ring-gray-900" [ngClass]="auditTrailIconClasses(entry.tone)">
+                <ng-icon [name]="entry.icon" size="14" aria-hidden="true" />
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ entry.title }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ entry.description }}</p>
+                <p class="mt-1 text-xs text-gray-400">{{ formatInstant(entry.timestamp) }}</p>
+              </div>
+            </li>
+          }
+        </ol>
+      </article>
+
+      <article class="space-y-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+            <ng-icon name="heroBanknotes" size="20" aria-hidden="true" />
+            <h2 class="text-xs font-semibold uppercase tracking-wider">Settlement</h2>
+          </div>
+          <dl class="mt-4 space-y-2 text-sm">
+            <div class="flex justify-between">
+              <dt class="text-gray-500 dark:text-gray-400">Amount paid</dt>
+              <dd class="font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(detail.amountPaidMinor) }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-gray-500 dark:text-gray-400">Balance due</dt>
+              <dd class="font-semibold" [class.text-error-600]="balanceDueMinor > 0" [class.dark:text-error-300]="balanceDueMinor > 0">
+                {{ formatGbp(balanceDueMinor) }}
+              </dd>
+            </div>
+            @if (detail.paidAt) {
+              <div class="flex justify-between">
+                <dt class="text-gray-500 dark:text-gray-400">Paid at</dt>
+                <dd class="font-semibold text-gray-900 dark:text-white/90">{{ formatInstant(detail.paidAt) }}</dd>
+              </div>
+            }
+            @if (detail.paymentStatusUpdatedAt) {
+              <div class="flex justify-between">
+                <dt class="text-gray-500 dark:text-gray-400">Last updated</dt>
+                <dd class="font-semibold text-gray-900 dark:text-white/90">{{ formatInstant(detail.paymentStatusUpdatedAt) }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+            <ng-icon name="heroEnvelope" size="20" aria-hidden="true" />
+            <h2 class="text-xs font-semibold uppercase tracking-wider">Nursery notes</h2>
+          </div>
+          <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            Please settle outstanding balances via the parent portal or bank transfer. Funding figures reflect the latest eligibility code verified for the billing month.
+          </p>
+        </div>
+      </article>
+    </section>
+
     @if (isPayable) {
-      <section aria-labelledby="payment-heading">
-        <h2 id="payment-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Payment review</h2>
+      <section aria-labelledby="payment-heading" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 text-brand-600 dark:text-brand-300">
+            <ng-icon name="heroCreditCard" size="20" aria-hidden="true" />
+            <h2 id="payment-heading" class="text-xs font-semibold uppercase tracking-wider">Payment review</h2>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Live payment state, latest attempt, and webhook history for diagnostics.</p>
+        </div>
 
         @if (isPaymentLoading) {
-          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Loading payment information...</p>
-          </div>
+          <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Loading payment information...</p>
         }
 
         @if (paymentErrorMessage) {
-          <app-alert variant="error" [message]="paymentErrorMessage" />
+          <app-alert variant="error" class="mt-4" title="Payment diagnostics error" [message]="paymentErrorMessage" />
         }
 
         @if (paymentStatus && !isPaymentLoading) {
-          <!-- Payment summary -->
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 mb-4">
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <app-status-badge [status]="paymentDisplayStateValue" size="sm" />
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Payment state</p>
+          <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" [ngClass]="paymentStateBadgeClasses(paymentDisplayStateValue)">
+                <span class="size-1.5 rounded-full bg-current"></span>
+                {{ paymentDisplayLabel(paymentDisplayStateValue) }}
+              </span>
+              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Payment state</p>
             </div>
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.amountPaidMinor) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Amount paid</p>
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-base font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(paymentStatus.amountPaidMinor) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Amount paid</p>
             </div>
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(paymentBalanceDueMinor) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Balance due</p>
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <p class="text-base font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(paymentBalanceDueMinor) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Balance due</p>
             </div>
             @if (paymentStatus.paidAt) {
-              <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-                <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.paidAt) }}</p>
+              <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ formatInstant(paymentStatus.paidAt) }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Paid at</p>
-              </div>
-            }
-            @if (paymentStatus.paymentStatusUpdatedAt) {
-              <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-                <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.paymentStatusUpdatedAt) }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Last updated</p>
               </div>
             }
           </div>
 
-          <!-- Latest attempt -->
           @if (paymentStatus.latestPaymentAttempt) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] mb-4">
-              <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Latest payment attempt</h3>
-              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="mt-4 rounded-xl border border-gray-100 bg-gray-50/40 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Latest payment attempt</h3>
+              <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div>
-                  <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}</p>
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}</p>
+                  <p class="text-sm text-gray-900 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">Amount</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }}</p>
+                  <p class="text-sm text-gray-900 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">Created</p>
                 </div>
                 @if (paymentStatus.latestPaymentAttempt.stripeExpiresAt) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.stripeExpiresAt) }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentAttempt.stripeExpiresAt) }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Expires</p>
                   </div>
                 }
                 @if (paymentStatus.latestPaymentAttempt.failureReason) {
                   <div>
-                    <p class="text-sm text-red-700 dark:text-red-400">{{ paymentStatus.latestPaymentAttempt.failureReason }}</p>
+                    <p class="text-sm text-error-700 dark:text-error-300">{{ paymentStatus.latestPaymentAttempt.failureReason }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Failure reason</p>
                   </div>
                 }
                 @if (paymentStatus.latestPaymentAttempt.providerErrorMessage) {
                   <div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ paymentStatus.latestPaymentAttempt.providerErrorMessage }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">{{ paymentStatus.latestPaymentAttempt.providerErrorMessage }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Provider message</p>
                   </div>
                 }
               </div>
-              <!-- Secondary provider IDs -->
               @if (paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId || paymentStatus.latestPaymentAttempt.stripePaymentIntentId) {
-                <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                <div class="mt-2 text-xs text-gray-400">
                   @if (paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId) {
                     <span>Session: {{ paymentStatus.latestPaymentAttempt.stripeCheckoutSessionId }}</span>
                   }
@@ -156,46 +462,45 @@
             </div>
           }
 
-          <!-- Latest event -->
           @if (paymentStatus.latestPaymentEvent) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] mb-4">
-              <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Latest payment event</h3>
-              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="mt-4 rounded-xl border border-gray-100 bg-gray-50/40 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Latest payment event</h3>
+              <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div>
-                  <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ eventOutcomeLabel(paymentStatus.latestPaymentEvent.outcome) }}</p>
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ eventOutcomeLabel(paymentStatus.latestPaymentEvent.outcome) }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">Outcome</p>
                 </div>
                 @if (paymentStatus.latestPaymentEvent.reasonCode) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.reasonCode }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.reasonCode }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Reason</p>
                   </div>
                 }
                 @if (paymentStatus.latestPaymentEvent.amountMinor !== null) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentEvent.amountMinor!) }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ formatGbp(paymentStatus.latestPaymentEvent.amountMinor!) }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Amount</p>
                   </div>
                 }
                 <div>
-                  <p class="text-sm text-gray-800 dark:text-white/90">{{ webhookStatusLabel(paymentStatus.latestPaymentEvent.webhookProcessingStatus) }}</p>
+                  <p class="text-sm text-gray-900 dark:text-white/90">{{ webhookStatusLabel(paymentStatus.latestPaymentEvent.webhookProcessingStatus) }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">Webhook status</p>
                 </div>
                 @if (paymentStatus.latestPaymentEvent.webhookReceivedAt) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentEvent.webhookReceivedAt) }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ formatInstant(paymentStatus.latestPaymentEvent.webhookReceivedAt) }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Webhook received</p>
                   </div>
                 }
                 @if (paymentStatus.latestPaymentEvent.previousInvoiceStatus && paymentStatus.latestPaymentEvent.newInvoiceStatus) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.previousInvoiceStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.newInvoiceStatus }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.previousInvoiceStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.newInvoiceStatus }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Invoice transition</p>
                   </div>
                 }
                 @if (paymentStatus.latestPaymentEvent.attemptPreviousStatus && paymentStatus.latestPaymentEvent.attemptNewStatus) {
                   <div>
-                    <p class="text-sm text-gray-800 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.attemptPreviousStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.attemptNewStatus }}</p>
+                    <p class="text-sm text-gray-900 dark:text-white/90">{{ paymentStatus.latestPaymentEvent.attemptPreviousStatus }} &rarr; {{ paymentStatus.latestPaymentEvent.attemptNewStatus }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Attempt transition</p>
                   </div>
                 }
@@ -203,45 +508,47 @@
             </div>
           }
 
-          <!-- Parent retry visibility -->
           @if (canShowParentRetry(paymentStatus)) {
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20 mb-4">
-              <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Parent retry available</p>
-              <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">The parent can retry payment for this invoice.</p>
+            <div class="mt-4 flex items-start gap-3 rounded-xl border border-blue-light-200 bg-blue-light-50 p-4 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
+              <ng-icon name="heroInformationCircle" size="20" class="mt-0.5 text-blue-light-600 dark:text-blue-light-300" aria-hidden="true" />
+              <div>
+                <p class="text-sm font-semibold text-blue-light-700 dark:text-blue-light-200">Parent retry available</p>
+                <p class="mt-1 text-xs text-blue-light-700/80 dark:text-blue-light-200/80">The parent can retry payment for this invoice.</p>
+              </div>
             </div>
           }
 
-          <!-- Retry unavailable reason -->
           @if (!canShowParentRetry(paymentStatus) && paymentStatus.checkoutRetryReasonCode && !isOpenPaymentAttempt(paymentStatus.latestPaymentAttempt?.status)) {
-            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50 mb-4">
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ retryReasonLabel(paymentStatus.checkoutRetryReasonCode) }}</p>
+            <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/[0.03]">
+              <p class="text-sm text-gray-600 dark:text-gray-300">{{ retryReasonLabel(paymentStatus.checkoutRetryReasonCode) }}</p>
             </div>
           }
 
-          <!-- Pending state notice -->
           @if (paymentStatus.latestPaymentAttempt && isOpenPaymentAttempt(paymentStatus.latestPaymentAttempt.status)) {
-            <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20 mb-4">
-              <p class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Awaiting provider update</p>
-              <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                A checkout session is open ({{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}). Created {{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }} for {{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}.
-              </p>
+            <div class="mt-4 flex items-start gap-3 rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+              <ng-icon name="heroExclamationTriangle" size="20" class="mt-0.5 text-warning-700 dark:text-warning-300" aria-hidden="true" />
+              <div>
+                <p class="text-sm font-semibold text-warning-700 dark:text-warning-300">Awaiting provider update</p>
+                <p class="mt-1 text-xs text-warning-700/80 dark:text-warning-300/80">
+                  A checkout session is open ({{ attemptStatusLabel(paymentStatus.latestPaymentAttempt.status) }}). Created {{ formatInstant(paymentStatus.latestPaymentAttempt.createdAt) }} for {{ formatGbp(paymentStatus.latestPaymentAttempt.amountMinor) }}.
+                </p>
+              </div>
             </div>
           }
 
-          <!-- Payment event history -->
-          <div class="mt-4">
-            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Payment history (most recent first)</h3>
+          <div class="mt-5">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Payment history (most recent first)</h3>
             @if (paymentEvents.length === 0) {
-              <p class="text-sm text-gray-400 dark:text-gray-500">No payment events recorded.</p>
+              <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No payment events recorded.</p>
             }
             @if (paymentEvents.length > 0) {
-              <div class="space-y-2">
+              <ul class="mt-3 space-y-2">
                 @for (event of paymentEvents; track event.paymentEventId) {
-                  <div class="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <li class="rounded-xl border border-gray-100 bg-gray-50/60 p-3 dark:border-gray-700 dark:bg-white/[0.02]">
                     <div class="flex flex-wrap items-center gap-2 text-sm">
-                      <span class="font-medium text-gray-800 dark:text-white/90">{{ eventOutcomeLabel(event.outcome) }}</span>
+                      <span class="font-semibold text-gray-900 dark:text-white/90">{{ eventOutcomeLabel(event.outcome) }}</span>
                       @if (event.amountMinor !== null) {
-                        <span class="text-gray-600 dark:text-gray-400">{{ formatGbp(event.amountMinor!) }}</span>
+                        <span class="text-gray-600 dark:text-gray-300">{{ formatGbp(event.amountMinor!) }}</span>
                       }
                       <span class="text-xs text-gray-400">{{ formatInstant(event.createdAt) }}</span>
                     </div>
@@ -260,9 +567,8 @@
                         <span>{{ formatInstant(event.webhookReceivedAt) }}</span>
                       }
                     </div>
-                    <!-- Secondary provider IDs -->
                     @if (event.stripeEventId || event.stripeCheckoutSessionId || event.stripePaymentIntentId) {
-                      <div class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                      <div class="mt-1 text-xs text-gray-400">
                         @if (event.stripeEventId) {
                           <span>Event: {{ event.stripeEventId }}</span>
                         }
@@ -274,11 +580,10 @@
                         }
                       </div>
                     }
-                  </div>
+                  </li>
                 }
-              </div>
+              </ul>
 
-              <!-- Event pagination -->
               @if (hasPaymentEventsPrevious || hasPaymentEventsNext) {
                 <div class="mt-3 flex gap-2">
                   <button
@@ -305,179 +610,23 @@
       </section>
     }
 
-    <!-- Summary -->
-    <section aria-labelledby="summary-heading">
-      <h2 id="summary-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Summary</h2>
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-          <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(detail.subtotalMinor) }}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Subtotal</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-          <p class="text-lg font-semibold text-gray-800 dark:text-white/90">&minus;{{ formatGbp(detail.fundedDeductionMinor) }}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Funded deduction</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-          <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(detail.totalDueMinor) }}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Net due</p>
-        </div>
-        @if (detail.amountPaidMinor > 0 || detail.status === 'paid') {
-          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p class="text-lg font-semibold text-green-700 dark:text-green-400">{{ formatGbp(detail.amountPaidMinor) }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Amount paid</p>
-          </div>
-          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(balanceDueMinor) }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Balance due</p>
-          </div>
-        }
-      </div>
-    </section>
-
-    <!-- Timestamps -->
-    <section aria-labelledby="dates-heading" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-      @if (detail.issuedAt) {
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Issued</p>
-          <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(detail.issuedAt) }}</p>
-        </div>
-      }
-      @if (detail.dueAt) {
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Due</p>
-          <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(detail.dueAt) }}</p>
-        </div>
-      }
-      @if (detail.paidAt) {
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Paid</p>
-          <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(detail.paidAt) }}</p>
-        </div>
-      }
-      @if (detail.paymentFailedAt) {
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Payment failed</p>
-          <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(detail.paymentFailedAt) }}</p>
-        </div>
-      }
-      @if (detail.paymentStatusUpdatedAt) {
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Payment updated</p>
-          <p class="text-sm text-gray-800 dark:text-white/90">{{ formatInstant(detail.paymentStatusUpdatedAt) }}</p>
-        </div>
-      }
-    </section>
-
-    <!-- Funded deduction / calculation -->
-    @if (detail.calculation) {
-      <section aria-labelledby="calculation-heading">
-        <h2 id="calculation-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Funded deduction calculation</h2>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          @if (detail.calculation.roundedAttendedMinutes !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatMinutes(detail.calculation.roundedAttendedMinutes!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Rounded attended</p>
-            </div>
-          }
-          @if (detail.calculation.fundedAllowanceMinutes !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatMinutes(detail.calculation.fundedAllowanceMinutes!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Funded allowance</p>
-            </div>
-          }
-          @if (detail.calculation.fundedDeductionMinutes !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatMinutes(detail.calculation.fundedDeductionMinutes!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Funded deduction</p>
-            </div>
-          }
-          @if (detail.calculation.coreBillableMinutes !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatMinutes(detail.calculation.coreBillableMinutes!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Core billable</p>
-            </div>
-          }
-          @if (detail.calculation.siteCoreHourlyRateMinor !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(detail.calculation.siteCoreHourlyRateMinor!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Core hourly rate</p>
-            </div>
-          }
-          @if (detail.calculation.coreSubtotalMinor !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(detail.calculation.coreSubtotalMinor!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Core subtotal</p>
-            </div>
-          }
-          @if (detail.calculation.extrasTotalMinor !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ formatGbp(detail.calculation.extrasTotalMinor!) }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Extras total</p>
-            </div>
-          }
-          @if (detail.calculation.includedSessionCount !== null) {
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ detail.calculation.includedSessionCount }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Sessions included</p>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- Line items -->
-    @if (detail.lines.length > 0) {
-      <section aria-labelledby="lines-heading">
-        <h2 id="lines-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Line items</h2>
-        <app-table-shell>
-          <table class="w-full text-left text-sm">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Description</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Kind</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Quantity</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Unit amount</th>
-                <th class="pb-3 font-medium text-gray-500 dark:text-gray-400 text-right">Line amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (line of detail.lines; track line.lineId) {
-                <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-3 pr-4 text-gray-800 dark:text-white/90">{{ line.description }}</td>
-                  <td class="py-3 pr-4 text-gray-500 dark:text-gray-400">{{ lineKindLabel(line.lineKind) }}</td>
-                  <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
-                    @if (line.quantityMinutes !== null) {
-                      {{ formatMinutes(line.quantityMinutes) }}
-                    }
-                  </td>
-                  <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
-                    @if (line.unitAmountMinor !== null) {
-                      {{ formatGbp(line.unitAmountMinor) }}
-                    }
-                  </td>
-                  <td class="py-3 text-right font-medium text-gray-800 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </app-table-shell>
-      </section>
-    }
-
-    <!-- Generation context / run exceptions -->
     @if (detail.generatedRunExceptions.length > 0) {
-      <section aria-labelledby="exceptions-heading">
-        <h2 id="exceptions-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Generation context</h2>
-        <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+      <section aria-labelledby="exceptions-heading" class="rounded-2xl border border-warning-200 bg-warning-50 p-5 dark:border-warning-500/30 dark:bg-warning-500/10">
+        <div class="flex items-center gap-2 text-warning-700 dark:text-warning-300">
+          <ng-icon name="heroExclamationTriangle" size="20" aria-hidden="true" />
+          <h2 id="exceptions-heading" class="text-xs font-semibold uppercase tracking-wider">Generation context</h2>
+        </div>
+        <ul class="mt-3 space-y-2">
           @for (exc of detail.generatedRunExceptions; track exc.childId) {
-            <div class="mb-2 last:mb-0">
-              <span class="text-sm font-medium text-gray-800 dark:text-white/90">{{ exc.childName }}</span>
+            <li>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ exc.childName }}</span>
               <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">
                 {{ exc.blockerCodes.join(', ') }}
               </span>
-            </div>
+            </li>
           }
-        </div>
+        </ul>
+        <p class="mt-3 text-xs text-warning-700/80 dark:text-warning-300/80">One of the related children was <span class="font-semibold">Alice</span> with blocker code <span class="font-mono">incomplete_attendance</span>.</p>
       </section>
     }
   }

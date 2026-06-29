@@ -1,13 +1,30 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroArrowDownTray,
+  heroBanknotes,
+  heroBuildingOffice2,
+  heroCalendarDays,
+  heroCheckBadge,
+  heroClock,
+  heroCreditCard,
+  heroEnvelope,
+  heroExclamationCircle,
+  heroExclamationTriangle,
+  heroEye,
+  heroInformationCircle,
+  heroLockClosed,
+  heroReceiptPercent,
+  heroShieldCheck,
+  heroUserCircle,
+} from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import {
@@ -27,6 +44,7 @@ import {
   webhookStatusLabel,
   retryReasonLabel,
   isOpenPaymentAttempt,
+  PaymentDisplayState,
 } from '../../utils/manager-payment-formatters';
 
 const IMMUTABLE_STATUSES = new Set(['issued', 'payment_failed', 'paid', 'overdue']);
@@ -38,6 +56,15 @@ function formatInstant(iso: string | null): string {
     timeZone: 'Europe/London',
     dateStyle: 'medium',
     timeStyle: 'short',
+  }).format(d);
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    dateStyle: 'long',
   }).format(d);
 }
 
@@ -54,18 +81,72 @@ function invoiceDisplayTitle(detail: ManagerInvoiceDetail): string {
   return `Draft invoice — ${detail.childName}`;
 }
 
+function lineQuantityLabel(line: ManagerInvoiceLine): string {
+  if (line.lineKind === 'funded_deduction') {
+    if (line.fundedAllowanceMinutes !== null) {
+      return `${formatMinutes(line.fundedAllowanceMinutes)} allowance`;
+    }
+    if (line.quantityMinutes !== null) {
+      return formatMinutes(line.quantityMinutes);
+    }
+    return '—';
+  }
+  if (line.sessionCount !== null && line.sessionCount > 0) {
+    return `${line.sessionCount} session${line.sessionCount === 1 ? '' : 's'}`;
+  }
+  if (line.quantityMinutes !== null) {
+    return formatMinutes(line.quantityMinutes);
+  }
+  return '—';
+}
+
+function lineKindTone(kind: string): 'primary' | 'accent' | 'success' | 'neutral' {
+  if (kind === 'funded_deduction') return 'accent';
+  if (kind === 'core_childcare' || kind === 'core_charge') return 'primary';
+  if (kind.startsWith('extra_')) return 'success';
+  return 'neutral';
+}
+
+interface AuditTrailEntry {
+  key: string;
+  icon: string;
+  tone: 'success' | 'primary' | 'warning' | 'error' | 'neutral';
+  title: string;
+  description: string;
+  timestamp: string | null;
+}
+
 @Component({
   selector: 'app-manager-invoice-detail',
   imports: [
     CommonModule,
     RouterLink,
-    PageHeaderComponent,
     LoadingStateComponent,
     AlertComponent,
-    TableShellComponent,
     StatusBadgeComponent,
+    NgIcon,
   ],
   templateUrl: './manager-invoice-detail.component.html',
+  providers: [
+    provideIcons({
+      heroArrowDownTray,
+      heroBanknotes,
+      heroBuildingOffice2,
+      heroCalendarDays,
+      heroCheckBadge,
+      heroClock,
+      heroCreditCard,
+      heroEnvelope,
+      heroExclamationCircle,
+      heroExclamationTriangle,
+      heroEye,
+      heroInformationCircle,
+      heroLockClosed,
+      heroReceiptPercent,
+      heroShieldCheck,
+      heroUserCircle,
+    }),
+  ],
 })
 export class ManagerInvoiceDetailComponent implements OnInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
@@ -87,7 +168,10 @@ export class ManagerInvoiceDetailComponent implements OnInit {
   readonly formatMinutes = formatMinutes;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
+  readonly formatDate = formatDate;
   readonly lineKindLabel = lineKindLabel;
+  readonly lineQuantityLabel = lineQuantityLabel;
+  readonly lineKindTone = lineKindTone;
 
   readonly canShowParentRetry = canShowParentRetry;
   readonly getPaymentDisplayState = getPaymentDisplayState;
@@ -132,7 +216,7 @@ export class ManagerInvoiceDetailComponent implements OnInit {
     return this.paymentStatus.totalDueMinor - this.paymentStatus.amountPaidMinor;
   }
 
-  get paymentDisplayStateValue(): string {
+  get paymentDisplayStateValue(): PaymentDisplayState {
     if (!this.detail) return 'not_issued';
     return getPaymentDisplayState(
       this.detail.status,
@@ -148,6 +232,138 @@ export class ManagerInvoiceDetailComponent implements OnInit {
 
   get hasPaymentEventsNext(): boolean {
     return this.paymentEvents.length === this.paymentEventsLimit;
+  }
+
+  get periodLabel(): string {
+    if (!this.detail?.period) return '';
+    const start = formatDate(this.detail.period.startDate);
+    const end = formatDate(this.detail.period.endDate);
+    if (!start || !end) return '';
+    return `${start} — ${end}`;
+  }
+
+  get auditTrail(): AuditTrailEntry[] {
+    if (!this.detail) return [];
+    const entries: AuditTrailEntry[] = [];
+
+    entries.push({
+      key: 'generated',
+      icon: 'heroReceiptPercent',
+      tone: 'neutral',
+      title: 'Invoice generated',
+      description: 'Draft prepared by automatic billing',
+      timestamp: this.detail.createdAt,
+    });
+
+    if (this.detail.generatedRunStartedAt) {
+      entries.push({
+        key: 'run-started',
+        icon: 'heroClock',
+        tone: 'primary',
+        title: 'Invoice run started',
+        description: this.detail.generatedRunStatus
+          ? `Run status: ${this.detail.generatedRunStatus}`
+          : 'Invoice run started',
+        timestamp: this.detail.generatedRunStartedAt,
+      });
+    }
+
+    if (this.detail.generatedRunCompletedAt) {
+      entries.push({
+        key: 'run-completed',
+        icon: 'heroShieldCheck',
+        tone: 'success',
+        title: 'Invoice run completed',
+        description: this.detail.generatedRunExceptionCount
+          ? `Completed with ${this.detail.generatedRunExceptionCount} exception${this.detail.generatedRunExceptionCount === 1 ? '' : 's'}`
+          : 'Completed without exceptions',
+        timestamp: this.detail.generatedRunCompletedAt,
+      });
+    }
+
+    if (this.detail.issuedAt) {
+      entries.push({
+        key: 'issued',
+        icon: 'heroCheckBadge',
+        tone: 'success',
+        title: 'Invoice issued',
+        description: 'Sent to the parent and added to the billing cycle',
+        timestamp: this.detail.issuedAt,
+      });
+    }
+
+    if (this.detail.lockedAt && this.detail.lockedAt !== this.detail.issuedAt) {
+      entries.push({
+        key: 'locked',
+        icon: 'heroLockClosed',
+        tone: 'neutral',
+        title: 'Invoice locked',
+        description: 'No further edits — adjustments must use a credit note',
+        timestamp: this.detail.lockedAt,
+      });
+    }
+
+    if (this.detail.paymentFailedAt) {
+      entries.push({
+        key: 'payment-failed',
+        icon: 'heroExclamationCircle',
+        tone: 'error',
+        title: 'Payment attempt failed',
+        description: 'Awaiting retry from the parent portal',
+        timestamp: this.detail.paymentFailedAt,
+      });
+    }
+
+    if (this.detail.paidAt) {
+      entries.push({
+        key: 'paid',
+        icon: 'heroCheckBadge',
+        tone: 'success',
+        title: 'Payment received',
+        description: `Settled for ${formatGbp(this.detail.amountPaidMinor)}`,
+        timestamp: this.detail.paidAt,
+      });
+    }
+
+    return entries;
+  }
+
+  auditTrailIconClasses(tone: AuditTrailEntry['tone']): string {
+    const map: Record<AuditTrailEntry['tone'], string> = {
+      success: 'bg-success-500 text-white',
+      primary: 'bg-brand-500 text-white',
+      warning: 'bg-warning-500 text-white',
+      error: 'bg-error-500 text-white',
+      neutral: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
+    };
+    return map[tone];
+  }
+
+  lineToneClasses(kind: string): string {
+    const tone = lineKindTone(kind);
+    const map: Record<ReturnType<typeof lineKindTone>, string> = {
+      primary: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
+      accent: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300',
+      success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300',
+      neutral: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  paymentStateBadgeClasses(state: PaymentDisplayState): string {
+    switch (state) {
+      case 'paid':
+        return 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300';
+      case 'payment_failed':
+        return 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300';
+      case 'unpaid':
+      case 'unpaid_overdue':
+        return 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300';
+      case 'awaiting_provider_update':
+        return 'bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-300';
+      default:
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+    }
   }
 
   previousPaymentEventsPage(): void {
@@ -199,7 +415,7 @@ export class ManagerInvoiceDetailComponent implements OnInit {
 
   private loadPaymentEvents(invoiceId: string): void {
     this.apiService.listPaymentEvents(invoiceId, { limit: this.paymentEventsLimit, offset: this.paymentEventsOffset }).subscribe({
-      next: (result) => {
+      next: (result: PaginatedPaymentEvents) => {
         this.paymentEvents = result.items;
         this.isPaymentLoading = false;
       },
