@@ -12,6 +12,7 @@ import {
   heroClock,
   heroCog6Tooth,
   heroReceiptPercent,
+  heroRectangleStack,
   heroScale,
   heroShieldCheck,
   heroUserGroup,
@@ -23,6 +24,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoom, StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
 
 type CardTone = 'brand' | 'success' | 'warning' | 'info' | 'neutral';
 type PillTone = 'success' | 'warning' | 'info' | 'brand' | 'neutral';
@@ -69,6 +71,7 @@ interface SettingCard {
       heroClock,
       heroCog6Tooth,
       heroReceiptPercent,
+      heroRectangleStack,
       heroScale,
       heroShieldCheck,
       heroUserGroup,
@@ -80,12 +83,14 @@ export class ManagerSiteSettingsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
+  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
 
   readonly routes = ROLE_ROUTES;
 
   readonly loading = signal(true);
   readonly pageError = signal<string | null>(null);
   readonly rooms = signal<StaffRoom[]>([]);
+  readonly sessionTypes = signal<StaffSessionType[]>([]);
   readonly billing = signal<{ rateMinor: number | null; hasRate: boolean }>({ rateMinor: null, hasRate: false });
   readonly attendanceRules = signal({
     parentSelfCheckin: true,
@@ -117,6 +122,8 @@ export class ManagerSiteSettingsComponent implements OnInit {
     return membership?.branch_name ?? 'Your nursery';
   });
 
+  readonly activeSessionTypes = computed(() => this.sessionTypes().filter((st) => st.isActive));
+
   readonly activeRooms = computed(() => this.rooms().filter((room) => room.isActive));
   readonly ageGroupLabels = computed(() => {
     const groups = new Set<string>();
@@ -145,6 +152,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
     const ageGroups = this.ageGroupLabels();
     const activeCount = this.activeRooms().length;
     const hasBilling = this.billing().hasRate;
+    const sessionActiveCount = this.activeSessionTypes().length;
 
     return [
       {
@@ -176,6 +184,21 @@ export class ManagerSiteSettingsComponent implements OnInit {
         pillTone: activeCount === 0 ? 'warning' : 'success',
         statusLabel: `${activeCount} active`,
         statusTone: activeCount === 0 ? 'warning' : 'success',
+      },
+      {
+        id: 'session-types',
+        title: 'Session types',
+        headline: sessionActiveCount === 0 ? 'No session types' : `${sessionActiveCount} active type${sessionActiveCount === 1 ? '' : 's'}`,
+        detail: 'Define reusable time blocks for bookings.',
+        icon: 'heroRectangleStack',
+        tone: 'brand',
+        kind: 'simple',
+        state: 'ready',
+        link: ROLE_ROUTES.managerSessionTypes,
+        pillLabel: sessionActiveCount === 0 ? 'Setup needed' : 'Configured',
+        pillTone: sessionActiveCount === 0 ? 'warning' : 'success',
+        statusLabel: `${sessionActiveCount} active`,
+        statusTone: sessionActiveCount === 0 ? 'warning' : 'success',
       },
       {
         id: 'hours',
@@ -235,12 +258,10 @@ export class ManagerSiteSettingsComponent implements OnInit {
         icon: 'heroBanknotes',
         tone: 'brand',
         kind: 'simple',
-        state: 'ready',
-        link: ROLE_ROUTES.managerFunding,
-        pillLabel: 'Active',
-        pillTone: 'success',
-        statusLabel: 'Active',
-        statusTone: 'success',
+        state: 'coming-soon',
+        link: null,
+        statusLabel: term,
+        statusTone: 'neutral',
       },
       {
         id: 'billing',
@@ -385,6 +406,10 @@ export class ManagerSiteSettingsComponent implements OnInit {
         this.pageError.set('Failed to load site configuration. Please try again.');
         this.loading.set(false);
       },
+    });
+
+    this.sessionTypesApi.listSessionTypes(branchId, { includeArchived: true }).subscribe({
+      next: (types) => this.sessionTypes.set(types),
     });
   }
 }
