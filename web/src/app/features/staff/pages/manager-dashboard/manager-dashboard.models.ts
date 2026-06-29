@@ -189,11 +189,6 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       route: '/manager/children',
     },
     {
-      label: 'Start invoice run',
-      description: 'Generate invoices for the current billing month',
-      route: '/manager/invoice-run',
-    },
-    {
       label: 'Review payment follow-up',
       description: 'Chase overdue and failed payments',
       disabled: true,

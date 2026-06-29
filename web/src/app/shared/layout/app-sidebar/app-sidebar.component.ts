@@ -14,11 +14,9 @@ import {
   heroEnvelope,
   heroClipboardDocumentCheck,
   heroClipboardDocumentList,
-  heroBanknotes,
   heroBuildingOffice2,
   heroClock,
   heroCurrencyPound,
-  heroDocumentPlus,
   heroDocumentText,
 } from '@ng-icons/heroicons/outline';
 
@@ -28,8 +26,6 @@ export type SidebarIcon =
   | 'invites'
   | 'attendance'
   | 'attendance-corrections'
-  | 'funding'
-  | 'invoice-run'
   | 'invoices'
   | 'rooms'
   | 'session-types'
@@ -63,11 +59,9 @@ export type SidebarNavGroup = {
       heroEnvelope,
       heroClipboardDocumentCheck,
       heroClipboardDocumentList,
-      heroBanknotes,
       heroBuildingOffice2,
       heroClock,
       heroCurrencyPound,
-      heroDocumentPlus,
       heroDocumentText,
     }),
   ],
@@ -85,8 +79,6 @@ export class AppSidebarComponent {
     invites: 'heroEnvelope',
     attendance: 'heroClipboardDocumentCheck',
     'attendance-corrections': 'heroClipboardDocumentList',
-    funding: 'heroBanknotes',
-    'invoice-run': 'heroDocumentPlus',
     invoices: 'heroDocumentText',
     rooms: 'heroBuildingOffice2',
     'session-types': 'heroClock',
@@ -175,8 +167,6 @@ export class AppSidebarComponent {
         {
           label: 'Billing',
           items: [
-            { label: 'Funding', path: ROLE_ROUTES.managerFunding, testId: 'staff-link-manager-funding', icon: 'funding' },
-            { label: 'Invoice run', path: ROLE_ROUTES.managerInvoiceRun, testId: 'staff-link-manager-invoice-run', icon: 'invoice-run' },
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },

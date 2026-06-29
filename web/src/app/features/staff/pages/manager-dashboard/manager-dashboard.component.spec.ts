@@ -118,17 +118,4 @@ describe('ManagerDashboardComponent', () => {
     expect(disabledAnchors.length).toBe(0);
   });
 
-  it('renders start invoice run as an enabled link', () => {
-    const quickActionSection = Array.from(native.querySelectorAll('section')).find((s) =>
-      s.querySelector('h2')?.textContent?.includes('Quick actions'),
-    );
-    expect(quickActionSection).toBeTruthy();
-
-    const links = quickActionSection!.querySelectorAll('a');
-    const invoiceRunLink = Array.from(links).find((a) =>
-      a.getAttribute('href')?.includes('/manager/invoice-run'),
-    );
-    expect(invoiceRunLink).toBeTruthy();
-    expect(invoiceRunLink!.textContent).toContain('Start invoice run');
-  });
 });

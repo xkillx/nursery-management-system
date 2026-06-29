@@ -86,10 +86,10 @@ describe('invoice-run-formatters', () => {
       expect(action.queryParams).toEqual({ billing_month: '2026-05' });
     });
 
-    it('routes missing funding profile without child id to funding overview', () => {
+    it('shows funding overview label without route when no child id', () => {
       const action = blockerNextAction('missing_funding_profile');
       expect(action.label).toBe('Funding overview');
-      expect(action.route).toEqual(['/manager/funding']);
+      expect(action.route).toBeUndefined();
     });
 
     it('routes missing site billing rate to child detail', () => {

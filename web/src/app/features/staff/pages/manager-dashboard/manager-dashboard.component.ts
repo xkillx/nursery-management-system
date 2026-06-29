@@ -96,12 +96,6 @@ interface AttendanceTile {
             </h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ snapshot.invoiceRunStatus.nextStep }}</p>
           </div>
-          <a
-            [routerLink]="invoiceRunRoute"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-          >
-            Review invoice run
-          </a>
         </div>
 
         <dl class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -266,7 +260,6 @@ interface AttendanceTile {
 export class ManagerDashboardComponent {
   readonly snapshot: ManagerDashboardSnapshot = MANAGER_DASHBOARD_MOCK;
   readonly attendanceRoute = '/manager/attendance';
-  readonly invoiceRunRoute = '/manager/invoice-run';
 
   get attendanceTiles(): AttendanceTile[] {
     const s = this.snapshot.attendanceSummary;

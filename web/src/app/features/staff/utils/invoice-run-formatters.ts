@@ -89,10 +89,7 @@ export function blockerNextAction(
           queryParams: billingMonth ? { billing_month: billingMonth } : undefined,
         };
       }
-      return {
-        label: 'Funding overview',
-        route: ['/manager/funding'],
-      };
+      return { label: 'Funding overview' };
     case 'missing_billing_rate':
     case 'missing_child_name':
     case 'missing_child_date_of_birth':
