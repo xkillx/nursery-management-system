@@ -86,27 +86,33 @@ export const routes: Routes = [
               },
               {
                 path: ':childId',
-                component: ManagerChildDetailComponent,
                 data: {
                   breadcrumb: { label: 'Child', resolve: childNameResolver },
                 },
-                title: 'Child Enrollment | Nursery Management',
-              },
-              {
-                path: ':childId/edit',
-                component: ManagerChildEditComponent,
-                data: {
-                  breadcrumb: { label: 'Edit' },
-                },
-                title: 'Edit Child | Nursery Management',
-              },
-              {
-                path: ':childId/booking-pattern',
-                component: ManagerBookingPatternComponent,
-                data: {
-                  breadcrumb: { label: 'Session pattern' },
-                },
-                title: 'Session pattern (booking pattern) | Nursery Management',
+                children: [
+                  {
+                    path: '',
+                    component: ManagerChildDetailComponent,
+                    title: 'Child Enrollment | Nursery Management',
+                  },
+                  {
+                    path: 'edit',
+                    component: ManagerChildEditComponent,
+                    data: { breadcrumb: { label: 'Edit' } },
+                    title: 'Edit Child | Nursery Management',
+                  },
+                  {
+                    path: 'booking-pattern',
+                    component: ManagerBookingPatternComponent,
+                    data: { breadcrumb: { label: 'Session pattern' } },
+                    title: 'Session pattern (booking pattern) | Nursery Management',
+                  },
+                  {
+                    path: ':tab',
+                    component: ManagerChildDetailComponent,
+                    title: 'Child Enrollment | Nursery Management',
+                  },
+                ],
               },
             ],
           },

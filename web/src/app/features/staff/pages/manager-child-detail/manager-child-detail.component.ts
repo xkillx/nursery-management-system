@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin, of, Subject } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
 
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -54,6 +54,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 
+export type ChildProfileTab = 'overview' | 'attendance' | 'funding' | 'health' | 'contacts';
+
 @Component({
   selector: 'app-manager-child-detail',
   imports: [
@@ -94,17 +96,21 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
   ],
   templateUrl: './manager-child-detail.component.html',
 })
-export class ManagerChildDetailComponent implements OnInit {
+export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly invoicesApi = inject(ManagerInvoicesApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroy$ = new Subject<void>();
+
+  private readonly validTabs: readonly ChildProfileTab[] = ['overview', 'attendance', 'funding', 'health', 'contacts'];
 
   readonly formatRate = formatHourlyRateGbp;
   readonly formatSiteRate = formatSiteRate;
   readonly requirementLabel = missingRequirementLabel;
 
-  activeTab: 'overview' | 'attendance' | 'funding' | 'health' | 'contacts' = 'overview';
+  activeTab: ChildProfileTab = 'overview';
 
   childId = '';
   child: ChildRecord | null = null;
@@ -140,11 +146,31 @@ export class ManagerChildDetailComponent implements OnInit {
   ngOnInit(): void {
     this.childId = this.route.snapshot.paramMap.get('childId') ?? '';
     this.billingMonth = this.route.snapshot.queryParamMap.get('billing_month') ?? '';
+    this.activeTab = this.resolveTab(this.route.snapshot.paramMap.get('tab'));
     this.load();
+
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      this.activeTab = this.resolveTab(params.get('tab'));
+    });
   }
 
-  selectTab(tab: 'overview' | 'attendance' | 'funding' | 'health' | 'contacts'): void {
-    this.activeTab = tab;
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  selectTab(tab: ChildProfileTab): void {
+    const commands = tab === 'overview'
+      ? ['/manager/children', this.childId]
+      : ['/manager/children', this.childId, tab];
+    this.router.navigate(commands, { queryParamsHandling: 'preserve' });
+  }
+
+  private resolveTab(tabParam: string | null): ChildProfileTab {
+    if (tabParam && (this.validTabs as readonly string[]).includes(tabParam)) {
+      return tabParam as ChildProfileTab;
+    }
+    return 'overview';
   }
 
   load(): void {
