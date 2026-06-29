@@ -1,0 +1,344 @@
+<div class="space-y-6">
+  <app-page-header
+    title="Site settings"
+    description="Manage your nursery configuration, operations, billing, and compliance settings."
+    [hasActions]="true"
+  >
+    <a
+      actions
+      href="#"
+      class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 sm:w-auto dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.05]"
+    >
+      <ng-icon name="heroClock" size="18" aria-hidden="true" />
+      Activity log
+    </a>
+    <button
+      type="button"
+      class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 sm:w-auto"
+    >
+      <ng-icon name="heroArrowRightCircle" size="18" aria-hidden="true" />
+      Save changes
+    </button>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state label="Loading site configuration..." />
+  } @else if (pageError(); as err) {
+    <app-alert variant="error" title="Error" [message]="err" />
+  } @else {
+    <section aria-labelledby="settings-grid-heading">
+      <h2 id="settings-grid-heading" class="sr-only">Configuration categories</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        @for (card of cards(); track trackCard($index, card)) {
+          @switch (card.kind) {
+            @case ('badge') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                    @if (card.badge) {
+                      <span
+                        class="rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-widest"
+                        [ngClass]="{
+                          'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500':
+                            card.badge.tone === 'success',
+                          'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400':
+                            card.badge.tone === 'warning',
+                          'bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-400':
+                            card.badge.tone === 'info',
+                          'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400':
+                            card.badge.tone === 'primary'
+                        }"
+                      >
+                        {{ card.badge.label }}
+                      </span>
+                    }
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                </div>
+                <div class="mt-6 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+                  <span
+                    class="text-xs"
+                    [ngClass]="{
+                      'text-success-600 dark:text-success-500 font-semibold': card.statusTone === 'success',
+                      'text-warning-600 dark:text-warning-400': card.statusTone === 'warning',
+                      'text-blue-light-600 dark:text-blue-light-400': card.statusTone === 'info',
+                      'text-brand-600 dark:text-brand-400 font-semibold': card.statusTone === 'primary',
+                      'text-gray-500 dark:text-gray-400 italic': card.statusTone === 'neutral' && card.statusItalic,
+                      'text-gray-700 dark:text-gray-300 font-medium': card.statusTone === 'neutral' && !card.statusItalic
+                    }"
+                  >
+                    {{ card.statusLabel }}
+                  </span>
+                  <ng-icon
+                    name="heroChevronRight"
+                    size="20"
+                    class="text-gray-400 transition group-hover:translate-x-1 group-hover:text-brand-500"
+                    aria-hidden="true"
+                  />
+                </div>
+              </article>
+            }
+
+            @case ('pill') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                  <div class="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                    <ng-icon [name]="card.pillIcon" size="16" aria-hidden="true" />
+                    {{ card.pillText }}
+                  </div>
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: card.state === 'ready' && !!card.link }" />
+              </article>
+            }
+
+            @case ('toggle') {
+              <article
+                class="group flex h-full flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                    <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                </div>
+                <div class="space-y-3">
+                  @for (toggle of card.toggles; track trackItem($index, toggle)) {
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">{{ toggle.label }}</span>
+                      <span
+                        role="switch"
+                        [attr.aria-checked]="toggle.enabled"
+                        class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors"
+                        [ngClass]="toggle.enabled
+                          ? 'bg-brand-500'
+                          : 'bg-gray-300 dark:bg-gray-700'"
+                      >
+                        <span
+                          class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition"
+                          [ngClass]="toggle.enabled ? 'translate-x-5' : 'translate-x-0.5'"
+                        ></span>
+                      </span>
+                    </div>
+                  }
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: false }" />
+              </article>
+            }
+
+            @case ('ratio') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                    @if (card.badge) {
+                      <span
+                        class="inline-flex items-center gap-1 text-xs font-semibold"
+                        [ngClass]="{
+                          'text-success-600 dark:text-success-500': card.badge.tone === 'success',
+                          'text-warning-600 dark:text-warning-400': card.badge.tone === 'warning'
+                        }"
+                      >
+                        <span
+                          class="h-1.5 w-1.5 rounded-full"
+                          [ngClass]="card.badge.tone === 'success'
+                            ? 'bg-success-500 animate-pulse'
+                            : 'bg-warning-500'"
+                        ></span>
+                        {{ card.badge.label }}
+                      </span>
+                    }
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                  <div class="mt-4">
+                    <div class="mb-2 flex items-center justify-between text-xs">
+                      <span class="text-gray-500 dark:text-gray-400">Alert threshold</span>
+                      <span class="font-semibold text-brand-500">{{ card.thresholdPercent }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                      <div
+                        class="h-full rounded-full bg-brand-500 transition-all"
+                        [style.width.%]="card.thresholdPercent"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: card.state === 'ready' && !!card.link }" />
+              </article>
+            }
+
+            @case ('highlight') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                  <div class="mt-4 rounded-xl border border-brand-100 bg-brand-50/60 p-3 dark:border-brand-500/20 dark:bg-brand-500/10">
+                    <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">
+                      {{ card.highlightLabel }}
+                    </p>
+                    <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90">{{ card.highlightValue }}</p>
+                  </div>
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: card.state === 'ready' && !!card.link }" />
+              </article>
+            }
+
+            @case ('key-value') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                  <div class="mt-4 space-y-2">
+                    @for (item of card.items; track trackItem($index, item)) {
+                      <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                        <ng-icon [name]="item.icon" size="16" class="text-gray-400" aria-hidden="true" />
+                        {{ item.text }}
+                      </div>
+                    }
+                  </div>
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: card.state === 'ready' && !!card.link }" />
+              </article>
+            }
+
+            @case ('status-list') {
+              <article
+                class="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-500 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                [class.opacity-70]="card.state === 'coming-soon'"
+              >
+                <div>
+                  <div class="mb-4 flex items-start justify-between">
+                    <div class="rounded-xl p-3" [ngClass]="card.iconBgClass">
+                      <ng-icon [name]="card.icon" size="22" [ngClass]="card.iconClass" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{{ card.title }}</h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ card.description }}</p>
+                  <div class="mt-4 space-y-2">
+                    @for (item of card.items; track trackItem($index, item)) {
+                      <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">
+                        <ng-icon
+                          name="heroCheckCircle"
+                          size="16"
+                          [ngClass]="item.enabled
+                            ? 'text-success-500'
+                            : 'text-gray-300 dark:text-gray-600'"
+                          aria-hidden="true"
+                        />
+                        {{ item.label }}
+                      </div>
+                    }
+                  </div>
+                </div>
+                <ng-container *ngTemplateOutlet="cardFooter; context: { $implicit: card, hasLink: card.state === 'ready' && !!card.link }" />
+              </article>
+            }
+          }
+        }
+      </div>
+    </section>
+
+    <section
+      aria-labelledby="help-heading"
+      class="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-6 dark:border-gray-800 dark:from-white/[0.03] dark:to-white/[0.05] sm:p-8"
+    >
+      <div class="relative z-10 flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+        <div class="max-w-xl">
+          <h3 id="help-heading" class="text-lg font-semibold text-gray-900 dark:text-white/90">
+            Need help with configuration?
+          </h3>
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Our expert team can help you migrate from legacy systems or optimise your room capacity, ratios, and funding workflows.
+          </p>
+          <a
+            href="#"
+            class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-500 transition hover:text-brand-600"
+          >
+            Book a consultancy session
+            <ng-icon name="heroArrowRightCircle" size="18" aria-hidden="true" />
+          </a>
+        </div>
+        <div class="hidden h-32 w-40 items-center justify-center rounded-xl border border-gray-200 bg-white/60 dark:border-gray-700 dark:bg-white/[0.05] sm:flex">
+          <ng-icon name="heroChatBubbleLeftRight" size="40" class="text-brand-500/40" aria-hidden="true" />
+        </div>
+      </div>
+      <div class="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-brand-500/5 blur-3xl"></div>
+      <div class="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-warning-500/5 blur-2xl"></div>
+    </section>
+  }
+</div>
+
+<ng-template #cardFooter let-card let-hasLink="hasLink">
+  <div class="mt-6 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+    <span
+      class="text-xs"
+      [ngClass]="{
+        'text-success-600 dark:text-success-500 font-semibold': card.statusTone === 'success',
+        'text-warning-600 dark:text-warning-400': card.statusTone === 'warning',
+        'text-blue-light-600 dark:text-blue-light-400': card.statusTone === 'info',
+        'text-brand-600 dark:text-brand-400 font-semibold': card.statusTone === 'primary',
+        'text-gray-500 dark:text-gray-400 italic': card.statusTone === 'neutral' && card.statusItalic,
+        'text-gray-700 dark:text-gray-300 font-medium': card.statusTone === 'neutral' && !card.statusItalic
+      }"
+    >
+      {{ card.statusLabel }}
+    </span>
+    @if (hasLink && card.link) {
+      <a
+        [routerLink]="card.link"
+        class="inline-flex items-center gap-1 text-sm font-medium text-brand-500 transition group-hover:gap-2"
+        [attr.aria-label]="'Open ' + card.title"
+      >
+        <ng-icon name="heroChevronRight" size="20" aria-hidden="true" />
+      </a>
+    } @else {
+      <span
+        class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:bg-white/5 dark:text-gray-400"
+      >
+        Soon
+      </span>
+    }
+  </div>
+</ng-template>

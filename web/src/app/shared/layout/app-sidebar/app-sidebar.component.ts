@@ -17,6 +17,7 @@ import {
   heroBuildingOffice2,
   heroClock,
   heroCurrencyPound,
+  heroCog6Tooth,
   heroDocumentText,
 } from '@ng-icons/heroicons/outline';
 
@@ -29,7 +30,8 @@ export type SidebarIcon =
   | 'invoices'
   | 'rooms'
   | 'session-types'
-  | 'billing-setup';
+  | 'billing-setup'
+  | 'site-settings';
 
 export type SidebarNavItem = {
   label: string;
@@ -62,6 +64,7 @@ export type SidebarNavGroup = {
       heroBuildingOffice2,
       heroClock,
       heroCurrencyPound,
+      heroCog6Tooth,
       heroDocumentText,
     }),
   ],
@@ -83,6 +86,7 @@ export class AppSidebarComponent {
     rooms: 'heroBuildingOffice2',
     'session-types': 'heroClock',
     'billing-setup': 'heroCurrencyPound',
+    'site-settings': 'heroCog6Tooth',
   };
 
   private subscription: Subscription = new Subscription();
@@ -173,6 +177,7 @@ export class AppSidebarComponent {
         {
           label: 'Setup',
           items: [
+            { label: 'Site settings', path: ROLE_ROUTES.managerSiteSettings, testId: 'staff-link-manager-site-settings', icon: 'site-settings' },
             { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/manager/rooms/'] },
             { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/manager/session-types/'] },
             { label: 'Billing setup', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'billing-setup' },
