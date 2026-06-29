@@ -14,9 +14,6 @@ import {
   heroEnvelope,
   heroClipboardDocumentCheck,
   heroClipboardDocumentList,
-  heroBuildingOffice2,
-  heroClock,
-  heroCurrencyPound,
   heroCog6Tooth,
   heroDocumentText,
 } from '@ng-icons/heroicons/outline';
@@ -28,9 +25,6 @@ export type SidebarIcon =
   | 'attendance'
   | 'attendance-corrections'
   | 'invoices'
-  | 'rooms'
-  | 'session-types'
-  | 'billing-setup'
   | 'site-settings';
 
 export type SidebarNavItem = {
@@ -61,9 +55,6 @@ export type SidebarNavGroup = {
       heroEnvelope,
       heroClipboardDocumentCheck,
       heroClipboardDocumentList,
-      heroBuildingOffice2,
-      heroClock,
-      heroCurrencyPound,
       heroCog6Tooth,
       heroDocumentText,
     }),
@@ -83,9 +74,6 @@ export class AppSidebarComponent {
     attendance: 'heroClipboardDocumentCheck',
     'attendance-corrections': 'heroClipboardDocumentList',
     invoices: 'heroDocumentText',
-    rooms: 'heroBuildingOffice2',
-    'session-types': 'heroClock',
-    'billing-setup': 'heroCurrencyPound',
     'site-settings': 'heroCog6Tooth',
   };
 
@@ -174,15 +162,12 @@ export class AppSidebarComponent {
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },
-        {
-          label: 'Setup',
-          items: [
-            { label: 'Site settings', path: ROLE_ROUTES.managerSiteSettings, testId: 'staff-link-manager-site-settings', icon: 'site-settings' },
-            { label: 'Rooms', path: ROLE_ROUTES.managerRooms, testId: 'staff-link-manager-rooms', icon: 'rooms', matchPaths: ['/manager/rooms/'] },
-            { label: 'Session types', path: ROLE_ROUTES.managerSessionTypes, testId: 'staff-link-manager-session-types', icon: 'session-types', matchPaths: ['/manager/session-types/'] },
-            { label: 'Billing setup', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'billing-setup' },
-          ],
-        },
+          {
+            label: 'Setup',
+            items: [
+              { label: 'Site settings', path: ROLE_ROUTES.managerSiteSettings, testId: 'staff-link-manager-site-settings', icon: 'site-settings' },
+            ],
+          },
       ];
     }
 
@@ -211,13 +196,7 @@ export class AppSidebarComponent {
             { label: 'Manager access', path: ROLE_ROUTES.ownerManagerAccess, testId: 'owner-link-manager-access', icon: 'children' },
           ],
         },
-        {
-          label: 'Setup',
-          items: [
-            { label: 'Rooms', path: ROLE_ROUTES.ownerRooms, testId: 'owner-link-rooms', icon: 'rooms', matchPaths: ['/owner/rooms/'] },
-            { label: 'Session types', path: ROLE_ROUTES.ownerSessionTypes, testId: 'owner-link-session-types', icon: 'session-types', matchPaths: ['/owner/session-types/'] },
-          ],
-        },
+
       ];
     }
 

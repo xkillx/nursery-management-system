@@ -38,23 +38,23 @@ describe('AppSidebarComponent', () => {
       authStub.role = ROLES.manager;
     });
 
-    it('shows dashboard, children, invites, attendance, billing, and rooms', () => {
+    it('shows dashboard, children, invites, attendance, billing, and site settings', () => {
       fixture.detectChanges();
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
       const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
       const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
-      const managerRooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
       const managerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance"]');
+      const siteSettings = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-settings"]');
       const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
       expect(dashboard).toBeTruthy();
       expect(managerChildren).toBeTruthy();
       expect(managerInvites).toBeTruthy();
       expect(managerInvoices).toBeTruthy();
-      expect(managerRooms).toBeTruthy();
       expect(managerAttendance).toBeTruthy();
+      expect(siteSettings).toBeTruthy();
       expect(parentInvoices).toBeFalsy();
     });
 
@@ -102,14 +102,6 @@ describe('AppSidebarComponent', () => {
       expect(invoices.getAttribute('href')).toContain('/manager/invoices');
     });
 
-    it('rooms link points to /manager/rooms', () => {
-      fixture.detectChanges();
-
-      const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
-      expect(rooms).toBeTruthy();
-      expect(rooms.getAttribute('href')).toContain('/manager/rooms');
-    });
-
     it('attendance link points to /manager/attendance', () => {
       fixture.detectChanges();
 
@@ -151,15 +143,6 @@ describe('AppSidebarComponent', () => {
       expect(invoices.getAttribute('aria-current')).toBe('page');
     });
 
-    it('highlights Rooms when on a manager room child route', () => {
-      const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/rooms/new');
-      fixture.detectChanges();
-
-      const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
-      expect(rooms.getAttribute('aria-current')).toBe('page');
-    });
-
     it('highlights Attendance corrections with query params', () => {
       const router = TestBed.inject(Router);
       spyOnProperty(router, 'url', 'get').and.returnValue('/manager/attendance-corrections?childId=abc');
@@ -193,7 +176,6 @@ describe('AppSidebarComponent', () => {
       const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
       const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
-      const managerRooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
       const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
       const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
@@ -201,7 +183,6 @@ describe('AppSidebarComponent', () => {
       expect(managerChildren).toBeFalsy();
       expect(managerInvites).toBeFalsy();
       expect(managerInvoices).toBeFalsy();
-      expect(managerRooms).toBeFalsy();
       expect(practitionerAttendance).toBeTruthy();
       expect(parentInvoices).toBeFalsy();
     });
@@ -237,16 +218,14 @@ describe('AppSidebarComponent', () => {
       authStub.role = ROLES.owner;
     });
 
-    it('renders owner overview, manager access, and rooms links', () => {
+    it('renders owner overview and manager access links', () => {
       fixture.detectChanges();
 
       const overview = fixture.nativeElement.querySelector('[data-testid="owner-link-overview"]');
       const managerAccess = fixture.nativeElement.querySelector('[data-testid="owner-link-manager-access"]');
-      const rooms = fixture.nativeElement.querySelector('[data-testid="owner-link-rooms"]');
 
       expect(overview).toBeTruthy();
       expect(managerAccess).toBeTruthy();
-      expect(rooms).toBeTruthy();
     });
 
     it('does not render staff or parent links', () => {
@@ -269,7 +248,7 @@ describe('AppSidebarComponent', () => {
       expect(fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]')).toBeFalsy();
     });
 
-    it('sees Overview, Access, and Setup group headings', () => {
+    it('sees Overview and Access group headings', () => {
       fixture.detectChanges();
 
       const headings = fixture.nativeElement.querySelectorAll('h2');
@@ -277,8 +256,7 @@ describe('AppSidebarComponent', () => {
 
       expect(labels).toContain('Overview');
       expect(labels).toContain('Access');
-      expect(labels).toContain('Setup');
-      expect(labels.length).toBe(3);
+      expect(labels.length).toBe(2);
     });
 
     it('overview link points to /owner', () => {
@@ -293,13 +271,6 @@ describe('AppSidebarComponent', () => {
 
       const managerAccess = fixture.nativeElement.querySelector('[data-testid="owner-link-manager-access"]');
       expect(managerAccess.getAttribute('href')).toContain('/owner/manager-access');
-    });
-
-    it('rooms link points to /owner/rooms', () => {
-      fixture.detectChanges();
-
-      const rooms = fixture.nativeElement.querySelector('[data-testid="owner-link-rooms"]');
-      expect(rooms.getAttribute('href')).toContain('/owner/rooms');
     });
 
     it('highlights overview when on /owner', () => {
@@ -326,14 +297,6 @@ describe('AppSidebarComponent', () => {
       expect(overview.getAttribute('aria-current')).toBeNull();
     });
 
-    it('highlights rooms when on an owner room child route', () => {
-      const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/owner/rooms/room-1/edit');
-      fixture.detectChanges();
-
-      const rooms = fixture.nativeElement.querySelector('[data-testid="owner-link-rooms"]');
-      expect(rooms.getAttribute('aria-current')).toBe('page');
-    });
   });
 
   describe('parent role', () => {
