@@ -20,86 +20,44 @@ import { catchError, of } from 'rxjs';
 
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
-import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoom, StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 
-type CardTone = 'primary' | 'success' | 'warning' | 'info' | 'neutral';
+type CardTone = 'brand' | 'success' | 'warning' | 'info' | 'neutral';
+type PillTone = 'success' | 'warning' | 'info' | 'brand' | 'neutral';
+type StatusTone = 'success' | 'warning' | 'info' | 'brand' | 'neutral';
+type CardKind = 'simple' | 'toggle' | 'ratio' | 'list';
 
-interface SettingCardBase {
+interface CardItem {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+interface SettingCard {
   readonly id: string;
   readonly title: string;
-  readonly description: string;
+  readonly headline: string;
+  readonly detail?: string;
   readonly icon: string;
-  readonly iconBgClass: string;
-  readonly iconClass: string;
   readonly tone: CardTone;
+  readonly kind: CardKind;
   readonly state: 'ready' | 'coming-soon';
   readonly link: string | null;
+  readonly pillLabel?: string;
+  readonly pillTone?: PillTone;
   readonly statusLabel: string;
-  readonly statusTone: 'neutral' | 'success' | 'warning' | 'info' | 'primary';
-  readonly statusItalic?: boolean;
-  readonly badge?: { label: string; tone: 'success' | 'warning' | 'info' | 'primary' };
+  readonly statusTone: StatusTone;
+  readonly toggles?: CardItem[];
+  readonly thresholdPercent?: number;
+  readonly items?: CardItem[];
 }
-
-interface BadgeCard extends SettingCardBase {
-  readonly kind: 'badge';
-}
-
-interface ToggleCard extends SettingCardBase {
-  readonly kind: 'toggle';
-  readonly toggles: { id: string; label: string; enabled: boolean }[];
-}
-
-interface PillCard extends SettingCardBase {
-  readonly kind: 'pill';
-  readonly pillIcon: string;
-  readonly pillText: string;
-}
-
-interface HighlightCard extends SettingCardBase {
-  readonly kind: 'highlight';
-  readonly highlightLabel: string;
-  readonly highlightValue: string;
-}
-
-interface RatioCard extends SettingCardBase {
-  readonly kind: 'ratio';
-  readonly thresholdPercent: number;
-}
-
-interface StatusListCard extends SettingCardBase {
-  readonly kind: 'status-list';
-  readonly items: { id: string; label: string; enabled: boolean }[];
-}
-
-interface KeyValueCard extends SettingCardBase {
-  readonly kind: 'key-value';
-  readonly items: { id: string; icon: string; text: string }[];
-}
-
-type SettingCard =
-  | BadgeCard
-  | ToggleCard
-  | PillCard
-  | HighlightCard
-  | RatioCard
-  | StatusListCard
-  | KeyValueCard;
 
 @Component({
   selector: 'app-manager-site-settings',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    NgIcon,
-    PageHeaderComponent,
-    LoadingStateComponent,
-    AlertComponent,
-  ],
+  imports: [CommonModule, RouterLink, NgIcon, AlertComponent],
   providers: [
     provideIcons({
       heroArrowRightCircle,
@@ -133,7 +91,6 @@ export class ManagerSiteSettingsComponent implements OnInit {
     parentSelfCheckin: true,
     offlineAttendance: true,
   });
-
   readonly currentTerm = signal('Spring Term 2026');
   readonly operatingHours = signal({
     days: 'Mon-Fri',
@@ -143,7 +100,6 @@ export class ManagerSiteSettingsComponent implements OnInit {
   readonly ratioMonitor = signal({
     thresholdPercent: 80,
     isActive: true,
-    standardLabel: 'EYFS 2024 Standards',
   });
   readonly compliance = signal({
     mfaEnabled: true,
@@ -190,68 +146,65 @@ export class ManagerSiteSettingsComponent implements OnInit {
     const activeCount = this.activeRooms().length;
     const hasBilling = this.billing().hasRate;
 
-    const statusToneFor = (enabled: boolean): 'success' | 'warning' => (enabled ? 'success' : 'warning');
-
     return [
       {
         id: 'site-profile',
-        kind: 'badge',
         title: 'Site profile',
-        description: 'Manage nursery identity, contact information, and registration details.',
+        headline: 'Identity on file',
+        detail: 'Nursery name, registration, and contact details.',
         icon: 'heroBuildingOffice2',
-        iconBgClass: 'bg-brand-50 dark:bg-brand-500/15',
-        iconClass: 'text-brand-500',
-        tone: 'primary',
-        state: 'coming-soon',
+        tone: 'brand',
+        kind: 'simple',
+        state: 'ready',
         link: null,
+        pillLabel: 'Configured',
+        pillTone: 'success',
         statusLabel: 'Identity on file',
         statusTone: 'success',
-        badge: { label: 'Configured', tone: 'success' },
       },
       {
         id: 'rooms',
-        kind: 'pill',
         title: 'Rooms & capacity',
-        description: 'Manage rooms, age groups, capacity limits, and EYFS ratio rules.',
+        headline: activeCount === 0 ? 'No active rooms' : `${activeCount} active room${activeCount === 1 ? '' : 's'}`,
+        detail: ageGroups.length > 0 ? ageGroups.join(' · ') : 'Add a room to define age groups.',
         icon: 'heroCog6Tooth',
-        iconBgClass: 'bg-gray-100 dark:bg-white/5',
-        iconClass: 'text-gray-600 dark:text-gray-300',
         tone: 'neutral',
+        kind: 'simple',
         state: 'ready',
         link: ROLE_ROUTES.managerRooms,
-        statusLabel: activeCount === 0 ? 'No active rooms' : `${activeCount} active`,
+        pillLabel: activeCount === 0 ? 'Setup needed' : 'Live',
+        pillTone: activeCount === 0 ? 'warning' : 'success',
+        statusLabel: `${activeCount} active`,
         statusTone: activeCount === 0 ? 'warning' : 'success',
-        pillIcon: 'heroUserGroup',
-        pillText: ageGroups.length > 0 ? ageGroups.join(' · ') : 'No age groups yet',
       },
       {
         id: 'hours',
-        kind: 'pill',
         title: 'Operating hours',
-        description: 'Configure opening times, holidays, and closure windows.',
+        headline: `${hours.days}, ${hours.window}`,
+        detail: 'Holiday windows and closure days are tracked here.',
         icon: 'heroClock',
-        iconBgClass: 'bg-warning-50 dark:bg-warning-500/15',
-        iconClass: 'text-warning-600 dark:text-warning-400',
         tone: 'warning',
+        kind: 'simple',
         state: 'coming-soon',
         link: null,
+        pillLabel: hours.hasHolidays ? 'Holidays pending' : 'Holidays on file',
+        pillTone: hours.hasHolidays ? 'warning' : 'success',
         statusLabel: hours.hasHolidays ? 'Holidays pending' : 'Holidays on file',
         statusTone: hours.hasHolidays ? 'warning' : 'success',
-        pillIcon: 'heroClock',
-        pillText: `${hours.days}, ${hours.window}`,
       },
       {
         id: 'attendance',
-        kind: 'toggle',
         title: 'Attendance rules',
-        description: 'Configure check-in, corrections, and attendance workflows for staff and parents.',
+        headline: 'Workflow defaults',
+        detail: 'Check-in, corrections, and offline capture.',
         icon: 'heroCheckCircle',
-        iconBgClass: 'bg-blue-light-50 dark:bg-blue-light-500/15',
-        iconClass: 'text-blue-light-500',
         tone: 'info',
+        kind: 'toggle',
         state: 'coming-soon',
         link: null,
-        statusLabel: 'See workflow',
+        pillLabel: 'Defaults',
+        pillTone: 'info',
+        statusLabel: 'Review workflow',
         statusTone: 'neutral',
         toggles: [
           { id: 'self-checkin', label: 'Parent self check-in', enabled: rules.parentSelfCheckin },
@@ -260,65 +213,62 @@ export class ManagerSiteSettingsComponent implements OnInit {
       },
       {
         id: 'ratio',
-        kind: 'ratio',
         title: 'Ratio monitoring',
-        description: 'Configure EYFS staffing ratio alerts and threshold guidance.',
+        headline: ratio.isActive ? 'Live EYFS alerts' : 'Paused',
+        detail: 'Threshold guidance against EYFS 2024 standards.',
         icon: 'heroScale',
-        iconBgClass: 'bg-warning-50 dark:bg-warning-500/15',
-        iconClass: 'text-warning-600 dark:text-warning-400',
         tone: 'warning',
+        kind: 'ratio',
         state: 'coming-soon',
         link: null,
-        statusLabel: ratio.standardLabel,
+        pillLabel: ratio.isActive ? 'Active' : 'Paused',
+        pillTone: ratio.isActive ? 'success' : 'warning',
+        statusLabel: 'EYFS 2024 standards',
         statusTone: 'neutral',
         thresholdPercent: ratio.thresholdPercent,
-        badge: { label: ratio.isActive ? 'Active' : 'Paused', tone: ratio.isActive ? 'success' : 'warning' },
       },
       {
         id: 'funding',
-        kind: 'highlight',
         title: 'Funding configuration',
-        description: 'Manage funded hours, entitlement rules, and term settings for EYPP/FSM.',
+        headline: term,
+        detail: 'Funded hours, entitlement rules, and term settings.',
         icon: 'heroBanknotes',
-        iconBgClass: 'bg-brand-50 dark:bg-brand-500/15',
-        iconClass: 'text-brand-500',
-        tone: 'primary',
+        tone: 'brand',
+        kind: 'simple',
         state: 'ready',
         link: ROLE_ROUTES.managerFunding,
+        pillLabel: 'Active',
+        pillTone: 'success',
         statusLabel: 'Active',
         statusTone: 'success',
-        highlightLabel: 'Current focus',
-        highlightValue: term,
       },
       {
         id: 'billing',
-        kind: 'key-value',
         title: 'Fees & billing',
-        description: 'Manage sessions, prices, discounts, and auto-invoicing rules.',
+        headline: billing,
+        detail: 'Sessions, sibling discounts, and auto-invoicing.',
         icon: 'heroReceiptPercent',
-        iconBgClass: 'bg-success-50 dark:bg-success-500/15',
-        iconClass: 'text-success-600 dark:text-success-500',
         tone: 'success',
+        kind: 'simple',
         state: 'ready',
         link: ROLE_ROUTES.managerBillingSetup,
+        pillLabel: hasBilling ? 'Live' : 'Setup',
+        pillTone: hasBilling ? 'success' : 'warning',
         statusLabel: hasBilling ? 'Auto-invoicing: ON' : 'Hourly rate pending',
         statusTone: hasBilling ? 'success' : 'warning',
-        items: [
-          { id: 'rate', icon: 'heroReceiptPercent', text: `Core rate: ${billing}` },
-          { id: 'discount', icon: 'heroReceiptPercent', text: 'Sibling discount rules' },
-        ],
       },
       {
         id: 'comms',
-        kind: 'status-list',
         title: 'Parent communication',
-        description: 'Manage messages, notifications, and the daily parent experience.',
+        headline: 'Messaging & media',
+        detail: 'Notifications, daily updates, and parent experience.',
         icon: 'heroChatBubbleLeftRight',
-        iconBgClass: 'bg-gray-100 dark:bg-white/5',
-        iconClass: 'text-gray-600 dark:text-gray-300',
         tone: 'neutral',
+        kind: 'list',
         state: 'coming-soon',
         link: null,
+        pillLabel: 'Enabled',
+        pillTone: 'success',
         statusLabel: `Last activity: ${comms.lastActivity}`,
         statusTone: 'neutral',
         items: [
@@ -328,15 +278,16 @@ export class ManagerSiteSettingsComponent implements OnInit {
       },
       {
         id: 'compliance',
-        kind: 'status-list',
         title: 'Compliance',
-        description: 'Manage GDPR, audit logs, retention, and security settings.',
+        headline: `Security score ${compliance.securityScore}%`,
+        detail: 'GDPR, audit logs, retention, and security.',
         icon: 'heroShieldCheck',
-        iconBgClass: 'bg-blue-light-50 dark:bg-blue-light-500/15',
-        iconClass: 'text-blue-light-500',
         tone: 'info',
+        kind: 'list',
         state: 'coming-soon',
         link: null,
+        pillLabel: `${compliance.securityScore}%`,
+        pillTone: 'success',
         statusLabel: `Security score: ${compliance.securityScore}%`,
         statusTone: 'success',
         items: [
@@ -349,6 +300,40 @@ export class ManagerSiteSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  iconWrapClass(card: SettingCard): string {
+    const map: Record<CardTone, string> = {
+      brand: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
+      success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300',
+      warning: 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300',
+      info: 'bg-blue-light-50 text-blue-light-700 dark:bg-blue-light-500/15 dark:text-blue-light-300',
+      neutral: 'bg-gray-100 text-gray-600 dark:bg-white/[0.08] dark:text-gray-300',
+    };
+    return map[card.tone];
+  }
+
+  pillTextClass(card: SettingCard): string {
+    const tone = card.pillTone ?? 'neutral';
+    const map: Record<PillTone, string> = {
+      success: 'text-success-600 dark:text-success-400',
+      warning: 'text-warning-700 dark:text-warning-300',
+      info: 'text-blue-light-700 dark:text-blue-light-300',
+      brand: 'text-brand-600 dark:text-brand-300',
+      neutral: 'text-gray-700 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  statusToneClass(card: SettingCard): string {
+    const map: Record<StatusTone, string> = {
+      success: 'text-success-600 dark:text-success-400',
+      warning: 'text-warning-700 dark:text-warning-300',
+      info: 'text-blue-light-700 dark:text-blue-light-300',
+      brand: 'text-brand-600 dark:text-brand-300',
+      neutral: 'text-gray-700 dark:text-gray-300',
+    };
+    return map[card.statusTone];
   }
 
   formatAgeGroup(ageGroup: string): string {
@@ -367,7 +352,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   }
 
   trackCard = (_index: number, card: SettingCard): string => card.id;
-  trackItem = (_index: number, item: { id: string }): string => item.id;
+  trackItem = (_index: number, item: CardItem): string => item.id;
 
   private load(): void {
     const membership = this.auth.activeMembership();

@@ -124,8 +124,8 @@ describe('ManagerSiteSettingsComponent', () => {
     fixture.detectChanges();
 
     expect(component.cards().length).toBe(9);
-    const roomCard = component.cards().find((c) => c.id === 'rooms') as { pillText: string; statusLabel: string };
-    expect(roomCard.pillText).toContain('Baby');
+    const roomCard = component.cards().find((c) => c.id === 'rooms') as { detail: string; statusLabel: string };
+    expect(roomCard.detail).toContain('Baby');
     expect(roomCard.statusLabel).toBe('3 active');
 
     const billingCard = component.cards().find((c) => c.id === 'billing');
