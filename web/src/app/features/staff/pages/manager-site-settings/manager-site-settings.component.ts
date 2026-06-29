@@ -3,7 +3,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  heroArrowRightCircle,
   heroBanknotes,
   heroBuildingOffice2,
   heroChatBubbleLeftRight,
@@ -62,7 +61,6 @@ interface SettingCard {
   imports: [CommonModule, RouterLink, NgIcon, AlertComponent],
   providers: [
     provideIcons({
-      heroArrowRightCircle,
       heroBanknotes,
       heroBuildingOffice2,
       heroChatBubbleLeftRight,

@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
 import {
-  heroArrowRightCircle,
   heroBanknotes,
   heroBuildingOffice2,
   heroChatBubbleLeftRight,
@@ -51,7 +50,6 @@ describe('ManagerSiteSettingsComponent', () => {
         provideRouter([]),
         { provide: AuthService, useValue: authStub },
         provideIcons({
-          heroArrowRightCircle,
           heroBanknotes,
           heroBuildingOffice2,
           heroChatBubbleLeftRight,
