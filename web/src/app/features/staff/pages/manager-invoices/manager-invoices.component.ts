@@ -21,7 +21,6 @@ import {
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
-import { ToastService } from '../../../../shared/services/toast.service';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -129,9 +128,6 @@ function formatBillingMonth(date: Date): string {
 export class ManagerInvoicesComponent implements OnInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
-  private readonly toastService = inject(ToastService);
-
-  private filterChanged = false;
 
   readonly statusFilters = STATUS_FILTERS;
   readonly rangePresets = RANGE_PRESETS;
@@ -184,21 +180,18 @@ export class ManagerInvoicesComponent implements OnInit {
     }
     // 'custom' leaves existing from/to values unchanged
     this.offset = 0;
-    this.filterChanged = true;
     this.loadList();
   }
 
   onCustomRangeChange(): void {
     this.activePreset = 'custom';
     this.offset = 0;
-    this.filterChanged = true;
     this.loadList();
   }
 
   onStatusChange(status: ManagerInvoiceStatusFilter): void {
     this.selectedStatus = status;
     this.offset = 0;
-    this.filterChanged = true;
     this.loadList();
   }
 
@@ -349,10 +342,6 @@ export class ManagerInvoicesComponent implements OnInit {
         next: (result) => {
           this.items = result.items;
           this.isLoading = false;
-          if (this.filterChanged) {
-            this.filterChanged = false;
-            this.toastService.success(`Showing ${result.items.length} invoice${result.items.length === 1 ? '' : 's'} for ${this.billingMonthLabel}`, { durationMs: 3000 });
-          }
         },
         error: (err) => {
           const mapped = this.errorMapper.mapAndHandle(err);
