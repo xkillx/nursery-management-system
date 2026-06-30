@@ -16,6 +16,7 @@ import (
 	"nursery-management-system/api/internal/platform/db"
 	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/logging"
+	"path/filepath"
 
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
@@ -50,6 +51,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
+
+	if cfg.RunMigrations {
+		migrationsPath := filepath.Join("db", "migrations")
+		if err := db.RunMigrations(migrationsPath, cfg.DatabaseURL); err != nil {
+			logger.Error("failed to run database migrations", "error", err)
+			os.Exit(1)
+		}
+	}
 
 	var scheduler *invoicerun.Scheduler
 	if cfg.SchedulerOwner {

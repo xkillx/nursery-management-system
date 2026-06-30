@@ -41,6 +41,8 @@ type Config struct {
 
 	LogLevel       string
 	MetricsEnabled bool
+
+	RunMigrations bool
 }
 
 func Load() (Config, error) {
@@ -101,6 +103,8 @@ func Load() (Config, error) {
 
 		LogLevel:       getEnv("LOG_LEVEL", "info"),
 		MetricsEnabled: resolveMetricsEnabled(os.Getenv("METRICS_ENABLED"), getEnv("APP_ENV", "local")),
+
+		RunMigrations: resolveRunMigrations(os.Getenv("RUN_MIGRATIONS")),
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -244,6 +248,17 @@ func resolveMetricsEnabled(raw, appEnv string) bool {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return appEnv == "local" || appEnv == "staging"
+	}
+	return strings.EqualFold(raw, "true")
+}
+
+func resolveRunMigrations(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return true
+	}
+	if raw == "1" {
+		return true
 	}
 	return strings.EqualFold(raw, "true")
 }

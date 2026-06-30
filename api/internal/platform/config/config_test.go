@@ -304,6 +304,80 @@ func TestLogLevelConfig(t *testing.T) {
 	})
 }
 
+func TestRunMigrationsConfig(t *testing.T) {
+	t.Run("default is true", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.RunMigrations {
+			t.Fatal("expected RunMigrations true by default")
+		}
+	})
+
+	t.Run("true enables", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "true")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.RunMigrations {
+			t.Fatal("expected RunMigrations true")
+		}
+	})
+
+	t.Run("TRUE enables", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "TRUE")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.RunMigrations {
+			t.Fatal("expected RunMigrations true for TRUE")
+		}
+	})
+
+	t.Run("1 enables", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "1")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !cfg.RunMigrations {
+			t.Fatal("expected RunMigrations true for 1")
+		}
+	})
+
+	t.Run("false disables", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "false")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.RunMigrations {
+			t.Fatal("expected RunMigrations false")
+		}
+	})
+
+	t.Run("FALSE disables", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("RUN_MIGRATIONS", "FALSE")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.RunMigrations {
+			t.Fatal("expected RunMigrations false for FALSE")
+		}
+	})
+}
+
 func TestMetricsEnabledConfig(t *testing.T) {
 	t.Run("default local is true", func(t *testing.T) {
 		setBaseEnv(t)
