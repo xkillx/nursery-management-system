@@ -102,14 +102,13 @@
             class="h-10 rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
           />
         </div>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ billingMonthLabel }}</span>
       </div>
     </div>
 
     @if (isLoading) {
       <app-loading-state label="Loading invoices..."></app-loading-state>
     } @else if (items.length > 0) {
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto hidden lg:block">
         <table class="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
@@ -190,6 +189,71 @@
           </tbody>
         </table>
       </div>
+
+      <div class="divide-y divide-gray-100 lg:hidden dark:divide-gray-800">
+        @for (item of items; track item.invoiceId) {
+          <article class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                  <ng-icon name="heroReceiptPercent" size="20" aria-hidden="true" />
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900 dark:text-white/90">{{ invoiceIdentity(item) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.childName }}</p>
+                </div>
+              </div>
+              <app-status-badge [status]="item.status" />
+            </div>
+
+            <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Net due</p>
+                <p class="font-semibold text-gray-900 dark:text-white/90">{{ formatGbp(item.totalDueMinor) }}</p>
+                @if (item.fundedDeductionMinor > 0) {
+                  <p class="text-xs text-warning-700 dark:text-warning-300">&minus;{{ formatGbp(item.fundedDeductionMinor) }} funded</p>
+                }
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Payment</p>
+                @if (item.status !== 'draft') {
+                  <p class="text-gray-700 dark:text-gray-200">{{ paymentCueRowLabel(item) }}</p>
+                  @if (item.status === 'paid' && item.paidAt) {
+                    <p class="text-xs text-gray-400">{{ formatInstant(item.paidAt) }}</p>
+                  }
+                  @if (item.status === 'payment_failed' && item.paymentFailedAt) {
+                    <p class="text-xs text-gray-400">{{ formatInstant(item.paymentFailedAt) }}</p>
+                  }
+                  @if ((item.status === 'issued' || item.status === 'overdue') && item.amountPaidMinor === 0 && item.dueStatus === 'overdue') {
+                    <p class="text-xs text-error-600 dark:text-error-300">Overdue</p>
+                  }
+                } @else {
+                  <p class="text-gray-400 dark:text-gray-500">Not issued</p>
+                }
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Due status</p>
+                <app-status-badge [status]="item.dueStatus" />
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Due date</p>
+                <p class="text-gray-700 dark:text-gray-200">{{ item.dueAt ? formatInstant(item.dueAt) : '—' }}</p>
+              </div>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between gap-2">
+              <span class="text-xs text-gray-400">{{ formatBillingMonthLabel(item.billingMonth) }}</span>
+              <a
+                [routerLink]="['/manager/invoices', item.invoiceId]"
+                class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:border-brand-300 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-200 dark:hover:border-brand-500/40 dark:hover:text-brand-300"
+              >
+                <ng-icon name="heroEye" size="16" aria-hidden="true" />
+                View
+              </a>
+            </div>
+          </article>
+        }
+      </div>
     } @else {
       <app-empty-state
         title="No invoices found"
@@ -200,7 +264,7 @@
     @if (hasInvoices) {
       <div class="flex flex-col gap-3 border-t border-gray-200 p-4 text-sm sm:flex-row sm:items-center sm:justify-between lg:p-6 dark:border-gray-800">
         <span class="text-gray-500 dark:text-gray-400">
-          Showing {{ items.length }} invoice{{ items.length === 1 ? '' : 's' }} for {{ billingMonthLabel }}
+          Page {{ currentPage }} &middot; {{ items.length }} invoice{{ items.length === 1 ? '' : 's' }} for {{ billingMonthLabel }}
         </span>
         <div class="flex items-center gap-2">
           <button
