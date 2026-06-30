@@ -2679,6 +2679,9 @@
                 } @else {
                   <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveFundingBenefits()">
                     {{ isSaving ? 'Saving...' : 'Save changes' }}
+                    @if (!isSaving) {
+                      <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                    }
                   </app-button>
                 }
               </div>
