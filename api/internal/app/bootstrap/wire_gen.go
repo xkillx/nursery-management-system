@@ -236,13 +236,19 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	repository3 := postgres9.NewRepository(pool)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder)
+	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
+	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
+	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
+	createAndIssueInvoiceFromForm := application7.NewCreateAndIssueInvoiceFromForm(repository3, eventDispatcher, writer, issueInvoice)
 	draftUseCases := httpbilling.DraftUseCases{
-		Preflight:  preflightDraftInvoices,
-		Generation: generateDraftInvoicesUseCase,
+		Preflight:              preflightDraftInvoices,
+		Generation:             generateDraftInvoicesUseCase,
+		ComputePrefill:         computeInvoicePrefill,
+		CreateDraft:            createDraftInvoice,
+		CreateAndIssueFromForm: createAndIssueInvoiceFromForm,
 	}
 	listInvoices := application7.NewListInvoices(repository3)
 	getInvoice := application7.NewGetInvoice(repository3)
-	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
 	bulkIssueInvoices := application7.NewBulkIssueInvoices(repository3, transactionManager, writer)
 	overrideAttendanceBlockUseCase := application7.NewOverrideAttendanceBlockUseCase(repository3, writer, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
@@ -540,13 +546,19 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	repository3 := postgres9.NewRepository(pool)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder)
+	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
+	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
+	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
+	createAndIssueInvoiceFromForm := application7.NewCreateAndIssueInvoiceFromForm(repository3, eventDispatcher, writer, issueInvoice)
 	draftUseCases := httpbilling.DraftUseCases{
-		Preflight:  preflightDraftInvoices,
-		Generation: generateDraftInvoicesUseCase,
+		Preflight:              preflightDraftInvoices,
+		Generation:             generateDraftInvoicesUseCase,
+		ComputePrefill:         computeInvoicePrefill,
+		CreateDraft:            createDraftInvoice,
+		CreateAndIssueFromForm: createAndIssueInvoiceFromForm,
 	}
 	listInvoices := application7.NewListInvoices(repository3)
 	getInvoice := application7.NewGetInvoice(repository3)
-	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
 	bulkIssueInvoices := application7.NewBulkIssueInvoices(repository3, transactionManager, writer)
 	overrideAttendanceBlockUseCase := application7.NewOverrideAttendanceBlockUseCase(repository3, writer, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
@@ -737,7 +749,7 @@ var absenceSet = wire.NewSet(postgres7.NewAbsenceRepository, wire.Bind(new(domai
 
 var fundingSet = wire.NewSet(postgres8.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres8.Repository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, httpfunding.NewHandler)
 
-var billingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres9.Repository)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), application7.NewPreflightDraftInvoices, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
+var billingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres9.Repository)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 
 func provideCreateCheckoutSession(
 	repo *postgres11.Repository,
