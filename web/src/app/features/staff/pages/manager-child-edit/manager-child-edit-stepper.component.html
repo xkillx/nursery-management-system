@@ -20,9 +20,11 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <app-button type="button" variant="outline" size="xs" className="min-h-10 border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="discardDraft()">
+              <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
               Discard draft
             </app-button>
             <app-button type="button" variant="ghost" size="xs" className="min-h-10 text-success-700 hover:bg-success-100 dark:text-success-400 dark:hover:bg-success-500/10" (btnClick)="dismissDraftBanner()">
+              <ng-icon name="heroXMark" size="16" aria-hidden="true" />
               Dismiss
             </app-button>
           </div>
@@ -1225,7 +1227,10 @@
                           />
                         </app-form-field>
                       </div>
-                      <app-button type="button" variant="ghost" size="xs" className="text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeReferralEntry(i)">Remove referral</app-button>
+                      <app-button type="button" variant="ghost" size="xs" className="inline-flex items-center gap-1 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeReferralEntry(i)">
+                        <ng-icon name="heroXCircle" size="15" aria-hidden="true" />
+                        Remove referral
+                      </app-button>
                     </div>
                   }
                 </div>
@@ -1463,7 +1468,10 @@
                   <div class="border-t border-gray-200 pt-8 dark:border-gray-800">
                     <div class="mb-4 flex items-center justify-between gap-3">
                       <h4 class="text-lg font-bold text-gray-950 dark:text-white/90">Second Parent/Carer</h4>
-                      <app-button type="button" variant="ghost" size="xs" className="min-h-10 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="step3.show_second_parent = false">Remove</app-button>
+                      <app-button type="button" variant="ghost" size="xs" className="min-h-10 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="step3.show_second_parent = false">
+                        <ng-icon name="heroXCircle" size="15" aria-hidden="true" />
+                        Remove
+                      </app-button>
                     </div>
                     <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                       <app-form-field label="Full name">
@@ -1600,7 +1608,10 @@
                           [(ngModel)]="emergencyAuthorisedFlags[i]"
                           label="Authorised to collect child from nursery"
                         />
-                        <app-button type="button" variant="ghost" size="xs" className="min-h-11 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeEmergencyContact(i)">Remove</app-button>
+                        <app-button type="button" variant="ghost" size="xs" className="inline-flex items-center gap-1 min-h-11 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeEmergencyContact(i)">
+                          <ng-icon name="heroXCircle" size="15" aria-hidden="true" />
+                          Remove
+                        </app-button>
                       </div>
                     </div>
                   }
@@ -2212,6 +2223,9 @@
                   </app-button>
                   <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving || !hasPatternEntries" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveSessionPattern(isNewRegistration)">
                     {{ isSaving ? 'Saving...' : (isNewRegistration ? 'Continue' : 'Save changes') }}
+                    @if (!isSaving) {
+                      <ng-icon [name]="isNewRegistration ? 'heroArrowRight' : 'heroCheck'" size="20" aria-hidden="true" />
+                    }
                   </app-button>
                 </div>
               }
