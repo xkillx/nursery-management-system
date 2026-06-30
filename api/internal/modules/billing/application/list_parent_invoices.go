@@ -22,11 +22,13 @@ func NewListParentInvoices(repo domain.BillingRepository) *ListParentInvoices {
 }
 
 type ListParentInvoicesParams struct {
-	BillingMonth *string
-	Status       *string
-	ChildID      *string
-	Limit        *string
-	Offset       *string
+	BillingMonth     *string
+	BillingMonthFrom *string
+	BillingMonthTo   *string
+	Status           *string
+	ChildID          *string
+	Limit            *string
+	Offset           *string
 }
 
 type ListParentInvoicesResult struct {
@@ -54,6 +56,22 @@ func (uc *ListParentInvoices) Execute(ctx context.Context, actor tenant.ActorCon
 			return ListParentInvoicesResult{}, domainerrors.Validation("Invalid billing_month format. Use YYYY-MM.", "billing_month")
 		}
 		filters.BillingMonth = &bm
+	}
+
+	if params.BillingMonthFrom != nil {
+		bm, err := ParseBillingMonth(*params.BillingMonthFrom)
+		if err != nil {
+			return ListParentInvoicesResult{}, domainerrors.Validation("Invalid billing_month_from format. Use YYYY-MM.", "billing_month_from")
+		}
+		filters.BillingMonthFrom = &bm
+	}
+
+	if params.BillingMonthTo != nil {
+		bm, err := ParseBillingMonth(*params.BillingMonthTo)
+		if err != nil {
+			return ListParentInvoicesResult{}, domainerrors.Validation("Invalid billing_month_to format. Use YYYY-MM.", "billing_month_to")
+		}
+		filters.BillingMonthTo = &bm
 	}
 
 	if params.Status != nil {

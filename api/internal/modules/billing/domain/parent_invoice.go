@@ -9,11 +9,13 @@ import (
 
 // ParentInvoiceFilters holds optional list filters for parent invoice view.
 type ParentInvoiceFilters struct {
-	BillingMonth *time.Time
-	Status       *string
-	ChildID      *uuid.UUID
-	Limit        int
-	Offset       int
+	BillingMonth     *time.Time
+	BillingMonthFrom *time.Time
+	BillingMonthTo   *time.Time
+	Status           *string
+	ChildID          *uuid.UUID
+	Limit            int
+	Offset           int
 }
 
 // ParentInvoiceRow maps a joined invoice + child row for parent view.

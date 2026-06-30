@@ -9,11 +9,13 @@ import (
 
 // InvoiceReviewFilters holds optional list filters for manager invoice review.
 type InvoiceReviewFilters struct {
-	BillingMonth *time.Time
-	Status       *string
-	ChildID      *uuid.UUID
-	Limit        int
-	Offset       int
+	BillingMonth     *time.Time
+	BillingMonthFrom *time.Time
+	BillingMonthTo   *time.Time
+	Status           *string
+	ChildID          *uuid.UUID
+	Limit            int
+	Offset           int
 }
 
 // InvoiceReviewRow maps a joined invoice + child + run row for manager review.

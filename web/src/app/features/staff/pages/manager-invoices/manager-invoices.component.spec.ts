@@ -91,13 +91,14 @@ describe('ManagerInvoicesComponent', () => {
     fixture = TestBed.createComponent(ManagerInvoicesComponent);
   });
 
-  it('loads list on init with default billing month and all status', () => {
+  it('loads list on init with default range and all status', () => {
     fixture.detectChanges();
 
     expect(apiService.listInvoices).toHaveBeenCalledTimes(1);
     const call = apiService.listInvoices.calls.argsFor(0)[0];
     expect(call.status).toBe('all');
-    expect(call.billingMonth).toMatch(/^\d{4}-\d{2}$/);
+    expect(call.billingMonthFrom).toMatch(/^\d{4}-\d{2}$/);
+    expect(call.billingMonthTo).toMatch(/^\d{4}-\d{2}$/);
     expect(call.limit).toBe(50);
     expect(call.offset).toBe(0);
   });
@@ -137,14 +138,29 @@ describe('ManagerInvoicesComponent', () => {
     expect(call.offset).toBe(0);
   });
 
-  it('reloads and resets offset when billing month changes', () => {
+  it('reloads and resets offset when range preset changes', () => {
     fixture.detectChanges();
     apiService.listInvoices.calls.reset();
 
-    fixture.componentInstance.onMonthChange('2026-04');
+    fixture.componentInstance.onRangePreset('this');
     expect(apiService.listInvoices).toHaveBeenCalledTimes(1);
     const call = apiService.listInvoices.calls.argsFor(0)[0];
-    expect(call.billingMonth).toBe('2026-04');
+    expect(call.billingMonthFrom).toBeDefined();
+    expect(call.billingMonthTo).toBeDefined();
+    expect(call.offset).toBe(0);
+  });
+
+  it('switches to custom range and reloads', () => {
+    fixture.detectChanges();
+    apiService.listInvoices.calls.reset();
+
+    fixture.componentInstance.selectedBillingMonthFrom = '2026-01';
+    fixture.componentInstance.selectedBillingMonthTo = '2026-06';
+    fixture.componentInstance.onCustomRangeChange();
+    expect(apiService.listInvoices).toHaveBeenCalledTimes(1);
+    const call = apiService.listInvoices.calls.argsFor(0)[0];
+    expect(call.billingMonthFrom).toBe('2026-01');
+    expect(call.billingMonthTo).toBe('2026-06');
     expect(call.offset).toBe(0);
   });
 

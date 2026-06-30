@@ -195,6 +195,8 @@ export class ManagerInvoicesApiService {
 
   listInvoices(params: {
     billingMonth?: string;
+    billingMonthFrom?: string;
+    billingMonthTo?: string;
     status: ManagerInvoiceStatusFilter;
     childId?: string;
     limit: number;
@@ -207,6 +209,12 @@ export class ManagerInvoicesApiService {
 
     if (params.billingMonth) {
       queryObj['billing_month'] = params.billingMonth;
+    }
+    if (params.billingMonthFrom) {
+      queryObj['billing_month_from'] = params.billingMonthFrom;
+    }
+    if (params.billingMonthTo) {
+      queryObj['billing_month_to'] = params.billingMonthTo;
     }
 
     if (params.status !== 'all') {

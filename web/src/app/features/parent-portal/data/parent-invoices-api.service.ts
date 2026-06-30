@@ -108,6 +108,8 @@ export class ParentInvoicesApiService {
     limit: number;
     offset: number;
     billingMonth?: string;
+    billingMonthFrom?: string;
+    billingMonthTo?: string;
     status?: ParentInvoiceStatus;
     childId?: string;
   }): Observable<ParentInvoiceListResult> {
@@ -117,6 +119,8 @@ export class ParentInvoicesApiService {
     };
 
     if (params.billingMonth) queryObj['billing_month'] = params.billingMonth;
+    if (params.billingMonthFrom) queryObj['billing_month_from'] = params.billingMonthFrom;
+    if (params.billingMonthTo) queryObj['billing_month_to'] = params.billingMonthTo;
     if (params.status) queryObj['status'] = params.status;
     if (params.childId) queryObj['child_id'] = params.childId;
 

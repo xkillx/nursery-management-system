@@ -375,13 +375,15 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) ([]domain.InvoiceReviewRow, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
-		TenantID:     uuidToPgtype(tenantID),
-		BranchID:     uuidToPgtype(branchID),
-		BillingMonth: timeToPgtypeDatePtr(filters.BillingMonth),
-		Status:       strToPgtypeTextPtr(filters.Status),
-		ChildID:      uuidToPgtypePtr(filters.ChildID),
-		Limit:        pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
-		Offset:       pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+		Limit:            pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
+		Offset:           pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
 	})
 	if err != nil {
 		return nil, err
@@ -521,14 +523,16 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 func (r *Repository) ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.InvoiceListForParent(ctx, sqlc.InvoiceListForParentParams{
-		TenantID:     uuidToPgtype(tenantID),
-		BranchID:     uuidToPgtype(branchID),
-		ID:           uuidToPgtype(membershipID),
-		BillingMonth: timeToPgtypeDatePtr(filters.BillingMonth),
-		Status:       strToPgtypeTextPtr(filters.Status),
-		ChildID:      uuidToPgtypePtr(filters.ChildID),
-		Limit:        pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
-		Offset:       pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		ID:               uuidToPgtype(membershipID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+		Limit:            pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
+		Offset:           pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
 	})
 	if err != nil {
 		return nil, err

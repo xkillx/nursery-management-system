@@ -961,20 +961,24 @@ JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($3::date IS NULL OR i.billing_month = $3::date)
-  AND ($4::text IS NULL OR i.status = $4::text)
-  AND ($5::uuid IS NULL OR i.child_id = $5::uuid)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
-LIMIT $7 OFFSET $6
+LIMIT $9 OFFSET $8
 `
 
 type InvoiceListForManagerReviewParams struct {
-	TenantID     pgtype.UUID
-	BranchID     pgtype.UUID
-	BillingMonth pgtype.Date
-	Status       pgtype.Text
-	ChildID      pgtype.UUID
-	Offset       pgtype.Int4
-	Limit        pgtype.Int4
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
 }
 
 type InvoiceListForManagerReviewRow struct {
@@ -1018,6 +1022,8 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 		arg.TenantID,
 		arg.BranchID,
 		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
 		arg.Offset,
@@ -1109,8 +1115,10 @@ WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
   AND ($4::date IS NULL OR i.billing_month = $4::date)
-  AND ($5::text IS NULL OR i.status = $5::text)
-  AND ($6::uuid IS NULL OR i.child_id = $6::uuid)
+  AND ($5::date IS NULL OR i.billing_month >= $5::date)
+  AND ($6::date IS NULL OR i.billing_month <= $6::date)
+  AND ($7::text IS NULL OR i.status = $7::text)
+  AND ($8::uuid IS NULL OR i.child_id = $8::uuid)
 ORDER BY
   CASE i.status
     WHEN 'overdue' THEN 1
@@ -1125,18 +1133,20 @@ ORDER BY
   c.middle_name ASC NULLS FIRST,
   c.last_name ASC NULLS FIRST,
   i.id ASC
-LIMIT $8 OFFSET $7
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForParentParams struct {
-	TenantID     pgtype.UUID
-	BranchID     pgtype.UUID
-	ID           pgtype.UUID
-	BillingMonth pgtype.Date
-	Status       pgtype.Text
-	ChildID      pgtype.UUID
-	Offset       pgtype.Int4
-	Limit        pgtype.Int4
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	ID               pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
 }
 
 type InvoiceListForParentRow struct {
@@ -1170,6 +1180,8 @@ func (q *Queries) InvoiceListForParent(ctx context.Context, arg InvoiceListForPa
 		arg.BranchID,
 		arg.ID,
 		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
 		arg.Offset,

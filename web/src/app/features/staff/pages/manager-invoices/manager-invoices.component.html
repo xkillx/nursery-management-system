@@ -85,24 +85,54 @@
         }
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <label for="invoices-month-input" class="sr-only">Billing month</label>
-        <div class="relative">
-          <ng-icon
-            name="heroFunnel"
-            size="16"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            aria-hidden="true"
-          />
-          <input
-            id="invoices-month-input"
-            type="month"
-            [ngModel]="selectedBillingMonth"
-            (ngModelChange)="onMonthChange($event)"
-            class="h-10 rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-          />
-        </div>
+      <div class="flex flex-wrap items-center gap-2">
+        @for (preset of rangePresets; track preset.value) {
+          <button
+            type="button"
+            class="cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
+            [ngClass]="{
+              'bg-brand-500 text-white shadow-theme-xs': activePreset === preset.value,
+              'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.05]': activePreset !== preset.value
+            }"
+            [attr.aria-pressed]="activePreset === preset.value"
+            (click)="onRangePreset(preset.value)"
+          >
+            {{ preset.label }}
+          </button>
+        }
       </div>
+
+      @if (activePreset === 'custom') {
+        <div class="flex flex-wrap items-center gap-3">
+          <label for="invoices-month-from" class="sr-only">From</label>
+          <div class="relative">
+            <ng-icon
+              name="heroCalendarDays"
+              size="16"
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              id="invoices-month-from"
+              type="month"
+              [ngModel]="selectedBillingMonthFrom"
+              (ngModelChange)="selectedBillingMonthFrom = $event; onCustomRangeChange()"
+              class="h-10 rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            />
+          </div>
+          <span class="text-sm text-gray-400 dark:text-gray-500">to</span>
+          <label for="invoices-month-to" class="sr-only">To</label>
+          <div class="relative">
+            <input
+              id="invoices-month-to"
+              type="month"
+              [ngModel]="selectedBillingMonthTo"
+              (ngModelChange)="selectedBillingMonthTo = $event; onCustomRangeChange()"
+              class="h-10 rounded-lg border border-gray-300 bg-white pl-3 pr-3 text-sm text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            />
+          </div>
+        </div>
+      }
     </div>
 
     @if (isLoading) {
@@ -257,7 +287,7 @@
     } @else {
       <app-empty-state
         title="No invoices found"
-        [message]="'No invoices for ' + billingMonthLabel + ' with status ' + (selectedStatus === 'all' ? 'All' : selectedStatus) + '.'"
+        [message]="'No invoices for ' + billingMonthLabel + ' with filter: ' + (selectedStatus === 'all' ? 'All' : selectedStatus) + '.'"
       ></app-empty-state>
     }
 

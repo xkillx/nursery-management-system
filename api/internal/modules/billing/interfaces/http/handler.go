@@ -153,11 +153,13 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 	}
 
 	result, err := h.listInvoices.Execute(c.Request.Context(), actor, application.ListInvoicesParams{
-		BillingMonth: queryParamPtr(c, "billing_month"),
-		Status:       queryParamPtr(c, "status"),
-		ChildID:      queryParamPtr(c, "child_id"),
-		Limit:        queryParamPtr(c, "limit"),
-		Offset:       queryParamPtr(c, "offset"),
+		BillingMonth:     queryParamPtr(c, "billing_month"),
+		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
+		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
+		Status:           queryParamPtr(c, "status"),
+		ChildID:          queryParamPtr(c, "child_id"),
+		Limit:            queryParamPtr(c, "limit"),
+		Offset:           queryParamPtr(c, "offset"),
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -334,11 +336,13 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 	}
 
 	result, err := h.listParentInvoices.Execute(c.Request.Context(), actor, application.ListParentInvoicesParams{
-		BillingMonth: queryParamPtr(c, "billing_month"),
-		Status:       queryParamPtr(c, "status"),
-		ChildID:      queryParamPtr(c, "child_id"),
-		Limit:        queryParamPtr(c, "limit"),
-		Offset:       queryParamPtr(c, "offset"),
+		BillingMonth:     queryParamPtr(c, "billing_month"),
+		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
+		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
+		Status:           queryParamPtr(c, "status"),
+		ChildID:          queryParamPtr(c, "child_id"),
+		Limit:            queryParamPtr(c, "limit"),
+		Offset:           queryParamPtr(c, "offset"),
 	})
 	if err != nil {
 		h.handleError(c, err)

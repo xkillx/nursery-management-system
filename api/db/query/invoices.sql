@@ -296,6 +296,8 @@ JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
@@ -506,6 +508,8 @@ WHERE i.tenant_id = $1
   AND i.branch_id = $2
   AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
 ORDER BY

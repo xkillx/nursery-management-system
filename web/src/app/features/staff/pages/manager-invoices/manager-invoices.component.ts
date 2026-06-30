@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
+  heroCalendarDays,
   heroCheckCircle,
   heroClock,
   heroCurrencyPound,
@@ -20,6 +21,7 @@ import {
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -67,6 +69,11 @@ function invoiceIdentity(item: ManagerInvoiceListItem): string {
   return `Draft invoice — ${item.childName}`;
 }
 
+interface RangePreset {
+  value: string;
+  label: string;
+}
+
 interface InvoiceMetric {
   key: string;
   label: string;
@@ -74,6 +81,19 @@ interface InvoiceMetric {
   count: number | null;
   tone: 'brand' | 'success' | 'warning' | 'error' | 'neutral';
   pill: string;
+}
+
+const RANGE_PRESETS: RangePreset[] = [
+  { value: 'this', label: 'This month' },
+  { value: '3m', label: 'Last 3 months' },
+  { value: '6m', label: 'Last 6 months' },
+  { value: 'custom', label: 'Custom' },
+];
+
+function formatBillingMonth(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
 }
 
 @Component({
@@ -92,6 +112,7 @@ interface InvoiceMetric {
   providers: [
     provideIcons({
       heroArrowDownTray,
+      heroCalendarDays,
       heroCheckCircle,
       heroClock,
       heroCurrencyPound,
@@ -108,11 +129,17 @@ interface InvoiceMetric {
 export class ManagerInvoicesComponent implements OnInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly toastService = inject(ToastService);
+
+  private filterChanged = false;
 
   readonly statusFilters = STATUS_FILTERS;
+  readonly rangePresets = RANGE_PRESETS;
   readonly invoicesRoute = ROLE_ROUTES.managerInvoices;
 
-  selectedBillingMonth = defaultCompletedBillingMonth();
+  selectedBillingMonthFrom: string;
+  selectedBillingMonthTo: string;
+  activePreset = 'this';
   selectedStatus: ManagerInvoiceStatusFilter = 'all';
   offset = 0;
 
@@ -124,6 +151,12 @@ export class ManagerInvoicesComponent implements OnInit {
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
   readonly invoiceIdentity = invoiceIdentity;
+
+  constructor() {
+    const now = new Date();
+    this.selectedBillingMonthTo = formatBillingMonth(now);
+    this.selectedBillingMonthFrom = formatBillingMonth(now);
+  }
 
   paymentCueState(item: ManagerInvoiceListItem): PaymentDisplayState {
     return getPaymentDisplayState(item.status, item.dueStatus, item.amountPaidMinor, null);
@@ -137,15 +170,35 @@ export class ManagerInvoicesComponent implements OnInit {
     this.loadList();
   }
 
-  onMonthChange(month: string): void {
-    this.selectedBillingMonth = month;
+  onRangePreset(preset: string): void {
+    this.activePreset = preset;
+    const now = new Date();
+    this.selectedBillingMonthTo = formatBillingMonth(now);
+
+    if (preset === 'this') {
+      this.selectedBillingMonthFrom = formatBillingMonth(now);
+    } else if (preset === '3m') {
+      this.selectedBillingMonthFrom = formatBillingMonth(new Date(now.getFullYear(), now.getMonth() - 2, 1));
+    } else if (preset === '6m') {
+      this.selectedBillingMonthFrom = formatBillingMonth(new Date(now.getFullYear(), now.getMonth() - 5, 1));
+    }
+    // 'custom' leaves existing from/to values unchanged
     this.offset = 0;
+    this.filterChanged = true;
+    this.loadList();
+  }
+
+  onCustomRangeChange(): void {
+    this.activePreset = 'custom';
+    this.offset = 0;
+    this.filterChanged = true;
     this.loadList();
   }
 
   onStatusChange(status: ManagerInvoiceStatusFilter): void {
     this.selectedStatus = status;
     this.offset = 0;
+    this.filterChanged = true;
     this.loadList();
   }
 
@@ -158,7 +211,10 @@ export class ManagerInvoicesComponent implements OnInit {
   }
 
   get billingMonthLabel(): string {
-    return formatBillingMonthLabel(this.selectedBillingMonth);
+    if (this.selectedBillingMonthFrom === this.selectedBillingMonthTo) {
+      return formatBillingMonthLabel(this.selectedBillingMonthFrom);
+    }
+    return `${formatBillingMonthLabel(this.selectedBillingMonthFrom)} – ${formatBillingMonthLabel(this.selectedBillingMonthTo)}`;
   }
 
   get hasInvoices(): boolean {
@@ -283,7 +339,8 @@ export class ManagerInvoicesComponent implements OnInit {
 
     this.apiService
       .listInvoices({
-        billingMonth: this.selectedBillingMonth,
+        billingMonthFrom: this.selectedBillingMonthFrom,
+        billingMonthTo: this.selectedBillingMonthTo,
         status: this.selectedStatus,
         limit: LIMIT,
         offset: this.offset,
@@ -292,6 +349,10 @@ export class ManagerInvoicesComponent implements OnInit {
         next: (result) => {
           this.items = result.items;
           this.isLoading = false;
+          if (this.filterChanged) {
+            this.filterChanged = false;
+            this.toastService.success(`Showing ${result.items.length} invoice${result.items.length === 1 ? '' : 's'} for ${this.billingMonthLabel}`, { durationMs: 3000 });
+          }
         },
         error: (err) => {
           const mapped = this.errorMapper.mapAndHandle(err);
