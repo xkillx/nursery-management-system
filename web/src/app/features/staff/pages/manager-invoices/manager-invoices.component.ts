@@ -165,6 +165,10 @@ export class ManagerInvoicesComponent implements OnInit {
     return this.items.length > 0;
   }
 
+  get currentPage(): number {
+    return Math.floor(this.offset / LIMIT) + 1;
+  }
+
   get metricCards(): InvoiceMetric[] {
     const issued = this.items.filter((i) => i.status === 'issued');
     const paid = this.items.filter((i) => i.status === 'paid');
