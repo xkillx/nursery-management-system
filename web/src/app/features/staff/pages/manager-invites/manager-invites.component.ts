@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgIcon } from '@ng-icons/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroEnvelope, heroPaperAirplane, heroXCircle } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -48,6 +49,9 @@ const ROLE_OPTIONS: Option[] = [
     ConfirmationDialogComponent,
   ],
   templateUrl: './manager-invites.component.html',
+  providers: [
+    provideIcons({ heroEnvelope, heroPaperAirplane, heroXCircle }),
+  ],
 })
 export class ManagerInvitesComponent {
   private readonly staffApi = inject(StaffApiService);

@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroCheck, heroPencilSquare, heroXMark } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
@@ -9,8 +11,11 @@ import { StaffApiService } from '../../data/staff-api.service';
 @Component({
   selector: 'app-manager-billing-setup',
   standalone: true,
-  imports: [CommonModule, FormsModule, AlertComponent, LoadingStateComponent],
+  imports: [CommonModule, FormsModule, NgIcon, AlertComponent, LoadingStateComponent],
   templateUrl: './manager-billing-setup.component.html',
+  providers: [
+    provideIcons({ heroCheck, heroPencilSquare, heroXMark }),
+  ],
 })
 export class ManagerBillingSetupComponent implements OnInit {
   private readonly api = inject(StaffApiService);

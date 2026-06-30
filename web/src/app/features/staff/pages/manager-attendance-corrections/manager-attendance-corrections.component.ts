@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroCheck } from '@ng-icons/heroicons/outline';
 import { Subject, switchMap, takeUntil, tap } from 'rxjs';
 
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
@@ -57,6 +59,7 @@ interface CorrectionError {
   imports: [
     CommonModule,
     FormsModule,
+    NgIcon,
     SelectComponent,
     PageHeaderComponent,
     ButtonComponent,
@@ -67,6 +70,9 @@ interface CorrectionError {
     DatePickerComponent,
   ],
   templateUrl: './manager-attendance-corrections.component.html',
+  providers: [
+    provideIcons({ heroCheck }),
+  ],
 })
 export class ManagerAttendanceCorrectionsComponent implements OnInit, OnDestroy {
   private readonly api = inject(StaffApiService);

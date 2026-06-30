@@ -3,9 +3,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  heroArchiveBoxXMark,
+  heroArrowUturnLeft,
   heroBuildingOffice2,
   heroChartBar,
+  heroChevronDoubleDown,
   heroFunnel,
+  heroPencilSquare,
   heroPlus,
   heroUserCircle,
   heroUserGroup,
@@ -45,9 +49,13 @@ interface RoomRow {
   templateUrl: './manager-rooms.component.html',
   providers: [
     provideIcons({
+      heroArchiveBoxXMark,
+      heroArrowUturnLeft,
       heroBuildingOffice2,
       heroChartBar,
+      heroChevronDoubleDown,
       heroFunnel,
+      heroPencilSquare,
       heroPlus,
       heroUserCircle,
       heroUserGroup,

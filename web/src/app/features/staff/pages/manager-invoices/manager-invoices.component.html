@@ -327,20 +327,22 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
             [disabled]="!hasPrevious"
             (click)="previousPage()"
           >
+            <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
             Previous
           </button>
           <span class="text-xs text-gray-400">Page {{ currentPage }}</span>
           <button
             type="button"
-            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
             [disabled]="!hasNext"
             (click)="nextPage()"
           >
             Next
+            <ng-icon name="heroChevronRight" size="16" aria-hidden="true" />
           </button>
         </div>
       </div>

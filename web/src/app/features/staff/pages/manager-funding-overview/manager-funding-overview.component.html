@@ -108,8 +108,11 @@
                   <a
                     [routerLink]="reviewLink(item.childId)"
                     [queryParams]="reviewQueryParams()"
-                    class="inline-flex h-7 items-center rounded-md border border-gray-300 px-2.5 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                  >Review allowance</a>
+                    class="inline-flex h-7 items-center gap-1.5 rounded-md border border-gray-300 px-2.5 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                  >
+                    <ng-icon name="heroEye" size="14" aria-hidden="true" />
+                    Review allowance
+                  </a>
                 </td>
               </tr>
             }

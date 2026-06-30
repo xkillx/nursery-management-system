@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroEye } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { StaffApiService } from '../../data/staff-api.service';
@@ -49,6 +51,7 @@ function flagColor(flag: FundingOverviewFlag): 'warning' | 'danger' | 'info' {
   imports: [
     CommonModule,
     RouterLink,
+    NgIcon,
     PageHeaderComponent,
     AlertComponent,
     TableShellComponent,
@@ -56,6 +59,9 @@ function flagColor(flag: FundingOverviewFlag): 'warning' | 'danger' | 'info' {
     LoadingStateComponent,
   ],
   templateUrl: './manager-funding-overview.component.html',
+  providers: [
+    provideIcons({ heroEye }),
+  ],
 })
 export class ManagerFundingOverviewComponent implements OnInit {
   private readonly staffApi = inject(StaffApiService);

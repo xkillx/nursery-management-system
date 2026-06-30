@@ -16,7 +16,8 @@
         </div>
       </div>
       <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
-        <button class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+        <button class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+          <ng-icon name="heroCalendarDays" size="16" aria-hidden="true" />
           Set up session pattern
         </button>
       </a>
@@ -604,7 +605,10 @@
                   />
                 </div>
                 <div class="flex gap-2">
-                  <button class="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-sm" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
+                  <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-sm" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
+                    @if (!isSavingMonthly) {
+                      <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+                    }
                     {{ isSavingMonthly ? 'Saving...' : 'Save Allowance' }}
                   </button>
                 </div>

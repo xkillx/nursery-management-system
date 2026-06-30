@@ -5,9 +5,12 @@ import { RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArchiveBox,
+  heroArchiveBoxXMark,
   heroArrowPath,
+  heroArrowUturnLeft,
   heroClock,
   heroFunnel,
+  heroPencilSquare,
   heroPlus,
   heroRectangleStack,
 } from '@ng-icons/heroicons/outline';
@@ -41,9 +44,12 @@ type SessionTypeStatusFilter = 'all' | 'active' | 'archived';
   providers: [
     provideIcons({
       heroArchiveBox,
+      heroArchiveBoxXMark,
       heroArrowPath,
+      heroArrowUturnLeft,
       heroClock,
       heroFunnel,
+      heroPencilSquare,
       heroPlus,
       heroRectangleStack,
     }),
