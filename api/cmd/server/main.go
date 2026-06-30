@@ -62,13 +62,11 @@ func main() {
 		auditWriter := audit.NewWriter()
 		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
 		markPendingUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txMgr)
-		generateUC := billingapp.NewGenerateDraftInvoices(billingRepo, txMgr, auditWriter, logger, nil)
 		lister := invoicerun.NewSystemTenantBranchLister(pool)
 		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
-		generateRunner := invoicerun.NewGenerateAdvanceInvoicesRunner(generateUC, lister)
 
 		var schedErr error
-		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, generateRunner, nil)
+		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, nil)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)

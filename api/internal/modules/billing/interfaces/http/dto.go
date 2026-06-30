@@ -256,6 +256,14 @@ type issueInvoiceRequest struct {
 	Confirm bool `json:"confirm"`
 }
 
+type createAndIssueInvoiceRequest struct {
+	ChildID       string                    `json:"child_id"`
+	BillingMonth  string                    `json:"billing_month"`
+	Lines         []draftInvoiceLineRequest `json:"lines"`
+	PaymentTerms  string                    `json:"payment_terms"`
+	InternalNotes string                    `json:"internal_notes"`
+}
+
 type issueInvoiceResponse struct {
 	InvoiceID     string `json:"invoice_id"`
 	InvoiceNumber string `json:"invoice_number"`
@@ -399,6 +407,84 @@ type parentInvoiceLineResponse struct {
 	SortOrder       int    `json:"sort_order"`
 	QuantityMinutes *int   `json:"quantity_minutes"`
 	UnitAmountMinor *int   `json:"unit_amount_minor"`
+	LineAmountMinor int    `json:"line_amount_minor"`
+}
+
+// --- Invoice Prefill DTOs ---
+
+type prefillResponse struct {
+	ChildID              string                `json:"child_id"`
+	ChildFirstName       string                `json:"child_first_name"`
+	ChildMiddleName      *string               `json:"child_middle_name"`
+	ChildLastName        *string               `json:"child_last_name"`
+	BillingMonth         string                `json:"billing_month"`
+	EntitlementStatus    entitlementResponse   `json:"entitlement_status"`
+	Lines                []prefillLineResponse `json:"lines"`
+	SubtotalMinor        int                   `json:"subtotal_minor"`
+	FundedDeductionMinor int                   `json:"funded_deduction_minor"`
+	TotalDueMinor        int                   `json:"total_due_minor"`
+	Warnings             []string              `json:"warnings"`
+}
+
+type entitlementResponse struct {
+	FundingProfileID       *string `json:"funding_profile_id,omitempty"`
+	FundedAllowanceMinutes int     `json:"funded_allowance_minutes"`
+	StatusLabel            string  `json:"status_label"`
+}
+
+type prefillLineResponse struct {
+	LineKind               string `json:"line_kind"`
+	Description            string `json:"description"`
+	SortOrder              int    `json:"sort_order"`
+	QuantityMinutes        int    `json:"quantity_minutes"`
+	UnitAmountMinor        int    `json:"unit_amount_minor"`
+	LineAmountMinor        int    `json:"line_amount_minor"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int    `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int    `json:"core_billable_minutes"`
+	SessionCount           int    `json:"session_count"`
+}
+
+// --- Create Draft Invoice DTOs ---
+
+type createDraftInvoiceRequest struct {
+	ChildID       string                    `json:"child_id"`
+	BillingMonth  string                    `json:"billing_month"`
+	Lines         []draftInvoiceLineRequest `json:"lines"`
+	PaymentTerms  string                    `json:"payment_terms"`
+	InternalNotes string                    `json:"internal_notes"`
+}
+
+type draftInvoiceLineRequest struct {
+	LineKind        string `json:"line_kind"`
+	Description     string `json:"description"`
+	SortOrder       int    `json:"sort_order"`
+	QuantityMinutes int    `json:"quantity_minutes"`
+	UnitAmountMinor int    `json:"unit_amount_minor"`
+	LineAmountMinor int    `json:"line_amount_minor"`
+}
+
+type createDraftInvoiceResponse struct {
+	InvoiceID     string              `json:"invoice_id"`
+	ChildID       string              `json:"child_id"`
+	BillingMonth  string              `json:"billing_month"`
+	Status        string              `json:"status"`
+	Lines         []draftLineResponse `json:"lines"`
+	SubtotalMinor int                 `json:"subtotal_minor"`
+	TotalDueMinor int                 `json:"total_due_minor"`
+	PaymentTerms  string              `json:"payment_terms"`
+	InternalNotes string              `json:"internal_notes"`
+	CreatedAt     string              `json:"created_at"`
+	UpdatedAt     string              `json:"updated_at"`
+}
+
+type draftLineResponse struct {
+	LineID          string `json:"line_id"`
+	LineKind        string `json:"line_kind"`
+	Description     string `json:"description"`
+	SortOrder       int    `json:"sort_order"`
+	QuantityMinutes int    `json:"quantity_minutes"`
+	UnitAmountMinor int    `json:"unit_amount_minor"`
 	LineAmountMinor int    `json:"line_amount_minor"`
 }
 

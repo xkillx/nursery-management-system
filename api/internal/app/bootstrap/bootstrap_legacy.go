@@ -291,8 +291,11 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{
-			Preflight:  billingapp.NewPreflightDraftInvoices(billingRepo),
-			Generation: billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
+			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
+			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
+			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager),
+			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter),
+			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher)),
 		},
 		Lifecycle: billinghandler.LifecycleUseCases{
 			ListInvoices:          billingapp.NewListInvoices(billingRepo),

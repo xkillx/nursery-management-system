@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
@@ -15,6 +15,7 @@ import {
   heroFunnel,
   heroMagnifyingGlass,
   heroPencilSquare,
+  heroPlus,
   heroReceiptPercent,
 } from '@ng-icons/heroicons/outline';
 
@@ -121,6 +122,7 @@ function formatBillingMonth(date: Date): string {
       heroFunnel,
       heroMagnifyingGlass,
       heroPencilSquare,
+      heroPlus,
       heroReceiptPercent,
     }),
   ],
@@ -128,6 +130,7 @@ function formatBillingMonth(date: Date): string {
 export class ManagerInvoicesComponent implements OnInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly router = inject(Router);
 
   readonly statusFilters = STATUS_FILTERS;
   readonly rangePresets = RANGE_PRESETS;
@@ -201,6 +204,10 @@ export class ManagerInvoicesComponent implements OnInit {
 
   get hasNext(): boolean {
     return this.items.length === LIMIT;
+  }
+
+  navigateToNew(): void {
+    this.router.navigate(['/manager/invoices/new']);
   }
 
   get billingMonthLabel(): string {

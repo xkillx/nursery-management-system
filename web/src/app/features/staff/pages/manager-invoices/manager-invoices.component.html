@@ -12,6 +12,14 @@
     <div class="flex flex-wrap items-center gap-2">
       <button
         type="button"
+        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+        (click)="navigateToNew()"
+      >
+        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+        Create New Invoice
+      </button>
+      <button
+        type="button"
         disabled
         class="inline-flex min-h-10 cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm font-medium text-gray-400 transition dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-500"
         title="Export coming soon"

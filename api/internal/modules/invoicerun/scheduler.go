@@ -36,7 +36,6 @@ type Scheduler struct {
 	cron     *cron.Cron
 	overdue  OverdueRunner
 	expire   *ExpireTermsRunner
-	generate *GenerateAdvanceInvoicesRunner
 	recorder *metrics.Recorder
 	ctx      context.Context
 	started  bool
@@ -46,7 +45,6 @@ func NewScheduler(
 	logger *slog.Logger,
 	overdue OverdueRunner,
 	expire *ExpireTermsRunner,
-	generate *GenerateAdvanceInvoicesRunner,
 	recorder *metrics.Recorder,
 ) (*Scheduler, error) {
 	london, err := time.LoadLocation("Europe/London")
@@ -60,7 +58,6 @@ func NewScheduler(
 		cron:     c,
 		overdue:  overdue,
 		expire:   expire,
-		generate: generate,
 		recorder: recorder,
 	}
 
@@ -72,11 +69,6 @@ func NewScheduler(
 	if _, addErr := c.AddFunc("0 2 * * *", s.runExpireTerms); addErr != nil {
 		return nil, fmt.Errorf("register expire-terms job: %w", addErr)
 	}
-	// Monthly 25th 00:05 — advance-pay invoice generation.
-	if _, addErr := c.AddFunc("5 0 25 * *", s.runGenerateAdvanceInvoices); addErr != nil {
-		return nil, fmt.Errorf("register generate-advance-invoices job: %w", addErr)
-	}
-
 	return s, nil
 }
 
@@ -199,53 +191,4 @@ func (s *Scheduler) runExpireTermsWithTrigger(trigger string) {
 		"latency_ms", time.Since(startedAt).Milliseconds(),
 	)
 	s.recorder.SchedulerRun("expire_terms_job", trigger, "completed", elapsed)
-}
-
-// runGenerateAdvanceInvoices is the cron callback for the 25th-of-month
-// advance-pay invoice generation job.
-func (s *Scheduler) runGenerateAdvanceInvoices() {
-	s.runGenerateAdvanceInvoicesWithTrigger("schedule", time.Now().UTC())
-}
-
-func (s *Scheduler) runGenerateAdvanceInvoicesWithTrigger(trigger string, now time.Time) {
-	if s.generate == nil {
-		return
-	}
-	// "Next billing month" from `now`: if today is on or before the 25th,
-	// the next month is the next calendar month; if after, it's the month
-	// after. The cron entry triggers on the 25th at 00:05, so we always
-	// run for next month from this date.
-	nextMonth := now.AddDate(0, 1, 0)
-	billingMonth := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
-
-	startedAt := time.Now()
-	runCtx, cancel := context.WithTimeout(s.ctx, 10*time.Minute)
-	defer cancel()
-
-	requestID := httpserver.NewRequestID()
-	s.logger.Info("generate_advance_invoices_job_started",
-		"trigger", trigger,
-		"request_id", requestID,
-		"billing_month", billingMonth.Format("2006-01"),
-	)
-
-	err := s.generate.RunForBillingMonth(runCtx, billingMonth, "scheduler")
-	elapsed := time.Since(startedAt).Seconds()
-
-	if err != nil {
-		s.logger.Error("generate_advance_invoices_job_failed",
-			"request_id", requestID,
-			"error", err,
-			"latency_ms", time.Since(startedAt).Milliseconds(),
-		)
-		s.recorder.SchedulerRun("generate_advance_invoices_job", trigger, "error", elapsed)
-		return
-	}
-
-	s.logger.Info("generate_advance_invoices_job_completed",
-		"request_id", requestID,
-		"billing_month", billingMonth.Format("2006-01"),
-		"latency_ms", time.Since(startedAt).Milliseconds(),
-	)
-	s.recorder.SchedulerRun("generate_advance_invoices_job", trigger, "completed", elapsed)
 }

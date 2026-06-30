@@ -3,16 +3,12 @@ package invoicerun
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"nursery-management-system/api/internal/modules/billing/application"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/db/sqlc"
-	"nursery-management-system/api/internal/platform/tenant"
-	"nursery-management-system/api/internal/platform/uid"
 )
 
 // TenantBranchLister exposes the (tenant, branch) pairs to the scheduler
@@ -51,64 +47,6 @@ func (l *SystemTenantBranchLister) ListAllTenantBranches(ctx context.Context) ([
 		})
 	}
 	return out, nil
-}
-
-// GenerateAdvanceInvoicesRunner is the cron-driven runner. It produces one
-// invoice per active Term for the given billing month by calling the
-// existing GenerateDraftInvoicesUseCase.
-type GenerateAdvanceInvoicesRunner struct {
-	generation         *application.GenerateDraftInvoicesUseCase
-	tenantBranchLister TenantBranchLister
-	now                func() time.Time
-}
-
-func NewGenerateAdvanceInvoicesRunner(
-	generation *application.GenerateDraftInvoicesUseCase,
-	lister TenantBranchLister,
-) *GenerateAdvanceInvoicesRunner {
-	return &GenerateAdvanceInvoicesRunner{
-		generation:         generation,
-		tenantBranchLister: lister,
-		now:                func() time.Time { return time.Now().UTC() },
-	}
-}
-
-// RunForBillingMonth produces one draft invoice per active Term for the
-// given billing month across every active (tenant, branch) scope. The
-// generator is idempotent: re-running for the same month is a no-op
-// because the existing-draft check short-circuits cleanly.
-//
-// The use case does not itself issue invoices; the manager triggers the
-// issue step explicitly today. The plan calls for auto-issue on the 25th;
-// wiring the auto-issue step into the same cron tick is straightforward
-// and is included in the same runner so a single failure mode applies to
-// both phases (the issue step is skipped if generation fails).
-func (r *GenerateAdvanceInvoicesRunner) RunForBillingMonth(ctx context.Context, billingMonth time.Time, triggeredBy string) error {
-	if r.tenantBranchLister == nil {
-		return fmt.Errorf("tenant-branch lister not configured")
-	}
-	if r.generation == nil {
-		return fmt.Errorf("generation use case not configured")
-	}
-	scopes, err := r.tenantBranchLister.ListAllTenantBranches(ctx)
-	if err != nil {
-		return fmt.Errorf("list tenant branches: %w", err)
-	}
-	billingMonthStr := billingMonth.Format("2006-01")
-
-	for _, scope := range scopes {
-		actor := tenant.ActorContext{
-			TenantID:      scope.TenantID,
-			BranchID:      scope.BranchID,
-			RequestID:     "scheduler-" + uid.NewUUID().String(),
-			CorrelationID: "scheduler:" + triggeredBy,
-		}
-		_, genErr := r.generation.Execute(ctx, actor, billingMonthStr, nil)
-		if genErr != nil {
-			return fmt.Errorf("generate drafts for %s/%s: %w", scope.TenantID, scope.BranchID, genErr)
-		}
-	}
-	return nil
 }
 
 // ExpireTermsRunner iterates every (tenant, branch) and runs the term

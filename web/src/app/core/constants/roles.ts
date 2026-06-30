@@ -21,7 +21,6 @@ export const ROLE_ROUTES = {
   managerFunding: '/manager/funding',
   managerBillingSetup: '/manager/billing-setup',
   managerAttendanceCorrections: '/manager/attendance-corrections',
-  managerInvoiceRun: '/manager/invoice-run',
   managerInvoices: '/manager/invoices',
   managerAttendance: '/manager/attendance',
   managerSiteSettings: '/manager/site-settings',

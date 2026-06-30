@@ -45,8 +45,6 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 		return domain.IssueInvoiceResult{}, domainerrors.Validation("Confirmation required.", "confirm")
 	}
 
-	runID := uid.NewUUID()
-
 	var result domain.IssueInvoiceResult
 
 	txErr := uc.dispatcher.DispatchInTx(ctx, func(tx pgx.Tx, emitter events.Emitter) error {
@@ -65,101 +63,11 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 			return domainerrors.Conflict(domain.IssueBlockerInvoiceNotDraft, "Invoice is not a draft.")
 		}
 
-		if runErr := uc.repo.CreateInvoiceRun(ctx, tx, domain.InvoiceRunCreateParams{
-			ID:                      runID,
-			TenantID:                actor.TenantID,
-			BranchID:                actor.BranchID,
-			BillingMonth:            candidate.BillingMonth,
-			RunType:                 domain.InvoiceRunTypeIssue,
-			Status:                  domain.InvoiceRunStatusStarted,
-			RequestedByUserID:       actor.UserID,
-			RequestedByMembershipID: actor.MembershipID,
-			RequestID:               actor.RequestID,
-		}); runErr != nil {
-			return fmt.Errorf("create issue run: %w", runErr)
+		issueResult, issueErr := uc.executeIssue(ctx, tx, emitter, actor, invoiceID, candidate.BillingMonth, domain.MustGBP(candidate.TotalDue.Minor()))
+		if issueErr != nil {
+			return issueErr
 		}
-
-		issueTime := time.Now().UTC()
-
-		year := candidate.BillingMonth.Year()
-		month := candidate.BillingMonth.Month()
-
-		seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, int(month))
-		if seqErr != nil {
-			return fmt.Errorf("allocate invoice number sequence: %w", seqErr)
-		}
-
-		invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
-
-		// Advance-pay: due_at = first day of billing month at 00:00 UTC.
-		dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-
-		if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
-			ID:                   invoiceID,
-			TenantID:             actor.TenantID,
-			BranchID:             actor.BranchID,
-			InvoiceNumber:        invoiceNumber,
-			IssuedSequence:       seq,
-			IssuedRunID:          runID,
-			IssuedAt:             issueTime,
-			IssuedByUserID:       actor.UserID,
-			IssuedByMembershipID: actor.MembershipID,
-			DueAt:                dueAt,
-		}); markErr != nil {
-			return fmt.Errorf("mark invoice issued: %w", markErr)
-		}
-
-		if auditErr := uc.auditW.WriteWithTx(ctx, tx, actor, audit.WriteParams{
-			ActionType: domain.AuditInvoiceIssued,
-			EntityType: domain.AuditEntityInvoice,
-			EntityID:   invoiceID,
-			Details: map[string]any{
-				"invoice_number":  invoiceNumber,
-				"billing_month":   candidate.BillingMonth.Format("2006-01"),
-				"issued_run_id":   runID.String(),
-				"issue_mode":      "single",
-				"total_due_minor": candidate.TotalDue.Minor(),
-				"due_at":          issueTime.Format(time.RFC3339),
-			},
-		}); auditErr != nil {
-			return fmt.Errorf("write audit: %w", auditErr)
-		}
-
-		runDetails, _ := json.Marshal(map[string]any{
-			"mode":          "single_invoice",
-			"invoice_id":    invoiceID.String(),
-			"issued_count":  1,
-			"blocked_count": 0,
-		})
-		if compErr := uc.repo.CompleteInvoiceRun(ctx, tx, domain.InvoiceRunCompleteParams{
-			ID:            runID,
-			TenantID:      actor.TenantID,
-			BranchID:      actor.BranchID,
-			Status:        domain.InvoiceRunStatusCompleted,
-			EligibleCount: 1,
-			SuccessCount:  1,
-			BlockedCount:  0,
-			Details:       runDetails,
-		}); compErr != nil {
-			return fmt.Errorf("complete issue run: %w", compErr)
-		}
-
-		emitter.Emit(domain.InvoiceIssued{
-			InvoiceID: invoiceID,
-			Occurred:  issueTime,
-		})
-
-		result = domain.IssueInvoiceResult{
-			InvoiceID:     invoiceID,
-			InvoiceNumber: invoiceNumber,
-			Status:        domain.InvoiceStatusIssued,
-			IssuedAt:      issueTime,
-			LockedAt:      issueTime,
-			DueAt:         issueTime,
-			IssuedRunID:   runID,
-			TotalDue:      candidate.TotalDue,
-		}
-
+		result = issueResult
 		return nil
 	})
 
@@ -171,6 +79,107 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 	}
 
 	return result, nil
+}
+
+// executeIssue performs the common issue steps: create run, allocate number,
+// mark issued, write audit, complete run, emit event. Called from IssueInvoice.Execute
+// and CreateAndIssueInvoiceFromForm.Execute.
+func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter events.Emitter, actor tenant.ActorContext, invoiceID uuid.UUID, billingMonth time.Time, totalDue domain.Money) (domain.IssueInvoiceResult, error) {
+	runID := uid.NewUUID()
+
+	if runErr := uc.repo.CreateInvoiceRun(ctx, tx, domain.InvoiceRunCreateParams{
+		ID:                      runID,
+		TenantID:                actor.TenantID,
+		BranchID:                actor.BranchID,
+		BillingMonth:            billingMonth,
+		RunType:                 domain.InvoiceRunTypeIssue,
+		Status:                  domain.InvoiceRunStatusStarted,
+		RequestedByUserID:       actor.UserID,
+		RequestedByMembershipID: actor.MembershipID,
+		RequestID:               actor.RequestID,
+	}); runErr != nil {
+		return domain.IssueInvoiceResult{}, fmt.Errorf("create issue run: %w", runErr)
+	}
+
+	issueTime := time.Now().UTC()
+
+	year := billingMonth.Year()
+	month := billingMonth.Month()
+
+	seq, seqErr := uc.repo.AllocateInvoiceNumberSequence(ctx, tx, actor.TenantID, actor.BranchID, year, int(month))
+	if seqErr != nil {
+		return domain.IssueInvoiceResult{}, fmt.Errorf("allocate invoice number sequence: %w", seqErr)
+	}
+
+	invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
+
+	dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+
+	if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
+		ID:                   invoiceID,
+		TenantID:             actor.TenantID,
+		BranchID:             actor.BranchID,
+		InvoiceNumber:        invoiceNumber,
+		IssuedSequence:       seq,
+		IssuedRunID:          runID,
+		IssuedAt:             issueTime,
+		IssuedByUserID:       actor.UserID,
+		IssuedByMembershipID: actor.MembershipID,
+		DueAt:                dueAt,
+	}); markErr != nil {
+		return domain.IssueInvoiceResult{}, fmt.Errorf("mark invoice issued: %w", markErr)
+	}
+
+	if auditErr := uc.auditW.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+		ActionType: domain.AuditInvoiceIssued,
+		EntityType: domain.AuditEntityInvoice,
+		EntityID:   invoiceID,
+		Details: map[string]any{
+			"invoice_number":  invoiceNumber,
+			"billing_month":   billingMonth.Format("2006-01"),
+			"issued_run_id":   runID.String(),
+			"issue_mode":      "single",
+			"total_due_minor": totalDue.Minor(),
+			"due_at":          issueTime.Format(time.RFC3339),
+		},
+	}); auditErr != nil {
+		return domain.IssueInvoiceResult{}, fmt.Errorf("write audit: %w", auditErr)
+	}
+
+	runDetails, _ := json.Marshal(map[string]any{
+		"mode":          "single_invoice",
+		"invoice_id":    invoiceID.String(),
+		"issued_count":  1,
+		"blocked_count": 0,
+	})
+	if compErr := uc.repo.CompleteInvoiceRun(ctx, tx, domain.InvoiceRunCompleteParams{
+		ID:            runID,
+		TenantID:      actor.TenantID,
+		BranchID:      actor.BranchID,
+		Status:        domain.InvoiceRunStatusCompleted,
+		EligibleCount: 1,
+		SuccessCount:  1,
+		BlockedCount:  0,
+		Details:       runDetails,
+	}); compErr != nil {
+		return domain.IssueInvoiceResult{}, fmt.Errorf("complete issue run: %w", compErr)
+	}
+
+	emitter.Emit(domain.InvoiceIssued{
+		InvoiceID: invoiceID,
+		Occurred:  issueTime,
+	})
+
+	return domain.IssueInvoiceResult{
+		InvoiceID:     invoiceID,
+		InvoiceNumber: invoiceNumber,
+		Status:        domain.InvoiceStatusIssued,
+		IssuedAt:      issueTime,
+		LockedAt:      issueTime,
+		DueAt:         issueTime,
+		IssuedRunID:   runID,
+		TotalDue:      totalDue,
+	}, nil
 }
 
 type BulkIssueInvoices struct {

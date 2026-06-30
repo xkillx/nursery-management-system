@@ -90,7 +90,6 @@ describe('app.routes', () => {
     'manager/children',
     'manager/invites',
     'manager/funding',
-    'manager/invoice-run',
     'manager/invoices',
     'manager/rooms',
     'manager/rooms/new',
@@ -192,15 +191,6 @@ describe('app.routes', () => {
 
     expect(fundingRoute).toBeDefined();
     expect(fundingRoute!.data?.['roles']).toEqual(['manager']);
-  });
-
-  it('invoice run route requires manager role only', () => {
-    const invoiceRunRoute = routes
-      .flatMap(r => r.children ?? [])
-      .find(r => r.path === 'manager/invoice-run');
-
-    expect(invoiceRunRoute).toBeDefined();
-    expect(invoiceRunRoute!.data?.['roles']).toEqual(['manager']);
   });
 
   it('invoices list route requires manager role only', () => {
@@ -369,7 +359,6 @@ describe('app.routes breadcrumb wiring', () => {
     'manager/rooms/new',
     'manager/rooms/:roomId/edit',
     'manager/funding',
-    'manager/invoice-run',
     'manager/invoices',
     'manager/invoices/:invoiceId',
     'practitioner/attendance',

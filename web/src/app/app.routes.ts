@@ -14,7 +14,7 @@ import { ManagerSessionTypesComponent } from './features/staff/pages/manager-ses
 import { ManagerSessionTemplatesComponent } from './features/staff/pages/manager-session-templates/manager-session-templates.component';
 import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
-import { ManagerInvoiceRunComponent } from './features/staff/pages/manager-invoice-run/manager-invoice-run.component';
+import { ManagerInvoiceCreateComponent } from './features/staff/pages/manager-invoice-create/manager-invoice-create.component';
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
 import { ManagerBillingSetupComponent } from './features/staff/pages/manager-billing-setup/manager-billing-setup.component';
 import { ManagerSiteSettingsComponent } from './features/staff/pages/manager-site-settings/manager-site-settings.component';
@@ -230,16 +230,6 @@ export const routes: Routes = [
             title: 'Funding Overview | Nursery Management',
           },
           {
-            path: 'manager/invoice-run',
-            component: ManagerInvoiceRunComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Invoice run' },
-            },
-            title: 'Invoice Run | Nursery Management',
-          },
-          {
             path: 'manager/invoices',
             canActivate: [authGuard, roleGuard],
             data: {
@@ -253,12 +243,28 @@ export const routes: Routes = [
                 title: 'Invoices | Nursery Management',
               },
               {
+                path: 'new',
+                component: ManagerInvoiceCreateComponent,
+                data: {
+                  breadcrumb: { label: 'New invoice' },
+                },
+                title: 'New Invoice | Nursery Management',
+              },
+              {
                 path: ':invoiceId',
                 component: ManagerInvoiceDetailComponent,
                 data: {
                   breadcrumb: { label: 'Invoice', resolve: invoiceNumberResolver },
                 },
                 title: 'Invoice Detail | Nursery Management',
+              },
+              {
+                path: ':invoiceId/edit',
+                component: ManagerInvoiceCreateComponent,
+                data: {
+                  breadcrumb: { label: 'Edit invoice' },
+                },
+                title: 'Edit Invoice | Nursery Management',
               },
             ],
           },

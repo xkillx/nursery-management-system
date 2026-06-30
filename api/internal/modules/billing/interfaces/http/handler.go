@@ -3,6 +3,7 @@ package httpbilling
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -19,8 +20,11 @@ import (
 
 type (
 	DraftUseCases struct {
-		Preflight  *application.PreflightDraftInvoices
-		Generation *application.GenerateDraftInvoicesUseCase
+		Preflight              *application.PreflightDraftInvoices
+		Generation             *application.GenerateDraftInvoicesUseCase
+		ComputePrefill         *application.ComputeInvoicePrefill
+		CreateDraft            *application.CreateDraftInvoice
+		CreateAndIssueFromForm *application.CreateAndIssueInvoiceFromForm
 	}
 
 	LifecycleUseCases struct {
@@ -49,41 +53,48 @@ type (
 )
 
 type Handler struct {
-	logger                *slog.Logger
-	preflight             *application.PreflightDraftInvoices
-	generation            *application.GenerateDraftInvoicesUseCase
-	listInvoices          *application.ListInvoices
-	getInvoice            *application.GetInvoice
-	issueInvoice          *application.IssueInvoice
-	bulkIssueInvoices     *application.BulkIssueInvoices
-	overrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
-	listParentInvoices    *application.ListParentInvoices
-	getParentInvoice      *application.GetParentInvoice
-	updateSiteRate        *application.UpdateSiteRateUseCase
+	logger                 *slog.Logger
+	preflight              *application.PreflightDraftInvoices
+	generation             *application.GenerateDraftInvoicesUseCase
+	computePrefill         *application.ComputeInvoicePrefill
+	createDraft            *application.CreateDraftInvoice
+	createAndIssueFromForm *application.CreateAndIssueInvoiceFromForm
+	listInvoices           *application.ListInvoices
+	getInvoice             *application.GetInvoice
+	issueInvoice           *application.IssueInvoice
+	bulkIssueInvoices      *application.BulkIssueInvoices
+	overrideAttendanceBlk  *application.OverrideAttendanceBlockUseCase
+	listParentInvoices     *application.ListParentInvoices
+	getParentInvoice       *application.GetParentInvoice
+	updateSiteRate         *application.UpdateSiteRateUseCase
 }
 
 func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
-		logger:                logger,
-		preflight:             cfg.Drafting.Preflight,
-		generation:            cfg.Drafting.Generation,
-		listInvoices:          cfg.Lifecycle.ListInvoices,
-		getInvoice:            cfg.Lifecycle.GetInvoice,
-		issueInvoice:          cfg.Lifecycle.IssueInvoice,
-		bulkIssueInvoices:     cfg.Lifecycle.BulkIssueInvoices,
-		overrideAttendanceBlk: cfg.Lifecycle.OverrideAttendanceBlk,
-		listParentInvoices:    cfg.Parent.List,
-		getParentInvoice:      cfg.Parent.Get,
-		updateSiteRate:        cfg.Admin.UpdateSiteRate,
+		logger:                 logger,
+		preflight:              cfg.Drafting.Preflight,
+		generation:             cfg.Drafting.Generation,
+		computePrefill:         cfg.Drafting.ComputePrefill,
+		createDraft:            cfg.Drafting.CreateDraft,
+		createAndIssueFromForm: cfg.Drafting.CreateAndIssueFromForm,
+		listInvoices:           cfg.Lifecycle.ListInvoices,
+		getInvoice:             cfg.Lifecycle.GetInvoice,
+		issueInvoice:           cfg.Lifecycle.IssueInvoice,
+		bulkIssueInvoices:      cfg.Lifecycle.BulkIssueInvoices,
+		overrideAttendanceBlk:  cfg.Lifecycle.OverrideAttendanceBlk,
+		listParentInvoices:     cfg.Parent.List,
+		getParentInvoice:       cfg.Parent.Get,
+		updateSiteRate:         cfg.Admin.UpdateSiteRate,
 	}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices/drafts/preflight", h.preflightHandler)
+	manager.GET("/invoices/prefill", h.prefillHandler)
 	manager.GET("/invoices", h.listInvoicesHandler)
 	manager.GET("/invoices/:invoice_id", h.getInvoiceHandler)
-	manager.POST("/invoice-runs/drafts", h.generateDraftsHandler)
-	manager.POST("/invoices/bulk-issue", h.bulkIssueInvoicesHandler)
+	manager.POST("/invoices/drafts", h.createDraftHandler)
+	manager.POST("/invoices/drafts/issue", h.createAndIssueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 	manager.GET("/billing-setup", h.getSiteRateHandler)
@@ -115,6 +126,121 @@ func (h *Handler) preflightHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toPreflightResponse(result))
+}
+
+func (h *Handler) prefillHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	childID := strings.TrimSpace(c.Query("child_id"))
+	billingMonth := strings.TrimSpace(c.Query("billing_month"))
+	if childID == "" || billingMonth == "" {
+		writeError(c, http.StatusBadRequest, "validation_error", "Missing child_id or billing_month query parameters.")
+		return
+	}
+
+	result, err := h.computePrefill.Execute(c.Request.Context(), actor, childID, billingMonth)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toPrefillResponse(result))
+}
+
+func (h *Handler) createDraftHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req createDraftInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		return
+	}
+
+	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.")
+		return
+	}
+
+	lines := make([]application.DraftInvoiceLineInput, 0, len(req.Lines))
+	for _, l := range req.Lines {
+		lines = append(lines, application.DraftInvoiceLineInput{
+			LineKind:        l.LineKind,
+			Description:     l.Description,
+			SortOrder:       l.SortOrder,
+			QuantityMinutes: l.QuantityMinutes,
+			UnitAmountMinor: l.UnitAmountMinor,
+			LineAmountMinor: l.LineAmountMinor,
+		})
+	}
+
+	result, err := h.createDraft.Execute(c.Request.Context(), actor, application.CreateDraftInvoiceInput{
+		ChildID:       childID,
+		BillingMonth:  strings.TrimSpace(req.BillingMonth),
+		Lines:         lines,
+		PaymentTerms:  strings.TrimSpace(req.PaymentTerms),
+		InternalNotes: strings.TrimSpace(req.InternalNotes),
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toCreateDraftResponse(result))
+}
+
+func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		return
+	}
+
+	var req createAndIssueInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		return
+	}
+
+	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.")
+		return
+	}
+
+	lines := make([]application.DraftInvoiceLineInput, 0, len(req.Lines))
+	for _, l := range req.Lines {
+		lines = append(lines, application.DraftInvoiceLineInput{
+			LineKind:        l.LineKind,
+			Description:     l.Description,
+			SortOrder:       l.SortOrder,
+			QuantityMinutes: l.QuantityMinutes,
+			UnitAmountMinor: l.UnitAmountMinor,
+			LineAmountMinor: l.LineAmountMinor,
+		})
+	}
+
+	result, err := h.createAndIssueFromForm.Execute(c.Request.Context(), actor, application.CreateAndIssueInvoiceInput{
+		ChildID:       childID,
+		BillingMonth:  strings.TrimSpace(req.BillingMonth),
+		Lines:         lines,
+		PaymentTerms:  strings.TrimSpace(req.PaymentTerms),
+		InternalNotes: strings.TrimSpace(req.InternalNotes),
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toIssueInvoiceResponse(result))
 }
 
 func (h *Handler) generateDraftsHandler(c *gin.Context) {
@@ -481,6 +607,75 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 		},
 		EligibleChildren: eligible,
 		BlockedChildren:  blocked,
+	}
+}
+
+func toPrefillResponse(r application.ComputeInvoicePrefillResult) prefillResponse {
+	lines := make([]prefillLineResponse, 0, len(r.Lines))
+	for _, l := range r.Lines {
+		lines = append(lines, prefillLineResponse{
+			LineKind:               l.LineKind,
+			Description:            l.Description,
+			SortOrder:              l.SortOrder,
+			QuantityMinutes:        l.QuantityMinutes,
+			UnitAmountMinor:        l.UnitAmountMinor,
+			LineAmountMinor:        l.LineAmountMinor,
+			FundedAllowanceMinutes: l.FundedAllowanceMinutes,
+			FundedDeductionMinutes: l.FundedDeductionMinutes,
+			CoreBillableMinutes:    l.CoreBillableMinutes,
+			SessionCount:           l.SessionCount,
+		})
+	}
+
+	entitlementLabel := "No Funding Profile"
+	if r.FundingProfileID != nil {
+		entitlementLabel = fmt.Sprintf("%d Hours Free Funding Active", r.FundedAllowanceMinutes/60)
+	}
+
+	return prefillResponse{
+		ChildID:         r.ChildID.String(),
+		ChildFirstName:  r.ChildFirstName,
+		ChildMiddleName: r.ChildMiddleName,
+		ChildLastName:   r.ChildLastName,
+		BillingMonth:    r.BillingMonth,
+		EntitlementStatus: entitlementResponse{
+			FundingProfileID:       formatUUIDPtr(r.FundingProfileID),
+			FundedAllowanceMinutes: r.FundedAllowanceMinutes,
+			StatusLabel:            entitlementLabel,
+		},
+		Lines:                lines,
+		SubtotalMinor:        r.SubtotalMinor,
+		FundedDeductionMinor: r.FundedDeductionMinor,
+		TotalDueMinor:        r.TotalDueMinor,
+		Warnings:             r.Warnings,
+	}
+}
+
+func toCreateDraftResponse(r application.CreateDraftInvoiceResult) createDraftInvoiceResponse {
+	lines := make([]draftLineResponse, 0, len(r.Lines))
+	for _, l := range r.Lines {
+		lines = append(lines, draftLineResponse{
+			LineID:          l.LineID.String(),
+			LineKind:        l.LineKind,
+			Description:     l.Description,
+			SortOrder:       l.SortOrder,
+			QuantityMinutes: l.QuantityMinutes,
+			UnitAmountMinor: l.UnitAmountMinor,
+			LineAmountMinor: l.LineAmountMinor,
+		})
+	}
+	return createDraftInvoiceResponse{
+		InvoiceID:     r.InvoiceID.String(),
+		ChildID:       r.ChildID.String(),
+		BillingMonth:  r.BillingMonth,
+		Status:        r.Status,
+		Lines:         lines,
+		SubtotalMinor: r.SubtotalMinor,
+		TotalDueMinor: r.TotalDueMinor,
+		PaymentTerms:  r.PaymentTerms,
+		InternalNotes: r.InternalNotes,
+		CreatedAt:     formatTime(r.CreatedAt),
+		UpdatedAt:     formatTime(r.UpdatedAt),
 	}
 }
 
