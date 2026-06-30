@@ -26,10 +26,13 @@ func TestGBP(t *testing.T) {
 		}
 	})
 
-	t.Run("negative value returns error", func(t *testing.T) {
-		_, err := GBP(-1)
-		if err == nil {
-			t.Fatal("expected error for negative minor units")
+	t.Run("negative value allowed", func(t *testing.T) {
+		m, err := GBP(-150)
+		if err != nil {
+			t.Fatalf("GBP(-150) unexpected error: %v", err)
+		}
+		if m.Minor() != -150 {
+			t.Errorf("got %d, want -150", m.Minor())
 		}
 	})
 }

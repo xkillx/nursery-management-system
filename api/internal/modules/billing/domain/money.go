@@ -9,9 +9,6 @@ type Money struct {
 }
 
 func GBP(minor int) (Money, error) {
-	if minor < 0 {
-		return Money{}, fmt.Errorf("GBP amount must not be negative")
-	}
 	return Money{minor: minor}, nil
 }
 
