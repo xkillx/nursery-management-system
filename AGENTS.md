@@ -32,3 +32,4 @@ Multi-tenant nursery management (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQ
 | [Gotchas & Setup](docs/agents/GOTCHAS.md) | Environment prerequisites, common pitfalls |
 | [Documented Solutions](docs/solutions/) | Past bug fixes, best practices, and workflow patterns — search by category (e.g., `integration-issues/`) or YAML frontmatter (`module`, `tags`, `problem_type`) |
 | [Shared Vocabulary](CONCEPTS.md) | Domain entities, named processes, and status concepts with project-specific meaning |
+| [Design System](DESIGN.md) | UI/UX design reference — colors, typography, components, layout, form patterns, interaction rules, responsive breakpoints, design tokens |

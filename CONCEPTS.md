@@ -16,6 +16,12 @@ A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 
 ### Benefits Status
 Tracks whether a child receives benefits that contribute towards nursery fees. Values: `yes`, `no`, `unknown`. Separate from the specific benefit types or amounts.
 
+### Room
+A physical room in the nursery where a child is assigned. Each child has at most one current room assignment (`child_room_assignments` with `is_current = true`) at a time. Rooms have a name (e.g., "Toddler Room") and an `age_group`. Used on invoices and registration forms as a child group label.
+
+### Parent Carer
+A child's parent or legal guardian recorded in `child_contacts` with `contact_type = 'parent_carer'`. A child may have multiple parent carers. The primary parent carer (lowest `sort_order`) is used as the billing contact on invoices, providing full name and address.
+
 ## Billing
 
 ### Money
@@ -25,3 +31,8 @@ A value object representing a monetary amount in GBP. Wraps a non-negative integ
 
 ### Stepper (Intake Wizard)
 A multi-step form wizard that guides staff through child registration or editing. Steps: Child Details, Medical & Health, Contacts & Security, Permissions & Consents, Session Pattern, Funding & Benefits. In registration mode, steps are sequential; in edit mode, steps are independently accessible.
+
+## Settings
+
+### Site Profile
+A branch's brand identity (name, description, phone, email, website, address) used on parent-facing surfaces. One Site Profile per branch, separate from branch ops (archive, hourly rate). Currently rendered on the parent invoice header.
