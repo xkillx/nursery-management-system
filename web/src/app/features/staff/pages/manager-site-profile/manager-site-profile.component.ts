@@ -6,6 +6,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowLeft,
   heroBuildingOffice2,
+  heroCheck,
   heroMapPin,
   heroPhone,
 } from '@ng-icons/heroicons/outline';
@@ -42,6 +43,7 @@ interface SiteProfileFormModel {
     provideIcons({
       heroArrowLeft,
       heroBuildingOffice2,
+      heroCheck,
       heroMapPin,
       heroPhone,
     }),
