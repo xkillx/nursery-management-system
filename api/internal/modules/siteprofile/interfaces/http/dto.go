@@ -19,7 +19,7 @@ type getSiteProfileResponse struct {
 
 type updateSiteProfileRequest struct {
 	NurseryName     string `json:"nursery_name" binding:"required"`
-	Description     string `json:"description"`
+	Description     string `json:"description" binding:"required"`
 	Phone           string `json:"phone" binding:"required"`
 	Email           string `json:"email" binding:"required"`
 	Website         string `json:"website" binding:"required"`

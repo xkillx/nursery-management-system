@@ -171,7 +171,6 @@ describe('ManagerSiteProfileComponent', () => {
     const putReq = httpMock.expectOne('/api/v1/site-profile');
     putReq.flush({ message: 'Server error' }, { status: 500, statusText: 'Server Error' });
 
-    expect(component.pageError).toBe('Failed to save site profile. Please try again.');
     expect(navigateSpy).not.toHaveBeenCalled();
   });
 

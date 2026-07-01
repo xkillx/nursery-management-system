@@ -140,6 +140,7 @@ export class ManagerSiteProfileComponent implements OnInit {
 
     const trimmed = {
       nursery_name: this.model.nursery_name.trim(),
+      description: this.model.description.trim(),
       phone: this.model.phone.trim(),
       email: this.model.email.trim(),
       website: this.model.website.trim(),
@@ -149,49 +150,55 @@ export class ManagerSiteProfileComponent implements OnInit {
     };
 
     if (!trimmed.nursery_name) {
-      this.fieldErrors.nursery_name = 'is required';
+      this.fieldErrors.nursery_name = 'Enter your nursery name.';
     } else if (trimmed.nursery_name.length > 120) {
-      this.fieldErrors.nursery_name = 'must be 120 characters or fewer';
+      this.fieldErrors.nursery_name = 'Nursery name must be 120 characters or fewer.';
+    }
+
+    if (!trimmed.description) {
+      this.fieldErrors.description = 'Enter a description for your nursery.';
+    } else if (trimmed.description.length > 2000) {
+      this.fieldErrors.description = 'Description must be 2000 characters or fewer.';
     }
 
     if (!trimmed.phone) {
-      this.fieldErrors.phone = 'is required';
+      this.fieldErrors.phone = 'Enter your phone number.';
     } else if (trimmed.phone.length > 32) {
-      this.fieldErrors.phone = 'must be 32 characters or fewer';
+      this.fieldErrors.phone = 'Phone number must be 32 characters or fewer.';
     }
 
     if (!trimmed.email) {
-      this.fieldErrors.email = 'is required';
+      this.fieldErrors.email = 'Enter your email address.';
     } else if (trimmed.email.length > 254) {
-      this.fieldErrors.email = 'must be 254 characters or fewer';
+      this.fieldErrors.email = 'Email must be 254 characters or fewer.';
     } else if (!this.isValidEmail(trimmed.email)) {
-      this.fieldErrors.email = 'is not a valid email address';
+      this.fieldErrors.email = 'Enter a valid email address (e.g. name@example.com).';
     }
 
     if (!trimmed.website) {
-      this.fieldErrors.website = 'is required';
+      this.fieldErrors.website = 'Enter your website address.';
     } else if (trimmed.website.length > 2048) {
-      this.fieldErrors.website = 'must be 2048 characters or fewer';
+      this.fieldErrors.website = 'Website must be 2048 characters or fewer.';
     } else if (!this.isValidURL(trimmed.website)) {
-      this.fieldErrors.website = 'is not a valid URL';
+      this.fieldErrors.website = 'Enter a valid website address (e.g. www.example.com).';
     }
 
     if (!trimmed.address_street) {
-      this.fieldErrors.address_street = 'is required';
+      this.fieldErrors.address_street = 'Enter your street address.';
     } else if (trimmed.address_street.length > 200) {
-      this.fieldErrors.address_street = 'must be 200 characters or fewer';
+      this.fieldErrors.address_street = 'Street address must be 200 characters or fewer.';
     }
 
     if (!trimmed.address_city) {
-      this.fieldErrors.address_city = 'is required';
+      this.fieldErrors.address_city = 'Enter your city.';
     } else if (trimmed.address_city.length > 100) {
-      this.fieldErrors.address_city = 'must be 100 characters or fewer';
+      this.fieldErrors.address_city = 'City must be 100 characters or fewer.';
     }
 
     if (!trimmed.address_postcode) {
-      this.fieldErrors.address_postcode = 'is required';
+      this.fieldErrors.address_postcode = 'Enter your postcode.';
     } else if (trimmed.address_postcode.length > 16) {
-      this.fieldErrors.address_postcode = 'must be 16 characters or fewer';
+      this.fieldErrors.address_postcode = 'Postcode must be 16 characters or fewer.';
     }
 
     return Object.keys(this.fieldErrors).length === 0;

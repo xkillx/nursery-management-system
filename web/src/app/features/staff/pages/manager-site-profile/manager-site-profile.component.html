@@ -44,10 +44,13 @@
             </div>
 
             <div>
-              <label for="description" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label for="description" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description <span class="text-error-500">*</span>
+              </label>
               <textarea
                 id="description"
                 name="description"
+                required
                 maxlength="2000"
                 [(ngModel)]="model.description"
                 placeholder="Tell parents about your nursery's mission and philosophy..."

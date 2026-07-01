@@ -132,55 +132,57 @@ func validateInput(in UpdateSiteProfileInput) []domain.FieldError {
 	var errs []domain.FieldError
 
 	if in.NurseryName == "" {
-		errs = append(errs, domain.FieldError{Field: "nursery_name", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "nursery_name", Message: "Enter your nursery name."})
 	} else if len(in.NurseryName) > 120 {
-		errs = append(errs, domain.FieldError{Field: "nursery_name", Message: "must be 120 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "nursery_name", Message: "Nursery name must be 120 characters or fewer."})
 	}
 
-	if len(in.Description) > 2000 {
-		errs = append(errs, domain.FieldError{Field: "description", Message: "must be 2000 characters or fewer"})
+	if in.Description == "" {
+		errs = append(errs, domain.FieldError{Field: "description", Message: "Enter a description for your nursery."})
+	} else if len(in.Description) > 2000 {
+		errs = append(errs, domain.FieldError{Field: "description", Message: "Description must be 2000 characters or fewer."})
 	}
 
 	if in.Phone == "" {
-		errs = append(errs, domain.FieldError{Field: "phone", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "phone", Message: "Enter your phone number."})
 	} else if len(in.Phone) > 32 {
-		errs = append(errs, domain.FieldError{Field: "phone", Message: "must be 32 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "phone", Message: "Phone number must be 32 characters or fewer."})
 	}
 
 	if in.Email == "" {
-		errs = append(errs, domain.FieldError{Field: "email", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "email", Message: "Enter your email address."})
 	} else if len(in.Email) > 254 {
-		errs = append(errs, domain.FieldError{Field: "email", Message: "must be 254 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "email", Message: "Email must be 254 characters or fewer."})
 	} else if !isValidEmail(in.Email) {
-		errs = append(errs, domain.FieldError{Field: "email", Message: "is not a valid email address"})
+		errs = append(errs, domain.FieldError{Field: "email", Message: "Enter a valid email address (e.g. name@example.com)."})
 	}
 
 	if in.Website == "" {
-		errs = append(errs, domain.FieldError{Field: "website", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "website", Message: "Enter your website address."})
 	} else if len(in.Website) > 2048 {
-		errs = append(errs, domain.FieldError{Field: "website", Message: "must be 2048 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "website", Message: "Website must be 2048 characters or fewer."})
 	} else if !isValidURL(in.Website) {
-		errs = append(errs, domain.FieldError{Field: "website", Message: "is not a valid URL"})
+		errs = append(errs, domain.FieldError{Field: "website", Message: "Enter a valid website address (e.g. www.example.com)."})
 	}
 
 	if in.AddressStreet == "" {
-		errs = append(errs, domain.FieldError{Field: "address_street", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "address_street", Message: "Enter your street address."})
 	} else if len(in.AddressStreet) > 200 {
-		errs = append(errs, domain.FieldError{Field: "address_street", Message: "must be 200 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "address_street", Message: "Street address must be 200 characters or fewer."})
 	}
 
 	if in.AddressCity == "" {
-		errs = append(errs, domain.FieldError{Field: "address_city", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "address_city", Message: "Enter your city."})
 	} else if len(in.AddressCity) > 100 {
-		errs = append(errs, domain.FieldError{Field: "address_city", Message: "must be 100 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "address_city", Message: "City must be 100 characters or fewer."})
 	}
 
 	if in.AddressPostcode == "" {
-		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "is required"})
+		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "Enter your postcode."})
 	} else if len(in.AddressPostcode) > 16 {
-		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "must be 16 characters or fewer"})
+		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "Postcode must be 16 characters or fewer."})
 	} else if !ukPostcodeRegex.MatchString(strings.ToUpper(in.AddressPostcode)) {
-		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "is not a valid UK postcode"})
+		errs = append(errs, domain.FieldError{Field: "address_postcode", Message: "Enter a valid UK postcode (e.g. M1 4BT)."})
 	}
 
 	return errs
