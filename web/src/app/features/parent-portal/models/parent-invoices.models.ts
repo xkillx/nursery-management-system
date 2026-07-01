@@ -57,6 +57,16 @@ export interface ParentInvoiceLine {
   lineAmountMinor: number;
 }
 
+export interface ParentInvoiceSiteProfile {
+  nursery_name: string;
+  phone: string;
+  email: string;
+  website: string;
+  address_street: string;
+  address_city: string;
+  address_postcode: string;
+}
+
 export interface ParentInvoiceDetail {
   invoiceId: string;
   invoiceKind: string;
@@ -78,6 +88,7 @@ export interface ParentInvoiceDetail {
   paidAt: string | null;
   paymentFailedAt: string | null;
   paymentStatusUpdatedAt: string | null;
+  site_profile: ParentInvoiceSiteProfile | null;
   calculation: ParentInvoiceCalculation | null;
   lines: ParentInvoiceLine[];
 }

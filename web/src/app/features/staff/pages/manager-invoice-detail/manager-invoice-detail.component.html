@@ -129,10 +129,18 @@
           <ng-icon name="heroBuildingOffice2" size="20" aria-hidden="true" />
           <h2 class="text-xs font-semibold uppercase tracking-wider">From · Nursery</h2>
         </div>
-        <p class="mt-4 text-base font-semibold text-gray-900 dark:text-white/90">Nursery site</p>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Site details are populated by the active membership and used on the issued invoice document.
-        </p>
+        @if (detail.site_profile) {
+          <p class="mt-4 text-base font-semibold text-gray-900 dark:text-white/90">{{ detail.site_profile.nursery_name }}</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ detail.site_profile.address_street }}, {{ detail.site_profile.address_city }}, {{ detail.site_profile.address_postcode }}</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ detail.site_profile.phone }}</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ detail.site_profile.email }}</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ detail.site_profile.website }}</p>
+        } @else {
+          <p class="mt-4 text-base font-semibold text-gray-900 dark:text-white/90">Nursery site</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Site details are populated by the active membership and used on the issued invoice document.
+          </p>
+        }
         <dl class="mt-4 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-200">
           <div>
             <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Billing month</dt>

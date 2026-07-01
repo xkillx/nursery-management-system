@@ -24,6 +24,8 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoom, StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
+import { StaffSiteProfileApiService } from '../../data/staff-site-profile-api.service';
+import { SiteProfile } from '../../models/site-profile.models';
 
 type CardTone = 'brand' | 'success' | 'warning' | 'info' | 'neutral';
 type PillTone = 'success' | 'warning' | 'info' | 'brand' | 'neutral';
@@ -82,6 +84,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
+  private readonly siteProfileApi = inject(StaffSiteProfileApiService);
 
   readonly routes = ROLE_ROUTES;
 
@@ -90,6 +93,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   readonly rooms = signal<StaffRoom[]>([]);
   readonly sessionTypes = signal<StaffSessionType[]>([]);
   readonly billing = signal<{ rateMinor: number | null; hasRate: boolean }>({ rateMinor: null, hasRate: false });
+  readonly siteProfile = signal<{ hasProfile: boolean; profile: SiteProfile | null } | null>(null);
   readonly attendanceRules = signal({
     parentSelfCheckin: true,
     offlineAttendance: true,
@@ -152,22 +156,58 @@ export class ManagerSiteSettingsComponent implements OnInit {
     const hasBilling = this.billing().hasRate;
     const sessionActiveCount = this.activeSessionTypes().length;
 
+    const spState = this.siteProfile();
+
+    const siteProfileCard: SettingCard = spState === null
+      ? {
+          id: 'site-profile',
+          title: 'Site profile',
+          headline: 'Loading...',
+          detail: 'Fetching site profile data.',
+          icon: 'heroBuildingOffice2',
+          tone: 'brand',
+          kind: 'simple',
+          state: 'ready',
+          link: null,
+          pillLabel: 'Loading',
+          pillTone: 'neutral',
+          statusLabel: 'Loading...',
+          statusTone: 'neutral',
+        }
+      : !spState.hasProfile
+        ? {
+            id: 'site-profile',
+            title: 'Site profile',
+            headline: 'Setup needed',
+            detail: 'Add a Site Profile to appear on parent invoices.',
+            icon: 'heroBuildingOffice2',
+            tone: 'brand',
+            kind: 'simple',
+            state: 'ready',
+            link: ROLE_ROUTES.managerSiteProfile,
+            pillLabel: 'Not configured',
+            pillTone: 'warning',
+            statusLabel: 'Not configured',
+            statusTone: 'warning',
+          }
+        : {
+            id: 'site-profile',
+            title: 'Site profile',
+            headline: spState.profile!.nursery_name,
+            detail: `${spState.profile!.address_street}, ${spState.profile!.address_city}`,
+            icon: 'heroBuildingOffice2',
+            tone: 'brand',
+            kind: 'simple',
+            state: 'ready',
+            link: ROLE_ROUTES.managerSiteProfile,
+            pillLabel: 'Configured',
+            pillTone: 'success',
+            statusLabel: 'Identity on file',
+            statusTone: 'success',
+          };
+
     return [
-      {
-        id: 'site-profile',
-        title: 'Site profile',
-        headline: 'Identity on file',
-        detail: 'Nursery name, registration, and contact details.',
-        icon: 'heroBuildingOffice2',
-        tone: 'brand',
-        kind: 'simple',
-        state: 'ready',
-        link: null,
-        pillLabel: 'Configured',
-        pillTone: 'success',
-        statusLabel: 'Identity on file',
-        statusTone: 'success',
-      },
+      siteProfileCard,
       {
         id: 'rooms',
         title: 'Rooms & capacity',
@@ -408,6 +448,15 @@ export class ManagerSiteSettingsComponent implements OnInit {
 
     this.sessionTypesApi.listSessionTypes(branchId, { includeArchived: true }).subscribe({
       next: (types) => this.sessionTypes.set(types),
+    });
+
+    this.siteProfileApi.getSiteProfile().pipe(
+      catchError(() => of({ site_profile: null })),
+    ).subscribe((resp) => {
+      this.siteProfile.set({
+        hasProfile: resp.site_profile !== null,
+        profile: resp.site_profile,
+      });
     });
   }
 }

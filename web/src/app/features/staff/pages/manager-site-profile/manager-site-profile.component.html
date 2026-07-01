@@ -1,0 +1,229 @@
+<div class="space-y-6">
+  <div class="flex items-center gap-3">
+    <button (click)="onCancel()" class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-400">
+      <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
+    </button>
+    <div>
+      <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">Site Profile</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your nursery's brand identity for invoices and communications.</p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <app-loading-state label="Loading site profile..." />
+  }
+
+  @if (pageError) {
+    <app-alert variant="error" title="Error" [message]="pageError" />
+  }
+
+  @if (!loading) {
+    <form #profileForm="ngForm" (ngSubmit)="submit(profileForm)" novalidate>
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+        <section class="xl:col-span-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <ng-icon name="heroBuildingOffice2" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Site Information</h2>
+          </div>
+
+          <div class="space-y-5 px-6 py-6">
+            <div>
+              <label for="nursery-name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nursery Name <span class="text-red-500">*</span></label>
+              <input
+                id="nursery-name"
+                name="nursery_name"
+                type="text"
+                required
+                maxlength="120"
+                [(ngModel)]="model.nursery_name"
+                placeholder="e.g. Little Stars Nursery"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="fieldErrors.nursery_name"
+                [disabled]="submitting"
+              />
+              @if (fieldErrors.nursery_name) {
+                <p class="mt-1 text-xs text-red-600">{{ fieldErrors.nursery_name }}</p>
+              }
+            </div>
+
+            <div>
+              <label for="description" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                maxlength="2000"
+                [(ngModel)]="model.description"
+                placeholder="A brief description of your nursery..."
+                rows="3"
+                class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="fieldErrors.description"
+                [disabled]="submitting"
+              ></textarea>
+              @if (fieldErrors.description) {
+                <p class="mt-1 text-xs text-red-600">{{ fieldErrors.description }}</p>
+              }
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label for="phone" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone <span class="text-red-500">*</span></label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  maxlength="32"
+                  [(ngModel)]="model.phone"
+                  placeholder="e.g. +44 161 555 0100"
+                  class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  [class.border-red-500]="fieldErrors.phone"
+                  [disabled]="submitting"
+                />
+                @if (fieldErrors.phone) {
+                  <p class="mt-1 text-xs text-red-600">{{ fieldErrors.phone }}</p>
+                }
+              </div>
+
+              <div>
+                <label for="email" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email <span class="text-red-500">*</span></label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  maxlength="254"
+                  [(ngModel)]="model.email"
+                  placeholder="e.g. hello@littlestars.example"
+                  class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  [class.border-red-500]="fieldErrors.email"
+                  [disabled]="submitting"
+                />
+                @if (fieldErrors.email) {
+                  <p class="mt-1 text-xs text-red-600">{{ fieldErrors.email }}</p>
+                }
+              </div>
+            </div>
+
+            <div>
+              <label for="website" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Website <span class="text-red-500">*</span></label>
+              <input
+                id="website"
+                name="website"
+                type="url"
+                required
+                maxlength="2048"
+                [(ngModel)]="model.website"
+                placeholder="e.g. https://littlestars.example"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="fieldErrors.website"
+                [disabled]="submitting"
+              />
+              @if (fieldErrors.website) {
+                <p class="mt-1 text-xs text-red-600">{{ fieldErrors.website }}</p>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="xl:col-span-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <ng-icon name="heroMapPin" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Address &amp; Location</h2>
+          </div>
+
+          <div class="space-y-5 px-6 py-6">
+            <div>
+              <label for="address-street" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Street Address <span class="text-red-500">*</span></label>
+              <input
+                id="address-street"
+                name="address_street"
+                type="text"
+                required
+                maxlength="200"
+                [(ngModel)]="model.address_street"
+                placeholder="e.g. 12 Acacia Ave"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="fieldErrors.address_street"
+                [disabled]="submitting"
+              />
+              @if (fieldErrors.address_street) {
+                <p class="mt-1 text-xs text-red-600">{{ fieldErrors.address_street }}</p>
+              }
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label for="address-city" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">City <span class="text-red-500">*</span></label>
+                <input
+                  id="address-city"
+                  name="address_city"
+                  type="text"
+                  required
+                  maxlength="100"
+                  [(ngModel)]="model.address_city"
+                  placeholder="e.g. Manchester"
+                  class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  [class.border-red-500]="fieldErrors.address_city"
+                  [disabled]="submitting"
+                />
+                @if (fieldErrors.address_city) {
+                  <p class="mt-1 text-xs text-red-600">{{ fieldErrors.address_city }}</p>
+                }
+              </div>
+
+              <div>
+                <label for="address-postcode" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Postcode <span class="text-red-500">*</span></label>
+                <input
+                  id="address-postcode"
+                  name="address_postcode"
+                  type="text"
+                  required
+                  maxlength="16"
+                  [(ngModel)]="model.address_postcode"
+                  placeholder="e.g. M1 4BT"
+                  class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  [class.border-red-500]="fieldErrors.address_postcode"
+                  [disabled]="submitting"
+                />
+                @if (fieldErrors.address_postcode) {
+                  <p class="mt-1 text-xs text-red-600">{{ fieldErrors.address_postcode }}</p>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          (click)="onCancel()"
+          [disabled]="submitting"
+          class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+        >
+          <ng-icon name="heroArrowLeft" size="16" aria-hidden="true" />
+          Cancel
+        </button>
+        <button
+          type="submit"
+          [disabled]="submitting"
+          class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50"
+        >
+          @if (submitting) {
+            <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          }
+          {{ submitting ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

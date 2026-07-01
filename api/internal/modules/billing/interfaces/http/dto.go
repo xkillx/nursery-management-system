@@ -168,32 +168,33 @@ type invoiceDetailResponse struct {
 		StartDate string `json:"start_date"`
 		EndDate   string `json:"end_date"`
 	} `json:"period"`
-	Status                     string                        `json:"status"`
-	DueStatus                  string                        `json:"due_status"`
-	CurrencyCode               string                        `json:"currency_code"`
-	SubtotalMinor              int                           `json:"subtotal_minor"`
-	FundedDeductionMinor       int                           `json:"funded_deduction_minor"`
-	TotalDueMinor              int                           `json:"total_due_minor"`
-	AmountPaidMinor            int                           `json:"amount_paid_minor"`
-	IssuedAt                   *string                       `json:"issued_at"`
-	LockedAt                   *string                       `json:"locked_at"`
-	DueAt                      *string                       `json:"due_at"`
-	PaidAt                     *string                       `json:"paid_at"`
-	PaymentFailedAt            *string                       `json:"payment_failed_at"`
-	PaymentStatusUpdatedAt     *string                       `json:"payment_status_updated_at"`
-	AdjustsInvoiceID           *string                       `json:"adjusts_invoice_id"`
-	AdjustmentReasonCode       *string                       `json:"adjustment_reason_code"`
-	AdjustmentReasonNote       *string                       `json:"adjustment_reason_note"`
-	GeneratedRunID             *string                       `json:"generated_run_id"`
-	GeneratedRunStatus         *string                       `json:"generated_run_status"`
-	GeneratedRunStartedAt      *string                       `json:"generated_run_started_at"`
-	GeneratedRunCompletedAt    *string                       `json:"generated_run_completed_at"`
-	GeneratedRunExceptionCount int                           `json:"generated_run_exception_count"`
-	GeneratedRunExceptions     []invoiceRunExceptionResponse `json:"generated_run_exceptions"`
-	Calculation                invoiceCalculationResponse    `json:"calculation"`
-	Lines                      []invoiceLineResponse         `json:"lines"`
-	CreatedAt                  string                        `json:"created_at"`
-	UpdatedAt                  string                        `json:"updated_at"`
+	Status                     string                            `json:"status"`
+	DueStatus                  string                            `json:"due_status"`
+	CurrencyCode               string                            `json:"currency_code"`
+	SubtotalMinor              int                               `json:"subtotal_minor"`
+	FundedDeductionMinor       int                               `json:"funded_deduction_minor"`
+	TotalDueMinor              int                               `json:"total_due_minor"`
+	AmountPaidMinor            int                               `json:"amount_paid_minor"`
+	IssuedAt                   *string                           `json:"issued_at"`
+	LockedAt                   *string                           `json:"locked_at"`
+	DueAt                      *string                           `json:"due_at"`
+	PaidAt                     *string                           `json:"paid_at"`
+	PaymentFailedAt            *string                           `json:"payment_failed_at"`
+	PaymentStatusUpdatedAt     *string                           `json:"payment_status_updated_at"`
+	AdjustsInvoiceID           *string                           `json:"adjusts_invoice_id"`
+	AdjustmentReasonCode       *string                           `json:"adjustment_reason_code"`
+	AdjustmentReasonNote       *string                           `json:"adjustment_reason_note"`
+	GeneratedRunID             *string                           `json:"generated_run_id"`
+	GeneratedRunStatus         *string                           `json:"generated_run_status"`
+	GeneratedRunStartedAt      *string                           `json:"generated_run_started_at"`
+	GeneratedRunCompletedAt    *string                           `json:"generated_run_completed_at"`
+	GeneratedRunExceptionCount int                               `json:"generated_run_exception_count"`
+	GeneratedRunExceptions     []invoiceRunExceptionResponse     `json:"generated_run_exceptions"`
+	Calculation                invoiceCalculationResponse        `json:"calculation"`
+	Lines                      []invoiceLineResponse             `json:"lines"`
+	SiteProfile                *parentInvoiceSiteProfileResponse `json:"site_profile"`
+	CreatedAt                  string                            `json:"created_at"`
+	UpdatedAt                  string                            `json:"updated_at"`
 }
 
 type invoiceLineResponse struct {
@@ -371,6 +372,16 @@ type parentInvoiceListItemResponse struct {
 	PaymentStatusUpdatedAt *string `json:"payment_status_updated_at"`
 }
 
+type parentInvoiceSiteProfileResponse struct {
+	NurseryName     string `json:"nursery_name"`
+	Phone           string `json:"phone"`
+	Email           string `json:"email"`
+	Website         string `json:"website"`
+	AddressStreet   string `json:"address_street"`
+	AddressCity     string `json:"address_city"`
+	AddressPostcode string `json:"address_postcode"`
+}
+
 type parentInvoiceDetailResponse struct {
 	InvoiceID            string  `json:"invoice_id"`
 	InvoiceKind          string  `json:"invoice_kind"`
@@ -385,20 +396,21 @@ type parentInvoiceDetailResponse struct {
 		StartDate string `json:"start_date"`
 		EndDate   string `json:"end_date"`
 	} `json:"period"`
-	Status                 string                           `json:"status"`
-	DueStatus              string                           `json:"due_status"`
-	CurrencyCode           string                           `json:"currency_code"`
-	SubtotalMinor          int                              `json:"subtotal_minor"`
-	FundedDeductionMinor   int                              `json:"funded_deduction_minor"`
-	TotalDueMinor          int                              `json:"total_due_minor"`
-	AmountPaidMinor        int                              `json:"amount_paid_minor"`
-	IssuedAt               *string                          `json:"issued_at"`
-	DueAt                  *string                          `json:"due_at"`
-	PaidAt                 *string                          `json:"paid_at"`
-	PaymentFailedAt        *string                          `json:"payment_failed_at"`
-	PaymentStatusUpdatedAt *string                          `json:"payment_status_updated_at"`
-	Calculation            parentInvoiceCalculationResponse `json:"calculation"`
-	Lines                  []parentInvoiceLineResponse      `json:"lines"`
+	Status                 string                            `json:"status"`
+	DueStatus              string                            `json:"due_status"`
+	CurrencyCode           string                            `json:"currency_code"`
+	SubtotalMinor          int                               `json:"subtotal_minor"`
+	FundedDeductionMinor   int                               `json:"funded_deduction_minor"`
+	TotalDueMinor          int                               `json:"total_due_minor"`
+	AmountPaidMinor        int                               `json:"amount_paid_minor"`
+	IssuedAt               *string                           `json:"issued_at"`
+	DueAt                  *string                           `json:"due_at"`
+	PaidAt                 *string                           `json:"paid_at"`
+	PaymentFailedAt        *string                           `json:"payment_failed_at"`
+	PaymentStatusUpdatedAt *string                           `json:"payment_status_updated_at"`
+	SiteProfile            *parentInvoiceSiteProfileResponse `json:"site_profile"`
+	Calculation            parentInvoiceCalculationResponse  `json:"calculation"`
+	Lines                  []parentInvoiceLineResponse       `json:"lines"`
 }
 
 type parentInvoiceLineResponse struct {

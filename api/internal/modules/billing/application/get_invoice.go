@@ -13,15 +13,17 @@ import (
 )
 
 type GetInvoice struct {
-	repo domain.BillingRepository
+	repo     domain.BillingRepository
+	spLookup SiteProfileLookup
 }
 
-func NewGetInvoice(repo domain.BillingRepository) *GetInvoice {
-	return &GetInvoice{repo: repo}
+func NewGetInvoice(repo domain.BillingRepository, spLookup SiteProfileLookup) *GetInvoice {
+	return &GetInvoice{repo: repo, spLookup: spLookup}
 }
 
 type GetInvoiceResult struct {
 	domain.InvoiceReviewDetail
+	SiteProfile *domain.InvoiceSiteProfile
 }
 
 func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string) (GetInvoiceResult, error) {
@@ -53,6 +55,24 @@ func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, in
 
 	exceptions, exceptionCount := parseRunExceptions(row.GeneratedRunDetails)
 
+	sp, lookupErr := uc.spLookup.GetForInvoice(ctx, actor.TenantID, actor.BranchID)
+	if lookupErr != nil {
+		return GetInvoiceResult{}, domainerrors.Internal(lookupErr)
+	}
+
+	var spDTO *domain.InvoiceSiteProfile
+	if sp != nil {
+		spDTO = &domain.InvoiceSiteProfile{
+			NurseryName:     sp.NurseryName,
+			Phone:           sp.Phone,
+			Email:           sp.Email,
+			Website:         sp.Website,
+			AddressStreet:   sp.AddressStreet,
+			AddressCity:     sp.AddressCity,
+			AddressPostcode: sp.AddressPostcode,
+		}
+	}
+
 	return GetInvoiceResult{
 		InvoiceReviewDetail: domain.InvoiceReviewDetail{
 			Invoice:                    row,
@@ -61,6 +81,7 @@ func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, in
 			GeneratedRunExceptions:     exceptions,
 			GeneratedRunExceptionCount: exceptionCount,
 		},
+		SiteProfile: spDTO,
 	}, nil
 }
 

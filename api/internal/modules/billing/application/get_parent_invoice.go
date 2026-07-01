@@ -11,15 +11,17 @@ import (
 )
 
 type GetParentInvoice struct {
-	repo domain.BillingRepository
+	repo     domain.BillingRepository
+	spLookup SiteProfileLookup
 }
 
-func NewGetParentInvoice(repo domain.BillingRepository) *GetParentInvoice {
-	return &GetParentInvoice{repo: repo}
+func NewGetParentInvoice(repo domain.BillingRepository, spLookup SiteProfileLookup) *GetParentInvoice {
+	return &GetParentInvoice{repo: repo, spLookup: spLookup}
 }
 
 type GetParentInvoiceResult struct {
 	domain.ParentInvoiceDetail
+	SiteProfile *domain.ParentInvoiceSiteProfile
 }
 
 func (uc *GetParentInvoice) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string) (GetParentInvoiceResult, error) {
@@ -49,11 +51,30 @@ func (uc *GetParentInvoice) Execute(ctx context.Context, actor tenant.ActorConte
 		return GetParentInvoiceResult{}, domainerrors.Internal(err)
 	}
 
+	sp, lookupErr := uc.spLookup.GetForInvoice(ctx, actor.TenantID, actor.BranchID)
+	if lookupErr != nil {
+		return GetParentInvoiceResult{}, domainerrors.Internal(lookupErr)
+	}
+
+	var spDTO *domain.ParentInvoiceSiteProfile
+	if sp != nil {
+		spDTO = &domain.ParentInvoiceSiteProfile{
+			NurseryName:     sp.NurseryName,
+			Phone:           sp.Phone,
+			Email:           sp.Email,
+			Website:         sp.Website,
+			AddressStreet:   sp.AddressStreet,
+			AddressCity:     sp.AddressCity,
+			AddressPostcode: sp.AddressPostcode,
+		}
+	}
+
 	return GetParentInvoiceResult{
 		ParentInvoiceDetail: domain.ParentInvoiceDetail{
 			Invoice:     row,
 			Lines:       lines,
 			Calculation: calc,
 		},
+		SiteProfile: spDTO,
 	}, nil
 }

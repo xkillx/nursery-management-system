@@ -24,6 +24,8 @@ import (
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
+	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
+	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/email"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -135,6 +137,26 @@ func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx pgx
 }
 
 var _ billingdomain.SiteRateRepository = (*siteRateUpdateAdapter)(nil)
+
+// ── Site Profile adapter ──────────────────────────────────────────────────
+
+type siteProfileLookupAdapter struct {
+	getUC *siteprofileapp.GetSiteProfileUseCase
+}
+
+func (a *siteProfileLookupAdapter) GetForInvoice(ctx context.Context, tenantID, branchID uuid.UUID) (*siteprofiledomain.SiteProfile, error) {
+	profile, err := a.getUC.Execute(ctx, tenant.ActorContext{
+		TenantID: tenantID,
+		BranchID: branchID,
+	})
+	if err != nil {
+		if domainerrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return profile, nil
+}
 
 // ── Owner adapters ──────────────────────────────────────────────────────────
 

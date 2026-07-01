@@ -90,6 +90,7 @@ interface InvoiceDetailApi extends ChildNameApi {
   paid_at?: string | null;
   payment_failed_at?: string | null;
   payment_status_updated_at?: string | null;
+  site_profile?: { nursery_name: string; phone: string; email: string; website: string; address_street: string; address_city: string; address_postcode: string } | null;
   calculation?: InvoiceCalculationApi | null;
   lines?: InvoiceLineApi[] | null;
 }
@@ -198,6 +199,7 @@ export class ParentInvoicesApiService {
       paidAt: d.paid_at ?? null,
       paymentFailedAt: d.payment_failed_at ?? null,
       paymentStatusUpdatedAt: d.payment_status_updated_at ?? null,
+      site_profile: d.site_profile ?? null,
       calculation: d.calculation ? this.toCalculation(d.calculation) : null,
       lines: (d.lines ?? [])
         .sort((a, b) => a.sort_order - b.sort_order)

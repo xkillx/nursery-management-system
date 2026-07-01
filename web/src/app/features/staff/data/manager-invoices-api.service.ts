@@ -124,6 +124,7 @@ interface InvoiceDetailApi extends ChildNameApi {
   generated_run_completed_at?: string | null;
   generated_run_exception_count?: number | null;
   generated_run_exceptions?: GeneratedRunExceptionApi[] | null;
+  site_profile?: { nursery_name: string; phone: string; email: string; website: string; address_street: string; address_city: string; address_postcode: string } | null;
   calculation?: InvoiceCalculationApi | null;
   lines?: InvoiceLineApi[] | null;
   created_at?: string;
@@ -324,6 +325,7 @@ export class ManagerInvoicesApiService {
       generatedRunCompletedAt: d.generated_run_completed_at ?? null,
       generatedRunExceptionCount: d.generated_run_exception_count ?? null,
       generatedRunExceptions: (d.generated_run_exceptions ?? []).map((e) => this.toException(e)),
+      site_profile: d.site_profile ?? null,
       calculation: d.calculation ? this.toCalculation(d.calculation) : null,
       lines: (d.lines ?? [])
         .sort((a, b) => a.sort_order - b.sort_order)

@@ -79,6 +79,16 @@ export interface ManagerInvoiceLine {
   sessionCount: number | null;
 }
 
+export interface ManagerInvoiceSiteProfile {
+  nursery_name: string;
+  phone: string;
+  email: string;
+  website: string;
+  address_street: string;
+  address_city: string;
+  address_postcode: string;
+}
+
 export interface ManagerInvoiceDetail {
   invoiceId: string;
   invoiceKind: string;
@@ -110,6 +120,7 @@ export interface ManagerInvoiceDetail {
   generatedRunCompletedAt: string | null;
   generatedRunExceptionCount: number | null;
   generatedRunExceptions: ManagerInvoiceGeneratedRunException[];
+  site_profile: ManagerInvoiceSiteProfile | null;
   calculation: ManagerInvoiceCalculation | null;
   lines: ManagerInvoiceLine[];
   createdAt: string;

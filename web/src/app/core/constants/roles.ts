@@ -24,6 +24,7 @@ export const ROLE_ROUTES = {
   managerInvoices: '/manager/invoices',
   managerAttendance: '/manager/attendance',
   managerSiteSettings: '/manager/site-settings',
+  managerSiteProfile: '/manager/site-profile',
   practitionerAttendance: '/practitioner/attendance',
   practitionerAttendanceLegacy: '/practitioner/attendance-children',
   parentInvoices: '/parent/invoices',

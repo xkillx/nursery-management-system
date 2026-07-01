@@ -50,6 +50,9 @@ import (
 	sessiontemplatehttphandler "nursery-management-system/api/internal/modules/sessiontemplates/interfaces/http"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	sessiontypehttphandler "nursery-management-system/api/internal/modules/sessiontypes/interfaces/http"
+	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
+	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
+	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 )
 
@@ -152,6 +155,22 @@ func provideChildCorrectionCheckerAdapter(repo *childpostgres.ChildRepository) *
 
 func provideAbsenceMarkerCheckerAdapter(repo *absencepostgres.AbsenceRepository) *absenceMarkerCheckerAdapter {
 	return &absenceMarkerCheckerAdapter{repo: repo}
+}
+
+func provideSiteProfileLookupAdapter(getUC *siteprofileapp.GetSiteProfileUseCase) *siteProfileLookupAdapter {
+	return &siteProfileLookupAdapter{getUC: getUC}
+}
+
+func provideSiteProfileHandler(
+	pool *pgxpool.Pool,
+	auditWriter *audit.Writer,
+	txMgr *transaction.Manager,
+	logger *slog.Logger,
+) *siteprofilehandler.Handler {
+	repo := siteprofilepostgres.NewRepository(pool)
+	getUC := siteprofileapp.NewGetSiteProfileUseCase(repo)
+	updateUC := siteprofileapp.NewUpdateSiteProfileUseCase(repo, auditWriter, txMgr)
+	return siteprofilehandler.NewHandler(getUC, updateUC, logger)
 }
 
 func provideSiteRateUpdateAdapter(repo *ownerpostgres.OwnerRepository) *siteRateUpdateAdapter {
@@ -262,6 +281,7 @@ type appComponents struct {
 	SessionTypesHandler     *sessiontypehttphandler.Handler
 	SessionTemplatesHandler *sessiontemplatehttphandler.Handler
 	TermHandler             *termhttphandler.Handler
+	SiteProfileHandler      *siteprofilehandler.Handler
 }
 
 func buildGinEngine(c appComponents) *gin.Engine {
@@ -320,6 +340,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.RoomsHandler.RegisterRoutes(protected)
 	c.SessionTypesHandler.RegisterRoutes(protected)
 	c.SessionTemplatesHandler.RegisterRoutes(protected)
+	c.SiteProfileHandler.RegisterRoutes(protected)
 	c.TermHandler.RegisterManagerRoutes(manager)
 
 	return router

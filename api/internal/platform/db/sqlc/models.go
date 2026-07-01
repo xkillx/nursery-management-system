@@ -753,6 +753,22 @@ type SessionType struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
+type SiteProfile struct {
+	ID              pgtype.UUID
+	TenantID        pgtype.UUID
+	BranchID        pgtype.UUID
+	NurseryName     string
+	Description     string
+	Phone           string
+	Email           string
+	Website         string
+	AddressStreet   string
+	AddressCity     string
+	AddressPostcode string
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
 type StripeWebhookEvent struct {
 	ID                pgtype.UUID
 	StripeEventID     string

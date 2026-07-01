@@ -875,6 +875,17 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 		CreatedAt:                  formatTime(inv.CreatedAt),
 		UpdatedAt:                  formatTime(inv.UpdatedAt),
 	}
+	if r.SiteProfile != nil {
+		resp.SiteProfile = &parentInvoiceSiteProfileResponse{
+			NurseryName:     r.SiteProfile.NurseryName,
+			Phone:           r.SiteProfile.Phone,
+			Email:           r.SiteProfile.Email,
+			Website:         r.SiteProfile.Website,
+			AddressStreet:   r.SiteProfile.AddressStreet,
+			AddressCity:     r.SiteProfile.AddressCity,
+			AddressPostcode: r.SiteProfile.AddressPostcode,
+		}
+	}
 	resp.Period.StartDate = formatDate(inv.PeriodStartDate)
 	resp.Period.EndDate = formatDate(inv.PeriodEndDate)
 
@@ -1084,6 +1095,17 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 		PaymentFailedAt:        formatTimePtr(inv.PaymentFailedAt),
 		PaymentStatusUpdatedAt: formatTimePtr(inv.PaymentStatusUpdatedAt),
 		Calculation:            toParentCalculationResponse(r.Calculation),
+	}
+	if r.SiteProfile != nil {
+		resp.SiteProfile = &parentInvoiceSiteProfileResponse{
+			NurseryName:     r.SiteProfile.NurseryName,
+			Phone:           r.SiteProfile.Phone,
+			Email:           r.SiteProfile.Email,
+			Website:         r.SiteProfile.Website,
+			AddressStreet:   r.SiteProfile.AddressStreet,
+			AddressCity:     r.SiteProfile.AddressCity,
+			AddressPostcode: r.SiteProfile.AddressPostcode,
+		}
 	}
 	resp.Period.StartDate = formatDate(inv.PeriodStartDate)
 	resp.Period.EndDate = formatDate(inv.PeriodEndDate)

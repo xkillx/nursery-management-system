@@ -16,6 +16,8 @@ import (
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
 
+	billingapp "nursery-management-system/api/internal/modules/billing/application"
+
 	authapp "nursery-management-system/api/internal/modules/authentication/application"
 	authdomain "nursery-management-system/api/internal/modules/authentication/domain"
 	authpostgres "nursery-management-system/api/internal/modules/authentication/infrastructure/postgres"
@@ -47,7 +49,6 @@ import (
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 
-	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
@@ -91,6 +92,11 @@ import (
 	termdomain "nursery-management-system/api/internal/modules/term/domain"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
+
+	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
+	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
+	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
+	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 )
 
 // ── Auth module ─────────────────────────────────────────────────────────
@@ -266,6 +272,8 @@ var fundingSet = wire.NewSet(
 var billingSet = wire.NewSet(
 	billingpostgres.NewRepository,
 	wire.Bind(new(billingdomain.BillingRepository), new(*billingpostgres.Repository)),
+	provideSiteProfileLookupAdapter,
+	wire.Bind(new(billingapp.SiteProfileLookup), new(*siteProfileLookupAdapter)),
 	provideSiteRateUpdateAdapter,
 	wire.Bind(new(billingdomain.SiteRateRepository), new(*siteRateUpdateAdapter)),
 	billingapp.NewPreflightDraftInvoices,
@@ -466,6 +474,27 @@ var termSet = wire.NewSet(
 	termhttphandler.NewHandler,
 )
 
+// ── Site Profile module ────────────────────────────────────────────────
+
+func provideSiteProfileHandlerSet(
+	repo siteprofiledomain.Repository,
+	auditWriter *audit.Writer,
+	txMgr *transaction.Manager,
+	logger *slog.Logger,
+) *siteprofilehandler.Handler {
+	getUC := siteprofileapp.NewGetSiteProfileUseCase(repo)
+	updateUC := siteprofileapp.NewUpdateSiteProfileUseCase(repo, auditWriter, txMgr)
+	return siteprofilehandler.NewHandler(getUC, updateUC, logger)
+}
+
+var siteProfileSet = wire.NewSet(
+	siteprofilepostgres.NewRepository,
+	wire.Bind(new(siteprofiledomain.Repository), new(*siteprofilepostgres.SiteProfileRepository)),
+	siteprofileapp.NewGetSiteProfileUseCase,
+	siteprofileapp.NewUpdateSiteProfileUseCase,
+	provideSiteProfileHandlerSet,
+)
+
 // ── Injector ────────────────────────────────────────────────────────────
 
 func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
@@ -508,6 +537,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		sessionTypesSet,
 		sessionTemplatesSet,
 		termSet,
+		siteProfileSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
@@ -554,6 +584,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		sessionTypesSet,
 		sessionTemplatesSet,
 		termSet,
+		siteProfileSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)

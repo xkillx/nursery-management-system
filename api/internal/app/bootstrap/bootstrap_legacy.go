@@ -87,6 +87,10 @@ import (
 	termdomain "nursery-management-system/api/internal/modules/term/domain"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
+
+	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
+	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
+	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 )
 
 // BootstrapOptions provides optional overrides for test harnesses.
@@ -285,10 +289,17 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	)
 	fundingHandler.RegisterRoutes(manager)
 
+	siteProfileRepo := siteprofilepostgres.NewRepository(pool)
+	siteProfileGetUC := siteprofileapp.NewGetSiteProfileUseCase(siteProfileRepo)
+	siteProfileUpdateUC := siteprofileapp.NewUpdateSiteProfileUseCase(siteProfileRepo, auditWriter, txManager)
+	siteProfileHandler := siteprofilehandler.NewHandler(siteProfileGetUC, siteProfileUpdateUC, logger)
+	siteProfileHandler.RegisterRoutes(protected)
+
 	billingRepo := billingpostgres.NewRepository(pool)
 	ownerRepo := ownerpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
+
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
@@ -299,14 +310,14 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		},
 		Lifecycle: billinghandler.LifecycleUseCases{
 			ListInvoices:          billingapp.NewListInvoices(billingRepo),
-			GetInvoice:            billingapp.NewGetInvoice(billingRepo),
+			GetInvoice:            billingapp.NewGetInvoice(billingRepo, &siteProfileLookupAdapter{getUC: siteProfileGetUC}),
 			IssueInvoice:          billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 			BulkIssueInvoices:     billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
 			OverrideAttendanceBlk: billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
 		},
 		Parent: billinghandler.ParentInvoiceUseCases{
 			List: billingapp.NewListParentInvoices(billingRepo),
-			Get:  billingapp.NewGetParentInvoice(billingRepo),
+			Get:  billingapp.NewGetParentInvoice(billingRepo, &siteProfileLookupAdapter{getUC: siteProfileGetUC}),
 		},
 		Admin: billinghandler.AdminUseCases{
 			UpdateSiteRate: updateSiteRateUC,
