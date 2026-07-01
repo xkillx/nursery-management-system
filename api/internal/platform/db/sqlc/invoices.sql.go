@@ -542,10 +542,13 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
+    r.name AS room_name,
     i.created_at, i.updated_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN child_room_assignments cra ON cra.child_id = i.child_id AND cra.tenant_id = i.tenant_id AND cra.branch_id = i.branch_id AND cra.is_current
+LEFT JOIN rooms r ON r.id = cra.room_id AND r.tenant_id = i.tenant_id AND r.branch_id = i.branch_id
 WHERE i.tenant_id = $1 AND i.branch_id = $2 AND i.id = $3
 `
 
@@ -587,6 +590,7 @@ type InvoiceGetForManagerReviewRow struct {
 	GeneratedRunCompletedAt pgtype.Timestamptz
 	GeneratedRunDetails     []byte
 	CalculationDetails      []byte
+	RoomName                pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -626,6 +630,7 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 		&i.GeneratedRunCompletedAt,
 		&i.GeneratedRunDetails,
 		&i.CalculationDetails,
+		&i.RoomName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -193,6 +193,8 @@ type invoiceDetailResponse struct {
 	Calculation                invoiceCalculationResponse        `json:"calculation"`
 	Lines                      []invoiceLineResponse             `json:"lines"`
 	SiteProfile                *parentInvoiceSiteProfileResponse `json:"site_profile"`
+	RoomName                   *string                           `json:"room_name"`
+	ParentContact              *parentContactResponse            `json:"parent_contact"`
 	CreatedAt                  string                            `json:"created_at"`
 	UpdatedAt                  string                            `json:"updated_at"`
 }
@@ -380,6 +382,16 @@ type parentInvoiceSiteProfileResponse struct {
 	AddressStreet   string `json:"address_street"`
 	AddressCity     string `json:"address_city"`
 	AddressPostcode string `json:"address_postcode"`
+}
+
+type parentContactResponse struct {
+	FullName        string `json:"full_name"`
+	AddressLine1    string `json:"address_line1"`
+	AddressLine2    string `json:"address_line2"`
+	AddressCity     string `json:"address_city"`
+	AddressPostcode string `json:"address_postcode"`
+	Email           string `json:"email"`
+	Telephone       string `json:"telephone"`
 }
 
 type parentInvoiceDetailResponse struct {

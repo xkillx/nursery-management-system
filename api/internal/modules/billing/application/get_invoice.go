@@ -15,15 +15,17 @@ import (
 type GetInvoice struct {
 	repo     domain.BillingRepository
 	spLookup SiteProfileLookup
+	pcLookup ParentContactLookup
 }
 
-func NewGetInvoice(repo domain.BillingRepository, spLookup SiteProfileLookup) *GetInvoice {
-	return &GetInvoice{repo: repo, spLookup: spLookup}
+func NewGetInvoice(repo domain.BillingRepository, spLookup SiteProfileLookup, pcLookup ParentContactLookup) *GetInvoice {
+	return &GetInvoice{repo: repo, spLookup: spLookup, pcLookup: pcLookup}
 }
 
 type GetInvoiceResult struct {
 	domain.InvoiceReviewDetail
-	SiteProfile *domain.InvoiceSiteProfile
+	SiteProfile   *domain.InvoiceSiteProfile
+	ParentContact *domain.ParentContact
 }
 
 func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string) (GetInvoiceResult, error) {
@@ -73,6 +75,11 @@ func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, in
 		}
 	}
 
+	pc, pcErr := uc.pcLookup.GetForInvoice(ctx, actor.TenantID, actor.BranchID, row.ChildID)
+	if pcErr != nil {
+		return GetInvoiceResult{}, domainerrors.Internal(pcErr)
+	}
+
 	return GetInvoiceResult{
 		InvoiceReviewDetail: domain.InvoiceReviewDetail{
 			Invoice:                    row,
@@ -81,7 +88,8 @@ func (uc *GetInvoice) Execute(ctx context.Context, actor tenant.ActorContext, in
 			GeneratedRunExceptions:     exceptions,
 			GeneratedRunExceptionCount: exceptionCount,
 		},
-		SiteProfile: spDTO,
+		SiteProfile:   spDTO,
+		ParentContact: pc,
 	}, nil
 }
 

@@ -51,6 +51,7 @@ type InvoiceReviewRow struct {
 	GeneratedRunCompletedAt *time.Time
 	GeneratedRunDetails     json.RawMessage
 	CalculationDetails      json.RawMessage
+	RoomName                *string
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }

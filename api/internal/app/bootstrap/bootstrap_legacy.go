@@ -310,7 +310,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		},
 		Lifecycle: billinghandler.LifecycleUseCases{
 			ListInvoices:          billingapp.NewListInvoices(billingRepo),
-			GetInvoice:            billingapp.NewGetInvoice(billingRepo, &siteProfileLookupAdapter{getUC: siteProfileGetUC}),
+			GetInvoice:            billingapp.NewGetInvoice(billingRepo, &siteProfileLookupAdapter{getUC: siteProfileGetUC}, &parentContactLookupAdapter{pool: pool}),
 			IssueInvoice:          billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 			BulkIssueInvoices:     billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
 			OverrideAttendanceBlk: billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),

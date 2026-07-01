@@ -886,6 +886,18 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			AddressPostcode: r.SiteProfile.AddressPostcode,
 		}
 	}
+	resp.RoomName = inv.RoomName
+	if r.ParentContact != nil {
+		resp.ParentContact = &parentContactResponse{
+			FullName:        r.ParentContact.FullName,
+			AddressLine1:    r.ParentContact.AddressLine1,
+			AddressLine2:    r.ParentContact.AddressLine2,
+			AddressCity:     r.ParentContact.AddressCity,
+			AddressPostcode: r.ParentContact.AddressPostcode,
+			Email:           r.ParentContact.Email,
+			Telephone:       r.ParentContact.Telephone,
+		}
+	}
 	resp.Period.StartDate = formatDate(inv.PeriodStartDate)
 	resp.Period.EndDate = formatDate(inv.PeriodEndDate)
 

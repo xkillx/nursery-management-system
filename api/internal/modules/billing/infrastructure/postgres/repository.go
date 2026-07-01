@@ -513,6 +513,7 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
 		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
 		CalculationDetails:      json.RawMessage(row.CalculationDetails),
+		RoomName:                pgtypeTextToStrPtr(row.RoomName),
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
 	}

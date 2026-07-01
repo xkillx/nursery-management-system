@@ -2,16 +2,19 @@ package bootstrap
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
+	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
@@ -137,6 +140,58 @@ func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx pgx
 }
 
 var _ billingdomain.SiteRateRepository = (*siteRateUpdateAdapter)(nil)
+
+// ── Parent Contact adapter ───────────────────────────────────────────────
+
+type childAddressJSON struct {
+	Street   string `json:"street"`
+	Line2    string `json:"line2"`
+	City     string `json:"city"`
+	Postcode string `json:"postcode"`
+}
+
+type parentContactLookupAdapter struct {
+	pool *pgxpool.Pool
+}
+
+func (a *parentContactLookupAdapter) GetForInvoice(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*billingdomain.ParentContact, error) {
+	var fullName, email, telephone string
+	var addressRaw []byte
+
+	err := a.pool.QueryRow(ctx, `
+		SELECT full_name, address, email, telephone
+		FROM child_contacts
+		WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND contact_type = 'parent_carer'
+		ORDER BY sort_order
+		LIMIT 1
+	`, tenantID, branchID, childID).Scan(&fullName, &addressRaw, &email, &telephone)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query parent contact: %w", err)
+	}
+
+	pc := &billingdomain.ParentContact{
+		FullName:  fullName,
+		Email:     email,
+		Telephone: telephone,
+	}
+
+	if len(addressRaw) > 0 {
+		var addr childAddressJSON
+		if err := json.Unmarshal(addressRaw, &addr); err == nil {
+			pc.AddressLine1 = addr.Street
+			pc.AddressLine2 = addr.Line2
+			pc.AddressCity = addr.City
+			pc.AddressPostcode = addr.Postcode
+		}
+	}
+
+	return pc, nil
+}
+
+var _ billingapp.ParentContactLookup = (*parentContactLookupAdapter)(nil)
 
 // ── Site Profile adapter ──────────────────────────────────────────────────
 

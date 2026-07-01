@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -8,6 +8,8 @@ import {
   heroBuildingOffice2,
   heroCalendarDays,
   heroCheckBadge,
+  heroChevronDown,
+  heroChevronRight,
   heroClock,
   heroCreditCard,
   heroEnvelope,
@@ -30,6 +32,7 @@ import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.servi
 import {
   ManagerInvoiceDetail,
   ManagerInvoiceLine,
+  ManagerInvoiceParentContact,
   ManagerPaymentStatus,
   PaymentEvent,
   PaginatedPaymentEvents,
@@ -134,6 +137,8 @@ interface AuditTrailEntry {
       heroBuildingOffice2,
       heroCalendarDays,
       heroCheckBadge,
+      heroChevronDown,
+      heroChevronRight,
       heroClock,
       heroCreditCard,
       heroEnvelope,
@@ -147,8 +152,17 @@ interface AuditTrailEntry {
       heroUserCircle,
     }),
   ],
+  styles: [
+    `
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-total { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  `,
+  ],
 })
-export class ManagerInvoiceDetailComponent implements OnInit {
+export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
@@ -163,6 +177,8 @@ export class ManagerInvoiceDetailComponent implements OnInit {
   paymentErrorMessage: string | null = null;
   paymentEventsOffset = 0;
   readonly paymentEventsLimit = 50;
+
+  isPaymentReviewCollapsed = true;
 
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
@@ -181,6 +197,8 @@ export class ManagerInvoiceDetailComponent implements OnInit {
   readonly webhookStatusLabel = webhookStatusLabel;
   readonly retryReasonLabel = retryReasonLabel;
   readonly isOpenPaymentAttempt = isOpenPaymentAttempt;
+
+  totalAnimated = false;
 
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
@@ -240,6 +258,22 @@ export class ManagerInvoiceDetailComponent implements OnInit {
     const end = formatDate(this.detail.period.endDate);
     if (!start || !end) return '';
     return `${start} — ${end}`;
+  }
+
+  get parentName(): string {
+    if (!this.detail) return '';
+    if (this.detail.parentContact?.fullName) return this.detail.parentContact.fullName;
+    return this.detail.childName;
+  }
+
+  get parentAccountId(): string {
+    if (!this.detail) return '';
+    return this.detail.childId;
+  }
+
+  get roomLabel(): string {
+    if (!this.detail?.roomName) return '';
+    return this.detail.roomName;
   }
 
   get auditTrail(): AuditTrailEntry[] {
@@ -364,6 +398,16 @@ export class ManagerInvoiceDetailComponent implements OnInit {
       default:
         return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
     }
+  }
+
+  ngAfterViewInit(): void {
+    requestAnimationFrame(() => {
+      this.totalAnimated = true;
+    });
+  }
+
+  togglePaymentReview(): void {
+    this.isPaymentReviewCollapsed = !this.isPaymentReviewCollapsed;
   }
 
   previousPaymentEventsPage(): void {

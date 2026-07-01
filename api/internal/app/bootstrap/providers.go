@@ -161,6 +161,10 @@ func provideSiteProfileLookupAdapter(getUC *siteprofileapp.GetSiteProfileUseCase
 	return &siteProfileLookupAdapter{getUC: getUC}
 }
 
+func provideParentContactLookupAdapter(pool *pgxpool.Pool) *parentContactLookupAdapter {
+	return &parentContactLookupAdapter{pool: pool}
+}
+
 func provideSiteProfileHandler(
 	pool *pgxpool.Pool,
 	auditWriter *audit.Writer,

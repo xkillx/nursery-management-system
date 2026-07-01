@@ -17,6 +17,7 @@ const issuedDetail: ManagerInvoiceDetail = {
   childId: 'c1',
   childName: 'Ben',
   billingMonth: '2026-05',
+  site_profile: { nursery_name: 'London North Nursery', phone: '020 1234 5678', email: 'info@nursery.com', website: 'https://nursery.com', address_street: '12 High Street', address_city: 'London', address_postcode: 'N1 8PR' },
   period: { startDate: '2026-05-01', endDate: '2026-05-31' },
   status: 'issued',
   dueStatus: 'due',
@@ -39,6 +40,16 @@ const issuedDetail: ManagerInvoiceDetail = {
   generatedRunStartedAt: '2026-06-09T11:00:00Z',
   generatedRunCompletedAt: '2026-06-09T11:05:00Z',
   generatedRunExceptionCount: 1,
+  roomName: 'Toddler Group',
+  parentContact: {
+    fullName: 'Burhan Khalid',
+    addressLine1: '45 Maple Avenue',
+    addressLine2: 'Crouch End',
+    addressCity: 'London',
+    addressPostcode: 'N8 9LE',
+    email: 'burhan@example.com',
+    telephone: '07700 900123',
+  },
   generatedRunExceptions: [
     { childId: 'c2', childName: 'Alice', blockerCodes: ['incomplete_attendance'] },
   ],
@@ -99,6 +110,8 @@ const draftDetail: ManagerInvoiceDetail = {
   lockedAt: null,
   issuedAt: null,
   dueAt: null,
+  roomName: null,
+  parentContact: null,
   lines: [],
   generatedRunExceptions: [],
   calculation: null,
@@ -341,14 +354,25 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).toContain('Due');
   });
 
-  it('renders funded summary calculation quantities', () => {
+  it('renders child name with room label', () => {
     createFixture();
     const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Ben');
+    expect(text).toContain('Toddler Group');
+  });
 
-    expect(text).toContain('22h');
-    expect(text).toContain('6h');
-    expect(text).toContain('16h');
-    expect(text).toContain('4');
+  it('renders parent contact details in To card', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Burhan Khalid');
+    expect(text).toContain('45 Maple Avenue');
+  });
+
+  it('renders bank details placeholder card', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Bank Details');
+    expect(text).toContain('coming soon');
   });
 
   it('renders line items in sorted order', () => {
@@ -376,8 +400,9 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).not.toContain('Issued invoice locked');
   });
 
-  it('does not render Checkout, Pay, or Retry payment as actionable buttons or links', () => {
+  it('does not render Checkout or Retry payment as actionable buttons or links', () => {
     createFixture();
+    fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
     expect(text).not.toContain('Checkout');
     expect(text).not.toContain('Retry payment');
@@ -386,7 +411,8 @@ describe('ManagerInvoiceDetailComponent', () => {
     const anchors: HTMLAnchorElement[] = Array.from(fixture.nativeElement.querySelectorAll('a'));
     const allElements: HTMLElement[] = [...buttons, ...anchors];
     const payElements = allElements.filter((el) => el.textContent?.includes('Pay'));
-    expect(payElements.length).toBe(0);
+    expect(payElements.length).toBe(1);
+    expect(payElements[0].textContent).toContain('Make Payment');
   });
 
   it('shows net due and funded deduction summary', () => {
@@ -403,18 +429,27 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).toContain('incomplete_attendance');
   });
 
-  it('shows back link to invoices list', () => {
+  it('shows breadcrumb link to invoices list', () => {
     createFixture();
     const links: HTMLAnchorElement[] = fixture.nativeElement.querySelectorAll('a');
-    const backLink = Array.from(links).find((a) => a.textContent?.includes('Back to invoices'));
-    expect(backLink).toBeTruthy();
-    expect(backLink!.href).toContain('/manager/invoices');
+    const invoicesLink = Array.from(links).find((a) => a.textContent?.trim() === 'Invoices');
+    expect(invoicesLink).toBeTruthy();
+    expect(invoicesLink!.href).toContain('/manager/invoices');
   });
 
-  it('shows payment review section for issued invoice', () => {
+  it('shows collapsed payment review section for issued invoice', () => {
     createFixture();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Payment review');
+    expect(text).not.toContain('Amount paid');
+  });
+
+  it('expands payment review on toggle click', () => {
+    createFixture();
+    const toggleBtn: HTMLButtonElement = fixture.nativeElement.querySelector('button[aria-expanded]');
+    toggleBtn.click();
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
     expect(text).toContain('Amount paid');
     expect(text).toContain('Balance due');
   });
@@ -425,14 +460,21 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).not.toContain('Payment review');
   });
 
+  function expandPayReview() {
+    const btn: HTMLButtonElement | null = fixture.nativeElement.querySelector('button[aria-expanded]');
+    if (btn) { btn.click(); fixture.detectChanges(); }
+  }
+
   it('shows unpaid state for issued invoice with zero paid', () => {
     createFixture();
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Unpaid');
   });
 
   it('shows paid state with paid amount and zero balance', () => {
     createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Paid');
     expect(text).toContain('Payment succeeded');
@@ -441,6 +483,7 @@ describe('ManagerInvoiceDetailComponent', () => {
 
   it('shows payment failed state with failure reason', () => {
     createFixture({ ...issuedDetail, status: 'payment_failed', paymentFailedAt: '2026-06-09T16:00:00Z' }, failedPaymentStatus, samplePaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Payment failed');
     expect(text).toContain('Card declined');
@@ -449,6 +492,7 @@ describe('ManagerInvoiceDetailComponent', () => {
 
   it('shows awaiting provider update for open checkout attempt', () => {
     createFixture(issuedDetail, openAttemptStatus, emptyPaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Awaiting provider update');
     expect(text).toContain('checkout session is open');
@@ -456,18 +500,21 @@ describe('ManagerInvoiceDetailComponent', () => {
 
   it('does not show parent retry for open attempt even when checkoutRetryAvailable is true', () => {
     createFixture(issuedDetail, openAttemptStatus, emptyPaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).not.toContain('Parent retry available');
   });
 
   it('shows parent retry available when eligible and no open attempt', () => {
     createFixture();
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Parent retry available');
   });
 
   it('shows payment events in history', () => {
     createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Payment history');
     expect(text).toContain('Payment succeeded');
@@ -477,12 +524,14 @@ describe('ManagerInvoiceDetailComponent', () => {
 
   it('shows empty payment history state', () => {
     createFixture();
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('No payment events recorded');
   });
 
   it('shows provider IDs as secondary diagnostic text', () => {
     createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('evt_1');
     expect(text).toContain('cs_1');
@@ -496,6 +545,7 @@ describe('ManagerInvoiceDetailComponent', () => {
       checkoutRetryReasonCode: 'already_paid',
     };
     createFixture(issuedDetail, noRetryStatus, emptyPaymentEvents);
+    expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Already paid');
   });
@@ -577,6 +627,8 @@ describe('ManagerInvoiceDetailComponent payment diagnostics error', () => {
   });
 
   it('shows payment diagnostics error with request ID', () => {
+    const btn: HTMLButtonElement | null = fixture.nativeElement.querySelector('button[aria-expanded]');
+    if (btn) { btn.click(); fixture.detectChanges(); }
     const text = fixture.nativeElement.textContent;
     const hasRequestId = text.includes('req-pay-1') || text.includes('req-ev-1');
     expect(hasRequestId).toBe(true);

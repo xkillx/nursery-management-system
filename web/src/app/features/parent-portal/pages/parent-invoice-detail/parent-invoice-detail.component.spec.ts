@@ -30,6 +30,7 @@ function makeDetail(overrides: Partial<ParentInvoiceDetail> = {}): ParentInvoice
     paidAt: null,
     paymentFailedAt: null,
     paymentStatusUpdatedAt: null,
+    site_profile: null,
     calculation: null,
     lines: [],
     ...overrides,

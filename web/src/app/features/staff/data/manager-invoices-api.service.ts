@@ -13,6 +13,7 @@ import {
   ManagerInvoiceCalculation,
   ManagerInvoiceGeneratedRunException,
   ManagerInvoicePeriod,
+  ManagerInvoiceParentContact,
   PaymentAttempt,
   PaymentEvent,
   ManagerPaymentStatus,
@@ -94,6 +95,16 @@ interface GeneratedRunExceptionApi extends ChildNameApi {
   blocker_codes: string[];
 }
 
+interface ParentContactApi {
+  full_name: string;
+  address_line1: string;
+  address_line2: string;
+  address_city: string;
+  address_postcode: string;
+  email: string;
+  telephone: string;
+}
+
 interface InvoiceDetailApi extends ChildNameApi {
   invoice_id: string;
   invoice_kind?: string;
@@ -125,6 +136,8 @@ interface InvoiceDetailApi extends ChildNameApi {
   generated_run_exception_count?: number | null;
   generated_run_exceptions?: GeneratedRunExceptionApi[] | null;
   site_profile?: { nursery_name: string; phone: string; email: string; website: string; address_street: string; address_city: string; address_postcode: string } | null;
+  room_name?: string | null;
+  parent_contact?: ParentContactApi | null;
   calculation?: InvoiceCalculationApi | null;
   lines?: InvoiceLineApi[] | null;
   created_at?: string;
@@ -326,6 +339,8 @@ export class ManagerInvoicesApiService {
       generatedRunExceptionCount: d.generated_run_exception_count ?? null,
       generatedRunExceptions: (d.generated_run_exceptions ?? []).map((e) => this.toException(e)),
       site_profile: d.site_profile ?? null,
+      roomName: d.room_name ?? null,
+      parentContact: d.parent_contact ? this.toParentContact(d.parent_contact) : null,
       calculation: d.calculation ? this.toCalculation(d.calculation) : null,
       lines: (d.lines ?? [])
         .sort((a, b) => a.sort_order - b.sort_order)
@@ -353,6 +368,18 @@ export class ManagerInvoicesApiService {
       middleName: child.child_middle_name,
       lastName: child.child_last_name,
     });
+  }
+
+  private toParentContact(pc: ParentContactApi): ManagerInvoiceParentContact {
+    return {
+      fullName: pc.full_name,
+      addressLine1: pc.address_line1,
+      addressLine2: pc.address_line2,
+      addressCity: pc.address_city,
+      addressPostcode: pc.address_postcode,
+      email: pc.email,
+      telephone: pc.telephone,
+    };
   }
 
   private toCalculation(c: InvoiceCalculationApi): ManagerInvoiceCalculation {

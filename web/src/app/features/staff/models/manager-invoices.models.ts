@@ -89,6 +89,16 @@ export interface ManagerInvoiceSiteProfile {
   address_postcode: string;
 }
 
+export interface ManagerInvoiceParentContact {
+  fullName: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressCity: string;
+  addressPostcode: string;
+  email: string;
+  telephone: string;
+}
+
 export interface ManagerInvoiceDetail {
   invoiceId: string;
   invoiceKind: string;
@@ -121,6 +131,8 @@ export interface ManagerInvoiceDetail {
   generatedRunExceptionCount: number | null;
   generatedRunExceptions: ManagerInvoiceGeneratedRunException[];
   site_profile: ManagerInvoiceSiteProfile | null;
+  roomName: string | null;
+  parentContact: ManagerInvoiceParentContact | null;
   calculation: ManagerInvoiceCalculation | null;
   lines: ManagerInvoiceLine[];
   createdAt: string;

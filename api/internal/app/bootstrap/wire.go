@@ -274,6 +274,8 @@ var billingSet = wire.NewSet(
 	wire.Bind(new(billingdomain.BillingRepository), new(*billingpostgres.Repository)),
 	provideSiteProfileLookupAdapter,
 	wire.Bind(new(billingapp.SiteProfileLookup), new(*siteProfileLookupAdapter)),
+	provideParentContactLookupAdapter,
+	wire.Bind(new(billingapp.ParentContactLookup), new(*parentContactLookupAdapter)),
 	provideSiteRateUpdateAdapter,
 	wire.Bind(new(billingdomain.SiteRateRepository), new(*siteRateUpdateAdapter)),
 	billingapp.NewPreflightDraftInvoices,
