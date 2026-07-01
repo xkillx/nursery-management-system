@@ -6,11 +6,8 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowLeft,
   heroBuildingOffice2,
-  heroEnvelope,
-  heroGlobeAlt,
   heroMapPin,
   heroPhone,
-  heroInformationCircle,
 } from '@ng-icons/heroicons/outline';
 
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
@@ -45,11 +42,8 @@ interface SiteProfileFormModel {
     provideIcons({
       heroArrowLeft,
       heroBuildingOffice2,
-      heroEnvelope,
-      heroGlobeAlt,
       heroMapPin,
       heroPhone,
-      heroInformationCircle,
     }),
   ],
 })
