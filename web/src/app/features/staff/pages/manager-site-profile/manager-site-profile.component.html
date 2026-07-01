@@ -8,10 +8,6 @@
     <app-loading-state label="Loading site profile..." />
   }
 
-  @if (pageError) {
-    <app-alert variant="error" title="Error" [message]="pageError" />
-  }
-
   @if (!loading) {
     <form #profileForm="ngForm" (ngSubmit)="submit(profileForm)" novalidate>
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">

@@ -13,7 +13,7 @@ import {
 
 import { ROLE_ROUTES } from '../../../../core/constants/roles';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { StaffSiteProfileApiService } from '../../data/staff-site-profile-api.service';
 import { SiteProfile, SiteProfileInput } from '../../models/site-profile.models';
 
@@ -35,7 +35,6 @@ interface SiteProfileFormModel {
     FormsModule,
     RouterModule,
     LoadingStateComponent,
-    AlertComponent,
     NgIcon,
   ],
   templateUrl: './manager-site-profile.component.html',
@@ -52,10 +51,10 @@ interface SiteProfileFormModel {
 export class ManagerSiteProfileComponent implements OnInit {
   private readonly api = inject(StaffSiteProfileApiService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   loading = true;
   submitting = false;
-  pageError: string | null = null;
   fieldErrors: Partial<Record<keyof SiteProfileFormModel, string>> = {};
 
   readonly siteSettingsRoute = ROLE_ROUTES.managerSiteSettings;
@@ -77,7 +76,6 @@ export class ManagerSiteProfileComponent implements OnInit {
 
   submit(form: NgForm): void {
     this.fieldErrors = {};
-    this.pageError = null;
 
     if (!this.validate(form)) return;
 
@@ -96,6 +94,7 @@ export class ManagerSiteProfileComponent implements OnInit {
     this.api.updateSiteProfile(input).subscribe({
       next: () => {
         this.submitting = false;
+        this.toast.success('Site profile saved successfully.');
         this.router.navigate([this.siteSettingsRoute]);
       },
       error: (err) => {
@@ -111,7 +110,6 @@ export class ManagerSiteProfileComponent implements OnInit {
 
   private loadProfile(): void {
     this.loading = true;
-    this.pageError = null;
 
     this.api.getSiteProfile().subscribe({
       next: (resp) => {
@@ -132,7 +130,7 @@ export class ManagerSiteProfileComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.pageError = 'Failed to load site profile. Please try again.';
+        this.toast.error('Failed to load site profile. Please try again.');
       },
     });
   }
@@ -208,7 +206,7 @@ export class ManagerSiteProfileComponent implements OnInit {
       }
       return;
     }
-    this.pageError = 'Failed to save site profile. Please try again.';
+    this.toast.error('Failed to save site profile. Please try again.');
   }
 
   private isValidEmail(email: string): boolean {
