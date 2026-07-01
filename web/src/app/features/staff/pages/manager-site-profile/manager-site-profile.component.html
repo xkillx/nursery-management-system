@@ -33,6 +33,7 @@
                 required
                 maxlength="120"
                 [(ngModel)]="model.nursery_name"
+                (input)="clearFieldError('nursery_name')"
                 placeholder="e.g. Little Stars Nursery"
                 class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                 [class.border-error-500]="fieldErrors.nursery_name"
@@ -53,6 +54,7 @@
                 required
                 maxlength="2000"
                 [(ngModel)]="model.description"
+                (input)="clearFieldError('description')"
                 placeholder="Tell parents about your nursery's mission and philosophy..."
                 rows="4"
                 class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
@@ -87,6 +89,7 @@
                 required
                 maxlength="32"
                 [(ngModel)]="model.phone"
+                (input)="clearFieldError('phone')"
                 placeholder="+44 1234 567890"
                 class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                 [class.border-error-500]="fieldErrors.phone"
@@ -108,6 +111,7 @@
                 required
                 maxlength="254"
                 [(ngModel)]="model.email"
+                (input)="clearFieldError('email')"
                 placeholder="contact@littlestars.com"
                 class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                 [class.border-error-500]="fieldErrors.email"
@@ -129,6 +133,7 @@
                 required
                 maxlength="2048"
                 [(ngModel)]="model.website"
+                (input)="clearFieldError('website')"
                 placeholder="www.littlestarsnursery.com"
                 class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                 [class.border-error-500]="fieldErrors.website"
@@ -162,6 +167,7 @@
                 required
                 maxlength="200"
                 [(ngModel)]="model.address_street"
+                (input)="clearFieldError('address_street')"
                 placeholder="123 Nursery Lane"
                 class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                 [class.border-error-500]="fieldErrors.address_street"
@@ -177,14 +183,15 @@
                 <label for="address-city" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   City <span class="text-error-500">*</span>
                 </label>
-                <input
-                  id="address-city"
-                  name="address_city"
-                  type="text"
-                  required
-                  maxlength="100"
-                  [(ngModel)]="model.address_city"
-                  placeholder="Manchester"
+              <input
+                id="address-city"
+                name="address_city"
+                type="text"
+                required
+                maxlength="100"
+                [(ngModel)]="model.address_city"
+                (input)="clearFieldError('address_city')"
+                placeholder="Manchester"
                   class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                   [class.border-error-500]="fieldErrors.address_city"
                   [disabled]="submitting"
@@ -198,14 +205,15 @@
                 <label for="address-postcode" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Postcode <span class="text-error-500">*</span>
                 </label>
-                <input
-                  id="address-postcode"
-                  name="address_postcode"
-                  type="text"
-                  required
-                  maxlength="16"
-                  [(ngModel)]="model.address_postcode"
-                  placeholder="M1 4BT"
+              <input
+                id="address-postcode"
+                name="address_postcode"
+                type="text"
+                required
+                maxlength="16"
+                [(ngModel)]="model.address_postcode"
+                (input)="clearFieldError('address_postcode')"
+                placeholder="M1 4BT"
                   class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
                   [class.border-error-500]="fieldErrors.address_postcode"
                   [disabled]="submitting"

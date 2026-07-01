@@ -77,7 +77,10 @@ export class ManagerSiteProfileComponent implements OnInit {
   submit(form: NgForm): void {
     this.fieldErrors = {};
 
-    if (!this.validate(form)) return;
+    if (!this.validate(form)) {
+      this.scrollToFirstError();
+      return;
+    }
 
     const input: SiteProfileInput = {
       nursery_name: this.model.nursery_name.trim(),
@@ -106,6 +109,28 @@ export class ManagerSiteProfileComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate([this.siteSettingsRoute]);
+  }
+
+  clearFieldError(field: keyof SiteProfileFormModel): void {
+    delete this.fieldErrors[field];
+  }
+
+  private scrollToFirstError(): void {
+    const firstKey = Object.keys(this.fieldErrors)[0] as keyof SiteProfileFormModel;
+    if (!firstKey) return;
+    const idMap: Record<keyof SiteProfileFormModel, string> = {
+      nursery_name: 'nursery-name',
+      description: 'description',
+      phone: 'phone',
+      email: 'email',
+      website: 'website',
+      address_street: 'address-street',
+      address_city: 'address-city',
+      address_postcode: 'address-postcode',
+    };
+    const el = document.getElementById(idMap[firstKey]);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el?.focus();
   }
 
   private loadProfile(): void {
