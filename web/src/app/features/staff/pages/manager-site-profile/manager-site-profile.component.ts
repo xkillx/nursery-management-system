@@ -82,12 +82,13 @@ export class ManagerSiteProfileComponent implements OnInit {
       return;
     }
 
+    const w = this.model.website.trim();
     const input: SiteProfileInput = {
       nursery_name: this.model.nursery_name.trim(),
       description: this.model.description.trim(),
       phone: this.model.phone.trim(),
       email: this.model.email.trim(),
-      website: this.model.website.trim(),
+      website: w.includes('://') ? w : `https://${w}`,
       address_street: this.model.address_street.trim(),
       address_city: this.model.address_city.trim(),
       address_postcode: this.model.address_postcode.trim(),
@@ -205,7 +206,7 @@ export class ManagerSiteProfileComponent implements OnInit {
     } else if (trimmed.website.length > 2048) {
       this.fieldErrors.website = 'Website must be 2048 characters or fewer.';
     } else if (!this.isValidURL(trimmed.website)) {
-      this.fieldErrors.website = 'Enter a valid website address (e.g. www.example.com).';
+      this.fieldErrors.website = 'Enter a valid website address (e.g. https://www.example.com).';
     }
 
     if (!trimmed.address_street) {
@@ -250,8 +251,9 @@ export class ManagerSiteProfileComponent implements OnInit {
   }
 
   private isValidURL(raw: string): boolean {
+    const s = raw.includes('://') ? raw : `https://${raw}`;
     try {
-      const u = new URL(raw);
+      const u = new URL(s);
       return u.protocol !== '' && u.host !== '';
     } catch {
       return false;

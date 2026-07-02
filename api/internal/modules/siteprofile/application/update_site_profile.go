@@ -116,12 +116,16 @@ func (uc *UpdateSiteProfileUseCase) Execute(ctx context.Context, actor tenant.Ac
 }
 
 func trimInput(in UpdateSiteProfileInput) UpdateSiteProfileInput {
+	website := strings.TrimSpace(in.Website)
+	if website != "" && !strings.Contains(website, "://") {
+		website = "https://" + website
+	}
 	return UpdateSiteProfileInput{
 		NurseryName:     strings.TrimSpace(in.NurseryName),
 		Description:     strings.TrimSpace(in.Description),
 		Phone:           strings.TrimSpace(in.Phone),
 		Email:           strings.TrimSpace(in.Email),
-		Website:         strings.TrimSpace(in.Website),
+		Website:         website,
 		AddressStreet:   strings.TrimSpace(in.AddressStreet),
 		AddressCity:     strings.TrimSpace(in.AddressCity),
 		AddressPostcode: strings.TrimSpace(in.AddressPostcode),
@@ -162,7 +166,7 @@ func validateInput(in UpdateSiteProfileInput) []domain.FieldError {
 	} else if len(in.Website) > 2048 {
 		errs = append(errs, domain.FieldError{Field: "website", Message: "Website must be 2048 characters or fewer."})
 	} else if !isValidURL(in.Website) {
-		errs = append(errs, domain.FieldError{Field: "website", Message: "Enter a valid website address (e.g. www.example.com)."})
+		errs = append(errs, domain.FieldError{Field: "website", Message: "Enter a valid website address (e.g. https://www.example.com)."})
 	}
 
 	if in.AddressStreet == "" {
@@ -205,6 +209,9 @@ func isValidEmail(email string) bool {
 }
 
 func isValidURL(raw string) bool {
+	if raw != "" && !strings.Contains(raw, "://") {
+		raw = "https://" + raw
+	}
 	u, err := url.Parse(raw)
 	if err != nil {
 		return false

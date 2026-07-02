@@ -1,12 +1,14 @@
 package http
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"nursery-management-system/api/internal/modules/siteprofile/application"
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 
 	httpserver "nursery-management-system/api/internal/platform/http"
@@ -49,6 +51,13 @@ func (h *Handler) getSiteProfile(c *gin.Context) {
 
 	profile, err := h.getUC.Execute(c.Request.Context(), actor)
 	if err != nil {
+		var de *domainerrors.DomainError
+		if errors.As(err, &de) && de.Code == "site_profile_not_found" {
+			c.JSON(http.StatusOK, getSiteProfileResponse{
+				SiteProfile: nil,
+			})
+			return
+		}
 		h.handleError(c, err)
 		return
 	}
