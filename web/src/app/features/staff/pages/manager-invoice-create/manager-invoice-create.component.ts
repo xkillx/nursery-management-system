@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroMagnifyingGlass,
@@ -12,6 +12,7 @@ import {
   heroExclamationTriangle,
   heroCheck,
   heroXMark,
+  heroChevronRight,
 } from '@ng-icons/heroicons/outline';
 import { catchError, of } from 'rxjs';
 
@@ -26,12 +27,14 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { formatGbp } from '../../../owner/utils/owner-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import { formatChildName } from '../../utils/manager-list-formatters';
+import { ChildRecord } from '../../models/children.models';
 
 @Component({
   selector: 'app-manager-invoice-create',
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     NgIcon,
     AlertComponent,
     LoadingStateComponent,
@@ -47,6 +50,7 @@ import { formatChildName } from '../../utils/manager-list-formatters';
       heroExclamationTriangle,
       heroCheck,
       heroXMark,
+      heroChevronRight,
     }),
   ],
 })
@@ -66,13 +70,21 @@ export class ManagerInvoiceCreateComponent implements OnInit {
 
   readonly DEFAULT_PAYMENT_TERMS = 'Payments are due within 7 days. Late fees may apply as per the parent agreement.';
 
+  readonly mockInvoiceNumber = 'INV-2026-042';
+  readonly issueDate = new Date().toISOString().split('T')[0];
+  readonly dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   mode: 'new' | 'edit' = 'new';
   editInvoiceId: string | null = null;
 
   childSearchTerm = '';
-  searchResults: { childId: string; fullName: string }[] = [];
+  searchResults: ChildRecord[] = [];
   isSearching = false;
-  selectedChild: { childId: string; fullName: string } | null = null;
+  selectedChild: ChildRecord | null = null;
+
+  parentCarerName = signal<string>('');
+  roomName = signal<string>('');
+  ageGroup = signal<string>('');
 
   billingMonth = '';
   isLoadingPrefill = false;
@@ -88,6 +100,21 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   isSaving = false;
   isIssuing = false;
   submitError: string | null = null;
+
+  readonly billingPeriodStart = computed(() => {
+    const month = this.billingMonth;
+    if (!month) return '';
+    return `${month}-01`;
+  });
+
+  readonly billingPeriodEnd = computed(() => {
+    const month = this.billingMonth;
+    if (!month) return '';
+    const [year, m] = month.split('-').map(Number);
+    const lastDay = new Date(year, m, 0).getDate();
+    const mm = String(m).padStart(2, '0');
+    return `${year}-${mm}-${lastDay}`;
+  });
 
   readonly subtotalMinor = computed(() =>
     this.lines().reduce((sum, l) => sum + l.lineAmountMinor, 0)
@@ -133,8 +160,6 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     }
 
     this.isSearching = true;
-    const membership = this.auth.activeMembership();
-    const branchId = membership?.branch_id ?? '';
 
     this.staffApi
       .listChildren({ status: 'active', limit: 20, offset: 0 })
@@ -148,11 +173,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
               const name = c.fullName.toLowerCase();
               const q = term.toLowerCase();
               return name.includes(q);
-            })
-            .map((c) => ({
-              childId: c.id,
-              fullName: c.fullName,
-            }));
+            });
           this.isSearching = false;
         },
         error: () => {
@@ -161,11 +182,65 @@ export class ManagerInvoiceCreateComponent implements OnInit {
       });
   }
 
-  selectChild(child: { childId: string; fullName: string }): void {
+  selectChild(child: ChildRecord): void {
     this.selectedChild = child;
     this.childSearchTerm = child.fullName;
     this.searchResults = [];
+
+    // Load parent/carer contacts
+    this.parentCarerName.set('Loading...');
+    this.staffApi.getChildContacts(child.id).subscribe({
+      next: (contacts) => {
+        if (contacts.parentCarers && contacts.parentCarers.length > 0) {
+          const parent = contacts.parentCarers[0];
+          this.parentCarerName.set(parent.fullName);
+        } else {
+          this.parentCarerName.set('Not assigned');
+        }
+      },
+      error: () => {
+        this.parentCarerName.set('Not assigned');
+      }
+    });
+
+    // Compute age group dynamically
+    const ageGroupStr = this.calculateAgeGroup(child.dateOfBirth);
+    this.ageGroup.set(ageGroupStr);
+
+    // Compute room name dynamically
+    this.roomName.set(this.getRoomNameByAgeGroup(ageGroupStr));
+
     this.loadPrefill();
+  }
+
+  private calculateAgeGroup(dobString: string): string {
+    if (!dobString) return 'Unknown';
+    const dob = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    if (age < 1) return 'Under 1 Year';
+    if (age < 2) return '1-2 Years';
+    if (age < 3) return '2-3 Years';
+    return '3-5 Years';
+  }
+
+  private getRoomNameByAgeGroup(ageGroupStr: string): string {
+    switch (ageGroupStr) {
+      case 'Under 1 Year':
+        return 'Babies Room';
+      case '1-2 Years':
+        return 'Minnows Room';
+      case '2-3 Years':
+        return 'Squirrels Room';
+      case '3-5 Years':
+        return 'Badgers Room';
+      default:
+        return 'Main Hall';
+    }
   }
 
   clearChild(): void {
@@ -174,6 +249,9 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.lines.set([]);
     this.entitlementLabel = '';
     this.hasFundingProfile = false;
+    this.parentCarerName.set('');
+    this.roomName.set('');
+    this.ageGroup.set('');
   }
 
   loadPrefill(): void {
@@ -182,7 +260,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.isLoadingPrefill = true;
     this.prefillError = null;
 
-    this.api.getPrefill(this.selectedChild.childId, this.billingMonth).subscribe({
+    this.api.getPrefill(this.selectedChild.id, this.billingMonth).subscribe({
       next: (prefill) => {
         this.lines.set(
           prefill.lines.map((l, i) => ({
@@ -232,6 +310,27 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     ]);
   }
 
+  addPresetLine(description: string, unitPriceMinor: number, quantity: number): void {
+    this.lines.update((prev) => [
+      ...prev,
+      {
+        id: `line-${Date.now()}`,
+        lineKind: 'extra',
+        description,
+        sortOrder: prev.length + 1,
+        quantityMinutes: quantity,
+        unitAmountMinor: unitPriceMinor,
+        lineAmountMinor: quantity * unitPriceMinor,
+        fundedAllowanceMinutes: 0,
+        fundedDeductionMinutes: 0,
+        coreBillableMinutes: 0,
+        sessionCount: 0,
+        isFundingOffset: false,
+      },
+    ]);
+    this.toast.success(`Preset "${description}" added.`);
+  }
+
   removeLine(lineId: string): void {
     this.lines.update((prev) => prev.filter((l) => l.id !== lineId));
   }
@@ -258,7 +357,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
 
     this.api
       .createDraft({
-        childId: this.selectedChild!.childId,
+        childId: this.selectedChild!.id,
         billingMonth: this.billingMonth,
         lines: this.lines().map((l) => ({
           lineKind: l.lineKind,
@@ -292,7 +391,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
 
     this.api
       .createAndIssue({
-        childId: this.selectedChild!.childId,
+        childId: this.selectedChild!.id,
         billingMonth: this.billingMonth,
         lines: this.lines().map((l) => ({
           lineKind: l.lineKind,

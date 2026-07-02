@@ -1,11 +1,21 @@
-<div class="space-y-6">
+<div class="space-y-6 max-w-[1440px] mx-auto pb-12 font-outfit">
+  <!-- Breadcrumbs -->
+  <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+    <a routerLink="/manager/invoices" class="hover:text-brand-600 transition-colors">Billing</a>
+    <ng-icon name="heroChevronRight" size="14" aria-hidden="true" />
+    <a routerLink="/manager/invoices" class="hover:text-brand-600 transition-colors">Invoices</a>
+    <ng-icon name="heroChevronRight" size="14" aria-hidden="true" />
+    <span class="font-semibold text-gray-900 dark:text-white/90">New Invoice</span>
+  </nav>
+
+  <!-- Header Title -->
   <section aria-labelledby="create-invoice-title">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <h1 id="create-invoice-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        <h1 id="create-invoice-title" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">
           {{ mode === 'edit' ? 'Edit Draft Invoice' : 'Create New Invoice' }}
         </h1>
-        <p class="mt-2 text-base text-gray-600 dark:text-gray-300">
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
           {{ mode === 'edit' ? 'Review and update the draft before issuing.' : 'Select a child and billing period to start.' }}
         </p>
       </div>
@@ -13,7 +23,7 @@
   </section>
 
   @if (submitError) {
-    <app-alert variant="error" [message]="submitError"></app-alert>
+    <app-alert variant="error" [message]="submitError" class="block"></app-alert>
   }
 
   @if (showWarningBanner()) {
@@ -21,199 +31,301 @@
       variant="warning"
       title="Significant funding deduction"
       message="The funding deduction exceeds 25% of the subtotal. Review before issuing."
+      class="block"
     ></app-alert>
   }
 
+  <!-- Two Column Layout -->
   <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+    <!-- Left Column: Form Cards -->
     <div class="space-y-6">
-      <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-        <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Recipient</h2>
+      
+      <!-- General & Recipient Card -->
+      <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- General details -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">General Details</h3>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Invoice Number</label>
+                <input
+                  type="text"
+                  class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
+                  readonly
+                  [value]="mockInvoiceNumber"
+                />
+              </div>
 
-        @if (!selectedChild) {
-          <div>
-            <label for="child-search" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Search child
-            </label>
-            <div class="relative">
-              <ng-icon
-                name="heroMagnifyingGlass"
-                size="18"
-                class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                aria-hidden="true"
-              />
-              <input
-                id="child-search"
-                type="search"
-                class="h-11 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                placeholder="Type at least 2 characters to search..."
-                [ngModel]="childSearchTerm"
-                (ngModelChange)="childSearchTerm = $event; onSearchInput()"
-              />
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Issue Date</label>
+                  <input
+                    type="date"
+                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
+                    readonly
+                    [value]="issueDate"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
+                    readonly
+                    [value]="dueDate"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recipient Selection -->
+          <div class="space-y-4 md:border-l md:border-gray-200 md:dark:border-gray-800 md:pl-8">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Recipient</h3>
+
+            <div class="space-y-3">
+              @if (!selectedChild) {
+                <div>
+                  <label for="child-search" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                    Search Child Name
+                  </label>
+                  <div class="relative">
+                    <ng-icon
+                      name="heroMagnifyingGlass"
+                      size="18"
+                      class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="child-search"
+                      type="search"
+                      class="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                      placeholder="Type at least 2 characters to search..."
+                      [ngModel]="childSearchTerm"
+                      (ngModelChange)="childSearchTerm = $event; onSearchInput()"
+                    />
+                  </div>
+
+                  @if (isSearching) {
+                    <p class="mt-2 text-xs text-gray-500">Searching active roster...</p>
+                  }
+
+                  @if (searchResults.length > 0) {
+                    <ul class="absolute z-10 mt-1 max-h-56 w-full md:w-[calc(50%-3rem)] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                      @for (child of searchResults; track child.id) {
+                        <li>
+                          <button
+                            type="button"
+                            class="w-full px-4 py-2.5 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04]"
+                            (click)="selectChild(child)"
+                          >
+                            <span class="font-medium text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              } @else {
+                <!-- Selected child context card matching reference layout -->
+                <div class="bg-brand-25 dark:bg-brand-950/20 p-4 rounded-xl border border-brand-100 dark:border-brand-900/50 flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400">
+                      <span class="text-2xl font-bold">👦</span>
+                    </div>
+                    <div>
+                      <p class="text-base font-bold text-gray-900 dark:text-white/90 leading-tight">{{ selectedChild.fullName }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Parent: <span class="font-medium text-gray-700 dark:text-gray-300">{{ parentCarerName() }}</span> • Room: <span class="font-medium text-gray-700 dark:text-gray-300">{{ roomName() }}</span>
+                      </p>
+                      <span class="inline-block px-2.5 py-0.5 mt-1.5 text-[10px] font-bold uppercase tracking-wider bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-full">
+                        Age Group: {{ ageGroup() }}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-brand-100 dark:hover:bg-brand-900/20 hover:text-brand-600"
+                    (click)="clearChild()"
+                    aria-label="Clear child selection"
+                  >
+                    <ng-icon name="heroXMark" size="18" />
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Billing Period & Entitlement Status underneath -->
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            
+            <div class="flex flex-col gap-1.5 w-full sm:w-2/3">
+              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing Period</label>
+              <div class="flex items-center gap-3">
+                <input
+                  type="month"
+                  class="h-10 w-full sm:w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                  [ngModel]="billingMonth"
+                  (ngModelChange)="billingMonth = $event; selectedChild ? loadPrefill() : null"
+                />
+                <span class="text-gray-400 text-sm">to</span>
+                <div class="flex gap-2 w-full">
+                  <input
+                    type="date"
+                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
+                    readonly
+                    [value]="billingPeriodStart()"
+                  />
+                  <input
+                    type="date"
+                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
+                    readonly
+                    [value]="billingPeriodEnd()"
+                  />
+                </div>
+              </div>
             </div>
 
-            @if (isSearching) {
-              <p class="mt-2 text-sm text-gray-500">Searching...</p>
+            @if (entitlementLabel) {
+              <div class="text-left sm:text-right mt-1 sm:mt-0">
+                <p class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Entitlement Status</p>
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 font-bold text-xs border border-success-200/50">
+                  <ng-icon name="heroSparkles" size="14" class="mr-1.5 shrink-0" aria-hidden="true" />
+                  {{ entitlementLabel }}
+                </span>
+              </div>
             }
 
-            @if (searchResults.length > 0) {
-              <ul class="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
-                @for (child of searchResults; track child.childId) {
-                  <li>
-                    <button
-                      type="button"
-                      class="w-full px-4 py-3 text-left text-sm transition hover:bg-gray-50 focus:outline-hidden dark:hover:bg-white/[0.04]"
-                      (click)="selectChild(child)"
-                    >
-                      <span class="font-medium text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
           </div>
-        } @else {
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="font-medium text-gray-900 dark:text-white/90">{{ selectedChild.fullName }}</p>
-            </div>
-            <button
-              type="button"
-              class="inline-flex size-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.05]"
-              (click)="clearChild()"
-              aria-label="Clear child selection"
-            >
-              <ng-icon name="heroXMark" size="18" />
-            </button>
-          </div>
-        }
-      </section>
-
-      <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-        <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Billing Period</h2>
-        <div class="max-w-60">
-          <label for="billing-month" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Billing month
-          </label>
-          <input
-            id="billing-month"
-            type="month"
-            class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-            [ngModel]="billingMonth"
-            (ngModelChange)="billingMonth = $event; selectedChild ? loadPrefill() : null"
-          />
         </div>
       </section>
 
-      @if (entitlementLabel) {
-        <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Entitlement Status</h2>
-          <div class="flex items-center gap-2">
-            <ng-icon name="heroSparkles" size="18" class="text-brand-500" aria-hidden="true" />
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ entitlementLabel }}</span>
-          </div>
-        </section>
-      }
-
       @if (isLoadingPrefill) {
-        <app-loading-state label="Computing prefill..."></app-loading-state>
+        <app-loading-state label="Computing billing schedules and attendance records..."></app-loading-state>
       }
 
       @if (prefillError) {
         <app-alert variant="error" [message]="prefillError"></app-alert>
       }
 
+      <!-- Line Items Section -->
       @if (lines().length > 0 && !isLoadingPrefill) {
-        <section class="rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-            <div class="flex items-center justify-between">
-              <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Line Items</h2>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                  (click)="addBlankLine()"
-                >
-                  <ng-icon name="heroPlus" size="16" aria-hidden="true" />
-                  Add Row
-                </button>
-              </div>
-            </div>
+        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
+          
+          <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Line Items</h3>
+            <button
+              type="button"
+              class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/30 px-3 text-xs font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
+              (click)="addBlankLine()"
+            >
+              <ng-icon name="heroPlus" size="14" aria-hidden="true" />
+              Add Row
+            </button>
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[700px] border-collapse text-sm">
+            <table class="w-full min-w-[700px] border-collapse text-left text-sm">
               <thead>
-                <tr class="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
-                  <th class="px-4 py-3 text-left w-8"></th>
-                  <th class="px-4 py-3 text-left">Description</th>
-                  <th class="px-4 py-3 text-right w-24">Qty (min)</th>
-                  <th class="px-4 py-3 text-right w-28">Unit price</th>
-                  <th class="px-4 py-3 text-right w-28">Total</th>
-                  <th class="px-4 py-3 text-center w-12"></th>
+                <tr class="border-b border-gray-200 bg-gray-50/50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
+                  <th class="px-6 py-3 w-10"></th>
+                  <th class="px-6 py-3">Description</th>
+                  <th class="px-6 py-3 w-28 text-center">Quantity</th>
+                  <th class="px-6 py-3 w-36 text-right">Unit Price</th>
+                  <th class="px-6 py-3 w-36 text-right">Total</th>
+                  <th class="px-6 py-3 w-14 text-center"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 @for (line of lines(); track line.id; let i = $index) {
-                  <tr class="transition hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
-                    <td class="px-4 py-2.5 text-xs text-gray-400">{{ i + 1 }}</td>
-                    <td class="px-4 py-2.5">
+                  <tr
+                    class="transition-colors hover:bg-gray-50/30 dark:hover:bg-white/[0.01]"
+                    [ngClass]="{'bg-brand-50/20 dark:bg-brand-950/10': line.isFundingOffset}"
+                  >
+                    <!-- Line Index -->
+                    <td class="px-6 py-3 text-xs text-gray-400">{{ i + 1 }}</td>
+                    
+                    <!-- Description -->
+                    <td class="px-6 py-3">
                       <div class="flex items-center gap-2">
                         @if (line.isFundingOffset) {
-                          <ng-icon name="heroSparkles" size="16" class="shrink-0 text-brand-500" aria-hidden="true" title="Funding offset" />
-                        }
-                        @if (line.lineKind === 'funded_deduction') {
-                          <span class="text-sm font-medium text-gray-900 dark:text-white/90">{{ line.description }}</span>
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 uppercase shrink-0">
+                            Funding Offset
+                          </span>
+                          <span class="text-sm font-semibold text-brand-800 dark:text-brand-300 leading-tight">
+                            {{ line.description }}
+                          </span>
                         } @else {
                           <input
                             type="text"
-                            class="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                            class="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                             [ngModel]="line.description"
                             (ngModelChange)="updateLine(line.id, 'description', $event)"
-                            placeholder="Description"
+                            placeholder="e.g. Session Hours, Fees..."
                           />
                         }
                       </div>
                     </td>
-                    <td class="px-4 py-2.5">
+
+                    <!-- Quantity -->
+                    <td class="px-6 py-3 text-center">
                       @if (!line.isFundingOffset) {
                         <input
                           type="number"
-                          class="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-right text-sm text-gray-800 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                          class="h-9 w-20 mx-auto rounded-md border border-gray-200 bg-white px-2 text-center text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                           [ngModel]="line.quantityMinutes"
                           (ngModelChange)="updateLine(line.id, 'quantityMinutes', Number($event))"
                           min="0"
                         />
+                      } @else {
+                        <span class="text-sm text-gray-500">{{ line.quantityMinutes }}</span>
                       }
                     </td>
-                    <td class="px-4 py-2.5">
+
+                    <!-- Unit Price -->
+                    <td class="px-6 py-3">
                       @if (!line.isFundingOffset) {
-                        <div class="relative">
-                          <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&pound;</span>
+                        <div class="relative w-28 ml-auto">
+                          <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&pound;</span>
                           <input
                             type="number"
-                            class="h-9 w-full rounded-md border border-gray-200 bg-white pl-6 pr-3 text-right text-sm text-gray-800 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                            class="h-9 w-full rounded-md border border-gray-200 bg-white pl-6 pr-3 text-right text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                             [ngModel]="line.unitAmountMinor / 100"
                             (ngModelChange)="updateLine(line.id, 'unitAmountMinor', Math.round(Number($event) * 100))"
                             min="0"
                             step="0.01"
                           />
                         </div>
-                      }
-                    </td>
-                    <td class="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white/90">
-                      @if (line.lineKind === 'funded_deduction') {
-                        <span class="text-warning-700 dark:text-warning-300">&minus;{{ formatGbp(line.lineAmountMinor) }}</span>
                       } @else {
-                        {{ formatGbp(line.lineAmountMinor) }}
+                        <span class="block text-right text-sm text-error-600 dark:text-error-400 font-medium">
+                          &minus;{{ formatGbp(Math.abs(line.unitAmountMinor)) }}
+                        </span>
                       }
                     </td>
-                    <td class="px-4 py-2.5 text-center">
+
+                    <!-- Row Total -->
+                    <td class="px-6 py-3 text-right font-semibold text-sm">
+                      @if (line.lineKind === 'funded_deduction') {
+                        <span class="text-error-600 dark:text-error-400 font-bold">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
+                      } @else {
+                        <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
+                      }
+                    </td>
+
+                    <!-- Action Button -->
+                    <td class="px-6 py-3 text-center">
                       @if (!line.isFundingOffset) {
                         <button
                           type="button"
-                          class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-red-50 hover:text-red-500 focus:outline-hidden"
+                          class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-error-50 dark:hover:bg-error-950/20 hover:text-error-500 focus:outline-hidden"
                           (click)="removeLine(line.id)"
-                          aria-label="Remove line"
+                          aria-label="Remove row"
                         >
                           <ng-icon name="heroTrash" size="16" />
                         </button>
@@ -226,88 +338,164 @@
           </div>
         </section>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Internal Notes</h2>
+        <!-- Notes & Terms -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Internal Notes</h3>
             <textarea
-              class="h-24 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               [ngModel]="internalNotes"
               (ngModelChange)="internalNotes = $event"
-              placeholder="Optional notes for internal reference..."
+              placeholder="Private details for internal staff view only..."
             ></textarea>
           </section>
 
-          <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Payment Terms</h2>
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Payment Terms</h3>
             <textarea
-              class="h-24 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               [ngModel]="paymentTerms"
               (ngModelChange)="paymentTerms = $event"
             ></textarea>
           </section>
         </div>
       }
+
     </div>
 
+    <!-- Right Column: Sidebar Actions & Presets -->
     @if (lines().length > 0 && !isLoadingPrefill) {
-      <aside class="space-y-4">
-        <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="mb-4 text-base font-semibold text-gray-900 dark:text-white/90">Invoice Summary</h2>
+      <aside class="space-y-6">
+        
+        <!-- Summary Card -->
+        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6 sticky top-6">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Invoice Summary</h3>
 
-          <dl class="space-y-3 text-sm">
+          <dl class="space-y-3.5 text-sm">
             <div class="flex items-center justify-between">
-              <dt class="text-gray-600 dark:text-gray-400">Subtotal</dt>
-              <dd class="font-medium text-gray-900 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Subtotal</dt>
+              <dd class="font-semibold text-gray-950 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
             </div>
 
             @if (fundedDeductionMinor() > 0) {
               <div class="flex items-center justify-between">
-                <dt class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                <dt class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                   <ng-icon name="heroSparkles" size="14" class="text-brand-500" aria-hidden="true" />
                   Funding deduction
                 </dt>
-                <dd class="font-medium text-warning-700 dark:text-warning-300">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
+                <dd class="font-bold text-error-600 dark:text-error-400">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
               </div>
             }
 
-            <div class="border-t border-gray-200 pt-3 dark:border-gray-700"></div>
             <div class="flex items-center justify-between">
-              <dt class="text-sm font-semibold text-gray-900 dark:text-white/90">Grand Total</dt>
-              <dd class="text-base font-bold text-gray-900 dark:text-white/90">{{ formatGbp(totalDueMinor()) }}</dd>
+              <dt class="text-gray-500 dark:text-gray-400">Total Tax (0%)</dt>
+              <dd class="font-medium text-gray-950 dark:text-white/90">£0.00</dd>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-800 pt-4"></div>
+            <div class="flex items-center justify-between">
+              <dt class="text-base font-bold text-gray-900 dark:text-white/90">Grand Total</dt>
+              <dd class="text-2xl font-black text-brand-600 dark:text-brand-400 tracking-tight">
+                {{ formatGbp(totalDueMinor()) }}
+              </dd>
             </div>
           </dl>
+
+          <!-- Submit Buttons -->
+          <div class="space-y-3">
+            <button
+              type="button"
+              class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-bold text-white shadow-theme-sm transition hover:bg-brand-700 active:scale-98 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+              [disabled]="!canSubmit() || isSaving || isIssuing"
+              (click)="issueInvoice()"
+            >
+              @if (isIssuing) {
+                <span>Issuing Invoice...</span>
+              } @else {
+                <ng-icon name="heroCheck" size="18" aria-hidden="true" />
+                Issue Invoice
+              }
+            </button>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                [disabled]="!canSubmit() || isSaving || isIssuing"
+                (click)="saveDraft()"
+              >
+                @if (isSaving) {
+                  <span>Saving...</span>
+                } @else {
+                  <ng-icon name="heroDocumentText" size="15" aria-hidden="true" />
+                  Save Draft
+                }
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                [disabled]="!canSubmit()"
+              >
+                <span>Preview</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="p-3.5 bg-warning-50 dark:bg-warning-950/10 rounded-xl border border-warning-100 dark:border-warning-900/30 flex gap-2.5">
+            <span class="text-lg">⚠️</span>
+            <p class="text-xs text-warning-800 dark:text-warning-300 leading-normal">
+              Confirm all attendance logs for the selected billing month are validated before issuing this invoice.
+            </p>
+          </div>
         </section>
 
-        <div class="flex flex-col gap-3">
-          <button
-            type="button"
-            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-            [disabled]="!canSubmit() || isSaving || isIssuing"
-            (click)="saveDraft()"
-          >
-            @if (isSaving) {
-              <span>Saving...</span>
-            } @else {
-              <ng-icon name="heroDocumentText" size="18" aria-hidden="true" />
-              Save Draft
-            }
-          </button>
+        <!-- Presets Card -->
+        <section class="bg-gray-100 dark:bg-white/[0.02] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+          <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest">Nursery Presets</h4>
+          
+          <div class="space-y-2">
+            <button
+              type="button"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              (click)="addPresetLine('Full Day Session', 6500, 1)"
+            >
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Full Day Session</p>
+                <span class="text-xs font-bold text-brand-600">Add</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-1">£65.00 • 8:00am - 6:00pm</p>
+            </button>
 
-          <button
-            type="button"
-            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-            [disabled]="!canSubmit() || isSaving || isIssuing"
-            (click)="issueInvoice()"
-          >
-            @if (isIssuing) {
-              <span>Issuing...</span>
-            } @else {
-              <ng-icon name="heroCheck" size="18" aria-hidden="true" />
-              Issue Invoice
-            }
-          </button>
-        </div>
+            <button
+              type="button"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              (click)="addPresetLine('Morning Session', 4200, 1)"
+            >
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Morning Session</p>
+                <span class="text-xs font-bold text-brand-600">Add</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-1">£42.00 • 8:00am - 1:00pm</p>
+            </button>
+
+            <button
+              type="button"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              (click)="addPresetLine('Afternoon Session', 4200, 1)"
+            >
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Afternoon Session</p>
+                <span class="text-xs font-bold text-brand-600">Add</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-1">£42.00 • 1:00pm - 6:00pm</p>
+            </button>
+          </div>
+        </section>
+
       </aside>
     }
   </div>
 </div>
+
