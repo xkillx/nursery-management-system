@@ -144,6 +144,7 @@ export class ManagerInvoicesComponent implements OnInit {
   selectedBillingMonthTo: string;
   activePreset = 'this';
   selectedStatus: ManagerInvoiceStatusFilter = 'all';
+  searchQuery = '';
   offset = 0;
 
   items: ManagerInvoiceListItem[] = [];
@@ -154,6 +155,57 @@ export class ManagerInvoicesComponent implements OnInit {
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
   readonly invoiceIdentity = invoiceIdentity;
+
+  get filteredItems(): ManagerInvoiceListItem[] {
+    const q = this.searchQuery.trim().toLowerCase();
+    if (!q) return this.items;
+    return this.items.filter(item => {
+      const childMatch = item.childName?.toLowerCase().includes(q);
+      const numberMatch = item.invoiceNumber?.toLowerCase().includes(q) || 
+                          item.invoiceNumberDisplay?.toLowerCase().includes(q);
+      return childMatch || numberMatch;
+    });
+  }
+
+  viewInvoice(invoiceId: string, event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('a') || target.closest('button') || target.closest('input') || target.closest('select')) {
+      return;
+    }
+    this.router.navigate(['/manager/invoices', invoiceId]);
+  }
+
+  getChildInitials(name: string): string {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  getAvatarColorClass(name: string): string {
+    if (!name) return 'bg-gray-100 text-gray-600';
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % 5;
+    const colors = [
+      'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300 border-blue-100 dark:border-blue-500/30',
+      'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300 border-emerald-100 dark:border-emerald-500/30',
+      'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300 border-violet-100 dark:border-violet-500/30',
+      'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border-amber-100 dark:border-amber-500/30',
+      'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300 border-rose-100 dark:border-rose-500/30',
+    ];
+    return colors[index];
+  }
+
+  getStatusBorderClass(status: string, dueStatus: string): string {
+    if (status === 'draft') return 'border-l-gray-300 dark:border-l-gray-700';
+    if (status === 'paid') return 'border-l-success-500';
+    if (dueStatus === 'overdue' || status === 'payment_failed') return 'border-l-error-500';
+    if (status === 'issued') return 'border-l-brand-500';
+    return 'border-l-transparent';
+  }
 
   constructor() {
     const now = new Date();
