@@ -91,8 +91,11 @@ describe('app.routes', () => {
     'manager/invites',
     'manager/funding',
     'manager/invoices',
-    'manager/rooms',
-    'manager/rooms/new',
+    'manager/site-settings',
+    'manager/site-settings/rooms',
+    'manager/site-settings/rooms/new',
+    'manager/site-settings/session-types',
+    'manager/site-settings/billing-setup',
     'practitioner/attendance',
     'practitioner/attendance-children',
     'owner',
@@ -110,7 +113,8 @@ describe('app.routes', () => {
   const dynamicPaths = [
     'manager/children/:childId',
     'manager/invoices/:invoiceId',
-    'manager/rooms/:roomId/edit',
+    'manager/site-settings/rooms/:roomId/edit',
+    'manager/site-settings/session-types/:sessionTypeId/edit',
     'owner/rooms/:roomId/edit',
     'parent/invoices/:invoiceId',
   ];
@@ -238,12 +242,12 @@ describe('app.routes', () => {
     expect(ownerRoomParent!.data?.['roles']).toEqual(['owner']);
   });
 
-  it('manager room routes require manager role only', () => {
-    const managerRoomParent = allDescendantRoutes(routes)
-      .find(r => r.path === 'manager/rooms');
+  it('manager site-settings room routes require manager role only', () => {
+    const managerSiteSettings = allDescendantRoutes(routes)
+      .find(r => r.path === 'manager/site-settings');
 
-    expect(managerRoomParent).toBeDefined();
-    expect(managerRoomParent!.data?.['roles']).toEqual(['manager']);
+    expect(managerSiteSettings).toBeDefined();
+    expect(managerSiteSettings!.data?.['roles']).toEqual(['manager']);
   });
 
   it('does not register practitioner room routes', () => {
@@ -355,9 +359,15 @@ describe('app.routes breadcrumb wiring', () => {
     'manager/children/:childId/edit',
     'manager/invites',
     'manager/attendance-corrections',
-    'manager/rooms',
-    'manager/rooms/new',
-    'manager/rooms/:roomId/edit',
+    'manager/site-settings',
+    'manager/site-settings/profile',
+    'manager/site-settings/rooms',
+    'manager/site-settings/rooms/new',
+    'manager/site-settings/rooms/:roomId/edit',
+    'manager/site-settings/session-types',
+    'manager/site-settings/session-types/new',
+    'manager/site-settings/session-types/:sessionTypeId/edit',
+    'manager/site-settings/billing-setup',
     'manager/funding',
     'manager/invoices',
     'manager/invoices/:invoiceId',

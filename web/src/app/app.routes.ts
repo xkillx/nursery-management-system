@@ -153,60 +153,79 @@ export const routes: Routes = [
             title: 'Attendance Corrections | Nursery Management',
           },
           {
-            path: 'manager/rooms',
+            path: 'manager/site-settings',
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Rooms', link: ['/manager/rooms'] },
+              breadcrumb: { label: 'Site settings', link: ['/manager/site-settings'] },
             },
             children: [
               {
                 path: '',
-                component: ManagerRoomsComponent,
-                title: 'Rooms | Nursery Management',
+                component: ManagerSiteSettingsComponent,
+                title: 'Site Settings | Nursery Management',
               },
               {
-                path: 'new',
-                component: OwnerRoomFormComponent,
+                path: 'profile',
+                component: ManagerSiteProfileComponent,
+                data: { breadcrumb: { label: 'Site profile' } },
+                title: 'Site Profile | Nursery Management',
+              },
+              {
+                path: 'rooms',
+                data: { breadcrumb: { label: 'Rooms & capacity' } },
+                children: [
+                  {
+                    path: '',
+                    component: ManagerRoomsComponent,
+                    title: 'Rooms | Nursery Management',
+                  },
+                  {
+                    path: 'new',
+                    component: OwnerRoomFormComponent,
+                    data: { breadcrumb: { label: 'New room' } },
+                    title: 'New Room | Nursery Management',
+                  },
+                  {
+                    path: ':roomId/edit',
+                    component: OwnerRoomFormComponent,
+                    data: { breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver } },
+                    title: 'Edit Room | Nursery Management',
+                  },
+                ],
+              },
+              {
+                path: 'session-types',
+                data: { breadcrumb: { label: 'Session types' } },
+                children: [
+                  {
+                    path: '',
+                    component: ManagerSessionTypesComponent,
+                    title: 'Session types | Nursery Management',
+                  },
+                  {
+                    path: 'new',
+                    component: OwnerSessionTypeFormComponent,
+                    data: { breadcrumb: { label: 'New session type' } },
+                    title: 'New session type | Nursery Management',
+                  },
+                  {
+                    path: ':sessionTypeId/edit',
+                    component: OwnerSessionTypeFormComponent,
+                    data: { breadcrumb: { label: 'Edit session type' } },
+                    title: 'Edit session type | Nursery Management',
+                  },
+                ],
+              },
+              {
+                path: 'billing-setup',
+                component: ManagerBillingSetupComponent,
+                canActivate: [authGuard, roleGuard],
                 data: {
-                  breadcrumb: { label: 'New room' },
+                  roles: ['manager'],
+                  breadcrumb: { label: 'Fees & billing' },
                 },
-                title: 'New Room | Nursery Management',
-              },
-              {
-                path: ':roomId/edit',
-                component: OwnerRoomFormComponent,
-                data: {
-                  breadcrumb: { label: 'Edit room', resolve: ownerRoomNameResolver },
-                },
-                title: 'Edit Room | Nursery Management',
-              },
-            ],
-          },
-          {
-            path: 'manager/session-types',
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Session types', link: ['/manager/session-types'] },
-            },
-            children: [
-              {
-                path: '',
-                component: ManagerSessionTypesComponent,
-                title: 'Session types | Nursery Management',
-              },
-              {
-                path: 'new',
-                component: OwnerSessionTypeFormComponent,
-                data: { breadcrumb: { label: 'New session type' } },
-                title: 'New session type | Nursery Management',
-              },
-              {
-                path: ':sessionTypeId/edit',
-                component: OwnerSessionTypeFormComponent,
-                data: { breadcrumb: { label: 'Edit session type' } },
-                title: 'Edit session type | Nursery Management',
+                title: 'Billing Setup | Nursery Management',
               },
             ],
           },
@@ -279,35 +298,46 @@ export const routes: Routes = [
             },
             title: 'Attendance | Nursery Management',
           },
-          {
-            path: 'manager/billing-setup',
-            component: ManagerBillingSetupComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Billing setup' },
-            },
-            title: 'Billing Setup | Nursery Management',
-          },
-          {
-            path: 'manager/site-settings',
-            component: ManagerSiteSettingsComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Site settings' },
-            },
-            title: 'Site Settings | Nursery Management',
-          },
+          // Redirects from old URLs to new nested site-settings structure
           {
             path: 'manager/site-profile',
-            component: ManagerSiteProfileComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager', 'owner'],
-              breadcrumb: { label: 'Site Profile' },
-            },
-            title: 'Site Profile | Nursery Management',
+            redirectTo: '/manager/site-settings/profile',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/billing-setup',
+            redirectTo: '/manager/site-settings/billing-setup',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/rooms',
+            redirectTo: '/manager/site-settings/rooms',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/rooms/new',
+            redirectTo: '/manager/site-settings/rooms/new',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/rooms/:roomId/edit',
+            redirectTo: '/manager/site-settings/rooms/:roomId/edit',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/session-types',
+            redirectTo: '/manager/site-settings/session-types',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/session-types/new',
+            redirectTo: '/manager/site-settings/session-types/new',
+            pathMatch: 'full',
+          },
+          {
+            path: 'manager/session-types/:sessionTypeId/edit',
+            redirectTo: '/manager/site-settings/session-types/:sessionTypeId/edit',
+            pathMatch: 'full',
           },
           {
             path: 'manager/attendance',
