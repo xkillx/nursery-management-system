@@ -36,3 +36,35 @@ A multi-step form wizard that guides staff through child registration or editing
 
 ### Site Profile
 A branch's brand identity (name, description, phone, email, website, address) used on parent-facing surfaces. One Site Profile per branch, separate from branch ops (archive, hourly rate). Currently rendered on the parent invoice header.
+
+## Invoicing
+
+### Term
+A 12-month (adjustable) commercial commitment between a nursery and a parent for one child. Links a child's booking pattern + hourly rate at a snapshot. Lifecycle: `pre_term → active → pending_renewal → ended | terminated`. Only active terms are billable. Start date must be the 1st of a calendar month.
+
+### Advance-Pay (Prepaid Monthly Invoicing)
+Invoices are generated for the next calendar month before service is delivered. The billing month IS the service month. Generation typically runs on the 25th of the preceding month.
+
+### Invoice Status
+- `draft` — editable, not yet issued to parent
+- `issued` — locked, invoice number assigned, parent can view/pay
+- `paid` — payment received in full
+- `payment_failed` — payment attempt failed
+- `overdue` — due date passed without payment
+
+### Invoice Lines
+- `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate)
+- `funded_deduction` — the funding entitlement deduction (funded minutes × hourly rate, subtracted)
+- `extra` — ad-hoc charges added by manager
+
+### Booking Pattern
+A child's planned weekly attendance schedule. The system counts day-of-week occurrences in the calendar month × session duration = `booked_core_minutes`. This is the billing basis under advance-pay.
+
+### Funded Allowance Minutes
+Monthly funding entitlement expressed in minutes. Derived from `funded_hours_per_week × 52 × 60 / 12` (annualised hours spread evenly across 12 months). Stored per (child, billing_month) in `funding_profiles`.
+
+### Billable Minutes
+`max(0, booked_core_minutes - funded_allowance_minutes)`. The minutes that the parent actually pays for after funding deduction.
+
+### Pro-Ration
+When a child starts mid-term, billable days are pro-rated: `booked_minutes × (eligible_days / total_days_in_month)`. The term always starts on the 1st; the child's `start_date` determines actual eligibility.
