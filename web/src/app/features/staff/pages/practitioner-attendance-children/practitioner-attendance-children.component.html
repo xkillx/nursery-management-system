@@ -5,34 +5,43 @@
       <h1 id="attendance-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
         Today's Attendance
       </h1>
-      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
-        {{ currentDate }} — <span class="font-medium">{{ clockTime }}</span>
+      <p class="mt-2 text-base leading-7 text-gray-500 dark:text-gray-400">
+        {{ currentDate }} • <span class="font-semibold text-gray-900 dark:text-white">{{ clockTime }}</span>
       </p>
     </div>
 
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <label class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+    <!-- Combined Controls Panel -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      <label class="relative flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80">
         <input
           type="checkbox"
           data-testid="auto-refresh-toggle"
           [checked]="autoRefreshEnabled"
           (change)="toggleAutoRefresh()"
-          class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+          class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800"
         />
-        Auto-refresh
+        <span>Auto-refresh</span>
       </label>
-      @if (isBackgroundRefreshing) {
-        <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="refreshing-indicator">Refreshing...</span>
+      
+      @if (isBackgroundRefreshing || lastUpdatedLabel) {
+        <div class="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium text-gray-500 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+          @if (isBackgroundRefreshing) {
+            <span data-testid="refreshing-indicator" class="inline-flex items-center gap-1.5 text-brand-500 dark:text-brand-400">
+              <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+              Refreshing...
+            </span>
+          } @else if (lastUpdatedLabel) {
+            <span data-testid="last-updated" class="text-gray-400 dark:text-gray-500">Updated {{ lastUpdatedLabel }}</span>
+          }
+        </div>
       }
-      @if (lastUpdatedLabel) {
-        <span class="text-xs text-gray-500 dark:text-gray-400" data-testid="last-updated">Updated {{ lastUpdatedLabel }}</span>
-      }
+
       <button
         type="button"
-        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        class="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 active:bg-gray-100 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
         (click)="loadChildren()"
       >
-        <ng-icon name="heroArrowPath" size="18" aria-hidden="true" />
+        <ng-icon name="heroArrowPath" size="16" [class.animate-spin]="isBackgroundRefreshing || (isLoading && children.length > 0)" aria-hidden="true" />
         Refresh
       </button>
     </div>
@@ -45,24 +54,31 @@
   }
 
   <!-- Stats Cards -->
-  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Attendance summary">
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Attendance summary">
+    <!-- Card 1: Total Expected -->
+    <article class="group rounded-2xl border border-gray-200/80 bg-linear-to-br from-white to-gray-50/50 p-5 shadow-theme-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-theme-sm dark:border-gray-800/80 dark:from-white/[0.03] dark:to-white/[0.01] dark:hover:border-gray-700">
       <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-          <ng-icon name="heroUsers" size="24" aria-hidden="true" />
+        <div class="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-300 dark:group-hover:bg-brand-500/20">
+          <ng-icon name="heroUsers" size="22" aria-hidden="true" />
         </div>
-        <span class="text-xs font-semibold text-success-600 dark:text-success-400">Daily Plan</span>
+        <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">Daily Plan</span>
       </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Expected</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ children.length }}</p>
+      <div class="mt-4">
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Expected</p>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <p class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">{{ children.length }}</p>
+          <span class="text-xs text-gray-400 dark:text-gray-500">children scheduled</span>
+        </div>
+      </div>
     </article>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+    <!-- Card 2: Checked In -->
+    <article class="group rounded-2xl border border-gray-200/80 bg-linear-to-br from-white to-success-50/[0.08] p-5 shadow-theme-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-success-200 hover:shadow-theme-sm dark:border-gray-800/80 dark:from-white/[0.03] dark:to-success-500/[0.01] dark:hover:border-success-500/30">
       <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
-          <ng-icon name="heroCheckBadge" size="24" aria-hidden="true" />
+        <div class="flex size-11 items-center justify-center rounded-xl bg-success-50 text-success-600 transition-colors group-hover:bg-success-100 dark:bg-success-500/15 dark:text-success-300 dark:group-hover:bg-success-500/20">
+          <ng-icon name="heroCheckBadge" size="22" aria-hidden="true" />
         </div>
-        <span class="text-xs font-semibold text-success-600 dark:text-success-400">
+        <span class="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">
           @if (children.length > 0) {
             {{ (checkedInCount / children.length * 100) | number:'1.0-0' }}%
           } @else {
@@ -70,16 +86,22 @@
           }
         </span>
       </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Checked In</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ checkedInCount }}</p>
+      <div class="mt-4">
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Checked In</p>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <p class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">{{ checkedInCount }}</p>
+          <span class="text-xs text-gray-400 dark:text-gray-500">currently present</span>
+        </div>
+      </div>
     </article>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+    <!-- Card 3: Absent Today -->
+    <article class="group rounded-2xl border border-gray-200/80 bg-linear-to-br from-white to-error-50/[0.08] p-5 shadow-theme-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-error-200 hover:shadow-theme-sm dark:border-gray-800/80 dark:from-white/[0.03] dark:to-error-500/[0.01] dark:hover:border-error-500/30">
       <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300">
-          <ng-icon name="heroXCircle" size="24" aria-hidden="true" />
+        <div class="flex size-11 items-center justify-center rounded-xl bg-error-50 text-error-600 transition-colors group-hover:bg-error-100 dark:bg-error-500/15 dark:text-error-300 dark:group-hover:bg-error-500/20">
+          <ng-icon name="heroXCircle" size="22" aria-hidden="true" />
         </div>
-        <span class="text-xs font-semibold text-error-600 dark:text-error-400">
+        <span class="inline-flex items-center rounded-full bg-error-50 px-2.5 py-0.5 text-xs font-semibold text-error-700 dark:bg-error-500/15 dark:text-error-400">
           @if (children.length > 0) {
             {{ (absentCount / children.length * 100) | number:'1.0-0' }}%
           } @else {
@@ -87,16 +109,22 @@
           }
         </span>
       </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Absent Today</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ absentCount }}</p>
+      <div class="mt-4">
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Absent Today</p>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <p class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">{{ absentCount }}</p>
+          <span class="text-xs text-gray-400 dark:text-gray-500">marked absent</span>
+        </div>
+      </div>
     </article>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+    <!-- Card 4: Expected Soon -->
+    <article class="group rounded-2xl border border-gray-200/80 bg-linear-to-br from-white to-warning-50/[0.08] p-5 shadow-theme-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-warning-200 hover:shadow-theme-sm dark:border-gray-855/80 dark:from-white/[0.03] dark:to-warning-500/[0.01] dark:hover:border-warning-500/30">
       <div class="flex items-start justify-between gap-4">
-        <div class="flex size-12 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300">
-          <ng-icon name="heroClock" size="24" aria-hidden="true" />
+        <div class="flex size-11 items-center justify-center rounded-xl bg-warning-50 text-warning-600 transition-colors group-hover:bg-warning-100 dark:bg-warning-500/15 dark:text-warning-300 dark:group-hover:bg-warning-500/20">
+          <ng-icon name="heroClock" size="22" aria-hidden="true" />
         </div>
-        <span class="text-xs font-semibold text-warning-600 dark:text-warning-400">
+        <span class="inline-flex items-center rounded-full bg-warning-50 px-2.5 py-0.5 text-xs font-semibold text-warning-700 dark:bg-warning-500/15 dark:text-warning-400">
           @if (children.length > 0) {
             {{ (expectedSoonCount / children.length * 100) | number:'1.0-0' }}%
           } @else {
@@ -104,8 +132,13 @@
           }
         </span>
       </div>
-      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Expected Soon</p>
-      <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ expectedSoonCount }}</p>
+      <div class="mt-4">
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Expected Soon</p>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <p class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">{{ expectedSoonCount }}</p>
+          <span class="text-xs text-gray-400 dark:text-gray-500">awaiting arrival</span>
+        </div>
+      </div>
     </article>
   </section>
 
@@ -113,11 +146,11 @@
   @if (isLoading && children.length === 0) {
     <div aria-busy="true" class="space-y-6">
       <!-- Skeleton stats grid -->
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @for (_ of [1,2,3,4]; track _) {
-          <div class="animate-pulse rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="animate-pulse rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex items-start justify-between gap-4">
-              <div class="size-12 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              <div class="size-11 rounded-xl bg-gray-200 dark:bg-gray-700"></div>
               <div class="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700"></div>
             </div>
             <div class="mt-5 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
@@ -126,7 +159,7 @@
         }
       </div>
       <!-- Skeleton table -->
-      <div class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="border-b border-gray-200 p-4 lg:p-6 dark:border-gray-800">
           <div class="flex gap-2">
             <div class="h-9 w-20 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
@@ -154,16 +187,17 @@
     <app-empty-state title="No children available for today's attendance."></app-empty-state>
   } @else {
     <!-- Records Section -->
-    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Attendance records">
-      <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
-        <div class="flex flex-wrap items-center gap-2">
+    <section class="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-theme-xs dark:border-gray-800/80 dark:bg-white/[0.02]" aria-label="Attendance records">
+      <div class="flex flex-col gap-4 border-b border-gray-200/80 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-5 dark:border-gray-800/80">
+        <!-- Segmented Filter Tab -->
+        <div class="inline-flex rounded-xl bg-gray-100/70 p-1 dark:bg-gray-800/70">
           <button
             data-testid="attendance-filter-all"
             type="button"
-            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            class="rounded-lg px-3.5 py-1.5 text-xs font-medium transition duration-200"
             [ngClass]="{
-              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'all',
-              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'all'
+              'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white': statusFilter === 'all',
+              'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white': statusFilter !== 'all'
             }"
             (click)="setStatusFilter('all')"
           >
@@ -172,10 +206,10 @@
           <button
             data-testid="attendance-filter-not-in"
             type="button"
-            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            class="rounded-lg px-3.5 py-1.5 text-xs font-medium transition duration-200"
             [ngClass]="{
-              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'not_checked_in',
-              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'not_checked_in'
+              'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white': statusFilter === 'not_checked_in',
+              'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white': statusFilter !== 'not_checked_in'
             }"
             (click)="setStatusFilter('not_checked_in')"
           >
@@ -184,10 +218,10 @@
           <button
             data-testid="attendance-filter-checked-in"
             type="button"
-            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            class="rounded-lg px-3.5 py-1.5 text-xs font-medium transition duration-200"
             [ngClass]="{
-              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'checked_in',
-              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'checked_in'
+              'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white': statusFilter === 'checked_in',
+              'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white': statusFilter !== 'checked_in'
             }"
             (click)="setStatusFilter('checked_in')"
           >
@@ -195,10 +229,10 @@
           </button>
           <button
             type="button"
-            class="rounded-lg px-4 py-2 text-sm font-medium transition"
+            class="rounded-lg px-3.5 py-1.5 text-xs font-medium transition duration-200"
             [ngClass]="{
-              'bg-brand-500 text-white shadow-theme-xs': statusFilter === 'absent',
-              'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.1]': statusFilter !== 'absent'
+              'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white': statusFilter === 'absent',
+              'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white': statusFilter !== 'absent'
             }"
             (click)="setStatusFilter('absent')"
           >
@@ -206,20 +240,21 @@
           </button>
         </div>
 
+        <!-- Search Bar -->
         <div class="flex flex-1 lg:max-w-md">
           <label for="attendance-search" class="sr-only">Filter by name</label>
           <div class="relative w-full">
             <ng-icon
               name="heroMagnifyingGlass"
-              size="18"
-              class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              size="16"
+              class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
               aria-hidden="true"
             />
             <input
               id="attendance-search"
               type="search"
               data-testid="attendance-search"
-              class="h-12 w-full rounded-lg border border-gray-300 bg-white py-3 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-400 dark:focus:border-brand-800"
+              class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50/50 py-2.5 pl-10 pr-4 text-xs text-gray-800 placeholder:text-gray-400 transition-all duration-200 focus:border-brand-400 focus:bg-white focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-brand-650"
               placeholder="Search children by name..."
               [value]="searchTerm"
               (input)="onSearchChange($any($event.target).value)"
@@ -237,64 +272,84 @@
       } @else {
         <!-- Mobile cards -->
         <div class="lg:hidden">
-          <div class="divide-y divide-gray-200 dark:divide-gray-800">
+          <div class="divide-y divide-gray-200/85 dark:divide-gray-800/80">
             @for (child of filteredChildren; track child.id) {
               <div>
                 <article
-                  class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                  class="p-4 transition hover:bg-gray-50/50 dark:hover:bg-white/[0.01]"
                   [class.opacity-60]="isAbsent(child)"
                 >
-                  <div class="flex items-start gap-3">
+                  <div class="flex items-start gap-3.5">
+                    <!-- Gradient Avatars -->
                     <div
-                      class="flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                      class="flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-theme-xs border"
                       [ngClass]="{
-                        'bg-gray-300 dark:bg-gray-600': isAbsent(child),
-                        'bg-brand-200 text-brand-700 dark:bg-brand-800 dark:text-brand-200': !isCheckedIn(child) && !isAbsent(child),
-                        'bg-success-200 text-success-700 dark:bg-success-800 dark:text-success-200': isCheckedIn(child)
+                        'bg-linear-to-br from-gray-100 to-gray-200 text-gray-500 border-gray-300/30 dark:from-gray-800/40 dark:to-gray-700/40 dark:text-gray-400 dark:border-gray-700/30': isAbsent(child),
+                        'bg-linear-to-br from-brand-100 to-brand-200 text-brand-700 border-brand-300/30 dark:from-brand-900/30 dark:to-brand-800/40 dark:text-brand-300 dark:border-brand-850/30': !isCheckedIn(child) && !isAbsent(child),
+                        'bg-linear-to-br from-success-100 to-success-200 text-success-700 border-success-300/30 dark:from-success-900/30 dark:to-success-800/40 dark:text-success-300 dark:border-success-850/30': isCheckedIn(child)
                       }"
                     >
                       {{ child.fullName | slice:0:2 | uppercase }}
                     </div>
                     <div class="min-w-0 flex-1">
-                      <div class="flex items-center gap-2">
-                        <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
+                        
+                        <!-- Status Badge -->
                         @if (isCheckedIn(child)) {
-                          <app-badge color="success" size="sm">
-                            <span class="h-1.5 w-1.5 rounded-full bg-success-500"></span>
-                            {{ formatLondonTime(child.checkedInAt) }}
-                          </app-badge>
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-0.5 text-[10px] font-medium text-success-750 border border-success-200/40 dark:bg-success-500/10 dark:text-success-400 dark:border-success-800/20">
+                            <span class="h-1 w-1 rounded-full bg-success-500"></span>
+                            Checked in at
+                          </span>
                         } @else if (isAbsent(child)) {
-                          <app-badge color="error" size="sm">Absent</app-badge>
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-0.5 text-[10px] font-medium text-error-750 border border-error-200/40 dark:bg-error-500/10 dark:text-error-400 dark:border-error-800/20">
+                            <span class="h-1 w-1 rounded-full bg-error-550"></span>
+                            Absent
+                          </span>
                         } @else {
-                          <app-badge color="light" size="sm">
-                            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400"></span>
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-0.5 text-[10px] font-medium text-gray-600 border border-gray-200/45 dark:bg-white/[0.04] dark:text-gray-400 dark:border-gray-800/40">
+                            <span class="h-1 w-1 animate-pulse rounded-full bg-gray-400 dark:bg-gray-500"></span>
                             Not in
-                          </app-badge>
+                          </span>
                         }
                       </div>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+
+                      <div class="mt-1 flex items-center">
                         @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
-                          <span class="text-warning-600 dark:text-warning-400">Enrollment incomplete</span>
+                          <span class="inline-flex items-center gap-1 text-[11px] font-medium text-warning-600 dark:text-warning-400">
+                            <ng-icon name="heroExclamationCircle" size="13" />
+                            Enrollment incomplete
+                          </span>
                         } @else if (showIncompleteSessionWarning(child)) {
-                          <span class="text-warning-600 dark:text-warning-400">Incomplete session needs manager correction</span>
+                          <span class="inline-flex items-center gap-1 text-[11px] font-medium text-warning-600 dark:text-warning-400">
+                            <ng-icon name="heroExclamationCircle" size="13" />
+                            Incomplete session needs manager correction
+                          </span>
                         } @else if (isAbsent(child)) {
-                          <span class="text-error-600 dark:text-error-400">Marked absent today</span>
+                          <span class="text-[11px] text-gray-400 dark:text-gray-500">Marked absent today</span>
                         } @else {
-                          Full Day
+                          <span class="text-[11px] text-gray-500 dark:text-gray-450">Full Day</span>
                         }
-                      </p>
+                      </div>
                     </div>
                   </div>
+
                   <div class="mt-4 flex gap-2">
                     @if (isCheckedIn(child)) {
                       <button
                         type="button"
-                        class="flex-1 rounded-lg border border-brand-200 px-3 py-2 text-sm font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                        class="flex-1 inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                         [disabled]="!canCheckOut(child)"
                         (click)="checkOut(child)"
                       >
                         @if (isPending(child.id)) {
-                          Checking out...
+                          <span class="inline-flex items-center gap-1.5">
+                            <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Checking out...
+                          </span>
                         } @else {
                           Check out
                         }
@@ -302,12 +357,18 @@
                     } @else if (isAbsent(child) && child.absenceMarkerId) {
                       <button
                         type="button"
-                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                        class="flex-1 inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                         [disabled]="!canClearAbsence(child)"
                         (click)="clearAbsence(child)"
                       >
                         @if (isPending(child.id)) {
-                          Clearing...
+                          <span class="inline-flex items-center gap-1.5">
+                            <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Clearing...
+                          </span>
                         } @else {
                           Clear absence
                         }
@@ -315,24 +376,36 @@
                     } @else {
                       <button
                         type="button"
-                        class="flex-1 rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 disabled:opacity-50"
+                        class="flex-1 inline-flex h-9 items-center justify-center rounded-lg bg-brand-500 px-3 text-xs font-semibold text-white shadow-theme-xs transition duration-200 hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 disabled:opacity-50"
                         [disabled]="!canCheckIn(child)"
                         (click)="checkIn(child)"
                       >
                         @if (isPending(child.id)) {
-                          Checking in...
+                          <span class="inline-flex items-center gap-1.5">
+                            <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Checking in...
+                          </span>
                         } @else {
                           Check in
                         }
                       </button>
                       <button
                         type="button"
-                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                        class="flex-1 inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                         [disabled]="!canMarkAbsent(child)"
                         (click)="markAbsent(child)"
                       >
                         @if (isPending(child.id)) {
-                          Marking...
+                          <span class="inline-flex items-center gap-1.5">
+                            <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Marking...
+                          </span>
                         } @else {
                           Mark absent
                         }
@@ -341,7 +414,7 @@
                   </div>
                 </article>
                 @if (rowErrors[child.id]) {
-                  <div class="mx-4 mb-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-500/10 dark:text-red-400">
+                  <div class="mx-4 mb-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-655 dark:border-red-800 dark:bg-red-500/10 dark:text-red-400">
                     {{ rowErrors[child.id] }}
                   </div>
                 }
@@ -354,81 +427,91 @@
         <div class="hidden overflow-x-auto lg:block">
           <table class="w-full min-w-[960px] border-collapse text-left">
             <thead>
-              <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+              <tr class="border-b border-gray-250 bg-gray-50/70 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-400">
                 <th class="px-6 py-4">Child</th>
                 <th class="px-6 py-4">Room / Session</th>
                 <th class="px-6 py-4">Status</th>
                 <th class="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            <tbody class="divide-y divide-gray-200/85 dark:divide-gray-800/80">
               @for (child of filteredChildren; track child.id) {
                 <tr
                   [attr.data-testid]="'attendance-row-' + child.id"
-                  class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                  class="group transition duration-150 hover:bg-gray-50/50 dark:hover:bg-white/[0.01]"
                   [class.opacity-60]="isAbsent(child)"
                 >
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-4">
+                      <!-- Gradient Avatars -->
                       <div
-                        class="flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-theme-xs border"
                         [ngClass]="{
-                          'bg-gray-300 dark:bg-gray-600': isAbsent(child),
-                          'bg-brand-200 text-brand-700 dark:bg-brand-800 dark:text-brand-200': !isCheckedIn(child) && !isAbsent(child),
-                          'bg-success-200 text-success-700 dark:bg-success-800 dark:text-success-200': isCheckedIn(child)
+                          'bg-linear-to-br from-gray-100 to-gray-200 text-gray-500 border-gray-300/30 dark:from-gray-800/40 dark:to-gray-700/40 dark:text-gray-400 dark:border-gray-700/30': isAbsent(child),
+                          'bg-linear-to-br from-brand-100 to-brand-200 text-brand-700 border-brand-300/30 dark:from-brand-900/30 dark:to-brand-800/40 dark:text-brand-300 dark:border-brand-850/30': !isCheckedIn(child) && !isAbsent(child),
+                          'bg-linear-to-br from-success-100 to-success-200 text-success-700 border-success-300/30 dark:from-success-900/30 dark:to-success-800/40 dark:text-success-300 dark:border-success-850/30': isCheckedIn(child)
                         }"
                       >
                         {{ child.fullName | slice:0:2 | uppercase }}
                       </div>
                       <div class="min-w-0">
                         <p class="font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</p>
-                        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">ID: #{{ child.id | slice:0:8 | uppercase }}</p>
+                        <p class="mt-1 font-mono text-[10px] tracking-wider text-gray-400 dark:text-gray-500">ID: #{{ child.id | slice:0:8 | uppercase }}</p>
                       </div>
                     </div>
                   </td>
 
                   <td class="px-6 py-4">
-                    <p class="text-sm text-gray-700 dark:text-gray-300">
-                      @if (isCheckedIn(child)) {
-                        @if (child.checkedInAt) {
-                          From {{ formatLondonTime(child.checkedInAt) }}
+                    <div class="flex flex-col gap-1">
+                      <p class="text-sm font-medium text-gray-755 dark:text-gray-300">
+                        @if (isCheckedIn(child)) {
+                          @if (child.checkedInAt) {
+                            <span class="text-gray-400 dark:text-gray-500">In since</span> {{ formatLondonTime(child.checkedInAt) }}
+                          } @else {
+                            Present today
+                          }
                         } @else {
-                          Today
+                          <span class="text-gray-400 dark:text-gray-500">Not checked in</span>
                         }
-                      } @else {
-                        —
-                      }
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
-                        <span class="text-warning-600 dark:text-warning-400">Enrollment incomplete</span>
-                      } @else if (showIncompleteSessionWarning(child)) {
-                        <span class="text-warning-600 dark:text-warning-400">Incomplete session needs manager correction</span>
-                      } @else if (isAbsent(child)) {
-                        <span class="text-error-600 dark:text-error-400">Marked absent today</span>
-                      } @else {
-                        Full Day
-                      }
-                    </p>
+                      </p>
+                      <div class="flex items-center">
+                        @if (!child.enrollmentComplete && !isCheckedIn(child) && !isAbsent(child)) {
+                          <span class="inline-flex items-center gap-1 text-[11px] font-medium text-warning-600 dark:text-warning-450">
+                            <ng-icon name="heroExclamationCircle" size="13" />
+                            Enrollment incomplete
+                          </span>
+                        } @else if (showIncompleteSessionWarning(child)) {
+                          <span class="inline-flex items-center gap-1 text-[11px] font-medium text-warning-600 dark:text-warning-455">
+                            <ng-icon name="heroExclamationCircle" size="13" />
+                            Incomplete session needs manager correction
+                          </span>
+                        } @else if (isAbsent(child)) {
+                          <span class="text-[11px] font-medium text-error-600 dark:text-error-450">
+                            Marked absent
+                          </span>
+                        } @else {
+                          <span class="text-[11px] text-gray-500 dark:text-gray-450">
+                            Full Day
+                          </span>
+                        }
+                      </div>
+                    </div>
                   </td>
 
                   <td class="px-6 py-4">
                     @if (isCheckedIn(child)) {
-                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <span class="h-2.5 w-2.5 rounded-full bg-success-500"></span>
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-750 border border-success-200/40 dark:bg-success-500/10 dark:text-success-400 dark:border-success-800/20">
+                        <span class="h-1.5 w-1.5 rounded-full bg-success-500"></span>
                         Checked in at
-                        @if (child.checkedInAt) {
-                          {{ formatLondonTime(child.checkedInAt) }}
-                        }
                       </span>
                     } @else if (isAbsent(child)) {
-                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <ng-icon name="heroXCircle" size="18" class="text-error-500" aria-hidden="true" />
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-1 text-xs font-medium text-error-755 border border-error-200/40 dark:bg-error-500/10 dark:text-error-400 dark:border-error-800/20">
+                        <span class="h-1.5 w-1.5 rounded-full bg-error-550"></span>
                         Absent
                       </span>
                     } @else {
-                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-gray-400"></span>
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200/40 dark:bg-white/[0.04] dark:text-gray-400 dark:border-gray-800/40">
+                        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400 dark:bg-gray-500"></span>
                         Not in
                       </span>
                     }
@@ -440,12 +523,18 @@
                         <button
                           type="button"
                           [attr.data-testid]="'attendance-action-' + child.id"
-                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-brand-200 px-3 text-sm font-medium text-brand-700 transition hover:bg-brand-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-brand-700 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                          class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3.5 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                           [disabled]="!canCheckOut(child)"
                           (click)="checkOut(child)"
                         >
                           @if (isPending(child.id)) {
-                            Checking out...
+                            <span class="inline-flex items-center gap-1.5">
+                              <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
+                              Checking out...
+                            </span>
                           } @else {
                             Check out
                           }
@@ -454,12 +543,18 @@
                         <button
                           type="button"
                           [attr.data-testid]="'attendance-clear-absence-' + child.id"
-                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                          class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3.5 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                           [disabled]="!canClearAbsence(child)"
                           (click)="clearAbsence(child)"
                         >
                           @if (isPending(child.id)) {
-                            Clearing...
+                            <span class="inline-flex items-center gap-1.5">
+                              <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
+                              Clearing...
+                            </span>
                           } @else {
                             Clear absence
                           }
@@ -468,12 +563,18 @@
                         <button
                           type="button"
                           [attr.data-testid]="'attendance-action-' + child.id"
-                          class="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-500 px-3 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
+                          class="inline-flex h-9 items-center justify-center rounded-lg bg-brand-500 px-3.5 text-xs font-semibold text-white shadow-theme-xs transition duration-200 hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 disabled:opacity-50"
                           [disabled]="!canCheckIn(child)"
                           (click)="checkIn(child)"
                         >
                           @if (isPending(child.id)) {
-                            Checking in...
+                            <span class="inline-flex items-center gap-1.5">
+                              <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
+                              Checking in...
+                            </span>
                           } @else {
                             Check in
                           }
@@ -481,12 +582,18 @@
                         <button
                           type="button"
                           [attr.data-testid]="'attendance-mark-absent-' + child.id"
-                          class="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                          class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-205 bg-white px-3.5 text-xs font-medium text-gray-700 shadow-theme-xs transition duration-200 hover:bg-gray-50 active:bg-gray-100/80 disabled:opacity-40 dark:border-gray-750 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80"
                           [disabled]="!canMarkAbsent(child)"
                           (click)="markAbsent(child)"
                         >
                           @if (isPending(child.id)) {
-                            Marking...
+                            <span class="inline-flex items-center gap-1.5">
+                              <svg class="h-3 w-3 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
+                              Marking...
+                            </span>
                           } @else {
                             Mark absent
                           }
@@ -498,8 +605,8 @@
 
                 @if (rowErrors[child.id]) {
                   <tr [attr.data-testid]="'attendance-row-error-' + child.id">
-                    <td colspan="4" class="px-6 pb-3 pt-0">
-                      <div class="rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-500/10 dark:text-red-400">
+                    <td colspan="4" class="px-6 pb-3.5 pt-0">
+                      <div class="rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-xs text-red-600 dark:border-red-800/60 dark:bg-red-500/10 dark:text-red-400 animate-fade-in">
                         {{ rowErrors[child.id] }}
                       </div>
                     </td>
@@ -511,8 +618,8 @@
         </div>
 
         <!-- Pagination / summary -->
-        <div class="border-t border-gray-200 px-6 py-4 text-center dark:border-gray-800">
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+        <div class="border-t border-gray-200 px-6 py-4.5 text-center dark:border-gray-800">
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
             Showing {{ filteredChildren.length }} of {{ children.length }} children
           </p>
         </div>

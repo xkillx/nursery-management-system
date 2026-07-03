@@ -7,9 +7,10 @@ import {
   heroArrowPath,
   heroCheckBadge,
   heroClock,
-      heroFunnel,
-      heroMagnifyingGlass,
-      heroUsers,
+  heroExclamationCircle,
+  heroFunnel,
+  heroMagnifyingGlass,
+  heroUsers,
   heroXCircle,
 } from '@ng-icons/heroicons/outline';
 
@@ -18,7 +19,6 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { StaffApiService } from '../../data/staff-api.service';
 import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 
 
@@ -31,7 +31,6 @@ type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
     CommonModule,
     NgIcon,
     AlertComponent,
-    BadgeComponent,
     EmptyStateComponent,
   ],
   providers: [
@@ -39,8 +38,9 @@ type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
       heroArrowPath,
       heroCheckBadge,
       heroClock,
+      heroExclamationCircle,
       heroFunnel,
-  heroMagnifyingGlass,
+      heroMagnifyingGlass,
       heroUsers,
       heroXCircle,
     }),
@@ -258,8 +258,19 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
 
   private updateClock(): void {
     const now = new Date();
-    this.clockTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    this.currentDate = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+    this.clockTime = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Europe/London',
+    }).format(now);
+    
+    this.currentDate = new Intl.DateTimeFormat('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Europe/London',
+    }).format(now);
   }
 
   private isForegroundLoading(): boolean {
