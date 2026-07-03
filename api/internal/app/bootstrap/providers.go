@@ -53,6 +53,7 @@ import (
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
 	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
+	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 )
 
@@ -199,6 +200,14 @@ func provideBookingPatternLookupAdapter(repo *childpostgres.ChildRepository) *bo
 
 func provideSiteRateProviderAdapter(repo *ownerpostgres.OwnerRepository) *siteRateProviderAdapter {
 	return &siteRateProviderAdapter{repo: repo}
+}
+
+func provideEnrollmentTermCreatorAdapter(termRepo *termpostgres.TermRepository, rateProvider *siteRateProviderAdapter, auditWriter *audit.Writer) *enrollmentTermCreatorAdapter {
+	return &enrollmentTermCreatorAdapter{
+		termRepo:     termRepo,
+		rateProvider: rateProvider,
+		auditWriter:  auditWriter,
+	}
 }
 
 func provideChildDeactivatorAdapter(markInactive *childapp.MarkInactive) *childDeactivatorAdapter {

@@ -183,11 +183,19 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	childRepo := childpostgres.NewChildRepository(pool)
 	sessionTypeRepo := sessiontypepostgres.NewRepository(pool)
+	ownerRepo := ownerpostgres.NewRepository(pool)
+	termRepo := termpostgres.NewTermRepository(pool)
+	siteRateProvider := &siteRateProviderAdapter{repo: ownerRepo}
+	termCreator := &enrollmentTermCreatorAdapter{
+		termRepo:     termRepo,
+		rateProvider: siteRateProvider,
+		auditWriter:  auditWriter,
+	}
 	childConfig := childhandler.ChildrenHandlerConfig{
 		Core: childhandler.CoreUseCases{
 			List:           childapp.NewListChildren(childRepo),
 			Get:            childapp.NewGetChild(childRepo),
-			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
+			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, termCreator, func() time.Time { return time.Now().UTC() }),
 			Update:         childapp.NewUpdateChild(childRepo, auditWriter, txManager),
 			MarkInactive:   childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
 			ListAttendance: childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
@@ -296,7 +304,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	siteProfileHandler.RegisterRoutes(protected)
 
 	billingRepo := billingpostgres.NewRepository(pool)
-	ownerRepo := ownerpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 
@@ -432,10 +439,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTemplatesHandler := sessiontemplatehttphandler.NewHandler(sessionTemplatesCreateUC, sessionTemplatesUpdateUC, sessionTemplatesListUC, sessionTemplatesGetUC, sessionTemplatesArchiveUC, sessionTemplatesReactivateUC, logger)
 	sessionTemplatesHandler.RegisterRoutes(protected)
 
-	termRepo := termpostgres.NewTermRepository(pool)
 	scheduleChangeRepo := termpostgres.NewScheduleChangeRepository(pool)
 	bookingPatternLookup := &bookingPatternLookupAdapter{repo: childRepo}
-	siteRateProvider := &siteRateProviderAdapter{repo: ownerRepo}
 
 	createTermUC := termapp.NewCreateTermUseCase(termRepo, txManager, auditWriter, bookingPatternLookup, siteRateProvider)
 	getTermUC := termapp.NewGetTermUseCase(termRepo)

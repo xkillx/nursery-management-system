@@ -165,6 +165,8 @@ var childrenSet = wire.NewSet(
 	wire.Bind(new(childdomain.Repository), new(*childpostgres.ChildRepository)),
 	provideSessionTypeLookupAdapter,
 	wire.Bind(new(childapp.SessionTypeLookup), new(*sessionTypeLookupAdapter)),
+	provideEnrollmentTermCreatorAdapter,
+	wire.Bind(new(childapp.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)),
 	provideClock,
 	provideTodayFunc,
 	childapp.NewListChildren,

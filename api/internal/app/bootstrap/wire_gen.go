@@ -105,6 +105,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	requestResetUseCase := application2.NewRequestResetUseCase(postgresRepository, emailAdapter, tokenGeneratorAdapter, string2, logger)
 	setNewPasswordUseCase := application2.NewSetNewPasswordUseCase(postgresRepository, logger)
 	httpresetHandler := provideResetHandler(requestResetUseCase, setNewPasswordUseCase, recorder, logger)
+	ownerRepository := postgres11.NewRepository(pool)
+	termRepository := postgres16.NewTermRepository(pool)
+	bootstrapSiteRateProviderAdapter := provideSiteRateProviderAdapter(ownerRepository)
 	childRepository := postgres3.NewChildRepository(pool)
 	listChildren := application3.NewListChildren(childRepository)
 	getChild := application3.NewGetChild(childRepository)
@@ -112,8 +115,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	transactionManager := provideTxManager(pool)
 	sessionTypeRepository := postgres4.NewRepository(pool)
 	bootstrapSessionTypeLookupAdapter := provideSessionTypeLookupAdapter(sessionTypeRepository)
+	bootstrapEnrollmentTermCreatorAdapter := provideEnrollmentTermCreatorAdapter(termRepository, bootstrapSiteRateProviderAdapter, writer)
 	todayFunc := provideTodayFunc()
-	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
+	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, bootstrapEnrollmentTermCreatorAdapter, todayFunc)
 	updateChild := application3.NewUpdateChild(childRepository, writer, transactionManager)
 	eventDispatcher := provideEventDispatcher(transactionManager)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
@@ -272,7 +276,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		List: listParentInvoices,
 		Get:  getParentInvoice,
 	}
-	ownerRepository := postgres11.NewRepository(pool)
 	bootstrapSiteRateUpdateAdapter := provideSiteRateUpdateAdapter(ownerRepository)
 	updateSiteRateUseCase := application7.NewUpdateSiteRateUseCase(bootstrapSiteRateUpdateAdapter, writer, transactionManager)
 	adminUseCases := httpbilling.AdminUseCases{
@@ -341,9 +344,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	archiveSessionTemplate := application14.NewArchiveSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	reactivateSessionTemplate := application14.NewReactivateSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	httpsessiontemplatesHandler := httpsessiontemplates.NewHandler(createSessionTemplate, updateSessionTemplate, listSessionTemplates, getSessionTemplate, archiveSessionTemplate, reactivateSessionTemplate, logger)
-	termRepository := postgres16.NewTermRepository(pool)
 	bootstrapBookingPatternLookupAdapter := provideBookingPatternLookupAdapter(childRepository)
-	bootstrapSiteRateProviderAdapter := provideSiteRateProviderAdapter(ownerRepository)
 	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter, bootstrapSiteRateProviderAdapter)
 	getTermUseCase := application15.NewGetTermUseCase(termRepository)
 	getCurrentTermForChildUseCase := application15.NewGetCurrentTermForChildUseCase(termRepository)
@@ -421,6 +422,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	requestResetUseCase := application2.NewRequestResetUseCase(postgresRepository, emailAdapter, tokenGeneratorAdapter, string2, logger)
 	setNewPasswordUseCase := application2.NewSetNewPasswordUseCase(postgresRepository, logger)
 	httpresetHandler := provideResetHandler(requestResetUseCase, setNewPasswordUseCase, recorder, logger)
+	ownerRepository := postgres11.NewRepository(pool)
+	termRepository := postgres16.NewTermRepository(pool)
+	bootstrapSiteRateProviderAdapter := provideSiteRateProviderAdapter(ownerRepository)
 	childRepository := postgres3.NewChildRepository(pool)
 	listChildren := application3.NewListChildren(childRepository)
 	getChild := application3.NewGetChild(childRepository)
@@ -428,8 +432,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	transactionManager := provideTxManager(pool)
 	sessionTypeRepository := postgres4.NewRepository(pool)
 	bootstrapSessionTypeLookupAdapter := provideSessionTypeLookupAdapter(sessionTypeRepository)
+	bootstrapEnrollmentTermCreatorAdapter := provideEnrollmentTermCreatorAdapter(termRepository, bootstrapSiteRateProviderAdapter, writer)
 	todayFunc := provideTodayFunc()
-	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
+	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, bootstrapEnrollmentTermCreatorAdapter, todayFunc)
 	updateChild := application3.NewUpdateChild(childRepository, writer, transactionManager)
 	eventDispatcher := provideEventDispatcher(transactionManager)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
@@ -588,7 +593,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		List: listParentInvoices,
 		Get:  getParentInvoice,
 	}
-	ownerRepository := postgres11.NewRepository(pool)
 	bootstrapSiteRateUpdateAdapter := provideSiteRateUpdateAdapter(ownerRepository)
 	updateSiteRateUseCase := application7.NewUpdateSiteRateUseCase(bootstrapSiteRateUpdateAdapter, writer, transactionManager)
 	adminUseCases := httpbilling.AdminUseCases{
@@ -657,9 +661,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	archiveSessionTemplate := application14.NewArchiveSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	reactivateSessionTemplate := application14.NewReactivateSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	httpsessiontemplatesHandler := httpsessiontemplates.NewHandler(createSessionTemplate, updateSessionTemplate, listSessionTemplates, getSessionTemplate, archiveSessionTemplate, reactivateSessionTemplate, logger)
-	termRepository := postgres16.NewTermRepository(pool)
 	bootstrapBookingPatternLookupAdapter := provideBookingPatternLookupAdapter(childRepository)
-	bootstrapSiteRateProviderAdapter := provideSiteRateProviderAdapter(ownerRepository)
 	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter, bootstrapSiteRateProviderAdapter)
 	getTermUseCase := application15.NewGetTermUseCase(termRepository)
 	getCurrentTermForChildUseCase := application15.NewGetCurrentTermForChildUseCase(termRepository)

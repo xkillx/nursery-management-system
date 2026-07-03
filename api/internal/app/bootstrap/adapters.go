@@ -30,9 +30,14 @@ import (
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	termapp "nursery-management-system/api/internal/modules/term/application"
+	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/email"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
+	"nursery-management-system/api/internal/platform/uid"
+
+	termdomain "nursery-management-system/api/internal/modules/term/domain"
+	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 )
 
 type membershipCheckerAdapter struct {
@@ -437,3 +442,79 @@ func (a *childDeactivatorAdapter) MarkChildInactive(ctx context.Context, tenantI
 }
 
 var _ termapp.ChildDeactivator = (*childDeactivatorAdapter)(nil)
+
+// enrollmentTermCreatorAdapter implements childapp.EnrollmentTermCreator
+// by creating a 12-month term for the child in the same transaction as enrollment.
+type enrollmentTermCreatorAdapter struct {
+	termRepo     *termpostgres.TermRepository
+	rateProvider termapp.SiteRateProvider
+	auditWriter  *audit.Writer
+}
+
+func (a *enrollmentTermCreatorAdapter) CreateEnrollmentTerm(ctx context.Context, tx pgx.Tx, actor tenant.ActorContext, childID uuid.UUID, termStartDate time.Time, bookingPatternID uuid.UUID) (uuid.UUID, error) {
+	// 1. Idempotent: skip if child already has an active term.
+	_, found, err := a.termRepo.GetActiveForChildInTx(ctx, tx, actor.TenantID, actor.BranchID, childID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("check existing term: %w", err)
+	}
+	if found {
+		return uuid.Nil, nil
+	}
+
+	// 2. Snapshot the site hourly rate.
+	rate, rateFound, err := a.rateProvider.SiteHourlyRateMinor(ctx, tx, actor.TenantID, actor.BranchID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("lookup site rate: %w", err)
+	}
+	if !rateFound || rate <= 0 {
+		return uuid.Nil, fmt.Errorf("site rate not found or invalid for branch %s", actor.BranchID)
+	}
+
+	// 3. Build the Term.
+	termID := uid.NewUUID()
+	term, err := termdomain.NewTerm(
+		termID,
+		actor.TenantID,
+		actor.BranchID,
+		childID,
+		termStartDate,
+		bookingPatternID,
+		rate,
+		actor.MembershipID,
+	)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("build term: %w", err)
+	}
+
+	// 4. Persist.
+	saved, err := a.termRepo.Insert(ctx, tx, term)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("insert term: %w", err)
+	}
+
+	// 5. Update child denormalisation.
+	if err := a.termRepo.SetChildCurrentTermID(ctx, tx, actor.TenantID, actor.BranchID, childID, saved.ID); err != nil {
+		return uuid.Nil, fmt.Errorf("set child current term: %w", err)
+	}
+
+	// 6. Audit.
+	if err := a.auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+		ActionType: termdomain.AuditTermCreated,
+		EntityType: termdomain.AuditEntityTerm,
+		EntityID:   saved.ID,
+		Details: map[string]any{
+			"child_id":               saved.ChildID.String(),
+			"term_start_date":        saved.TermStartDate.Format("2006-01-02"),
+			"term_end_date":          saved.TermEndDate.Format("2006-01-02"),
+			"booking_pattern_id":     saved.BookingPatternID.String(),
+			"site_hourly_rate_minor": saved.SiteHourlyRateMinor,
+			"status":                 string(saved.Status),
+		},
+	}); err != nil {
+		return uuid.Nil, fmt.Errorf("audit term_created: %w", err)
+	}
+
+	return saved.ID, nil
+}
+
+var _ childapp.EnrollmentTermCreator = (*enrollmentTermCreatorAdapter)(nil)

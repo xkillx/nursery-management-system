@@ -173,6 +173,7 @@ type ChildCreationResult struct {
 	MiddleName        *string
 	LastName          *string
 	StartDate         string
+	TermID            *uuid.UUID
 	CreatedSubRecords []string
 }
 
@@ -181,14 +182,15 @@ type CreateChildWithFullProfile struct {
 	audit         *audit.Writer
 	txm           TxManager
 	sessionLookup SessionTypeLookup
+	termCreator   EnrollmentTermCreator
 	clock         TodayFunc
 }
 
-func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, clock TodayFunc) *CreateChildWithFullProfile {
+func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, termCreator EnrollmentTermCreator, clock TodayFunc) *CreateChildWithFullProfile {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
-	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, clock: clock}
+	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, termCreator: termCreator, clock: clock}
 }
 
 func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.ActorContext, input CreateChildFullInput) (*ChildCreationResult, error) {
@@ -240,7 +242,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 	}
 
-	var result *ChildCreationResult
+	var result ChildCreationResult
 	err = uc.txm.ExecTx(ctx, func(tx pgx.Tx) error {
 		childID := uid.NewUUID()
 		child := domain.Child{
@@ -419,10 +421,23 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			if !input.BookingPattern.EffectiveFrom.IsZero() {
 				bpEffectiveFrom = input.BookingPattern.EffectiveFrom
 			}
-			if _, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, true, uc.clock); err != nil {
+			bp, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, true, uc.clock)
+			if err != nil {
 				return err
 			}
 			created = append(created, "booking_pattern")
+
+			if bp != nil {
+				termStart := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+				termID, err := uc.termCreator.CreateEnrollmentTerm(ctx, tx, actor, childID, termStart, bp.ID)
+				if err != nil {
+					return fmt.Errorf("create enrollment term: %w", err)
+				}
+				if termID != uuid.Nil {
+					result.TermID = &termID
+					created = append(created, "term")
+				}
+			}
 		}
 
 		if uc.audit != nil {
@@ -440,12 +455,13 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			}
 		}
 
-		result = &ChildCreationResult{
+		result = ChildCreationResult{
 			ChildID:           childID,
 			FirstName:         firstName,
 			MiddleName:        child.MiddleName,
 			LastName:          child.LastName,
 			StartDate:         startDate.Format("2006-01-02"),
+			TermID:            result.TermID,
 			CreatedSubRecords: created,
 		}
 		return nil
@@ -454,7 +470,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		return nil, mapExecTxError(err)
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) error {

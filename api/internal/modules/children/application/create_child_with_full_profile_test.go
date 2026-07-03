@@ -91,6 +91,22 @@ func (f *fakeCreateTxm) ExecTx(ctx context.Context, fn func(pgx.Tx) error) error
 	return fn(nil)
 }
 
+type fakeTermCreator struct {
+	application.EnrollmentTermCreator
+	createCalled     bool
+	childID          uuid.UUID
+	termStartDate    time.Time
+	bookingPatternID uuid.UUID
+}
+
+func (f *fakeTermCreator) CreateEnrollmentTerm(ctx context.Context, tx pgx.Tx, actor tenant.ActorContext, childID uuid.UUID, termStartDate time.Time, bookingPatternID uuid.UUID) (uuid.UUID, error) {
+	f.createCalled = true
+	f.childID = childID
+	f.termStartDate = termStartDate
+	f.bookingPatternID = bookingPatternID
+	return uuid.New(), nil
+}
+
 func createActorContext(tenantID, branchID uuid.UUID) tenant.ActorContext {
 	return tenant.ActorContext{
 		UserID:       uuid.New(),
@@ -128,7 +144,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -164,7 +180,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): false}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -199,7 +215,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -225,7 +241,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -265,7 +281,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -303,7 +319,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -327,6 +343,106 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		}
 		if !slices.Contains(result.CreatedSubRecords, "booking_pattern") {
 			t.Errorf("expected CreatedSubRecords to contain 'booking_pattern', got %v", result.CreatedSubRecords)
+		}
+	})
+
+	t.Run("CreatesTermWhenBookingPatternProvided", func(t *testing.T) {
+		tenantID := uuid.New()
+		branchID := uuid.New()
+		stID := uuid.New()
+
+		repo := &fakeChildRepository{}
+		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
+		txm := &fakeCreateTxm{}
+		termCreator := &fakeTermCreator{}
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+		})
+
+		input := newDefaultInput()
+		input.BookingPattern = &application.BookingPatternInput{
+			EffectiveFrom: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+			Entries: []application.BookingPatternEntryInput{
+				{DayOfWeek: 1, SessionTypeID: stID},
+			},
+		}
+
+		result, err := uc.Execute(context.Background(), createActorContext(tenantID, branchID), input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !termCreator.createCalled {
+			t.Error("expected CreateEnrollmentTerm to be called")
+		}
+		if !slices.Contains(result.CreatedSubRecords, "term") {
+			t.Errorf("expected CreatedSubRecords to contain 'term', got %v", result.CreatedSubRecords)
+		}
+		if result.TermID == nil {
+			t.Error("expected TermID to be non-nil when term is created")
+		}
+	})
+
+	t.Run("TermStartDateIsFirstOfStartDateMonth", func(t *testing.T) {
+		tenantID := uuid.New()
+		branchID := uuid.New()
+		stID := uuid.New()
+
+		repo := &fakeChildRepository{}
+		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
+		txm := &fakeCreateTxm{}
+		termCreator := &fakeTermCreator{}
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+			return time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+		})
+
+		input := newDefaultInput()
+		input.Child.StartDate = "2026-06-24"
+		input.BookingPattern = &application.BookingPatternInput{
+			EffectiveFrom: time.Date(2026, 6, 24, 0, 0, 0, 0, time.UTC),
+			Entries: []application.BookingPatternEntryInput{
+				{DayOfWeek: 2, SessionTypeID: stID},
+			},
+		}
+
+		_, err := uc.Execute(context.Background(), createActorContext(tenantID, branchID), input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !termCreator.createCalled {
+			t.Fatal("expected CreateEnrollmentTerm to be called")
+		}
+		expectedStart := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+		if !termCreator.termStartDate.Equal(expectedStart) {
+			t.Errorf("expected term start date %s, got %s", expectedStart.Format("2006-01-02"), termCreator.termStartDate.Format("2006-01-02"))
+		}
+	})
+
+	t.Run("SkipsTermWhenNoBookingPattern", func(t *testing.T) {
+		tenantID := uuid.New()
+		branchID := uuid.New()
+
+		repo := &fakeChildRepository{}
+		lookup := &fakeCreateLookup{activeTypes: map[string]bool{}}
+		txm := &fakeCreateTxm{}
+		termCreator := &fakeTermCreator{}
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+		})
+
+		input := newDefaultInput()
+
+		result, err := uc.Execute(context.Background(), createActorContext(tenantID, branchID), input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if termCreator.createCalled {
+			t.Error("expected CreateEnrollmentTerm NOT to be called when no booking pattern")
+		}
+		if slices.Contains(result.CreatedSubRecords, "term") {
+			t.Errorf("expected CreatedSubRecords not to contain 'term', got %v", result.CreatedSubRecords)
+		}
+		if result.TermID != nil {
+			t.Error("expected TermID to be nil when no term is created")
 		}
 	})
 }
