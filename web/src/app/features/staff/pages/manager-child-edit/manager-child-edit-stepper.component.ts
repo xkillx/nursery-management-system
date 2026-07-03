@@ -418,6 +418,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return this._steps;
   }
 
+  activeStepIndex(): number {
+    return this._steps.findIndex((s) => s.key === this.currentStep);
+  }
+
   readonly languageOptions = [
     'English',
     'Mandarin Chinese',
