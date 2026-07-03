@@ -98,14 +98,26 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
 
   errorMessage: string | null = null;
 
+  selectedCardFilter: 'all' | 'active' | 'incomplete' | 'requirements' = 'all';
+
   get isSearchActive(): boolean {
     return this.searchTerm.trim().length > 0;
   }
 
   get filteredChildren(): ChildRecord[] {
-    const term = this.searchTerm.trim().toLowerCase();
     let result = this.children;
 
+    // Apply card filtering client-side
+    if (this.selectedCardFilter === 'active') {
+      result = result.filter(child => child.isActive);
+    } else if (this.selectedCardFilter === 'incomplete') {
+      result = result.filter(child => !child.enrollmentComplete);
+    } else if (this.selectedCardFilter === 'requirements') {
+      result = result.filter(child => child.missingRequirements && child.missingRequirements.length > 0);
+    }
+
+    // Apply search filtering
+    const term = this.searchTerm.trim().toLowerCase();
     if (term) {
       result = result.filter((child) => {
         const searchableText = [
@@ -133,6 +145,34 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
 
   get missingRequirementCount(): number {
     return this.children.reduce((total, child) => total + child.missingRequirements.length, 0);
+  }
+
+  hasStarted(startDateStr: string | null): boolean {
+    if (!startDateStr) return false;
+    const start = new Date(startDateStr);
+    if (Number.isNaN(start.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    return start <= today;
+  }
+
+  toggleCardFilter(filter: 'all' | 'active' | 'incomplete' | 'requirements'): void {
+    if (this.selectedCardFilter === filter) {
+      this.selectedCardFilter = 'all';
+      this.status = 'active';
+    } else {
+      this.selectedCardFilter = filter;
+      if (filter === 'incomplete' || filter === 'requirements') {
+        this.status = 'all';
+      } else if (filter === 'active') {
+        this.status = 'active';
+      } else {
+        this.status = 'active';
+      }
+    }
+    this.offset = 0;
+    this.loadChildren();
   }
 
   ngOnInit(): void {
@@ -200,6 +240,7 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
 
   onStatusChange(nextStatus: string): void {
     this.status = nextStatus as StatusFilter;
+    this.selectedCardFilter = 'all';
     this.offset = 0;
     this.loadChildren();
   }
@@ -237,10 +278,7 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
   }
 
   activeFilterByStatus(status: 'incomplete' | 'requirements'): void {
-    this.status = 'all';
-    this.offset = 0;
-    this.searchTerm = '';
-    this.loadChildren();
+    this.toggleCardFilter(status);
   }
 
   openEdit(child: ChildRecord): void {

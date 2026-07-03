@@ -143,4 +143,76 @@ last_name: 'Hopper',
     component.openEdit({ ...childApi } as any);
     expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'child-1', 'edit']);
   });
+
+  it('toggleCardFilter sets correct status and selectedCardFilter', () => {
+    fixture.detectChanges();
+    flushChildren(); // Flushes initial load
+
+    expect(component.selectedCardFilter).toBe('all');
+
+    // Toggle to active -> calls loadChildren
+    component.toggleCardFilter('active');
+    let req = httpMock.expectOne((r) => r.url === '/api/v1/children' && r.params.get('status') === 'active');
+    req.flush({ items: [], total: 0 });
+    expect(component.selectedCardFilter).toBe('active');
+    expect(component.status).toBe('active');
+    
+    // Toggle active again -> resets to all -> calls loadChildren
+    component.toggleCardFilter('active');
+    req = httpMock.expectOne((r) => r.url === '/api/v1/children' && r.params.get('status') === 'active');
+    req.flush({ items: [], total: 0 });
+    expect(component.selectedCardFilter).toBe('all');
+    expect(component.status).toBe('active');
+
+    // Toggle to incomplete -> sets status to all -> calls loadChildren
+    component.toggleCardFilter('incomplete');
+    req = httpMock.expectOne((r) => r.url === '/api/v1/children' && r.params.get('status') === 'all');
+    req.flush({ items: [], total: 0 });
+    expect(component.selectedCardFilter).toBe('incomplete');
+    expect(component.status).toBe('all');
+  });
+
+  it('filteredChildren filters by selectedCardFilter client-side', () => {
+    fixture.detectChanges();
+    flushChildren(); // Flushes initial load
+    
+    const activeChild = { ...completeChildApi, id: 'c1', isActive: true, enrollmentComplete: true, missingRequirements: [] };
+    const incompleteChild = { ...childApi, id: 'c2', isActive: true, enrollmentComplete: false, missingRequirements: ['parent_carer_contact'] };
+    const inactiveChild = { ...childApi, id: 'c3', isActive: false, enrollmentComplete: false, missingRequirements: [] };
+    
+    component.children = [activeChild, incompleteChild, inactiveChild] as any[];
+
+    component.selectedCardFilter = 'all';
+    expect(component.filteredChildren.length).toBe(3);
+
+    component.selectedCardFilter = 'active';
+    expect(component.filteredChildren.length).toBe(2);
+    expect(component.filteredChildren.map(c => c.id)).toContain('c1');
+    expect(component.filteredChildren.map(c => c.id)).toContain('c2');
+
+    component.selectedCardFilter = 'incomplete';
+    expect(component.filteredChildren.length).toBe(2);
+    expect(component.filteredChildren.map(c => c.id)).toContain('c2');
+    expect(component.filteredChildren.map(c => c.id)).toContain('c3');
+
+    component.selectedCardFilter = 'requirements';
+    expect(component.filteredChildren.length).toBe(1);
+    expect(component.filteredChildren[0].id).toBe('c2');
+  });
+
+  it('hasStarted helper returns correct boolean based on start_date compared to today', () => {
+    const today = new Date();
+    
+    const pastDate = new Date();
+    pastDate.setDate(today.getDate() - 5);
+    const pastDateStr = pastDate.toISOString().split('T')[0];
+
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + 5);
+    const futureDateStr = futureDate.toISOString().split('T')[0];
+
+    expect(component.hasStarted(pastDateStr)).toBe(true);
+    expect(component.hasStarted(futureDateStr)).toBe(false);
+    expect(component.hasStarted(null)).toBe(false);
+  });
 });
