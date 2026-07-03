@@ -32,53 +32,66 @@
     <app-loading-state></app-loading-state>
   } @else if (child) {
     <!-- Profile Header Section -->
-    <div class="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-sm mb-6">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div class="flex items-center gap-5">
-          <!-- Initial-based Avatar with gradient background -->
-          <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 text-white font-bold text-2xl flex items-center justify-center shadow-md">
-            {{ child.firstName ? child.firstName[0] : '' }}{{ child.lastName ? child.lastName[0] : '' }}
+    <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-theme-sm mb-6 relative overflow-hidden">
+      <!-- Decorative background accent glow -->
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-brand-500/5 to-transparent rounded-full pointer-events-none"></div>
+      
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-1">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+          <!-- Initial-based Avatar with modern rich gradient -->
+          <div class="relative group">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-400 text-white font-bold text-2xl flex items-center justify-center shadow-lg shadow-brand-500/20 transition-all duration-300 group-hover:scale-105 select-none">
+              {{ child.firstName ? child.firstName[0] : '' }}{{ child.lastName ? child.lastName[0] : '' }}
+            </div>
+            <div class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white shadow-sm flex items-center justify-center border border-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <ng-icon name="heroPencilSquare" size="12"></ng-icon>
+            </div>
           </div>
+          
           <div>
-            <div class="flex flex-wrap items-center gap-2 mb-2">
-              <h1 class="text-2xl font-bold text-gray-900 tracking-tight">{{ child.fullName }}</h1>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5"
-                [ngClass]="child.isActive ? 'bg-success-50 text-success-600' : 'bg-gray-100 text-gray-500'">
-                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="child.isActive ? 'bg-success-500' : 'bg-gray-400'"></span>
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+              <h1 class="text-2xl font-bold text-gray-900 tracking-tight font-outfit">{{ child.fullName }}</h1>
+              
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 border font-outfit"
+                [ngClass]="child.isActive ? 'bg-success-50 text-success-700 border-success-100' : 'bg-gray-50 text-gray-500 border-gray-200'">
+                <span class="w-1.5 h-1.5 rounded-full animate-pulse" [ngClass]="child.isActive ? 'bg-success-500' : 'bg-gray-400'"></span>
                 {{ child.isActive ? 'Active' : 'Inactive' }}
               </span>
+              
               @if (roomAssignments && roomAssignments.length > 0) {
-                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-500 text-xs font-bold">
+                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100 text-[11px] font-bold font-outfit">
                   Assigned
                 </span>
               }
             </div>
-            <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-gray-500">
+            
+            <div class="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-gray-500 mt-1">
               <div class="flex items-center gap-1.5">
-                <ng-icon name="heroCalendarDays" size="18" class="text-gray-400"></ng-icon>
-                <span>Born: {{ child.dateOfBirth }}</span>
+                <ng-icon name="heroCalendarDays" size="16" class="text-gray-400"></ng-icon>
+                <span>Born: <strong class="text-gray-700 font-semibold">{{ child.dateOfBirth }}</strong> @if (childAge) { <span class="text-xs text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-md font-bold ml-1 font-outfit">{{ childAge }}</span> }</span>
               </div>
               <div class="flex items-center gap-1.5">
-                <ng-icon name="heroCalendarDays" size="18" class="text-gray-400"></ng-icon>
-                <span>Joined: {{ child.startDate }}</span>
+                <ng-icon name="heroCalendarDays" size="16" class="text-gray-400"></ng-icon>
+                <span>Joined: <strong class="text-gray-700 font-semibold">{{ child.startDate }}</strong></span>
               </div>
               <div class="flex items-center gap-1.5">
-                <ng-icon name="heroIdentification" size="18" class="text-gray-400"></ng-icon>
-                <span>Ref: NP-{{ childId.slice(0, 8).toUpperCase() }}</span>
+                <ng-icon name="heroIdentification" size="16" class="text-gray-400"></ng-icon>
+                <span class="font-mono">Ref: NP-{{ childId.slice(0, 8).toUpperCase() }}</span>
               </div>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
-            <button class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200/80 text-gray-700 font-semibold text-sm rounded-xl border border-gray-200/60 transition-all flex items-center gap-1.5">
-              <ng-icon name="heroCalendarDays" size="20" class="text-gray-700"></ng-icon>
+        
+        <div class="flex items-center justify-center gap-3 shrink-0">
+          <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="w-full sm:w-auto">
+            <button class="w-full px-4 py-2.5 bg-gray-50 hover:bg-gray-105 hover:text-gray-900 text-gray-700 font-bold text-xs rounded-xl border border-gray-200/80 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm active:scale-98">
+              <ng-icon name="heroCalendarDays" size="18" class="text-gray-500"></ng-icon>
               Session Pattern
             </button>
           </a>
-          <a [routerLink]="['/manager/children', childId, 'edit']">
-            <button class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl shadow-md shadow-brand-500/10 transition-all flex items-center gap-1.5">
-              <ng-icon name="heroPencilSquare" size="20" class="text-white"></ng-icon>
+          <a [routerLink]="['/manager/children', childId, 'edit']" class="w-full sm:w-auto">
+            <button class="w-full px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-98">
+              <ng-icon name="heroPencilSquare" size="18" class="text-white"></ng-icon>
               Edit Details
             </button>
           </a>
@@ -86,36 +99,36 @@
       </div>
     </div>
 
-    <!-- Tabs Navigation -->
-    <div class="grid grid-cols-5 border-b border-gray-200/80 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
+    <!-- Tabs Navigation (Segmented Pill Layout) -->
+    <div class="bg-gray-100/60 p-1.5 rounded-2xl flex gap-1.5 mb-6 overflow-x-auto no-scrollbar scroll-smooth max-w-full md:max-w-max border border-gray-200/40">
       <button (click)="selectTab('overview')"
-        [ngClass]="activeTab === 'overview' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
-        <ng-icon name="heroHome" size="18"></ng-icon>
+        [ngClass]="activeTab === 'overview' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'"
+        class="px-4 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold whitespace-nowrap flex items-center justify-center gap-2 select-none">
+        <ng-icon name="heroHome" size="16"></ng-icon>
         Overview
       </button>
       <button (click)="selectTab('attendance')"
-        [ngClass]="activeTab === 'attendance' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
-        <ng-icon name="heroCalendarDays" size="18"></ng-icon>
+        [ngClass]="activeTab === 'attendance' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'"
+        class="px-4 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold whitespace-nowrap flex items-center justify-center gap-2 select-none">
+        <ng-icon name="heroCalendarDays" size="16"></ng-icon>
         Attendance
       </button>
       <button (click)="selectTab('funding')"
-        [ngClass]="activeTab === 'funding' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
-        <ng-icon name="heroDocumentText" size="18"></ng-icon>
+        [ngClass]="activeTab === 'funding' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'"
+        class="px-4 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold whitespace-nowrap flex items-center justify-center gap-2 select-none">
+        <ng-icon name="heroDocumentText" size="16"></ng-icon>
         Funding &amp; Billing
       </button>
       <button (click)="selectTab('health')"
-        [ngClass]="activeTab === 'health' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
-        <ng-icon name="heroHeart" size="18"></ng-icon>
+        [ngClass]="activeTab === 'health' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'"
+        class="px-4 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold whitespace-nowrap flex items-center justify-center gap-2 select-none">
+        <ng-icon name="heroHeart" size="16"></ng-icon>
         Health &amp; Medical
       </button>
       <button (click)="selectTab('contacts')"
-        [ngClass]="activeTab === 'contacts' ? 'border-brand-500 text-brand-500 font-bold' : 'border-transparent text-gray-500 hover:text-gray-900'"
-        class="pb-3 border-b-2 transition-all text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-2">
-        <ng-icon name="heroUserGroup" size="18"></ng-icon>
+        [ngClass]="activeTab === 'contacts' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'"
+        class="px-4 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold whitespace-nowrap flex items-center justify-center gap-2 select-none">
+        <ng-icon name="heroUserGroup" size="16"></ng-icon>
         Contacts
       </button>
     </div>
@@ -127,101 +140,129 @@
       @if (activeTab === 'overview') {
         <div class="col-span-12 lg:col-span-8 space-y-6">
           <!-- Metrics Row -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
-              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Attendance Rate Metric -->
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-theme-sm flex flex-col gap-2 relative overflow-hidden group hover:shadow-theme-md transition-shadow">
+              <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                 <span>Attendance Rate</span>
-                <span class="text-success-600 font-bold">+2.4%</span>
+                <span class="px-2 py-0.5 bg-success-50 text-success-600 rounded-md font-bold flex items-center gap-0.5 border border-success-100">
+                  +2.4%
+                </span>
               </div>
-              <div class="text-3xl font-bold text-gray-900">94.2%</div>
-              <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mt-1">
-                <div class="bg-success-500 h-full rounded-full" style="width: 94.2%"></div>
+              <div class="text-3xl font-bold text-gray-900 font-outfit mt-1">94.2%</div>
+              <div class="w-full bg-gray-50 h-2 rounded-full overflow-hidden mt-3 border border-gray-100">
+                <div class="bg-success-500 h-full rounded-full transition-all duration-500" style="width: 94.2%"></div>
               </div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
-              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <!-- Weekly Hours Metric -->
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-theme-sm flex flex-col gap-2 relative overflow-hidden group hover:shadow-theme-md transition-shadow">
+              <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                 <span>Weekly Hours</span>
-                <span class="text-gray-500 font-medium">Schedule</span>
+                <ng-icon name="heroCalendarDays" size="16" class="text-gray-400"></ng-icon>
               </div>
-              <div class="text-3xl font-bold text-gray-900">
+              <div class="text-3xl font-bold text-gray-900 font-outfit mt-1">
                 {{ funding?.funded_hours_per_week ?? '30.0' }}
               </div>
-              <p class="text-xs text-gray-400 mt-1">
+              <p class="text-xs text-gray-500 font-medium mt-3 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
                 {{ funding?.funding_model === 'stretched' ? 'Stretched' : 'Term-time only' }} model
               </p>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col gap-2">
-              <div class="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <!-- Funding Status Metric -->
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-theme-sm flex flex-col gap-2 relative overflow-hidden group hover:shadow-theme-md transition-shadow">
+              <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
                 <span>Funding Status</span>
-                <ng-icon name="heroCheckCircle" size="18" class="text-success-500"></ng-icon>
+                @if (funding?.eligibility_code_validated) {
+                  <span class="w-2 h-2 rounded-full bg-success-500"></span>
+                } @else {
+                  <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                }
               </div>
-              <div class="text-xl font-bold text-gray-900">
+              <div class="text-xl font-bold text-gray-900 font-outfit mt-1 truncate">
                 {{ funding?.eligibility_code_validated ? 'Code Validated' : 'Self-Funded' }}
               </div>
-              <p class="text-xs text-gray-400 mt-1 truncate">
+              <p class="text-xs text-gray-400 mt-3 truncate font-mono">
                 {{ funding?.eligibility_code ? 'Code: ' + funding?.eligibility_code : 'No code registered' }}
               </p>
             </div>
           </div>
 
           <!-- General Details Card -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <ng-icon name="heroAcademicCap" size="20" class="text-brand-500"></ng-icon>
-              Demographics & Enrollment
-            </h3>
-            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-              <div>
-                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Sex</dt>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-50">
+              <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                <ng-icon name="heroAcademicCap" size="20"></ng-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900">Demographics & Enrollment</h3>
+            </div>
+            
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm">
+              <div class="pb-3 border-b border-gray-50">
+                <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">Sex</dt>
                 <dd class="mt-1 font-semibold text-gray-800 capitalize">{{ profile?.sex ?? 'Not disclosed' }}</dd>
               </div>
-              <div>
-                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Start date</dt>
+              
+              <div class="pb-3 border-b border-gray-50">
+                <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">Start date</dt>
                 <dd class="mt-1 font-semibold text-gray-800">{{ child.startDate }}</dd>
               </div>
+              
               @if (child.endDate) {
-                <div>
-                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">End date</dt>
-                  <dd class="mt-1 font-semibold text-gray-800">{{ child.endDate }}</dd>
+                <div class="pb-3 border-b border-gray-50">
+                  <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">End date</dt>
+                  <dd class="mt-1 font-semibold text-red-500">{{ child.endDate }}</dd>
                 </div>
               }
-              <div>
-                <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Site rate</dt>
+              
+              <div class="pb-3 border-b border-gray-50">
+                <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">Active Billing Rate</dt>
                 <dd class="mt-1 font-semibold text-gray-800">
-                  {{ formatRate(child.siteCoreHourlyRateMinor) }} / {{ formatSiteRate(child.siteCoreHourlyRateMinor) }}
+                  @if (billingProfile?.billing_basis === 'custom') {
+                    <span class="text-brand-600 font-bold">{{ formatRate(billingProfile?.custom_rate_minor ?? null) }}</span>
+                    <span class="text-[10px] bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded-md font-bold ml-1.5 uppercase tracking-wide border border-brand-100">Custom Profile</span>
+                  } @else {
+                    <span class="text-gray-900 font-bold">{{ formatRate(child.siteCoreHourlyRateMinor) }}</span>
+                    <span class="text-[10px] bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded-md font-semibold ml-1.5 uppercase tracking-wide border border-gray-200">Standard Site Rate</span>
+                  }
                 </dd>
               </div>
+              
               @if (profile?.ethnic_origin) {
-                <div>
-                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Ethnic Origin</dt>
-                  <dd class="mt-1 font-semibold text-gray-800">{{ profile?.ethnic_origin }}</dd>
+                <div class="pb-3 border-b border-gray-50">
+                  <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">Ethnic Origin</dt>
+                  <dd class="mt-1 font-semibold text-gray-800 capitalize">{{ profile?.ethnic_origin?.replace('_', ' ') }}</dd>
                 </div>
               }
+              
               @if (profile?.first_language) {
-                <div>
-                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">First Language</dt>
-                  <dd class="mt-1 font-semibold text-gray-800">{{ profile?.first_language }}</dd>
+                <div class="pb-3 border-b border-gray-50">
+                  <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">First Language</dt>
+                  <dd class="mt-1 font-semibold text-gray-800 capitalize">{{ profile?.first_language }}</dd>
                 </div>
               }
+              
               @if (child.notes) {
                 <div class="md:col-span-2">
-                  <dt class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Enrollment Notes</dt>
-                  <dd class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200/50 mt-1 leading-relaxed">{{ child.notes }}</dd>
+                  <dt class="text-xs font-bold uppercase text-gray-400 tracking-wider">Enrollment Notes</dt>
+                  <dd class="mt-2 text-gray-700 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 leading-relaxed font-normal">{{ child.notes }}</dd>
                 </div>
               }
             </dl>
 
             @if (child.missingRequirements.length > 0) {
-              <div class="mt-6 pt-4 border-t border-gray-100">
-                <h4 class="text-sm font-bold text-red-600 flex items-center gap-1.5 mb-2">
+              <div class="mt-6 pt-5 border-t border-red-100 bg-red-50/30 p-4 rounded-2xl border border-red-100/50">
+                <h4 class="text-sm font-bold text-red-700 flex items-center gap-2 mb-2">
                   <ng-icon name="heroExclamationTriangle" size="18" class="text-red-500 shrink-0"></ng-icon>
                   Missing Intake Requirements
                 </h4>
-                <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2 text-xs text-red-600/90 font-medium">
                   @for (m of child.missingRequirements; track m) {
-                    <li>{{ requirementLabel(m) }}</li>
+                    <li class="flex items-center gap-1.5">
+                      <span class="w-1 h-1 rounded-full bg-red-400"></span>
+                      {{ requirementLabel(m) }}
+                    </li>
                   }
                 </ul>
               </div>
@@ -229,41 +270,77 @@
           </div>
 
           <!-- Room Assignment & Booking Pattern -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <ng-icon name="heroHome" size="20" class="text-brand-500"></ng-icon>
-              Room Assignment &amp; Schedule
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
-                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Room Placements</div>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-50">
+              <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                <ng-icon name="heroHome" size="20"></ng-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900">Room Assignment &amp; Schedule</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <!-- Current Room Placement -->
+              <div class="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Current Room Placement</div>
                 @if (roomAssignments.length === 0) {
-                  <p class="text-sm text-gray-500">No room assigned. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Assign room</a>.</p>
+                  <p class="text-xs text-gray-500 font-medium">
+                    No room assigned. 
+                    <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline font-bold">Assign room now</a>.
+                  </p>
                 } @else {
                   <ul class="space-y-3">
                     @for (assign of roomAssignments; track assign.id) {
-                      <li class="flex items-center justify-between text-sm">
+                      <li class="flex items-center justify-between text-xs bg-white p-3 rounded-xl border border-gray-100 shadow-theme-xs">
                         <div class="flex items-center gap-2">
-                          <span class="w-2.5 h-2.5 rounded-full" [ngClass]="assign.is_current ? 'bg-brand-500' : 'bg-gray-300'"></span>
-                          <span class="font-semibold text-gray-800">Room placement</span>
+                          <span class="w-2 h-2 rounded-full animate-pulse" [ngClass]="assign.is_current ? 'bg-brand-500' : 'bg-gray-300'"></span>
+                          <span class="font-bold text-gray-800">Placement</span>
                         </div>
-                        <span class="text-gray-500">From: {{ assign.start_date }}</span>
+                        <span class="text-gray-400">From: <strong class="text-gray-600 font-semibold">{{ assign.start_date }}</strong></span>
                       </li>
                     }
                   </ul>
                 }
               </div>
 
-              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
-                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Schedule &amp; Pattern</div>
-                @if (currentBookingPattern) {
-                  <div class="text-sm space-y-1">
-                    <p class="font-semibold text-gray-800">{{ currentBookingPattern.is_current ? 'Current Schedule' : 'Schedule' }}</p>
-                    <p class="text-xs text-gray-500">Effective: {{ currentBookingPattern.effective_from }}</p>
-                  </div>
-                } @else {
-                  <p class="text-sm text-gray-500">No active session pattern. <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="text-brand-600 hover:underline">Set schedule</a>.</p>
-                }
+              <!-- Schedule & Weekly Days Grid -->
+              <div class="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-between">
+                <div>
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Schedule &amp; Pattern</div>
+                  @if (currentBookingPattern) {
+                    <div class="text-xs space-y-1">
+                      <p class="font-bold text-gray-800 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-success-500"></span>
+                        Active Schedule
+                      </p>
+                      <p class="text-[11px] text-gray-400">Effective: {{ currentBookingPattern.effective_from }}</p>
+                    </div>
+                  } @else {
+                    <p class="text-xs text-gray-500 font-medium">
+                      No active session pattern. 
+                      <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="text-brand-600 hover:underline font-bold">Set schedule now</a>.
+                    </p>
+                  }
+                </div>
+                
+                <!-- Graphic Schedule Indicators -->
+                <div class="flex items-center justify-between gap-1.5 mt-4 pt-3 border-t border-gray-100">
+                  @for (day of weeklySchedule; track day.dayName) {
+                    <div class="flex flex-col items-center gap-1 relative group">
+                      <span class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all border select-none"
+                        [ngClass]="day.isActive 
+                          ? 'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/10' 
+                          : 'bg-white text-gray-400 border-gray-100'">
+                        {{ day.shortName }}
+                      </span>
+                      @if (day.isActive) {
+                        <!-- Hover info tooltip -->
+                        <div class="absolute bottom-full mb-2 bg-gray-900 text-white text-[9px] rounded px-2 py-1 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-20">
+                          {{ day.sessions.join(', ') }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -272,9 +349,9 @@
         <!-- Right Side Column -->
         <div class="col-span-12 lg:col-span-4 space-y-6">
           <!-- Primary Contacts -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-50">
+              <h3 class="text-md font-bold text-gray-900 flex items-center gap-2">
                 <ng-icon name="heroUserGroup" size="20" class="text-brand-500"></ng-icon>
                 Legal Guardians
               </h3>
@@ -284,24 +361,27 @@
             } @else {
               <div class="space-y-3">
                 @for (carer of parentCarers; track carer.id) {
-                  <div class="p-4 rounded-xl border border-gray-200/80 hover:border-brand-500 transition-all cursor-default">
+                  <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/20 hover:border-brand-300 hover:bg-white transition-all group">
                     <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center">
+                      <!-- initials avatar -->
+                      <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center border border-brand-100">
                         {{ carer.fullName ? carer.fullName[0] : 'C' }}
                       </div>
+                      
                       <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 truncate">{{ carer.fullName }}</p>
-                        <p class="text-xs text-gray-500 capitalize">{{ carer.relationshipToChild || 'Guardian' }}</p>
+                        <p class="text-xs text-brand-600/90 font-semibold capitalize mt-0.5">{{ carer.relationshipToChild || 'Guardian' }}</p>
                       </div>
+                      
                       <div class="flex gap-1 shrink-0">
                         @if (carer.telephone) {
-                          <a [href]="'tel:' + carer.telephone" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center text-brand-600 transition-colors">
-                            <ng-icon name="heroPhone" size="18" class="text-brand-600"></ng-icon>
+                          <a [href]="'tel:' + carer.telephone" class="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-brand-500 hover:bg-brand-500 hover:text-white transition-colors duration-200" title="Call">
+                            <ng-icon name="heroPhone" size="14"></ng-icon>
                           </a>
                         }
                         @if (carer.email) {
-                          <a [href]="'mailto:' + carer.email" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200/70 flex items-center justify-center text-gray-600 transition-colors">
-                            <ng-icon name="heroEnvelope" size="18" class="text-gray-600"></ng-icon>
+                          <a [href]="'mailto:' + carer.email" class="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-brand-500 hover:text-white transition-colors duration-200" title="Email">
+                            <ng-icon name="heroEnvelope" size="14"></ng-icon>
                           </a>
                         }
                       </div>
@@ -312,48 +392,80 @@
             }
           </div>
 
-          <!-- Quick Actions & Sub-Records list -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 class="text-sm font-semibold uppercase text-gray-400 tracking-wider mb-4">Quick Record Indicators</h3>
+          <!-- Quick Actions & Dynamic Status Indicators -->
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <h3 class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4">Quick Record Indicators</h3>
+            
             <div class="grid grid-cols-2 gap-3">
-              <button (click)="selectTab('health')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
-                <ng-icon name="heroHeart" size="24" class="text-red-500"></ng-icon>
-                <span class="text-xs font-semibold text-gray-700">Allergies</span>
+              <!-- Allergies Indicator -->
+              <button (click)="selectTab('health')" class="p-3.5 rounded-2xl bg-gray-50/50 hover:bg-white border border-gray-100 hover:border-brand-200 flex flex-col items-center gap-2 text-center transition-all group">
+                <ng-icon name="heroHeart" size="20" class="text-red-500 group-hover:scale-105 transition-transform"></ng-icon>
+                <span class="text-xs font-bold text-gray-700">Allergies</span>
+                @if (healthProfile?.dietary_requirements_notes || healthProfile?.medical_conditions_notes) {
+                  <span class="px-1.5 py-0.5 rounded bg-error-50 text-error-700 text-[9px] font-bold border border-error-100 uppercase animate-pulse">Alerts</span>
+                } @else {
+                  <span class="px-1.5 py-0.5 rounded bg-success-50 text-success-700 text-[9px] font-bold border border-success-100 uppercase">None</span>
+                }
               </button>
-              <button (click)="selectTab('health')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
-                <ng-icon name="heroClipboardDocumentCheck" size="24" class="text-brand-500"></ng-icon>
-                <span class="text-xs font-semibold text-gray-700">Consents</span>
+              
+              <!-- Consents Indicator -->
+              <button (click)="selectTab('health')" class="p-3.5 rounded-2xl bg-gray-50/50 hover:bg-white border border-gray-100 hover:border-brand-200 flex flex-col items-center gap-2 text-center transition-all group">
+                <ng-icon name="heroClipboardDocumentCheck" size="20" class="text-brand-500 group-hover:scale-105 transition-transform"></ng-icon>
+                <span class="text-xs font-bold text-gray-700">Consents</span>
+                @if (consent) {
+                  <span class="px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 text-[9px] font-bold border border-brand-100 uppercase">Logged</span>
+                } @else {
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase border border-gray-200">Empty</span>
+                }
               </button>
-              <button (click)="selectTab('funding')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
-                <ng-icon name="heroDocumentText" size="24" class="text-success-500"></ng-icon>
-                <span class="text-xs font-semibold text-gray-700">Billing Profile</span>
+              
+              <!-- Billing Profile Indicator -->
+              <button (click)="selectTab('funding')" class="p-3.5 rounded-2xl bg-gray-50/50 hover:bg-white border border-gray-100 hover:border-brand-200 flex flex-col items-center gap-2 text-center transition-all group">
+                <ng-icon name="heroDocumentText" size="20" class="text-success-500 group-hover:scale-105 transition-transform"></ng-icon>
+                <span class="text-xs font-bold text-gray-700">Billing Profile</span>
+                @if (billingProfile) {
+                  <span class="px-1.5 py-0.5 rounded bg-success-50 text-success-700 text-[9px] font-bold border border-success-100 uppercase truncate max-w-[80px]">
+                    {{ billingProfile.billing_basis === 'custom' ? 'Custom' : 'Site Rate' }}
+                  </span>
+                } @else {
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase border border-gray-200">Not Set</span>
+                }
               </button>
-              <button (click)="selectTab('contacts')" class="p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/50 flex flex-col items-center gap-2 text-center transition-all">
-                <ng-icon name="heroShieldCheck" size="24" class="text-amber-500"></ng-icon>
-                <span class="text-xs font-semibold text-gray-700">Password Hint</span>
+              
+              <!-- Password Hint Indicator -->
+              <button (click)="selectTab('contacts')" class="p-3.5 rounded-2xl bg-gray-50/50 hover:bg-white border border-gray-100 hover:border-brand-200 flex flex-col items-center gap-2 text-center transition-all group">
+                <ng-icon name="heroShieldCheck" size="20" class="text-amber-500 group-hover:scale-105 transition-transform"></ng-icon>
+                <span class="text-xs font-bold text-gray-700">Password Hint</span>
+                @if (collectionSettings?.collection_password_hint) {
+                  <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200 uppercase">Set</span>
+                } @else {
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase border border-gray-200 font-outfit">Missing</span>
+                }
               </button>
             </div>
           </div>
 
           <!-- Activity timeline -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <h3 class="text-md font-bold text-gray-900 mb-4 flex items-center gap-2">
               <ng-icon name="heroClock" size="20" class="text-brand-500"></ng-icon>
               Administrative Log
             </h3>
-            <div class="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+            
+            <div class="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
               <div class="relative">
-                <span class="absolute -left-[21px] top-0.5 w-4.5 h-4.5 rounded-full bg-success-50 border-2 border-success-500 z-10"></span>
+                <span class="absolute -left-[20px] top-1 w-3 h-3 rounded-full bg-success-500 border border-white ring-4 ring-success-50 z-10"></span>
                 <div>
                   <p class="text-xs font-bold text-gray-900">Child record updated</p>
-                  <p class="text-[11px] text-gray-400 mt-0.5">Last system modification timestamp: {{ child.updatedAt ? (child.updatedAt | date:'mediumDate') : 'Recent' }}</p>
+                  <p class="text-[10px] text-gray-400 mt-0.5">Last modified: {{ child.updatedAt ? (child.updatedAt | date:'mediumDate') : 'Recent' }}</p>
                 </div>
               </div>
+              
               <div class="relative">
-                <span class="absolute -left-[21px] top-0.5 w-4.5 h-4.5 rounded-full bg-brand-50 border-2 border-brand-500 z-10"></span>
+                <span class="absolute -left-[20px] top-1 w-3 h-3 rounded-full bg-brand-500 border border-white ring-4 ring-brand-50 z-10"></span>
                 <div>
                   <p class="text-xs font-bold text-gray-900">Registration confirmed</p>
-                  <p class="text-[11px] text-gray-400 mt-0.5">Enrollment start date set to: {{ child.startDate }}</p>
+                  <p class="text-[10px] text-gray-400 mt-0.5">Enrollment start: {{ child.startDate }}</p>
                 </div>
               </div>
             </div>
@@ -364,69 +476,79 @@
       <!-- ==================== ATTENDANCE TAB ==================== -->
       @if (activeTab === 'attendance') {
         <div class="col-span-12 space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex items-center justify-between">
-              <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Attendance Rate</p>
-                <h3 class="text-3xl font-bold text-brand-500">94.2%</h3>
-                <p class="text-xs text-success-600 flex items-center gap-1.5 mt-1 font-semibold">
-                  <ng-icon name="heroArrowRight" size="16" class="text-success-500"></ng-icon>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Attendance Rate card with progress ring -->
+            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-theme-sm flex items-center justify-between hover:shadow-theme-md transition-shadow">
+              <div class="space-y-1">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Attendance Rate</p>
+                <h3 class="text-3xl font-bold text-brand-500 font-outfit">94.2%</h3>
+                <p class="text-xs text-success-600 flex items-center gap-1 mt-2 font-bold">
+                  <ng-icon name="heroArrowRight" size="14" class="text-success-500"></ng-icon>
                   +2.1% from last month
                 </p>
               </div>
-              <div class="relative w-16 h-16">
+              <div class="relative w-16 h-16 shrink-0">
                 <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                  <circle class="stroke-gray-100" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+                  <circle class="stroke-gray-50" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
                   <circle class="stroke-brand-500" cx="18" cy="18" fill="none" r="16" stroke-dasharray="94.2, 100" stroke-linecap="round" stroke-width="3"></circle>
                 </svg>
+                <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700">94%</div>
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Hours This Month</p>
-              <div class="flex items-baseline gap-2">
-                <h3 class="text-3xl font-bold text-gray-900">142</h3>
-                <span class="text-sm text-gray-500">/ 160 hrs</span>
-              </div>
-              <div class="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div class="h-full bg-info-500 w-[88%] rounded-full"></div>
-              </div>
-              <p class="text-xs text-gray-400 mt-2 font-medium">Target: 40 hrs per week</p>
-            </div>
-
-            <div class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex items-center justify-between">
+            <!-- Total Hours card with progress bar -->
+            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-theme-sm hover:shadow-theme-md transition-shadow flex flex-col justify-between">
               <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Days Absent</p>
-                <h3 class="text-3xl font-bold text-red-500">2</h3>
-                <p class="text-xs text-gray-500 mt-1">Sickness: 1 | Holiday: 1</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Hours This Month</p>
+                <div class="flex items-baseline gap-1.5 mt-2">
+                  <h3 class="text-3xl font-bold text-gray-900 font-outfit">142</h3>
+                  <span class="text-xs text-gray-400 font-semibold">/ 160 hrs</span>
+                </div>
               </div>
-              <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 shadow-sm">
-                <ng-icon name="heroExclamationTriangle" size="28" class="text-red-500"></ng-icon>
+              <div class="mt-4">
+                <div class="h-2 bg-gray-50 border border-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-brand-500 w-[88%] rounded-full transition-all duration-500"></div>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-2 font-bold">Target: 40 hrs per week</p>
+              </div>
+            </div>
+
+            <!-- Days Absent card -->
+            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-theme-sm flex items-center justify-between hover:shadow-theme-md transition-shadow">
+              <div class="space-y-1">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Days Absent</p>
+                <h3 class="text-3xl font-bold text-red-500 font-outfit">2</h3>
+                <p class="text-xs text-gray-500 font-medium mt-2">Sickness: 1 | Holiday: 1</p>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-red-50/50 border border-red-100/30 flex items-center justify-center text-red-500 shadow-sm shrink-0">
+                <ng-icon name="heroExclamationTriangle" size="24"></ng-icon>
               </div>
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm">
-            <div class="p-6 border-b border-gray-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
+          <!-- Attendance Log Table Shell -->
+          <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-theme-sm">
+            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/30">
               <div>
-                <h4 class="text-lg font-bold text-gray-900">Attendance Log History</h4>
-                <p class="text-sm text-gray-500">Current Period logs</p>
+                <h4 class="text-md font-bold text-gray-900">Attendance Log History</h4>
+                <p class="text-xs text-gray-400 mt-0.5">Current Period logs</p>
               </div>
-              <div class="flex gap-2">
-                <button class="bg-brand-50 hover:bg-brand-100 text-brand-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5">
-                  <ng-icon name="heroPlus" size="18" class="text-brand-600"></ng-icon>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button class="flex-1 sm:flex-initial bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-100 font-bold px-3.5 py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-98">
+                  <ng-icon name="heroPlus" size="16" class="text-brand-600"></ng-icon>
                   Request Holiday
                 </button>
-                <button class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5">
-                  <ng-icon name="heroExclamationTriangle" size="18" class="text-red-600"></ng-icon>
+                <button class="flex-1 sm:flex-initial bg-red-50 hover:bg-red-100 text-red-700 border border-red-100 font-bold px-3.5 py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-98">
+                  <ng-icon name="heroExclamationTriangle" size="16" class="text-red-600"></ng-icon>
                   Mark Absence
                 </button>
               </div>
             </div>
+            
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
                 <thead>
-                  <tr class="text-gray-400 border-b border-gray-200 bg-gray-50/50">
+                  <tr class="text-gray-400 border-b border-gray-100 bg-gray-50/30">
                     <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Day / Date</th>
                     <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Scheduled</th>
                     <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Check In</th>
@@ -434,65 +556,74 @@
                     <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
-                  <tr class="hover:bg-gray-50/50 transition-colors">
+                <tbody class="divide-y divide-gray-50 text-sm text-gray-700">
+                  <!-- Present Row 1 -->
+                  <tr class="hover:bg-gray-50/30 transition-colors">
                     <td class="px-6 py-4">
                       <div class="font-bold text-gray-900">Monday, May 13</div>
-                      <div class="text-xs text-gray-400">Week 20</div>
+                      <div class="text-[10px] text-gray-400 font-medium mt-0.5">Week 20</div>
                     </td>
-                    <td class="px-6 py-4">08:00 - 18:00</td>
-                    <td class="px-6 py-4 font-mono font-medium">07:58</td>
-                    <td class="px-6 py-4 font-mono font-medium">17:55</td>
+                    <td class="px-6 py-4 text-xs font-medium text-gray-600">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">07:58</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">17:55</td>
                     <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                      <span class="px-2.5 py-0.5 bg-success-50 text-success-700 text-[10px] font-bold rounded-full border border-success-100">PRESENT</span>
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50/50 transition-colors">
+                  
+                  <!-- Present Row 2 -->
+                  <tr class="hover:bg-gray-50/30 transition-colors">
                     <td class="px-6 py-4">
                       <div class="font-bold text-gray-900">Tuesday, May 14</div>
-                      <div class="text-xs text-gray-400">Week 20</div>
+                      <div class="text-[10px] text-gray-400 font-medium mt-0.5">Week 20</div>
                     </td>
-                    <td class="px-6 py-4">08:00 - 18:00</td>
-                    <td class="px-6 py-4 font-mono font-medium">08:15</td>
-                    <td class="px-6 py-4 font-mono font-medium">18:05</td>
+                    <td class="px-6 py-4 text-xs font-medium text-gray-600">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">08:15</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">18:05</td>
                     <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                      <span class="px-2.5 py-0.5 bg-success-50 text-success-700 text-[10px] font-bold rounded-full border border-success-100">PRESENT</span>
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50/50 transition-colors bg-red-50/20">
+                  
+                  <!-- Sick Row -->
+                  <tr class="hover:bg-red-50/10 bg-red-50/20 transition-colors">
                     <td class="px-6 py-4">
-                      <div class="font-bold text-red-600">Wednesday, May 15</div>
-                      <div class="text-xs text-red-400">Week 20</div>
+                      <div class="font-bold text-red-700">Wednesday, May 15</div>
+                      <div class="text-[10px] text-red-500/80 font-bold mt-0.5">Week 20</div>
                     </td>
-                    <td class="px-6 py-4">08:00 - 18:00</td>
-                    <td class="px-6 py-4 font-mono font-medium">—</td>
-                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4 text-xs font-medium text-red-650">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-semibold text-red-400 text-xs">—</td>
+                    <td class="px-6 py-4 font-mono font-semibold text-red-400 text-xs">—</td>
                     <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full">ABSENT (SICK)</span>
+                      <span class="px-2.5 py-0.5 bg-red-105 text-red-700 text-[10px] font-bold rounded-full border border-red-200 uppercase">ABSENT (SICK)</span>
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50/50 transition-colors">
+                  
+                  <!-- Present Row 3 -->
+                  <tr class="hover:bg-gray-50/30 transition-colors">
                     <td class="px-6 py-4">
                       <div class="font-bold text-gray-900">Thursday, May 16</div>
-                      <div class="text-xs text-gray-400">Week 20</div>
+                      <div class="text-[10px] text-gray-400 font-medium mt-0.5">Week 20</div>
                     </td>
-                    <td class="px-6 py-4">08:00 - 18:00</td>
-                    <td class="px-6 py-4 font-mono font-medium">07:55</td>
-                    <td class="px-6 py-4 font-mono font-medium">17:50</td>
+                    <td class="px-6 py-4 text-xs font-medium text-gray-600">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">07:55</td>
+                    <td class="px-6 py-4 font-mono font-bold text-gray-800 text-xs">17:50</td>
                     <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 bg-success-50 text-success-600 text-xs font-bold rounded-full">PRESENT</span>
+                      <span class="px-2.5 py-0.5 bg-success-50 text-success-700 text-[10px] font-bold rounded-full border border-success-100">PRESENT</span>
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50/50 transition-colors bg-brand-50/10">
+                  
+                  <!-- Holiday Row -->
+                  <tr class="hover:bg-brand-50/20 bg-brand-50/10 transition-colors">
                     <td class="px-6 py-4">
-                      <div class="font-bold text-brand-600">Friday, May 17</div>
-                      <div class="text-xs text-brand-400">Week 20</div>
+                      <div class="font-bold text-brand-700">Friday, May 17</div>
+                      <div class="text-[10px] text-brand-500/80 font-bold mt-0.5">Week 20</div>
                     </td>
-                    <td class="px-6 py-4">08:00 - 18:00</td>
-                    <td class="px-6 py-4 font-mono font-medium">—</td>
-                    <td class="px-6 py-4 font-mono font-medium">—</td>
+                    <td class="px-6 py-4 text-xs font-medium text-brand-650">08:00 - 18:00</td>
+                    <td class="px-6 py-4 font-mono font-semibold text-brand-400 text-xs">—</td>
+                    <td class="px-6 py-4 font-mono font-semibold text-brand-400 text-xs">—</td>
                     <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-full">HOLIDAY</span>
+                      <span class="px-2.5 py-0.5 bg-brand-105 text-brand-700 text-[10px] font-bold rounded-full border border-brand-200 uppercase">HOLIDAY</span>
                     </td>
                   </tr>
                 </tbody>
@@ -505,57 +636,71 @@
       <!-- ==================== FUNDING & BILLING TAB ==================== -->
       @if (activeTab === 'funding') {
         <div class="col-span-12 lg:col-span-4 space-y-6">
-          <!-- Balance & Actions -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
-            <div>
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Account Balance</p>
-              <h3 class="text-3xl font-bold text-gray-900">£0.00</h3>
-              <p class="text-xs text-success-600 mt-1 font-semibold flex items-center gap-1">
-                <ng-icon name="heroCheckCircle" size="16" class="text-success-500"></ng-icon>
-                Settled & Up-to-date
-              </p>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
-                <div class="text-xs text-gray-400 font-bold uppercase mb-1">Last Payment</div>
-                <div class="font-bold text-gray-800">£850.00</div>
+          <!-- Balance & Actions (Premium Banking Style Card) -->
+          <div class="bg-gradient-to-tr from-gray-900 via-slate-800 to-gray-850 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-gray-800">
+            <!-- Decorative circle glow -->
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="relative z-1 space-y-5">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Account Balance</p>
+                  <h3 class="text-3xl font-bold font-outfit mt-1 text-white">£0.00</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-success-500/20 text-success-400 border border-success-500/30 text-[10px] font-bold uppercase tracking-wide">
+                  Settled
+                </span>
               </div>
-              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200/50">
-                <div class="text-xs text-gray-400 font-bold uppercase mb-1">Last Invoice</div>
-                <div class="font-bold text-gray-800">£850.00</div>
+              
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="bg-white/5 border border-white/10 p-3 rounded-2xl">
+                  <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Last Payment</div>
+                  <div class="font-bold text-sm text-white mt-0.5">£850.00</div>
+                </div>
+                <div class="bg-white/5 border border-white/10 p-3 rounded-2xl">
+                  <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Last Invoice</div>
+                  <div class="font-bold text-sm text-white mt-0.5">£850.00</div>
+                </div>
               </div>
+              
+              <button class="w-full py-3 bg-white hover:bg-gray-100 text-gray-900 rounded-xl font-bold text-xs transition-all duration-250 flex items-center justify-center gap-1.5 shadow-sm active:scale-98">
+                <ng-icon name="heroPlus" size="16" class="text-gray-900"></ng-icon>
+                Add Credit to Account
+              </button>
             </div>
-            <button class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
-              <ng-icon name="heroPlus" size="20" class="text-white"></ng-icon>
-              Add Credit to Account
-            </button>
           </div>
 
           <!-- Billing profile config -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 class="text-md font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <ng-icon name="heroDocumentText" size="20" class="text-brand-500"></ng-icon>
-              Billing Configuration
-            </h3>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+              <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                <ng-icon name="heroDocumentText" size="18"></ng-icon>
+              </div>
+              <h3 class="text-sm font-bold text-gray-900">Billing Configuration</h3>
+            </div>
+            
             @if (billingProfile) {
-              <dl class="space-y-3 text-sm">
-                <div class="flex justify-between border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500">Basis</dt>
-                  <dd class="font-bold text-gray-800 capitalize">{{ billingProfile.billing_basis }}</dd>
+              <dl class="space-y-3.5 text-xs">
+                <div class="flex justify-between border-b border-gray-50 pb-2">
+                  <dt class="text-gray-400 font-medium">Basis</dt>
+                  <dd class="font-bold text-gray-800 capitalize">{{ billingProfile.billing_basis.replace('_', ' ') }}</dd>
                 </div>
                 @if (billingProfile.custom_rate_minor !== null && billingProfile.custom_rate_minor !== undefined) {
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <dt class="text-gray-500">Custom hourly rate</dt>
-                    <dd class="font-bold text-gray-800">{{ formatRate(billingProfile.custom_rate_minor) }}</dd>
+                  <div class="flex justify-between border-b border-gray-50 pb-2">
+                    <dt class="text-gray-400 font-medium">Custom hourly rate</dt>
+                    <dd class="font-bold text-brand-600">{{ formatRate(billingProfile.custom_rate_minor) }}</dd>
                   </div>
                 }
-                <div class="flex justify-between pb-1">
-                  <dt class="text-gray-500">Effective from</dt>
-                  <dd class="font-bold text-gray-800">{{ billingProfile.effective_from }}</dd>
+                <div class="flex justify-between pt-0.5">
+                  <dt class="text-gray-400 font-medium">Effective from</dt>
+                  <dd class="font-bold text-gray-700">{{ billingProfile.effective_from }}</dd>
                 </div>
               </dl>
             } @else {
-              <p class="text-sm text-gray-500">No active billing profile. <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline">Configure billing</a>.</p>
+              <p class="text-xs text-gray-500 font-medium">
+                No active billing profile. 
+                <a [routerLink]="['/manager/children', childId, 'edit']" class="text-brand-600 hover:underline font-bold">Configure billing</a>.
+              </p>
             }
           </div>
         </div>
@@ -563,57 +708,59 @@
         <div class="col-span-12 lg:col-span-8 space-y-6">
           <!-- Monthly Funding Profile Editor (visible when billing_month query param present) -->
           @if (billingMonth) {
-            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
-              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <ng-icon name="heroCalendarDays" size="20" class="text-brand-500"></ng-icon>
-                Monthly Funding Profile — {{ billingMonth }}
-              </h3>
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-gray-50">
+                <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                  <ng-icon name="heroCalendarDays" size="18"></ng-icon>
+                </div>
+                <h3 class="text-md font-bold text-gray-900">Monthly Funding Profile — {{ billingMonth }}</h3>
+              </div>
 
               @if (funding && funding.funding_enabled) {
-                <div class="rounded-xl border border-brand-100 bg-brand-50/50 p-4 space-y-3">
-                  <h4 class="text-sm font-bold text-brand-800">Registration funding reference info</h4>
-                  <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-brand-700">
-                    <div><span class="font-semibold">Type:</span> {{ funding.funding_type }}</div>
-                    <div><span class="font-semibold">Model:</span> {{ funding.funding_model === 'stretched' ? 'Stretched' : 'Term time only' }}</div>
+                <div class="rounded-2xl border border-brand-100 bg-brand-50/30 p-4 space-y-3">
+                  <h4 class="text-xs font-bold text-brand-800 uppercase tracking-wider">Registration funding reference info</h4>
+                  <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-brand-700">
+                    <div><span class="font-semibold text-brand-500">Type:</span> {{ funding.funding_type.replace('_', ' ') }}</div>
+                    <div><span class="font-semibold text-brand-500">Model:</span> {{ funding.funding_model === 'stretched' ? 'Stretched' : 'Term time' }}</div>
                     @if (funding.funded_hours_per_week) {
-                      <div><span class="font-semibold">Hours/week:</span> {{ funding.funded_hours_per_week }}</div>
+                      <div><span class="font-semibold text-brand-500">Hours/week:</span> {{ funding.funded_hours_per_week }}</div>
                     }
                     @if (funding.eligibility_code) {
-                      <div><span class="font-semibold">Eligibility Code:</span> {{ funding.eligibility_code }}</div>
+                      <div><span class="font-semibold text-brand-500">Eligibility Code:</span> {{ funding.eligibility_code }}</div>
                     }
                   </dl>
-                  <p class="text-[11px] text-brand-600/85">This info is static from registration. Monthly deductions are governed strictly by the allowance minutes set below.</p>
+                  <p class="text-[10px] text-brand-600/80 leading-relaxed pt-1 border-t border-brand-100/40">This info is static from registration. Monthly deductions are governed strictly by the allowance minutes set below.</p>
                 </div>
               }
 
               @if (suggestedMinutes !== null) {
-                <div class="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200/50 text-sm">
-                  <span class="text-gray-700">Suggested monthly allowance: <strong class="text-gray-900 font-bold">{{ suggestedMinutes }}</strong> minutes</span>
-                  <button type="button" class="text-xs font-bold text-brand-600 hover:underline" (click)="useSuggestedValue()">Use suggested value</button>
+                <div class="flex items-center justify-between gap-3 bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100 text-xs">
+                  <span class="text-gray-600 font-medium">Suggested monthly allowance: <strong class="text-gray-900 font-bold">{{ suggestedMinutes }}</strong> minutes</span>
+                  <button type="button" class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline" (click)="useSuggestedValue()">Use suggested value</button>
                 </div>
               }
 
               <div class="space-y-4">
-                <div>
-                  <label for="monthly-allowance" class="block text-sm font-semibold text-gray-700 mb-1">Funded allowance (minutes)</label>
+                <div class="max-w-xs">
+                  <label for="monthly-allowance" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Funded allowance (minutes)</label>
                   <input
                     id="monthly-allowance"
                     type="number"
                     min="0"
                     [(ngModel)]="monthlyAllowanceMinutes"
-                    class="block w-full rounded-xl border border-brand-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-brand-500/20"
+                    class="block w-full rounded-xl border border-gray-250 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 font-mono font-semibold"
                   />
                 </div>
                 <div class="flex gap-2">
-                  <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-sm" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
+                  <button class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/10 transition-all active:scale-98" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
                     @if (!isSavingMonthly) {
-                      <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+                      <ng-icon name="heroCheck" size="14" aria-hidden="true" />
                     }
                     {{ isSavingMonthly ? 'Saving...' : 'Save Allowance' }}
                   </button>
                 </div>
                 @if (monthlySaveMessage) {
-                  <p class="text-xs text-success-600 font-semibold flex items-center gap-1.5">
+                  <p class="text-xs text-success-600 font-bold flex items-center gap-1">
                     <ng-icon name="heroCheckCircle" size="16" class="text-success-500"></ng-icon>
                     {{ monthlySaveMessage }}
                   </p>
@@ -622,32 +769,33 @@
             </div>
           }
 
-          <!-- Invoices List -->
-          <div class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm">
-            <div class="p-6 border-b border-gray-200/80 bg-gray-50/50 flex justify-between items-center">
-              <h3 class="text-lg font-bold text-gray-900">Recent Invoices</h3>
+          <!-- Invoices List Card -->
+          <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-theme-sm">
+            <div class="p-5 border-b border-gray-100 bg-gray-50/30 flex justify-between items-center">
+              <h3 class="text-md font-bold text-gray-900">Recent Invoices</h3>
             </div>
+            
             @if (invoices.length === 0) {
               <app-empty-state message="No invoices generated for this child yet."></app-empty-state>
             } @else {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="text-gray-400 border-b border-gray-200 bg-gray-50/50">
-                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Invoice ID</th>
-                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Billing Month</th>
-                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Amount</th>
-                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Status</th>
-                      <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-right">Actions</th>
+                    <tr class="text-gray-400 border-b border-gray-100 bg-gray-50/30">
+                      <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Invoice ID</th>
+                      <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Billing Month</th>
+                      <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Amount</th>
+                      <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+                  <tbody class="divide-y divide-gray-50 text-sm text-gray-700">
                     @for (inv of invoices; track inv.invoiceId) {
-                      <tr class="hover:bg-gray-50/50 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-gray-900">
+                      <tr class="hover:bg-gray-50/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-gray-950">
                           {{ inv.invoiceNumberDisplay || 'Draft' }}
                         </td>
-                        <td class="px-6 py-4 text-gray-500">{{ inv.billingMonth }}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-gray-500">{{ inv.billingMonth }}</td>
                         <td class="px-6 py-4 font-bold text-gray-900">
                           £{{ (inv.totalDueMinor / 100).toFixed(2) }}
                         </td>
@@ -656,8 +804,8 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                           <div class="flex justify-end gap-1.5">
-                            <a [routerLink]="['/manager/invoices', inv.invoiceId]" class="p-1.5 text-gray-500 hover:text-brand-500 transition-colors" title="View details">
-                              <ng-icon name="heroEye" size="18" class="text-gray-500"></ng-icon>
+                            <a [routerLink]="['/manager/invoices', inv.invoiceId]" class="w-8 h-8 rounded-lg bg-gray-55 border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-brand-500 hover:text-white hover:border-brand-500 transition-all duration-200" title="View details">
+                              <ng-icon name="heroEye" size="14"></ng-icon>
                             </a>
                           </div>
                         </td>
@@ -674,156 +822,232 @@
       <!-- ==================== HEALTH & MEDICAL TAB ==================== -->
       @if (activeTab === 'health') {
         <div class="col-span-12 lg:col-span-8 space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <!-- Allergies & Dietary -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm relative overflow-hidden space-y-4">
+            <div class="bg-white p-6 rounded-3xl border shadow-theme-sm relative overflow-hidden space-y-4 hover:shadow-theme-md transition-shadow"
+              [ngClass]="(healthProfile?.dietary_requirements_notes || healthProfile?.medical_conditions_notes) ? 'border-red-100 bg-red-50/5' : 'border-gray-100 bg-white'">
               <div class="flex justify-between items-start">
-                <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shadow-sm">
-                  <ng-icon name="heroExclamationTriangle" size="24" class="text-red-500"></ng-icon>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border"
+                  [ngClass]="(healthProfile?.dietary_requirements_notes || healthProfile?.medical_conditions_notes) ? 'bg-red-50 text-red-500 border-red-100' : 'bg-success-50 text-success-500 border-success-100'">
+                  <ng-icon [name]="(healthProfile?.dietary_requirements_notes || healthProfile?.medical_conditions_notes) ? 'heroExclamationTriangle' : 'heroHeart'" size="20"></ng-icon>
                 </div>
-                <span class="bg-success-50 text-success-600 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">
-                  {{ healthProfile?.medical_conditions_status === 'none' ? 'None Disclosed' : 'Active' }}
-                </span>
+                
+                @if (healthProfile?.dietary_requirements_notes || healthProfile?.medical_conditions_notes) {
+                  <span class="bg-red-50 text-red-700 border border-red-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Active Alert</span>
+                } @else {
+                  <span class="bg-success-50 text-success-700 border border-success-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">No Alerts</span>
+                }
               </div>
+              
               <div>
-                <h4 class="text-lg font-bold text-gray-900 mb-1">Allergies &amp; Dietary</h4>
-                <p class="text-sm text-gray-500 leading-relaxed">
+                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Allergies &amp; Dietary</h4>
+                <p class="text-xs text-gray-500 leading-relaxed mt-2 font-medium">
                   {{ healthProfile?.dietary_requirements_notes || 'No food allergies or medical dietary requirements disclosed by parents.' }}
                 </p>
               </div>
             </div>
 
             <!-- Immunisations -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-4 hover:shadow-theme-md transition-shadow">
               <div class="flex justify-between items-start">
-                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
-                  <ng-icon name="heroShieldCheck" size="24" class="text-brand-500"></ng-icon>
+                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm border border-brand-100">
+                  <ng-icon name="heroShieldCheck" size="20"></ng-icon>
                 </div>
-                <span class="bg-brand-50 text-brand-600 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">
+                <span class="bg-brand-50 text-brand-700 border border-brand-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   {{ healthProfile?.immunisation_status || 'Up to date' }}
                 </span>
               </div>
+              
               <div>
-                <h4 class="text-lg font-bold text-gray-900 mb-1">Immunisations</h4>
-                <p class="text-sm text-gray-500 leading-relaxed">
-                  Vaccination schedule is compliant. Country of records: {{ healthProfile?.immunisation_country || 'United Kingdom' }}.
+                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Immunisations</h4>
+                <p class="text-xs text-gray-500 leading-relaxed mt-2 font-medium">
+                  Vaccination schedule is compliant. Country of records: <strong class="text-gray-700">{{ healthProfile?.immunisation_country || 'United Kingdom' }}</strong>.
                 </p>
               </div>
             </div>
           </div>
 
           <!-- Medical history & visitor details -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
-            <h4 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <ng-icon name="heroHeart" size="20" class="text-brand-500"></ng-icon>
-              Medical &amp; Clinical Contacts
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="p-4 rounded-xl border border-gray-200/80 space-y-2 text-sm bg-gray-50/50">
-                <div class="flex items-center gap-2 text-brand-600 font-bold mb-1">
-                  <ng-icon name="heroUser" size="18" class="text-brand-500"></ng-icon>
-                  GP / Doctor
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+              <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                <ng-icon name="heroHeart" size="18"></ng-icon>
+              </div>
+              <h3 class="text-sm font-bold text-gray-900">Medical &amp; Clinical Contacts</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <!-- GP / Doctor Card -->
+              <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/30 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center gap-2 text-brand-600 font-bold text-xs uppercase tracking-wider mb-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                    GP / Doctor
+                  </div>
+                  @if (healthProfile?.doctor_name) {
+                    <p class="font-bold text-gray-800 text-sm">{{ healthProfile?.doctor_name }}</p>
+                    @if (healthProfile?.doctor_address) { 
+                      <p class="text-xs text-gray-400 mt-1 flex items-start gap-1 font-medium">
+                        <span class="shrink-0 text-gray-300">📍</span>
+                        {{ healthProfile?.doctor_address }}
+                      </p> 
+                    }
+                  } @else {
+                    <p class="text-xs text-gray-400 italic">No doctor registered.</p>
+                  }
                 </div>
-                @if (healthProfile?.doctor_name) {
-                  <p class="font-bold text-gray-800">{{ healthProfile?.doctor_name }}</p>
-                  @if (healthProfile?.doctor_phone) { <p class="text-gray-500">Phone: {{ healthProfile?.doctor_phone }}</p> }
-                  @if (healthProfile?.doctor_address) { <p class="text-xs text-gray-400">Address: {{ healthProfile?.doctor_address }}</p> }
-                } @else {
-                  <p class="text-gray-400 italic">No doctor registered.</p>
+                
+                @if (healthProfile?.doctor_phone) {
+                  <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <span class="text-[10px] text-gray-400 font-bold uppercase">Phone</span>
+                    <a [href]="'tel:' + healthProfile?.doctor_phone" class="text-xs font-bold text-brand-600 hover:underline font-mono">
+                      {{ healthProfile?.doctor_phone }}
+                    </a>
+                  </div>
                 }
               </div>
 
-              <div class="p-4 rounded-xl border border-gray-200/80 space-y-2 text-sm bg-gray-50/50">
-                <div class="flex items-center gap-2 text-brand-600 font-bold mb-1">
-                  <ng-icon name="heroUser" size="18" class="text-brand-500"></ng-icon>
-                  Health Visitor
+              <!-- Health Visitor Card -->
+              <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/30 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center gap-2 text-brand-600 font-bold text-xs uppercase tracking-wider mb-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                    Health Visitor
+                  </div>
+                  @if (healthProfile?.health_visitor_name) {
+                    <p class="font-bold text-gray-800 text-sm">{{ healthProfile?.health_visitor_name }}</p>
+                    @if (healthProfile?.health_visitor_address) { 
+                      <p class="text-xs text-gray-400 mt-1 flex items-start gap-1 font-medium">
+                        <span class="shrink-0 text-gray-300">📍</span>
+                        {{ healthProfile?.health_visitor_address }}
+                      </p> 
+                    }
+                  } @else {
+                    <p class="text-xs text-gray-400 italic">No health visitor registered.</p>
+                  }
                 </div>
-                @if (healthProfile?.health_visitor_name) {
-                  <p class="font-bold text-gray-800">{{ healthProfile?.health_visitor_name }}</p>
-                  @if (healthProfile?.health_visitor_phone) { <p class="text-gray-500">Phone: {{ healthProfile?.health_visitor_phone }}</p> }
-                  @if (healthProfile?.health_visitor_address) { <p class="text-xs text-gray-400">Address: {{ healthProfile?.health_visitor_address }}</p> }
-                } @else {
-                  <p class="text-gray-400 italic">No health visitor registered.</p>
+                
+                @if (healthProfile?.health_visitor_phone) {
+                  <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <span class="text-[10px] text-gray-400 font-bold uppercase">Phone</span>
+                    <a [href]="'tel:' + healthProfile?.health_visitor_phone" class="text-xs font-bold text-brand-600 hover:underline font-mono">
+                      {{ healthProfile?.health_visitor_phone }}
+                    </a>
+                  </div>
                 }
               </div>
             </div>
           </div>
 
           <!-- Consents Checklist -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
-            <h4 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <ng-icon name="heroClipboardDocumentCheck" size="20" class="text-brand-500"></ng-icon>
-              Signed Regulatory Consents
-            </h4>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm">
+            <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+              <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
+                <ng-icon name="heroClipboardDocumentCheck" size="18"></ng-icon>
+              </div>
+              <h3 class="text-sm font-bold text-gray-900">Signed Regulatory Consents</h3>
+            </div>
+            
             @if (consent) {
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.urgent_medical_treatment ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.urgent_medical_treatment ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">Urgent Medical Treatment</span>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <!-- Consent list items -->
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">Urgent Medical Treatment</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.urgent_medical_treatment ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.urgent_medical_treatment ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.plasters ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.plasters ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">Apply Plasters</span>
+                
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">Apply Plasters</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.plasters ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.plasters ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.local_outings ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.local_outings ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">Local Outings & Walks</span>
+                
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">Local Outings & Walks</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.local_outings ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.local_outings ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.gdpr_data_processing_consent ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.gdpr_data_processing_consent ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">GDPR Data Processing</span>
+                
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">GDPR Data Processing</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.gdpr_data_processing_consent ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.gdpr_data_processing_consent ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.nursery_website ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.nursery_website ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">Nursery Website Photos</span>
+                
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">Nursery Website Photos</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.nursery_website ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.nursery_website ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
-                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200/40">
-                  <ng-icon [name]="consent.social_media ? 'heroCheckCircle' : 'heroXCircle'" size="20" [ngClass]="consent.social_media ? 'text-success-500' : 'text-red-500'" class="shrink-0"></ng-icon>
-                  <span class="font-semibold text-gray-800">Social Media sharing</span>
+                
+                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-150 bg-gray-50/10">
+                  <span class="font-bold text-gray-700">Social Media Sharing</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                    [ngClass]="consent.social_media ? 'bg-success-50 text-success-700 border-success-100' : 'bg-red-50 text-red-700 border-red-100'">
+                    {{ consent.social_media ? 'Granted' : 'Declined' }}
+                  </span>
                 </div>
               </div>
-              <div class="mt-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50 text-xs text-gray-500 flex justify-between">
-                <span>Signed by: <strong>{{ consent.signer_name }}</strong></span>
-                <span>Date: <strong>{{ consent.signed_date }}</strong></span>
+              
+              <div class="mt-4 p-4 rounded-2xl border border-gray-100 bg-gray-50/50 text-[11px] text-gray-500 flex justify-between font-medium">
+                <span>Signed by: <strong class="text-gray-800 font-bold">{{ consent.signer_name }}</strong></span>
+                <span>Date: <strong class="text-gray-800 font-bold">{{ consent.signed_date }}</strong></span>
               </div>
             } @else {
-              <p class="text-sm text-gray-400 italic">Consents data has not been logged yet.</p>
+              <p class="text-xs text-gray-400 italic">Consents data has not been logged yet.</p>
             }
           </div>
         </div>
 
         <div class="col-span-12 lg:col-span-4 space-y-6">
-          <!-- Emergency Consent Card -->
-          <div class="bg-brand-500 text-white rounded-2xl p-6 shadow-md space-y-4">
-            <div class="flex items-center justify-between">
-              <ng-icon name="heroShieldCheck" size="32" class="text-white/90"></ng-icon>
-              <span class="bg-white/20 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">Active</span>
-            </div>
-            <h4 class="text-lg font-bold">Emergency Medical Consent</h4>
-            <p class="text-xs text-white/80 leading-relaxed">
-              Parents have granted full permission for staff to seek urgent emergency hospital care or administer basic first aid procedures.
-            </p>
-            <div class="p-3 bg-white/10 rounded-xl border border-white/15 flex items-center justify-between text-xs">
-              <span class="opacity-70">Consent status:</span>
-              <span class="font-bold">FULLY SIGNED</span>
+          <!-- Emergency Consent Card (Beautiful Branded Overlay) -->
+          <div class="bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-500 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-brand-400/20">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            
+            <div class="relative z-1 space-y-4">
+              <div class="flex items-center justify-between">
+                <ng-icon name="heroShieldCheck" size="28" class="text-white"></ng-icon>
+                <span class="bg-white/20 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Active Status</span>
+              </div>
+              
+              <h4 class="text-md font-bold font-outfit text-white">Emergency Medical Consent</h4>
+              <p class="text-[11px] text-white/80 leading-relaxed">
+                Parents have granted full permission for staff to seek urgent emergency hospital care or administer basic first aid procedures when necessary.
+              </p>
+              
+              <div class="p-3.5 bg-white/10 rounded-xl border border-white/15 flex items-center justify-between text-xs font-semibold">
+                <span class="text-white/70">Consent status:</span>
+                <span class="text-white font-bold tracking-wide uppercase text-[10px] bg-white/15 px-2 py-0.5 rounded border border-white/20">Fully Signed</span>
+              </div>
             </div>
           </div>
 
           <!-- Safeguarding card if exists -->
           @if (safeguardingProfile) {
-            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-3">
-              <h4 class="text-sm font-semibold uppercase text-red-500 tracking-wider flex items-center gap-1.5">
-                <ng-icon name="heroShieldCheck" size="18" class="text-red-500"></ng-icon>
+            <div class="bg-white p-5 rounded-3xl border border-red-100 bg-red-50/5 shadow-theme-sm space-y-3">
+              <h4 class="text-xs font-bold uppercase text-red-650 tracking-wider flex items-center gap-1.5 mb-2">
+                <ng-icon name="heroShieldCheck" size="16" class="text-red-500"></ng-icon>
                 Safeguarding &amp; Support
               </h4>
               <dl class="space-y-2 text-xs">
-                <div class="flex justify-between pb-1 border-b border-gray-50">
-                  <dt class="text-gray-400">Social services involved:</dt>
-                  <dd class="font-bold text-gray-800 capitalize">{{ safeguardingProfile.social_services_status }}</dd>
+                <div class="flex justify-between pb-2 border-b border-red-100/20">
+                  <dt class="text-red-655/80 font-medium">Social services involved:</dt>
+                  <dd class="font-bold text-red-700 capitalize">{{ safeguardingProfile.social_services_status }}</dd>
                 </div>
                 @if (safeguardingProfile.social_worker_name) {
-                  <div class="flex justify-between pb-1 border-b border-gray-50">
-                    <dt class="text-gray-400">Worker name:</dt>
+                  <div class="flex justify-between pt-1">
+                    <dt class="text-red-655/80 font-medium">Worker name:</dt>
                     <dd class="font-bold text-gray-800">{{ safeguardingProfile.social_worker_name }}</dd>
                   </div>
                 }
@@ -837,10 +1061,10 @@
       @if (activeTab === 'contacts') {
         <div class="col-span-12 lg:col-span-8 space-y-6">
           <!-- Guardians List -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-6">
-            <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-6">
+            <div class="flex justify-between items-center border-b border-gray-50 pb-4">
               <div>
-                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <h3 class="text-md font-bold text-gray-900 flex items-center gap-2">
                   <ng-icon name="heroUserGroup" size="20" class="text-brand-500"></ng-icon>
                   Parent/Carer Details
                 </h3>
@@ -854,25 +1078,45 @@
               <div class="space-y-6">
                 @for (carer of parentCarers; track carer.id; let idx = $index) {
                   <div class="space-y-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center">
-                        {{ carer.fullName ? carer.fullName[0] : 'C' }}
-                      </div>
-                      <div>
-                        <div class="font-bold text-gray-900">{{ carer.fullName }}</div>
-                        <div class="text-xs font-bold text-brand-600 uppercase tracking-wider">
-                          {{ carer.relationshipToChild || 'Guardian' }} · parental responsibility: {{ carer.hasParentalResponsibility ? 'Yes' : 'No' }}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div class="flex items-center gap-3">
+                        <!-- Initial avatar with soft background -->
+                        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center border border-brand-100 shrink-0">
+                          {{ carer.fullName ? carer.fullName[0] : 'C' }}
+                        </div>
+                        <div>
+                          <div class="font-bold text-gray-900 text-sm">{{ carer.fullName }}</div>
+                          <div class="text-xs font-bold text-brand-600 uppercase tracking-wider mt-0.5 capitalize">
+                            {{ carer.relationshipToChild || 'Guardian' }}
+                          </div>
                         </div>
                       </div>
+                      
+                      <!-- Parental Responsibility Badge -->
+                      <span class="self-start sm:self-auto px-2.5 py-0.5 rounded-full text-[10px] font-bold border tracking-wide uppercase select-none"
+                        [ngClass]="carer.hasParentalResponsibility ? 'bg-success-50 text-success-700 border-success-100' : 'bg-gray-50 text-gray-500 border-gray-200'">
+                        Parental Responsibility: {{ carer.hasParentalResponsibility ? 'Yes' : 'No' }}
+                      </span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-gray-50/50 p-4 rounded-xl border border-gray-200/40">
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-gray-50/40 p-4 rounded-2xl border border-gray-100">
                       <div>
-                        <span class="text-xs font-semibold text-gray-400 block mb-0.5">Contact Number</span>
-                        <span class="font-semibold text-gray-800">{{ carer.telephone || 'Not provided' }}</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Contact Number</span>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-gray-800 font-mono">{{ carer.telephone || 'Not provided' }}</span>
+                          @if (carer.telephone) {
+                            <a [href]="'tel:' + carer.telephone" class="text-xs font-bold text-brand-600 hover:underline">Call</a>
+                          }
+                        </div>
                       </div>
                       <div>
-                        <span class="text-xs font-semibold text-gray-400 block mb-0.5">Email Address</span>
-                        <span class="font-semibold text-gray-800">{{ carer.email || 'Not provided' }}</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email Address</span>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-gray-800 truncate block max-w-[200px]">{{ carer.email || 'Not provided' }}</span>
+                          @if (carer.email) {
+                            <a [href]="'mailto:' + carer.email" class="text-xs font-bold text-brand-600 hover:underline">Email</a>
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -883,33 +1127,34 @@
           </div>
 
           <!-- Authorized Collectors -->
-          <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-4">
             <div>
-              <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h3 class="text-md font-bold text-gray-900 flex items-center gap-2">
                 <ng-icon name="heroShieldCheck" size="20" class="text-amber-500"></ng-icon>
                 Authorized Collectors
               </h3>
-              <p class="text-xs text-gray-400 mt-0.5">Individuals approved to collect the child. Identification required on arrival.</p>
+              <p class="text-xs text-gray-400 mt-0.5 font-medium">Individuals approved to collect the child. Identification required on arrival.</p>
             </div>
 
             @if (authorisedCollectors.length === 0) {
-              <p class="text-sm text-gray-400 italic">No third-party authorized collectors listed.</p>
+              <p class="text-xs text-gray-400 italic">No third-party authorized collectors listed.</p>
             } @else {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for (coll of authorisedCollectors; track coll.id) {
-                  <div class="bg-gray-50/50 p-4 border border-gray-200/80 rounded-xl flex items-center justify-between gap-4">
+                  <div class="bg-gray-50/50 p-4 border border-gray-100 rounded-2xl flex items-center justify-between gap-4 shadow-theme-xs">
                     <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
-                        <ng-icon name="heroUser" size="20" class="text-gray-600"></ng-icon>
+                      <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-600 flex items-center justify-center shrink-0">
+                        <ng-icon name="heroUser" size="18" class="text-gray-500"></ng-icon>
                       </div>
                       <div>
-                        <div class="text-sm font-bold text-gray-800">{{ coll.fullName }}</div>
-                        <div class="text-xs text-gray-500">{{ coll.relationshipToChild || 'Collector' }}</div>
+                        <div class="text-xs font-bold text-gray-800">{{ coll.fullName }}</div>
+                        <div class="text-[10px] text-gray-400 capitalize font-semibold mt-0.5">{{ coll.relationshipToChild || 'Collector' }}</div>
                       </div>
                     </div>
-                    <span class="bg-success-50 text-success-600 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5">
+                    
+                    <span class="bg-success-50 text-success-700 border border-success-100 px-2.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-0.5 select-none uppercase tracking-wider">
                       <ng-icon name="heroCheckCircle" size="12" class="text-success-500"></ng-icon>
-                      APPROVED
+                      Approved
                     </span>
                   </div>
                 }
@@ -919,22 +1164,36 @@
         </div>
 
         <div class="col-span-12 lg:col-span-4 space-y-6">
-          <!-- Collection Password Config -->
-          <div class="bg-white border-2 border-amber-500/10 rounded-2xl p-6 shadow-sm space-y-4">
-            <div class="flex items-center gap-3 text-amber-600">
-              <div class="p-2 bg-amber-50 rounded-xl">
-                <ng-icon name="heroLockClosed" size="24" class="text-amber-500"></ng-icon>
+          <!-- Collection Password Config (Togglable Security Mask) -->
+          <div class="bg-white border border-amber-200/50 rounded-3xl p-6 shadow-theme-sm space-y-4 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full pointer-events-none"></div>
+            
+            <div class="flex items-center gap-3 text-amber-600 relative z-1">
+              <div class="p-2 bg-amber-50 border border-amber-100 rounded-xl text-amber-600">
+                <ng-icon name="heroLockClosed" size="20"></ng-icon>
               </div>
-              <h3 class="font-bold text-gray-900 text-md">Pickup Security</h3>
+              <h3 class="font-bold text-gray-900 text-sm">Pickup Security</h3>
             </div>
-            <p class="text-xs text-gray-500 leading-relaxed">
-              This secure password must be stated by any third-party collectors when picking up the child from the nursery.
+            
+            <p class="text-xs text-gray-500 leading-relaxed font-medium">
+              This secure password hint must be stated by any third-party collectors when picking up the child from the nursery.
             </p>
-            <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-200/30 text-sm">
-              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Pickup Hint</span>
-              <strong class="text-gray-800 font-bold block">{{ collectionSettings?.collection_password_hint || 'Not configured' }}</strong>
+            
+            <div class="flex items-center justify-between bg-amber-50/30 p-4 rounded-2xl border border-amber-100/40 text-xs">
+              <div class="flex-1 min-w-0">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Pickup Hint</span>
+                <strong class="text-gray-800 font-bold block truncate font-mono text-sm tracking-wide">
+                  {{ showPickupPassword ? (collectionSettings?.collection_password_hint || 'Not configured') : '••••••••' }}
+                </strong>
+              </div>
+              
+              <button (click)="togglePickupPassword()" class="text-xs font-bold text-amber-600 hover:text-amber-700 select-none flex items-center gap-1 shrink-0 ml-3 bg-white border border-amber-150 px-2.5 py-1 rounded-lg hover:bg-amber-50 transition-colors shadow-theme-xs">
+                <ng-icon [name]="showPickupPassword ? 'heroEyeSlash' : 'heroEye'" size="14"></ng-icon>
+                {{ showPickupPassword ? 'Hide' : 'Reveal' }}
+              </button>
             </div>
-            <div class="text-[11px] text-gray-400 italic">
+            
+            <div class="text-[10px] text-gray-400 italic font-medium">
               Updated: {{ collectionSettings?.collection_password_updated_at ? (collectionSettings?.collection_password_updated_at | date:'mediumDate') : 'No update logs' }}
             </div>
           </div>

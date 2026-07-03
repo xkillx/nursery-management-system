@@ -25,6 +25,7 @@ import {
   heroDocumentText,
   heroClock,
   heroEye,
+  heroEyeSlash,
   heroShieldCheck,
   heroPlus,
   heroLockClosed,
@@ -89,6 +90,7 @@ export type ChildProfileTab = 'overview' | 'attendance' | 'funding' | 'health' |
       heroDocumentText,
       heroClock,
       heroEye,
+      heroEyeSlash,
       heroShieldCheck,
       heroPlus,
       heroLockClosed,
@@ -143,6 +145,66 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   get suggestedMinutes(): number | null {
     if (!this.funding?.funded_hours_per_week) return null;
     return Math.round(this.funding.funded_hours_per_week * 4.33 * 60);
+  }
+
+  showPickupPassword = false;
+
+  togglePickupPassword(): void {
+    this.showPickupPassword = !this.showPickupPassword;
+  }
+
+  get childAge(): string {
+    if (!this.child?.dateOfBirth) return '';
+    const birthDate = new Date(this.child.dateOfBirth);
+    if (isNaN(birthDate.getTime())) return '';
+    const today = new Date();
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    
+    if (days < 0) {
+      months--;
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    if (years === 0) {
+      if (months === 0) {
+        return `${days}d`;
+      }
+      return `${months}m`;
+    }
+    return `${years}y ${months}m`;
+  }
+
+  get weeklySchedule(): { dayName: string; shortName: string; isActive: boolean; sessions: string[] }[] {
+    const days = [
+      { dayOfWeek: 1, dayName: 'Monday', shortName: 'Mon' },
+      { dayOfWeek: 2, dayName: 'Tuesday', shortName: 'Tue' },
+      { dayOfWeek: 3, dayName: 'Wednesday', shortName: 'Wed' },
+      { dayOfWeek: 4, dayName: 'Thursday', shortName: 'Thu' },
+      { dayOfWeek: 5, dayName: 'Friday', shortName: 'Fri' }
+    ];
+    
+    return days.map(day => {
+      const matchingEntries = this.currentBookingPattern?.entries.filter(e => e.day_of_week === day.dayOfWeek) ?? [];
+      const sessions = matchingEntries.map(e => {
+        if (e.session_type) {
+          return `${e.session_type.name} (${e.session_type.start_time.slice(0, 5)} - ${e.session_type.end_time.slice(0, 5)})`;
+        }
+        return 'Scheduled';
+      });
+      return {
+        dayName: day.dayName,
+        shortName: day.shortName,
+        isActive: matchingEntries.length > 0,
+        sessions
+      };
+    });
   }
 
   ngOnInit(): void {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import {
@@ -256,7 +256,10 @@ type RegistrationDraft = {
     collection_password: string;
     collection_password_hint: string;
     national_insurance_number: string;
-    parent1_address: string;
+    parent1_address_street: string;
+    parent1_address_line2: string;
+    parent1_address_city: string;
+    parent1_address_postcode: string;
     parent1_work_address: string;
     parent1_has_responsibility: boolean | null;
     show_second_parent: boolean;
@@ -264,7 +267,10 @@ type RegistrationDraft = {
     second_parent_relationship: string;
     second_parent_telephone: string;
     second_parent_email: string;
-    second_parent_address: string;
+    second_parent_address_street: string;
+    second_parent_address_line2: string;
+    second_parent_address_city: string;
+    second_parent_address_postcode: string;
     second_parent_work_address: string;
     second_parent_has_responsibility: boolean | null;
   };
@@ -301,7 +307,6 @@ type RegistrationDraft = {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     NgIcon,
     ButtonComponent,
     CheckboxComponent,
@@ -689,7 +694,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     collection_password: '',
     collection_password_hint: '',
     national_insurance_number: '',
-    parent1_address: '',
+    parent1_address_street: '',
+    parent1_address_line2: '',
+    parent1_address_city: '',
+    parent1_address_postcode: '',
     parent1_work_address: '',
     parent1_has_responsibility: null as boolean | null,
     show_second_parent: false,
@@ -697,7 +705,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     second_parent_relationship: '',
     second_parent_telephone: '',
     second_parent_email: '',
-    second_parent_address: '',
+    second_parent_address_street: '',
+    second_parent_address_line2: '',
+    second_parent_address_city: '',
+    second_parent_address_postcode: '',
     second_parent_work_address: '',
     second_parent_has_responsibility: null as boolean | null,
   };
@@ -1403,9 +1414,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       ? {
           ...this.parentCarersDraft[0],
           hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
-          address: this.step3.parent1_address
-            ? { text: this.step3.parent1_address.trim() }
-            : this.parentCarersDraft[0].address,
+          address: this.buildStructuredAddress(
+            this.step3.parent1_address_street,
+            this.step3.parent1_address_line2,
+            this.step3.parent1_address_city,
+            this.step3.parent1_address_postcode,
+          ) ?? this.parentCarersDraft[0].address,
           workAddress: this.step3.parent1_work_address
             ? { text: this.step3.parent1_work_address.trim() }
             : this.parentCarersDraft[0].workAddress,
@@ -1419,9 +1433,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       parentCarers.push({
         fullName: this.step3.second_parent_name.trim(),
         relationshipToChild: this.step3.second_parent_relationship.trim() || null,
-        address: this.step3.second_parent_address.trim()
-          ? { text: this.step3.second_parent_address.trim() } as unknown as Record<string, unknown>
-          : null,
+        address: this.buildStructuredAddress(
+          this.step3.second_parent_address_street,
+          this.step3.second_parent_address_line2,
+          this.step3.second_parent_address_city,
+          this.step3.second_parent_address_postcode,
+        ) as unknown as Record<string, unknown>,
         telephone: this.step3.second_parent_telephone.trim() || null,
         email: this.step3.second_parent_email.trim() || null,
         workAddress: this.step3.second_parent_work_address.trim()
@@ -1946,6 +1963,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       primary_relationship: 'primary-relationship',
       primary_telephone: 'primary-telephone',
       primary_email: 'primary-email',
+      parent1_address_street: 'parent1-address-street',
+      parent1_address_city: 'parent1-address-city',
+      parent1_address_postcode: 'parent1-address-postcode',
+      second_parent_address_street: 'second-parent-address-street',
+      second_parent_address_city: 'second-parent-address-city',
+      second_parent_address_postcode: 'second-parent-address-postcode',
       parent1_has_responsibility: 'parent1-responsibility-group',
       emergency_contacts: 'emergency-contacts-group',
       collection_password: 'collection-password',
@@ -2127,7 +2150,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       parentCarers.push({
         fullName: this.parentCarersDraft[0].fullName.trim(),
         relationshipToChild: this.parentCarersDraft[0].relationshipToChild || null,
-        address: this.step3.parent1_address.trim() ? { text: this.step3.parent1_address.trim() } : null,
+        address: this.buildStructuredAddress(
+          this.step3.parent1_address_street,
+          this.step3.parent1_address_line2,
+          this.step3.parent1_address_city,
+          this.step3.parent1_address_postcode,
+        ),
         telephone: this.parentCarersDraft[0].telephone || null,
         email: this.parentCarersDraft[0].email || null,
         hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
@@ -2137,7 +2165,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       parentCarers.push({
         fullName: this.step3.second_parent_name.trim(),
         relationshipToChild: this.step3.second_parent_relationship.trim() || null,
-        address: this.step3.second_parent_address.trim() ? { text: this.step3.second_parent_address.trim() } : null,
+        address: this.buildStructuredAddress(
+          this.step3.second_parent_address_street,
+          this.step3.second_parent_address_line2,
+          this.step3.second_parent_address_city,
+          this.step3.second_parent_address_postcode,
+        ),
         telephone: this.step3.second_parent_telephone.trim() || null,
         email: this.step3.second_parent_email.trim() || null,
         hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
@@ -2486,6 +2519,28 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     if (!primary?.email?.trim()) {
       issues.push({ stepKey: 'contacts-collection', field: 'primary_email', message: 'Record the primary parent/carer email address.' });
+    }
+
+    if (!this.step3.parent1_address_street?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_street', message: 'Enter the street address.' });
+    }
+    if (!this.step3.parent1_address_city?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_city', message: 'Enter the city.' });
+    }
+    if (!this.step3.parent1_address_postcode?.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_postcode', message: 'Enter the postcode.' });
+    }
+
+    if (this.step3.show_second_parent && this.step3.second_parent_name?.trim()) {
+      if (!this.step3.second_parent_address_street?.trim()) {
+        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_street', message: 'Enter the street address.' });
+      }
+      if (!this.step3.second_parent_address_city?.trim()) {
+        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_city', message: 'Enter the city.' });
+      }
+      if (!this.step3.second_parent_address_postcode?.trim()) {
+        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_postcode', message: 'Enter the postcode.' });
+      }
     }
 
     const validEmergency = this.emergencyContactsDraft.filter(contact =>
@@ -2954,7 +3009,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         ? raw.parentCarers.map(contact => ({ ...contact }))
         : [this.emptyContact('Mother')];
       if (raw.parentCarers.length > 0) {
-        this.step3.parent1_address = this.addressToString(raw.parentCarers[0].address as any);
+        this.addressToStructuredFields(raw.parentCarers[0].address as any, 'parent1');
         this.step3.parent1_work_address = this.addressToString(raw.parentCarers[0].workAddress as any);
         this.step3.parent1_has_responsibility = raw.parentCarers[0].hasParentalResponsibility ?? null;
       }
@@ -2964,7 +3019,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.step3.second_parent_relationship = raw.parentCarers[1].relationshipToChild ?? '';
         this.step3.second_parent_telephone = raw.parentCarers[1].telephone ?? '';
         this.step3.second_parent_email = raw.parentCarers[1].email ?? '';
-        this.step3.second_parent_address = this.addressToString(raw.parentCarers[1].address as any);
+        this.addressToStructuredFields(raw.parentCarers[1].address as any, 'second_parent');
         this.step3.second_parent_work_address = this.addressToString(raw.parentCarers[1].workAddress as any);
         this.step3.second_parent_has_responsibility = raw.parentCarers[1].hasParentalResponsibility ?? null;
       } else {
@@ -2973,7 +3028,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.step3.second_parent_relationship = '';
         this.step3.second_parent_telephone = '';
         this.step3.second_parent_email = '';
-        this.step3.second_parent_address = '';
+        this.step3.second_parent_address_street = '';
+        this.step3.second_parent_address_line2 = '';
+        this.step3.second_parent_address_city = '';
+        this.step3.second_parent_address_postcode = '';
         this.step3.second_parent_work_address = '';
         this.step3.second_parent_has_responsibility = null;
       }
@@ -3064,6 +3122,36 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private stringToAddress(value: string): Record<string, unknown> | null {
     const trimmed = value.trim();
     return trimmed ? { text: trimmed } : null;
+  }
+
+  private buildStructuredAddress(street?: string, line2?: string, city?: string, postcode?: string): Record<string, unknown> | null {
+    const s = street?.trim();
+    const c = city?.trim();
+    const p = postcode?.trim();
+    if (!s || !c || !p) return null;
+    const addr: Record<string, unknown> = { street: s, city: c, postcode: p };
+    const l2 = line2?.trim();
+    if (l2) addr.line2 = l2;
+    return addr;
+  }
+
+  private addressToStructuredFields(addr: Record<string, unknown> | null | undefined, prefix: 'parent1' | 'second_parent'): void {
+    if (!addr) return;
+    const street = typeof addr['street'] === 'string' ? addr['street'] : '';
+    const line2 = typeof addr['line2'] === 'string' ? addr['line2'] : '';
+    const city = typeof addr['city'] === 'string' ? addr['city'] : '';
+    const postcode = typeof addr['postcode'] === 'string' ? addr['postcode'] : '';
+    if (prefix === 'parent1') {
+      this.step3.parent1_address_street = street;
+      this.step3.parent1_address_line2 = line2;
+      this.step3.parent1_address_city = city;
+      this.step3.parent1_address_postcode = postcode;
+    } else {
+      this.step3.second_parent_address_street = street;
+      this.step3.second_parent_address_line2 = line2;
+      this.step3.second_parent_address_city = city;
+      this.step3.second_parent_address_postcode = postcode;
+    }
   }
 
   private parseYesNoUnknown(value: string): string | null {
@@ -3318,7 +3406,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       collection_password: '',
       collection_password_hint: '',
       national_insurance_number: '',
-      parent1_address: '',
+      parent1_address_street: '',
+      parent1_address_line2: '',
+      parent1_address_city: '',
+      parent1_address_postcode: '',
       parent1_work_address: '',
       parent1_has_responsibility: null,
       show_second_parent: false,
@@ -3326,7 +3417,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       second_parent_relationship: '',
       second_parent_telephone: '',
       second_parent_email: '',
-      second_parent_address: '',
+      second_parent_address_street: '',
+      second_parent_address_line2: '',
+      second_parent_address_city: '',
+      second_parent_address_postcode: '',
       second_parent_work_address: '',
       second_parent_has_responsibility: null,
     };
