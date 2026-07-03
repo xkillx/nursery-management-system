@@ -1379,14 +1379,76 @@
                         placeholder="Work address if applicable"
                       />
                     </app-form-field>
-                    <app-form-field label="Home address" className="md:col-span-2">
+                    <app-form-field
+                      label="Street address"
+                      labelFor="parent1-address-street"
+                      [required]="true"
+                      errorId="parent1-address-street-error"
+                      [error]="step3VisibleError('parent1_address_street')"
+                      className="md:col-span-2"
+                    >
                       <app-input-field
+                        id="parent1-address-street"
+                        name="parent1_address_street"
                         type="text"
-                        [(ngModel)]="step3.parent1_address"
-
-                        placeholder="e.g. 123 High Street, London"
+                        [(ngModel)]="step3.parent1_address_street"
+                        (blurred)="markStep3Touched('parent1_address_street')"
+                        [error]="shouldShowStep3Error('parent1_address_street')"
+                        [describedBy]="shouldShowStep3Error('parent1_address_street') ? 'parent1-address-street-error' : undefined"
+                        autocomplete="street-address"
+                        placeholder="e.g. 123 High Street"
                       />
                     </app-form-field>
+                    <div class="grid grid-cols-1 gap-8 md:grid-cols-3 md:col-span-2">
+                      <app-form-field label="Apartment/floor (optional)" labelFor="parent1-address-line2">
+                        <app-input-field
+                          id="parent1-address-line2"
+                          name="parent1_address_line2"
+                          type="text"
+                          [(ngModel)]="step3.parent1_address_line2"
+                          placeholder="e.g. Flat 4B"
+                        />
+                      </app-form-field>
+                      <app-form-field
+                        label="City"
+                        labelFor="parent1-address-city"
+                        [required]="true"
+                        errorId="parent1-address-city-error"
+                        [error]="step3VisibleError('parent1_address_city')"
+                      >
+                        <app-input-field
+                          id="parent1-address-city"
+                          name="parent1_address_city"
+                          type="text"
+                          [(ngModel)]="step3.parent1_address_city"
+                          (blurred)="markStep3Touched('parent1_address_city')"
+                          [error]="shouldShowStep3Error('parent1_address_city')"
+                          [describedBy]="shouldShowStep3Error('parent1_address_city') ? 'parent1-address-city-error' : undefined"
+                          autocomplete="address-level2"
+                          placeholder="e.g. London"
+                        />
+                      </app-form-field>
+                      <app-form-field
+                        label="Postcode"
+                        labelFor="parent1-address-postcode"
+                        [required]="true"
+                        errorId="parent1-address-postcode-error"
+                        [error]="step3VisibleError('parent1_address_postcode')"
+                      >
+                        <app-input-field
+                          id="parent1-address-postcode"
+                          name="parent1_address_postcode"
+                          type="text"
+                          [(ngModel)]="step3.parent1_address_postcode"
+                          (blurred)="markStep3Touched('parent1_address_postcode')"
+                          [error]="shouldShowStep3Error('parent1_address_postcode')"
+                          [describedBy]="shouldShowStep3Error('parent1_address_postcode') ? 'parent1-address-postcode-error' : undefined"
+                          autocomplete="postal-code"
+                          className="uppercase"
+                          placeholder="SW1A 1AA"
+                        />
+                      </app-form-field>
+                    </div>
                   </div>
                   <fieldset
                     class="mt-2"
@@ -1514,14 +1576,76 @@
                           placeholder="Work address if applicable"
                         />
                       </app-form-field>
-                      <app-form-field label="Home address" className="md:col-span-2">
+                      <app-form-field
+                        label="Street address"
+                        labelFor="second-parent-address-street"
+                        [required]="true"
+                        errorId="second-parent-address-street-error"
+                        [error]="step3VisibleError('second_parent_address_street')"
+                        className="md:col-span-2"
+                      >
                         <app-input-field
+                          id="second-parent-address-street"
+                          name="second_parent_address_street"
                           type="text"
-                          [(ngModel)]="step3.second_parent_address"
-
-                          placeholder="Different address if applicable"
+                          [(ngModel)]="step3.second_parent_address_street"
+                          (blurred)="markStep3Touched('second_parent_address_street')"
+                          [error]="shouldShowStep3Error('second_parent_address_street')"
+                          [describedBy]="shouldShowStep3Error('second_parent_address_street') ? 'second-parent-address-street-error' : undefined"
+                          autocomplete="street-address"
+                          placeholder="e.g. 123 High Street"
                         />
                       </app-form-field>
+                      <div class="grid grid-cols-1 gap-8 md:grid-cols-3 md:col-span-2">
+                        <app-form-field label="Apartment/floor (optional)" labelFor="second-parent-address-line2">
+                          <app-input-field
+                            id="second-parent-address-line2"
+                            name="second_parent_address_line2"
+                            type="text"
+                            [(ngModel)]="step3.second_parent_address_line2"
+                            placeholder="e.g. Flat 4B"
+                          />
+                        </app-form-field>
+                        <app-form-field
+                          label="City"
+                          labelFor="second-parent-address-city"
+                          [required]="true"
+                          errorId="second-parent-address-city-error"
+                          [error]="step3VisibleError('second_parent_address_city')"
+                        >
+                          <app-input-field
+                            id="second-parent-address-city"
+                            name="second_parent_address_city"
+                            type="text"
+                            [(ngModel)]="step3.second_parent_address_city"
+                            (blurred)="markStep3Touched('second_parent_address_city')"
+                            [error]="shouldShowStep3Error('second_parent_address_city')"
+                            [describedBy]="shouldShowStep3Error('second_parent_address_city') ? 'second-parent-address-city-error' : undefined"
+                            autocomplete="address-level2"
+                            placeholder="e.g. London"
+                          />
+                        </app-form-field>
+                        <app-form-field
+                          label="Postcode"
+                          labelFor="second-parent-address-postcode"
+                          [required]="true"
+                          errorId="second-parent-address-postcode-error"
+                          [error]="step3VisibleError('second_parent_address_postcode')"
+                        >
+                          <app-input-field
+                            id="second-parent-address-postcode"
+                            name="second_parent_address_postcode"
+                            type="text"
+                            [(ngModel)]="step3.second_parent_address_postcode"
+                            (blurred)="markStep3Touched('second_parent_address_postcode')"
+                            [error]="shouldShowStep3Error('second_parent_address_postcode')"
+                            [describedBy]="shouldShowStep3Error('second_parent_address_postcode') ? 'second-parent-address-postcode-error' : undefined"
+                            autocomplete="postal-code"
+                            className="uppercase"
+                            placeholder="SW1A 1AA"
+                          />
+                        </app-form-field>
+                      </div>
                     </div>
                     <fieldset class="mt-4">
                       <legend class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">

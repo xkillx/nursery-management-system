@@ -509,6 +509,24 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 					Message: "Enter the primary parent/carer email address.",
 				})
 			}
+			if street, ok := c.Address["street"].(string); !ok || strings.TrimSpace(street) == "" {
+				fieldErrors = append(fieldErrors, domainerrors.FieldError{
+					Field:   fmt.Sprintf("contacts[%d].address.street", i),
+					Message: "Enter the street address.",
+				})
+			}
+			if city, ok := c.Address["city"].(string); !ok || strings.TrimSpace(city) == "" {
+				fieldErrors = append(fieldErrors, domainerrors.FieldError{
+					Field:   fmt.Sprintf("contacts[%d].address.city", i),
+					Message: "Enter the city.",
+				})
+			}
+			if postcode, ok := c.Address["postcode"].(string); !ok || strings.TrimSpace(postcode) == "" {
+				fieldErrors = append(fieldErrors, domainerrors.FieldError{
+					Field:   fmt.Sprintf("contacts[%d].address.postcode", i),
+					Message: "Enter the postcode.",
+				})
+			}
 		}
 	}
 

@@ -11,7 +11,6 @@ import (
 	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
-	"nursery-management-system/api/internal/platform/transaction"
 )
 
 type GetContacts struct {
@@ -44,10 +43,10 @@ func (uc *GetContacts) Execute(ctx context.Context, actor tenant.ActorContext, c
 type ReplaceContacts struct {
 	repo  domain.Repository
 	audit *audit.Writer
-	txm   *transaction.Manager
+	txm   TxManager
 }
 
-func NewReplaceContacts(repo domain.Repository, auditWriter *audit.Writer, txm *transaction.Manager) *ReplaceContacts {
+func NewReplaceContacts(repo domain.Repository, auditWriter *audit.Writer, txm TxManager) *ReplaceContacts {
 	return &ReplaceContacts{repo: repo, audit: auditWriter, txm: txm}
 }
 
@@ -80,6 +79,15 @@ func (uc *ReplaceContacts) Execute(ctx context.Context, actor tenant.ActorContex
 			if in.ContactType == domain.ContactTypeParentCarer {
 				if in.Email == nil || strings.TrimSpace(*in.Email) == "" {
 					return domainerrors.Validation("Enter the parent/carer email address.", "email")
+				}
+				if street, ok := in.Address["street"].(string); !ok || strings.TrimSpace(street) == "" {
+					return domainerrors.Validation("Enter the street address.", "street")
+				}
+				if city, ok := in.Address["city"].(string); !ok || strings.TrimSpace(city) == "" {
+					return domainerrors.Validation("Enter the city.", "city")
+				}
+				if postcode, ok := in.Address["postcode"].(string); !ok || strings.TrimSpace(postcode) == "" {
+					return domainerrors.Validation("Enter the postcode.", "postcode")
 				}
 			}
 			bucketed[in.ContactType] = append(bucketed[in.ContactType], in)

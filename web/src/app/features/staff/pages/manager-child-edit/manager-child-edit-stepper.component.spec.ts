@@ -99,6 +99,9 @@ describe('ManagerChildEditStepperComponent', () => {
       hasParentalResponsibility: null,
     }];
     component.step3.parent1_has_responsibility = true;
+    component.step3.parent1_address_street = '123 High Street';
+    component.step3.parent1_address_city = 'London';
+    component.step3.parent1_address_postcode = 'SW1A 1AA';
 
     component.emergencyContactsDraft = [
       {
