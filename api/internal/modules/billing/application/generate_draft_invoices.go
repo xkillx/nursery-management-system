@@ -38,6 +38,8 @@ func NewGenerateDraftInvoices(
 	auditW *audit.Writer,
 	logger *slog.Logger,
 	recorder *metrics.Recorder,
+	termDateLookup domain.TermDateLookup,
+	adHocLookup domain.AdHocBookingLookup,
 ) *GenerateDraftInvoicesUseCase {
 	return &GenerateDraftInvoicesUseCase{
 		repo:         repo,
@@ -45,7 +47,7 @@ func NewGenerateDraftInvoices(
 		auditW:       auditW,
 		logger:       logger,
 		recorder:     recorder,
-		termInvoices: NewGenerateTermInvoices(repo, auditW),
+		termInvoices: NewGenerateTermInvoices(repo, auditW, termDateLookup, adHocLookup),
 		completeRun:  NewCompleteInvoiceRun(repo),
 		metricsRec:   NewInvoiceMetrics(recorder, logger),
 	}

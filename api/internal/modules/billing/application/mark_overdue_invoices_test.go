@@ -40,6 +40,9 @@ func (s *stubBillingRepo) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ t
 func (s *stubBillingRepo) ListBookingPatternEntries(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) ListActiveAdHocBookingsForChildInMonth(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AdHocBookingRow, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) CreateInvoiceRun(_ context.Context, _ domain.Tx, _ domain.InvoiceRunCreateParams) error {
 	panic("stub")
 }

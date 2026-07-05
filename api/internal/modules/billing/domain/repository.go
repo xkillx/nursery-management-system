@@ -36,6 +36,9 @@ type BillingRepository interface {
 	// ListActiveTerms is the non-tx variant used by the preflight preview.
 	ListActiveTerms(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
 	ListBookingPatternEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID) ([]BookingPatternEntryRow, error)
+	// ListActiveAdHocBookingsForChildInMonth returns enriched ad-hoc booking rows
+	// (joined with session_types) used for invoice line generation.
+	ListActiveAdHocBookingsForChildInMonth(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]AdHocBookingRow, error)
 
 	CreateInvoiceRun(ctx context.Context, tx Tx, params InvoiceRunCreateParams) error
 	CompleteInvoiceRun(ctx context.Context, tx Tx, params InvoiceRunCompleteParams) error
@@ -101,15 +104,21 @@ type AdvancePayTermRow struct {
 	HasParentCarerContact  bool
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes *int
+	TermTimeOnly           bool
+	FundingModel           string
+	FundedHoursPerWeek     *float64
+	AdHocRateMultiplier    float64
 }
 
 // BookingPatternEntryRow is the per-entry row from ListBookingPatternEntries.
 type BookingPatternEntryRow struct {
-	DayOfWeek       int
-	SessionTypeID   uuid.UUID
-	SessionTypeName string
-	StartMinutes    int
-	EndMinutes      int
+	DayOfWeek               int
+	SessionTypeID           uuid.UUID
+	SessionTypeName         string
+	StartMinutes            int
+	EndMinutes              int
+	SessionTypeKind         string
+	SessionTypeFlatFeeMinor *int
 }
 
 // ExtraLineRow maps an extra invoice line row.

@@ -11,7 +11,9 @@ SELECT
     st.name AS session_type_name,
     st.start_time AS session_type_start_time,
     st.end_time AS session_type_end_time,
-    st.is_active AS session_type_is_active
+    st.is_active AS session_type_is_active,
+    st.kind AS session_type_kind,
+    st.flat_fee_minor AS session_type_flat_fee_minor
 FROM child_booking_pattern_entries e
 JOIN session_types st
   ON st.tenant_id = e.tenant_id

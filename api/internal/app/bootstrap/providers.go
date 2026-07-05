@@ -28,6 +28,7 @@ import (
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
 	authhandler "nursery-management-system/api/internal/modules/authentication/interfaces/http"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
@@ -56,6 +57,7 @@ import (
 	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
+	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	termcalendarhttphandler "nursery-management-system/api/internal/modules/term_calendar/interfaces/http"
 )
 
@@ -214,6 +216,14 @@ func provideEnrollmentTermCreatorAdapter(termRepo *termpostgres.TermRepository, 
 
 func provideChildDeactivatorAdapter(markInactive *childapp.MarkInactive) *childDeactivatorAdapter {
 	return &childDeactivatorAdapter{markInactiveUC: markInactive}
+}
+
+func provideTermDateLookupAdapter(repo *termcalendarpostgres.AcademicTermRepository) *termDateLookupAdapter {
+	return &termDateLookupAdapter{repo: repo}
+}
+
+func provideAdHocBookingLookupAdapter(repo *billingpostgres.Repository) *adHocBookingLookupAdapter {
+	return &adHocBookingLookupAdapter{repo: repo}
 }
 
 func provideTxManagerAdapter(mgr *transaction.Manager) *txManagerAdapter {

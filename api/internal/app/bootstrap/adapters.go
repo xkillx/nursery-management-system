@@ -16,6 +16,7 @@ import (
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -30,6 +31,7 @@ import (
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	termapp "nursery-management-system/api/internal/modules/term/application"
+	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/email"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
@@ -518,3 +520,48 @@ func (a *enrollmentTermCreatorAdapter) CreateEnrollmentTerm(ctx context.Context,
 }
 
 var _ childapp.EnrollmentTermCreator = (*enrollmentTermCreatorAdapter)(nil)
+
+// ── Billing pipeline adapters ──────────────────────────────────────────
+
+// termDateLookupAdapter satisfies billingdomain.TermDateLookup by delegating
+// to the term_calendar module's academic term repository.
+type termDateLookupAdapter struct {
+	repo *termcalendarpostgres.AcademicTermRepository
+}
+
+func (a *termDateLookupAdapter) GetTermDateRangesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]billingdomain.TermDateRange, error) {
+	from := month
+	to := month.AddDate(0, 1, 0).AddDate(0, 0, -1)
+	ranges, err := a.repo.ListActiveDateRanges(ctx, tenantID, branchID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("term date lookup: %w", err)
+	}
+	out := make([]billingdomain.TermDateRange, 0, len(ranges))
+	for _, r := range ranges {
+		out = append(out, billingdomain.TermDateRange{
+			StartDate: r.StartDate,
+			EndDate:   r.EndDate,
+		})
+	}
+	return out, nil
+}
+
+var _ billingdomain.TermDateLookup = (*termDateLookupAdapter)(nil)
+
+// adHocBookingLookupAdapter satisfies billingdomain.AdHocBookingLookup by
+// delegating to the billing repository's ad-hoc booking query.
+type adHocBookingLookupAdapter struct {
+	repo *billingpostgres.Repository
+}
+
+func (a *adHocBookingLookupAdapter) ListActiveBookingsForChildInMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, month time.Time) ([]billingdomain.AdHocBookingRow, error) {
+	from := month
+	to := month.AddDate(0, 1, 0).AddDate(0, 0, -1)
+	rows, err := a.repo.ListActiveAdHocBookingsForChildInMonth(ctx, nil, tenantID, branchID, childID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("ad-hoc booking lookup: %w", err)
+	}
+	return rows, nil
+}
+
+var _ billingdomain.AdHocBookingLookup = (*adHocBookingLookupAdapter)(nil)

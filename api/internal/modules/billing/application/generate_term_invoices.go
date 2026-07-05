@@ -16,12 +16,14 @@ import (
 )
 
 type GenerateTermInvoices struct {
-	repo   domain.BillingRepository
-	auditW *audit.Writer
+	repo           domain.BillingRepository
+	auditW         *audit.Writer
+	termDateLookup domain.TermDateLookup
+	adHocLookup    domain.AdHocBookingLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -98,8 +100,22 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 					StartMinutes:    e.StartMinutes,
 					EndMinutes:      e.EndMinutes,
 					DurationMinutes: e.EndMinutes - e.StartMinutes,
+					Kind:            e.SessionTypeKind,
+					FlatFeeMinor:    e.SessionTypeFlatFeeMinor,
 				},
 			})
+		}
+
+		var termDates []domain.TermDateRange
+		var termDatesUsedLabels []string
+		if termRow.TermTimeOnly && uc.termDateLookup != nil {
+			termDates, err = uc.termDateLookup.GetTermDateRangesForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
+			if err != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup term dates for term %s: %w", termRow.TermID, err)
+			}
+			for _, r := range termDates {
+				termDatesUsedLabels = append(termDatesUsedLabels, fmt.Sprintf("%s to %s", r.StartDate.Format("2006-01-02"), r.EndDate.Format("2006-01-02")))
+			}
 		}
 
 		calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
@@ -107,16 +123,27 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			domainEntries,
 			in.BillingMonth,
 			termRow.SiteHourlyRateMinor,
-			nil,
+			termDates,
 		)
 		if calcErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)
 		}
 
+		subtotalMinor := calc.Subtotal.Minor()
+
 		fundedAllowance := 0
+		fundingModel := termRow.FundingModel
+		if fundingModel == "" {
+			fundingModel = "unknown"
+		}
 		if termRow.FundedAllowanceMinutes != nil {
 			fundedAllowance = *termRow.FundedAllowanceMinutes
+		} else if fundingModel == "term_time_only" && termRow.FundedHoursPerWeek != nil {
+			if len(termDates) > 0 {
+				fundedAllowance = domain.CalculateTermTimeFundedAllowanceMinutes(*termRow.FundedHoursPerWeek, termDates, in.BillingMonth)
+			}
 		}
+
 		_, billableMinutes, _, billableMinor, err := domain.ComputeFundedDeductionMinor(
 			calc.TotalMinutes, fundedAllowance, termRow.SiteHourlyRateMinor,
 		)
@@ -124,12 +151,11 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("compute funded deduction for term %s: %w", termRow.TermID, err)
 		}
 		fundedDeductionMinutes := minInt(calc.TotalMinutes, fundedAllowance)
-		fundedDeductionMinor := calc.Subtotal.Minor() - billableMinor
+		fundedDeductionMinor := subtotalMinor - billableMinor
 		if fundedDeductionMinor < 0 {
 			fundedDeductionMinor = 0
 		}
 
-		subtotalMinor := calc.Subtotal.Minor()
 		totalDueMinor := billableMinor
 
 		extrasTotalMinor := 0
@@ -144,6 +170,65 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			}
 		}
 
+		var adHocLines []struct {
+			description string
+			minutes     int
+			unitMinor   int
+			lineMinor   int
+		}
+		adHocTotalMinor := 0
+		if uc.adHocLookup != nil {
+			monthEnd := in.BillingMonth.AddDate(0, 1, 0).AddDate(0, 0, -1)
+			adHocBookings, adHocErr := uc.adHocLookup.ListActiveBookingsForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+			if adHocErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup ad-hoc bookings for term %s: %w", termRow.TermID, adHocErr)
+			}
+			for _, ab := range adHocBookings {
+				if ab.CalendarDate.Before(in.BillingMonth) || ab.CalendarDate.After(monthEnd) {
+					continue
+				}
+				duration := ab.EndMinutes - ab.StartMinutes
+				if duration <= 0 {
+					continue
+				}
+				var lineMinor int
+				var lineDesc string
+				sortOrder := 3
+				_ = sortOrder
+				if ab.FlatFeeMinor != nil {
+					lineMinor = *ab.FlatFeeMinor
+					lineDesc = fmt.Sprintf("Ad-hoc session: %s on %s (flat fee)", ab.SessionTypeName, ab.CalendarDate.Format("02 Jan"))
+				} else {
+					multiplier := termRow.AdHocRateMultiplier
+					if multiplier <= 0 {
+						multiplier = 1.50
+					}
+					chargedMinutes := domain.CalculateAdHocChargeMinutes(duration, multiplier)
+					minor, hrErr := domain.CalculateHourlyAmountMinor(chargedMinutes, termRow.SiteHourlyRateMinor)
+					if hrErr != nil {
+						return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate ad-hoc charge: %w", hrErr)
+					}
+					lineMinor = minor
+					lineDesc = fmt.Sprintf("Ad-hoc session: %s on %s (×%.2f)", ab.SessionTypeName, ab.CalendarDate.Format("02 Jan"), multiplier)
+				}
+				adHocLines = append(adHocLines, struct {
+					description string
+					minutes     int
+					unitMinor   int
+					lineMinor   int
+				}{
+					description: lineDesc,
+					minutes:     duration,
+					unitMinor:   lineMinor,
+					lineMinor:   lineMinor,
+				})
+				adHocTotalMinor += lineMinor
+			}
+		}
+
+		subtotalMinor += adHocTotalMinor
+		totalDueMinor += adHocTotalMinor
+
 		calcDetails := domain.InvoiceCalculationDetails{
 			BillingMonth:           in.BillingMonthRaw,
 			ChildID:                termRow.ChildID,
@@ -155,6 +240,9 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			FundedAllowanceMinutes: fundedAllowance,
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
+			TermTimeOnly:           termRow.TermTimeOnly,
+			FundingModel:           fundingModel,
+			TermDatesUsed:          termDatesUsedLabels,
 			TermID:                 termRow.TermID,
 			BookingPatternID:       termRow.BookingPatternID,
 			BookedCoreMinutes:      calc.TotalMinutes,
@@ -227,7 +315,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			SortOrder:       1,
 			QuantityMinutes: calc.TotalMinutes,
 			UnitAmount:      domain.MustGBP(termRow.SiteHourlyRateMinor),
-			LineAmount:      domain.MustGBP(subtotalMinor),
+			LineAmount:      domain.MustGBP(calc.Subtotal.Minor()),
 			SessionCount:    len(calc.Sessions),
 			Details:         coreLineDetailsJSON,
 		}); insErr != nil {
@@ -236,12 +324,15 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		deductionLineAmount := -fundedDeductionMinor
 		var deductionLineDetailsJSON []byte
-		if termRow.FundingProfileID != nil {
+		if termRow.FundingProfileID != nil || fundedAllowance > 0 {
 			deductionDetails := domain.FundedDeductionLineDetails{
-				FundingProfileID:       *termRow.FundingProfileID,
 				FundedAllowanceMinutes: fundedAllowance,
 				FundedDeductionMinutes: fundedDeductionMinutes,
 				CoreBillableMinutes:    billableMinutes,
+				FundingModel:           fundingModel,
+			}
+			if termRow.FundingProfileID != nil {
+				deductionDetails.FundingProfileID = *termRow.FundingProfileID
 			}
 			deductionLineDetailsJSON, jsonErr = json.Marshal(deductionDetails)
 			if jsonErr != nil {
@@ -269,6 +360,24 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("insert deduction line: %w", insErr)
 		}
 
+		for i, ahLine := range adHocLines {
+			if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
+				ID:              uid.NewUUID(),
+				TenantID:        in.Actor.TenantID,
+				BranchID:        in.Actor.BranchID,
+				InvoiceID:       invoiceID,
+				LineKind:        domain.LineKindAdHoc,
+				Description:     ahLine.description,
+				SortOrder:       3 + i,
+				QuantityMinutes: ahLine.minutes,
+				UnitAmount:      domain.MustGBP(ahLine.unitMinor),
+				LineAmount:      domain.MustGBP(ahLine.lineMinor),
+				SessionCount:    1,
+			}); insErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("insert ad-hoc line: %w", insErr)
+			}
+		}
+
 		auditAction := domain.AuditInvoiceDraftGenerated
 		if action == domain.DraftUpdated {
 			auditAction = domain.AuditInvoiceDraftRegenerated
@@ -284,6 +393,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				"booked_core_minutes":  calc.TotalMinutes,
 				"funded_deduction_min": fundedDeductionMinor,
 				"total_due_minor":      totalDueMinor + extrasTotalMinor,
+				"ad_hoc_total_minor":   adHocTotalMinor,
 			},
 		}); auditErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("write audit: %w", auditErr)

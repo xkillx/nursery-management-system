@@ -55,6 +55,8 @@ type BookedEntryBreakdown struct {
 	DurationMinutes    int
 	OccurrencesInMonth int
 	TotalMinutes       int
+	Kind               string
+	FlatFeeMinor       *int
 }
 
 type TermDateRange struct {
@@ -64,6 +66,30 @@ type TermDateRange struct {
 
 type TermDateLookup interface {
 	GetTermDateRangesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]TermDateRange, error)
+}
+
+type AdHocBookingRow struct {
+	ID              uuid.UUID
+	ChildID         uuid.UUID
+	CalendarDate    time.Time
+	SessionTypeID   uuid.UUID
+	SessionTypeName string
+	StartMinutes    int
+	EndMinutes      int
+	FlatFeeMinor    *int
+}
+
+type AdHocBookingLookup interface {
+	ListActiveBookingsForChildInMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, month time.Time) ([]AdHocBookingRow, error)
+}
+
+type FundingRecordRow struct {
+	FundingModel       string
+	FundedHoursPerWeek *float64
+}
+
+type FundingRecordLookup interface {
+	GetFundingRecord(ctx context.Context, tenantID, branchID, childID uuid.UUID) (FundingRecordRow, bool, error)
 }
 
 func isDateInAnyTermRange(t time.Time, ranges []TermDateRange) bool {
@@ -191,6 +217,8 @@ func CalculateBookedCoreMinutesInMonth(
 			DurationMinutes:    e.SessionType.DurationMinutes,
 			OccurrencesInMonth: occurrences,
 			TotalMinutes:       totalMinutes,
+			Kind:               e.SessionType.Kind,
+			FlatFeeMinor:       e.SessionType.FlatFeeMinor,
 		})
 		calc.TotalMinutes += totalMinutes
 

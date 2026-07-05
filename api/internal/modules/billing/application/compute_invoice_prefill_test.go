@@ -27,6 +27,10 @@ func (s *stubPrefillRepo) ListBookingPatternEntries(_ context.Context, _ domain.
 	return s.entries, s.entriesErr
 }
 
+func (s *stubPrefillRepo) ListActiveAdHocBookingsForChildInMonth(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AdHocBookingRow, error) {
+	return nil, nil
+}
+
 func (s *stubPrefillRepo) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
 	panic("unused")
 }

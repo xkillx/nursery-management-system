@@ -125,6 +125,9 @@ type InvoiceCalculationDetails struct {
 	FundedAllowanceMinutes int        `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int        `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int        `json:"core_billable_minutes"`
+	TermTimeOnly           bool       `json:"term_time_only"`
+	FundingModel           string     `json:"funding_model,omitempty"`
+	TermDatesUsed          []string   `json:"term_dates_used,omitempty"`
 
 	// Advance-pay source.
 	TermID            uuid.UUID              `json:"term_id"`
@@ -164,6 +167,7 @@ type FundedDeductionLineDetails struct {
 	FundedAllowanceMinutes int       `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int       `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int       `json:"core_billable_minutes"`
+	FundingModel           string    `json:"funding_model,omitempty"`
 }
 
 // Audit action types for draft invoice generation.

@@ -133,6 +133,10 @@ func mapAdvancePayTermRows(rows []sqlc.BillingListActiveTermsForGenerationRow) [
 			HasParentCarerContact:  row.HasParentCarerContact,
 			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
 			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
+			TermTimeOnly:           row.TermTimeOnly,
+			FundingModel:           row.FundingModel,
+			FundedHoursPerWeek:     pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
+			AdHocRateMultiplier:    pgtypeNumericToFloat64(row.AdHocRateMultiplier),
 		})
 	}
 	return out
@@ -158,11 +162,51 @@ func (r *Repository) ListBookingPatternEntries(ctx context.Context, tx domain.Tx
 			continue
 		}
 		out = append(out, domain.BookingPatternEntryRow{
-			DayOfWeek:       int(row.DayOfWeek),
+			DayOfWeek:               int(row.DayOfWeek),
+			SessionTypeID:           pgtypeUUIDToUUID(row.SessionTypeID),
+			SessionTypeName:         row.SessionTypeName,
+			StartMinutes:            startMin,
+			EndMinutes:              endMin,
+			SessionTypeKind:         row.SessionTypeKind,
+			SessionTypeFlatFeeMinor: pgtypeInt4ToIntPtr(row.SessionTypeFlatFeeMinor),
+		})
+	}
+	return out, nil
+}
+
+func (r *Repository) ListActiveAdHocBookingsForChildInMonth(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]domain.AdHocBookingRow, error) {
+	var q *sqlc.Queries
+	if tx != nil {
+		q = r.queriesTx(tx)
+	} else {
+		q = sqlc.New(r.pool)
+	}
+	rows, err := q.BillingListAdHocBookingsForMonth(ctx, sqlc.BillingListAdHocBookingsForMonthParams{
+		TenantID:       uuidToPgtype(tenantID),
+		BranchID:       uuidToPgtype(branchID),
+		ChildID:        uuidToPgtype(childID),
+		CalendarDate:   timeToPgtypeDate(from),
+		CalendarDate_2: timeToPgtypeDate(to),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list ad-hoc bookings for month: %w", err)
+	}
+	out := make([]domain.AdHocBookingRow, 0, len(rows))
+	for _, row := range rows {
+		startMin := timeOfDayToMinutes(row.SessionTypeStartTime)
+		endMin := timeOfDayToMinutes(row.SessionTypeEndTime)
+		if endMin <= startMin {
+			continue
+		}
+		out = append(out, domain.AdHocBookingRow{
+			ID:              pgtypeUUIDToUUID(row.ID),
+			ChildID:         pgtypeUUIDToUUID(row.ChildID),
+			CalendarDate:    pgtypeDateToTime(row.CalendarDate),
 			SessionTypeID:   pgtypeUUIDToUUID(row.SessionTypeID),
 			SessionTypeName: row.SessionTypeName,
 			StartMinutes:    startMin,
 			EndMinutes:      endMin,
+			FlatFeeMinor:    pgtypeInt4ToIntPtr(row.SessionTypeFlatFeeMinor),
 		})
 	}
 	return out, nil
@@ -893,6 +937,25 @@ func strToPgtypeTextPtr(s *string) pgtype.Text {
 		return pgtype.Text{Valid: false}
 	}
 	return pgtype.Text{String: *s, Valid: true}
+}
+
+func pgtypeNumericToFloat64(n pgtype.Numeric) float64 {
+	if !n.Valid {
+		return 0
+	}
+	f, err := n.Float64Value()
+	if err != nil {
+		return 0
+	}
+	return f.Float64
+}
+
+func pgtypeNumericToFloat64Ptr(n pgtype.Numeric) *float64 {
+	if !n.Valid {
+		return nil
+	}
+	v := pgtypeNumericToFloat64(n)
+	return &v
 }
 
 func uuidToPgtypePtr(u *uuid.UUID) pgtype.UUID {

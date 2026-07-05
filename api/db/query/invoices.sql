@@ -427,8 +427,31 @@ SET status = 'overdue',
     updated_at = now()
 WHERE status = 'issued'
   AND amount_paid_minor < total_due_minor
-  AND due_at < $1
+   AND due_at < $1
 RETURNING id, tenant_id, branch_id;
+
+-- name: BillingListAdHocBookingsForMonth :many
+SELECT
+    ab.id,
+    ab.child_id,
+    ab.calendar_date,
+    ab.session_type_id,
+    st.name AS session_type_name,
+    st.start_time AS session_type_start_time,
+    st.end_time AS session_type_end_time,
+    st.flat_fee_minor AS session_type_flat_fee_minor
+FROM ad_hoc_bookings ab
+JOIN session_types st
+  ON st.tenant_id = ab.tenant_id
+ AND st.branch_id = ab.branch_id
+ AND st.id = ab.session_type_id
+WHERE ab.tenant_id = $1
+  AND ab.branch_id = $2
+  AND ab.child_id = $3
+  AND ab.calendar_date >= $4
+  AND ab.calendar_date <= $5
+  AND ab.status = 'active'
+ORDER BY ab.calendar_date ASC, ab.created_at ASC;
 
 -- Advance-pay billing: list active terms covering the billing month, joined with child
 -- and branch data so the application layer can drive invoice generation off a single query.
@@ -458,17 +481,32 @@ SELECT
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
     fp.id AS funding_profile_id,
-    fp.funded_allowance_minutes
+    fp.funded_allowance_minutes,
+    bp.term_time_only,
+    COALESCE(fr.funding_model, 'unknown') AS funding_model,
+    fr.funded_hours_per_week,
+    b.ad_hoc_rate_multiplier
 FROM term t
 JOIN children c
   ON c.tenant_id = t.tenant_id
  AND c.branch_id = t.branch_id
  AND c.id = t.child_id
+JOIN child_booking_patterns bp
+  ON bp.tenant_id = t.tenant_id
+ AND bp.branch_id = t.branch_id
+ AND bp.id = t.booking_pattern_id
 LEFT JOIN funding_profiles fp
-    ON fp.tenant_id = t.tenant_id
-   AND fp.branch_id = t.branch_id
-   AND fp.child_id = t.child_id
-   AND fp.billing_month = $3
+  ON fp.tenant_id = t.tenant_id
+ AND fp.branch_id = t.branch_id
+ AND fp.child_id = t.child_id
+ AND fp.billing_month = $3
+LEFT JOIN child_funding_records fr
+  ON fr.tenant_id = t.tenant_id
+ AND fr.branch_id = t.branch_id
+ AND fr.child_id = t.child_id
+JOIN branches b
+  ON b.tenant_id = t.tenant_id
+ AND b.id = t.branch_id
 WHERE t.tenant_id = $1
   AND t.branch_id = $2
   AND t.status = ANY (ARRAY['active', 'pending_renewal']::text[])

@@ -51,6 +51,8 @@ import (
 	stripeclient "nursery-management-system/api/internal/modules/payments/infrastructure/stripe"
 	paymentshandler "nursery-management-system/api/internal/modules/payments/interfaces/http"
 
+	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
+
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/email"
@@ -304,13 +306,14 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	siteProfileHandler.RegisterRoutes(protected)
 
 	billingRepo := billingpostgres.NewRepository(pool)
+	termCalendarRepo := termcalendarpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
-			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder),
+			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder, &termDateLookupAdapter{repo: termCalendarRepo}, &adHocBookingLookupAdapter{repo: billingRepo}),
 			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager),
 			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter),
 			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher)),

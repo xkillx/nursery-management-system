@@ -75,6 +75,7 @@ import (
 	domain14 "nursery-management-system/api/internal/modules/term/domain"
 	postgres16 "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/term/interfaces/http"
+	postgres17 "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/metrics"
@@ -242,8 +243,11 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	listOverview := application6.NewListOverview(repository2)
 	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
 	repository3 := postgres9.NewRepository(pool)
+	termCalendarRepo := postgres17.NewRepository(pool)
+	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(termCalendarRepo)
+	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository3)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
-	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder)
+	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter)
 	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
 	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
 	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
@@ -559,8 +563,11 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	listOverview := application6.NewListOverview(repository2)
 	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
 	repository3 := postgres9.NewRepository(pool)
+	termCalendarRepo := postgres17.NewRepository(pool)
+	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(termCalendarRepo)
+	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository3)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
-	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder)
+	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter)
 	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
 	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
 	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
@@ -767,7 +774,7 @@ var absenceSet = wire.NewSet(postgres7.NewAbsenceRepository, wire.Bind(new(domai
 
 var fundingSet = wire.NewSet(postgres8.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres8.Repository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, httpfunding.NewHandler)
 
-var billingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres9.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application7.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application7.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
+var billingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres9.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application7.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application7.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain8.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain8.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 
 func provideCreateCheckoutSession(
 	repo *postgres12.Repository,
