@@ -21,6 +21,8 @@ import { ManagerSiteSettingsComponent } from './features/staff/pages/manager-sit
 import { ManagerSiteProfileComponent } from './features/staff/pages/manager-site-profile/manager-site-profile.component';
 import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-invoice-detail/manager-invoice-detail.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
+import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
+import { ManagerAdHocBookingComponent } from './features/staff/pages/manager-ad-hoc-booking/manager-ad-hoc-booking.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
@@ -227,6 +229,12 @@ export const routes: Routes = [
                 },
                 title: 'Billing Setup | Nursery Management',
               },
+              {
+                path: 'term-calendar',
+                component: ManagerTermCalendarComponent,
+                data: { breadcrumb: { label: 'Term calendar' } },
+                title: 'Term Calendar | Nursery Management',
+              },
             ],
           },
           {
@@ -238,6 +246,16 @@ export const routes: Routes = [
               breadcrumb: { label: 'Session templates' },
             },
             title: 'Session templates | Nursery Management',
+          },
+          {
+            path: 'manager/ad-hoc-bookings',
+            component: ManagerAdHocBookingComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Ad-hoc bookings' },
+            },
+            title: 'Ad-Hoc Bookings | Nursery Management',
           },
           {
             path: 'manager/funding',

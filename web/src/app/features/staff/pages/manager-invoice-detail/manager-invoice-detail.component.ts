@@ -72,6 +72,7 @@ function formatDate(iso: string | null): string {
 }
 
 function lineKindLabel(kind: string): string {
+  if (kind === 'ad_hoc') return 'Ad-hoc session';
   return kind
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -106,6 +107,7 @@ function lineQuantityLabel(line: ManagerInvoiceLine): string {
 function lineKindTone(kind: string): 'primary' | 'accent' | 'success' | 'neutral' {
   if (kind === 'funded_deduction') return 'accent';
   if (kind === 'core_childcare' || kind === 'core_charge') return 'primary';
+  if (kind === 'ad_hoc') return 'success';
   if (kind.startsWith('extra_')) return 'success';
   return 'neutral';
 }

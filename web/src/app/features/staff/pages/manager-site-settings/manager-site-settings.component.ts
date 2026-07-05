@@ -5,6 +5,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroBanknotes,
   heroBuildingOffice2,
+  heroCalendarDays,
   heroChatBubbleLeftRight,
   heroCheckCircle,
   heroChevronRight,
@@ -65,6 +66,7 @@ interface SettingCard {
     provideIcons({
       heroBanknotes,
       heroBuildingOffice2,
+      heroCalendarDays,
       heroChatBubbleLeftRight,
       heroCheckCircle,
       heroChevronRight,
@@ -315,6 +317,19 @@ export class ManagerSiteSettingsComponent implements OnInit {
         pillTone: hasBilling ? 'success' : 'warning',
         statusLabel: hasBilling ? 'Auto-invoicing: ON' : 'Hourly rate pending',
         statusTone: hasBilling ? 'success' : 'warning',
+      },
+      {
+        id: 'term-calendar',
+        title: 'Term calendar',
+        headline: 'Academic terms',
+        detail: 'Manage autumn, spring, and summer term dates for term-time billing.',
+        icon: 'heroCalendarDays',
+        tone: 'info',
+        kind: 'simple',
+        state: 'ready',
+        link: '/manager/site-settings/term-calendar',
+        statusLabel: 'Manage terms',
+        statusTone: 'info',
       },
       {
         id: 'comms',

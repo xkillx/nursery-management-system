@@ -17,12 +17,14 @@ export interface BookingPattern {
   effective_from: string;
   effective_to: string | null;
   is_current: boolean;
+  term_time_only: boolean;
   created_at: string;
   entries: BookedSession[];
 }
 
 export interface BookingPatternInput {
   effective_from: string;
+  term_time_only?: boolean;
   entries: BookingPatternEntryInput[];
 }
 
