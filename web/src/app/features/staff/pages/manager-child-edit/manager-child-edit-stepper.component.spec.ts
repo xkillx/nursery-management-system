@@ -557,7 +557,7 @@ describe('ManagerChildEditStepperComponent', () => {
       const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
       const labels = buttons.map(b => (b.textContent || '').trim());
       expect(labels.some(l => l.includes('Mark Reviewed/Complete'))).toBe(false);
-      expect(labels.some(l => l.includes('Save Changes'))).toBe(true);
+      expect(labels.some(l => l.includes('Save changes'))).toBe(true);
     });
   });
 
