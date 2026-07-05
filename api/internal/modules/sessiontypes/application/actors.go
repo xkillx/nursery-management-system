@@ -133,3 +133,11 @@ func minutesToHHMM(m int) string {
 func internalError(err error) error {
 	return domainerrors.Internal(fmt.Errorf("sessiontypes: %w", err))
 }
+
+func validSessionTypeKind(k string) bool {
+	switch k {
+	case "standard", "wraparound_before", "wraparound_after", "core", "extended":
+		return true
+	}
+	return false
+}

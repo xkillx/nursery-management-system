@@ -58,7 +58,7 @@ func (q *Queries) ChildBookingPatternsCloseCurrent(ctx context.Context, arg Chil
 }
 
 const childBookingPatternsGetActiveForDate = `-- name: ChildBookingPatternsGetActiveForDate :one
-SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -85,6 +85,7 @@ type ChildBookingPatternsGetActiveForDateRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsGetActiveForDate(ctx context.Context, arg ChildBookingPatternsGetActiveForDateParams) (ChildBookingPatternsGetActiveForDateRow, error) {
@@ -104,12 +105,13 @@ func (q *Queries) ChildBookingPatternsGetActiveForDate(ctx context.Context, arg 
 		&i.EffectiveTo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TermTimeOnly,
 	)
 	return i, err
 }
 
 const childBookingPatternsGetByID = `-- name: ChildBookingPatternsGetByID :one
-SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
 `
@@ -129,6 +131,7 @@ type ChildBookingPatternsGetByIDRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsGetByID(ctx context.Context, arg ChildBookingPatternsGetByIDParams) (ChildBookingPatternsGetByIDRow, error) {
@@ -143,12 +146,13 @@ func (q *Queries) ChildBookingPatternsGetByID(ctx context.Context, arg ChildBook
 		&i.EffectiveTo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TermTimeOnly,
 	)
 	return i, err
 }
 
 const childBookingPatternsGetCurrentOpenByChild = `-- name: ChildBookingPatternsGetCurrentOpenByChild :one
-SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND is_current
 LIMIT 1
@@ -169,6 +173,7 @@ type ChildBookingPatternsGetCurrentOpenByChildRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsGetCurrentOpenByChild(ctx context.Context, arg ChildBookingPatternsGetCurrentOpenByChildParams) (ChildBookingPatternsGetCurrentOpenByChildRow, error) {
@@ -183,12 +188,13 @@ func (q *Queries) ChildBookingPatternsGetCurrentOpenByChild(ctx context.Context,
 		&i.EffectiveTo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TermTimeOnly,
 	)
 	return i, err
 }
 
 const childBookingPatternsGetPreviousClosedByChild = `-- name: ChildBookingPatternsGetPreviousClosedByChild :one
-SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -213,6 +219,7 @@ type ChildBookingPatternsGetPreviousClosedByChildRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsGetPreviousClosedByChild(ctx context.Context, arg ChildBookingPatternsGetPreviousClosedByChildParams) (ChildBookingPatternsGetPreviousClosedByChildRow, error) {
@@ -227,14 +234,15 @@ func (q *Queries) ChildBookingPatternsGetPreviousClosedByChild(ctx context.Conte
 		&i.EffectiveTo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TermTimeOnly,
 	)
 	return i, err
 }
 
 const childBookingPatternsInsert = `-- name: ChildBookingPatternsInsert :one
-INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from, effective_to)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+INSERT INTO child_booking_patterns (id, tenant_id, branch_id, child_id, effective_from, effective_to, term_time_only)
+VALUES ($1, $2, $3, $4, $5, $7, $6)
+RETURNING id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 `
 
 type ChildBookingPatternsInsertParams struct {
@@ -243,6 +251,7 @@ type ChildBookingPatternsInsertParams struct {
 	BranchID      pgtype.UUID
 	ChildID       pgtype.UUID
 	EffectiveFrom pgtype.Date
+	TermTimeOnly  bool
 	EffectiveTo   pgtype.Date
 }
 
@@ -255,6 +264,7 @@ type ChildBookingPatternsInsertRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsInsert(ctx context.Context, arg ChildBookingPatternsInsertParams) (ChildBookingPatternsInsertRow, error) {
@@ -264,6 +274,7 @@ func (q *Queries) ChildBookingPatternsInsert(ctx context.Context, arg ChildBooki
 		arg.BranchID,
 		arg.ChildID,
 		arg.EffectiveFrom,
+		arg.TermTimeOnly,
 		arg.EffectiveTo,
 	)
 	var i ChildBookingPatternsInsertRow
@@ -276,12 +287,13 @@ func (q *Queries) ChildBookingPatternsInsert(ctx context.Context, arg ChildBooki
 		&i.EffectiveTo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TermTimeOnly,
 	)
 	return i, err
 }
 
 const childBookingPatternsListByChild = `-- name: ChildBookingPatternsListByChild :many
-SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
 ORDER BY effective_from DESC, created_at DESC
@@ -302,6 +314,7 @@ type ChildBookingPatternsListByChildRow struct {
 	EffectiveTo   pgtype.Date
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 func (q *Queries) ChildBookingPatternsListByChild(ctx context.Context, arg ChildBookingPatternsListByChildParams) ([]ChildBookingPatternsListByChildRow, error) {
@@ -322,6 +335,7 @@ func (q *Queries) ChildBookingPatternsListByChild(ctx context.Context, arg Child
 			&i.EffectiveTo,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TermTimeOnly,
 		); err != nil {
 			return nil, err
 		}
@@ -352,6 +366,29 @@ func (q *Queries) ChildBookingPatternsUpdateEffectiveFrom(ctx context.Context, a
 		arg.BranchID,
 		arg.ID,
 		arg.EffectiveFrom,
+	)
+	return err
+}
+
+const childBookingPatternsUpdateTermTimeOnly = `-- name: ChildBookingPatternsUpdateTermTimeOnly :exec
+UPDATE child_booking_patterns
+SET term_time_only = $4, updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
+`
+
+type ChildBookingPatternsUpdateTermTimeOnlyParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	ID           pgtype.UUID
+	TermTimeOnly bool
+}
+
+func (q *Queries) ChildBookingPatternsUpdateTermTimeOnly(ctx context.Context, arg ChildBookingPatternsUpdateTermTimeOnlyParams) error {
+	_, err := q.db.Exec(ctx, childBookingPatternsUpdateTermTimeOnly,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.TermTimeOnly,
 	)
 	return err
 }

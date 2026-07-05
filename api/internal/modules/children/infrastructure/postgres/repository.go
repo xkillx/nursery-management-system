@@ -1478,6 +1478,7 @@ func (r *ChildRepository) InsertPattern(ctx context.Context, tx domain.Tx, p *do
 		ChildID:       uuidToPgtype(p.ChildID),
 		EffectiveFrom: timeToPgtypeDate(p.EffectiveFrom),
 		EffectiveTo:   timeToPgtypeDatePtr(p.EffectiveTo),
+		TermTimeOnly:  p.TermTimeOnly,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("insert child booking pattern: %w", err)
@@ -1575,6 +1576,19 @@ func (r *ChildRepository) UpdateEffectiveFrom(ctx context.Context, tx domain.Tx,
 	return nil
 }
 
+func (r *ChildRepository) UpdateTermTimeOnly(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, termTimeOnly bool) error {
+	q := sqlc.New(tx.(pgx.Tx))
+	if err := q.ChildBookingPatternsUpdateTermTimeOnly(ctx, sqlc.ChildBookingPatternsUpdateTermTimeOnlyParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		ID:           uuidToPgtype(patternID),
+		TermTimeOnly: termTimeOnly,
+	}); err != nil {
+		return fmt.Errorf("update child booking pattern term_time_only: %w", err)
+	}
+	return nil
+}
+
 func (r *ChildRepository) entriesForPattern(ctx context.Context, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntry, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
@@ -1619,6 +1633,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 		EffectiveTo   pgtype.Date
 		CreatedAt     pgtype.Timestamptz
 		UpdatedAt     pgtype.Timestamptz
+		TermTimeOnly  bool
 	}
 	var f fields
 	var isCurrent bool
@@ -1628,6 +1643,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = v.IsCurrent
 	case sqlc.ChildBookingPatternsListByChildRow:
@@ -1635,6 +1651,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = !v.EffectiveTo.Valid
 	case sqlc.ChildBookingPatternsGetByIDRow:
@@ -1642,6 +1659,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = !v.EffectiveTo.Valid
 	case sqlc.ChildBookingPatternsGetActiveForDateRow:
@@ -1649,6 +1667,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = !v.EffectiveTo.Valid
 	case sqlc.ChildBookingPatternsGetCurrentOpenByChildRow:
@@ -1656,6 +1675,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = true
 	case sqlc.ChildBookingPatternsGetPreviousClosedByChildRow:
@@ -1663,6 +1683,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = false
 	case sqlc.ChildBookingPatternsInsertRow:
@@ -1670,6 +1691,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 			ID: v.ID, TenantID: v.TenantID, BranchID: v.BranchID, ChildID: v.ChildID,
 			EffectiveFrom: v.EffectiveFrom, EffectiveTo: v.EffectiveTo,
 			CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
+			TermTimeOnly: v.TermTimeOnly,
 		}
 		isCurrent = !v.EffectiveTo.Valid
 	default:
@@ -1683,6 +1705,7 @@ func mapBookingPatternRow(row interface{}) domain.BookingPattern {
 		EffectiveFrom: pgtypeDateToTime(f.EffectiveFrom),
 		EffectiveTo:   pgtypeDateToTimePtr(f.EffectiveTo),
 		IsCurrent:     isCurrent,
+		TermTimeOnly:  f.TermTimeOnly,
 		CreatedAt:     pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:     pgtypeTimestamptzToTime(f.UpdatedAt),
 	}

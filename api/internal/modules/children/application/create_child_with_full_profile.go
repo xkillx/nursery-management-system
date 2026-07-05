@@ -421,7 +421,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			if !input.BookingPattern.EffectiveFrom.IsZero() {
 				bpEffectiveFrom = input.BookingPattern.EffectiveFrom
 			}
-			bp, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, true, uc.clock)
+			bp, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, input.BookingPattern.TermTimeOnly, true, uc.clock)
 			if err != nil {
 				return err
 			}

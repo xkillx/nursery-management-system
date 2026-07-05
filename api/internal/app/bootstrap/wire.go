@@ -93,6 +93,16 @@ import (
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 
+	termcalendarapp "nursery-management-system/api/internal/modules/term_calendar/application"
+	termcalendardomain "nursery-management-system/api/internal/modules/term_calendar/domain"
+	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
+	termcalendarhttphandler "nursery-management-system/api/internal/modules/term_calendar/interfaces/http"
+
+	adhocapp "nursery-management-system/api/internal/modules/ad_hoc_bookings/application"
+	adhocdomain "nursery-management-system/api/internal/modules/ad_hoc_bookings/domain"
+	adhocpostgres "nursery-management-system/api/internal/modules/ad_hoc_bookings/infrastructure/postgres"
+	adhochttphandler "nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
+
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
@@ -499,6 +509,29 @@ var siteProfileSet = wire.NewSet(
 	provideSiteProfileHandlerSet,
 )
 
+// ── Academic Term Calendar module ─────────────────────────────────────
+
+var termCalendarSet = wire.NewSet(
+	termcalendarpostgres.NewRepository,
+	wire.Bind(new(termcalendardomain.Repository), new(*termcalendarpostgres.AcademicTermRepository)),
+	termcalendarapp.NewCreateTerm,
+	termcalendarapp.NewListTerms,
+	termcalendarapp.NewUpdateTerm,
+	termcalendarapp.NewArchiveTerm,
+	termcalendarhttphandler.NewHandler,
+)
+
+// ── Ad-Hoc Bookings module ───────────────────────────────────────────
+
+var adHocBookingsSet = wire.NewSet(
+	adhocpostgres.NewRepository,
+	wire.Bind(new(adhocdomain.Repository), new(*adhocpostgres.AdHocBookingRepository)),
+	adhocapp.NewCreateAdHocBooking,
+	adhocapp.NewListAdHocBookings,
+	adhocapp.NewCancelAdHocBooking,
+	adhochttphandler.NewHandler,
+)
+
 // ── Injector ────────────────────────────────────────────────────────────
 
 func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
@@ -508,6 +541,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		wire.Bind(new(roomsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(sessiontypeapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(sessiontemplateapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(termcalendarapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
@@ -524,6 +558,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		wire.Bind(new(roomsapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		wire.Bind(new(sessiontypeapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		wire.Bind(new(sessiontemplateapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
+		wire.Bind(new(termcalendarapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		provideAttendanceClock,
 		provideWebBaseURL,
 		authSet,
@@ -541,6 +576,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		sessionTypesSet,
 		sessionTemplatesSet,
 		termSet,
+		termCalendarSet,
 		siteProfileSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
@@ -555,6 +591,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		wire.Bind(new(roomsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(sessiontypeapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(sessiontemplateapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(termcalendarapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
@@ -571,6 +608,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		wire.Bind(new(roomsapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		wire.Bind(new(sessiontypeapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		wire.Bind(new(sessiontemplateapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
+		wire.Bind(new(termcalendarapp.SiteExistsChecker), new(*siteExistsCheckerAdapter)),
 		provideAttendanceClock,
 		provideWebBaseURL,
 		authSet,
@@ -588,6 +626,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		sessionTypesSet,
 		sessionTemplatesSet,
 		termSet,
+		termCalendarSet,
 		siteProfileSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,

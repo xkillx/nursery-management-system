@@ -98,4 +98,5 @@ type Repository interface {
 	ClosePatternByID(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error
 	ReplaceEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, entries []BookingPatternEntry) error
 	UpdateEffectiveFrom(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error
+	UpdateTermTimeOnly(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, termTimeOnly bool) error
 }

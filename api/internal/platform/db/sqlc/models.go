@@ -161,6 +161,32 @@ type AbsenceMarker struct {
 	UpdatedAt             pgtype.Timestamptz
 }
 
+type AcademicTerm struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	Name      string
+	Kind      string
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	IsActive  bool
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type AdHocBooking struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	ChildID              pgtype.UUID
+	CalendarDate         pgtype.Date
+	SessionTypeID        pgtype.UUID
+	BookedByMembershipID pgtype.UUID
+	Status               string
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
 type AttendanceEvent struct {
 	ID                     pgtype.UUID
 	TenantID               pgtype.UUID
@@ -221,6 +247,7 @@ type Branch struct {
 	UpdatedAt           pgtype.Timestamptz
 	IsActive            bool
 	CoreHourlyRateMinor pgtype.Int4
+	AdHocRateMultiplier pgtype.Numeric
 }
 
 type Child struct {
@@ -262,6 +289,7 @@ type ChildBookingPattern struct {
 	IsCurrent     bool
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
 }
 
 type ChildBookingPatternEntry struct {
@@ -742,15 +770,17 @@ type SessionTemplateEntry struct {
 }
 
 type SessionType struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Name         string
+	StartTime    pgtype.Time
+	EndTime      pgtype.Time
+	IsActive     bool
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Kind         string
+	FlatFeeMinor pgtype.Int4
 }
 
 type SiteProfile struct {

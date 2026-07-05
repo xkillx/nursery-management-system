@@ -22,6 +22,7 @@ import (
 
 	absencepostgres "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	absencehandler "nursery-management-system/api/internal/modules/absence/interfaces/http"
+	adhochttphandler "nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
@@ -55,6 +56,7 @@ import (
 	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
+	termcalendarhttphandler "nursery-management-system/api/internal/modules/term_calendar/interfaces/http"
 )
 
 // ── Shared infrastructure providers ──────────────────────────────────────
@@ -294,6 +296,8 @@ type appComponents struct {
 	SessionTypesHandler     *sessiontypehttphandler.Handler
 	SessionTemplatesHandler *sessiontemplatehttphandler.Handler
 	TermHandler             *termhttphandler.Handler
+	TermCalendarHandler     *termcalendarhttphandler.Handler
+	AdHocBookingsHandler    *adhochttphandler.Handler
 	SiteProfileHandler      *siteprofilehandler.Handler
 }
 
@@ -355,6 +359,8 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.SessionTemplatesHandler.RegisterRoutes(protected)
 	c.SiteProfileHandler.RegisterRoutes(protected)
 	c.TermHandler.RegisterManagerRoutes(manager)
+	c.TermCalendarHandler.RegisterManagerRoutes(manager)
+	c.AdHocBookingsHandler.RegisterManagerRoutes(manager)
 
 	return router
 }

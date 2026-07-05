@@ -22,6 +22,7 @@ type BookingPatternInput struct {
 	EffectiveFrom time.Time
 	EffectiveTo   *time.Time
 	Entries       []BookingPatternEntryInput
+	TermTimeOnly  bool
 }
 
 // resolveBookingPatternEntries validates, deduplicates, and resolves session
@@ -80,7 +81,7 @@ func resolveBookingPatternEntries(ctx context.Context, lookup SessionTypeLookup,
 // booking pattern. It checks effectiveFrom is not backdated, closes any open
 // pattern adjacently, inserts the new pattern, and optionally writes an audit
 // entry. The caller must have already verified the child exists in scope.
-func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Repository, auditWriter *audit.Writer, actor tenant.ActorContext, childID uuid.UUID, effectiveFrom time.Time, effectiveTo *time.Time, entries []domain.BookingPatternEntry, writeAudit bool, clock TodayFunc) (*domain.BookingPattern, error) {
+func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Repository, auditWriter *audit.Writer, actor tenant.ActorContext, childID uuid.UUID, effectiveFrom time.Time, effectiveTo *time.Time, entries []domain.BookingPatternEntry, termTimeOnly bool, writeAudit bool, clock TodayFunc) (*domain.BookingPattern, error) {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
@@ -113,6 +114,7 @@ func createBookingPatternInTx(ctx context.Context, tx pgx.Tx, repo domain.Reposi
 		ChildID:       childID,
 		EffectiveFrom: effectiveFrom,
 		EffectiveTo:   effectiveTo,
+		TermTimeOnly:  termTimeOnly,
 	}
 	saved, serr := repo.InsertPattern(ctx, tx, pattern, entries)
 	if serr != nil {

@@ -26,6 +26,7 @@ const (
 	LineKindCoreChildcare   = "core_childcare"
 	LineKindFundedDeduction = "funded_deduction"
 	LineKindExtra           = "extra"
+	LineKindAdHoc           = "ad_hoc"
 )
 
 // Invoice run status constants.

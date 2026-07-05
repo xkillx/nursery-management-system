@@ -1,8 +1,12 @@
 package domain
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // BookedSessionType is a minimal projection of a session type used for
@@ -14,6 +18,8 @@ type BookedSessionType struct {
 	StartMinutes    int // minutes since midnight, local London time
 	EndMinutes      int
 	DurationMinutes int // EndMinutes - StartMinutes
+	Kind            string
+	FlatFeeMinor    *int
 }
 
 // BookedPatternEntry is one row in a Booking Pattern (day-of-week + session type).
@@ -51,21 +57,89 @@ type BookedEntryBreakdown struct {
 	TotalMinutes       int
 }
 
+type TermDateRange struct {
+	StartDate time.Time
+	EndDate   time.Time
+}
+
+type TermDateLookup interface {
+	GetTermDateRangesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]TermDateRange, error)
+}
+
+func isDateInAnyTermRange(t time.Time, ranges []TermDateRange) bool {
+	for _, r := range ranges {
+		if !t.Before(r.StartDate) && !t.After(r.EndDate) {
+			return true
+		}
+	}
+	return false
+}
+
+func isWeekday(t time.Time) bool {
+	d := t.Weekday()
+	return d != time.Saturday && d != time.Sunday
+}
+
+// CalculateTermTimeFundedAllowanceMinutes computes the funded allowance for a
+// term-time-only child in a given billing month.
+//
+// The formula:
+//
+//	termDaysInMonth  = count of weekdays falling within any term date range
+//	                   that lie inside billingMonth
+//	allowance        = fundedHoursPerWeek × 60 × termDaysInMonth / 5
+//
+// Returns 0 when termDaysInMonth is 0 or fundedHoursPerWeek is 0.
+func CalculateTermTimeFundedAllowanceMinutes(fundedHoursPerWeek float64, termDateRanges []TermDateRange, billingMonth time.Time) int {
+	if fundedHoursPerWeek <= 0 {
+		return 0
+	}
+	if billingMonth.Day() != 1 {
+		return 0
+	}
+	nextMonth := billingMonth.AddDate(0, 1, 0)
+
+	termDaysInMonth := 0
+	for d := billingMonth; d.Before(nextMonth); d = d.AddDate(0, 0, 1) {
+		if isWeekday(d) && isDateInAnyTermRange(d, termDateRanges) {
+			termDaysInMonth++
+		}
+	}
+	if termDaysInMonth == 0 {
+		return 0
+	}
+	return int(fundedHoursPerWeek * 60 * float64(termDaysInMonth) / 5)
+}
+
+// CalculateAdHocChargeMinutes returns the billable minutes for an ad-hoc
+// booking: ceil(sessionDuration × multiplier).
+func CalculateAdHocChargeMinutes(sessionDurationMinutes int, adHocRateMultiplier float64) int {
+	return int(math.Ceil(float64(sessionDurationMinutes) * adHocRateMultiplier))
+}
+
 // CalculateBookedCoreMinutesInMonth computes the monthly booked core minutes
 // for a Booking Pattern, by counting occurrences of each (day_of_week,
 // session_type) entry in the calendar month.
 //
+// When termDates is nil or empty: counts all matching day-of-week occurrences
+// (standard 52-week behaviour).
+//
+// When termDates is non-empty: only counts dates that fall within at least
+// one term date range (term-time-only billing).
+//
 // The session type duration is in minutes; occurrences are integer counts of
-// that day-of-week falling inside the billing month.
+// that day-of-week falling inside the billing month AND in any term range.
 //
 // The plan's "always bill 52 weeks" rule means we do NOT pro-rate for partial
 // weeks at the month boundary — we simply count how many times each
-// day-of-week occurs in the calendar month.
+// day-of-week occurs in the calendar month (filtered by term dates when
+// term_time_only).
 func CalculateBookedCoreMinutesInMonth(
 	patternID string,
 	entries []BookedPatternEntry,
 	billingMonthStart time.Time,
 	siteHourlyRateMinor int,
+	termDates []TermDateRange,
 ) (BookedCoreCalculation, error) {
 	if siteHourlyRateMinor < 0 {
 		return BookedCoreCalculation{}, fmt.Errorf("site_hourly_rate_minor must be >= 0")
@@ -99,7 +173,9 @@ func CalculateBookedCoreMinutesInMonth(
 			// time.Weekday(): Sunday=0 ... Saturday=6.
 			// Our day_of_week: Monday=1 ... Sunday=7.
 			if int(d.Weekday()) == e.DayOfWeek%7 {
-				occurrences++
+				if len(termDates) == 0 || isDateInAnyTermRange(d, termDates) {
+					occurrences++
+				}
 			}
 		}
 
@@ -121,13 +197,15 @@ func CalculateBookedCoreMinutesInMonth(
 		// Per-session breakdown for explainability.
 		for d := monthStart; d.Before(nextMonth); d = d.AddDate(0, 0, 1) {
 			if int(d.Weekday()) == e.DayOfWeek%7 {
-				calc.Sessions = append(calc.Sessions, BookedSession{
-					DayOfWeek:       e.DayOfWeek,
-					OccurrenceDate:  d,
-					DurationMinutes: e.SessionType.DurationMinutes,
-					SessionTypeID:   e.SessionType.ID,
-					SessionTypeName: e.SessionType.Name,
-				})
+				if len(termDates) == 0 || isDateInAnyTermRange(d, termDates) {
+					calc.Sessions = append(calc.Sessions, BookedSession{
+						DayOfWeek:       e.DayOfWeek,
+						OccurrenceDate:  d,
+						DurationMinutes: e.SessionType.DurationMinutes,
+						SessionTypeID:   e.SessionType.ID,
+						SessionTypeName: e.SessionType.Name,
+					})
+				}
 			}
 		}
 	}

@@ -107,6 +107,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			domainEntries,
 			in.BillingMonth,
 			termRow.SiteHourlyRateMinor,
+			nil,
 		)
 		if calcErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)

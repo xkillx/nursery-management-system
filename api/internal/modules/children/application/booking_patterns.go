@@ -71,11 +71,13 @@ type CreateBookingPatternInput struct {
 	EffectiveFrom time.Time
 	EffectiveTo   *time.Time
 	Entries       []BookingPatternEntryInput
+	TermTimeOnly  bool
 }
 
 type UpdateBookingPatternInput struct {
 	EffectiveFrom *time.Time
 	Entries       *[]BookingPatternEntryInput
+	TermTimeOnly  *bool
 }
 
 // ── Use cases ─────────────────────────────────────────────────────────────
@@ -228,7 +230,7 @@ func (uc *CreateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 		}
 
 		var terr error
-		result, terr = createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, cid, in.EffectiveFrom, in.EffectiveTo, resolved, true, uc.clock)
+		result, terr = createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, cid, in.EffectiveFrom, in.EffectiveTo, resolved, in.TermTimeOnly, true, uc.clock)
 		return terr
 	})
 	if err != nil {
@@ -377,6 +379,12 @@ func (uc *UpdateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 		if resolved != nil {
 			if err := uc.repo.ReplaceEntries(ctx, tx, actor.TenantID, actor.BranchID, pattern.ID, resolved); err != nil {
 				return domainerrors.Internal(fmt.Errorf("replace entries: %w", err))
+			}
+		}
+
+		if in.TermTimeOnly != nil {
+			if err := uc.repo.UpdateTermTimeOnly(ctx, tx, actor.TenantID, actor.BranchID, pattern.ID, *in.TermTimeOnly); err != nil {
+				return domainerrors.Internal(fmt.Errorf("update term_time_only: %w", err))
 			}
 		}
 

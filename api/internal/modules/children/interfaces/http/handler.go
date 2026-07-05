@@ -798,6 +798,7 @@ func (h *Handler) createBookingPatternHandler(c *gin.Context) {
 	result, err := h.createBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), application.CreateBookingPatternInput{
 		EffectiveFrom: effectiveFrom,
 		Entries:       entries,
+		TermTimeOnly:  req.TermTimeOnly,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -840,6 +841,9 @@ func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
 			})
 		}
 		in.Entries = &entries
+	}
+	if req.TermTimeOnly != nil {
+		in.TermTimeOnly = req.TermTimeOnly
 	}
 	result, err := h.updateBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"), in)
 	if err != nil {

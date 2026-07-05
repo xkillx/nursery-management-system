@@ -172,6 +172,16 @@ func (f *fakeChildBPRepo) UpdateEffectiveFrom(ctx context.Context, tx domain.Tx,
 	}
 	return nil
 }
+func (f *fakeChildBPRepo) UpdateTermTimeOnly(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID, termTimeOnly bool) error {
+	for _, ps := range f.patternsByChildID {
+		for i := range ps {
+			if ps[i].ID == patternID {
+				ps[i].TermTimeOnly = termTimeOnly
+			}
+		}
+	}
+	return nil
+}
 
 // Stub implementations for the rest of domain.Repository.
 

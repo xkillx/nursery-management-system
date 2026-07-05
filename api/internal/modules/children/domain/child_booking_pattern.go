@@ -14,6 +14,7 @@ type BookingPattern struct {
 	EffectiveFrom time.Time
 	EffectiveTo   *time.Time
 	IsCurrent     bool
+	TermTimeOnly  bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	Entries       []BookingPatternEntry

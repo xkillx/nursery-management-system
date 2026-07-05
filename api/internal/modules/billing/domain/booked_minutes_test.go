@@ -17,7 +17,7 @@ func TestCalculateBookedCoreMinutesInMonth(t *testing.T) {
 		},
 	}
 	// July 2026 has 4 Mondays: 6, 13, 20, 27.
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestCalculateBookedCoreMinutesInMonth_MultipleDays(t *testing.T) {
 		{DayOfWeek: 5, SessionType: BookedSessionType{ID: "st3", Name: "Fri", DurationMinutes: 180}},
 	}
 	// July 2026: Mondays=4, Wednesdays=5, Fridays=5 → 14 * 180 = 2520
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestCalculateBookedCoreMinutesInMonth_DayOfWeekConversion(t *testing.T) {
 		{DayOfWeek: 7, SessionType: BookedSessionType{ID: "st1", Name: "Sun", DurationMinutes: 60}},
 	}
 	// July 2026: Sundays are 5, 12, 19, 26 = 4.
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
 	if calc.TotalMinutes != 4*60 {
 		t.Errorf("Sunday count: got %d, want %d", calc.TotalMinutes, 4*60)
 	}
@@ -67,7 +67,7 @@ func TestCalculateBookedCoreMinutesInMonth_FebruaryLeapYear(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "M", DurationMinutes: 60}},
 	}
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000, nil)
 	if calc.TotalMinutes != 4*60 {
 		t.Errorf("Feb leap year: got %d, want %d", calc.TotalMinutes, 4*60)
 	}
@@ -77,7 +77,7 @@ func TestCalculateBookedCoreMinutesInMonth_BadDayOfWeek(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 0, SessionType: BookedSessionType{ID: "st1", Name: "X", DurationMinutes: 60}},
 	}
-	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000)
+	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
 	if err == nil {
 		t.Error("expected error for day_of_week=0")
 	}

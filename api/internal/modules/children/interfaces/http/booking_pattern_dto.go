@@ -15,11 +15,13 @@ type bookingPatternEntryInput struct {
 type bookingPatternRequest struct {
 	EffectiveFrom string                     `json:"effective_from" binding:"required"`
 	Entries       []bookingPatternEntryInput `json:"entries" binding:"required"`
+	TermTimeOnly  bool                       `json:"term_time_only"`
 }
 
 type bookingPatternUpdateRequest struct {
 	EffectiveFrom *string                     `json:"effective_from"`
 	Entries       *[]bookingPatternEntryInput `json:"entries"`
+	TermTimeOnly  *bool                       `json:"term_time_only"`
 }
 
 type sessionTypeRef struct {
@@ -41,6 +43,7 @@ type bookingPatternResponse struct {
 	EffectiveFrom string                  `json:"effective_from"`
 	EffectiveTo   *string                 `json:"effective_to,omitempty"`
 	IsCurrent     bool                    `json:"is_current"`
+	TermTimeOnly  bool                    `json:"term_time_only"`
 	CreatedAt     string                  `json:"created_at"`
 	Entries       []bookedSessionResponse `json:"entries"`
 }
@@ -58,6 +61,7 @@ func toBookingPatternResponse(bp domain.BookingPattern) bookingPatternResponse {
 		EffectiveFrom: bp.EffectiveFrom.Format("2006-01-02"),
 		EffectiveTo:   dateStringPtr(bp.EffectiveTo),
 		IsCurrent:     bp.IsCurrent,
+		TermTimeOnly:  bp.TermTimeOnly,
 		CreatedAt:     bp.CreatedAt.UTC().Format(time.RFC3339),
 		Entries:       make([]bookedSessionResponse, 0, len(bp.Entries)),
 	}

@@ -56,17 +56,19 @@ func (q *Queries) SessionTypesCheckActiveNameExists(ctx context.Context, arg Ses
 }
 
 const sessionTypesCreate = `-- name: SessionTypesCreate :exec
-INSERT INTO session_types (id, tenant_id, branch_id, name, start_time, end_time, is_active)
-VALUES ($1, $2, $3, $4, $5, $6, true)
+INSERT INTO session_types (id, tenant_id, branch_id, name, start_time, end_time, kind, flat_fee_minor)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type SessionTypesCreateParams struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Name         string
+	StartTime    pgtype.Time
+	EndTime      pgtype.Time
+	Kind         string
+	FlatFeeMinor pgtype.Int4
 }
 
 func (q *Queries) SessionTypesCreate(ctx context.Context, arg SessionTypesCreateParams) error {
@@ -77,6 +79,8 @@ func (q *Queries) SessionTypesCreate(ctx context.Context, arg SessionTypesCreate
 		arg.Name,
 		arg.StartTime,
 		arg.EndTime,
+		arg.Kind,
+		arg.FlatFeeMinor,
 	)
 	return err
 }
@@ -102,7 +106,7 @@ func (q *Queries) SessionTypesExists(ctx context.Context, arg SessionTypesExists
 }
 
 const sessionTypesGetByID = `-- name: SessionTypesGetByID :one
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -128,12 +132,14 @@ func (q *Queries) SessionTypesGetByID(ctx context.Context, arg SessionTypesGetBy
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.FlatFeeMinor,
 	)
 	return i, err
 }
 
 const sessionTypesGetByIDForUpdate = `-- name: SessionTypesGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -160,12 +166,14 @@ func (q *Queries) SessionTypesGetByIDForUpdate(ctx context.Context, arg SessionT
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.FlatFeeMinor,
 	)
 	return i, err
 }
 
 const sessionTypesListByBranch = `-- name: SessionTypesListByBranch :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -198,6 +206,8 @@ func (q *Queries) SessionTypesListByBranch(ctx context.Context, arg SessionTypes
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Kind,
+			&i.FlatFeeMinor,
 		); err != nil {
 			return nil, err
 		}
@@ -232,20 +242,26 @@ SET
     name = CASE WHEN $1 = 1 THEN $2 ELSE name END,
     start_time = CASE WHEN $3 = 1 THEN $4 ELSE start_time END,
     end_time = CASE WHEN $5 = 1 THEN $6 ELSE end_time END,
+    kind = CASE WHEN $7 = 1 THEN $8 ELSE kind END,
+    flat_fee_minor = CASE WHEN $9::bool THEN $10 ELSE flat_fee_minor END,
     updated_at = now()
-WHERE tenant_id = $7 AND branch_id = $8 AND id = $9
+WHERE tenant_id = $11 AND branch_id = $12 AND id = $13
 `
 
 type SessionTypesUpdateParams struct {
-	SetName      interface{}
-	Name         string
-	SetStartTime interface{}
-	StartTime    pgtype.Time
-	SetEndTime   interface{}
-	EndTime      pgtype.Time
-	TenantID     pgtype.UUID
-	BranchID     pgtype.UUID
-	ID           pgtype.UUID
+	SetName         interface{}
+	Name            string
+	SetStartTime    interface{}
+	StartTime       pgtype.Time
+	SetEndTime      interface{}
+	EndTime         pgtype.Time
+	SetKind         interface{}
+	NewKind         pgtype.Text
+	SetFlatFeeMinor bool
+	NewFlatFeeMinor pgtype.Int4
+	TenantID        pgtype.UUID
+	BranchID        pgtype.UUID
+	ID              pgtype.UUID
 }
 
 func (q *Queries) SessionTypesUpdate(ctx context.Context, arg SessionTypesUpdateParams) (int64, error) {
@@ -256,6 +272,10 @@ func (q *Queries) SessionTypesUpdate(ctx context.Context, arg SessionTypesUpdate
 		arg.StartTime,
 		arg.SetEndTime,
 		arg.EndTime,
+		arg.SetKind,
+		arg.NewKind,
+		arg.SetFlatFeeMinor,
+		arg.NewFlatFeeMinor,
 		arg.TenantID,
 		arg.BranchID,
 		arg.ID,
