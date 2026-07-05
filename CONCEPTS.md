@@ -5,10 +5,13 @@ Shared domain vocabulary for this project — entities, named processes, and sta
 ## Children
 
 ### Booking Pattern
-A child's planned weekly attendance schedule, defining which session types the child attends on which days of the week. A child has at most one current (open) booking pattern at a time; when a new pattern is created, the previous one is closed. Patterns cannot be backdated or edited once their effective date has passed.
+A child's planned weekly attendance schedule, defining which session types the child attends on which days of the week. A child has at most one current (open) booking pattern at a time; when a new pattern is created, the previous one is closed. Patterns cannot be backdated or edited once their effective date has passed. A pattern may carry an optional `term_time_only` flag; when true, billing calculations exclude dates outside the branch's academic term calendar.
+
+### Ad-Hoc Booking
+A one-off session booking for a specific child on a specific calendar date, independent from the recurring booking pattern. Used for backup childcare, inset-day extras, or casual sessions. Billed at the ad-hoc rate (branch hourly rate × ad-hoc multiplier, or flat fee if the session type has one configured). Status: `active` or `cancelled`. Does not affect funding allowance calculations.
 
 ### Session Type
-A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children.
+A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children. Each session type has a `kind` classification (`standard`, `wraparound_before`, `wraparound_after`, `core`, `extended`) and an optional `flat_fee_minor` that, when set, overrides hourly-rate-based billing for that session type.
 
 ### Funding Record
 A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 30 Hours), funding model (term-time or stretched), eligibility status, and benefit information. Separate from billing — funding records capture entitlement, not invoices.
@@ -34,6 +37,9 @@ A multi-step form wizard that guides staff through child registration or editing
 
 ## Settings
 
+### Academic Term
+A branch-level operational period representing a school term (e.g., "Autumn 2026", "Spring 2027"). Each academic term has a name, kind (`autumn`, `spring`, `summer`), start date, and end date. Configured per branch to reflect local school calendars. Used to determine which weeks are term-time for term-time-only booking patterns and funding calculations.
+
 ### Site Profile
 A branch's brand identity (name, description, phone, email, website, address) used on parent-facing surfaces. One Site Profile per branch, separate from branch ops (archive, hourly rate). Currently rendered on the parent invoice header.
 
@@ -56,12 +62,17 @@ Invoices are generated for the next calendar month before service is delivered. 
 - `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate)
 - `funded_deduction` — the funding entitlement deduction (funded minutes × hourly rate, subtracted)
 - `extra` — ad-hoc charges added by manager
+- `ad_hoc` — one-off booking charges for individual ad-hoc sessions
 
 ### Booking Pattern
 A child's planned weekly attendance schedule. The system counts day-of-week occurrences in the calendar month × session duration = `booked_core_minutes`. This is the billing basis under advance-pay.
 
 ### Funded Allowance Minutes
-Monthly funding entitlement expressed in minutes. Derived from `funded_hours_per_week × 52 × 60 / 12` (annualised hours spread evenly across 12 months). Stored per (child, billing_month) in `funding_profiles`.
+Monthly funding entitlement expressed in minutes. Two computation paths:
+- **Stretched model:** `funded_hours_per_week × 52 × 60 / 12` (annualised hours spread evenly across 12 months).
+- **Term-time-only model:** `funded_hours_per_week × 60 × term_weekdays_in_month / 5`. Term months only; zero during holidays. Derived from the branch's academic term calendar.
+
+Stored per (child, billing_month) in `funding_profiles`.
 
 ### Billable Minutes
 `max(0, booked_core_minutes - funded_allowance_minutes)`. The minutes that the parent actually pays for after funding deduction.
