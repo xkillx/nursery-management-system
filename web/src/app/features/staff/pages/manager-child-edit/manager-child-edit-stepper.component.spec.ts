@@ -995,6 +995,7 @@ describe('ManagerChildEditStepperComponent', () => {
         effective_from: '2026-09-01',
         effective_to: null,
         is_current: true,
+        term_time_only: false,
         created_at: '2026-06-01T00:00:00Z',
         entries: [
           { day_of_week: 1, session_type: { id: 'st-1', name: 'Morning', start_time: '08:00', end_time: '13:00', is_active: true } },

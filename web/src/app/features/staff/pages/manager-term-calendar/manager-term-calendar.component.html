@@ -1,192 +1,442 @@
-<div class="p-6 max-w-5xl mx-auto">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-2xl font-semibold text-gray-900">Academic Terms</h1>
-      <p class="text-sm text-gray-500 mt-1">Manage term calendars for {{ siteName }}.</p>
-    </div>
-    <div class="flex gap-2">
-      <button
-        (click)="toggleIncludeArchived()"
-        class="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50"
-        [class.bg-gray-100]="includeArchived"
-      >
-        {{ includeArchived ? 'Hide archived' : 'Show archived' }}
-      </button>
-      <button
-        (click)="openCreate()"
-        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-      >
-        <ng-icon name="heroPlus" class="inline-block w-4 h-4 mr-1 align-text-bottom"></ng-icon>
-        Add term
-      </button>
-    </div>
-  </div>
+<div class="space-y-6">
+  @if (editorMode === 'closed') {
+    <!-- List view (exactly like rooms landing page) -->
+    <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="terms-title">
+      <div class="max-w-3xl">
+        <h1 id="terms-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+          Academic Terms
+        </h1>
+        <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+          Manage term calendars, set academic dates, and configure seasonal schedules across {{ siteName }}.
+        </p>
+      </div>
 
-  @if (pageError) {
-    <app-alert variant="error" title="Error" [message]="pageError" class="mb-4"></app-alert>
-  }
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          (click)="openCreate()"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 cursor-pointer"
+        >
+          <ng-icon name="heroPlus" size="18" aria-hidden="true"></ng-icon>
+          New Term
+        </button>
+      </div>
+    </section>
 
-  @if (loading) {
-    <app-loading-state></app-loading-state>
-  } @else if (terms().length === 0) {
-    <app-empty-state
-      title="No academic terms"
-      message="Create your first academic term to enable term-time billing."
-    ></app-empty-state>
-  } @else {
-    <div class="bg-white rounded-xl border overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b">
-          <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Kind</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Start date</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">End date</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y">
-          @for (term of terms(); track term.id) {
-            <tr [class.opacity-50]="!term.is_active">
-              <td class="px-4 py-3 font-medium text-gray-900">{{ term.name }}</td>
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                  {{ term.kind }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-gray-600">{{ term.start_date }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ term.end_date }}</td>
-              <td class="px-4 py-3 text-right">
-                <div class="flex justify-end gap-1">
-                  @if (term.is_active) {
-                    <button
-                      (click)="openEdit(term)"
-                      class="p-1.5 rounded hover:bg-gray-100"
-                      title="Edit"
-                    >
-                      <ng-icon name="heroPencilSquare" class="w-4 h-4 text-gray-500"></ng-icon>
-                    </button>
-                    <button
-                      (click)="archive(term)"
-                      class="p-1.5 rounded hover:bg-gray-100"
-                      title="Archive"
-                    >
-                      <ng-icon name="heroTrash" class="w-4 h-4 text-gray-500"></ng-icon>
-                    </button>
-                  } @else {
-                    <span class="text-xs text-gray-400 px-2 py-1">Archived</span>
-                  }
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
 
-  @if (editorMode !== 'closed') {
-    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" (click)="closeEditor()">
-      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" (click)="$event.stopPropagation()">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900">
-            {{ editorMode === 'edit' ? 'Edit term' : 'Create term' }}
-          </h2>
-          <button (click)="closeEditor()" class="p-1 rounded hover:bg-gray-100">
-            <ng-icon name="heroXMark" class="w-5 h-5 text-gray-400"></ng-icon>
+
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Academic terms summary">
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroCalendar" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-brand-600 dark:text-brand-400">All Dates</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Terms</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ totalTermsCount() }}</p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+            <ng-icon name="heroCheck" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-success-600 dark:text-success-400">In Use</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Active Terms</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ activeTermsCount() }}</p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
+            <ng-icon name="heroClock" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">History</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Archived Terms</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ archivedTermsCount() }}</p>
+      </article>
+    </section>
+
+    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Academic term records">
+      <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            (click)="toggleIncludeArchived()"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:bg-white/[0.05] cursor-pointer"
+            [class.bg-brand-50]="includeArchived"
+            [class.text-brand-600]="includeArchived"
+            [class.border-brand-200]="includeArchived"
+          >
+            <ng-icon name="heroClock" size="18" aria-hidden="true"></ng-icon>
+            {{ includeArchived ? 'Hide Archived' : 'Show Archived' }}
           </button>
         </div>
 
-        @if (formError) {
-          <app-alert variant="error" title="Error" [message]="formError" class="mb-4"></app-alert>
-        }
+        <div class="flex items-center justify-end">
+          <span class="text-sm text-gray-600 dark:text-gray-400">
+            Showing {{ terms().length }} academic terms
+          </span>
+        </div>
+      </div>
 
-        <form #termForm="ngForm" (ngSubmit)="save()">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                [(ngModel)]="form.name"
-                name="name"
-                required
-                maxlength="120"
-                placeholder="e.g. Autumn 2026"
-                class="w-full border rounded-lg px-3 py-2 text-sm"
-                [class.border-red-300]="formFieldErrors.name"
-              />
-              @if (formFieldErrors.name) {
-                <p class="text-xs text-red-600 mt-1">{{ formFieldErrors.name }}</p>
-              }
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Kind</label>
-              <select
-                [(ngModel)]="form.kind"
-                name="kind"
-                required
-                class="w-full border rounded-lg px-3 py-2 text-sm"
-                [class.border-red-300]="formFieldErrors.kind"
+      <!-- Mobile view -->
+      <div class="lg:hidden">
+        @if (loading) {
+          <app-loading-state label="Loading terms..."></app-loading-state>
+        } @else if (terms().length === 0) {
+          <app-empty-state
+            title="No academic terms"
+            message="Create your first academic term to enable term-time billing."
+          ></app-empty-state>
+        } @else {
+          <div class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (term of terms(); track term.id) {
+              <article
+                [id]="'term-' + term.id"
+                class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                [class.opacity-60]="!term.is_active"
               >
-                @for (opt of kindOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
+                <div class="flex items-start gap-3">
+                  <div
+                    class="flex size-12 shrink-0 items-center justify-center rounded-xl font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
+                  >
+                    <span class="text-sm uppercase font-bold">{{ term.name.slice(0, 2) }}</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ term.name }}</h2>
+                    <p class="mt-1 flex flex-wrap gap-1.5 items-center">
+                      @if (term.kind === 'autumn') {
+                        <app-badge color="warning" variant="light" size="sm">Autumn</app-badge>
+                      } @else if (term.kind === 'spring') {
+                        <app-badge color="success" variant="light" size="sm">Spring</app-badge>
+                      } @else {
+                        <app-badge color="primary" variant="light" size="sm">Summer</app-badge>
+                      }
+
+                      @if (term.is_active) {
+                        <app-badge color="success" variant="light" size="sm">Active</app-badge>
+                      } @else {
+                        <app-badge color="light" variant="light" size="sm">Archived</app-badge>
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <dl class="mt-4 grid gap-3 text-sm xsm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Start Date</dt>
+                    <dd class="mt-1 text-gray-800 dark:text-gray-200 font-medium">
+                      {{ term.start_date | date:'dd MMM yyyy' }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">End Date</dt>
+                    <dd class="mt-1 text-gray-800 dark:text-gray-200 font-medium">
+                      {{ term.end_date | date:'dd MMM yyyy' }}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div class="mt-4 flex gap-2">
+                  @if (term.is_active) {
+                    <button
+                      type="button"
+                      (click)="openEdit(term)"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05] cursor-pointer"
+                      [attr.aria-label]="'Edit term ' + term.name"
+                    >
+                      <ng-icon name="heroPencilSquare" size="16" aria-hidden="true"></ng-icon>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      (click)="archive(term)"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                      [attr.aria-label]="'Archive term ' + term.name"
+                    >
+                      <ng-icon name="heroTrash" size="16" aria-hidden="true"></ng-icon>
+                      Archive
+                    </button>
+                  } @else {
+                    <div class="text-center w-full py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-lg">
+                      Term Archived
+                    </div>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Desktop view -->
+      <div class="hidden overflow-x-auto lg:block">
+        <table class="w-full min-w-[960px] border-collapse text-left">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+              <th class="px-6 py-4">Term Name</th>
+              <th class="px-6 py-4">Kind</th>
+              <th class="px-6 py-4">Start Date</th>
+              <th class="px-6 py-4">End Date</th>
+              <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @if (loading) {
+              <tr>
+                <td colspan="6">
+                  <app-loading-state label="Loading terms..."></app-loading-state>
+                </td>
+              </tr>
+            } @else if (terms().length === 0) {
+              <tr>
+                <td colspan="6">
+                  <app-empty-state
+                    title="No academic terms"
+                    message="Create your first academic term to enable term-time billing."
+                  ></app-empty-state>
+                </td>
+              </tr>
+            } @else {
+              @for (term of terms(); track term.id) {
+                <tr
+                  [id]="'term-' + term.id"
+                  class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                  [class.opacity-60]="!term.is_active"
+                >
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-4">
+                      <div
+                        class="flex size-12 shrink-0 items-center justify-center rounded-xl font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
+                      >
+                        <span class="text-sm font-bold">{{ term.name.slice(0, 2).toUpperCase() }}</span>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="font-semibold text-gray-900 dark:text-white/90">{{ term.name }}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    @if (term.kind === 'autumn') {
+                      <app-badge color="warning" variant="light">Autumn</app-badge>
+                    } @else if (term.kind === 'spring') {
+                      <app-badge color="success" variant="light">Spring</app-badge>
+                    } @else {
+                      <app-badge color="primary" variant="light">Summer</app-badge>
+                    }
+                  </td>
+
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {{ term.start_date | date:'dd MMM yyyy' }}
+                  </td>
+
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {{ term.end_date | date:'dd MMM yyyy' }}
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <span class="h-2.5 w-2.5 rounded-full" [class.bg-emerald-500]="term.is_active" [class.bg-gray-400]="!term.is_active"></span>
+                      {{ term.is_active ? 'Active' : 'Archived' }}
+                    </span>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-2">
+                      @if (term.is_active) {
+                        <button
+                          type="button"
+                          (click)="openEdit(term)"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05] cursor-pointer"
+                        >
+                          <ng-icon name="heroPencilSquare" size="15" aria-hidden="true"></ng-icon>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          (click)="archive(term)"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 disabled:opacity-50 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                        >
+                          <ng-icon name="heroTrash" size="15" aria-hidden="true"></ng-icon>
+                          Archive
+                        </button>
+                      } @else {
+                        <span class="text-xs text-gray-400 dark:text-gray-500 px-3 py-2 font-semibold">Archived</span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <!-- Create/Edit Form View (Exactly like create room form page structure) -->
+    <div>
+      <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        {{ editorMode === 'edit' ? 'Edit Academic Term' : 'New Academic Term' }}
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        {{ editorMode === 'edit' ? 'Modify the term dates and parameters below.' : 'Configure a new term period for the academic calendar.' }}
+      </p>
+    </div>
+
+    @if (formError) {
+      <app-alert variant="error" title="Error" [message]="formError" />
+    }
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <!-- Left Column: Form Details Card -->
+      <section class="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroPencilSquare" size="20" aria-hidden="true" />
+          </span>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Term Details</h2>
+        </div>
+
+        <form #termForm="ngForm" class="space-y-6 px-6 py-6" (ngSubmit)="save()" novalidate>
+          <div>
+            <label for="term-name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Term Name <span class="text-red-500">*</span></label>
+            <input
+              id="term-name"
+              name="name"
+              type="text"
+              required
+              maxlength="120"
+              [(ngModel)]="form.name"
+              placeholder="e.g. Autumn 2026"
+              class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              [class.border-red-500]="formFieldErrors.name"
+              [disabled]="formSaving"
+            />
+            @if (formFieldErrors.name) {
+              <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.name }}</p>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label for="term-kind" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Term Season <span class="text-red-500">*</span></label>
+              <app-select
+                id="term-kind"
+                name="kind"
+                [options]="kindOptions"
+                [(ngModel)]="form.kind"
+                placeholder="Select term season"
+                [error]="!!formFieldErrors.kind"
+                [disabled]="formSaving"
+              />
               @if (formFieldErrors.kind) {
-                <p class="text-xs text-red-600 mt-1">{{ formFieldErrors.kind }}</p>
-              }
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Start date</label>
-              <input
-                type="date"
-                [(ngModel)]="form.start_date"
-                name="start_date"
-                required
-                class="w-full border rounded-lg px-3 py-2 text-sm"
-                [class.border-red-300]="formFieldErrors.start_date"
-              />
-              @if (formFieldErrors.start_date) {
-                <p class="text-xs text-red-600 mt-1">{{ formFieldErrors.start_date }}</p>
-              }
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">End date</label>
-              <input
-                type="date"
-                [(ngModel)]="form.end_date"
-                name="end_date"
-                required
-                class="w-full border rounded-lg px-3 py-2 text-sm"
-                [class.border-red-300]="formFieldErrors.end_date"
-              />
-              @if (formFieldErrors.end_date) {
-                <p class="text-xs text-red-600 mt-1">{{ formFieldErrors.end_date }}</p>
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.kind }}</p>
               }
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 mt-6">
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label for="term-start-date" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date <span class="text-red-500">*</span></label>
+              <app-date-picker
+                id="term-start-date"
+                name="start_date"
+                [(ngModel)]="form.start_date"
+                placeholder="Select start date"
+                [error]="!!formFieldErrors.start_date"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.start_date) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.start_date }}</p>
+              }
+            </div>
+
+            <div>
+              <label for="term-end-date" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">End Date <span class="text-red-500">*</span></label>
+              <app-date-picker
+                id="term-end-date"
+                name="end_date"
+                [(ngModel)]="form.end_date"
+                placeholder="Select end date"
+                [error]="!!formFieldErrors.end_date"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.end_date) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.end_date }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end dark:border-gray-800">
             <button
               type="button"
               (click)="closeEditor()"
-              class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+              [disabled]="formSaving"
             >
               Cancel
             </button>
             <button
               type="submit"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50 cursor-pointer"
               [disabled]="formSaving || !termForm.valid"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
             >
-              {{ formSaving ? 'Saving\u2026' : (editorMode === 'edit' ? 'Save changes' : 'Create term') }}
+              @if (formSaving) {
+                <svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+              {{ editorMode === 'edit' ? 'Save Changes' : 'Create Term' }}
             </button>
           </div>
         </form>
-      </div>
+      </section>
+
+      <!-- Right Column: Sidebar Guidance Details -->
+      <aside class="space-y-6">
+        <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-500/20 dark:bg-blue-500/10">
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-blue-500 shadow-sm dark:bg-gray-900">
+              <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
+          </div>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Academic term dates are used to automate billing cycles for term-time children.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Ensure the start and end dates do not overlap with other active terms.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Archiving a term prevents it from being used for new invoices but preserves billing history.</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
     </div>
   }
+
+  <!-- Archive Confirmation Dialog -->
+  <app-confirmation-dialog
+    [isOpen]="isConfirmArchiveOpen"
+    title="Archive Academic Term"
+    message="Are you sure you want to archive '{{ termToArchive?.name }}'? This will disable term-time billing schedules tied to this term."
+    confirmText="Archive Term"
+    cancelText="Cancel"
+    variant="danger"
+    [loading]="archiveSaving"
+    (confirmed)="confirmArchive()"
+    (cancelled)="cancelArchive()"
+  ></app-confirmation-dialog>
 </div>

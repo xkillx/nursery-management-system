@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -7,6 +7,7 @@ import {
   heroCheck,
   heroChevronDown,
   heroClock,
+  heroInformationCircle,
   heroPencilSquare,
   heroPlus,
   heroTrash,
@@ -16,6 +17,10 @@ import {
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
+import { SelectComponent } from '../../../../shared/components/form/select/select.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AcademicTermsApiService } from '../../data/academic-terms-api.service';
@@ -36,6 +41,10 @@ const KIND_OPTIONS: { value: AcademicTermKind; label: string }[] = [
     LoadingStateComponent,
     EmptyStateComponent,
     AlertComponent,
+    BadgeComponent,
+    SelectComponent,
+    DatePickerComponent,
+    ConfirmationDialogComponent,
   ],
   templateUrl: './manager-term-calendar.component.html',
   providers: [
@@ -44,6 +53,7 @@ const KIND_OPTIONS: { value: AcademicTermKind; label: string }[] = [
       heroCheck,
       heroChevronDown,
       heroClock,
+      heroInformationCircle,
       heroPencilSquare,
       heroPlus,
       heroTrash,
@@ -59,9 +69,12 @@ export class ManagerTermCalendarComponent implements OnInit {
   siteId: string | null = null;
   siteName = '';
   loading = false;
-  pageError: string | null = null;
   includeArchived = false;
   terms = signal<AcademicTerm[]>([]);
+
+  totalTermsCount = computed(() => this.terms().length);
+  activeTermsCount = computed(() => this.terms().filter(t => t.is_active).length);
+  archivedTermsCount = computed(() => this.terms().filter(t => !t.is_active).length);
 
   editorMode: 'closed' | 'create' | 'edit' = 'closed';
   editingTermId: string | null = null;
@@ -70,12 +83,16 @@ export class ManagerTermCalendarComponent implements OnInit {
   formError: string | null = null;
   formFieldErrors: { name?: string; kind?: string; start_date?: string; end_date?: string } = {};
 
+  isConfirmArchiveOpen = false;
+  termToArchive: AcademicTerm | null = null;
+  archiveSaving = false;
+
   readonly kindOptions = KIND_OPTIONS;
 
   ngOnInit(): void {
     const membership = this.auth.activeMembership();
     if (!membership?.branch_id) {
-      this.pageError = 'No site is attached to this manager session.';
+      this.toast.error('No site is attached to this manager session.');
       return;
     }
     this.siteId = membership.branch_id;
@@ -86,7 +103,6 @@ export class ManagerTermCalendarComponent implements OnInit {
   loadTerms(): void {
     if (!this.siteId) return;
     this.loading = true;
-    this.pageError = null;
     this.api.listTerms(this.siteId, { includeArchived: this.includeArchived }).subscribe({
       next: (terms) => {
         this.terms.set(terms);
@@ -94,7 +110,7 @@ export class ManagerTermCalendarComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.pageError = 'Failed to load academic terms.';
+        this.toast.error('Failed to load academic terms.');
       },
     });
   }
@@ -164,15 +180,32 @@ export class ManagerTermCalendarComponent implements OnInit {
   }
 
   archive(term: AcademicTerm): void {
-    if (!this.siteId) return;
-    this.api.archiveTerm(this.siteId, term.id).subscribe({
+    this.termToArchive = term;
+    this.isConfirmArchiveOpen = true;
+  }
+
+  confirmArchive(): void {
+    if (!this.siteId || !this.termToArchive) return;
+    this.archiveSaving = true;
+    this.api.archiveTerm(this.siteId, this.termToArchive.id).subscribe({
       next: () => {
+        this.archiveSaving = false;
+        this.isConfirmArchiveOpen = false;
+        this.termToArchive = null;
         this.toast.success('Term archived.');
         this.loadTerms();
       },
       error: () => {
+        this.archiveSaving = false;
+        this.isConfirmArchiveOpen = false;
+        this.termToArchive = null;
         this.toast.error('Failed to archive term.');
       },
     });
+  }
+
+  cancelArchive(): void {
+    this.isConfirmArchiveOpen = false;
+    this.termToArchive = null;
   }
 }
