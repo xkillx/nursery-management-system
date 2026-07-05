@@ -250,6 +250,15 @@ type Branch struct {
 	AdHocRateMultiplier pgtype.Numeric
 }
 
+type BranchClosureDay struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	Date      pgtype.Date
+	Reason    pgtype.Text
+	CreatedAt pgtype.Timestamptz
+}
+
 type Child struct {
 	ID            pgtype.UUID
 	TenantID      pgtype.UUID

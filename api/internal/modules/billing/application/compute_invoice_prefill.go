@@ -110,6 +110,7 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			billingMonth,
 			termRow.SiteHourlyRateMinor,
 			nil,
+			nil,
 		)
 		if calcErr != nil {
 			return fmt.Errorf("calculate booked minutes: %w", calcErr)

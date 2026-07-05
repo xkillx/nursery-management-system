@@ -83,6 +83,10 @@ type AdHocBookingLookup interface {
 	ListActiveBookingsForChildInMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, month time.Time) ([]AdHocBookingRow, error)
 }
 
+type ClosureDateLookup interface {
+	GetClosureDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]time.Time, error)
+}
+
 type FundingRecordRow struct {
 	FundingModel       string
 	FundedHoursPerWeek *float64
@@ -106,17 +110,26 @@ func isWeekday(t time.Time) bool {
 	return d != time.Saturday && d != time.Sunday
 }
 
+func isClosureDate(t time.Time, closures []time.Time) bool {
+	for _, c := range closures {
+		if t.Year() == c.Year() && t.Month() == c.Month() && t.Day() == c.Day() {
+			return true
+		}
+	}
+	return false
+}
+
 // CalculateTermTimeFundedAllowanceMinutes computes the funded allowance for a
 // term-time-only child in a given billing month.
 //
 // The formula:
 //
 //	termDaysInMonth  = count of weekdays falling within any term date range
-//	                   that lie inside billingMonth
+//	                   that lie inside billingMonth, minus closure dates
 //	allowance        = fundedHoursPerWeek × 60 × termDaysInMonth / 5
 //
 // Returns 0 when termDaysInMonth is 0 or fundedHoursPerWeek is 0.
-func CalculateTermTimeFundedAllowanceMinutes(fundedHoursPerWeek float64, termDateRanges []TermDateRange, billingMonth time.Time) int {
+func CalculateTermTimeFundedAllowanceMinutes(fundedHoursPerWeek float64, termDateRanges []TermDateRange, billingMonth time.Time, closureDates []time.Time) int {
 	if fundedHoursPerWeek <= 0 {
 		return 0
 	}
@@ -127,7 +140,7 @@ func CalculateTermTimeFundedAllowanceMinutes(fundedHoursPerWeek float64, termDat
 
 	termDaysInMonth := 0
 	for d := billingMonth; d.Before(nextMonth); d = d.AddDate(0, 0, 1) {
-		if isWeekday(d) && isDateInAnyTermRange(d, termDateRanges) {
+		if isWeekday(d) && isDateInAnyTermRange(d, termDateRanges) && !isClosureDate(d, closureDates) {
 			termDaysInMonth++
 		}
 	}
@@ -166,6 +179,7 @@ func CalculateBookedCoreMinutesInMonth(
 	billingMonthStart time.Time,
 	siteHourlyRateMinor int,
 	termDates []TermDateRange,
+	closureDates []time.Time,
 ) (BookedCoreCalculation, error) {
 	if siteHourlyRateMinor < 0 {
 		return BookedCoreCalculation{}, fmt.Errorf("site_hourly_rate_minor must be >= 0")
@@ -199,7 +213,7 @@ func CalculateBookedCoreMinutesInMonth(
 			// time.Weekday(): Sunday=0 ... Saturday=6.
 			// Our day_of_week: Monday=1 ... Sunday=7.
 			if int(d.Weekday()) == e.DayOfWeek%7 {
-				if len(termDates) == 0 || isDateInAnyTermRange(d, termDates) {
+				if (len(termDates) == 0 || isDateInAnyTermRange(d, termDates)) && !isClosureDate(d, closureDates) {
 					occurrences++
 				}
 			}
@@ -225,7 +239,7 @@ func CalculateBookedCoreMinutesInMonth(
 		// Per-session breakdown for explainability.
 		for d := monthStart; d.Before(nextMonth); d = d.AddDate(0, 0, 1) {
 			if int(d.Weekday()) == e.DayOfWeek%7 {
-				if len(termDates) == 0 || isDateInAnyTermRange(d, termDates) {
+				if (len(termDates) == 0 || isDateInAnyTermRange(d, termDates)) && !isClosureDate(d, closureDates) {
 					calc.Sessions = append(calc.Sessions, BookedSession{
 						DayOfWeek:       e.DayOfWeek,
 						OccurrenceDate:  d,

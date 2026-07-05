@@ -16,14 +16,15 @@ import (
 )
 
 type GenerateTermInvoices struct {
-	repo           domain.BillingRepository
-	auditW         *audit.Writer
-	termDateLookup domain.TermDateLookup
-	adHocLookup    domain.AdHocBookingLookup
+	repo              domain.BillingRepository
+	auditW            *audit.Writer
+	termDateLookup    domain.TermDateLookup
+	adHocLookup       domain.AdHocBookingLookup
+	closureDateLookup domain.ClosureDateLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, closureDateLookup domain.ClosureDateLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, closureDateLookup: closureDateLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -118,12 +119,25 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			}
 		}
 
+		var closureDates []time.Time
+		var closureDaysExcludedLabels []string
+		if uc.closureDateLookup != nil {
+			closureDates, err = uc.closureDateLookup.GetClosureDatesForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
+			if err != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup closure dates: %w", err)
+			}
+			for _, cd := range closureDates {
+				closureDaysExcludedLabels = append(closureDaysExcludedLabels, cd.Format("2006-01-02"))
+			}
+		}
+
 		calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
 			termRow.BookingPatternID.String(),
 			domainEntries,
 			in.BillingMonth,
 			termRow.SiteHourlyRateMinor,
 			termDates,
+			closureDates,
 		)
 		if calcErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)
@@ -140,7 +154,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			fundedAllowance = *termRow.FundedAllowanceMinutes
 		} else if fundingModel == "term_time_only" && termRow.FundedHoursPerWeek != nil {
 			if len(termDates) > 0 {
-				fundedAllowance = domain.CalculateTermTimeFundedAllowanceMinutes(*termRow.FundedHoursPerWeek, termDates, in.BillingMonth)
+				fundedAllowance = domain.CalculateTermTimeFundedAllowanceMinutes(*termRow.FundedHoursPerWeek, termDates, in.BillingMonth, closureDates)
 			}
 		}
 
@@ -243,6 +257,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			TermTimeOnly:           termRow.TermTimeOnly,
 			FundingModel:           fundingModel,
 			TermDatesUsed:          termDatesUsedLabels,
+			ClosureDaysExcluded:    closureDaysExcludedLabels,
 			TermID:                 termRow.TermID,
 			BookingPatternID:       termRow.BookingPatternID,
 			BookedCoreMinutes:      calc.TotalMinutes,

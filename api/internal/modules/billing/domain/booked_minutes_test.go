@@ -1,6 +1,9 @@
 package domain
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestCalculateBookedCoreMinutesInMonth(t *testing.T) {
 	// A pattern with one entry: Monday, 5-hour (300 min) session.
@@ -17,7 +20,7 @@ func TestCalculateBookedCoreMinutesInMonth(t *testing.T) {
 		},
 	}
 	// July 2026 has 4 Mondays: 6, 13, 20, 27.
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +44,7 @@ func TestCalculateBookedCoreMinutesInMonth_MultipleDays(t *testing.T) {
 		{DayOfWeek: 5, SessionType: BookedSessionType{ID: "st3", Name: "Fri", DurationMinutes: 180}},
 	}
 	// July 2026: Mondays=4, Wednesdays=5, Fridays=5 → 14 * 180 = 2520
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +59,7 @@ func TestCalculateBookedCoreMinutesInMonth_DayOfWeekConversion(t *testing.T) {
 		{DayOfWeek: 7, SessionType: BookedSessionType{ID: "st1", Name: "Sun", DurationMinutes: 60}},
 	}
 	// July 2026: Sundays are 5, 12, 19, 26 = 4.
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
 	if calc.TotalMinutes != 4*60 {
 		t.Errorf("Sunday count: got %d, want %d", calc.TotalMinutes, 4*60)
 	}
@@ -67,7 +70,7 @@ func TestCalculateBookedCoreMinutesInMonth_FebruaryLeapYear(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "M", DurationMinutes: 60}},
 	}
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000, nil)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000, nil, nil)
 	if calc.TotalMinutes != 4*60 {
 		t.Errorf("Feb leap year: got %d, want %d", calc.TotalMinutes, 4*60)
 	}
@@ -77,9 +80,83 @@ func TestCalculateBookedCoreMinutesInMonth_BadDayOfWeek(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 0, SessionType: BookedSessionType{ID: "st1", Name: "X", DurationMinutes: 60}},
 	}
-	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil)
+	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
 	if err == nil {
 		t.Error("expected error for day_of_week=0")
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_ClosureDayExclusion(t *testing.T) {
+	// July 2026: Mondays are 6, 13, 20, 27 = 4.
+	// Close July 13 (Monday).
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	closureDates := []time.Time{timeMustParse("2026-07-13")}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calc.TotalMinutes != 3*300 {
+		t.Errorf("expected 3 * 300 = %d, got %d", 3*300, calc.TotalMinutes)
+	}
+	if len(calc.Sessions) != 3 {
+		t.Errorf("expected 3 sessions, got %d", len(calc.Sessions))
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_ClosureDayNonMatching(t *testing.T) {
+	// Close a Saturday — should have no effect on Monday bookings.
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	closureDates := []time.Time{timeMustParse("2026-07-04")} // Saturday
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calc.TotalMinutes != 4*300 {
+		t.Errorf("expected 4 * 300 = %d, got %d", 4*300, calc.TotalMinutes)
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_NilClosureDates(t *testing.T) {
+	// nil closure dates should behave same as no closures.
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calc.TotalMinutes != 4*300 {
+		t.Errorf("expected 4 * 300 = %d, got %d", 4*300, calc.TotalMinutes)
+	}
+}
+
+func TestCalculateTermTimeFundedAllowanceMinutes_ClosureDayExclusion(t *testing.T) {
+	// July 2026: 23 weekdays.
+	// Term range covers all of July.
+	// Close July 13 (Monday) — 22 weekdays remain.
+	termRanges := []TermDateRange{
+		{StartDate: timeMustParse("2026-07-01"), EndDate: timeMustParse("2026-07-31")},
+	}
+	closureDates := []time.Time{timeMustParse("2026-07-13")}
+	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), closureDates)
+	// 15 * 60 * 22 / 5 = 3960
+	if allowance != 3960 {
+		t.Errorf("expected 3960, got %d", allowance)
+	}
+}
+
+func TestCalculateTermTimeFundedAllowanceMinutes_NoClosures(t *testing.T) {
+	termRanges := []TermDateRange{
+		{StartDate: timeMustParse("2026-07-01"), EndDate: timeMustParse("2026-07-31")},
+	}
+	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), nil)
+	// 23 weekdays in July 2026. 15 * 60 * 23 / 5 = 4140
+	if allowance != 4140 {
+		t.Errorf("expected 4140, got %d", allowance)
 	}
 }
 

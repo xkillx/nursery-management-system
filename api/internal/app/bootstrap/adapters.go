@@ -17,6 +17,7 @@ import (
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
+	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -565,3 +566,19 @@ func (a *adHocBookingLookupAdapter) ListActiveBookingsForChildInMonth(ctx contex
 }
 
 var _ billingdomain.AdHocBookingLookup = (*adHocBookingLookupAdapter)(nil)
+
+// closureDateLookupAdapter satisfies billingdomain.ClosureDateLookup by delegating
+// to the branch_closures module's repository.
+type closureDateLookupAdapter struct {
+	repo *branchclosurepostgres.Repository
+}
+
+func (a *closureDateLookupAdapter) GetClosureDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]time.Time, error) {
+	dates, err := a.repo.ListClosureDatesForBranchAndMonth(ctx, tenantID, branchID, month)
+	if err != nil {
+		return nil, fmt.Errorf("closure date lookup: %w", err)
+	}
+	return dates, nil
+}
+
+var _ billingdomain.ClosureDateLookup = (*closureDateLookupAdapter)(nil)

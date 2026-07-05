@@ -128,6 +128,7 @@ type InvoiceCalculationDetails struct {
 	TermTimeOnly           bool       `json:"term_time_only"`
 	FundingModel           string     `json:"funding_model,omitempty"`
 	TermDatesUsed          []string   `json:"term_dates_used,omitempty"`
+	ClosureDaysExcluded    []string   `json:"closure_days_excluded,omitempty"`
 
 	// Advance-pay source.
 	TermID            uuid.UUID              `json:"term_id"`

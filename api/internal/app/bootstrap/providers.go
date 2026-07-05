@@ -30,6 +30,8 @@ import (
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
+	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
+	branchclosurehandler "nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -226,6 +228,10 @@ func provideAdHocBookingLookupAdapter(repo *billingpostgres.Repository) *adHocBo
 	return &adHocBookingLookupAdapter{repo: repo}
 }
 
+func provideClosureDateLookupAdapter(repo *branchclosurepostgres.Repository) *closureDateLookupAdapter {
+	return &closureDateLookupAdapter{repo: repo}
+}
+
 func provideTxManagerAdapter(mgr *transaction.Manager) *txManagerAdapter {
 	return &txManagerAdapter{mgr: mgr}
 }
@@ -308,6 +314,7 @@ type appComponents struct {
 	TermHandler             *termhttphandler.Handler
 	TermCalendarHandler     *termcalendarhttphandler.Handler
 	AdHocBookingsHandler    *adhochttphandler.Handler
+	BranchClosureHandler    *branchclosurehandler.Handler
 	SiteProfileHandler      *siteprofilehandler.Handler
 }
 
@@ -371,6 +378,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.TermHandler.RegisterManagerRoutes(manager)
 	c.TermCalendarHandler.RegisterManagerRoutes(manager)
 	c.AdHocBookingsHandler.RegisterManagerRoutes(manager)
+	c.BranchClosureHandler.RegisterRoutes(protected)
 
 	return router
 }

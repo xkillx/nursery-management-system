@@ -11,13 +11,13 @@ import (
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
-	application18 "nursery-management-system/api/internal/modules/absence/application"
+	application19 "nursery-management-system/api/internal/modules/absence/application"
 	domain2 "nursery-management-system/api/internal/modules/absence/domain"
 	postgres9 "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/absence/interfaces/http"
 	application17 "nursery-management-system/api/internal/modules/ad_hoc_bookings/application"
 	domain17 "nursery-management-system/api/internal/modules/ad_hoc_bookings/domain"
-	postgres18 "nursery-management-system/api/internal/modules/ad_hoc_bookings/infrastructure/postgres"
+	postgres19 "nursery-management-system/api/internal/modules/ad_hoc_bookings/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
 	application5 "nursery-management-system/api/internal/modules/attendance/application"
 	domain7 "nursery-management-system/api/internal/modules/attendance/domain"
@@ -32,6 +32,10 @@ import (
 	domain8 "nursery-management-system/api/internal/modules/billing/domain"
 	postgres11 "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/billing/interfaces/http"
+	application18 "nursery-management-system/api/internal/modules/branch_closures/application"
+	domain18 "nursery-management-system/api/internal/modules/branch_closures/domain"
+	postgres13 "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
+	"nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 	application3 "nursery-management-system/api/internal/modules/children/application"
 	domain5 "nursery-management-system/api/internal/modules/children/domain"
 	postgres3 "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -42,7 +46,7 @@ import (
 	"nursery-management-system/api/internal/modules/funding/interfaces/http"
 	application10 "nursery-management-system/api/internal/modules/invites/application"
 	domain10 "nursery-management-system/api/internal/modules/invites/domain"
-	postgres15 "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
+	postgres16 "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/invites/interfaces/http"
 	application11 "nursery-management-system/api/internal/modules/owner/application"
 	domain11 "nursery-management-system/api/internal/modules/owner/domain"
@@ -58,22 +62,22 @@ import (
 	"nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 	application9 "nursery-management-system/api/internal/modules/payments/application"
 	domain9 "nursery-management-system/api/internal/modules/payments/domain"
-	postgres14 "nursery-management-system/api/internal/modules/payments/infrastructure/postgres"
+	postgres15 "nursery-management-system/api/internal/modules/payments/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/payments/infrastructure/stripe"
 	application12 "nursery-management-system/api/internal/modules/rooms/application"
 	domain12 "nursery-management-system/api/internal/modules/rooms/domain"
-	postgres16 "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
+	postgres17 "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/rooms/interfaces/http"
 	application14 "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	domain13 "nursery-management-system/api/internal/modules/sessiontemplates/domain"
-	postgres17 "nursery-management-system/api/internal/modules/sessiontemplates/infrastructure/postgres"
+	postgres18 "nursery-management-system/api/internal/modules/sessiontemplates/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/sessiontemplates/interfaces/http"
 	application13 "nursery-management-system/api/internal/modules/sessiontypes/application"
 	postgres4 "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/sessiontypes/interfaces/http"
 	application8 "nursery-management-system/api/internal/modules/siteprofile/application"
 	domain15 "nursery-management-system/api/internal/modules/siteprofile/domain"
-	postgres13 "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
+	postgres14 "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
 	application15 "nursery-management-system/api/internal/modules/term/application"
 	domain14 "nursery-management-system/api/internal/modules/term/domain"
@@ -254,7 +258,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
 	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository3)
-	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter)
+	repository4 := postgres13.NewRepository(pool)
+	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository4)
+	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapClosureDateLookupAdapter)
 	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
 	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
 	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
@@ -267,7 +273,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		CreateAndIssueFromForm: createAndIssueInvoiceFromForm,
 	}
 	listInvoices := application7.NewListInvoices(repository3)
-	siteProfileRepository := postgres13.NewRepository(pool)
+	siteProfileRepository := postgres14.NewRepository(pool)
 	getSiteProfileUseCase := application8.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
 	bootstrapParentContactLookupAdapter := provideParentContactLookupAdapter(pool)
@@ -299,26 +305,26 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Admin:     adminUseCases,
 	}
 	httpbillingHandler := httpbilling.NewHandler(billingHandlerConfig, logger)
-	repository4 := postgres14.NewRepository(pool)
+	repository5 := postgres15.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
-	createCheckoutSession := provideCreateCheckoutSession(repository4, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	createCheckoutSession := provideCreateCheckoutSession(repository5, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	webhookVerifier := provideWebhookVerifier(cfg)
 	bootstrapAuditSystemWriterAdapter := provideAuditSystemWriterAdapter(writer)
-	handleStripeWebhook := provideHandleStripeWebhook(repository4, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
-	managerPaymentRepository := provideManagerPaymentRepo(repository4)
+	handleStripeWebhook := provideHandleStripeWebhook(repository5, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
+	managerPaymentRepository := provideManagerPaymentRepo(repository5)
 	getManagerPaymentStatus := application9.NewGetManagerPaymentStatus(managerPaymentRepository)
 	listManagerPaymentEvents := application9.NewListManagerPaymentEvents(managerPaymentRepository)
 	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, recorder, logger)
-	repository5 := postgres15.NewRepository(pool, writer)
+	repository6 := postgres16.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application10.NewTokenGeneratorAdapter(tokensManager)
 	inviteEmailAdapter := application10.NewInviteEmailAdapter(sender)
-	createInviteUseCase := application10.NewCreateInviteUseCase(repository5, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
-	listInvitesUseCase := application10.NewListInvitesUseCase(repository5)
-	resendInviteUseCase := application10.NewResendInviteUseCase(repository5, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
-	revokeInviteUseCase := application10.NewRevokeInviteUseCase(repository5, logger)
-	acceptInviteUseCase := application10.NewAcceptInviteUseCase(repository5, logger)
+	createInviteUseCase := application10.NewCreateInviteUseCase(repository6, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
+	listInvitesUseCase := application10.NewListInvitesUseCase(repository6)
+	resendInviteUseCase := application10.NewResendInviteUseCase(repository6, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
+	revokeInviteUseCase := application10.NewRevokeInviteUseCase(repository6, logger)
+	acceptInviteUseCase := application10.NewAcceptInviteUseCase(repository6, logger)
 	fixedWindowLimiter := provideInviteIPLimiter()
 	httpinviteHandler := httpinvite.NewHandler(createInviteUseCase, listInvitesUseCase, resendInviteUseCase, revokeInviteUseCase, acceptInviteUseCase, tokensManager, fixedWindowLimiter, logger)
 	getSiteSummariesUseCase := application11.NewGetSiteSummariesUseCase(ownerRepository)
@@ -330,7 +336,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	reactivateManagerAccessUseCase := application11.NewReactivateManagerAccessUseCase(ownerRepository)
 	updateSiteBillingSetupUseCase := application11.NewUpdateSiteBillingSetupUseCase(ownerRepository, writer, transactionManager)
 	httpownerHandler := provideOwnerHandler(getSiteSummariesUseCase, listManagerAccessUseCase, grantManagerAccessUseCase, deactivateManagerAccessUseCase, reactivateManagerAccessUseCase, updateSiteBillingSetupUseCase, recorder, logger)
-	roomRepository := postgres16.NewRepository(pool)
+	roomRepository := postgres17.NewRepository(pool)
 	bootstrapSiteExistsCheckerAdapter := provideSiteExistsCheckerAdapter(ownerRepository)
 	createRoom := application12.NewCreateRoom(roomRepository, bootstrapSiteExistsCheckerAdapter)
 	updateRoom := application12.NewUpdateRoom(roomRepository, bootstrapSiteExistsCheckerAdapter)
@@ -346,7 +352,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	archiveSessionType := application13.NewArchiveSessionType(sessionTypeRepository, transactionManager, writer)
 	reactivateSessionType := application13.NewReactivateSessionType(sessionTypeRepository, transactionManager, writer)
 	httpsessiontypesHandler := httpsessiontypes.NewHandler(createSessionType, updateSessionType, listSessionTypes, getSessionType, archiveSessionType, reactivateSessionType, logger)
-	sessionTemplateRepository := postgres17.NewRepository(pool)
+	sessionTemplateRepository := postgres18.NewRepository(pool)
 	bootstrapSessionTemplateLookupTemplateAdapter := provideSessionTemplateLookupTemplateAdapter(bootstrapSessionTypeLookupAdapter)
 	createSessionTemplate := application14.NewCreateSessionTemplate(sessionTemplateRepository, bootstrapSiteExistsCheckerAdapter, bootstrapSessionTemplateLookupTemplateAdapter, transactionManager, writer)
 	updateSessionTemplate := application14.NewUpdateSessionTemplate(sessionTemplateRepository, bootstrapSiteExistsCheckerAdapter, bootstrapSessionTemplateLookupTemplateAdapter, transactionManager, writer)
@@ -389,11 +395,15 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	updateTerm := application16.NewUpdateTerm(academicTermRepository, transactionManager)
 	archiveTerm := application16.NewArchiveTerm(academicTermRepository, transactionManager)
 	httptermcalendarHandler := httptermcalendar.NewHandler(createTerm, listTerms, updateTerm, archiveTerm, logger)
-	adHocBookingRepository := postgres18.NewRepository(pool)
+	adHocBookingRepository := postgres19.NewRepository(pool)
 	createAdHocBooking := application17.NewCreateAdHocBooking(adHocBookingRepository)
 	listAdHocBookings := application17.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application17.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
 	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, logger)
+	createClosureDay := application18.NewCreateClosureDay(repository4)
+	listClosureDays := application18.NewListClosureDays(repository4)
+	deleteClosureDay := application18.NewDeleteClosureDay(repository4)
+	httpclosureHandler := httpclosure.NewHandler(createClosureDay, listClosureDays, deleteClosureDay, logger)
 	httpHandler := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
@@ -419,6 +429,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		TermHandler:             httptermHandler,
 		TermCalendarHandler:     httptermcalendarHandler,
 		AdHocBookingsHandler:    httpadhocbookingsHandler,
+		BranchClosureHandler:    httpclosureHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
@@ -586,7 +597,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
 	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository3)
-	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter)
+	repository4 := postgres13.NewRepository(pool)
+	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository4)
+	generateDraftInvoicesUseCase := application7.NewGenerateDraftInvoices(repository3, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapClosureDateLookupAdapter)
 	computeInvoicePrefill := application7.NewComputeInvoicePrefill(repository3, transactionManager)
 	createDraftInvoice := application7.NewCreateDraftInvoice(repository3, transactionManager, writer)
 	issueInvoice := application7.NewIssueInvoice(repository3, transactionManager, writer, eventDispatcher)
@@ -599,7 +612,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		CreateAndIssueFromForm: createAndIssueInvoiceFromForm,
 	}
 	listInvoices := application7.NewListInvoices(repository3)
-	siteProfileRepository := postgres13.NewRepository(pool)
+	siteProfileRepository := postgres14.NewRepository(pool)
 	getSiteProfileUseCase := application8.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
 	bootstrapParentContactLookupAdapter := provideParentContactLookupAdapter(pool)
@@ -631,26 +644,26 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Admin:     adminUseCases,
 	}
 	httpbillingHandler := httpbilling.NewHandler(billingHandlerConfig, logger)
-	repository4 := postgres14.NewRepository(pool)
+	repository5 := postgres15.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
-	createCheckoutSession := provideCreateCheckoutSession(repository4, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	createCheckoutSession := provideCreateCheckoutSession(repository5, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	webhookVerifier := provideWebhookVerifier(cfg)
 	bootstrapAuditSystemWriterAdapter := provideAuditSystemWriterAdapter(writer)
-	handleStripeWebhook := provideHandleStripeWebhook(repository4, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
-	managerPaymentRepository := provideManagerPaymentRepo(repository4)
+	handleStripeWebhook := provideHandleStripeWebhook(repository5, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
+	managerPaymentRepository := provideManagerPaymentRepo(repository5)
 	getManagerPaymentStatus := application9.NewGetManagerPaymentStatus(managerPaymentRepository)
 	listManagerPaymentEvents := application9.NewListManagerPaymentEvents(managerPaymentRepository)
 	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, recorder, logger)
-	repository5 := postgres15.NewRepository(pool, writer)
+	repository6 := postgres16.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application10.NewTokenGeneratorAdapter(tokensManager)
 	inviteEmailAdapter := application10.NewInviteEmailAdapter(sender)
-	createInviteUseCase := application10.NewCreateInviteUseCase(repository5, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
-	listInvitesUseCase := application10.NewListInvitesUseCase(repository5)
-	resendInviteUseCase := application10.NewResendInviteUseCase(repository5, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
-	revokeInviteUseCase := application10.NewRevokeInviteUseCase(repository5, logger)
-	acceptInviteUseCase := application10.NewAcceptInviteUseCase(repository5, logger)
+	createInviteUseCase := application10.NewCreateInviteUseCase(repository6, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
+	listInvitesUseCase := application10.NewListInvitesUseCase(repository6)
+	resendInviteUseCase := application10.NewResendInviteUseCase(repository6, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
+	revokeInviteUseCase := application10.NewRevokeInviteUseCase(repository6, logger)
+	acceptInviteUseCase := application10.NewAcceptInviteUseCase(repository6, logger)
 	fixedWindowLimiter := provideInviteIPLimiter()
 	httpinviteHandler := httpinvite.NewHandler(createInviteUseCase, listInvitesUseCase, resendInviteUseCase, revokeInviteUseCase, acceptInviteUseCase, tokensManager, fixedWindowLimiter, logger)
 	getSiteSummariesUseCase := application11.NewGetSiteSummariesUseCase(ownerRepository)
@@ -662,7 +675,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	reactivateManagerAccessUseCase := application11.NewReactivateManagerAccessUseCase(ownerRepository)
 	updateSiteBillingSetupUseCase := application11.NewUpdateSiteBillingSetupUseCase(ownerRepository, writer, transactionManager)
 	httpownerHandler := provideOwnerHandler(getSiteSummariesUseCase, listManagerAccessUseCase, grantManagerAccessUseCase, deactivateManagerAccessUseCase, reactivateManagerAccessUseCase, updateSiteBillingSetupUseCase, recorder, logger)
-	roomRepository := postgres16.NewRepository(pool)
+	roomRepository := postgres17.NewRepository(pool)
 	bootstrapSiteExistsCheckerAdapter := provideSiteExistsCheckerAdapter(ownerRepository)
 	createRoom := application12.NewCreateRoom(roomRepository, bootstrapSiteExistsCheckerAdapter)
 	updateRoom := application12.NewUpdateRoom(roomRepository, bootstrapSiteExistsCheckerAdapter)
@@ -678,7 +691,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	archiveSessionType := application13.NewArchiveSessionType(sessionTypeRepository, transactionManager, writer)
 	reactivateSessionType := application13.NewReactivateSessionType(sessionTypeRepository, transactionManager, writer)
 	httpsessiontypesHandler := httpsessiontypes.NewHandler(createSessionType, updateSessionType, listSessionTypes, getSessionType, archiveSessionType, reactivateSessionType, logger)
-	sessionTemplateRepository := postgres17.NewRepository(pool)
+	sessionTemplateRepository := postgres18.NewRepository(pool)
 	bootstrapSessionTemplateLookupTemplateAdapter := provideSessionTemplateLookupTemplateAdapter(bootstrapSessionTypeLookupAdapter)
 	createSessionTemplate := application14.NewCreateSessionTemplate(sessionTemplateRepository, bootstrapSiteExistsCheckerAdapter, bootstrapSessionTemplateLookupTemplateAdapter, transactionManager, writer)
 	updateSessionTemplate := application14.NewUpdateSessionTemplate(sessionTemplateRepository, bootstrapSiteExistsCheckerAdapter, bootstrapSessionTemplateLookupTemplateAdapter, transactionManager, writer)
@@ -721,11 +734,15 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	updateTerm := application16.NewUpdateTerm(academicTermRepository, transactionManager)
 	archiveTerm := application16.NewArchiveTerm(academicTermRepository, transactionManager)
 	httptermcalendarHandler := httptermcalendar.NewHandler(createTerm, listTerms, updateTerm, archiveTerm, logger)
-	adHocBookingRepository := postgres18.NewRepository(pool)
+	adHocBookingRepository := postgres19.NewRepository(pool)
 	createAdHocBooking := application17.NewCreateAdHocBooking(adHocBookingRepository)
 	listAdHocBookings := application17.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application17.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
 	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, logger)
+	createClosureDay := application18.NewCreateClosureDay(repository4)
+	listClosureDays := application18.NewListClosureDays(repository4)
+	deleteClosureDay := application18.NewDeleteClosureDay(repository4)
+	httpclosureHandler := httpclosure.NewHandler(createClosureDay, listClosureDays, deleteClosureDay, logger)
 	httpHandler := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
@@ -751,6 +768,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		TermHandler:             httptermHandler,
 		TermCalendarHandler:     httptermcalendarHandler,
 		AdHocBookingsHandler:    httpadhocbookingsHandler,
+		BranchClosureHandler:    httpclosureHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
@@ -768,16 +786,16 @@ func provideMarkAbsent(
 	childChecker domain2.ChildEnrollmentChecker,
 	txMgr *transaction.Manager, audit2 *audit.Writer,
 	clock *application5.AttendanceClock,
-) *application18.MarkAbsent {
-	return application18.NewMarkAbsent(repo, childChecker, txMgr, audit2, clock)
+) *application19.MarkAbsent {
+	return application19.NewMarkAbsent(repo, childChecker, txMgr, audit2, clock)
 }
 
 func provideClearMarker(
 	repo domain2.Repository,
 	txMgr *transaction.Manager, audit2 *audit.Writer,
 	clock *application5.AttendanceClock,
-) *application18.ClearMarker {
-	return application18.NewClearMarker(repo, txMgr, audit2, clock)
+) *application19.ClearMarker {
+	return application19.NewClearMarker(repo, txMgr, audit2, clock)
 }
 
 func provideUpsertProfile(
@@ -808,7 +826,7 @@ var fundingSet = wire.NewSet(postgres10.NewRepository, wire.Bind(new(domain3.Rep
 var billingSet = wire.NewSet(postgres11.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres11.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application7.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application7.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain8.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain8.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 
 func provideCreateCheckoutSession(
-	repo *postgres14.Repository,
+	repo *postgres15.Repository,
 	paymentsTxMgr *txManagerAdapter,
 	checkoutProvider domain9.CheckoutProvider,
 	cfg config.Config,
@@ -821,7 +839,7 @@ func provideCreateCheckoutSession(
 }
 
 func provideHandleStripeWebhook(
-	repo *postgres14.Repository,
+	repo *postgres15.Repository,
 	webhookVerifier domain9.WebhookVerifier,
 	paymentsTxMgr *txManagerAdapter,
 	auditWriter *auditSystemWriterAdapter,
@@ -835,7 +853,7 @@ func provideHandleStripeWebhook(
 	return uc.WithObservability(logger, recorder)
 }
 
-var paymentsSet = wire.NewSet(postgres14.NewRepository, provideTxManagerAdapter,
+var paymentsSet = wire.NewSet(postgres15.NewRepository, provideTxManagerAdapter,
 	provideAuditSystemWriterAdapter,
 	provideStripeClient, wire.Bind(new(domain9.CheckoutProvider), new(*stripe.Client)), provideWebhookVerifier, wire.Bind(new(domain9.WebhookVerifier), new(*stripe.WebhookVerifier)), provideManagerPaymentRepo,
 	provideCreateCheckoutSession,
@@ -843,7 +861,7 @@ var paymentsSet = wire.NewSet(postgres14.NewRepository, provideTxManagerAdapter,
 )
 
 var invitesSet = wire.NewSet(
-	provideInviteTokenManager, postgres15.NewRepository, wire.Bind(new(domain10.Repository), new(*postgres15.Repository)), application10.NewTokenGeneratorAdapter, wire.Bind(new(application10.TokenGenerator), new(*application10.TokenGeneratorAdapter)), application10.NewInviteEmailAdapter, wire.Bind(new(application10.EmailSender), new(*application10.InviteEmailAdapter)), application10.NewCreateInviteUseCase, application10.NewListInvitesUseCase, application10.NewResendInviteUseCase, application10.NewRevokeInviteUseCase, application10.NewAcceptInviteUseCase, provideInviteIPLimiter, httpinvite.NewHandler,
+	provideInviteTokenManager, postgres16.NewRepository, wire.Bind(new(domain10.Repository), new(*postgres16.Repository)), application10.NewTokenGeneratorAdapter, wire.Bind(new(application10.TokenGenerator), new(*application10.TokenGeneratorAdapter)), application10.NewInviteEmailAdapter, wire.Bind(new(application10.EmailSender), new(*application10.InviteEmailAdapter)), application10.NewCreateInviteUseCase, application10.NewListInvitesUseCase, application10.NewResendInviteUseCase, application10.NewRevokeInviteUseCase, application10.NewAcceptInviteUseCase, provideInviteIPLimiter, httpinvite.NewHandler,
 )
 
 func provideResetHandler(
@@ -873,11 +891,11 @@ func provideOwnerHandler(
 
 var ownerSet = wire.NewSet(postgres6.NewRepository, wire.Bind(new(domain11.SummaryRepository), new(*postgres6.OwnerRepository)), wire.Bind(new(domain11.ManagerAccessRepository), new(*postgres6.OwnerRepository)), application11.NewGetSiteSummariesUseCase, application11.NewListManagerAccessUseCase, provideInviteTokenGeneratorAdapter, wire.Bind(new(domain11.InviteTokenGenerator), new(*inviteTokenGeneratorAdapter)), provideEmailSenderAdapter, wire.Bind(new(domain11.ManagerInviteSender), new(*emailSenderAdapter)), application11.NewGrantManagerAccessUseCase, application11.NewDeactivateManagerAccessUseCase, application11.NewReactivateManagerAccessUseCase, application11.NewUpdateSiteBillingSetupUseCase, provideOwnerHandler)
 
-var roomsSet = wire.NewSet(postgres16.NewRepository, wire.Bind(new(domain12.Repository), new(*postgres16.RoomRepository)), application12.NewCreateRoom, application12.NewUpdateRoom, application12.NewListRooms, application12.NewGetRoom, application12.NewArchiveRoom, application12.NewReactivateRoom, httprooms.NewHandler)
+var roomsSet = wire.NewSet(postgres17.NewRepository, wire.Bind(new(domain12.Repository), new(*postgres17.RoomRepository)), application12.NewCreateRoom, application12.NewUpdateRoom, application12.NewListRooms, application12.NewGetRoom, application12.NewArchiveRoom, application12.NewReactivateRoom, httprooms.NewHandler)
 
 var sessionTypesSet = wire.NewSet(application13.NewCreateSessionType, application13.NewUpdateSessionType, application13.NewListSessionTypes, application13.NewGetSessionType, application13.NewArchiveSessionType, application13.NewReactivateSessionType, httpsessiontypes.NewHandler)
 
-var sessionTemplatesSet = wire.NewSet(postgres17.NewRepository, wire.Bind(new(domain13.Repository), new(*postgres17.SessionTemplateRepository)), provideSessionTemplateLookupTemplateAdapter, wire.Bind(new(application14.SessionTypeLookup), new(*sessionTemplateLookupTemplateAdapter)), application14.NewCreateSessionTemplate, application14.NewUpdateSessionTemplate, application14.NewListSessionTemplates, application14.NewGetSessionTemplate, application14.NewArchiveSessionTemplate, application14.NewReactivateSessionTemplate, httpsessiontemplates.NewHandler)
+var sessionTemplatesSet = wire.NewSet(postgres18.NewRepository, wire.Bind(new(domain13.Repository), new(*postgres18.SessionTemplateRepository)), provideSessionTemplateLookupTemplateAdapter, wire.Bind(new(application14.SessionTypeLookup), new(*sessionTemplateLookupTemplateAdapter)), application14.NewCreateSessionTemplate, application14.NewUpdateSessionTemplate, application14.NewListSessionTemplates, application14.NewGetSessionTemplate, application14.NewArchiveSessionTemplate, application14.NewReactivateSessionTemplate, httpsessiontemplates.NewHandler)
 
 var termSet = wire.NewSet(postgres5.NewTermRepository, postgres5.NewScheduleChangeRepository, wire.Bind(new(domain14.Repository), new(*postgres5.TermRepository)), wire.Bind(new(domain14.ScheduleChangeRepository), new(*postgres5.ScheduleChangeRepository)), provideBookingPatternLookupAdapter, wire.Bind(new(application15.BookingPatternLookup), new(*bookingPatternLookupAdapter)), provideSiteRateProviderAdapter, wire.Bind(new(application15.SiteRateProvider), new(*siteRateProviderAdapter)), application15.NewCreateTermUseCase, application15.NewGetTermUseCase, application15.NewGetCurrentTermForChildUseCase, application15.NewListTermsForChildUseCase, application15.NewListExpiringTermsUseCase, application15.NewRequestScheduleChangeUseCase, application15.NewApproveScheduleChangeUseCase, application15.NewRejectScheduleChangeUseCase, application15.NewTerminateTermUseCase, wire.Struct(new(httpterm.CoreTermUseCases), "*"), wire.Struct(new(httpterm.ScheduleChangeUseCases), "*"), wire.Struct(new(httpterm.TermHandlerConfig), "*"), httpterm.NewHandler)
 
@@ -892,8 +910,10 @@ func provideSiteProfileHandlerSet(
 	return http.NewHandler(getUC, updateUC, logger)
 }
 
-var siteProfileSet = wire.NewSet(postgres13.NewRepository, wire.Bind(new(domain15.Repository), new(*postgres13.SiteProfileRepository)), application8.NewGetSiteProfileUseCase, application8.NewUpdateSiteProfileUseCase, provideSiteProfileHandlerSet)
+var siteProfileSet = wire.NewSet(postgres14.NewRepository, wire.Bind(new(domain15.Repository), new(*postgres14.SiteProfileRepository)), application8.NewGetSiteProfileUseCase, application8.NewUpdateSiteProfileUseCase, provideSiteProfileHandlerSet)
 
 var termCalendarSet = wire.NewSet(postgres12.NewRepository, wire.Bind(new(domain16.Repository), new(*postgres12.AcademicTermRepository)), application16.NewCreateTerm, application16.NewListTerms, application16.NewUpdateTerm, application16.NewArchiveTerm, httptermcalendar.NewHandler)
 
-var adHocBookingsSet = wire.NewSet(postgres18.NewRepository, wire.Bind(new(domain17.Repository), new(*postgres18.AdHocBookingRepository)), application17.NewCreateAdHocBooking, application17.NewListAdHocBookings, application17.NewCancelAdHocBooking, httpadhocbookings.NewHandler)
+var adHocBookingsSet = wire.NewSet(postgres19.NewRepository, wire.Bind(new(domain17.Repository), new(*postgres19.AdHocBookingRepository)), application17.NewCreateAdHocBooking, application17.NewListAdHocBookings, application17.NewCancelAdHocBooking, httpadhocbookings.NewHandler)
+
+var branchClosuresSet = wire.NewSet(postgres13.NewRepository, wire.Bind(new(domain18.Repository), new(*postgres13.Repository)), application18.NewCreateClosureDay, application18.NewListClosureDays, application18.NewDeleteClosureDay, httpclosure.NewHandler, provideClosureDateLookupAdapter, wire.Bind(new(domain8.ClosureDateLookup), new(*closureDateLookupAdapter)))

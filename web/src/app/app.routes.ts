@@ -22,6 +22,7 @@ import { ManagerSiteProfileComponent } from './features/staff/pages/manager-site
 import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-invoice-detail/manager-invoice-detail.component';
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
+import { ManagerClosureDaysComponent } from './features/staff/pages/manager-closure-days/manager-closure-days.component';
 import { ManagerAdHocBookingComponent } from './features/staff/pages/manager-ad-hoc-booking/manager-ad-hoc-booking.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
@@ -234,6 +235,12 @@ export const routes: Routes = [
                 component: ManagerTermCalendarComponent,
                 data: { breadcrumb: { label: 'Term calendar' } },
                 title: 'Term Calendar | Nursery Management',
+              },
+              {
+                path: 'closure-days',
+                component: ManagerClosureDaysComponent,
+                data: { breadcrumb: { label: 'Closure days' } },
+                title: 'Closure Days | Nursery Management',
               },
             ],
           },

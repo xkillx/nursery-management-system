@@ -107,6 +107,11 @@ import (
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
 	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
+
+	branchclosureapp "nursery-management-system/api/internal/modules/branch_closures/application"
+	branchclosuredomain "nursery-management-system/api/internal/modules/branch_closures/domain"
+	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
+	branchclosurehandler "nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 )
 
 // ── Auth module ─────────────────────────────────────────────────────────
@@ -536,6 +541,19 @@ var adHocBookingsSet = wire.NewSet(
 	adhochttphandler.NewHandler,
 )
 
+// ── Branch Closures module ──────────────────────────────────────────
+
+var branchClosuresSet = wire.NewSet(
+	branchclosurepostgres.NewRepository,
+	wire.Bind(new(branchclosuredomain.Repository), new(*branchclosurepostgres.Repository)),
+	branchclosureapp.NewCreateClosureDay,
+	branchclosureapp.NewListClosureDays,
+	branchclosureapp.NewDeleteClosureDay,
+	branchclosurehandler.NewHandler,
+	provideClosureDateLookupAdapter,
+	wire.Bind(new(billingdomain.ClosureDateLookup), new(*closureDateLookupAdapter)),
+)
+
 // ── Injector ────────────────────────────────────────────────────────────
 
 func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
@@ -584,6 +602,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		termCalendarSet,
 		adHocBookingsSet,
 		siteProfileSet,
+		branchClosuresSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
@@ -636,6 +655,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		termCalendarSet,
 		adHocBookingsSet,
 		siteProfileSet,
+		branchClosuresSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
