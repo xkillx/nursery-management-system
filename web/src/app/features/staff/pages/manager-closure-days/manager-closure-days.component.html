@@ -1,98 +1,191 @@
 <div class="space-y-6">
-  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-    <div class="max-w-3xl">
-      <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
-        Closure Days
-      </h1>
-      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
-        Manage inset days and bank holidays. Children booked on closure days are not billed.
-      </p>
-    </div>
-  </section>
+  <!-- Page Header -->
+  <app-page-header
+    title="Closure Days"
+    description="Manage inset days and bank holidays. Children booked on closure days are not billed."
+  />
 
   @if (formError) {
-    <div class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-800 dark:bg-error-900/20 dark:text-error-300">
-      {{ formError }}
-    </div>
+    <app-alert
+      variant="error"
+      title="Failed to add closure day"
+      [message]="formError"
+      [dismissible]="true"
+      (dismissed)="formError = null"
+    />
   }
 
-  <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-    <h2 class="text-sm font-semibold text-gray-900 dark:text-white/90">Add closure day</h2>
-    <form #addForm="ngForm" (ngSubmit)="addClosureDay(addForm)" class="mt-4 flex flex-wrap items-end gap-4">
-      <div class="flex flex-col gap-1.5">
-        <label for="closure-date" class="text-xs font-medium text-gray-600 dark:text-gray-400">Date</label>
-        <input
-          id="closure-date"
-          type="date"
-          name="date"
-          [(ngModel)]="formDate"
-          required
-          class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        />
-      </div>
-      <div class="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-        <label for="closure-reason" class="text-xs font-medium text-gray-600 dark:text-gray-400">Reason (optional)</label>
-        <input
-          id="closure-reason"
-          type="text"
-          name="reason"
-          [(ngModel)]="formReason"
-          placeholder="e.g. Inset day, Bank holiday"
-          class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        />
-      </div>
-      <button
-        type="submit"
-        [disabled]="formSaving || !formDate"
-        class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-      >
-        <ng-icon name="heroPlus" size="16" aria-hidden="true" />
-        {{ formSaving ? 'Adding...' : 'Add' }}
-      </button>
-    </form>
-  </section>
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <!-- Left Column: Add Form -->
+    <div class="lg:col-span-4">
+      <app-component-card title="Add Closure Day" desc="Set a date and reason to exclude it from billing.">
+        <form #addForm="ngForm" (ngSubmit)="addClosureDay(addForm)" class="space-y-5">
+          <app-form-field label="Date" labelFor="closure-date" [required]="true">
+            <app-date-picker
+              id="closure-date"
+              name="date"
+              [(ngModel)]="formDate"
+              placeholder="Select date"
+              [disabled]="formSaving"
+            />
+          </app-form-field>
 
-  @if (loading) {
-    <app-loading-state />
-  } @else if (closureDays().length === 0) {
-    <app-empty-state
-      title="No closure days"
-      description="Add inset days or bank holidays to exclude them from billing."
-    />
-  } @else {
-    <section class="rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-      <ul class="divide-y divide-gray-100 dark:divide-gray-800">
-        @for (day of closureDays(); track day.id) {
-          <li class="flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-                <ng-icon name="heroCalendarDays" size="20" aria-hidden="true" />
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ day.date }}</p>
-                @if (day.reason) {
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ day.reason }}</p>
+          <app-form-field label="Reason" labelFor="closure-reason-select" [required]="true">
+            <app-select
+              id="closure-reason-select"
+              name="reasonSelect"
+              [options]="reasonOptions"
+              [(ngModel)]="selectedReasonOption"
+              placeholder="Select a reason"
+              [disabled]="formSaving"
+            />
+          </app-form-field>
+
+          @if (selectedReasonOption === 'Other') {
+            <app-form-field label="Custom Reason" labelFor="closure-reason-custom" [required]="true">
+              <app-input-field
+                id="closure-reason-custom"
+                name="reasonCustom"
+                [(ngModel)]="customReason"
+                placeholder="e.g. Building Maintenance"
+                [disabled]="formSaving"
+              />
+            </app-form-field>
+          }
+
+          <app-button
+            type="submit"
+            [disabled]="formSaving || !formDate || !selectedReasonOption || (selectedReasonOption === 'Other' && !customReason.trim())"
+            [loading]="formSaving"
+            className="w-full"
+          >
+            Add Closure Day
+          </app-button>
+        </form>
+      </app-component-card>
+    </div>
+
+    <!-- Right Column: List & Stats -->
+    <div class="lg:col-span-8 space-y-6">
+      <!-- Stats Dashboard -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <!-- Card 1: Total Closures -->
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
+          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
+          </div>
+          <div>
+            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total Closures ({{ currentYear }})</span>
+            <span class="mt-1 block text-2xl font-semibold text-gray-800 dark:text-white/90">
+              {{ totalClosures() }} {{ totalClosures() === 1 ? 'day' : 'days' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 2: Next Closure Day -->
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
+          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400">
+            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Next Upcoming Closure</span>
+            <span class="mt-1 block text-lg font-semibold text-gray-800 dark:text-white/90 truncate" [title]="nextClosure() ? (nextClosure()!.date | date: 'EEEE, d MMMM y' : 'UTC') : 'None scheduled'">
+              {{ nextClosure() ? (nextClosure()!.date | date: 'd MMM y' : 'UTC') : 'None scheduled' }}
+            </span>
+            @if (nextClosure()) {
+              <span class="block text-xs text-gray-500 dark:text-gray-400 truncate">
+                {{ nextClosure()!.reason || 'No reason specified' }} ({{ nextClosureDaysRemaining() }})
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- List of Closure Days -->
+      @if (loading) {
+        <app-loading-state />
+      } @else if (closureDays().length === 0) {
+        <app-empty-state
+          title="No closure days"
+          description="Add inset days or bank holidays to exclude them from billing."
+        />
+      } @else {
+        <div class="space-y-6">
+          @for (group of groupedClosureDays(); track group.monthKey) {
+            <div>
+              <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-1">
+                {{ group.monthKey }}
+              </h3>
+              
+              <div class="space-y-3">
+                @for (day of group.days; track day.id) {
+                  <div class="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-gray-700 transition duration-200">
+                    <div class="flex items-center gap-4">
+                      <!-- Calendar Page Icon Style -->
+                      <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
+                          {{ day.date | date: 'MMM' : 'UTC' }}
+                        </span>
+                        <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
+                          {{ day.date | date: 'd' : 'UTC' }}
+                        </span>
+                      </div>
+                      
+                      <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                            {{ day.date | date: 'EEEE' : 'UTC' }}
+                          </span>
+                          
+                          @if (day.reason) {
+                            <app-badge [color]="getReasonColor(day.reason)" size="sm">
+                              {{ day.reason }}
+                            </app-badge>
+                          }
+                        </div>
+                        
+                        <!-- Status context -->
+                        <div class="mt-1 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                          @switch (getDateStatus(day.date)) {
+                            @case ('today') {
+                              <span class="flex size-2 rounded-full bg-success-500"></span>
+                              <span class="text-success-600 dark:text-success-400 font-medium">Today</span>
+                            }
+                            @case ('upcoming') {
+                              <span class="flex size-2 rounded-full bg-brand-500"></span>
+                              <span class="text-brand-600 dark:text-brand-400 font-medium">Upcoming</span>
+                            }
+                            @case ('past') {
+                              <span class="flex size-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                              <span>Passed</span>
+                            }
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      (click)="confirmDelete(day)"
+                      class="inline-flex size-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10 dark:hover:text-error-400"
+                      aria-label="Remove closure day"
+                    >
+                      <ng-icon name="heroTrash" size="18" aria-hidden="true" />
+                    </button>
+                  </div>
                 }
               </div>
             </div>
-            <button
-              (click)="confirmDelete(day)"
-              class="inline-flex size-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10 dark:hover:text-error-400"
-              aria-label="Remove closure day"
-            >
-              <ng-icon name="heroTrash" size="18" aria-hidden="true" />
-            </button>
-          </li>
-        }
-      </ul>
-    </section>
-  }
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>
 
 <app-confirmation-dialog
   [isOpen]="isConfirmDeleteOpen"
   title="Remove closure day"
-  [message]="dayToDelete ? 'Remove the closure day on ' + dayToDelete.date + '? This will re-enable billing for that date.' : ''"
+  [message]="dayToDelete ? 'Are you sure you want to remove the closure day on ' + (dayToDelete.date | date: 'EEEE, d MMMM y' : 'UTC') + '? This will re-enable billing for that date.' : ''"
   confirmText="Remove"
   variant="danger"
   [loading]="deleteSaving"
