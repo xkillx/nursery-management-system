@@ -86,7 +86,7 @@ func (uc *UpdateSessionTemplate) Execute(ctx context.Context, actor SessionTempl
 		seen := make(map[SessionTemplateEntryInput]struct{}, len(*params.Entries))
 		resolved = make([]domain.SessionTemplateEntry, 0, len(*params.Entries))
 		for _, e := range *params.Entries {
-			if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
+			if e.DayOfWeek < 1 || e.DayOfWeek > 5 {
 				return domain.SessionTemplate{}, domainerrors.Validation("Invalid request payload.", "day_of_week")
 			}
 			if e.SessionTypeID == uuid.Nil {

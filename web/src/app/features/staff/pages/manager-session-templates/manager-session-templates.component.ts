@@ -43,8 +43,6 @@ const DAY_LABELS: Record<number, string> = {
   3: 'Wed',
   4: 'Thu',
   5: 'Fri',
-  6: 'Sat',
-  7: 'Sun',
 };
 
 @Component({
@@ -92,7 +90,7 @@ export class ManagerSessionTemplatesComponent implements OnInit {
   editingTemplateId: string | null = null;
   formName = '';
   formDescription = '';
-  formEntries: Record<number, DayEntry[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+  formEntries: Record<number, DayEntry[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
   formSaving = false;
   formError: string | null = null;
   formFieldErrors: { name?: string; description?: string; entries?: string } = {};
@@ -251,13 +249,11 @@ export class ManagerSessionTemplatesComponent implements OnInit {
       3: [...monday],
       4: [...monday],
       5: [...monday],
-      6: this.formEntries[6] ?? [],
-      7: this.formEntries[7] ?? [],
     };
   }
 
   clearAllEntries(): void {
-    this.formEntries = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+    this.formEntries = { 1: [], 2: [], 3: [], 4: [], 5: [] };
   }
 
   entriesForDay(day: number): DayEntry[] {
@@ -266,7 +262,7 @@ export class ManagerSessionTemplatesComponent implements OnInit {
 
   buildPayload(): SessionTemplateInput {
     const entries: { dayOfWeek: number; sessionTypeId: string }[] = [];
-    for (let d = 1; d <= 7; d++) {
+    for (let d = 1; d <= 5; d++) {
       for (const e of this.entriesForDay(d)) {
         if (e.sessionTypeId) {
           entries.push({ dayOfWeek: d, sessionTypeId: e.sessionTypeId });

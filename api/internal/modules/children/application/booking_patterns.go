@@ -310,7 +310,7 @@ func (uc *UpdateBookingPattern) Execute(ctx context.Context, actor tenant.ActorC
 			seenDays := make(map[int]struct{}, len(*in.Entries))
 			resolved = make([]domain.BookingPatternEntry, 0, len(*in.Entries))
 			for _, e := range *in.Entries {
-				if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
+				if e.DayOfWeek < 1 || e.DayOfWeek > 5 {
 					return domainerrors.Validation("Invalid request payload.", "day_of_week")
 				}
 				if e.SessionTypeID == uuid.Nil {

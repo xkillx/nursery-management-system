@@ -133,7 +133,7 @@ func (uc *CreateSessionTemplate) resolveEntries(ctx context.Context, actor Sessi
 	seen := make(map[SessionTemplateEntryInput]struct{}, len(entries))
 	resolved := make([]domain.SessionTemplateEntry, 0, len(entries))
 	for _, e := range entries {
-		if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
+		if e.DayOfWeek < 1 || e.DayOfWeek > 5 {
 			return nil, domainerrors.Validation("Invalid request payload.", "day_of_week")
 		}
 		if e.SessionTypeID == uuid.Nil {

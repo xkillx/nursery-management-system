@@ -2533,10 +2533,10 @@
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
-                          @for (day of [1,2,3,4,5,6,7]; track day) {
+                          @for (day of [1,2,3,4,5]; track day) {
                             <tr class="hover:bg-gray-50/20 dark:hover:bg-white/[0.01] transition-colors">
                               <td class="px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300">
-                                {{ ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day] }}
+                                {{ ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][day] }}
                               </td>
                               @for (st of availableSessionTypes; track st.id) {
                                 <td class="px-2 py-3 text-center">
@@ -2556,7 +2556,7 @@
                                     [class.dark:border-gray-800]="!isPatternEntrySelected(day, st.id)"
                                     [class.dark:text-gray-600]="!isPatternEntrySelected(day, st.id)"
                                     [class.dark:bg-gray-900/60]="!isPatternEntrySelected(day, st.id)"
-                                    [attr.aria-label]="'Toggle ' + (['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day]) + ' ' + st.name"
+                                    [attr.aria-label]="'Toggle ' + (['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][day]) + ' ' + st.name"
                                   >
                                     <ng-icon [name]="isPatternEntrySelected(day, st.id) ? 'heroCheckCircle' : 'heroPlus'" size="18" />
                                   </button>

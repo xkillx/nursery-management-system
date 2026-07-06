@@ -54,14 +54,14 @@ func TestCalculateBookedCoreMinutesInMonth_MultipleDays(t *testing.T) {
 }
 
 func TestCalculateBookedCoreMinutesInMonth_DayOfWeekConversion(t *testing.T) {
-	// Day 7 = Sunday per the schema constraint.
+	// Day 5 = Friday — verifies ISO-to-Go weekday mapping.
 	entries := []BookedPatternEntry{
-		{DayOfWeek: 7, SessionType: BookedSessionType{ID: "st1", Name: "Sun", DurationMinutes: 60}},
+		{DayOfWeek: 5, SessionType: BookedSessionType{ID: "st1", Name: "Fri", DurationMinutes: 60}},
 	}
-	// July 2026: Sundays are 5, 12, 19, 26 = 4.
+	// July 2026: Fridays are 3, 10, 17, 24, 31 = 5.
 	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
-	if calc.TotalMinutes != 4*60 {
-		t.Errorf("Sunday count: got %d, want %d", calc.TotalMinutes, 4*60)
+	if calc.TotalMinutes != 5*60 {
+		t.Errorf("Friday count: got %d, want %d", calc.TotalMinutes, 5*60)
 	}
 }
 
