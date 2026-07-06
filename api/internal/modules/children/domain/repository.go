@@ -27,8 +27,8 @@ type ChildCorrectionInfo struct {
 // The postgres implementation struct satisfies all methods.
 type Repository interface {
 	// Identity
-	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int) ([]Child, error)
-	Count(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter) (int, error)
+	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int, roomID *uuid.UUID) ([]Child, error)
+	Count(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, roomID *uuid.UUID) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	Create(ctx context.Context, tx Tx, child Child, notes string, tenantID, branchID uuid.UUID) error
 	Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error)

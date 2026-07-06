@@ -52,6 +52,11 @@ WHERE c.tenant_id = $1
       OR (sqlc.arg('status_filter') = 'active' AND c.is_active = true)
       OR (sqlc.arg('status_filter') = 'inactive' AND c.is_active = false)
   )
+  AND (sqlc.narg('room_id')::uuid IS NULL OR c.id IN (
+      SELECT cra.child_id FROM child_room_assignments cra
+      WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
+        AND cra.room_id = sqlc.narg('room_id')::uuid AND cra.is_current
+  ))
 ORDER BY c.updated_at DESC
 LIMIT $3 OFFSET $4;
 
@@ -197,7 +202,12 @@ WHERE c.tenant_id = $1
       sqlc.arg('status_filter') = 'all'
       OR (sqlc.arg('status_filter') = 'active' AND c.is_active = true)
       OR (sqlc.arg('status_filter') = 'inactive' AND c.is_active = false)
-  );
+  )
+  AND (sqlc.narg('room_id')::uuid IS NULL OR c.id IN (
+      SELECT cra.child_id FROM child_room_assignments cra
+      WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
+        AND cra.room_id = sqlc.narg('room_id')::uuid AND cra.is_current
+  ));
 
 -- name: ChildrenListAttendance :many
 SELECT c.id,

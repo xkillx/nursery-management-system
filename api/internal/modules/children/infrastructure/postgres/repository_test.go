@@ -100,7 +100,7 @@ func TestChildList_FilterActive(t *testing.T) {
 		t.Fatalf("insert inactive: %v", err)
 	}
 
-	rows, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusActive, 50, 0)
+	rows, err := repo.List(ctx, childTenantID, childBranchID, childdomain.StatusActive, 50, 0, nil)
 	if err != nil {
 		t.Fatalf("List active: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestChildList_FilterActive(t *testing.T) {
 		t.Errorf("len(rows) = %d, want 1", len(rows))
 	}
 
-	rows, err = repo.List(ctx, childTenantID, childBranchID, childdomain.StatusAll, 50, 0)
+	rows, err = repo.List(ctx, childTenantID, childBranchID, childdomain.StatusAll, 50, 0, nil)
 	if err != nil {
 		t.Fatalf("List all: %v", err)
 	}

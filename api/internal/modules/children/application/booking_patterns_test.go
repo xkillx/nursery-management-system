@@ -207,10 +207,10 @@ func (f *fakeChildBPRepo) UpdateTermTimeOnly(ctx context.Context, tx domain.Tx, 
 
 // Stub implementations for the rest of domain.Repository.
 
-func (f *fakeChildBPRepo) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int) ([]domain.Child, error) {
+func (f *fakeChildBPRepo) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int, roomID *uuid.UUID) ([]domain.Child, error) {
 	return nil, nil
 }
-func (f *fakeChildBPRepo) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter) (int, error) {
+func (f *fakeChildBPRepo) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, roomID *uuid.UUID) (int, error) {
 	return 0, nil
 }
 func (f *fakeChildBPRepo) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.Child, bool, error) {

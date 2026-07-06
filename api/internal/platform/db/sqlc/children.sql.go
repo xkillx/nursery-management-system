@@ -21,16 +21,27 @@ WHERE c.tenant_id = $1
       OR ($3 = 'active' AND c.is_active = true)
       OR ($3 = 'inactive' AND c.is_active = false)
   )
+  AND ($4::uuid IS NULL OR c.id IN (
+      SELECT cra.child_id FROM child_room_assignments cra
+      WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
+        AND cra.room_id = $4::uuid AND cra.is_current
+  ))
 `
 
 type ChildrenCountParams struct {
 	TenantID     pgtype.UUID
 	BranchID     pgtype.UUID
 	StatusFilter interface{}
+	RoomID       pgtype.UUID
 }
 
 func (q *Queries) ChildrenCount(ctx context.Context, arg ChildrenCountParams) (int64, error) {
-	row := q.db.QueryRow(ctx, childrenCount, arg.TenantID, arg.BranchID, arg.StatusFilter)
+	row := q.db.QueryRow(ctx, childrenCount,
+		arg.TenantID,
+		arg.BranchID,
+		arg.StatusFilter,
+		arg.RoomID,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -377,6 +388,11 @@ WHERE c.tenant_id = $1
       OR ($5 = 'active' AND c.is_active = true)
       OR ($5 = 'inactive' AND c.is_active = false)
   )
+  AND ($6::uuid IS NULL OR c.id IN (
+      SELECT cra.child_id FROM child_room_assignments cra
+      WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
+        AND cra.room_id = $6::uuid AND cra.is_current
+  ))
 ORDER BY c.updated_at DESC
 LIMIT $3 OFFSET $4
 `
@@ -387,6 +403,7 @@ type ChildrenListParams struct {
 	Limit        int32
 	Offset       int32
 	StatusFilter interface{}
+	RoomID       pgtype.UUID
 }
 
 type ChildrenListRow struct {
@@ -415,6 +432,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 		arg.Limit,
 		arg.Offset,
 		arg.StatusFilter,
+		arg.RoomID,
 	)
 	if err != nil {
 		return nil, err

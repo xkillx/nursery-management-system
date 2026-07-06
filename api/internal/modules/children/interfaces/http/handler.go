@@ -11,6 +11,7 @@ import (
 	"nursery-management-system/api/internal/modules/children/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
+	"nursery-management-system/api/internal/platform/http/queryparams"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -250,17 +251,36 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 		return
 	}
 
-	statusFilter := c.Query("status")
+	filters := queryparams.ParseFilterParams(c, map[string]string{
+		"status":  "string",
+		"room_id": "uuid",
+	})
+
+	statusFilter := filters["status"]
+	if statusFilter == "" {
+		statusFilter = "all"
+	}
+
+	var roomID *uuid.UUID
+	if rid, ok := filters["room_id"]; ok {
+		parsed, err := uuid.Parse(rid)
+		if err != nil {
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "room_id", "message": "must be a valid UUID"}})
+			return
+		}
+		roomID = &parsed
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, pageSize, offset)
+	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, pageSize, offset, roomID)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	total, err := h.listChildren.Count(c.Request.Context(), actor, statusFilter)
+	total, err := h.listChildren.Count(c.Request.Context(), actor, statusFilter, roomID)
 	if err != nil {
 		h.handleError(c, err)
 		return

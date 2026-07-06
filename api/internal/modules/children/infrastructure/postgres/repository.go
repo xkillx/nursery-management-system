@@ -24,15 +24,19 @@ func NewChildRepository(pool *pgxpool.Pool) *ChildRepository {
 	return &ChildRepository{pool: pool}
 }
 
-func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int) ([]domain.Child, error) {
+func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int, roomID *uuid.UUID) ([]domain.Child, error) {
 	q := sqlc.New(r.pool)
-	rows, err := q.ChildrenList(ctx, sqlc.ChildrenListParams{
+	params := sqlc.ChildrenListParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
 		Limit:        int32(limit),
 		Offset:       int32(offset),
 		StatusFilter: string(filter),
-	})
+	}
+	if roomID != nil {
+		params.RoomID = uuidToPgtype(*roomID)
+	}
+	rows, err := q.ChildrenList(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("query children: %w", err)
 	}
@@ -43,13 +47,17 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 	return out, nil
 }
 
-func (r *ChildRepository) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter) (int, error) {
+func (r *ChildRepository) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, roomID *uuid.UUID) (int, error) {
 	q := sqlc.New(r.pool)
-	n, err := q.ChildrenCount(ctx, sqlc.ChildrenCountParams{
+	params := sqlc.ChildrenCountParams{
 		TenantID:     uuidToPgtype(tenantID),
 		BranchID:     uuidToPgtype(branchID),
 		StatusFilter: string(filter),
-	})
+	}
+	if roomID != nil {
+		params.RoomID = uuidToPgtype(*roomID)
+	}
+	n, err := q.ChildrenCount(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("count children: %w", err)
 	}
