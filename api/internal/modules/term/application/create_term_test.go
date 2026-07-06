@@ -90,6 +90,33 @@ func (m *mockTermRepo) ListByChild(_ context.Context, _, _, childID uuid.UUID) (
 	}
 	return out, nil
 }
+
+func (m *mockTermRepo) ListByChildPaginated(_ context.Context, _, _, childID uuid.UUID, limit, offset int) ([]domain.Term, error) {
+	out := make([]domain.Term, 0)
+	for _, t := range m.terms {
+		if t.ChildID == childID {
+			out = append(out, *t)
+		}
+	}
+	if offset >= len(out) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(out) {
+		end = len(out)
+	}
+	return out[offset:end], nil
+}
+
+func (m *mockTermRepo) CountByChild(_ context.Context, _, _, childID uuid.UUID) (int, error) {
+	count := 0
+	for _, t := range m.terms {
+		if t.ChildID == childID {
+			count++
+		}
+	}
+	return count, nil
+}
 func (m *mockTermRepo) ListActiveByBranch(_ context.Context, _, _ uuid.UUID) ([]domain.Term, error) {
 	out := make([]domain.Term, 0)
 	for _, t := range m.terms {
@@ -101,6 +128,14 @@ func (m *mockTermRepo) ListActiveByBranch(_ context.Context, _, _ uuid.UUID) ([]
 }
 func (m *mockTermRepo) ListExpiringWithin(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.Term, error) {
 	return nil, nil
+}
+
+func (m *mockTermRepo) ListExpiringWithinPaginated(_ context.Context, _, _ uuid.UUID, _ time.Time, limit, offset int) ([]domain.Term, error) {
+	return nil, nil
+}
+
+func (m *mockTermRepo) CountExpiringWithin(_ context.Context, _, _ uuid.UUID, _ time.Time) (int, error) {
+	return 0, nil
 }
 func (m *mockTermRepo) ListEndingOnOrBefore(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.Term, error) {
 	return nil, nil

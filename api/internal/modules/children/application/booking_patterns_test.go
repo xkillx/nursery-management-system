@@ -52,6 +52,28 @@ func (f *fakeChildBPRepo) ListByChild(ctx context.Context, tenantID, branchID, c
 	return f.patternsByChildID[childID], nil
 }
 
+func (f *fakeChildBPRepo) ListByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]domain.BookingPattern, error) {
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
+	patterns := f.patternsByChildID[childID]
+	if offset >= len(patterns) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(patterns) {
+		end = len(patterns)
+	}
+	return patterns[offset:end], nil
+}
+
+func (f *fakeChildBPRepo) CountByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	if f.listErr != nil {
+		return 0, f.listErr
+	}
+	return len(f.patternsByChildID[childID]), nil
+}
+
 func (f *fakeChildBPRepo) GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*domain.BookingPattern, bool, error) {
 	for _, ps := range f.patternsByChildID {
 		for i := range ps {
@@ -280,6 +302,14 @@ func (f *fakeChildBPRepo) SetCollectionPassword(ctx context.Context, tx domain.T
 }
 func (f *fakeChildBPRepo) ListRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.ChildRoomAssignment, error) {
 	return nil, nil
+}
+
+func (f *fakeChildBPRepo) ListRoomAssignmentsByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]domain.ChildRoomAssignment, error) {
+	return nil, nil
+}
+
+func (f *fakeChildBPRepo) CountRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	return 0, nil
 }
 func (f *fakeChildBPRepo) GetCurrentRoomAssignmentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
 	return nil, false, nil

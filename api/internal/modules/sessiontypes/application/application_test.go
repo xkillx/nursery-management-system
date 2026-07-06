@@ -35,6 +35,21 @@ func (f *fakeSessionTypeRepo) ListByBranch(ctx context.Context, tenantID, branch
 	return f.types, nil
 }
 
+func (f *fakeSessionTypeRepo) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.SessionType, error) {
+	if offset >= len(f.types) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(f.types) {
+		end = len(f.types)
+	}
+	return f.types[offset:end], nil
+}
+
+func (f *fakeSessionTypeRepo) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	return len(f.types), nil
+}
+
 func (f *fakeSessionTypeRepo) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
 	if f.getErr != nil {
 		return domain.SessionType{}, f.getErr

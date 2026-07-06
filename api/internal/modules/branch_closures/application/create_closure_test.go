@@ -40,6 +40,39 @@ func (m *mockClosureRepo) ListByBranchAndDateRange(ctx context.Context, tenantID
 	return out, nil
 }
 
+func (m *mockClosureRepo) ListByBranchAndDateRangePaginated(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time, limit, offset int) ([]domain.BranchClosureDay, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
+	var out []domain.BranchClosureDay
+	for _, c := range m.closures {
+		if !c.Date.Before(from) && !c.Date.After(to) {
+			out = append(out, c)
+		}
+	}
+	if offset >= len(out) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(out) {
+		end = len(out)
+	}
+	return out[offset:end], nil
+}
+
+func (m *mockClosureRepo) CountByBranchAndDateRange(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time) (int, error) {
+	if m.listErr != nil {
+		return 0, m.listErr
+	}
+	count := 0
+	for _, c := range m.closures {
+		if !c.Date.Before(from) && !c.Date.After(to) {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (m *mockClosureRepo) Delete(ctx context.Context, tenantID, branchID, id uuid.UUID) error {
 	if m.deleteErr != nil {
 		return m.deleteErr

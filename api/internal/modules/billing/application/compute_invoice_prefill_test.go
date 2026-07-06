@@ -71,6 +71,10 @@ func (s *stubPrefillRepo) ListInvoicesForManagerReview(_ context.Context, _, _ u
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) CountInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceReviewFilters) (int, error) {
+	panic("unused")
+}
+
 func (s *stubPrefillRepo) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	panic("unused")
 }

@@ -35,6 +35,21 @@ func (m *mockOverviewRepo) ListOverview(_ context.Context, _, _ uuid.UUID, _ tim
 	return m.rows, m.err
 }
 
+func (m *mockOverviewRepo) ListOverviewPaginated(_ context.Context, _, _ uuid.UUID, _ time.Time, limit, offset int) ([]domain.OverviewRow, error) {
+	if offset >= len(m.rows) {
+		return nil, m.err
+	}
+	end := offset + limit
+	if end > len(m.rows) {
+		end = len(m.rows)
+	}
+	return m.rows[offset:end], m.err
+}
+
+func (m *mockOverviewRepo) CountOverview(_ context.Context, _, _ uuid.UUID, _ time.Time) (int, error) {
+	return len(m.rows), m.err
+}
+
 func testActor() tenant.ActorContext {
 	return tenant.ActorContext{
 		TenantID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),

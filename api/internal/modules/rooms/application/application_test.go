@@ -39,6 +39,21 @@ func (f *fakeRoomRepo) ListByBranch(ctx context.Context, tenantID, branchID uuid
 	return f.rooms, nil
 }
 
+func (f *fakeRoomRepo) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.Room, error) {
+	if offset >= len(f.rooms) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(f.rooms) {
+		end = len(f.rooms)
+	}
+	return f.rooms[offset:end], nil
+}
+
+func (f *fakeRoomRepo) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	return len(f.rooms), nil
+}
+
 func (f *fakeRoomRepo) GetByID(ctx context.Context, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
 	if f.getErr != nil {
 		return domain.Room{}, f.getErr

@@ -43,6 +43,21 @@ func (f *fakeTemplateRepo) ListByBranch(ctx context.Context, tenantID, branchID 
 	return f.templates, nil
 }
 
+func (f *fakeTemplateRepo) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.SessionTemplate, error) {
+	if offset >= len(f.templates) {
+		return nil, nil
+	}
+	end := offset + limit
+	if end > len(f.templates) {
+		end = len(f.templates)
+	}
+	return f.templates[offset:end], nil
+}
+
+func (f *fakeTemplateRepo) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	return len(f.templates), nil
+}
+
 func (f *fakeTemplateRepo) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
 	if f.getErr != nil {
 		return domain.SessionTemplate{}, f.getErr

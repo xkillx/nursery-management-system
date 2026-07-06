@@ -43,6 +43,14 @@ func (m *mockRepo) ListOverview(ctx context.Context, tenantID, branchID uuid.UUI
 	return nil, nil
 }
 
+func (m *mockRepo) ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]domain.OverviewRow, error) {
+	return nil, nil
+}
+
+func (m *mockRepo) CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error) {
+	return 0, nil
+}
+
 func TestParseBillingMonth(t *testing.T) {
 	tests := []struct {
 		input   string

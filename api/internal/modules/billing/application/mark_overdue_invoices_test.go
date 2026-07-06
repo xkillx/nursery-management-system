@@ -70,6 +70,10 @@ func (s *stubBillingRepo) InsertInvoiceLine(_ context.Context, _ domain.Tx, _ do
 func (s *stubBillingRepo) ListInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceReviewFilters) ([]domain.InvoiceReviewRow, error) {
 	panic("stub")
 }
+
+func (s *stubBillingRepo) CountInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceReviewFilters) (int, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	panic("stub")
 }
