@@ -53,15 +53,17 @@ WHERE tenant_id = $1
   AND accepted_at IS NULL
   AND revoked_at IS NULL
   AND expires_at > now()
+  AND ($3::text IS NULL OR role = $3::text)
 `
 
 type InviteCountPendingParams struct {
 	TenantID pgtype.UUID
 	BranchID pgtype.UUID
+	Role     pgtype.Text
 }
 
 func (q *Queries) InviteCountPending(ctx context.Context, arg InviteCountPendingParams) (int64, error) {
-	row := q.db.QueryRow(ctx, inviteCountPending, arg.TenantID, arg.BranchID)
+	row := q.db.QueryRow(ctx, inviteCountPending, arg.TenantID, arg.BranchID, arg.Role)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -576,13 +578,15 @@ WHERE tenant_id = $1
   AND accepted_at IS NULL
   AND revoked_at IS NULL
   AND expires_at > now()
+  AND ($3::text IS NULL OR role = $3::text)
 ORDER BY created_at DESC
-LIMIT $4 OFFSET $3
+LIMIT $5 OFFSET $4
 `
 
 type InviteListPendingPaginatedParams struct {
 	TenantID pgtype.UUID
 	BranchID pgtype.UUID
+	Role     pgtype.Text
 	Offset   pgtype.Int4
 	Limit    pgtype.Int4
 }
@@ -591,6 +595,7 @@ func (q *Queries) InviteListPendingPaginated(ctx context.Context, arg InviteList
 	rows, err := q.db.Query(ctx, inviteListPendingPaginated,
 		arg.TenantID,
 		arg.BranchID,
+		arg.Role,
 		arg.Offset,
 		arg.Limit,
 	)

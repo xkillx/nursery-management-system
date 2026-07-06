@@ -174,6 +174,7 @@ WHERE tenant_id = $1
   AND accepted_at IS NULL
   AND revoked_at IS NULL
   AND expires_at > now()
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role')::text)
 ORDER BY created_at DESC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -184,4 +185,5 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND accepted_at IS NULL
   AND revoked_at IS NULL
-  AND expires_at > now();
+  AND expires_at > now()
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role')::text);

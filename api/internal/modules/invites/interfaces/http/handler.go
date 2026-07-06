@@ -14,6 +14,7 @@ import (
 	"nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
+	"nursery-management-system/api/internal/platform/http/queryparams"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -132,17 +133,27 @@ func (h *Handler) listHandler(c *gin.Context) {
 		return
 	}
 
-	statusVal := strings.TrimSpace(c.Query("status"))
+	filters := queryparams.ParseFilterParams(c, map[string]string{
+		"status": "string",
+		"role":   "string",
+	})
+
+	statusVal := strings.TrimSpace(filters["status"])
 	status, valid := application.ParseStatus(statusVal)
 	if !valid {
 		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "status", "message": "must be a valid status (pending, accepted, revoked, all)"}})
 		return
 	}
 
+	var role *string
+	if r, ok := filters["role"]; ok {
+		role = &r
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset)
+	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset, role)
 	if err != nil {
 		httpserver.WriteInternalError(c)
 		return

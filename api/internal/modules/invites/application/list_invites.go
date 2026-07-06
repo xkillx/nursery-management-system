@@ -30,8 +30,8 @@ func (uc *ListInvitesUseCase) Execute(ctx context.Context, actor tenant.ActorCon
 	return ListInvitesResult{Invites: invites}, nil
 }
 
-func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, status domain.InviteStatus, limit, offset int) (ListInvitesResult, int, error) {
-	invites, err := uc.repo.ListInvitesPaginated(ctx, actor.TenantID, actor.BranchID, status, limit, offset)
+func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, status domain.InviteStatus, limit, offset int, role *string) (ListInvitesResult, int, error) {
+	invites, err := uc.repo.ListInvitesPaginated(ctx, actor.TenantID, actor.BranchID, status, limit, offset, role)
 	if err != nil {
 		return ListInvitesResult{}, 0, err
 	}
@@ -39,7 +39,7 @@ func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant
 		invites = []domain.Invite{}
 	}
 
-	total, err := uc.repo.CountInvites(ctx, actor.TenantID, actor.BranchID, status)
+	total, err := uc.repo.CountInvites(ctx, actor.TenantID, actor.BranchID, status, role)
 	if err != nil {
 		return ListInvitesResult{}, 0, err
 	}

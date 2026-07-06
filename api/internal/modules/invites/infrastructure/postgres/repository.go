@@ -219,19 +219,23 @@ func (r *Repository) ListInvites(ctx context.Context, tenantID, branchID uuid.UU
 	}
 }
 
-func (r *Repository) ListInvitesPaginated(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, limit, offset int) ([]domain.Invite, error) {
+func (r *Repository) ListInvitesPaginated(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, limit, offset int, role *string) ([]domain.Invite, error) {
 	q := sqlc.New(r.pool)
 	pgTenant := pgUUID(tenantID)
 	pgBranch := pgUUID(branchID)
 
 	switch status {
 	default:
-		rows, err := q.InviteListPendingPaginated(ctx, sqlc.InviteListPendingPaginatedParams{
+		params := sqlc.InviteListPendingPaginatedParams{
 			TenantID: pgTenant,
 			BranchID: pgBranch,
 			Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
 			Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
-		})
+		}
+		if role != nil {
+			params.Role = pgtype.Text{String: *role, Valid: true}
+		}
+		rows, err := q.InviteListPendingPaginated(ctx, params)
 		if err != nil {
 			return nil, err
 		}
@@ -239,17 +243,21 @@ func (r *Repository) ListInvitesPaginated(ctx context.Context, tenantID, branchI
 	}
 }
 
-func (r *Repository) CountInvites(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus) (int, error) {
+func (r *Repository) CountInvites(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, role *string) (int, error) {
 	q := sqlc.New(r.pool)
 	pgTenant := pgUUID(tenantID)
 	pgBranch := pgUUID(branchID)
 
 	switch status {
 	default:
-		count, err := q.InviteCountPending(ctx, sqlc.InviteCountPendingParams{
+		params := sqlc.InviteCountPendingParams{
 			TenantID: pgTenant,
 			BranchID: pgBranch,
-		})
+		}
+		if role != nil {
+			params.Role = pgtype.Text{String: *role, Valid: true}
+		}
+		count, err := q.InviteCountPending(ctx, params)
 		if err != nil {
 			return 0, err
 		}
