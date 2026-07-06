@@ -109,12 +109,7 @@ type userResponse struct {
 func (h *Handler) loginHandler(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request payload.",
-			"details":    err.Error(),
-			"request_id": c.Writer.Header().Get("X-Request-ID"),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
 		return
 	}
 
@@ -134,12 +129,7 @@ func (h *Handler) loginHandler(c *gin.Context) {
 			h.recordAuthFailure(c, "login", "login_invalid_credentials")
 			h.unauthorized(c)
 		case errors.As(err, &valErr):
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"code":       "validation_error",
-				"message":    "Invalid request payload.",
-				"request_id": c.Writer.Header().Get("X-Request-ID"),
-				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
-			})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": valErr.Field, "message": valErr.Message})
 		case errors.As(err, &selErr):
 			msg := "Choose a nursery to continue."
 			if selErr.IsStaleChoice {
@@ -248,12 +238,7 @@ func (h *Handler) logoutHandler(c *gin.Context) {
 func (h *Handler) switchMembershipHandler(c *gin.Context) {
 	var req switchMembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request payload.",
-			"details":    err.Error(),
-			"request_id": c.Writer.Header().Get("X-Request-ID"),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
 		return
 	}
 
@@ -409,30 +394,18 @@ func toMembershipResponse(m domain.Membership) membershipResponse {
 }
 
 func (h *Handler) unauthorized(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-		"code":       "unauthorized",
-		"message":    "Invalid credentials or session.",
-		"request_id": c.Writer.Header().Get("X-Request-ID"),
-	})
+	httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 }
 
 func (h *Handler) internalError(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-		"code":       "internal_error",
-		"message":    "Something went wrong.",
-		"request_id": c.Writer.Header().Get("X-Request-ID"),
-	})
+	httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 }
 
 func (h *Handler) forbiddenScopeSelection(c *gin.Context, message string) {
 	if h.logger != nil || h.recorder != nil {
 		httpserver.RecordAuthorizationDenial(c, h.logger, h.recorder, "session_action", "forbidden_scope_selection")
 	}
-	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-		"code":       "forbidden_scope_selection",
-		"message":    message,
-		"request_id": c.Writer.Header().Get("X-Request-ID"),
-	})
+	httpserver.WriteError(c, http.StatusForbidden, "forbidden_scope_selection", message, nil)
 }
 
 func (h *Handler) recordAuthFailure(c *gin.Context, operation, reason string) {

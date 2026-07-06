@@ -86,11 +86,7 @@ func (h *Handler) RegisterRoutes(ownerGroup *gin.RouterGroup) {
 func (h *Handler) getSiteSummaries(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
@@ -106,12 +102,7 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 	if raw := c.Query("site_id"); raw != "" {
 		parsed, err := uuid.Parse(raw)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"code":       "validation_error",
-				"message":    "Invalid request parameters.",
-				"request_id": httpserver.RequestIDFromContext(c),
-				"details":    map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"},
-			})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 			return
 		}
 		siteID = &parsed
@@ -122,24 +113,11 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 		var valErr *domain.ValidationError
 		switch {
 		case errors.As(err, &valErr):
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"code":       "validation_error",
-				"message":    "Invalid request parameters.",
-				"request_id": httpserver.RequestIDFromContext(c),
-				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
-			})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": valErr.Field, "message": valErr.Message})
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
@@ -167,43 +145,24 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 func (h *Handler) listManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
 	siteIDStr := c.Query("site_id")
 	if siteIDStr == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    map[string]string{"field": "site_id", "message": "site_id is required"},
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id is required"})
 		return
 	}
 	siteID, err := uuid.Parse(siteIDStr)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"},
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 		return
 	}
 
 	status := c.DefaultQuery("status", "active")
 	if status != "active" && status != "inactive" && status != "all" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    map[string]string{"field": "status", "message": "status must be active, inactive, or all"},
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "status", "message": "status must be active, inactive, or all"})
 		return
 	}
 
@@ -220,17 +179,9 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
@@ -261,22 +212,13 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 func (h *Handler) grantManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"},
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 		return
 	}
 
@@ -284,12 +226,7 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 		Email string `json:"email" binding:"required,email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request payload.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    err.Error(),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
 		return
 	}
 
@@ -303,17 +240,9 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
@@ -339,30 +268,18 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 		return
 	}
 	membershipID, err := uuid.Parse(c.Param("membership_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "membership_id", "message": "membership_id must be a valid UUID"})
 		return
 	}
 
@@ -376,23 +293,11 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		case errors.Is(err, domain.ErrMembershipNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "manager_membership_not_found",
-				"message":    "Manager membership not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "manager_membership_not_found", "Manager membership not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
@@ -418,30 +323,18 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 		return
 	}
 	membershipID, err := uuid.Parse(c.Param("membership_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "membership_id", "message": "membership_id must be a valid UUID"})
 		return
 	}
 
@@ -455,17 +348,9 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
@@ -492,22 +377,13 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"code":       "forbidden_role",
-			"message":    "Access denied.",
-			"request_id": httpserver.RequestIDFromContext(c),
-		})
+		httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request parameters.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"},
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
 		return
 	}
 
@@ -515,12 +391,7 @@ func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 		CoreHourlyRateMinor int `json:"core_hourly_rate_minor"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":       "validation_error",
-			"message":    "Invalid request payload.",
-			"request_id": httpserver.RequestIDFromContext(c),
-			"details":    err.Error(),
-		})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
 		return
 	}
 
@@ -535,24 +406,11 @@ func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 		var valErr *domain.ValidationError
 		switch {
 		case errors.As(err, &valErr):
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"code":       "validation_error",
-				"message":    "Invalid request parameters.",
-				"request_id": httpserver.RequestIDFromContext(c),
-				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
-			})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": valErr.Field, "message": valErr.Message})
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"code":       "internal_error",
-				"message":    "Something went wrong.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
 		}
 		return
 	}
