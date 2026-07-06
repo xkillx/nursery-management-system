@@ -906,14 +906,14 @@ func (h *Handler) createBookingPatternHandler(c *gin.Context) {
 	}
 	effectiveFrom, err := time.Parse("2006-01-02", req.EffectiveFrom)
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "effective_from", "message": "must be a valid date (YYYY-MM-DD)"}})
 		return
 	}
 	entries := make([]application.BookingPatternEntryInput, 0, len(req.Entries))
 	for _, e := range req.Entries {
 		stID, perr := uuid.Parse(e.SessionTypeID)
 		if perr != nil {
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "session_type_id", "message": "must be a valid UUID"}})
 			return
 		}
 		entries = append(entries, application.BookingPatternEntryInput{
@@ -948,7 +948,7 @@ func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
 	if req.EffectiveFrom != nil {
 		t, err := time.Parse("2006-01-02", *req.EffectiveFrom)
 		if err != nil {
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "effective_from", "message": "must be a valid date (YYYY-MM-DD)"}})
 			return
 		}
 		in.EffectiveFrom = &t
@@ -958,7 +958,7 @@ func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
 		for _, e := range *req.Entries {
 			stID, perr := uuid.Parse(e.SessionTypeID)
 			if perr != nil {
-				httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+				httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "session_type_id", "message": "must be a valid UUID"}})
 				return
 			}
 			entries = append(entries, application.BookingPatternEntryInput{

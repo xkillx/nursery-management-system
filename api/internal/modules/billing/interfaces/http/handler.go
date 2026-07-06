@@ -208,7 +208,7 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 
 	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.", nil)
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "child_id", "message": "must be a valid UUID"}})
 		return
 	}
 
@@ -268,7 +268,7 @@ func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 
 	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.", nil)
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "child_id", "message": "must be a valid UUID"}})
 		return
 	}
 
@@ -429,7 +429,7 @@ func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
 
 	invoiceID, err := uuid.Parse(strings.TrimSpace(c.Param("invoice_id")))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice_id.", nil)
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "invoice_id", "message": "must be a valid UUID"}})
 		return
 	}
 
@@ -583,18 +583,9 @@ func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 		var valErr *domain.ValidationError
 		switch {
 		case errors.As(err, &valErr):
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"code":       "validation_error",
-				"message":    "Invalid request parameters.",
-				"request_id": httpserver.RequestIDFromContext(c),
-				"details":    map[string]string{"field": valErr.Field, "message": valErr.Message},
-			})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": valErr.Field, "message": valErr.Message}})
 		case errors.Is(err, domain.ErrSiteNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"code":       "site_not_found",
-				"message":    "Site not found.",
-				"request_id": httpserver.RequestIDFromContext(c),
-			})
+			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
 		default:
 			h.handleError(c, err)
 		}

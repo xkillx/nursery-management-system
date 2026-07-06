@@ -135,7 +135,7 @@ func (h *Handler) listHandler(c *gin.Context) {
 	statusVal := strings.TrimSpace(c.Query("status"))
 	status, valid := application.ParseStatus(statusVal)
 	if !valid {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", gin.H{"field": "status"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "status", "message": "must be a valid status (pending, accepted, revoked, all)"}})
 		return
 	}
 
@@ -173,7 +173,7 @@ func (h *Handler) resendHandler(c *gin.Context) {
 
 	inviteID, err := uuid.Parse(c.Param("invite_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", gin.H{"field": "invite_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "invite_id", "message": "must be a valid UUID"}})
 		return
 	}
 
@@ -210,7 +210,7 @@ func (h *Handler) revokeHandler(c *gin.Context) {
 
 	inviteID, err := uuid.Parse(c.Param("invite_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", gin.H{"field": "invite_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "invite_id", "message": "must be a valid UUID"}})
 		return
 	}
 

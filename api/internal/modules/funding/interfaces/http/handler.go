@@ -220,4 +220,3 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
 }
-

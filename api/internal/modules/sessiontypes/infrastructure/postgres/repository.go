@@ -290,7 +290,7 @@ func mapSessionTypeFromListPaginatedRow(row sqlc.SessionTypesListByBranchPaginat
 		v := int(row.FlatFeeMinor.Int32)
 		st.FlatFeeMinor = &v
 	}
-		return st
+	return st
 }
 
 func isNoRows(err error) bool {
