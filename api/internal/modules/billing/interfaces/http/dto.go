@@ -340,12 +340,6 @@ type issueBlockerResponse struct {
 
 // --- Parent Invoice View DTOs (API-21) ---
 
-type parentInvoiceListResponse struct {
-	Items  []parentInvoiceListItemResponse `json:"items"`
-	Limit  int                             `json:"limit"`
-	Offset int                             `json:"offset"`
-}
-
 type parentInvoiceListItemResponse struct {
 	InvoiceID            string  `json:"invoice_id"`
 	InvoiceKind          string  `json:"invoice_kind"`

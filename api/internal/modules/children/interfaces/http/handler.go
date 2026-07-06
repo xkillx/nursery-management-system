@@ -881,24 +881,6 @@ func writeError(c *gin.Context, status int, code, message string) {
 	})
 }
 
-func parseIntQuery(c *gin.Context, key string, def int) int {
-	v := c.Query(key)
-	if v == "" {
-		return def
-	}
-	var n int
-	for _, r := range v {
-		if r < '0' || r > '9' {
-			return def
-		}
-		n = n*10 + int(r-'0')
-	}
-	if n == 0 {
-		return def
-	}
-	return n
-}
-
 // requireRoles checks that the authenticated user has one of the allowed roles.
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))

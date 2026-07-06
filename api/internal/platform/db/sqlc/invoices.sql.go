@@ -599,6 +599,59 @@ func (q *Queries) InvoiceCountForManagerReview(ctx context.Context, arg InvoiceC
 	return count, err
 }
 
+const invoiceCountForParent = `-- name: InvoiceCountForParent :one
+SELECT COUNT(*)
+FROM invoices i
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+  AND ($4::date IS NULL OR i.billing_month = $4::date)
+  AND ($5::date IS NULL OR i.billing_month >= $5::date)
+  AND ($6::date IS NULL OR i.billing_month <= $6::date)
+  AND ($7::text IS NULL OR i.status = $7::text)
+  AND ($8::uuid IS NULL OR i.child_id = $8::uuid)
+`
+
+type InvoiceCountForParentParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	ID               pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+}
+
+func (q *Queries) InvoiceCountForParent(ctx context.Context, arg InvoiceCountForParentParams) (int64, error) {
+	row := q.db.QueryRow(ctx, invoiceCountForParent,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const invoiceGet = `-- name: InvoiceGet :one
 SELECT id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
        invoice_number, issued_sequence, generated_run_id, issued_run_id,

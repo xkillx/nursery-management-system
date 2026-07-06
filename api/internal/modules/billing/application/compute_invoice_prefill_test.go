@@ -107,6 +107,10 @@ func (s *stubPrefillRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) CountInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) (int, error) {
+	panic("unused")
+}
+
 func (s *stubPrefillRepo) GetInvoiceForParent(_ context.Context, _, _, _, _ uuid.UUID) (domain.ParentInvoiceRow, bool, error) {
 	panic("unused")
 }

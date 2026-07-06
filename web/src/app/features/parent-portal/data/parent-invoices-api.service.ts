@@ -45,8 +45,9 @@ interface InvoiceListItemApi extends ChildNameApi {
 
 interface InvoiceListResponseApi {
   items: InvoiceListItemApi[];
-  limit: number;
-  offset: number;
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 interface InvoiceCalculationApi {
@@ -106,8 +107,8 @@ export class ParentInvoicesApiService {
   private readonly http = inject(HttpClient);
 
   listInvoices(params: {
-    limit: number;
-    offset: number;
+    page: number;
+    pageSize: number;
     billingMonth?: string;
     billingMonthFrom?: string;
     billingMonthTo?: string;
@@ -115,8 +116,8 @@ export class ParentInvoicesApiService {
     childId?: string;
   }): Observable<ParentInvoiceListResult> {
     const queryObj: Record<string, string> = {
-      limit: String(params.limit),
-      offset: String(params.offset),
+      page: String(params.page),
+      page_size: String(params.pageSize),
     };
 
     if (params.billingMonth) queryObj['billing_month'] = params.billingMonth;
@@ -147,8 +148,9 @@ export class ParentInvoicesApiService {
   private toListResult(res: InvoiceListResponseApi): ParentInvoiceListResult {
     return {
       items: res.items.map((i) => this.toListItem(i)),
-      limit: res.limit,
-      offset: res.offset,
+      total: res.total,
+      page: res.page,
+      pageSize: res.page_size,
     };
   }
 

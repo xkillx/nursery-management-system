@@ -607,6 +607,24 @@ func (r *Repository) ListInvoicesForParent(ctx context.Context, tenantID, branch
 	return result, nil
 }
 
+func (r *Repository) CountInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters domain.ParentInvoiceFilters) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.InvoiceCountForParent(ctx, sqlc.InvoiceCountForParentParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		ID:               uuidToPgtype(membershipID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
 func (r *Repository) GetInvoiceForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) (domain.ParentInvoiceRow, bool, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.InvoiceGetForParent(ctx, sqlc.InvoiceGetForParentParams{

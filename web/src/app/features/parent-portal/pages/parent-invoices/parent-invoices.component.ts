@@ -22,7 +22,7 @@ import {
   balanceDueMinor,
 } from '../../utils/parent-invoice-formatters';
 
-const LIMIT = 200;
+const PAGE_SIZE = 50;
 
 @Component({
   selector: 'app-parent-invoices',
@@ -42,7 +42,8 @@ export class ParentInvoicesComponent implements OnInit {
   private readonly errorMapper = inject(ApiErrorMapper);
 
   items: ParentInvoiceListItem[] = [];
-  offset = 0;
+  page = 1;
+  total = 0;
   isLoading = false;
   isLoadingMore = false;
   errorMessage: string | null = null;
@@ -66,7 +67,7 @@ export class ParentInvoicesComponent implements OnInit {
   }
 
   get hasMore(): boolean {
-    return this.items.length > 0 && this.items.length % LIMIT === 0;
+    return this.items.length > 0 && this.items.length < this.total;
   }
 
   isPayable = isPayableInvoice;
@@ -77,7 +78,7 @@ export class ParentInvoicesComponent implements OnInit {
 
   loadMore(): void {
     this.isLoadingMore = true;
-    this.offset += LIMIT;
+    this.page++;
     this.fetchInvoices(true);
   }
 
@@ -104,7 +105,7 @@ export class ParentInvoicesComponent implements OnInit {
   private loadInvoices(): void {
     this.isLoading = true;
     this.errorMessage = null;
-    this.offset = 0;
+    this.page = 1;
     this.fetchInvoices(false);
   }
 
@@ -114,7 +115,7 @@ export class ParentInvoicesComponent implements OnInit {
 
   private fetchInvoices(append: boolean): void {
     this.apiService
-      .listInvoices({ limit: LIMIT, offset: this.offset })
+      .listInvoices({ page: this.page, pageSize: PAGE_SIZE })
       .subscribe({
         next: (result) => {
           if (append) {
@@ -124,6 +125,7 @@ export class ParentInvoicesComponent implements OnInit {
           } else {
             this.items = result.items;
           }
+          this.total = result.total;
           this.isLoading = false;
           this.isLoadingMore = false;
         },

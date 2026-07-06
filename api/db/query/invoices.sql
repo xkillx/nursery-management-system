@@ -579,6 +579,31 @@ ORDER BY
   i.id ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
+-- name: InvoiceCountForParent :one
+SELECT COUNT(*)
+FROM invoices i
+JOIN memberships m
+  ON m.tenant_id = i.tenant_id
+ AND m.branch_id = i.branch_id
+ AND m.id = $3
+ AND m.role = 'parent'
+ AND m.is_active = true
+ AND m.ended_at IS NULL
+JOIN parent_membership_children pmc
+  ON pmc.tenant_id = i.tenant_id
+ AND pmc.branch_id = i.branch_id
+ AND pmc.membership_id = m.id
+ AND pmc.child_id = i.child_id
+ AND pmc.ended_at IS NULL
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid);
+
 -- name: InvoiceGetForParent :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,

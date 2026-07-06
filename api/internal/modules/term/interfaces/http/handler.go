@@ -10,6 +10,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/modules/term/domain"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 
 	httpserver "nursery-management-system/api/internal/platform/http"
@@ -126,12 +127,14 @@ func (h *Handler) listTermsHandler(c *gin.Context) {
 		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
 		return
 	}
-	terms, execErr := h.listTerms.Execute(c.Request.Context(), actor, childID.String())
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+	result, execErr := h.listTerms.Execute(c.Request.Context(), actor, childID.String(), pageSize, offset)
 	if execErr != nil {
 		h.handleError(c, execErr)
 		return
 	}
-	c.JSON(http.StatusOK, toTermListResponse(terms))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toTermListResponse(result.Items), result.Total, page, pageSize))
 }
 
 func (h *Handler) getCurrentTermHandler(c *gin.Context) {
@@ -179,12 +182,14 @@ func (h *Handler) listExpiringHandler(c *gin.Context) {
 			within = v
 		}
 	}
-	terms, execErr := h.listExpiring.Execute(c.Request.Context(), actor, within)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+	result, execErr := h.listExpiring.Execute(c.Request.Context(), actor, within, pageSize, offset)
 	if execErr != nil {
 		h.handleError(c, execErr)
 		return
 	}
-	c.JSON(http.StatusOK, toTermListResponse(terms))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toTermListResponse(result.Items), result.Total, page, pageSize))
 }
 
 func (h *Handler) requestScheduleChangeHandler(c *gin.Context) {

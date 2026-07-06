@@ -33,6 +33,7 @@ type ListParentInvoicesParams struct {
 
 type ListParentInvoicesResult struct {
 	Items  []domain.ParentInvoiceRow
+	Total  int
 	Limit  int
 	Offset int
 }
@@ -114,12 +115,18 @@ func (uc *ListParentInvoices) Execute(ctx context.Context, actor tenant.ActorCon
 		return ListParentInvoicesResult{}, domainerrors.Internal(err)
 	}
 
+	total, err := uc.repo.CountInvoicesForParent(ctx, actor.TenantID, actor.BranchID, actor.MembershipID, filters)
+	if err != nil {
+		return ListParentInvoicesResult{}, domainerrors.Internal(err)
+	}
+
 	if rows == nil {
 		rows = []domain.ParentInvoiceRow{}
 	}
 
 	return ListParentInvoicesResult{
 		Items:  rows,
+		Total:  total,
 		Limit:  filters.Limit,
 		Offset: filters.Offset,
 	}, nil

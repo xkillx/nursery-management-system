@@ -32,8 +32,9 @@ export interface ParentInvoiceListItem {
 
 export interface ParentInvoiceListResult {
   items: ParentInvoiceListItem[];
-  limit: number;
-  offset: number;
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface ParentInvoiceCalculation {

@@ -468,21 +468,27 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 		return
 	}
 
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	limitStr := fmt.Sprintf("%d", pageSize)
+	offsetStr := fmt.Sprintf("%d", offset)
+
 	result, err := h.listParentInvoices.Execute(c.Request.Context(), actor, application.ListParentInvoicesParams{
 		BillingMonth:     queryParamPtr(c, "billing_month"),
 		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
 		Status:           queryParamPtr(c, "status"),
 		ChildID:          queryParamPtr(c, "child_id"),
-		Limit:            queryParamPtr(c, "limit"),
-		Offset:           queryParamPtr(c, "offset"),
+		Limit:            &limitStr,
+		Offset:           &offsetStr,
 	})
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toParentInvoiceListResponse(result))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toParentInvoiceListResponse(result), result.Total, page, pageSize))
 }
 
 func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
@@ -1048,7 +1054,7 @@ func toBulkIssueResponse(r domain.BulkIssueInvoicesResult) bulkIssueInvoicesResp
 	}
 }
 
-func toParentInvoiceListResponse(r application.ListParentInvoicesResult) parentInvoiceListResponse {
+func toParentInvoiceListResponse(r application.ListParentInvoicesResult) []parentInvoiceListItemResponse {
 	items := make([]parentInvoiceListItemResponse, 0, len(r.Items))
 	for _, inv := range r.Items {
 		item := parentInvoiceListItemResponse{
@@ -1078,11 +1084,7 @@ func toParentInvoiceListResponse(r application.ListParentInvoicesResult) parentI
 		item.Period.EndDate = formatDate(inv.PeriodEndDate)
 		items = append(items, item)
 	}
-	return parentInvoiceListResponse{
-		Items:  items,
-		Limit:  r.Limit,
-		Offset: r.Offset,
-	}
+	return items
 }
 
 func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentInvoiceDetailResponse {

@@ -98,6 +98,9 @@ func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ do
 func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) CountInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) (int, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) GetInvoiceForParent(_ context.Context, _, _, _, _ uuid.UUID) (domain.ParentInvoiceRow, bool, error) {
 	panic("stub")
 }

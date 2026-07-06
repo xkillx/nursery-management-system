@@ -64,6 +64,7 @@ type BillingRepository interface {
 
 	// Parent Invoice View (API-21) — read-only, no transaction required.
 	ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) ([]ParentInvoiceRow, error)
+	CountInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) (int, error)
 	GetInvoiceForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) (ParentInvoiceRow, bool, error)
 	ListInvoiceLinesForParent(ctx context.Context, tenantID, branchID, membershipID, invoiceID uuid.UUID) ([]ParentInvoiceLineRow, error)
 

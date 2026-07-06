@@ -58,13 +58,13 @@ describe('ParentInvoicesComponent', () => {
   });
 
   it('shows loading state on init', () => {
-    apiMock.listInvoices.and.returnValue(of({ items: [], limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items: [], total: 0, page: 1, pageSize: 50 }));
     fixture.detectChanges();
-    expect(apiMock.listInvoices).toHaveBeenCalledWith({ limit: 200, offset: 0 });
+    expect(apiMock.listInvoices).toHaveBeenCalledWith({ page: 1, pageSize: 50 });
   });
 
   it('shows empty state when no invoices', () => {
-    apiMock.listInvoices.and.returnValue(of({ items: [], limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items: [], total: 0, page: 1, pageSize: 50 }));
     fixture.detectChanges();
     const emptyEl = fixture.debugElement.query(By.css('app-empty-state'));
     expect(emptyEl).toBeTruthy();
@@ -83,7 +83,7 @@ describe('ParentInvoicesComponent', () => {
       makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' }),
       makeItem({ invoiceId: '2', status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }),
     ];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     fixture.detectChanges();
 
     const heading = fixture.debugElement.query(By.css('[aria-labelledby="attention-heading"]'));
@@ -95,7 +95,7 @@ describe('ParentInvoicesComponent', () => {
       makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' }),
       makeItem({ invoiceId: '2', status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }),
     ];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     fixture.detectChanges();
 
     const historySections = fixture.debugElement.queryAll(By.css('h2'));
@@ -108,7 +108,7 @@ describe('ParentInvoicesComponent', () => {
       makeItem({ invoiceId: '1', childId: 'c1', childName: 'Ada', billingMonth: '2026-05', status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }),
       makeItem({ invoiceId: '2', childId: 'c2', childName: 'Zara', billingMonth: '2026-05', status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }),
     ];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     fixture.detectChanges();
 
     expect(component.historyGroups.length).toBe(2);
@@ -116,7 +116,7 @@ describe('ParentInvoicesComponent', () => {
 
   it('shows view details link', () => {
     const items = [makeItem({ invoiceId: '1', status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 })];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     fixture.detectChanges();
 
     const links = fixture.debugElement.queryAll(By.css('a'));
@@ -126,7 +126,7 @@ describe('ParentInvoicesComponent', () => {
 
   it('startPayment calls checkout session and redirects', () => {
     const items = [makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' })];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     apiMock.createCheckoutSession.and.returnValue(of({
       checkoutSessionId: 'cs-1',
       checkoutUrl: 'https://checkout.stripe.com/session',
@@ -142,7 +142,7 @@ describe('ParentInvoicesComponent', () => {
 
   it('handles payment error', () => {
     const items = [makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' })];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     apiMock.createCheckoutSession.and.returnValue(throwError(() => ({ error: { code: 'conflict', message: 'already paid' } })));
     errorMapperMock.mapAndHandle.and.returnValue({ code: 'conflict', message: 'already paid', requestId: null, fieldErrors: {} });
 
@@ -151,9 +151,9 @@ describe('ParentInvoicesComponent', () => {
     expect(component.payingInvoiceIds.has('1')).toBeFalse();
   });
 
-  it('shows load more when full page returned', () => {
-    const items = Array.from({ length: 200 }, (_, i) => makeItem({ invoiceId: String(i), status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }));
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+  it('shows load more when more pages available', () => {
+    const items = Array.from({ length: 50 }, (_, i) => makeItem({ invoiceId: String(i), status: 'paid', dueStatus: 'paid', totalDueMinor: 45000, amountPaidMinor: 45000 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: 100, page: 1, pageSize: 50 }));
     fixture.detectChanges();
 
     expect(component.hasMore).toBeTrue();
@@ -161,7 +161,7 @@ describe('ParentInvoicesComponent', () => {
 
   it('duplicate startPayment does not create second checkout session', () => {
     const items = [makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' })];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     apiMock.createCheckoutSession.and.returnValue(new Subject<CheckoutSessionResult>().asObservable());
 
     fixture.detectChanges();
@@ -177,7 +177,7 @@ describe('ParentInvoicesComponent', () => {
       makeItem({ invoiceId: '1', status: 'overdue', dueStatus: 'overdue' }),
       makeItem({ invoiceId: '2', status: 'overdue', dueStatus: 'overdue' }),
     ];
-    apiMock.listInvoices.and.returnValue(of({ items, limit: 200, offset: 0 }));
+    apiMock.listInvoices.and.returnValue(of({ items, total: items.length, page: 1, pageSize: 50 }));
     apiMock.createCheckoutSession.withArgs('1').and.returnValue(new Subject<CheckoutSessionResult>().asObservable());
     apiMock.createCheckoutSession.withArgs('2').and.returnValue(throwError(() => ({ error: { code: 'conflict', message: 'fail' } })));
     errorMapperMock.mapAndHandle.and.returnValue({ code: 'conflict', message: 'fail', requestId: null, fieldErrors: {} });

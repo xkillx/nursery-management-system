@@ -26,25 +26,25 @@ describe('ParentInvoicesApiService', () => {
   });
 
   describe('listInvoices', () => {
-    it('sends limit and offset params', () => {
-      service.listInvoices({ limit: 200, offset: 0 }).subscribe();
+    it('sends page and page_size params', () => {
+      service.listInvoices({ page: 1, pageSize: 50 }).subscribe();
 
       const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices'));
-      expect(req.request.params.get('limit')).toBe('200');
-      expect(req.request.params.get('offset')).toBe('0');
-      req.flush({ items: [], limit: 200, offset: 0 });
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('page_size')).toBe('50');
+      req.flush({ items: [], total: 0, page: 1, page_size: 50 });
     });
 
     it('sends optional billing_month, status, and child_id params', () => {
-      service.listInvoices({ limit: 200, offset: 0, billingMonth: '2026-05', status: 'issued', childId: 'c-1' }).subscribe();
+      service.listInvoices({ page: 1, pageSize: 50, billingMonth: '2026-05', status: 'issued', childId: 'c-1' }).subscribe();
 
       const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices'));
-      expect(req.request.params.get('limit')).toBe('200');
-      expect(req.request.params.get('offset')).toBe('0');
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('page_size')).toBe('50');
       expect(req.request.params.get('billing_month')).toBe('2026-05');
       expect(req.request.params.get('status')).toBe('issued');
       expect(req.request.params.get('child_id')).toBe('c-1');
-      req.flush({ items: [], limit: 200, offset: 0 });
+      req.flush({ items: [], total: 0, page: 1, page_size: 50 });
     });
 
     it('maps list fields from snake_case to camelCase', (done) => {
@@ -72,11 +72,12 @@ child_last_name: null,
           payment_failed_at: null,
           payment_status_updated_at: null,
         }],
-        limit: 200,
-        offset: 0,
+        total: 1,
+        page: 1,
+        page_size: 50,
       };
 
-      service.listInvoices({ limit: 200, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ page: 1, pageSize: 50 }).subscribe((result) => {
         expect(result.items.length).toBe(1);
         const item = result.items[0];
         expect(item.invoiceId).toBe('inv-1');
@@ -91,8 +92,9 @@ child_last_name: null,
         expect(item.fundedDeductionMinor).toBe(5000);
         expect(item.totalDueMinor).toBe(40000);
         expect(item.amountPaidMinor).toBe(0);
-        expect(result.limit).toBe(200);
-        expect(result.offset).toBe(0);
+        expect(result.total).toBe(1);
+        expect(result.page).toBe(1);
+        expect(result.pageSize).toBe(50);
         done();
       });
 
@@ -115,11 +117,12 @@ child_last_name: null,
           funded_deduction_minor: 0,
           total_due_minor: 10000,
         }],
-        limit: 200,
-        offset: 0,
+        total: 1,
+        page: 1,
+        page_size: 50,
       };
 
-      service.listInvoices({ limit: 200, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ page: 1, pageSize: 50 }).subscribe((result) => {
         const item = result.items[0];
         expect(item.invoiceNumberDisplay).toBe('');
         expect(item.dueStatus).toBe('due');
