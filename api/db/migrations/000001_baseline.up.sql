@@ -234,7 +234,39 @@ CREATE TABLE branches (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
     core_hourly_rate_minor integer,
+    ad_hoc_rate_multiplier numeric(4,2) NOT NULL DEFAULT 1.50,
     CONSTRAINT branches_core_hourly_rate_positive_check CHECK (((core_hourly_rate_minor IS NULL) OR (core_hourly_rate_minor > 0)))
+);
+
+CREATE TABLE site_profiles (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    nursery_name varchar(120) NOT NULL,
+    description varchar(2000) NOT NULL DEFAULT '',
+    phone varchar(32) NOT NULL,
+    email varchar(254) NOT NULL,
+    website varchar(2048) NOT NULL,
+    address_street varchar(200) NOT NULL,
+    address_city varchar(100) NOT NULL,
+    address_postcode varchar(16) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE academic_terms (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    name varchar(120) NOT NULL,
+    kind varchar(20) NOT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT academic_terms_start_before_end CHECK (start_date < end_date),
+    CONSTRAINT academic_terms_kind_check CHECK (kind IN ('autumn', 'spring', 'summer'))
 );
 
 CREATE TABLE users (
@@ -600,9 +632,13 @@ CREATE TABLE session_types (
     start_time time NOT NULL,
     end_time time NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
+    kind text NOT NULL DEFAULT 'standard',
+    flat_fee_minor integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT session_types_time_check CHECK ((start_time < end_time))
+    CONSTRAINT session_types_time_check CHECK ((start_time < end_time)),
+    CONSTRAINT session_types_kind_check CHECK (kind IN ('standard', 'wraparound_before', 'wraparound_after', 'core', 'extended')),
+    CONSTRAINT session_types_flat_fee_nonneg CHECK (flat_fee_minor IS NULL OR flat_fee_minor >= 0)
 );
 
 CREATE TABLE child_booking_patterns (
@@ -613,6 +649,7 @@ CREATE TABLE child_booking_patterns (
     effective_from date NOT NULL,
     effective_to date,
     is_current boolean GENERATED ALWAYS AS ((effective_to IS NULL)) STORED NOT NULL,
+    term_time_only boolean NOT NULL DEFAULT false,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT child_booking_patterns_dates_check CHECK (((effective_to IS NULL) OR (effective_to >= effective_from)))
@@ -627,7 +664,7 @@ CREATE TABLE child_booking_pattern_entries (
     session_type_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_booking_pattern_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))
+    CONSTRAINT child_booking_pattern_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 5)))
 );
 
 CREATE TABLE session_templates (
@@ -650,7 +687,7 @@ CREATE TABLE session_template_entries (
     session_type_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT session_template_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))
+    CONSTRAINT session_template_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 5)))
 );
 
 CREATE TABLE term (
@@ -880,12 +917,36 @@ CREATE TABLE invoice_lines (
     CONSTRAINT invoice_lines_funded_allowance_nonneg CHECK (((funded_allowance_minutes IS NULL) OR (funded_allowance_minutes >= 0))),
     CONSTRAINT invoice_lines_funded_deduction_nonneg CHECK (((funded_deduction_minutes IS NULL) OR (funded_deduction_minutes >= 0))),
     CONSTRAINT invoice_lines_funded_deduction_nonpos CHECK (((line_kind <> 'funded_deduction'::text) OR (line_amount_minor <= 0))),
-    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text]))),
+    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text, 'ad_hoc'::text]))),
     CONSTRAINT invoice_lines_quantity_nonneg CHECK (((quantity_minutes IS NULL) OR (quantity_minutes >= 0))),
     CONSTRAINT invoice_lines_raw_attended_nonneg CHECK (((raw_attended_minutes IS NULL) OR (raw_attended_minutes >= 0))),
     CONSTRAINT invoice_lines_rounded_attended_nonneg CHECK (((rounded_attended_minutes IS NULL) OR (rounded_attended_minutes >= 0))),
     CONSTRAINT invoice_lines_session_count_nonneg CHECK (((session_count IS NULL) OR (session_count >= 0))),
     CONSTRAINT invoice_lines_unit_amount_nonneg CHECK (((unit_amount_minor IS NULL) OR (unit_amount_minor >= 0)))
+);
+
+CREATE TABLE ad_hoc_bookings (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    calendar_date date NOT NULL,
+    session_type_id uuid NOT NULL,
+    booked_by_membership_id uuid NOT NULL,
+    status text NOT NULL DEFAULT 'active',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT ad_hoc_bookings_pkey PRIMARY KEY (id),
+    CONSTRAINT ad_hoc_bookings_status_check CHECK (status IN ('active', 'cancelled'))
+);
+
+CREATE TABLE branch_closure_days (
+    id uuid PRIMARY KEY,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    date date NOT NULL,
+    reason text,
+    created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE payment_attempts (
@@ -1014,6 +1075,8 @@ CREATE TABLE password_reset_tokens (
     CONSTRAINT password_reset_tokens_consumed_shape_check CHECK (((used_at IS NULL) OR (superseded_at IS NULL)))
 );
 
+-- Primary keys
+
 ALTER TABLE ONLY tenants
     ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
 
@@ -1025,6 +1088,15 @@ ALTER TABLE ONLY branches
 
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_tenant_id_name_key UNIQUE (tenant_id, name);
+
+ALTER TABLE ONLY site_profiles
+    ADD CONSTRAINT site_profiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY site_profiles
+    ADD CONSTRAINT site_profiles_branch_id_unique UNIQUE (branch_id);
+
+ALTER TABLE ONLY academic_terms
+    ADD CONSTRAINT academic_terms_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
@@ -1229,6 +1301,8 @@ ALTER TABLE ONLY password_reset_tokens
 
 ALTER TABLE ONLY password_reset_tokens
     ADD CONSTRAINT password_reset_tokens_token_hash_key UNIQUE (token_hash);
+
+-- Indexes
 
 CREATE UNIQUE INDEX attendance_events_scope_id_unique ON attendance_events USING btree (tenant_id, branch_id, id);
 
@@ -1439,6 +1513,27 @@ CREATE INDEX idx_parent_membership_children_child_active
 CREATE INDEX idx_parent_membership_children_membership_active
     ON parent_membership_children USING btree (membership_id) WHERE (ended_at IS NULL);
 
+CREATE INDEX idx_site_profiles_tenant_branch ON site_profiles(tenant_id, branch_id);
+
+CREATE UNIQUE INDEX idx_academic_terms_tenant_branch_name_active
+    ON academic_terms(tenant_id, branch_id, name) WHERE is_active = true;
+
+CREATE INDEX idx_academic_terms_tenant_branch ON academic_terms(tenant_id, branch_id);
+CREATE INDEX idx_academic_terms_dates ON academic_terms(tenant_id, branch_id, start_date, end_date);
+
+CREATE INDEX idx_ad_hoc_bookings_tenant_branch_child_date
+    ON ad_hoc_bookings(tenant_id, branch_id, child_id, calendar_date);
+CREATE INDEX idx_ad_hoc_bookings_tenant_branch_status
+    ON ad_hoc_bookings(tenant_id, branch_id, status);
+
+CREATE UNIQUE INDEX branch_closure_days_tenant_branch_date_idx
+    ON branch_closure_days (tenant_id, branch_id, date);
+
+CREATE INDEX branch_closure_days_tenant_branch_month_idx
+    ON branch_closure_days (tenant_id, branch_id, date);
+
+-- Triggers
+
 CREATE TRIGGER trg_invoice_immutability BEFORE UPDATE ON invoices FOR EACH ROW EXECUTE FUNCTION protect_issued_invoice_immutability();
 
 CREATE TRIGGER trg_invoice_lines_immutability BEFORE INSERT OR DELETE OR UPDATE ON invoice_lines FOR EACH ROW EXECUTE FUNCTION protect_issued_invoice_lines();
@@ -1457,8 +1552,18 @@ CREATE TRIGGER memberships_end_cascade_children
     AFTER UPDATE OF ended_at ON memberships
     FOR EACH ROW EXECUTE FUNCTION cascade_parent_membership_child_end();
 
+-- Foreign keys
+
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY site_profiles
+    ADD CONSTRAINT site_profiles_branch_id_fkey FOREIGN KEY (branch_id)
+        REFERENCES branches(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY academic_terms
+    ADD CONSTRAINT academic_terms_branch_id_fkey FOREIGN KEY (branch_id)
+        REFERENCES branches(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY memberships
     ADD CONSTRAINT memberships_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
@@ -1732,6 +1837,15 @@ ALTER TABLE ONLY invoice_lines
 
 ALTER TABLE ONLY invoice_lines
     ADD CONSTRAINT invoice_lines_invoice_scope_fkey FOREIGN KEY (tenant_id, branch_id, invoice_id) REFERENCES invoices(tenant_id, branch_id, id);
+
+ALTER TABLE ONLY ad_hoc_bookings
+    ADD CONSTRAINT ad_hoc_bookings_child_id_fkey FOREIGN KEY (child_id) REFERENCES children(id);
+
+ALTER TABLE ONLY ad_hoc_bookings
+    ADD CONSTRAINT ad_hoc_bookings_session_type_id_fkey FOREIGN KEY (session_type_id) REFERENCES session_types(id);
+
+ALTER TABLE ONLY ad_hoc_bookings
+    ADD CONSTRAINT ad_hoc_bookings_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY payment_attempts
     ADD CONSTRAINT fk_payment_attempts_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
