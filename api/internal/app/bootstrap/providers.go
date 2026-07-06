@@ -343,6 +343,13 @@ func buildGinEngine(c appComponents) *gin.Engine {
 
 	router.Use(httpserver.RecoveryMiddleware(c.Logger))
 
+	router.Use(httpserver.BodySizeLimitMiddleware(c.Config.MaxBodySizeBytes, map[string]bool{
+		c.Config.APIBasePath + "/stripe/webhooks": true,
+	}))
+
+	corsOrigins := httpserver.ParseAllowedOrigins(c.Config.CORSAllowedOrigins)
+	router.Use(httpserver.CORSMiddleware(corsOrigins, c.Config.WebBaseURL))
+
 	api := registerHealthRoutes(router, c.Config.APIBasePath, c.Pool)
 	api.Use(httpserver.RateLimitMiddleware(c.GlobalRateLimiter))
 
