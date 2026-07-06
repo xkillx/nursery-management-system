@@ -568,6 +568,402 @@ func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAt
 	return items, nil
 }
 
+const childrenListSortByCreatedAtAsc = `-- name: ChildrenListSortByCreatedAtAsc :many
+SELECT c.id,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       c.date_of_birth,
+       c.start_date,
+       c.end_date,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
+       c.notes,
+       c.is_active,
+       (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
+       EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
+       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.created_at,
+       c.updated_at
+FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND ($5 = 'all' OR ($5 = 'active' AND c.is_active = true) OR ($5 = 'inactive' AND c.is_active = false))
+  AND ($6::uuid IS NULL OR c.id IN (SELECT cra.child_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.room_id = $6::uuid AND cra.is_current))
+ORDER BY c.created_at ASC
+LIMIT $3 OFFSET $4
+`
+
+type ChildrenListSortByCreatedAtAscParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Limit        int32
+	Offset       int32
+	StatusFilter interface{}
+	RoomID       pgtype.UUID
+}
+
+type ChildrenListSortByCreatedAtAscRow struct {
+	ID                      pgtype.UUID
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
+	HasParentCarerContact   bool
+	HasBookingPattern       bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) ChildrenListSortByCreatedAtAsc(ctx context.Context, arg ChildrenListSortByCreatedAtAscParams) ([]ChildrenListSortByCreatedAtAscRow, error) {
+	rows, err := q.db.Query(ctx, childrenListSortByCreatedAtAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Limit,
+		arg.Offset,
+		arg.StatusFilter,
+		arg.RoomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildrenListSortByCreatedAtAscRow
+	for rows.Next() {
+		var i ChildrenListSortByCreatedAtAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.SiteCoreHourlyRateMinor,
+			&i.Notes,
+			&i.IsActive,
+			&i.PrimaryRoomID,
+			&i.HasCurrentRoom,
+			&i.HasParentCarerContact,
+			&i.HasBookingPattern,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const childrenListSortByCreatedAtDesc = `-- name: ChildrenListSortByCreatedAtDesc :many
+SELECT c.id,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       c.date_of_birth,
+       c.start_date,
+       c.end_date,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
+       c.notes,
+       c.is_active,
+       (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
+       EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
+       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.created_at,
+       c.updated_at
+FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND ($5 = 'all' OR ($5 = 'active' AND c.is_active = true) OR ($5 = 'inactive' AND c.is_active = false))
+  AND ($6::uuid IS NULL OR c.id IN (SELECT cra.child_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.room_id = $6::uuid AND cra.is_current))
+ORDER BY c.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ChildrenListSortByCreatedAtDescParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Limit        int32
+	Offset       int32
+	StatusFilter interface{}
+	RoomID       pgtype.UUID
+}
+
+type ChildrenListSortByCreatedAtDescRow struct {
+	ID                      pgtype.UUID
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
+	HasParentCarerContact   bool
+	HasBookingPattern       bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) ChildrenListSortByCreatedAtDesc(ctx context.Context, arg ChildrenListSortByCreatedAtDescParams) ([]ChildrenListSortByCreatedAtDescRow, error) {
+	rows, err := q.db.Query(ctx, childrenListSortByCreatedAtDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Limit,
+		arg.Offset,
+		arg.StatusFilter,
+		arg.RoomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildrenListSortByCreatedAtDescRow
+	for rows.Next() {
+		var i ChildrenListSortByCreatedAtDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.SiteCoreHourlyRateMinor,
+			&i.Notes,
+			&i.IsActive,
+			&i.PrimaryRoomID,
+			&i.HasCurrentRoom,
+			&i.HasParentCarerContact,
+			&i.HasBookingPattern,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const childrenListSortByNameAsc = `-- name: ChildrenListSortByNameAsc :many
+SELECT c.id,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       c.date_of_birth,
+       c.start_date,
+       c.end_date,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
+       c.notes,
+       c.is_active,
+       (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
+       EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
+       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.created_at,
+       c.updated_at
+FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND ($5 = 'all' OR ($5 = 'active' AND c.is_active = true) OR ($5 = 'inactive' AND c.is_active = false))
+  AND ($6::uuid IS NULL OR c.id IN (SELECT cra.child_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.room_id = $6::uuid AND cra.is_current))
+ORDER BY c.first_name ASC NULLS LAST, c.middle_name ASC NULLS LAST, c.last_name ASC NULLS LAST
+LIMIT $3 OFFSET $4
+`
+
+type ChildrenListSortByNameAscParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Limit        int32
+	Offset       int32
+	StatusFilter interface{}
+	RoomID       pgtype.UUID
+}
+
+type ChildrenListSortByNameAscRow struct {
+	ID                      pgtype.UUID
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
+	HasParentCarerContact   bool
+	HasBookingPattern       bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) ChildrenListSortByNameAsc(ctx context.Context, arg ChildrenListSortByNameAscParams) ([]ChildrenListSortByNameAscRow, error) {
+	rows, err := q.db.Query(ctx, childrenListSortByNameAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Limit,
+		arg.Offset,
+		arg.StatusFilter,
+		arg.RoomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildrenListSortByNameAscRow
+	for rows.Next() {
+		var i ChildrenListSortByNameAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.SiteCoreHourlyRateMinor,
+			&i.Notes,
+			&i.IsActive,
+			&i.PrimaryRoomID,
+			&i.HasCurrentRoom,
+			&i.HasParentCarerContact,
+			&i.HasBookingPattern,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const childrenListSortByNameDesc = `-- name: ChildrenListSortByNameDesc :many
+SELECT c.id,
+       c.first_name,
+       c.middle_name,
+       c.last_name,
+       c.date_of_birth,
+       c.start_date,
+       c.end_date,
+       b.core_hourly_rate_minor AS site_core_hourly_rate_minor,
+       c.notes,
+       c.is_active,
+       (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
+       EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
+       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.created_at,
+       c.updated_at
+FROM children c
+JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND ($5 = 'all' OR ($5 = 'active' AND c.is_active = true) OR ($5 = 'inactive' AND c.is_active = false))
+  AND ($6::uuid IS NULL OR c.id IN (SELECT cra.child_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.room_id = $6::uuid AND cra.is_current))
+ORDER BY c.first_name DESC NULLS LAST, c.middle_name DESC NULLS LAST, c.last_name DESC NULLS LAST
+LIMIT $3 OFFSET $4
+`
+
+type ChildrenListSortByNameDescParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Limit        int32
+	Offset       int32
+	StatusFilter interface{}
+	RoomID       pgtype.UUID
+}
+
+type ChildrenListSortByNameDescRow struct {
+	ID                      pgtype.UUID
+	FirstName               string
+	MiddleName              pgtype.Text
+	LastName                pgtype.Text
+	DateOfBirth             pgtype.Date
+	StartDate               pgtype.Date
+	EndDate                 pgtype.Date
+	SiteCoreHourlyRateMinor pgtype.Int4
+	Notes                   pgtype.Text
+	IsActive                bool
+	PrimaryRoomID           pgtype.UUID
+	HasCurrentRoom          bool
+	HasParentCarerContact   bool
+	HasBookingPattern       bool
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) ChildrenListSortByNameDesc(ctx context.Context, arg ChildrenListSortByNameDescParams) ([]ChildrenListSortByNameDescRow, error) {
+	rows, err := q.db.Query(ctx, childrenListSortByNameDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Limit,
+		arg.Offset,
+		arg.StatusFilter,
+		arg.RoomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildrenListSortByNameDescRow
+	for rows.Next() {
+		var i ChildrenListSortByNameDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.MiddleName,
+			&i.LastName,
+			&i.DateOfBirth,
+			&i.StartDate,
+			&i.EndDate,
+			&i.SiteCoreHourlyRateMinor,
+			&i.Notes,
+			&i.IsActive,
+			&i.PrimaryRoomID,
+			&i.HasCurrentRoom,
+			&i.HasParentCarerContact,
+			&i.HasBookingPattern,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const childrenMarkInactive = `-- name: ChildrenMarkInactive :exec
 UPDATE children
 SET is_active = false,

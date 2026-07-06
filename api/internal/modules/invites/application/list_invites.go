@@ -30,8 +30,14 @@ func (uc *ListInvitesUseCase) Execute(ctx context.Context, actor tenant.ActorCon
 	return ListInvitesResult{Invites: invites}, nil
 }
 
-func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, status domain.InviteStatus, limit, offset int, role *string) (ListInvitesResult, int, error) {
-	invites, err := uc.repo.ListInvitesPaginated(ctx, actor.TenantID, actor.BranchID, status, limit, offset, role)
+func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, status domain.InviteStatus, limit, offset int, role *string, sortField, sortDir string) (ListInvitesResult, int, error) {
+	var invites []domain.Invite
+	var err error
+	if sortField != "" && sortDir != "" {
+		invites, err = uc.repo.ListInvitesPaginatedSorted(ctx, actor.TenantID, actor.BranchID, status, limit, offset, role, sortField, sortDir)
+	} else {
+		invites, err = uc.repo.ListInvitesPaginated(ctx, actor.TenantID, actor.BranchID, status, limit, offset, role)
+	}
 	if err != nil {
 		return ListInvitesResult{}, 0, err
 	}

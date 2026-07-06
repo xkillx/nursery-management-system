@@ -60,6 +60,56 @@ func (r *RoomRepository) ListByBranchPaginated(ctx context.Context, tenantID, br
 	return out, nil
 }
 
+func (r *RoomRepository) ListByBranchPaginatedSorted(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int, sortField, sortDir string) ([]domain.Room, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := uuidToPgtype(tenantID)
+	pgBranch := uuidToPgtype(branchID)
+	col3 := !includeArchived
+	pgLimit := pgtype.Int4{Int32: int32(limit), Valid: true}
+	pgOffset := pgtype.Int4{Int32: int32(offset), Valid: true}
+
+	switch sortField + ":" + sortDir {
+	case "name:desc":
+		rows, err := q.RoomsListByBranchPaginatedSortByNameDesc(ctx, sqlc.RoomsListByBranchPaginatedSortByNameDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query rooms sorted: %w", err)
+		}
+		out := make([]domain.Room, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapRoom(row))
+		}
+		return out, nil
+	case "created_at:asc":
+		rows, err := q.RoomsListByBranchPaginatedSortByCreatedAtAsc(ctx, sqlc.RoomsListByBranchPaginatedSortByCreatedAtAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query rooms sorted: %w", err)
+		}
+		out := make([]domain.Room, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapRoom(row))
+		}
+		return out, nil
+	case "created_at:desc":
+		rows, err := q.RoomsListByBranchPaginatedSortByCreatedAtDesc(ctx, sqlc.RoomsListByBranchPaginatedSortByCreatedAtDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query rooms sorted: %w", err)
+		}
+		out := make([]domain.Room, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapRoom(row))
+		}
+		return out, nil
+	default:
+		return r.ListByBranchPaginated(ctx, tenantID, branchID, includeArchived, limit, offset)
+	}
+}
+
 func (r *RoomRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
 	q := sqlc.New(r.pool)
 	count, err := q.RoomsCountByBranch(ctx, sqlc.RoomsCountByBranchParams{

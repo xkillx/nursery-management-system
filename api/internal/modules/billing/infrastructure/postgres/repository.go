@@ -418,26 +418,90 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 
 func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) ([]domain.InvoiceReviewRow, error) {
 	q := sqlc.New(r.pool)
-	rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
-		TenantID:         uuidToPgtype(tenantID),
-		BranchID:         uuidToPgtype(branchID),
-		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
-		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
-		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
-		ChildID:          uuidToPgtypePtr(filters.ChildID),
-		Limit:            pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
-		Offset:           pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
-	})
-	if err != nil {
-		return nil, err
-	}
+	pgTenant := uuidToPgtype(tenantID)
+	pgBranch := uuidToPgtype(branchID)
+	pgBillingMonth := timeToPgtypeDatePtr(filters.BillingMonth)
+	pgBillingMonthFrom := timeToPgtypeDatePtr(filters.BillingMonthFrom)
+	pgBillingMonthTo := timeToPgtypeDatePtr(filters.BillingMonthTo)
+	pgStatus := strToPgtypeTextPtr(filters.Status)
+	pgChildID := uuidToPgtypePtr(filters.ChildID)
+	pgLimit := pgtype.Int4{Int32: int32(filters.Limit), Valid: true}
+	pgOffset := pgtype.Int4{Int32: int32(filters.Offset), Valid: true}
 
-	result := make([]domain.InvoiceReviewRow, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, mapInvoiceReviewRow(row))
+	switch filters.SortField + ":" + filters.SortDir {
+	case "billing_month:asc":
+		rows, err := q.InvoiceListForManagerReviewSortByBillingMonthAsc(ctx, sqlc.InvoiceListForManagerReviewSortByBillingMonthAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRowSort(row))
+		}
+		return result, nil
+	case "due_at:asc":
+		rows, err := q.InvoiceListForManagerReviewSortByDueAtAsc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRowSort(row))
+		}
+		return result, nil
+	case "due_at:desc":
+		rows, err := q.InvoiceListForManagerReviewSortByDueAtDesc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRowSort(row))
+		}
+		return result, nil
+	case "total_amount:asc":
+		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountAsc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRowSort(row))
+		}
+		return result, nil
+	case "total_amount:desc":
+		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountDesc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRowSort(row))
+		}
+		return result, nil
+	default:
+		rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		result := make([]domain.InvoiceReviewRow, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, mapInvoiceReviewRow(row))
+		}
+		return result, nil
 	}
-	return result, nil
 }
 
 func (r *Repository) CountInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) (int, error) {
@@ -538,6 +602,94 @@ func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.Invoice
 		CalculationDetails:      json.RawMessage(row.CalculationDetails),
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+}
+
+func mapInvoiceReviewRowSort(row interface{}) domain.InvoiceReviewRow {
+	type fields struct {
+		ID                      pgtype.UUID
+		InvoiceKind             string
+		InvoiceNumber           pgtype.Text
+		Status                  string
+		ChildID                 pgtype.UUID
+		ChildFirstName          string
+		ChildMiddleName         pgtype.Text
+		ChildLastName           pgtype.Text
+		BillingMonth            pgtype.Date
+		PeriodStartDate         pgtype.Date
+		PeriodEndDate           pgtype.Date
+		CurrencyCode            string
+		SubtotalMinor           int32
+		FundedDeductionMinor    int32
+		TotalDueMinor           int32
+		AmountPaidMinor         int32
+		DueAt                   pgtype.Timestamptz
+		IssuedAt                pgtype.Timestamptz
+		LockedAt                pgtype.Timestamptz
+		PaidAt                  pgtype.Timestamptz
+		PaymentFailedAt         pgtype.Timestamptz
+		PaymentStatusUpdatedAt  pgtype.Timestamptz
+		AdjustsInvoiceID        pgtype.UUID
+		AdjustmentReasonCode    pgtype.Text
+		AdjustmentReasonNote    pgtype.Text
+		GeneratedRunID          pgtype.UUID
+		GeneratedRunStatus      pgtype.Text
+		GeneratedRunStartedAt   pgtype.Timestamptz
+		GeneratedRunCompletedAt pgtype.Timestamptz
+		GeneratedRunDetails     []byte
+		CalculationDetails      []byte
+		CreatedAt               pgtype.Timestamptz
+		UpdatedAt               pgtype.Timestamptz
+	}
+	var f fields
+	switch v := row.(type) {
+	case sqlc.InvoiceListForManagerReviewSortByBillingMonthAscRow:
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+	case sqlc.InvoiceListForManagerReviewSortByDueAtAscRow:
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+	case sqlc.InvoiceListForManagerReviewSortByDueAtDescRow:
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+	case sqlc.InvoiceListForManagerReviewSortByTotalAmountAscRow:
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+	case sqlc.InvoiceListForManagerReviewSortByTotalAmountDescRow:
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+	default:
+		return domain.InvoiceReviewRow{}
+	}
+	return domain.InvoiceReviewRow{
+		ID:                      pgtypeUUIDToUUID(f.ID),
+		InvoiceKind:             f.InvoiceKind,
+		InvoiceNumber:           pgtypeTextToStrPtr(f.InvoiceNumber),
+		Status:                  f.Status,
+		ChildID:                 pgtypeUUIDToUUID(f.ChildID),
+		ChildFirstName:          f.ChildFirstName,
+		ChildMiddleName:         pgtypeTextToStrPtr(f.ChildMiddleName),
+		ChildLastName:           pgtypeTextToStrPtr(f.ChildLastName),
+		BillingMonth:            pgtypeDateToTime(f.BillingMonth),
+		PeriodStartDate:         pgtypeDateToTime(f.PeriodStartDate),
+		PeriodEndDate:           pgtypeDateToTime(f.PeriodEndDate),
+		CurrencyCode:            f.CurrencyCode,
+		Subtotal:                domain.MustGBP(int(f.SubtotalMinor)),
+		FundedDeduction:         domain.MustGBP(int(f.FundedDeductionMinor)),
+		TotalDue:                domain.MustGBP(int(f.TotalDueMinor)),
+		AmountPaid:              domain.MustGBP(int(f.AmountPaidMinor)),
+		DueAt:                   pgtypeTimestamptzToTimePtr(f.DueAt),
+		IssuedAt:                pgtypeTimestamptzToTimePtr(f.IssuedAt),
+		LockedAt:                pgtypeTimestamptzToTimePtr(f.LockedAt),
+		PaidAt:                  pgtypeTimestamptzToTimePtr(f.PaidAt),
+		PaymentFailedAt:         pgtypeTimestamptzToTimePtr(f.PaymentFailedAt),
+		PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(f.PaymentStatusUpdatedAt),
+		AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(f.AdjustsInvoiceID),
+		AdjustmentReasonCode:    pgtypeTextToStrPtr(f.AdjustmentReasonCode),
+		AdjustmentReasonNote:    pgtypeTextToStrPtr(f.AdjustmentReasonNote),
+		GeneratedRunID:          pgtypeUUIDToUUIDPtr(f.GeneratedRunID),
+		GeneratedRunStatus:      pgtypeTextToStrPtr(f.GeneratedRunStatus),
+		GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(f.GeneratedRunStartedAt),
+		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(f.GeneratedRunCompletedAt),
+		GeneratedRunDetails:     json.RawMessage(f.GeneratedRunDetails),
+		CalculationDetails:      json.RawMessage(f.CalculationDetails),
+		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
+		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
 	}
 }
 

@@ -16,6 +16,8 @@ type InvoiceReviewFilters struct {
 	ChildID          *uuid.UUID
 	Limit            int
 	Offset           int
+	SortField        string
+	SortDir          string
 }
 
 // InvoiceReviewRow maps a joined invoice + child + run row for manager review.

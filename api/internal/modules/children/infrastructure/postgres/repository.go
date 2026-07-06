@@ -47,6 +47,69 @@ func (r *ChildRepository) List(ctx context.Context, tenantID, branchID uuid.UUID
 	return out, nil
 }
 
+func (r *ChildRepository) ListSorted(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int, roomID *uuid.UUID, sortField, sortDir string) ([]domain.Child, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := uuidToPgtype(tenantID)
+	pgBranch := uuidToPgtype(branchID)
+	pgRoom := pgtype.UUID{}
+	if roomID != nil {
+		pgRoom = uuidToPgtype(*roomID)
+	}
+
+	switch sortField + ":" + sortDir {
+	case "name:asc":
+		r, err := q.ChildrenListSortByNameAsc(ctx, sqlc.ChildrenListSortByNameAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Limit: int32(limit), Offset: int32(offset), StatusFilter: string(filter), RoomID: pgRoom,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query children sorted: %w", err)
+		}
+		out := make([]domain.Child, 0, len(r))
+		for _, row := range r {
+			out = append(out, mapChildRow(row))
+		}
+		return out, nil
+	case "name:desc":
+		r, err := q.ChildrenListSortByNameDesc(ctx, sqlc.ChildrenListSortByNameDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Limit: int32(limit), Offset: int32(offset), StatusFilter: string(filter), RoomID: pgRoom,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query children sorted: %w", err)
+		}
+		out := make([]domain.Child, 0, len(r))
+		for _, row := range r {
+			out = append(out, mapChildRow(row))
+		}
+		return out, nil
+	case "created_at:asc":
+		r, err := q.ChildrenListSortByCreatedAtAsc(ctx, sqlc.ChildrenListSortByCreatedAtAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Limit: int32(limit), Offset: int32(offset), StatusFilter: string(filter), RoomID: pgRoom,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query children sorted: %w", err)
+		}
+		out := make([]domain.Child, 0, len(r))
+		for _, row := range r {
+			out = append(out, mapChildRow(row))
+		}
+		return out, nil
+	case "created_at:desc":
+		r, err := q.ChildrenListSortByCreatedAtDesc(ctx, sqlc.ChildrenListSortByCreatedAtDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Limit: int32(limit), Offset: int32(offset), StatusFilter: string(filter), RoomID: pgRoom,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query children sorted: %w", err)
+		}
+		out := make([]domain.Child, 0, len(r))
+		for _, row := range r {
+			out = append(out, mapChildRow(row))
+		}
+		return out, nil
+	default:
+		return r.List(ctx, tenantID, branchID, filter, limit, offset, roomID)
+	}
+}
+
 func (r *ChildRepository) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, roomID *uuid.UUID) (int, error) {
 	q := sqlc.New(r.pool)
 	params := sqlc.ChildrenCountParams{
@@ -346,6 +409,46 @@ func mapChildRow(row interface{}) domain.Child {
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDForUpdateRow:
+		f = fields{
+			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
+			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
+			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern:     v.HasBookingPattern,
+			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+	case sqlc.ChildrenListSortByNameAscRow:
+		f = fields{
+			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
+			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
+			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern:     v.HasBookingPattern,
+			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+	case sqlc.ChildrenListSortByNameDescRow:
+		f = fields{
+			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
+			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
+			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern:     v.HasBookingPattern,
+			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+	case sqlc.ChildrenListSortByCreatedAtAscRow:
+		f = fields{
+			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
+			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,
+			SiteCoreHourlyRateMinor: v.SiteCoreHourlyRateMinor, Notes: v.Notes,
+			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
+			HasParentCarerContact: v.HasParentCarerContact,
+			HasBookingPattern:     v.HasBookingPattern,
+			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
+		}
+	case sqlc.ChildrenListSortByCreatedAtDescRow:
 		f = fields{
 			ID: v.ID, FirstName: v.FirstName, MiddleName: v.MiddleName, LastName: v.LastName,
 			DateOfBirth: v.DateOfBirth, StartDate: v.StartDate, EndDate: v.EndDate,

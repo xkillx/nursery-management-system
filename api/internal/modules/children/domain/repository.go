@@ -28,6 +28,7 @@ type ChildCorrectionInfo struct {
 type Repository interface {
 	// Identity
 	List(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int, roomID *uuid.UUID) ([]Child, error)
+	ListSorted(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, limit, offset int, roomID *uuid.UUID, sortField, sortDir string) ([]Child, error)
 	Count(ctx context.Context, tenantID, branchID uuid.UUID, filter StatusFilter, roomID *uuid.UUID) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (Child, bool, error)
 	Create(ctx context.Context, tx Tx, child Child, notes string, tenantID, branchID uuid.UUID) error

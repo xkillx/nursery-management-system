@@ -271,10 +271,20 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 		roomID = &parsed
 	}
 
+	allowedSorts := map[string][]string{
+		"name":       {"asc", "desc"},
+		"created_at": {"asc", "desc"},
+	}
+	sortExpr, err := queryparams.ParseSortParams(c, allowedSorts)
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
+		return
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, pageSize, offset, roomID)
+	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, pageSize, offset, roomID, sortExpr.Field, sortExpr.Direction)
 	if err != nil {
 		h.handleError(c, err)
 		return

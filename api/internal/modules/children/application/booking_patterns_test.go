@@ -210,6 +210,9 @@ func (f *fakeChildBPRepo) UpdateTermTimeOnly(ctx context.Context, tx domain.Tx, 
 func (f *fakeChildBPRepo) List(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int, roomID *uuid.UUID) ([]domain.Child, error) {
 	return nil, nil
 }
+func (f *fakeChildBPRepo) ListSorted(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, limit, offset int, roomID *uuid.UUID, sortField, sortDir string) ([]domain.Child, error) {
+	return nil, nil
+}
 func (f *fakeChildBPRepo) Count(ctx context.Context, tenantID, branchID uuid.UUID, filter domain.StatusFilter, roomID *uuid.UUID) (int, error) {
 	return 0, nil
 }

@@ -16,6 +16,7 @@ import (
 	"nursery-management-system/api/internal/modules/billing/domain"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
+	"nursery-management-system/api/internal/platform/http/queryparams"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -352,6 +353,17 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		return
 	}
 
+	allowedSorts := map[string][]string{
+		"billing_month": {"asc", "desc"},
+		"due_at":        {"asc", "desc"},
+		"total_amount":  {"asc", "desc"},
+	}
+	sortExpr, sortErr := queryparams.ParseSortParams(c, allowedSorts)
+	if sortErr != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", sortErr.Error(), nil)
+		return
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
@@ -366,6 +378,8 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		ChildID:          queryParamPtr(c, "child_id"),
 		Limit:            &limitStr,
 		Offset:           &offsetStr,
+		SortField:        sortExpr.Field,
+		SortDir:          sortExpr.Direction,
 	})
 	if err != nil {
 		h.handleError(c, err)

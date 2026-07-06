@@ -363,6 +363,171 @@ func (q *Queries) RoomsListByBranchPaginated(ctx context.Context, arg RoomsListB
 	return items, nil
 }
 
+const roomsListByBranchPaginatedSortByCreatedAtAsc = `-- name: RoomsListByBranchPaginatedSortByCreatedAtAsc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at ASC
+LIMIT $5 OFFSET $4
+`
+
+type RoomsListByBranchPaginatedSortByCreatedAtAscParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) RoomsListByBranchPaginatedSortByCreatedAtAsc(ctx context.Context, arg RoomsListByBranchPaginatedSortByCreatedAtAscParams) ([]Room, error) {
+	rows, err := q.db.Query(ctx, roomsListByBranchPaginatedSortByCreatedAtAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Description,
+			&i.AgeGroup,
+			&i.Capacity,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const roomsListByBranchPaginatedSortByCreatedAtDesc = `-- name: RoomsListByBranchPaginatedSortByCreatedAtDesc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at DESC
+LIMIT $5 OFFSET $4
+`
+
+type RoomsListByBranchPaginatedSortByCreatedAtDescParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) RoomsListByBranchPaginatedSortByCreatedAtDesc(ctx context.Context, arg RoomsListByBranchPaginatedSortByCreatedAtDescParams) ([]Room, error) {
+	rows, err := q.db.Query(ctx, roomsListByBranchPaginatedSortByCreatedAtDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Description,
+			&i.AgeGroup,
+			&i.Capacity,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const roomsListByBranchPaginatedSortByNameDesc = `-- name: RoomsListByBranchPaginatedSortByNameDesc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name DESC
+LIMIT $5 OFFSET $4
+`
+
+type RoomsListByBranchPaginatedSortByNameDescParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) RoomsListByBranchPaginatedSortByNameDesc(ctx context.Context, arg RoomsListByBranchPaginatedSortByNameDescParams) ([]Room, error) {
+	rows, err := q.db.Query(ctx, roomsListByBranchPaginatedSortByNameDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Description,
+			&i.AgeGroup,
+			&i.Capacity,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const roomsReactivate = `-- name: RoomsReactivate :exec
 UPDATE rooms
 SET is_active = true, updated_at = now()

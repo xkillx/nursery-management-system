@@ -10,6 +10,7 @@ import (
 	"nursery-management-system/api/internal/modules/sessiontypes/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
+	"nursery-management-system/api/internal/platform/http/queryparams"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -118,10 +119,20 @@ func (h *Handler) listSessionTypes(c *gin.Context) {
 
 	includeArchived := c.Query("include_archived") == "true"
 
+	allowedSorts := map[string][]string{
+		"name":       {"asc", "desc"},
+		"created_at": {"asc", "desc"},
+	}
+	sortExpr, sortErr := queryparams.ParseSortParams(c, allowedSorts)
+	if sortErr != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", sortErr.Error(), nil)
+		return
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	types, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, pageSize, offset)
+	types, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, pageSize, offset, sortExpr.Field, sortExpr.Direction)
 	if err != nil {
 		h.handleError(c, err)
 		return

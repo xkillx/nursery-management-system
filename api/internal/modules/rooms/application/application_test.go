@@ -50,6 +50,10 @@ func (f *fakeRoomRepo) ListByBranchPaginated(ctx context.Context, tenantID, bran
 	return f.rooms[offset:end], nil
 }
 
+func (f *fakeRoomRepo) ListByBranchPaginatedSorted(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int, sortField, sortDir string) ([]domain.Room, error) {
+	return f.ListByBranchPaginated(ctx, tenantID, branchID, includeArchived, limit, offset)
+}
+
 func (f *fakeRoomRepo) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
 	return len(f.rooms), nil
 }

@@ -101,3 +101,30 @@ FROM rooms
 WHERE tenant_id = $1
   AND branch_id = $2
   AND (NOT $3::bool OR is_active = true);
+
+-- name: RoomsListByBranchPaginatedSortByNameDesc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name DESC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: RoomsListByBranchPaginatedSortByCreatedAtAsc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: RoomsListByBranchPaginatedSortByCreatedAtDesc :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at DESC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');

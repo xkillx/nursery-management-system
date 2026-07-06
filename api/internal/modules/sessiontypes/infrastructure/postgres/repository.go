@@ -60,6 +60,56 @@ func (r *SessionTypeRepository) ListByBranchPaginated(ctx context.Context, tenan
 	return out, nil
 }
 
+func (r *SessionTypeRepository) ListByBranchPaginatedSorted(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int, sortField, sortDir string) ([]domain.SessionType, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := uuidToPgtype(tenantID)
+	pgBranch := uuidToPgtype(branchID)
+	col3 := !includeArchived
+	pgLimit := pgtype.Int4{Int32: int32(limit), Valid: true}
+	pgOffset := pgtype.Int4{Int32: int32(offset), Valid: true}
+
+	switch sortField + ":" + sortDir {
+	case "name:desc":
+		rows, err := q.SessionTypesListByBranchPaginatedSortByNameDesc(ctx, sqlc.SessionTypesListByBranchPaginatedSortByNameDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query session types sorted: %w", err)
+		}
+		out := make([]domain.SessionType, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapSessionTypeSortRow(row))
+		}
+		return out, nil
+	case "created_at:asc":
+		rows, err := q.SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx, sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query session types sorted: %w", err)
+		}
+		out := make([]domain.SessionType, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapSessionTypeSortRow(row))
+		}
+		return out, nil
+	case "created_at:desc":
+		rows, err := q.SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx, sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Column3: col3, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("query session types sorted: %w", err)
+		}
+		out := make([]domain.SessionType, 0, len(rows))
+		for _, row := range rows {
+			out = append(out, mapSessionTypeSortRow(row))
+		}
+		return out, nil
+	default:
+		return r.ListByBranchPaginated(ctx, tenantID, branchID, includeArchived, limit, offset)
+	}
+}
+
 func (r *SessionTypeRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
 	q := sqlc.New(r.pool)
 	count, err := q.SessionTypesCountByBranch(ctx, sqlc.SessionTypesCountByBranchParams{
@@ -323,4 +373,48 @@ func pgtypeTimeToMinutes(t pgtype.Time) int {
 		return 0
 	}
 	return int(t.Microseconds / 60 / 1_000_000)
+}
+
+func mapSessionTypeSortRow(row interface{}) domain.SessionType {
+	type fields struct {
+		ID           pgtype.UUID
+		TenantID     pgtype.UUID
+		BranchID     pgtype.UUID
+		Name         string
+		StartTime    pgtype.Time
+		EndTime      pgtype.Time
+		IsActive     bool
+		CreatedAt    pgtype.Timestamptz
+		UpdatedAt    pgtype.Timestamptz
+		Kind         string
+		FlatFeeMinor pgtype.Int4
+	}
+	var f fields
+	switch v := row.(type) {
+	case sqlc.SessionTypesListByBranchPaginatedSortByNameDescRow:
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtAscRow:
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtDescRow:
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+	default:
+		return domain.SessionType{}
+	}
+	st := domain.SessionType{
+		ID:        pgtypeUUIDToUUID(f.ID),
+		TenantID:  pgtypeUUIDToUUID(f.TenantID),
+		BranchID:  pgtypeUUIDToUUID(f.BranchID),
+		Name:      f.Name,
+		StartMinutes: pgtypeTimeToMinutes(f.StartTime),
+		EndMinutes:   pgtypeTimeToMinutes(f.EndTime),
+		IsActive:  f.IsActive,
+		Kind:      f.Kind,
+		CreatedAt: pgtypeTimestamptzToTime(f.CreatedAt),
+		UpdatedAt: pgtypeTimestamptzToTime(f.UpdatedAt),
+	}
+	if f.FlatFeeMinor.Valid {
+		v := int(f.FlatFeeMinor.Int32)
+		st.FlatFeeMinor = &v
+	}
+	return st
 }

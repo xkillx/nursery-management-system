@@ -28,12 +28,18 @@ func (uc *ListSessionTypes) Execute(ctx context.Context, actor SessionTypeActor,
 	return types, nil
 }
 
-func (uc *ListSessionTypes) ExecutePaginated(ctx context.Context, actor SessionTypeActor, siteID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.SessionType, int, error) {
+func (uc *ListSessionTypes) ExecutePaginated(ctx context.Context, actor SessionTypeActor, siteID uuid.UUID, includeArchived bool, limit, offset int, sortField, sortDir string) ([]domain.SessionType, int, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
 		return nil, 0, err
 	}
 
-	types, err := uc.repo.ListByBranchPaginated(ctx, actor.TenantID(), siteID, includeArchived, limit, offset)
+	var types []domain.SessionType
+	var err error
+	if sortField != "" && sortDir != "" {
+		types, err = uc.repo.ListByBranchPaginatedSorted(ctx, actor.TenantID(), siteID, includeArchived, limit, offset, sortField, sortDir)
+	} else {
+		types, err = uc.repo.ListByBranchPaginated(ctx, actor.TenantID(), siteID, includeArchived, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, internalError(err)
 	}

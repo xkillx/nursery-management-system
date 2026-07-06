@@ -12,6 +12,7 @@ import (
 
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
+	"nursery-management-system/api/internal/platform/http/queryparams"
 )
 
 type Handler struct {
@@ -122,10 +123,20 @@ func (h *Handler) listRooms(c *gin.Context) {
 	includeArchived := c.Query("include_archived") == "true"
 	includeOccupancy := c.Query("include") == "occupancy"
 
+	allowedSorts := map[string][]string{
+		"name":       {"asc", "desc"},
+		"created_at": {"asc", "desc"},
+	}
+	sortExpr, sortErr := queryparams.ParseSortParams(c, allowedSorts)
+	if sortErr != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", sortErr.Error(), nil)
+		return
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	rooms, counts, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, includeOccupancy, pageSize, offset)
+	rooms, counts, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, includeOccupancy, pageSize, offset, sortExpr.Field, sortExpr.Direction)
 	if err != nil {
 		h.handleError(c, err)
 		return

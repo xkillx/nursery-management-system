@@ -29,6 +29,8 @@ type ListInvoicesParams struct {
 	ChildID          *string
 	Limit            *string
 	Offset           *string
+	SortField        string
+	SortDir          string
 }
 
 type ListInvoicesResult struct {
@@ -107,6 +109,9 @@ func (uc *ListInvoices) Execute(ctx context.Context, actor tenant.ActorContext, 
 		}
 		filters.Offset = o
 	}
+
+	filters.SortField = params.SortField
+	filters.SortDir = params.SortDir
 
 	rows, err := uc.repo.ListInvoicesForManagerReview(ctx, actor.TenantID, actor.BranchID, filters)
 	if err != nil {

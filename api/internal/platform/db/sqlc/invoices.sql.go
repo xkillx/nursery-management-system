@@ -1276,6 +1276,741 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 	return items, nil
 }
 
+const invoiceListForManagerReviewSortByBillingMonthAsc = `-- name: InvoiceListForManagerReviewSortByBillingMonthAsc :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+ORDER BY i.billing_month ASC
+LIMIT $9 OFFSET $8
+`
+
+type InvoiceListForManagerReviewSortByBillingMonthAscParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
+}
+
+type InvoiceListForManagerReviewSortByBillingMonthAscRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReviewSortByBillingMonthAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByBillingMonthAscParams) ([]InvoiceListForManagerReviewSortByBillingMonthAscRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReviewSortByBillingMonthAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewSortByBillingMonthAscRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewSortByBillingMonthAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForManagerReviewSortByDueAtAsc = `-- name: InvoiceListForManagerReviewSortByDueAtAsc :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+ORDER BY i.due_at ASC NULLS LAST
+LIMIT $9 OFFSET $8
+`
+
+type InvoiceListForManagerReviewSortByDueAtAscParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
+}
+
+type InvoiceListForManagerReviewSortByDueAtAscRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReviewSortByDueAtAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByDueAtAscParams) ([]InvoiceListForManagerReviewSortByDueAtAscRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReviewSortByDueAtAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewSortByDueAtAscRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewSortByDueAtAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForManagerReviewSortByDueAtDesc = `-- name: InvoiceListForManagerReviewSortByDueAtDesc :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+ORDER BY i.due_at DESC NULLS LAST
+LIMIT $9 OFFSET $8
+`
+
+type InvoiceListForManagerReviewSortByDueAtDescParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
+}
+
+type InvoiceListForManagerReviewSortByDueAtDescRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReviewSortByDueAtDesc(ctx context.Context, arg InvoiceListForManagerReviewSortByDueAtDescParams) ([]InvoiceListForManagerReviewSortByDueAtDescRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReviewSortByDueAtDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewSortByDueAtDescRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewSortByDueAtDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForManagerReviewSortByTotalAmountAsc = `-- name: InvoiceListForManagerReviewSortByTotalAmountAsc :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+ORDER BY i.total_due_minor ASC
+LIMIT $9 OFFSET $8
+`
+
+type InvoiceListForManagerReviewSortByTotalAmountAscParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
+}
+
+type InvoiceListForManagerReviewSortByTotalAmountAscRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByTotalAmountAscParams) ([]InvoiceListForManagerReviewSortByTotalAmountAscRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReviewSortByTotalAmountAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewSortByTotalAmountAscRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewSortByTotalAmountAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invoiceListForManagerReviewSortByTotalAmountDesc = `-- name: InvoiceListForManagerReviewSortByTotalAmountDesc :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+ORDER BY i.total_due_minor DESC
+LIMIT $9 OFFSET $8
+`
+
+type InvoiceListForManagerReviewSortByTotalAmountDescParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+	Offset           pgtype.Int4
+	Limit            pgtype.Int4
+}
+
+type InvoiceListForManagerReviewSortByTotalAmountDescRow struct {
+	ID                      pgtype.UUID
+	InvoiceKind             string
+	InvoiceNumber           pgtype.Text
+	Status                  string
+	ChildID                 pgtype.UUID
+	ChildFirstName          string
+	ChildMiddleName         pgtype.Text
+	ChildLastName           pgtype.Text
+	BillingMonth            pgtype.Date
+	PeriodStartDate         pgtype.Date
+	PeriodEndDate           pgtype.Date
+	CurrencyCode            string
+	SubtotalMinor           int32
+	FundedDeductionMinor    int32
+	TotalDueMinor           int32
+	AmountPaidMinor         int32
+	DueAt                   pgtype.Timestamptz
+	IssuedAt                pgtype.Timestamptz
+	LockedAt                pgtype.Timestamptz
+	PaidAt                  pgtype.Timestamptz
+	PaymentFailedAt         pgtype.Timestamptz
+	PaymentStatusUpdatedAt  pgtype.Timestamptz
+	AdjustsInvoiceID        pgtype.UUID
+	AdjustmentReasonCode    pgtype.Text
+	AdjustmentReasonNote    pgtype.Text
+	GeneratedRunID          pgtype.UUID
+	GeneratedRunStatus      pgtype.Text
+	GeneratedRunStartedAt   pgtype.Timestamptz
+	GeneratedRunCompletedAt pgtype.Timestamptz
+	GeneratedRunDetails     []byte
+	CalculationDetails      []byte
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountDesc(ctx context.Context, arg InvoiceListForManagerReviewSortByTotalAmountDescParams) ([]InvoiceListForManagerReviewSortByTotalAmountDescRow, error) {
+	rows, err := q.db.Query(ctx, invoiceListForManagerReviewSortByTotalAmountDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceListForManagerReviewSortByTotalAmountDescRow
+	for rows.Next() {
+		var i InvoiceListForManagerReviewSortByTotalAmountDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceKind,
+			&i.InvoiceNumber,
+			&i.Status,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.BillingMonth,
+			&i.PeriodStartDate,
+			&i.PeriodEndDate,
+			&i.CurrencyCode,
+			&i.SubtotalMinor,
+			&i.FundedDeductionMinor,
+			&i.TotalDueMinor,
+			&i.AmountPaidMinor,
+			&i.DueAt,
+			&i.IssuedAt,
+			&i.LockedAt,
+			&i.PaidAt,
+			&i.PaymentFailedAt,
+			&i.PaymentStatusUpdatedAt,
+			&i.AdjustsInvoiceID,
+			&i.AdjustmentReasonCode,
+			&i.AdjustmentReasonNote,
+			&i.GeneratedRunID,
+			&i.GeneratedRunStatus,
+			&i.GeneratedRunStartedAt,
+			&i.GeneratedRunCompletedAt,
+			&i.GeneratedRunDetails,
+			&i.CalculationDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const invoiceListForParent = `-- name: InvoiceListForParent :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,

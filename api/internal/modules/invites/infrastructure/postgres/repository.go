@@ -243,6 +243,55 @@ func (r *Repository) ListInvitesPaginated(ctx context.Context, tenantID, branchI
 	}
 }
 
+func (r *Repository) ListInvitesPaginatedSorted(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, limit, offset int, role *string, sortField, sortDir string) ([]domain.Invite, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := pgUUID(tenantID)
+	pgBranch := pgUUID(branchID)
+	pgLimit := pgtype.Int4{Int32: int32(limit), Valid: true}
+	pgOffset := pgtype.Int4{Int32: int32(offset), Valid: true}
+	var pgRole pgtype.Text
+	if role != nil {
+		pgRole = pgtype.Text{String: *role, Valid: true}
+	}
+
+	switch sortField + ":" + sortDir {
+	case "email:asc":
+		rows, err := q.InviteListPendingPaginatedSortByEmailAsc(ctx, sqlc.InviteListPendingPaginatedSortByEmailAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Role: pgRole, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return mapRows(rows), nil
+	case "email:desc":
+		rows, err := q.InviteListPendingPaginatedSortByEmailDesc(ctx, sqlc.InviteListPendingPaginatedSortByEmailDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Role: pgRole, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return mapRows(rows), nil
+	case "created_at:asc":
+		rows, err := q.InviteListPendingPaginatedSortByCreatedAtAsc(ctx, sqlc.InviteListPendingPaginatedSortByCreatedAtAscParams{
+			TenantID: pgTenant, BranchID: pgBranch, Role: pgRole, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return mapRows(rows), nil
+	case "created_at:desc":
+		rows, err := q.InviteListPendingPaginatedSortByCreatedAtDesc(ctx, sqlc.InviteListPendingPaginatedSortByCreatedAtDescParams{
+			TenantID: pgTenant, BranchID: pgBranch, Role: pgRole, Limit: pgLimit, Offset: pgOffset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return mapRows(rows), nil
+	default:
+		return r.ListInvitesPaginated(ctx, tenantID, branchID, status, limit, offset, role)
+	}
+}
+
 func (r *Repository) CountInvites(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, role *string) (int, error) {
 	q := sqlc.New(r.pool)
 	pgTenant := pgUUID(tenantID)

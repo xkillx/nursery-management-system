@@ -352,6 +352,216 @@ func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg Ses
 	return items, nil
 }
 
+const sessionTypesListByBranchPaginatedSortByCreatedAtAsc = `-- name: SessionTypesListByBranchPaginatedSortByCreatedAtAsc :many
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
+FROM session_types
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at ASC
+LIMIT $5 OFFSET $4
+`
+
+type SessionTypesListByBranchPaginatedSortByCreatedAtAscParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+type SessionTypesListByBranchPaginatedSortByCreatedAtAscRow struct {
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Name         string
+	StartTime    pgtype.Time
+	EndTime      pgtype.Time
+	IsActive     bool
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Kind         string
+	FlatFeeMinor pgtype.Int4
+}
+
+func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtAscParams) ([]SessionTypesListByBranchPaginatedSortByCreatedAtAscRow, error) {
+	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByCreatedAtAsc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SessionTypesListByBranchPaginatedSortByCreatedAtAscRow
+	for rows.Next() {
+		var i SessionTypesListByBranchPaginatedSortByCreatedAtAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.StartTime,
+			&i.EndTime,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Kind,
+			&i.FlatFeeMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sessionTypesListByBranchPaginatedSortByCreatedAtDesc = `-- name: SessionTypesListByBranchPaginatedSortByCreatedAtDesc :many
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
+FROM session_types
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY created_at DESC
+LIMIT $5 OFFSET $4
+`
+
+type SessionTypesListByBranchPaginatedSortByCreatedAtDescParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+type SessionTypesListByBranchPaginatedSortByCreatedAtDescRow struct {
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Name         string
+	StartTime    pgtype.Time
+	EndTime      pgtype.Time
+	IsActive     bool
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Kind         string
+	FlatFeeMinor pgtype.Int4
+}
+
+func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtDescParams) ([]SessionTypesListByBranchPaginatedSortByCreatedAtDescRow, error) {
+	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByCreatedAtDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SessionTypesListByBranchPaginatedSortByCreatedAtDescRow
+	for rows.Next() {
+		var i SessionTypesListByBranchPaginatedSortByCreatedAtDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.StartTime,
+			&i.EndTime,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Kind,
+			&i.FlatFeeMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sessionTypesListByBranchPaginatedSortByNameDesc = `-- name: SessionTypesListByBranchPaginatedSortByNameDesc :many
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
+FROM session_types
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name DESC
+LIMIT $5 OFFSET $4
+`
+
+type SessionTypesListByBranchPaginatedSortByNameDescParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+type SessionTypesListByBranchPaginatedSortByNameDescRow struct {
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	Name         string
+	StartTime    pgtype.Time
+	EndTime      pgtype.Time
+	IsActive     bool
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Kind         string
+	FlatFeeMinor pgtype.Int4
+}
+
+func (q *Queries) SessionTypesListByBranchPaginatedSortByNameDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByNameDescParams) ([]SessionTypesListByBranchPaginatedSortByNameDescRow, error) {
+	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByNameDesc,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SessionTypesListByBranchPaginatedSortByNameDescRow
+	for rows.Next() {
+		var i SessionTypesListByBranchPaginatedSortByNameDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.StartTime,
+			&i.EndTime,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Kind,
+			&i.FlatFeeMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const sessionTypesReactivate = `-- name: SessionTypesReactivate :exec
 UPDATE session_types
 SET is_active = true, updated_at = now()

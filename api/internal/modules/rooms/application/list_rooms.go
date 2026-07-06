@@ -38,12 +38,18 @@ func (uc *ListRooms) Execute(ctx context.Context, actor RoomActor, siteID uuid.U
 	return rooms, counts, nil
 }
 
-func (uc *ListRooms) ExecutePaginated(ctx context.Context, actor RoomActor, siteID uuid.UUID, includeArchived, includeOccupancy bool, limit, offset int) ([]domain.Room, map[uuid.UUID]int, int, error) {
+func (uc *ListRooms) ExecutePaginated(ctx context.Context, actor RoomActor, siteID uuid.UUID, includeArchived, includeOccupancy bool, limit, offset int, sortField, sortDir string) ([]domain.Room, map[uuid.UUID]int, int, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
 		return nil, nil, 0, err
 	}
 
-	rooms, err := uc.repo.ListByBranchPaginated(ctx, actor.TenantID(), siteID, includeArchived, limit, offset)
+	var rooms []domain.Room
+	var err error
+	if sortField != "" && sortDir != "" {
+		rooms, err = uc.repo.ListByBranchPaginatedSorted(ctx, actor.TenantID(), siteID, includeArchived, limit, offset, sortField, sortDir)
+	} else {
+		rooms, err = uc.repo.ListByBranchPaginated(ctx, actor.TenantID(), siteID, includeArchived, limit, offset)
+	}
 	if err != nil {
 		return nil, nil, 0, internalError(err)
 	}

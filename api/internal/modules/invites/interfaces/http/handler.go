@@ -150,10 +150,20 @@ func (h *Handler) listHandler(c *gin.Context) {
 		role = &r
 	}
 
+	allowedSorts := map[string][]string{
+		"email":      {"asc", "desc"},
+		"created_at": {"asc", "desc"},
+	}
+	sortExpr, sortErr := queryparams.ParseSortParams(c, allowedSorts)
+	if sortErr != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", sortErr.Error(), nil)
+		return
+	}
+
 	page, pageSize := pagination.ParsePageParams(c)
 	offset := (page - 1) * pageSize
 
-	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset, role)
+	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset, role, sortExpr.Field, sortExpr.Direction)
 	if err != nil {
 		httpserver.WriteInternalError(c)
 		return

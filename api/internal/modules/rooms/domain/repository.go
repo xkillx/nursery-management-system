@@ -11,6 +11,7 @@ type Tx = any
 type Repository interface {
 	ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]Room, error)
 	ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]Room, error)
+	ListByBranchPaginatedSorted(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int, sortField, sortDir string) ([]Room, error)
 	CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, roomID uuid.UUID) (Room, error)
 	Create(ctx context.Context, room Room) error

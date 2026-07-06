@@ -19,7 +19,7 @@ func NewListChildren(repo domain.Repository) *ListChildren {
 	return &ListChildren{repo: repo}
 }
 
-func (uc *ListChildren) Execute(ctx context.Context, actor tenant.ActorContext, statusFilter string, limit, offset int, roomID *uuid.UUID) ([]domain.Child, error) {
+func (uc *ListChildren) Execute(ctx context.Context, actor tenant.ActorContext, statusFilter string, limit, offset int, roomID *uuid.UUID, sortField, sortDir string) ([]domain.Child, error) {
 	sf, err := ValidateStatusFilter(statusFilter)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,12 @@ func (uc *ListChildren) Execute(ctx context.Context, actor tenant.ActorContext, 
 		return nil, err
 	}
 
-	children, err := uc.repo.List(ctx, actor.TenantID, actor.BranchID, sf, limit, offset, roomID)
+	var children []domain.Child
+	if sortField != "" && sortDir != "" {
+		children, err = uc.repo.ListSorted(ctx, actor.TenantID, actor.BranchID, sf, limit, offset, roomID, sortField, sortDir)
+	} else {
+		children, err = uc.repo.List(ctx, actor.TenantID, actor.BranchID, sf, limit, offset, roomID)
+	}
 	if err != nil {
 		return nil, domainerrors.Internal(fmt.Errorf("list children: %w", err))
 	}
