@@ -88,6 +88,21 @@ func (h *Handler) resolveActor(c *gin.Context) (application.SessionTemplateActor
 	return nil, false
 }
 
+// listTemplates returns a paginated list of session templates for a site.
+//
+//	@Summary		List session templates
+//	@Description	Get a paginated list of session templates for a site.
+//	@Tags			session-templates
+//	@Produce		json
+//	@Param			site_id				path		string	true	"Site ID"	format(uuid)
+//	@Param			include_archived	query		bool	false	"Include archived templates"
+//	@Param			page				query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200					{object}	object{items=[]sessionTemplateResponse,total=int,page=int,page_size=int}
+//	@Failure		401					{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner","practitioner"]
+//	@Router			/sites/{site_id}/session-templates [get]
 func (h *Handler) listTemplates(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -115,6 +130,20 @@ func (h *Handler) listTemplates(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toSessionTemplateListResponse(templates), total, page, pageSize))
 }
 
+// getTemplate returns a single session template by ID.
+//
+//	@Summary		Get session template
+//	@Description	Get a single session template by ID.
+//	@Tags			session-templates
+//	@Produce		json
+//	@Param			site_id		path		string	true	"Site ID"		format(uuid)
+//	@Param			template_id	path		string	true	"Template ID"	format(uuid)
+//	@Success		200			{object}	sessionTemplateResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner","practitioner"]
+//	@Router			/sites/{site_id}/session-templates/{template_id} [get]
 func (h *Handler) getTemplate(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -143,6 +172,21 @@ func (h *Handler) getTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, toSessionTemplateResponse(t))
 }
 
+// createTemplate creates a new session template for a site.
+//
+//	@Summary		Create session template
+//	@Description	Create a new session template for a site.
+//	@Tags			session-templates
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string						true	"Site ID"	format(uuid)
+//	@Param			body	body		createSessionTemplateRequest	true	"Template data"
+//	@Success		201		{object}	sessionTemplateResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/session-templates [post]
 func (h *Handler) createTemplate(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -190,6 +234,23 @@ func (h *Handler) createTemplate(c *gin.Context) {
 	c.JSON(http.StatusCreated, toSessionTemplateResponse(t))
 }
 
+// updateTemplate updates an existing session template.
+//
+//	@Summary		Update session template
+//	@Description	Update an existing session template.
+//	@Tags			session-templates
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id		path		string						true	"Site ID"		format(uuid)
+//	@Param			template_id	path		string						true	"Template ID"	format(uuid)
+//	@Param			body		body		updateSessionTemplateRequest	true	"Template data"
+//	@Success		200			{object}	sessionTemplateResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/session-templates/{template_id} [patch]
 func (h *Handler) updateTemplate(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -244,6 +305,20 @@ func (h *Handler) updateTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, toSessionTemplateResponse(t))
 }
 
+// archiveTemplate archives a session template.
+//
+//	@Summary		Archive session template
+//	@Description	Archive a session template.
+//	@Tags			session-templates
+//	@Produce		json
+//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
+//	@Param			template_id	path	string	true	"Template ID"	format(uuid)
+//	@Success		200			{object}	object
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/session-templates/{template_id}/actions/archive [post]
 func (h *Handler) archiveTemplate(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -271,6 +346,20 @@ func (h *Handler) archiveTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// reactivateTemplate reactivates an archived session template.
+//
+//	@Summary		Reactivate session template
+//	@Description	Reactivate an archived session template.
+//	@Tags			session-templates
+//	@Produce		json
+//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
+//	@Param			template_id	path	string	true	"Template ID"	format(uuid)
+//	@Success		200			{object}	sessionTemplateResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/session-templates/{template_id}/actions/reactivate [post]
 func (h *Handler) reactivateTemplate(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {

@@ -31,6 +31,21 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	g.PUT("/children/:child_id", h.upsertProfileHandler)
 }
 
+// overviewHandler returns the funding overview for a billing month.
+//
+//	@Summary		Funding overview
+//	@Description	Get the funding overview for a billing month.
+//	@Tags			funding
+//	@Produce		json
+//	@Param			billing_month	query		string	true	"Billing month"	format(month)
+//	@Param			page			query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200				{object}	object{items=[]overviewItemResponse,total=int,page=int,page_size=int}
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/funding/overview [get]
 func (h *Handler) overviewHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -56,6 +71,21 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toOverviewResponse(result), total, page, pageSize))
 }
 
+// getProfileHandler returns the funding profile for a child.
+//
+//	@Summary		Get funding profile
+//	@Description	Get the funding profile for a child for a billing month.
+//	@Tags			funding
+//	@Produce		json
+//	@Param			child_id		path		string	true	"Child ID"		format(uuid)
+//	@Param			billing_month	query		string	true	"Billing month"	format(month)
+//	@Success		200				{object}	fundingProfileResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Failure		404				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/funding/children/{child_id} [get]
 func (h *Handler) getProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -78,6 +108,22 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toResponse(profile))
 }
 
+// upsertProfileHandler creates or updates the funding profile for a child.
+//
+//	@Summary		Upsert funding profile
+//	@Description	Create or update the funding profile for a child.
+//	@Tags			funding
+//	@Accept			json
+//	@Produce		json
+//	@Param			child_id	path		string					true	"Child ID"	format(uuid)
+//	@Param			body		body		fundingProfileRequest	true	"Funding profile data"
+//	@Success		200			{object}	fundingProfileResponse
+//	@Success		201			{object}	fundingProfileResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/funding/children/{child_id} [put]
 func (h *Handler) upsertProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {

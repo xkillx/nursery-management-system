@@ -69,6 +69,20 @@ func (h *Handler) RegisterRoutes(ownerGroup *gin.RouterGroup) {
 	ownerGroup.PUT("/sites/:site_id/billing-setup", h.updateSiteBillingSetup)
 }
 
+// getSiteSummaries returns site summaries for the owner.
+//
+//	@Summary		Get site summaries
+//	@Description	Get site summaries with billing and attendance data.
+//	@Tags			owner
+//	@Produce		json
+//	@Param			billing_month	query		string	false	"Billing month"	format(month)
+//	@Param			site_id			query		string	false	"Filter by site ID"	format(uuid)
+//	@Success		200				{object}	siteSummariesResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		403				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/site-summaries [get]
 func (h *Handler) getSiteSummaries(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
@@ -133,6 +147,23 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 	c.JSON(http.StatusOK, toSiteSummariesResponse(result))
 }
 
+// listManagerAccess returns a paginated list of manager access records.
+//
+//	@Summary		List manager access
+//	@Description	Get a paginated list of manager access records for a site.
+//	@Tags			owner
+//	@Produce		json
+//	@Param			site_id		query		string	true	"Site ID"	format(uuid)
+//	@Param			status		query		string	false	"Filter by status"	Enums(active, inactive, all)	default(active)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]managerAccessResponse,total=int,page=int,page_size=int}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		403			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/manager-access [get]
 func (h *Handler) listManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
@@ -211,6 +242,22 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(out, total, page, pageSize))
 }
 
+// grantManagerAccess grants manager access to a user.
+//
+//	@Summary		Grant manager access
+//	@Description	Grant manager access to a user by email.
+//	@Tags			owner
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			body	body		object{email=string}	true	"Email address"
+//	@Success		200		{object}	grantManagerAccessResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		403		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/sites/{site_id}/manager-access [post]
 func (h *Handler) grantManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
@@ -274,6 +321,21 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 	c.JSON(http.StatusOK, toGrantResponse(result))
 }
 
+// deactivateManagerAccess deactivates manager access.
+//
+//	@Summary		Deactivate manager access
+//	@Description	Deactivate manager access for a membership.
+//	@Tags			owner
+//	@Produce		json
+//	@Param			site_id			path	string	true	"Site ID"			format(uuid)
+//	@Param			membership_id	path	string	true	"Membership ID"		format(uuid)
+//	@Success		204
+//	@Failure		400	{object}	object{code=string,message=string}
+//	@Failure		403	{object}	object{code=string,message=string}
+//	@Failure		404	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/sites/{site_id}/manager-access/{membership_id}/actions/deactivate [post]
 func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
@@ -338,6 +400,21 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// reactivateManagerAccess reactivates manager access.
+//
+//	@Summary		Reactivate manager access
+//	@Description	Reactivate manager access for a membership.
+//	@Tags			owner
+//	@Produce		json
+//	@Param			site_id			path	string	true	"Site ID"			format(uuid)
+//	@Param			membership_id	path	string	true	"Membership ID"		format(uuid)
+//	@Success		204
+//	@Failure		400	{object}	object{code=string,message=string}
+//	@Failure		403	{object}	object{code=string,message=string}
+//	@Failure		404	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/sites/{site_id}/manager-access/{membership_id}/actions/activate [post]
 func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {
@@ -396,6 +473,22 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// updateSiteBillingSetup updates the site billing setup.
+//
+//	@Summary		Update site billing setup
+//	@Description	Update the core hourly rate for a site.
+//	@Tags			owner
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			body	body		object{core_hourly_rate_minor=int}	true	"Billing setup data"
+//	@Success		200		{object}	updateSiteBillingSetupResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		403		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["owner"]
+//	@Router			/owner/sites/{site_id}/billing-setup [put]
 func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 	actor, ok := tenant.OwnerActorFromGinContext(c)
 	if !ok {

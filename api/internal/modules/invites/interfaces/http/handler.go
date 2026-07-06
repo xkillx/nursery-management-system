@@ -67,6 +67,21 @@ type createInviteRequest struct {
 	Role  string `json:"role" binding:"required"`
 }
 
+// createHandler creates a new invite.
+//
+//	@Summary		Create invite
+//	@Description	Create a new invite for a manager or practitioner.
+//	@Tags			invites
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		createInviteRequest	true	"Invite data"
+//	@Success		201		{object}	inviteResponse
+//	@Success		200		{object}	inviteResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invites [post]
 func (h *Handler) createHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -95,6 +110,21 @@ func (h *Handler) createHandler(c *gin.Context) {
 	c.JSON(status, toInviteResponse(result.Invite))
 }
 
+// listHandler returns a paginated list of invites.
+//
+//	@Summary		List invites
+//	@Description	Get a paginated list of invites with optional status filter.
+//	@Tags			invites
+//	@Produce		json
+//	@Param			status		query		string	false	"Filter by status"	Enums(pending, accepted, revoked, all)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]inviteResponse,total=int,page=int,page_size=int}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invites [get]
 func (h *Handler) listHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -121,6 +151,19 @@ func (h *Handler) listHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toInviteResponseList(result.Invites), total, page, pageSize))
 }
 
+// resendHandler resends an invite.
+//
+//	@Summary		Resend invite
+//	@Description	Resend an invite email.
+//	@Tags			invites
+//	@Produce		json
+//	@Param			invite_id	path		string	true	"Invite ID"	format(uuid)
+//	@Success		200			{object}	inviteResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invites/{invite_id}/resend [post]
 func (h *Handler) resendHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -145,6 +188,19 @@ func (h *Handler) resendHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toInviteResponse(result.Invite))
 }
 
+// revokeHandler revokes an invite.
+//
+//	@Summary		Revoke invite
+//	@Description	Revoke an invite.
+//	@Tags			invites
+//	@Produce		json
+//	@Param			invite_id	path		string	true	"Invite ID"	format(uuid)
+//	@Success		200			{object}	inviteResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invites/{invite_id}/revoke [post]
 func (h *Handler) revokeHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -174,6 +230,18 @@ type acceptInviteRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
+// acceptHandler accepts an invite and creates a user account.
+//
+//	@Summary		Accept invite
+//	@Description	Accept an invite and create a user account with the provided password.
+//	@Tags			invites
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		acceptInviteRequest	true	"Invite token and new password"
+//	@Success		204
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		429		{object}	object{code=string,message=string}
+//	@Router			/invites/accept [post]
 func (h *Handler) acceptHandler(c *gin.Context) {
 	clientIP := c.ClientIP()
 	if !h.ipLimiter.Allow("invite_accept_ip:" + clientIP) {

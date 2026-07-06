@@ -93,6 +93,23 @@ func (h *Handler) resolveActor(c *gin.Context) (application.AdHocBookingActor, b
 	return application.NewManagerAdHocBookingActor(actor), true
 }
 
+// listBookings returns a paginated list of ad hoc bookings.
+//
+//	@Summary		List ad hoc bookings
+//	@Description	Get a paginated list of ad hoc bookings for a site.
+//	@Tags			ad-hoc-bookings
+//	@Produce		json
+//	@Param			site_id		path		string	true	"Site ID"	format(uuid)
+//	@Param			child_id	query		string	false	"Filter by child ID"	format(uuid)
+//	@Param			from		query		string	false	"Filter from date"		format(date)
+//	@Param			to			query		string	false	"Filter to date"		format(date)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]adHocBookingResponse,total=int,page=int,page_size=int}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/ad-hoc-bookings [get]
 func (h *Handler) listBookings(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -146,6 +163,21 @@ func (h *Handler) listBookings(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toAdHocBookingListResponse(bookings), total, page, pageSize))
 }
 
+// createBooking creates a new ad hoc booking.
+//
+//	@Summary		Create ad hoc booking
+//	@Description	Create a new ad hoc booking for a child.
+//	@Tags			ad-hoc-bookings
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
+//	@Param			body	body		createAdHocBookingRequest	true	"Booking data"
+//	@Success		201		{object}	object{ad_hoc_booking=adHocBookingResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/ad-hoc-bookings [post]
 func (h *Handler) createBooking(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -196,6 +228,20 @@ func (h *Handler) createBooking(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"ad_hoc_booking": toAdHocBookingResponse(booking)})
 }
 
+// cancelBooking cancels an ad hoc booking.
+//
+//	@Summary		Cancel ad hoc booking
+//	@Description	Cancel an ad hoc booking.
+//	@Tags			ad-hoc-bookings
+//	@Produce		json
+//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
+//	@Param			booking_id	path	string	true	"Booking ID"	format(uuid)
+//	@Success		204
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Failure		404	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/ad-hoc-bookings/{booking_id}/cancel [post]
 func (h *Handler) cancelBooking(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {

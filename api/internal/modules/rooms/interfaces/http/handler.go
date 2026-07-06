@@ -90,6 +90,22 @@ func (h *Handler) resolveActor(c *gin.Context) (application.RoomActor, bool) {
 	return nil, false
 }
 
+// listRooms returns a paginated list of rooms for a site.
+//
+//	@Summary		List rooms
+//	@Description	Get a paginated list of rooms for a site.
+//	@Tags			rooms
+//	@Produce		json
+//	@Param			site_id			path		string	true	"Site ID"	format(uuid)
+//	@Param			include_archived	query		bool	false	"Include archived rooms"
+//	@Param			include			query		string	false	"Include additional data"	Enums(occupancy)
+//	@Param			page			query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200				{object}	object{items=[]roomResponse,total=int,page=int,page_size=int}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner","practitioner"]
+//	@Router			/sites/{site_id}/rooms [get]
 func (h *Handler) listRooms(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -118,6 +134,21 @@ func (h *Handler) listRooms(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toRoomListResponse(rooms, counts), total, page, pageSize))
 }
 
+// createRoom creates a new room for a site.
+//
+//	@Summary		Create room
+//	@Description	Create a new room for a site.
+//	@Tags			rooms
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			body	body		createRoomRequest	true	"Room data"
+//	@Success		201		{object}	roomResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/rooms [post]
 func (h *Handler) createRoom(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -153,6 +184,20 @@ func (h *Handler) createRoom(c *gin.Context) {
 	c.JSON(http.StatusCreated, toRoomResponse(room))
 }
 
+// getRoom returns a single room by ID.
+//
+//	@Summary		Get room
+//	@Description	Get a single room by ID.
+//	@Tags			rooms
+//	@Produce		json
+//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			room_id	path		string	true	"Room ID"	format(uuid)
+//	@Success		200		{object}	roomResponse
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner","practitioner"]
+//	@Router			/sites/{site_id}/rooms/{room_id} [get]
 func (h *Handler) getRoom(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -181,6 +226,23 @@ func (h *Handler) getRoom(c *gin.Context) {
 	c.JSON(http.StatusOK, toRoomResponse(room))
 }
 
+// updateRoom updates an existing room.
+//
+//	@Summary		Update room
+//	@Description	Update an existing room.
+//	@Tags			rooms
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			room_id	path		string			true	"Room ID"	format(uuid)
+//	@Param			body	body		updateRoomRequest	true	"Room data"
+//	@Success		200		{object}	roomResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/rooms/{room_id} [patch]
 func (h *Handler) updateRoom(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -222,6 +284,20 @@ func (h *Handler) updateRoom(c *gin.Context) {
 	c.JSON(http.StatusOK, toRoomResponse(room))
 }
 
+// archiveRoom archives a room.
+//
+//	@Summary		Archive room
+//	@Description	Archive a room. Children must be reassigned first.
+//	@Tags			rooms
+//	@Produce		json
+//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
+//	@Param			room_id	path	string	true	"Room ID"	format(uuid)
+//	@Success		200		{object}	object
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/rooms/{room_id}/actions/archive [post]
 func (h *Handler) archiveRoom(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -249,6 +325,20 @@ func (h *Handler) archiveRoom(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// reactivateRoom reactivates an archived room.
+//
+//	@Summary		Reactivate room
+//	@Description	Reactivate an archived room.
+//	@Tags			rooms
+//	@Produce		json
+//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
+//	@Param			room_id	path	string	true	"Room ID"	format(uuid)
+//	@Success		200		{object}	roomResponse
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/rooms/{room_id}/actions/activate [post]
 func (h *Handler) reactivateRoom(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {

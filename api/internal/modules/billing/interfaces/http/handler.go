@@ -107,6 +107,19 @@ func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
 	parent.GET("/invoices/:invoice_id", h.getParentInvoiceHandler)
 }
 
+// preflightHandler returns preflight data for draft invoice generation.
+//
+//	@Summary		Preflight draft invoices
+//	@Description	Get preflight data for draft invoice generation for a billing month.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			billing_month	query		string	true	"Billing month"	format(month)
+//	@Success		200				{object}	preflightResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/drafts/preflight [get]
 func (h *Handler) preflightHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -129,6 +142,20 @@ func (h *Handler) preflightHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toPreflightResponse(result))
 }
 
+// prefillHandler returns prefill data for a draft invoice.
+//
+//	@Summary		Compute invoice prefill
+//	@Description	Compute prefill data for a draft invoice for a child and billing month.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			child_id		query		string	true	"Child ID"		format(uuid)
+//	@Param			billing_month	query		string	true	"Billing month"	format(month)
+//	@Success		200				{object}	prefillResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/prefill [get]
 func (h *Handler) prefillHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -152,6 +179,20 @@ func (h *Handler) prefillHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toPrefillResponse(result))
 }
 
+// createDraftHandler creates a new draft invoice.
+//
+//	@Summary		Create draft invoice
+//	@Description	Create a new draft invoice for a child.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		createDraftInvoiceRequest	true	"Invoice data"
+//	@Success		201		{object}	createDraftInvoiceResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/drafts [post]
 func (h *Handler) createDraftHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -198,6 +239,20 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, toCreateDraftResponse(result))
 }
 
+// createAndIssueInvoiceHandler creates and immediately issues an invoice.
+//
+//	@Summary		Create and issue invoice
+//	@Description	Create and immediately issue an invoice for a child.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		createAndIssueInvoiceRequest	true	"Invoice data"
+//	@Success		201		{object}	issueInvoiceResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/drafts/issue [post]
 func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -272,6 +327,24 @@ func (h *Handler) generateDraftsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toGenerateDraftsResponse(result))
 }
 
+// listInvoicesHandler returns a paginated list of invoices.
+//
+//	@Summary		List invoices
+//	@Description	Get a paginated list of invoices with optional filters.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			billing_month		query		string	false	"Filter by billing month"		format(month)
+//	@Param			billing_month_from	query		string	false	"Filter from billing month"		format(month)
+//	@Param			billing_month_to		query		string	false	"Filter to billing month"		format(month)
+//	@Param			status				query		string	false	"Filter by status"				Enums(draft, issued, paid, overdue, payment_failed)
+//	@Param			child_id			query		string	false	"Filter by child ID"			format(uuid)
+//	@Param			page				query		int		false	"Page number"					default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"				default(50)	minimum(1)	maximum(200)
+//	@Success		200					{object}	object{items=[]invoiceListItemResponse,total=int,page=int,page_size=int}
+//	@Failure		401					{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices [get]
 func (h *Handler) listInvoicesHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -302,6 +375,19 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toInvoiceListResponse(result), result.Total, page, pageSize))
 }
 
+// getInvoiceHandler returns a single invoice by ID.
+//
+//	@Summary		Get invoice
+//	@Description	Get a single invoice by ID with full details.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Success		200			{object}	invoiceDetailResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id} [get]
 func (h *Handler) getInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -318,6 +404,22 @@ func (h *Handler) getInvoiceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toInvoiceDetailResponse(result))
 }
 
+// overrideAttendanceBlockHandler overrides an attendance block on an invoice.
+//
+//	@Summary		Override attendance block
+//	@Description	Override an attendance block on an invoice.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			invoice_id	path		string							true	"Invoice ID"	format(uuid)
+//	@Param			body		body		overrideAttendanceBlockRequest	true	"Override data"
+//	@Success		200			{object}	overrideAttendanceBlockResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/override-attendance-block [post]
 func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -350,6 +452,22 @@ func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toOverrideAttendanceBlockResponse(result))
 }
 
+// issueInvoiceHandler issues an invoice.
+//
+//	@Summary		Issue invoice
+//	@Description	Issue a draft invoice.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			invoice_id	path		string				true	"Invoice ID"	format(uuid)
+//	@Param			body		body		issueInvoiceRequest	true	"Issue confirmation"
+//	@Success		200			{object}	issueInvoiceResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/issue [post]
 func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -401,6 +519,17 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toBulkIssueResponse(result))
 }
 
+// getSiteRateHandler returns the current site rate.
+//
+//	@Summary		Get site rate
+//	@Description	Get the current core hourly rate for the site.
+//	@Tags			billing-setup
+//	@Produce		json
+//	@Success		200	{object}	object{core_hourly_rate_minor=int,has_rate=bool}
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/billing-setup [get]
 func (h *Handler) getSiteRateHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -420,6 +549,20 @@ func (h *Handler) getSiteRateHandler(c *gin.Context) {
 	})
 }
 
+// updateSiteRateHandler updates the site rate.
+//
+//	@Summary		Update site rate
+//	@Description	Update the core hourly rate for the site.
+//	@Tags			billing-setup
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		object{core_hourly_rate_minor=int}	true	"Rate data"
+//	@Success		204
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/billing-setup [put]
 func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -461,6 +604,24 @@ func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// listParentInvoicesHandler returns a paginated list of parent invoices.
+//
+//	@Summary		List parent invoices
+//	@Description	Get a paginated list of invoices for the authenticated parent.
+//	@Tags			parent-invoices
+//	@Produce		json
+//	@Param			billing_month		query		string	false	"Filter by billing month"		format(month)
+//	@Param			billing_month_from	query		string	false	"Filter from billing month"		format(month)
+//	@Param			billing_month_to		query		string	false	"Filter to billing month"		format(month)
+//	@Param			status				query		string	false	"Filter by status"				Enums(draft, issued, paid, overdue, payment_failed)
+//	@Param			child_id			query		string	false	"Filter by child ID"			format(uuid)
+//	@Param			page				query		int		false	"Page number"					default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"				default(50)	minimum(1)	maximum(200)
+//	@Success		200					{object}	object{items=[]parentInvoiceListItemResponse,total=int,page=int,page_size=int}
+//	@Failure		401					{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/parent/invoices [get]
 func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -491,6 +652,19 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toParentInvoiceListResponse(result), result.Total, page, pageSize))
 }
 
+// getParentInvoiceHandler returns a single parent invoice by ID.
+//
+//	@Summary		Get parent invoice
+//	@Description	Get a single parent invoice by ID with full details.
+//	@Tags			parent-invoices
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Success		200			{object}	parentInvoiceDetailResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/parent/invoices/{invoice_id} [get]
 func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {

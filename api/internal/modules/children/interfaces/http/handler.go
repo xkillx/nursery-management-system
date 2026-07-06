@@ -229,6 +229,20 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	manager.PATCH("/children/:child_id/booking-patterns/:pattern_id", h.updateBookingPatternHandler)
 }
 
+// listChildrenHandler returns a paginated list of children.
+//
+//	@Summary		List children
+//	@Description	Get a paginated list of children for the current branch.
+//	@Tags			children
+//	@Produce		json
+//	@Param			status	query		string	false	"Filter by status"	Enums(active, inactive, all)
+//	@Param			page	query		int		false	"Page number"		default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200		{object}	object{items=[]childResponse,total=int,page=int,page_size=int}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children [get]
 func (h *Handler) listChildrenHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -260,6 +274,19 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(out, total, page, pageSize))
 }
 
+// getChildHandler returns a single child by ID.
+//
+//	@Summary		Get child
+//	@Description	Get a single child by ID.
+//	@Tags			children
+//	@Produce		json
+//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
+//	@Success		200			{object}	childResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children/{child_id} [get]
 func (h *Handler) getChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -274,6 +301,20 @@ func (h *Handler) getChildHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toChildResponse(child))
 }
 
+// createChildHandler creates a new child with full profile.
+//
+//	@Summary		Create child
+//	@Description	Create a new child with full profile (contacts, health, etc.).
+//	@Tags			children
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		createChildRequest	true	"Child data"
+//	@Success		201		{object}	childCreationResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children [post]
 func (h *Handler) createChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -298,6 +339,22 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, toChildCreationResponse(result))
 }
 
+// updateChildHandler updates an existing child.
+//
+//	@Summary		Update child
+//	@Description	Update an existing child's basic information.
+//	@Tags			children
+//	@Accept			json
+//	@Produce		json
+//	@Param			child_id	path		string				true	"Child ID"	format(uuid)
+//	@Param			body		body		childWriteRequest	true	"Child data"
+//	@Success		200			{object}	childResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children/{child_id} [patch]
 func (h *Handler) updateChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -326,6 +383,22 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toChildResponse(child))
 }
 
+// markInactiveHandler marks a child as inactive.
+//
+//	@Summary		Mark child inactive
+//	@Description	Mark a child as inactive with a reason.
+//	@Tags			children
+//	@Accept			json
+//	@Produce		json
+//	@Param			child_id	path		string			true	"Child ID"	format(uuid)
+//	@Param			body		body		reasonRequest	true	"Reason for marking inactive"
+//	@Success		200			{object}	childResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children/{child_id}/actions/mark-inactive [post]
 func (h *Handler) markInactiveHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -348,6 +421,17 @@ func (h *Handler) markInactiveHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toChildResponse(child))
 }
 
+// listAttendanceHandler returns children with attendance state for today.
+//
+//	@Summary		List attendance children
+//	@Description	Get children with their attendance state for today.
+//	@Tags			children
+//	@Produce		json
+//	@Success		200	{object}	object{items=[]attendanceChildResponse}
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/children/attendance [get]
 func (h *Handler) listAttendanceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -615,6 +699,21 @@ func (h *Handler) setCollectionSettingHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toChildCollectionSettingsResponse(p))
 }
 
+// listRoomAssignmentsHandler returns a paginated list of room assignments for a child.
+//
+//	@Summary		List room assignments
+//	@Description	Get a paginated list of room assignments for a child.
+//	@Tags			children
+//	@Produce		json
+//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]roomAssignmentResponse,total=int,page=int,page_size=int}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/children/{child_id}/room-assignments [get]
 func (h *Handler) listRoomAssignmentsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -733,6 +832,21 @@ func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 
 // --- Booking Pattern handlers ---
 
+// listBookingPatternsHandler returns a paginated list of booking patterns for a child.
+//
+//	@Summary		List booking patterns
+//	@Description	Get a paginated list of booking patterns for a child.
+//	@Tags			children
+//	@Produce		json
+//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]bookingPatternResponse,total=int,page=int,page_size=int}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/children/{child_id}/booking-patterns [get]
 func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {

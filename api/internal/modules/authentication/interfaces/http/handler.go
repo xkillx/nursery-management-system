@@ -94,6 +94,18 @@ type userResponse struct {
 	Email string `json:"email"`
 }
 
+// loginHandler authenticates a user and returns access/refresh tokens.
+//
+//	@Summary		User login
+//	@Description	Authenticate with email and password. Returns access token and user profile.
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		loginRequest	true	"Login credentials"
+//	@Success		200		{object}	authResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Router			/auth/login [post]
 func (h *Handler) loginHandler(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -157,6 +169,15 @@ func (h *Handler) loginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, h.buildAuthResponse(result.AccessToken, result.User, result.Memberships, result.ActiveMembership))
 }
 
+// refreshHandler refreshes the access token using the refresh token cookie.
+//
+//	@Summary		Refresh access token
+//	@Description	Refresh the access token using the refresh token cookie. Requires valid CSRF token.
+//	@Tags			authentication
+//	@Produce		json
+//	@Success		200	{object}	authResponse
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Router			/auth/refresh [post]
 func (h *Handler) refreshHandler(c *gin.Context) {
 	rawRefresh, err := c.Cookie(refreshCookieName)
 	if err != nil || strings.TrimSpace(rawRefresh) == "" {
@@ -187,6 +208,13 @@ func (h *Handler) refreshHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, h.buildAuthResponse(result.AccessToken, result.User, result.Memberships, result.ActiveMembership))
 }
 
+// logoutHandler logs out the user by clearing refresh and CSRF cookies.
+//
+//	@Summary		Logout
+//	@Description	Invalidate the current session by clearing refresh and CSRF cookies.
+//	@Tags			authentication
+//	@Success		204
+//	@Router			/auth/logout [post]
 func (h *Handler) logoutHandler(c *gin.Context) {
 	rawRefresh, err := c.Cookie(refreshCookieName)
 	if err == nil && strings.TrimSpace(rawRefresh) != "" {
@@ -203,6 +231,20 @@ func (h *Handler) logoutHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// switchMembershipHandler switches the active membership for the authenticated user.
+//
+//	@Summary		Switch membership
+//	@Description	Switch the active membership (tenant/branch) for the authenticated user.
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		switchMembershipRequest	true	"Membership ID to switch to"
+//	@Success		200		{object}	authResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		403		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@Router			/auth/switch-membership [post]
 func (h *Handler) switchMembershipHandler(c *gin.Context) {
 	var req switchMembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

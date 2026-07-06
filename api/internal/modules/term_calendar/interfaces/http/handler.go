@@ -61,6 +61,21 @@ func (h *Handler) resolveActor(c *gin.Context) (application.TermCalendarActor, b
 	return application.NewManagerTermCalendarActor(actor), true
 }
 
+// listTerms returns a paginated list of academic terms for a site.
+//
+//	@Summary		List academic terms
+//	@Description	Get a paginated list of academic terms for a site.
+//	@Tags			academic-terms
+//	@Produce		json
+//	@Param			site_id				path		string	true	"Site ID"	format(uuid)
+//	@Param			include_archived	query		bool	false	"Include archived terms"
+//	@Param			page				query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200					{object}	object{items=[]academicTermResponse,total=int,page=int,page_size=int}
+//	@Failure		401					{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/academic-terms [get]
 func (h *Handler) listTerms(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -88,6 +103,21 @@ func (h *Handler) listTerms(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toTermListResponse(terms), total, page, pageSize))
 }
 
+// createTerm creates a new academic term for a site.
+//
+//	@Summary		Create academic term
+//	@Description	Create a new academic term for a site.
+//	@Tags			academic-terms
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			body	body		createTermRequest	true	"Term data"
+//	@Success		201		{object}	object{academic_term=academicTermResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/academic-terms [post]
 func (h *Handler) createTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -134,6 +164,23 @@ func (h *Handler) createTerm(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"academic_term": toTermResponse(term)})
 }
 
+// updateTerm updates an existing academic term.
+//
+//	@Summary		Update academic term
+//	@Description	Update an existing academic term.
+//	@Tags			academic-terms
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			term_id	path		string			true	"Term ID"	format(uuid)
+//	@Param			body	body		updateTermRequest	true	"Term data"
+//	@Success		200		{object}	object{academic_term=academicTermResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		404		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/academic-terms/{term_id} [patch]
 func (h *Handler) updateTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
@@ -193,6 +240,20 @@ func (h *Handler) updateTerm(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"academic_term": toTermResponse(term)})
 }
 
+// archiveTerm archives an academic term.
+//
+//	@Summary		Archive academic term
+//	@Description	Archive an academic term.
+//	@Tags			academic-terms
+//	@Produce		json
+//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
+//	@Param			term_id	path	string	true	"Term ID"	format(uuid)
+//	@Success		204
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Failure		404	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/academic-terms/{term_id}/actions/archive [post]
 func (h *Handler) archiveTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {

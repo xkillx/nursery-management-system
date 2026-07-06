@@ -48,6 +48,21 @@ func (h *Handler) resolveActor(c *gin.Context) (tenantID, branchID uuid.UUID, ok
 	return actor.TenantID, actor.BranchID, true
 }
 
+// createClosureDay creates a new closure day for a site.
+//
+//	@Summary		Create closure day
+//	@Description	Create a new closure day for a site.
+//	@Tags			closure-days
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
+//	@Param			body	body		createClosureDayRequest	true	"Closure day data"
+//	@Success		201		{object}	object{closure_day=closureDayResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/sites/{site_id}/closure-days [post]
 func (h *Handler) createClosureDay(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
@@ -81,6 +96,23 @@ func (h *Handler) createClosureDay(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"closure_day": toClosureDayResponse(closure)})
 }
 
+// listClosureDays returns a paginated list of closure days for a site.
+//
+//	@Summary		List closure days
+//	@Description	Get a paginated list of closure days for a site within a date range.
+//	@Tags			closure-days
+//	@Produce		json
+//	@Param			site_id		path		string	true	"Site ID"	format(uuid)
+//	@Param			from		query		string	true	"From date"	format(date)
+//	@Param			to			query		string	true	"To date"	format(date)
+//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Success		200			{object}	object{items=[]closureDayResponse,total=int,page=int,page_size=int}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/sites/{site_id}/closure-days [get]
 func (h *Handler) listClosureDays(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
@@ -119,6 +151,20 @@ func (h *Handler) listClosureDays(c *gin.Context) {
 	c.JSON(http.StatusOK, pagination.PaginatedResponse(toClosureDayListResponse(closures), total, page, pageSize))
 }
 
+// deleteClosureDay deletes a closure day.
+//
+//	@Summary		Delete closure day
+//	@Description	Delete a closure day.
+//	@Tags			closure-days
+//	@Produce		json
+//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
+//	@Param			id		path	string	true	"Closure Day ID"	format(uuid)
+//	@Success		204
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Failure		404	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/sites/{site_id}/closure-days/{id} [delete]
 func (h *Handler) deleteClosureDay(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
