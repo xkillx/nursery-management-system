@@ -66,19 +66,19 @@ func (h *Handler) resolveActor(c *gin.Context) (tenantID, branchID uuid.UUID, ok
 func (h *Handler) createClosureDay(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req createClosureDayRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	date, err := parseDate(req.Date)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid date format. Use YYYY-MM-DD.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid date format. Use YYYY-MM-DD.", nil)
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *Handler) createClosureDay(c *gin.Context) {
 func (h *Handler) listClosureDays(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -124,18 +124,18 @@ func (h *Handler) listClosureDays(c *gin.Context) {
 	toStr := c.Query("to")
 
 	if fromStr == "" || toStr == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "Both from and to query parameters are required.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Both from and to query parameters are required.", nil)
 		return
 	}
 
 	from, err := parseDate(fromStr)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid from date format. Use YYYY-MM-DD.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid from date format. Use YYYY-MM-DD.", nil)
 		return
 	}
 	to, err := parseDate(toStr)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid to date format. Use YYYY-MM-DD.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid to date format. Use YYYY-MM-DD.", nil)
 		return
 	}
 
@@ -168,13 +168,13 @@ func (h *Handler) listClosureDays(c *gin.Context) {
 func (h *Handler) deleteClosureDay(c *gin.Context) {
 	tenantID, branchID, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid closure day ID.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid closure day ID.", nil)
 		return
 	}
 
@@ -193,11 +193,3 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}

@@ -79,13 +79,13 @@ func (h *Handler) resolveActor(c *gin.Context) (application.TermCalendarActor, b
 func (h *Handler) listTerms(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -121,30 +121,30 @@ func (h *Handler) listTerms(c *gin.Context) {
 func (h *Handler) createTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	var req createTermRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	startDate, err := parseDate(req.StartDate)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid start_date format.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid start_date format.", nil)
 		return
 	}
 	endDate, err := parseDate(req.EndDate)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid end_date format.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid end_date format.", nil)
 		return
 	}
 
@@ -184,25 +184,25 @@ func (h *Handler) createTerm(c *gin.Context) {
 func (h *Handler) updateTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	termID, err := uuid.Parse(c.Param("term_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	var req updateTermRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -217,7 +217,7 @@ func (h *Handler) updateTerm(c *gin.Context) {
 	if req.StartDate != nil {
 		sd, err := parseDate(*req.StartDate)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid start_date format.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid start_date format.", nil)
 			return
 		}
 		params.StartDate = &sd
@@ -225,7 +225,7 @@ func (h *Handler) updateTerm(c *gin.Context) {
 	if req.EndDate != nil {
 		ed, err := parseDate(*req.EndDate)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid end_date format.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid end_date format.", nil)
 			return
 		}
 		params.EndDate = &ed
@@ -257,19 +257,19 @@ func (h *Handler) updateTerm(c *gin.Context) {
 func (h *Handler) archiveTerm(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	termID, err := uuid.Parse(c.Param("term_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -288,15 +288,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}
-
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))
 	for _, role := range roles {
@@ -306,25 +297,25 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v, ok := c.Get(tenant.AuthContextKey)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		authCtx, ok := v.(tenant.AuthorizationContext)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		switch authCtx.Role {
 		case "owner", "manager", "practitioner", "parent":
 		default:
-			writeError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
 			return
 		}
 
 		if _, exists := allowed[authCtx.Role]; !exists {
-			writeError(c, http.StatusForbidden, "forbidden_role", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 			return
 		}
 

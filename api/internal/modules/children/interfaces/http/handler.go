@@ -246,7 +246,7 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 func (h *Handler) listChildrenHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -290,7 +290,7 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 func (h *Handler) getChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	child, err := h.getChild.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -318,17 +318,17 @@ func (h *Handler) getChildHandler(c *gin.Context) {
 func (h *Handler) createChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req createChildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	input, err := mapCreateChildRequest(req)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	result, err := h.createChildWithFull.Execute(c.Request.Context(), actor, input)
@@ -358,12 +358,12 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 func (h *Handler) updateChildHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childWriteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	params := application.UpdateChildParams{
@@ -402,12 +402,12 @@ func (h *Handler) updateChildHandler(c *gin.Context) {
 func (h *Handler) markInactiveHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req reasonRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	child, err := h.markInactive.Execute(c.Request.Context(), actor, c.Param("child_id"), application.MarkInactiveParams{
@@ -435,7 +435,7 @@ func (h *Handler) markInactiveHandler(c *gin.Context) {
 func (h *Handler) listAttendanceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	children, err := h.listAttendance.Execute(c.Request.Context(), actor)
@@ -455,7 +455,7 @@ func (h *Handler) listAttendanceHandler(c *gin.Context) {
 func (h *Handler) getProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getProfile.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -469,12 +469,12 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 func (h *Handler) updateProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateProfile.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildProfileRequest(req))
@@ -488,7 +488,7 @@ func (h *Handler) updateProfileHandler(c *gin.Context) {
 func (h *Handler) getContactsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	contacts, err := h.getContacts.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -502,12 +502,12 @@ func (h *Handler) getContactsHandler(c *gin.Context) {
 func (h *Handler) replaceContactsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childContactsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	contacts, err := h.replaceContacts.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildContactsRequest(req))
@@ -521,7 +521,7 @@ func (h *Handler) replaceContactsHandler(c *gin.Context) {
 func (h *Handler) getHealthHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getHealth.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -535,12 +535,12 @@ func (h *Handler) getHealthHandler(c *gin.Context) {
 func (h *Handler) updateHealthHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childHealthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateHealth.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildHealthRequest(req))
@@ -554,7 +554,7 @@ func (h *Handler) updateHealthHandler(c *gin.Context) {
 func (h *Handler) getSafeguardingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getSafeguarding.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -568,12 +568,12 @@ func (h *Handler) getSafeguardingHandler(c *gin.Context) {
 func (h *Handler) updateSafeguardingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childSafeguardingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateSafeguarding.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildSafeguardingRequest(req))
@@ -587,7 +587,7 @@ func (h *Handler) updateSafeguardingHandler(c *gin.Context) {
 func (h *Handler) getConsentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getConsent.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -605,12 +605,12 @@ func (h *Handler) getConsentHandler(c *gin.Context) {
 func (h *Handler) updateConsentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childConsentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateConsent.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildConsentRequest(req))
@@ -624,7 +624,7 @@ func (h *Handler) updateConsentHandler(c *gin.Context) {
 func (h *Handler) getFundingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getFunding.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -642,12 +642,12 @@ func (h *Handler) getFundingHandler(c *gin.Context) {
 func (h *Handler) updateFundingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childFundingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateFunding.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildFundingRequest(req))
@@ -661,7 +661,7 @@ func (h *Handler) updateFundingHandler(c *gin.Context) {
 func (h *Handler) getCollectionSettingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getCollectionSetting.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -679,12 +679,12 @@ func (h *Handler) getCollectionSettingHandler(c *gin.Context) {
 func (h *Handler) setCollectionSettingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childCollectionSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.setCollectionPassword.Execute(c.Request.Context(), actor, c.Param("child_id"), application.SetCollectionPasswordInput{
@@ -717,7 +717,7 @@ func (h *Handler) setCollectionSettingHandler(c *gin.Context) {
 func (h *Handler) listRoomAssignmentsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -739,12 +739,12 @@ func (h *Handler) listRoomAssignmentsHandler(c *gin.Context) {
 func (h *Handler) createRoomAssignmentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req roomAssignmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	a, err := h.createRoomAssignment.Execute(c.Request.Context(), actor, c.Param("child_id"), application.CreateRoomAssignmentInput{
@@ -761,7 +761,7 @@ func (h *Handler) createRoomAssignmentHandler(c *gin.Context) {
 func (h *Handler) closeRoomAssignmentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	if err := h.closeRoomAssignment.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("assignment_id")); err != nil {
@@ -774,7 +774,7 @@ func (h *Handler) closeRoomAssignmentHandler(c *gin.Context) {
 func (h *Handler) getBillingProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getBillingProfile.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -792,12 +792,12 @@ func (h *Handler) getBillingProfileHandler(c *gin.Context) {
 func (h *Handler) updateBillingProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req childBillingProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	p, err := h.updateBillingProfile.Execute(c.Request.Context(), actor, c.Param("child_id"), application.UpdateBillingProfileInput{
@@ -815,7 +815,7 @@ func (h *Handler) updateBillingProfileHandler(c *gin.Context) {
 func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getLeavingRecord.Execute(c.Request.Context(), actor, c.Param("child_id"))
@@ -850,7 +850,7 @@ func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -868,7 +868,7 @@ func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
 func (h *Handler) getBookingPatternHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"))
@@ -882,7 +882,7 @@ func (h *Handler) getBookingPatternHandler(c *gin.Context) {
 func (h *Handler) getCurrentBookingPatternHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	p, err := h.getCurrentBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Query("date"))
@@ -896,24 +896,24 @@ func (h *Handler) getCurrentBookingPatternHandler(c *gin.Context) {
 func (h *Handler) createBookingPatternHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req bookingPatternRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	effectiveFrom, err := time.Parse("2006-01-02", req.EffectiveFrom)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	entries := make([]application.BookingPatternEntryInput, 0, len(req.Entries))
 	for _, e := range req.Entries {
 		stID, perr := uuid.Parse(e.SessionTypeID)
 		if perr != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 			return
 		}
 		entries = append(entries, application.BookingPatternEntryInput{
@@ -936,19 +936,19 @@ func (h *Handler) createBookingPatternHandler(c *gin.Context) {
 func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	var req bookingPatternUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	in := application.UpdateBookingPatternInput{}
 	if req.EffectiveFrom != nil {
 		t, err := time.Parse("2006-01-02", *req.EffectiveFrom)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 			return
 		}
 		in.EffectiveFrom = &t
@@ -958,7 +958,7 @@ func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
 		for _, e := range *req.Entries {
 			stID, perr := uuid.Parse(e.SessionTypeID)
 			if perr != nil {
-				writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+				httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 				return
 			}
 			entries = append(entries, application.BookingPatternEntryInput{
@@ -986,15 +986,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}
-
 // requireRoles checks that the authenticated user has one of the allowed roles.
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))
@@ -1005,25 +996,25 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v, ok := c.Get(tenant.AuthContextKey)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		authCtx, ok := v.(tenant.AuthorizationContext)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		switch authCtx.Role {
 		case "owner", "manager", "practitioner", "parent":
 		default:
-			writeError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
 			return
 		}
 
 		if _, exists := allowed[authCtx.Role]; !exists {
-			writeError(c, http.StatusForbidden, "forbidden_role", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 			return
 		}
 

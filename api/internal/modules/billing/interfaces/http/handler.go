@@ -123,13 +123,13 @@ func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
 func (h *Handler) preflightHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	billingMonth := strings.TrimSpace(c.Query("billing_month"))
 	if billingMonth == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "Missing billing_month query parameter.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Missing billing_month query parameter.", nil)
 		return
 	}
 
@@ -159,14 +159,14 @@ func (h *Handler) preflightHandler(c *gin.Context) {
 func (h *Handler) prefillHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	childID := strings.TrimSpace(c.Query("child_id"))
 	billingMonth := strings.TrimSpace(c.Query("billing_month"))
 	if childID == "" || billingMonth == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "Missing child_id or billing_month query parameters.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Missing child_id or billing_month query parameters.", nil)
 		return
 	}
 
@@ -196,19 +196,19 @@ func (h *Handler) prefillHandler(c *gin.Context) {
 func (h *Handler) createDraftHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req createDraftInvoiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
 		return
 	}
 
 	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.", nil)
 		return
 	}
 
@@ -256,19 +256,19 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req createAndIssueInvoiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
 		return
 	}
 
 	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child ID.", nil)
 		return
 	}
 
@@ -302,19 +302,19 @@ func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 func (h *Handler) generateDraftsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req generateDraftsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
 		return
 	}
 
 	req.BillingMonth = strings.TrimSpace(req.BillingMonth)
 	if req.BillingMonth == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "Missing billing_month.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Missing billing_month.", nil)
 		return
 	}
 
@@ -348,7 +348,7 @@ func (h *Handler) generateDraftsHandler(c *gin.Context) {
 func (h *Handler) listInvoicesHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -391,7 +391,7 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 func (h *Handler) getInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -423,19 +423,19 @@ func (h *Handler) getInvoiceHandler(c *gin.Context) {
 func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	invoiceID, err := uuid.Parse(strings.TrimSpace(c.Param("invoice_id")))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid invoice_id.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice_id.", nil)
 		return
 	}
 
 	var req overrideAttendanceBlockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -471,13 +471,13 @@ func (h *Handler) overrideAttendanceBlockHandler(c *gin.Context) {
 func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req issueInvoiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
 		return
 	}
 
@@ -493,13 +493,13 @@ func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req bulkIssueInvoicesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request body.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
 		return
 	}
 
@@ -533,7 +533,7 @@ func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
 func (h *Handler) getSiteRateHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -566,7 +566,7 @@ func (h *Handler) getSiteRateHandler(c *gin.Context) {
 func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -574,7 +574,7 @@ func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 		CoreHourlyRateMinor int `json:"core_hourly_rate_minor"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -625,7 +625,7 @@ func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -668,7 +668,7 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
@@ -694,15 +694,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
 }
 
 func toPreflightResponse(r domain.PreflightResult) preflightResponse {

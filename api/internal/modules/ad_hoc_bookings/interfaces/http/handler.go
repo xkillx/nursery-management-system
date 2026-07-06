@@ -113,13 +113,13 @@ func (h *Handler) resolveActor(c *gin.Context) (application.AdHocBookingActor, b
 func (h *Handler) listBookings(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -127,7 +127,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 	if cid := c.Query("child_id"); cid != "" {
 		id, err := uuid.Parse(cid)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid child_id.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child_id.", nil)
 			return
 		}
 		childID = &id
@@ -137,7 +137,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 	if v := c.Query("from"); v != "" {
 		t, err := time.Parse("2006-01-02", v)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid from format.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid from format.", nil)
 			return
 		}
 		from = &t
@@ -145,7 +145,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 	if v := c.Query("to"); v != "" {
 		t, err := time.Parse("2006-01-02", v)
 		if err != nil {
-			writeError(c, http.StatusBadRequest, "validation_error", "Invalid to format.")
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid to format.", nil)
 			return
 		}
 		to = &t
@@ -181,35 +181,35 @@ func (h *Handler) listBookings(c *gin.Context) {
 func (h *Handler) createBooking(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	var req createAdHocBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	childID, err := uuid.Parse(req.ChildID)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid child_id.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child_id.", nil)
 		return
 	}
 	calendarDate, err := time.Parse("2006-01-02", req.CalendarDate)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid calendar_date format.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid calendar_date format.", nil)
 		return
 	}
 	sessionTypeID, err := uuid.Parse(req.SessionTypeID)
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid session_type_id.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid session_type_id.", nil)
 		return
 	}
 
@@ -245,19 +245,19 @@ func (h *Handler) createBooking(c *gin.Context) {
 func (h *Handler) cancelBooking(c *gin.Context) {
 	actor, ok := h.resolveActor(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	bookingID, err := uuid.Parse(c.Param("booking_id"))
 	if err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -276,15 +276,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}
-
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))
 	for _, role := range roles {
@@ -294,25 +285,25 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v, ok := c.Get(tenant.AuthContextKey)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		authCtx, ok := v.(tenant.AuthorizationContext)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		switch authCtx.Role {
 		case "owner", "manager", "practitioner", "parent":
 		default:
-			writeError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
 			return
 		}
 
 		if _, exists := allowed[authCtx.Role]; !exists {
-			writeError(c, http.StatusForbidden, "forbidden_role", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 			return
 		}
 

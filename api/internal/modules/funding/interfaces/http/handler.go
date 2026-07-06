@@ -49,13 +49,13 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 func (h *Handler) overviewHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	billingMonth := c.Query("billing_month")
 	if billingMonth == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "billing_month query parameter is required.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "billing_month query parameter is required.", nil)
 		return
 	}
 
@@ -89,13 +89,13 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 func (h *Handler) getProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	billingMonth := c.Query("billing_month")
 	if billingMonth == "" {
-		writeError(c, http.StatusBadRequest, "validation_error", "billing_month query parameter is required.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "billing_month query parameter is required.", nil)
 		return
 	}
 
@@ -127,13 +127,13 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 func (h *Handler) upsertProfileHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req fundingProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -221,11 +221,3 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}

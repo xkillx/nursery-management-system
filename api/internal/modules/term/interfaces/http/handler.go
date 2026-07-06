@@ -100,25 +100,25 @@ func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 func (h *Handler) createTermHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	childID, err := parseUUIDRaw(c.Param("child_id"), "child_id")
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 
 	var req createTermRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
 	in, err := toCreateTermInput(childID, req)
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 
@@ -148,12 +148,12 @@ func (h *Handler) createTermHandler(c *gin.Context) {
 func (h *Handler) listTermsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	childID, err := parseUUIDRaw(c.Param("child_id"), "child_id")
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	page, pageSize := pagination.ParsePageParams(c)
@@ -182,12 +182,12 @@ func (h *Handler) listTermsHandler(c *gin.Context) {
 func (h *Handler) getCurrentTermHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	childID, err := parseUUIDRaw(c.Param("child_id"), "child_id")
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	term, execErr := h.getCurrentTerm.Execute(c.Request.Context(), actor, childID.String())
@@ -214,7 +214,7 @@ func (h *Handler) getCurrentTermHandler(c *gin.Context) {
 func (h *Handler) getTermHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	term, execErr := h.getTerm.Execute(c.Request.Context(), actor, c.Param("term_id"))
@@ -242,7 +242,7 @@ func (h *Handler) getTermHandler(c *gin.Context) {
 func (h *Handler) listExpiringHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	within := 30
@@ -280,22 +280,22 @@ func (h *Handler) listExpiringHandler(c *gin.Context) {
 func (h *Handler) requestScheduleChangeHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	termID, err := parseUUIDRaw(c.Param("term_id"), "term_id")
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	var req requestScheduleChangeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	in, err := toRequestScheduleChangeInput(termID, req)
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	change, execErr := h.requestChange.Execute(c.Request.Context(), actor, in)
@@ -323,7 +323,7 @@ func (h *Handler) requestScheduleChangeHandler(c *gin.Context) {
 func (h *Handler) approveScheduleChangeHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	change, execErr := h.approveChange.Execute(c.Request.Context(), actor, c.Param("term_id"), c.Param("change_id"))
@@ -351,7 +351,7 @@ func (h *Handler) approveScheduleChangeHandler(c *gin.Context) {
 func (h *Handler) rejectScheduleChangeHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	change, execErr := h.rejectChange.Execute(c.Request.Context(), actor, c.Param("term_id"), c.Param("change_id"))
@@ -381,22 +381,22 @@ func (h *Handler) rejectScheduleChangeHandler(c *gin.Context) {
 func (h *Handler) terminateTermHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		h.writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 	termID, err := parseUUIDRaw(c.Param("term_id"), "term_id")
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	var req terminateTermRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 	in, err := toTerminateTermInput(termID, req)
 	if err != nil {
-		h.writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", err.Error(), nil)
 		return
 	}
 	term, execErr := h.terminate.Execute(c.Request.Context(), actor, in)
@@ -416,13 +416,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func (h *Handler) writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code: code, Message: message, RequestID: requestID,
-	})
 }
 
 var _ = errors.New

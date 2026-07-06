@@ -32,13 +32,13 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 func (h *Handler) markAbsentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	var req markAbsentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -58,13 +58,13 @@ func (h *Handler) markAbsentHandler(c *gin.Context) {
 func (h *Handler) clearMarkerHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
-		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
 	markerID := c.Param("absence_marker_id")
 	if _, err := parseMarkerID(markerID); err != nil {
-		writeError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.")
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
@@ -84,15 +84,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func writeError(c *gin.Context, status int, code, message string) {
-	requestID := httpserver.RequestIDFromContext(c)
-	c.AbortWithStatusJSON(status, httpserver.ErrorResponse{
-		Code:      code,
-		Message:   message,
-		RequestID: requestID,
-	})
-}
-
 func requireRoles(roles ...string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(roles))
 	for _, role := range roles {
@@ -102,18 +93,18 @@ func requireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v, ok := c.Get(tenant.AuthContextKey)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		authCtx, ok := v.(tenant.AuthorizationContext)
 		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
+			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 			return
 		}
 
 		if _, exists := allowed[authCtx.Role]; !exists {
-			writeError(c, http.StatusForbidden, "forbidden_role", "Access denied.")
+			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
 			return
 		}
 
