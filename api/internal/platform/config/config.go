@@ -43,6 +43,9 @@ type Config struct {
 	MetricsEnabled bool
 
 	RunMigrations bool
+
+	CORSAllowedOrigins string
+	MaxBodySizeBytes   int64
 }
 
 func Load() (Config, error) {
@@ -105,6 +108,9 @@ func Load() (Config, error) {
 		MetricsEnabled: resolveMetricsEnabled(os.Getenv("METRICS_ENABLED"), getEnv("APP_ENV", "local")),
 
 		RunMigrations: resolveRunMigrations(os.Getenv("RUN_MIGRATIONS")),
+
+		CORSAllowedOrigins: strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS")),
+		MaxBodySizeBytes:   resolveMaxBodySizeBytes(os.Getenv("MAX_BODY_SIZE_BYTES")),
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -261,4 +267,16 @@ func resolveRunMigrations(raw string) bool {
 		return true
 	}
 	return strings.EqualFold(raw, "true")
+}
+
+func resolveMaxBodySizeBytes(raw string) int64 {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 1048576 // 1MB default
+	}
+	v, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || v <= 0 {
+		return 1048576
+	}
+	return v
 }
