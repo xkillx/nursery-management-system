@@ -30,6 +30,23 @@ func (uc *ListInvitesUseCase) Execute(ctx context.Context, actor tenant.ActorCon
 	return ListInvitesResult{Invites: invites}, nil
 }
 
+func (uc *ListInvitesUseCase) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, status domain.InviteStatus, limit, offset int) (ListInvitesResult, int, error) {
+	invites, err := uc.repo.ListInvitesPaginated(ctx, actor.TenantID, actor.BranchID, status, limit, offset)
+	if err != nil {
+		return ListInvitesResult{}, 0, err
+	}
+	if invites == nil {
+		invites = []domain.Invite{}
+	}
+
+	total, err := uc.repo.CountInvites(ctx, actor.TenantID, actor.BranchID, status)
+	if err != nil {
+		return ListInvitesResult{}, 0, err
+	}
+
+	return ListInvitesResult{Invites: invites}, total, nil
+}
+
 // ParseStatus returns the InviteStatus for the query value, defaulting to pending.
 func ParseStatus(v string) (domain.InviteStatus, bool) {
 	switch v {

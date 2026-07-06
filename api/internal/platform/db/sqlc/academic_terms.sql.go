@@ -55,6 +55,27 @@ func (q *Queries) AcademicTermsCheckActiveNameExists(ctx context.Context, arg Ac
 	return exists, err
 }
 
+const academicTermsCountByBranch = `-- name: AcademicTermsCountByBranch :one
+SELECT COUNT(*)
+FROM academic_terms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+`
+
+type AcademicTermsCountByBranchParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+}
+
+func (q *Queries) AcademicTermsCountByBranch(ctx context.Context, arg AcademicTermsCountByBranchParams) (int64, error) {
+	row := q.db.QueryRow(ctx, academicTermsCountByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const academicTermsCreate = `-- name: AcademicTermsCreate :exec
 INSERT INTO academic_terms (id, tenant_id, branch_id, name, kind, start_date, end_date, is_active)
 VALUES ($1, $2, $3, $4, $5, $6, $7, true)
@@ -213,6 +234,61 @@ type AcademicTermsListByBranchParams struct {
 
 func (q *Queries) AcademicTermsListByBranch(ctx context.Context, arg AcademicTermsListByBranchParams) ([]AcademicTerm, error) {
 	rows, err := q.db.Query(ctx, academicTermsListByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AcademicTerm
+	for rows.Next() {
+		var i AcademicTerm
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Kind,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const academicTermsListByBranchPaginated = `-- name: AcademicTermsListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, name, kind, start_date, end_date, is_active, created_at, updated_at
+FROM academic_terms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY start_date DESC, name ASC
+LIMIT $5 OFFSET $4
+`
+
+type AcademicTermsListByBranchPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) AcademicTermsListByBranchPaginated(ctx context.Context, arg AcademicTermsListByBranchPaginatedParams) ([]AcademicTerm, error) {
+	rows, err := q.db.Query(ctx, academicTermsListByBranchPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

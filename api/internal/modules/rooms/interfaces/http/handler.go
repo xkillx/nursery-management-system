@@ -11,6 +11,7 @@ import (
 	"nursery-management-system/api/internal/platform/tenant"
 
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 )
 
 type Handler struct {
@@ -105,13 +106,16 @@ func (h *Handler) listRooms(c *gin.Context) {
 	includeArchived := c.Query("include_archived") == "true"
 	includeOccupancy := c.Query("include") == "occupancy"
 
-	rooms, counts, err := h.list.Execute(c.Request.Context(), actor, siteID, includeArchived, includeOccupancy)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	rooms, counts, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, includeOccupancy, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"rooms": toRoomListResponse(rooms, counts)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toRoomListResponse(rooms, counts), total, page, pageSize))
 }
 
 func (h *Handler) createRoom(c *gin.Context) {

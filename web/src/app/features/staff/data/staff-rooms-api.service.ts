@@ -36,7 +36,10 @@ interface ApiRoom {
 }
 
 interface ApiRoomListResponse {
-  rooms: ApiRoom[];
+  items: ApiRoom[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,7 +56,7 @@ export class StaffRoomsApiService {
     }
     return this.http
       .get<ApiRoomListResponse>(apiUrl(`/sites/${siteId}/rooms`), { params })
-      .pipe(map((res) => res.rooms.map((room) => this.toRoom(room))));
+      .pipe(map((res) => res.items.map((room) => this.toRoom(room))));
   }
 
   archiveRoom(siteId: string, roomId: string): Observable<void> {

@@ -10,6 +10,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/children/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -236,7 +237,10 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 	}
 
 	statusFilter := c.Query("status")
-	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, parseIntQuery(c, "limit", 50), parseIntQuery(c, "offset", 0))
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	children, err := h.listChildren.Execute(c.Request.Context(), actor, statusFilter, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -253,7 +257,7 @@ func (h *Handler) listChildrenHandler(c *gin.Context) {
 		out = append(out, toChildResponse(child))
 	}
 
-	c.JSON(http.StatusOK, gin.H{"items": out, "total": total})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(out, total, page, pageSize))
 }
 
 func (h *Handler) getChildHandler(c *gin.Context) {
@@ -617,7 +621,11 @@ func (h *Handler) listRoomAssignmentsHandler(c *gin.Context) {
 		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
 		return
 	}
-	items, err := h.listRoomAssignments.Execute(c.Request.Context(), actor, c.Param("child_id"))
+
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	items, total, err := h.listRoomAssignments.ExecutePaginated(c.Request.Context(), actor, c.Param("child_id"), pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -626,7 +634,7 @@ func (h *Handler) listRoomAssignmentsHandler(c *gin.Context) {
 	for _, it := range items {
 		out = append(out, toRoomAssignmentResponse(it))
 	}
-	c.JSON(http.StatusOK, gin.H{"items": out})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(out, total, page, pageSize))
 }
 
 func (h *Handler) createRoomAssignmentHandler(c *gin.Context) {
@@ -731,12 +739,16 @@ func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
 		writeError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.")
 		return
 	}
-	items, err := h.listBookingPatterns.Execute(c.Request.Context(), actor, c.Param("child_id"))
+
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	items, total, err := h.listBookingPatterns.ExecutePaginated(c.Request.Context(), actor, c.Param("child_id"), pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": toBookingPatternListResponse(items)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toBookingPatternListResponse(items), total, page, pageSize))
 }
 
 func (h *Handler) getBookingPatternHandler(c *gin.Context) {

@@ -49,3 +49,36 @@ WHERE c.tenant_id = $1
   AND c.start_date < ($3 + INTERVAL '1 month')::date
   AND (c.end_date IS NULL OR c.end_date >= $3)
 ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC;
+
+-- name: FundingOverviewListPaginated :many
+SELECT
+  c.id AS child_id,
+  c.first_name AS child_first_name,
+  c.middle_name AS child_middle_name,
+  c.last_name AS child_last_name,
+  c.is_active,
+  c.start_date,
+  c.end_date,
+  fp.id AS funding_profile_id,
+  fp.funded_allowance_minutes,
+  fp.updated_at AS funding_updated_at
+FROM children c
+LEFT JOIN funding_profiles fp
+  ON fp.tenant_id = c.tenant_id
+  AND fp.branch_id = c.branch_id
+  AND fp.child_id = c.id
+  AND fp.billing_month = $3
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < ($3 + INTERVAL '1 month')::date
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: FundingOverviewCount :one
+SELECT COUNT(*)
+FROM children c
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < ($3 + INTERVAL '1 month')::date
+  AND (c.end_date IS NULL OR c.end_date >= $3);

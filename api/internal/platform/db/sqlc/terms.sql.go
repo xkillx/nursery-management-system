@@ -51,6 +51,46 @@ func (q *Queries) ChildSetCurrentTermID(ctx context.Context, arg ChildSetCurrent
 	return err
 }
 
+const termCountByChild = `-- name: TermCountByChild :one
+SELECT COUNT(*)
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+`
+
+type TermCountByChildParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+}
+
+func (q *Queries) TermCountByChild(ctx context.Context, arg TermCountByChildParams) (int64, error) {
+	row := q.db.QueryRow(ctx, termCountByChild, arg.TenantID, arg.BranchID, arg.ChildID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const termCountExpiringWithin = `-- name: TermCountExpiringWithin :one
+SELECT COUNT(*)
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2
+  AND status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND term_end_date <= $3
+`
+
+type TermCountExpiringWithinParams struct {
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	TermEndDate pgtype.Date
+}
+
+func (q *Queries) TermCountExpiringWithin(ctx context.Context, arg TermCountExpiringWithinParams) (int64, error) {
+	row := q.db.QueryRow(ctx, termCountExpiringWithin, arg.TenantID, arg.BranchID, arg.TermEndDate)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const termGetActiveForChild = `-- name: TermGetActiveForChild :one
 SELECT id, tenant_id, branch_id, child_id,
        term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
@@ -357,6 +397,67 @@ func (q *Queries) TermListByChild(ctx context.Context, arg TermListByChildParams
 	return items, nil
 }
 
+const termListByChildPaginated = `-- name: TermListByChildPaginated :many
+SELECT id, tenant_id, branch_id, child_id,
+       term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
+       status, termination_reason_code, termination_reason_note, terminated_at,
+       created_at, created_by_membership_id, updated_at
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY term_start_date DESC, created_at DESC
+LIMIT $5 OFFSET $4
+`
+
+type TermListByChildPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) TermListByChildPaginated(ctx context.Context, arg TermListByChildPaginatedParams) ([]Term, error) {
+	rows, err := q.db.Query(ctx, termListByChildPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Term
+	for rows.Next() {
+		var i Term
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.TermStartDate,
+			&i.TermEndDate,
+			&i.BookingPatternID,
+			&i.SiteHourlyRateMinor,
+			&i.Status,
+			&i.TerminationReasonCode,
+			&i.TerminationReasonNote,
+			&i.TerminatedAt,
+			&i.CreatedAt,
+			&i.CreatedByMembershipID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const termListEndingOnOrBefore = `-- name: TermListEndingOnOrBefore :many
 SELECT id, tenant_id, branch_id, child_id,
        term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
@@ -431,6 +532,69 @@ type TermListExpiringWithinParams struct {
 
 func (q *Queries) TermListExpiringWithin(ctx context.Context, arg TermListExpiringWithinParams) ([]Term, error) {
 	rows, err := q.db.Query(ctx, termListExpiringWithin, arg.TenantID, arg.BranchID, arg.TermEndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Term
+	for rows.Next() {
+		var i Term
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.TermStartDate,
+			&i.TermEndDate,
+			&i.BookingPatternID,
+			&i.SiteHourlyRateMinor,
+			&i.Status,
+			&i.TerminationReasonCode,
+			&i.TerminationReasonNote,
+			&i.TerminatedAt,
+			&i.CreatedAt,
+			&i.CreatedByMembershipID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const termListExpiringWithinPaginated = `-- name: TermListExpiringWithinPaginated :many
+SELECT id, tenant_id, branch_id, child_id,
+       term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
+       status, termination_reason_code, termination_reason_note, terminated_at,
+       created_at, created_by_membership_id, updated_at
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2
+  AND status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND term_end_date <= $3
+ORDER BY term_end_date ASC, child_id ASC
+LIMIT $5 OFFSET $4
+`
+
+type TermListExpiringWithinPaginatedParams struct {
+	TenantID    pgtype.UUID
+	BranchID    pgtype.UUID
+	TermEndDate pgtype.Date
+	Offset      pgtype.Int4
+	Limit       pgtype.Int4
+}
+
+func (q *Queries) TermListExpiringWithinPaginated(ctx context.Context, arg TermListExpiringWithinPaginatedParams) ([]Term, error) {
+	rows, err := q.db.Query(ctx, termListExpiringWithinPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.TermEndDate,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

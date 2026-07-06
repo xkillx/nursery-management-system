@@ -53,6 +53,40 @@ func (r *Repository) ListByBranchAndDateRange(ctx context.Context, tenantID, bra
 	return out, nil
 }
 
+func (r *Repository) ListByBranchAndDateRangePaginated(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time, limit, offset int) ([]domain.BranchClosureDay, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.BranchClosureDaysListByBranchAndDateRangePaginated(ctx, sqlc.BranchClosureDaysListByBranchAndDateRangePaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Date:     timeToPgtypeDate(from),
+		Date_2:   timeToPgtypeDate(to),
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query closure days list paginated: %w", err)
+	}
+	out := make([]domain.BranchClosureDay, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapClosureDay(row))
+	}
+	return out, nil
+}
+
+func (r *Repository) CountByBranchAndDateRange(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.BranchClosureDaysCountByBranchAndDateRange(ctx, sqlc.BranchClosureDaysCountByBranchAndDateRangeParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Date:     timeToPgtypeDate(from),
+		Date_2:   timeToPgtypeDate(to),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("query closure days count: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *Repository) Delete(ctx context.Context, tenantID, branchID, id uuid.UUID) error {
 	q := sqlc.New(r.pool)
 	rowsAffected, err := q.BranchClosureDaysDelete(ctx, sqlc.BranchClosureDaysDeleteParams{

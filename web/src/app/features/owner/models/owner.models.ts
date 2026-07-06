@@ -119,7 +119,10 @@ export interface ApiRoom {
 }
 
 export interface ApiRoomListResponse {
-  rooms: ApiRoom[];
+  items: ApiRoom[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface ApiCreateRoomRequest {

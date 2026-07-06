@@ -187,6 +187,32 @@ func (q *Queries) OwnerCountIncompleteAttendanceByBranches(ctx context.Context, 
 	return items, nil
 }
 
+const ownerCountManagerAccess = `-- name: OwnerCountManagerAccess :one
+SELECT COUNT(*)
+FROM memberships m
+WHERE m.tenant_id = $1
+  AND m.branch_id = $2
+  AND m.role = 'manager'
+  AND (
+      $3 = 'all'
+      OR ($3 = 'active' AND m.is_active = true AND m.ended_at IS NULL)
+      OR ($3 = 'inactive' AND m.is_active = false)
+  )
+`
+
+type OwnerCountManagerAccessParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	StatusFilter interface{}
+}
+
+func (q *Queries) OwnerCountManagerAccess(ctx context.Context, arg OwnerCountManagerAccessParams) (int64, error) {
+	row := q.db.QueryRow(ctx, ownerCountManagerAccess, arg.TenantID, arg.BranchID, arg.StatusFilter)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const ownerCountPendingManagerInvitesByBranches = `-- name: OwnerCountPendingManagerInvitesByBranches :many
 SELECT branch_id, COUNT(*)::int AS count
 FROM manager_invites
@@ -657,6 +683,74 @@ func (q *Queries) OwnerListManagerAccess(ctx context.Context, arg OwnerListManag
 	var items []OwnerListManagerAccessRow
 	for rows.Next() {
 		var i OwnerListManagerAccessRow
+		if err := rows.Scan(
+			&i.MembershipID,
+			&i.UserID,
+			&i.Email,
+			&i.IsActive,
+			&i.EndedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ownerListManagerAccessPaginated = `-- name: OwnerListManagerAccessPaginated :many
+SELECT m.id AS membership_id,
+       m.user_id,
+       u.email,
+       m.is_active,
+       m.ended_at
+FROM memberships m
+JOIN users u ON u.id = m.user_id
+WHERE m.tenant_id = $1
+  AND m.branch_id = $2
+  AND m.role = 'manager'
+  AND (
+      $3 = 'all'
+      OR ($3 = 'active' AND m.is_active = true AND m.ended_at IS NULL)
+      OR ($3 = 'inactive' AND m.is_active = false)
+  )
+ORDER BY u.email
+LIMIT $5 OFFSET $4
+`
+
+type OwnerListManagerAccessPaginatedParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	StatusFilter interface{}
+	Offset       pgtype.Int4
+	Limit        pgtype.Int4
+}
+
+type OwnerListManagerAccessPaginatedRow struct {
+	MembershipID pgtype.UUID
+	UserID       pgtype.UUID
+	Email        string
+	IsActive     bool
+	EndedAt      pgtype.Timestamptz
+}
+
+func (q *Queries) OwnerListManagerAccessPaginated(ctx context.Context, arg OwnerListManagerAccessPaginatedParams) ([]OwnerListManagerAccessPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, ownerListManagerAccessPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.StatusFilter,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OwnerListManagerAccessPaginatedRow
+	for rows.Next() {
+		var i OwnerListManagerAccessPaginatedRow
 		if err := rows.Scan(
 			&i.MembershipID,
 			&i.UserID,

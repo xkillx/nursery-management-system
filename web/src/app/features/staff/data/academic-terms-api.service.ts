@@ -17,7 +17,10 @@ interface ApiAcademicTerm {
 }
 
 interface ApiListResponse {
-  academic_terms: ApiAcademicTerm[];
+  items: ApiAcademicTerm[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,7 +34,7 @@ export class AcademicTermsApiService {
     }
     return this.http
       .get<ApiListResponse>(apiUrl(`/sites/${siteId}/academic-terms`), { params })
-      .pipe(map((res) => res.academic_terms.map((t) => this.toTerm(t))));
+      .pipe(map((res) => res.items.map((t) => this.toTerm(t))));
   }
 
   createTerm(siteId: string, payload: AcademicTermInput): Observable<AcademicTerm> {

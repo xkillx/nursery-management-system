@@ -51,6 +51,7 @@ type BillingRepository interface {
 
 	// Manager Invoice Review (API-18) — read-only, no transaction required.
 	ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) ([]InvoiceReviewRow, error)
+	CountInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) (int, error)
 	GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
 	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
 

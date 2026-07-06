@@ -13,6 +13,7 @@ import (
 	"nursery-management-system/api/internal/modules/invites/domain"
 	"nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -108,13 +109,16 @@ func (h *Handler) listHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := h.list.Execute(c.Request.Context(), actor, status)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset)
 	if err != nil {
 		httpserver.WriteInternalError(c)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"items": toInviteResponseList(result.Invites)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toInviteResponseList(result.Invites), total, page, pageSize))
 }
 
 func (h *Handler) resendHandler(c *gin.Context) {

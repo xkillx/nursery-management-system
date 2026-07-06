@@ -57,6 +57,25 @@ func (q *Queries) ChildBookingPatternsCloseCurrent(ctx context.Context, arg Chil
 	return err
 }
 
+const childBookingPatternsCountByChild = `-- name: ChildBookingPatternsCountByChild :one
+SELECT COUNT(*)
+FROM child_booking_patterns
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+`
+
+type ChildBookingPatternsCountByChildParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+}
+
+func (q *Queries) ChildBookingPatternsCountByChild(ctx context.Context, arg ChildBookingPatternsCountByChildParams) (int64, error) {
+	row := q.db.QueryRow(ctx, childBookingPatternsCountByChild, arg.TenantID, arg.BranchID, arg.ChildID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const childBookingPatternsGetActiveForDate = `-- name: ChildBookingPatternsGetActiveForDate :one
 SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
 FROM child_booking_patterns
@@ -326,6 +345,70 @@ func (q *Queries) ChildBookingPatternsListByChild(ctx context.Context, arg Child
 	var items []ChildBookingPatternsListByChildRow
 	for rows.Next() {
 		var i ChildBookingPatternsListByChildRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.EffectiveFrom,
+			&i.EffectiveTo,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.TermTimeOnly,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const childBookingPatternsListByChildPaginated = `-- name: ChildBookingPatternsListByChildPaginated :many
+SELECT id, tenant_id, branch_id, child_id, effective_from, effective_to, created_at, updated_at, term_time_only
+FROM child_booking_patterns
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY effective_from DESC, created_at DESC
+LIMIT $5 OFFSET $4
+`
+
+type ChildBookingPatternsListByChildPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+type ChildBookingPatternsListByChildPaginatedRow struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	ChildID       pgtype.UUID
+	EffectiveFrom pgtype.Date
+	EffectiveTo   pgtype.Date
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	TermTimeOnly  bool
+}
+
+func (q *Queries) ChildBookingPatternsListByChildPaginated(ctx context.Context, arg ChildBookingPatternsListByChildPaginatedParams) ([]ChildBookingPatternsListByChildPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, childBookingPatternsListByChildPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildBookingPatternsListByChildPaginatedRow
+	for rows.Next() {
+		var i ChildBookingPatternsListByChildPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,

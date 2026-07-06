@@ -36,7 +36,10 @@ interface ApiSessionTemplate {
 }
 
 interface ApiListResponse {
-  session_templates: ApiSessionTemplate[];
+  items: ApiSessionTemplate[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,7 +56,7 @@ export class StaffSessionTemplatesApiService {
     }
     return this.http
       .get<ApiListResponse>(apiUrl(`/sites/${siteId}/session-templates`), { params })
-      .pipe(map((res) => res.session_templates.map((s) => this.toListItem(s))));
+      .pipe(map((res) => res.items.map((s) => this.toListItem(s))));
   }
 
   getSessionTemplate(siteId: string, templateId: string): Observable<SessionTemplate> {

@@ -58,3 +58,19 @@ SELECT EXISTS (
     SELECT 1 FROM session_types
     WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
 );
+
+-- name: SessionTypesListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind, flat_fee_minor
+FROM session_types
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: SessionTypesCountByBranch :one
+SELECT COUNT(*)
+FROM session_types
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true);

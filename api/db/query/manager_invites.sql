@@ -160,3 +160,28 @@ VALUES ($1, $2, $3, $4, true);
 -- name: InviteCreateMembership :exec
 INSERT INTO memberships (id, tenant_id, branch_id, user_id, role, is_active)
 VALUES ($1, $2, $3, $4, $5, true);
+
+-- name: InviteListPendingPaginated :many
+SELECT id, tenant_id, branch_id, email, email_normalized, role, token_hash, expires_at,
+       accepted_at, accepted_user_id, accepted_membership_id,
+       revoked_at, revoked_by_user_id, revoked_by_membership_id,
+       created_by_user_id, created_by_membership_id,
+       resent_at, resent_by_user_id, resent_by_membership_id,
+       send_count, created_at, updated_at
+FROM manager_invites
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+  AND expires_at > now()
+ORDER BY created_at DESC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: InviteCountPending :one
+SELECT COUNT(*)
+FROM manager_invites
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+  AND expires_at > now();

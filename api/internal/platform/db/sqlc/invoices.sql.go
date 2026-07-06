@@ -563,6 +563,42 @@ func (q *Queries) InsertInvoiceLine(ctx context.Context, arg InsertInvoiceLinePa
 	return err
 }
 
+const invoiceCountForManagerReview = `-- name: InvoiceCountForManagerReview :one
+SELECT COUNT(*)
+FROM invoices i
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND ($3::date IS NULL OR i.billing_month = $3::date)
+  AND ($4::date IS NULL OR i.billing_month >= $4::date)
+  AND ($5::date IS NULL OR i.billing_month <= $5::date)
+  AND ($6::text IS NULL OR i.status = $6::text)
+  AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+`
+
+type InvoiceCountForManagerReviewParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	BillingMonth     pgtype.Date
+	BillingMonthFrom pgtype.Date
+	BillingMonthTo   pgtype.Date
+	Status           pgtype.Text
+	ChildID          pgtype.UUID
+}
+
+func (q *Queries) InvoiceCountForManagerReview(ctx context.Context, arg InvoiceCountForManagerReviewParams) (int64, error) {
+	row := q.db.QueryRow(ctx, invoiceCountForManagerReview,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.BillingMonthFrom,
+		arg.BillingMonthTo,
+		arg.Status,
+		arg.ChildID,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const invoiceGet = `-- name: InvoiceGet :one
 SELECT id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
        invoice_number, issued_sequence, generated_run_id, issued_run_id,

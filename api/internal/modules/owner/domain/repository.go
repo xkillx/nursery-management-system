@@ -64,6 +64,8 @@ type ManagerAccessRepository interface {
 	RefreshManagerInvite(ctx context.Context, id uuid.UUID, tokenHash string, expiresAt time.Time, resentByUserID, resentByMembershipID uuid.UUID) error
 
 	ListManagerAccess(ctx context.Context, tenantID, branchID uuid.UUID, statusFilter string) ([]ManagerAccessEntry, error)
+	ListManagerAccessPaginated(ctx context.Context, tenantID, branchID uuid.UUID, statusFilter string, limit, offset int) ([]ManagerAccessEntry, error)
+	CountManagerAccess(ctx context.Context, tenantID, branchID uuid.UUID, statusFilter string) (int, error)
 }
 
 type InviteTokenGenerator interface {

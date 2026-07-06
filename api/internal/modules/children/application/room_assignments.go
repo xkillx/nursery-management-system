@@ -43,6 +43,29 @@ func (uc *ListRoomAssignments) Execute(ctx context.Context, actor tenant.ActorCo
 	return assignments, nil
 }
 
+func (uc *ListRoomAssignments) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, childID string, limit, offset int) ([]domain.ChildRoomAssignment, int, error) {
+	id, err := parseUUID(childID)
+	if err != nil {
+		return nil, 0, domainerrors.Validation("Invalid request payload.", "child_id")
+	}
+	_, found, err := uc.repo.GetByID(ctx, actor.TenantID, actor.BranchID, id)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("check child exists: %w", err))
+	}
+	if !found {
+		return nil, 0, domainerrors.NotFound("child", "Resource not found.")
+	}
+	assignments, err := uc.repo.ListRoomAssignmentsByChildPaginated(ctx, actor.TenantID, actor.BranchID, id, limit, offset)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("list child room assignments paginated: %w", err))
+	}
+	total, err := uc.repo.CountRoomAssignmentsByChild(ctx, actor.TenantID, actor.BranchID, id)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("count child room assignments: %w", err))
+	}
+	return assignments, total, nil
+}
+
 type CreateRoomAssignment struct {
 	repo  domain.Repository
 	audit *audit.Writer

@@ -1,4 +1,4 @@
-.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories
+.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories swagger-generate swagger-validate
 
 API_DIR := api
 WEB_DIR := web
@@ -73,3 +73,10 @@ test-api-repositories:
 		./internal/modules/attendance/infrastructure/postgres/ \
 		./internal/modules/funding/infrastructure/postgres/ \
 		./internal/modules/payments/infrastructure/postgres/
+
+swagger-generate:
+	@cd "$(API_DIR)" && go tool swag init -g cmd/server/main.go --parseInternal --parseDependency -o ./docs
+
+swagger-validate:
+	@cd "$(API_DIR)" && go tool swag fmt --dir cmd,internal
+	@echo "Swagger annotations formatted."

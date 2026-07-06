@@ -57,6 +57,25 @@ func (q *Queries) ChildRoomAssignmentsCloseCurrent(ctx context.Context, arg Chil
 	return err
 }
 
+const childRoomAssignmentsCountByChild = `-- name: ChildRoomAssignmentsCountByChild :one
+SELECT COUNT(*)
+FROM child_room_assignments
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+`
+
+type ChildRoomAssignmentsCountByChildParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+}
+
+func (q *Queries) ChildRoomAssignmentsCountByChild(ctx context.Context, arg ChildRoomAssignmentsCountByChildParams) (int64, error) {
+	row := q.db.QueryRow(ctx, childRoomAssignmentsCountByChild, arg.TenantID, arg.BranchID, arg.ChildID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const childRoomAssignmentsGetByID = `-- name: ChildRoomAssignmentsGetByID :one
 SELECT id, tenant_id, branch_id, child_id, room_id, start_date, end_date, created_at
 FROM child_room_assignments
@@ -218,6 +237,68 @@ func (q *Queries) ChildRoomAssignmentsListByChild(ctx context.Context, arg Child
 	var items []ChildRoomAssignmentsListByChildRow
 	for rows.Next() {
 		var i ChildRoomAssignmentsListByChildRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.RoomID,
+			&i.StartDate,
+			&i.EndDate,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const childRoomAssignmentsListByChildPaginated = `-- name: ChildRoomAssignmentsListByChildPaginated :many
+SELECT id, tenant_id, branch_id, child_id, room_id, start_date, end_date, created_at
+FROM child_room_assignments
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY start_date DESC, created_at DESC
+LIMIT $5 OFFSET $4
+`
+
+type ChildRoomAssignmentsListByChildPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+type ChildRoomAssignmentsListByChildPaginatedRow struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	ChildID   pgtype.UUID
+	RoomID    pgtype.UUID
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	CreatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ChildRoomAssignmentsListByChildPaginated(ctx context.Context, arg ChildRoomAssignmentsListByChildPaginatedParams) ([]ChildRoomAssignmentsListByChildPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, childRoomAssignmentsListByChildPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildRoomAssignmentsListByChildPaginatedRow
+	for rows.Next() {
+		var i ChildRoomAssignmentsListByChildPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,

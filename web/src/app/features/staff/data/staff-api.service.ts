@@ -27,6 +27,8 @@ import { formatChildName } from '../utils/manager-list-formatters';
 interface StaffListResponse<T> {
   items: T[];
   total: number;
+  page: number;
+  page_size: number;
 }
 
 interface ChildApiModel {

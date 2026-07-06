@@ -39,7 +39,10 @@ interface ApiSessionType {
 }
 
 interface ApiListResponse {
-  session_types: ApiSessionType[];
+  items: ApiSessionType[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -56,7 +59,7 @@ export class StaffSessionTypesApiService {
     }
     return this.http
       .get<ApiListResponse>(apiUrl(`/sites/${siteId}/session-types`), { params })
-      .pipe(map((res) => res.session_types.map((s) => this.toSessionType(s))));
+      .pipe(map((res) => res.items.map((s) => this.toSessionType(s))));
   }
 
   createSessionType(siteId: string, payload: StaffSessionTypeInput): Observable<StaffSessionType> {

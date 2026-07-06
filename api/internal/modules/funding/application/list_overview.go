@@ -63,6 +63,58 @@ func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, 
 	}, nil
 }
 
+func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string, limit, offset int) (domain.OverviewResult, int, error) {
+	billingMonth, err := ParseBillingMonth(billingMonthRaw)
+	if err != nil {
+		return domain.OverviewResult{}, 0, domainerrors.Validation("Invalid billing month. Must be YYYY-MM.", "billing_month")
+	}
+
+	rows, err := uc.repo.ListOverviewPaginated(ctx, actor.TenantID, actor.BranchID, billingMonth, limit, offset)
+	if err != nil {
+		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
+	}
+
+	total, err := uc.repo.CountOverview(ctx, actor.TenantID, actor.BranchID, billingMonth)
+	if err != nil {
+		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
+	}
+
+	var summary domain.OverviewSummary
+	var items []domain.OverviewItem
+
+	summary.IncludedChildCount = total
+
+	for _, row := range rows {
+		flags := computeFlags(row)
+		if len(flags) > 0 {
+			items = append(items, domain.OverviewItem{Row: row, Flags: flags})
+			summary.FlaggedChildCount++
+			for _, f := range flags {
+				switch f {
+				case domain.FlagMissingProfile:
+					summary.MissingProfileCount++
+				case domain.FlagExplicitZero:
+					summary.ExplicitZeroCount++
+				case domain.FlagUnderOneHour:
+					summary.UnderOneHourCount++
+				case domain.FlagAbove160Hours:
+					summary.Above160HoursCount++
+				}
+			}
+		}
+	}
+
+	if items == nil {
+		items = []domain.OverviewItem{}
+	}
+
+	return domain.OverviewResult{
+		BillingMonth: billingMonth,
+		Summary:      summary,
+		Items:        items,
+	}, total, nil
+}
+
 func computeFlags(row domain.OverviewRow) []domain.OverviewFlag {
 	if row.FundingProfileID == nil {
 		return []domain.OverviewFlag{domain.FlagMissingProfile}

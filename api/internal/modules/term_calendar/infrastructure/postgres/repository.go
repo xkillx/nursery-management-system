@@ -40,6 +40,38 @@ func (r *AcademicTermRepository) ListByBranch(ctx context.Context, tenantID, bra
 	return out, nil
 }
 
+func (r *AcademicTermRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.AcademicTerm, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.AcademicTermsListByBranchPaginated(ctx, sqlc.AcademicTermsListByBranchPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query academic terms list paginated: %w", err)
+	}
+	out := make([]domain.AcademicTerm, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapAcademicTerm(row))
+	}
+	return out, nil
+}
+
+func (r *AcademicTermRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.AcademicTermsCountByBranch(ctx, sqlc.AcademicTermsCountByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("query academic terms count: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *AcademicTermRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.AcademicTerm, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.AcademicTermsGetByID(ctx, sqlc.AcademicTermsGetByIDParams{

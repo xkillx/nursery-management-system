@@ -9,6 +9,7 @@ import (
 	"nursery-management-system/api/internal/modules/funding/application"
 	"nursery-management-system/api/internal/modules/funding/domain"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -43,13 +44,16 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := h.overview.Execute(c.Request.Context(), actor, billingMonth)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	result, total, err := h.overview.ExecutePaginated(c.Request.Context(), actor, billingMonth, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toOverviewResponse(result))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toOverviewResponse(result), total, page, pageSize))
 }
 
 func (h *Handler) getProfileHandler(c *gin.Context) {

@@ -203,3 +203,34 @@ WHERE id = $1;
 UPDATE refresh_tokens
 SET revoked_at = now(), updated_at = now()
 WHERE membership_id = $1 AND revoked_at IS NULL;
+
+-- name: OwnerListManagerAccessPaginated :many
+SELECT m.id AS membership_id,
+       m.user_id,
+       u.email,
+       m.is_active,
+       m.ended_at
+FROM memberships m
+JOIN users u ON u.id = m.user_id
+WHERE m.tenant_id = $1
+  AND m.branch_id = $2
+  AND m.role = 'manager'
+  AND (
+      sqlc.arg('status_filter') = 'all'
+      OR (sqlc.arg('status_filter') = 'active' AND m.is_active = true AND m.ended_at IS NULL)
+      OR (sqlc.arg('status_filter') = 'inactive' AND m.is_active = false)
+  )
+ORDER BY u.email
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: OwnerCountManagerAccess :one
+SELECT COUNT(*)
+FROM memberships m
+WHERE m.tenant_id = $1
+  AND m.branch_id = $2
+  AND m.role = 'manager'
+  AND (
+      sqlc.arg('status_filter') = 'all'
+      OR (sqlc.arg('status_filter') = 'active' AND m.is_active = true AND m.ended_at IS NULL)
+      OR (sqlc.arg('status_filter') = 'inactive' AND m.is_active = false)
+  );

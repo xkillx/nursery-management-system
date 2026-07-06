@@ -73,6 +73,8 @@ type Repository interface {
 
 	// Room Assignments
 	ListRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]ChildRoomAssignment, error)
+	ListRoomAssignmentsByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]ChildRoomAssignment, error)
+	CountRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error)
 	GetCurrentRoomAssignmentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildRoomAssignment, bool, error)
 	InsertRoomAssignment(ctx context.Context, tx Tx, a *ChildRoomAssignment) (*ChildRoomAssignment, error)
 	CloseCurrentRoomAssignment(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, endDate time.Time) error
@@ -89,6 +91,8 @@ type Repository interface {
 
 	// Booking Patterns
 	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]BookingPattern, error)
+	ListByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]BookingPattern, error)
+	CountByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error)
 	GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*BookingPattern, bool, error)
 	GetActiveForDate(ctx context.Context, tenantID, branchID, childID uuid.UUID, date time.Time) (*BookingPattern, bool, error)
 	GetCurrentOpenByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*BookingPattern, bool, error)

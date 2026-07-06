@@ -11,6 +11,34 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const branchClosureDaysCountByBranchAndDateRange = `-- name: BranchClosureDaysCountByBranchAndDateRange :one
+SELECT COUNT(*)
+FROM branch_closure_days
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND date >= $3
+  AND date <= $4
+`
+
+type BranchClosureDaysCountByBranchAndDateRangeParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Date     pgtype.Date
+	Date_2   pgtype.Date
+}
+
+func (q *Queries) BranchClosureDaysCountByBranchAndDateRange(ctx context.Context, arg BranchClosureDaysCountByBranchAndDateRangeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, branchClosureDaysCountByBranchAndDateRange,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Date,
+		arg.Date_2,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const branchClosureDaysCreate = `-- name: BranchClosureDaysCreate :exec
 INSERT INTO branch_closure_days (id, tenant_id, branch_id, date, reason)
 VALUES ($1, $2, $3, $4, $5)
@@ -101,6 +129,60 @@ func (q *Queries) BranchClosureDaysListByBranchAndDateRange(ctx context.Context,
 		arg.BranchID,
 		arg.Date,
 		arg.Date_2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BranchClosureDay
+	for rows.Next() {
+		var i BranchClosureDay
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Date,
+			&i.Reason,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const branchClosureDaysListByBranchAndDateRangePaginated = `-- name: BranchClosureDaysListByBranchAndDateRangePaginated :many
+SELECT id, tenant_id, branch_id, date, reason, created_at
+FROM branch_closure_days
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND date >= $3
+  AND date <= $4
+ORDER BY date ASC
+LIMIT $6 OFFSET $5
+`
+
+type BranchClosureDaysListByBranchAndDateRangePaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Date     pgtype.Date
+	Date_2   pgtype.Date
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) BranchClosureDaysListByBranchAndDateRangePaginated(ctx context.Context, arg BranchClosureDaysListByBranchAndDateRangePaginatedParams) ([]BranchClosureDay, error) {
+	rows, err := q.db.Query(ctx, branchClosureDaysListByBranchAndDateRangePaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Date,
+		arg.Date_2,
+		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err

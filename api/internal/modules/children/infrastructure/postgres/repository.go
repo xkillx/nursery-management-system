@@ -1120,6 +1120,38 @@ func (r *ChildRepository) ListRoomAssignmentsByChild(ctx context.Context, tenant
 	return out, nil
 }
 
+func (r *ChildRepository) ListRoomAssignmentsByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]domain.ChildRoomAssignment, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildRoomAssignmentsListByChildPaginated(ctx, sqlc.ChildRoomAssignmentsListByChildPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list child room assignments paginated: %w", err)
+	}
+	out := make([]domain.ChildRoomAssignment, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapRoomAssignmentRow(row))
+	}
+	return out, nil
+}
+
+func (r *ChildRepository) CountRoomAssignmentsByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.ChildRoomAssignmentsCountByChild(ctx, sqlc.ChildRoomAssignmentsCountByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count child room assignments: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *ChildRepository) GetCurrentRoomAssignmentByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildRoomAssignment, bool, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.ChildRoomAssignmentsGetCurrentByChild(ctx, sqlc.ChildRoomAssignmentsGetCurrentByChildParams{
@@ -1387,6 +1419,44 @@ func (r *ChildRepository) ListByChild(ctx context.Context, tenantID, branchID, c
 		out = append(out, bp)
 	}
 	return out, nil
+}
+
+func (r *ChildRepository) ListByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]domain.BookingPattern, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildBookingPatternsListByChildPaginated(ctx, sqlc.ChildBookingPatternsListByChildPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list child booking patterns paginated: %w", err)
+	}
+	out := make([]domain.BookingPattern, 0, len(rows))
+	for _, row := range rows {
+		bp := mapBookingPatternRow(row)
+		entries, eerr := r.entriesForPattern(ctx, tenantID, branchID, bp.ID)
+		if eerr != nil {
+			return nil, eerr
+		}
+		bp.Entries = entries
+		out = append(out, bp)
+	}
+	return out, nil
+}
+
+func (r *ChildRepository) CountByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.ChildBookingPatternsCountByChild(ctx, sqlc.ChildBookingPatternsCountByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count child booking patterns: %w", err)
+	}
+	return int(count), nil
 }
 
 func (r *ChildRepository) GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*domain.BookingPattern, bool, error) {

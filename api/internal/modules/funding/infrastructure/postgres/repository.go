@@ -173,6 +173,72 @@ func (r *Repository) ListOverview(ctx context.Context, tenantID, branchID uuid.U
 	return result, nil
 }
 
+func (r *Repository) ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]domain.OverviewRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.FundingOverviewListPaginated(ctx, sqlc.FundingOverviewListPaginatedParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		BillingMonth: timeToPgtypeDate(billingMonth),
+		Limit:        pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:       pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list funding overview paginated: %w", err)
+	}
+
+	result := make([]domain.OverviewRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapOverviewRowFromPaginatedRow(row))
+	}
+	return result, nil
+}
+
+func (r *Repository) CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.FundingOverviewCount(ctx, sqlc.FundingOverviewCountParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  timeToPgtypeDate(billingMonth),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count funding overview: %w", err)
+	}
+	return int(count), nil
+}
+
+func mapOverviewRowFromPaginatedRow(row sqlc.FundingOverviewListPaginatedRow) domain.OverviewRow {
+	var profileID *uuid.UUID
+	if row.FundingProfileID.Valid {
+		id := pgtypeUUIDToUUID(row.FundingProfileID)
+		profileID = &id
+	}
+
+	var allowance *int
+	if row.FundedAllowanceMinutes.Valid {
+		v := int(row.FundedAllowanceMinutes.Int32)
+		allowance = &v
+	}
+
+	var updatedAt *time.Time
+	if row.FundingUpdatedAt.Valid {
+		t := row.FundingUpdatedAt.Time
+		updatedAt = &t
+	}
+
+	return domain.OverviewRow{
+		ChildID:                pgtypeUUIDToUUID(row.ChildID),
+		ChildFirstName:         row.ChildFirstName,
+		ChildMiddleName:        pgtypeTextToStringPtr(row.ChildMiddleName),
+		ChildLastName:          pgtypeTextToStringPtr(row.ChildLastName),
+		IsActive:               row.IsActive,
+		StartDate:              pgtypeDateToTime(row.StartDate),
+		EndDate:                pgtypeDateToTimePtr(row.EndDate),
+		FundingProfileID:       profileID,
+		FundedAllowanceMinutes: allowance,
+		FundingUpdatedAt:       updatedAt,
+	}
+}
+
 func mapOverviewRow(row sqlc.FundingOverviewListRow) domain.OverviewRow {
 	var profileID *uuid.UUID
 	if row.FundingProfileID.Valid {

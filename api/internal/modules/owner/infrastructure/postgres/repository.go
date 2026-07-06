@@ -422,3 +422,45 @@ func (r *OwnerRepository) ListManagerAccess(ctx context.Context, tenantID, branc
 	}
 	return entries, nil
 }
+
+func (r *OwnerRepository) ListManagerAccessPaginated(ctx context.Context, tenantID, branchID uuid.UUID, statusFilter string, limit, offset int) ([]domain.ManagerAccessEntry, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.OwnerListManagerAccessPaginated(ctx, sqlc.OwnerListManagerAccessPaginatedParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		StatusFilter: statusFilter,
+		Limit:        pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:       pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]domain.ManagerAccessEntry, 0, len(rows))
+	for _, row := range rows {
+		e := domain.ManagerAccessEntry{
+			MembershipID: pgtypeUUIDToUUID(row.MembershipID),
+			UserID:       pgtypeUUIDToUUID(row.UserID),
+			Email:        row.Email,
+			IsActive:     row.IsActive,
+		}
+		if row.EndedAt.Valid {
+			t := row.EndedAt.Time
+			e.EndedAt = &t
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+func (r *OwnerRepository) CountManagerAccess(ctx context.Context, tenantID, branchID uuid.UUID, statusFilter string) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.OwnerCountManagerAccess(ctx, sqlc.OwnerCountManagerAccessParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		StatusFilter: statusFilter,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}

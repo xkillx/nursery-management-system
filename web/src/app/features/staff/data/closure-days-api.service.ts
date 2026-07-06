@@ -14,7 +14,10 @@ interface ApiClosureDay {
 }
 
 interface ApiListResponse {
-  closure_days: ApiClosureDay[];
+  items: ApiClosureDay[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,7 +28,7 @@ export class ClosureDaysApiService {
     const params = new HttpParams().set('from', from).set('to', to);
     return this.http
       .get<ApiListResponse>(apiUrl(`/sites/${branchId}/closure-days`), { params })
-      .pipe(map((res) => res.closure_days.map((c) => this.toClosureDay(c))));
+      .pipe(map((res) => res.items.map((c) => this.toClosureDay(c))));
   }
 
   create(branchId: string, date: string, reason?: string): Observable<ClosureDay> {

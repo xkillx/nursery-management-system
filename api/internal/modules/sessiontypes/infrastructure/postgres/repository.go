@@ -36,9 +36,41 @@ func (r *SessionTypeRepository) ListByBranch(ctx context.Context, tenantID, bran
 	}
 	out := make([]domain.SessionType, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapSessionType(row))
+		out = append(out, mapSessionTypeFromListRow(row))
 	}
 	return out, nil
+}
+
+func (r *SessionTypeRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.SessionType, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.SessionTypesListByBranchPaginated(ctx, sqlc.SessionTypesListByBranchPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query session types list paginated: %w", err)
+	}
+	out := make([]domain.SessionType, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapSessionTypeFromListPaginatedRow(row))
+	}
+	return out, nil
+}
+
+func (r *SessionTypeRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.SessionTypesCountByBranch(ctx, sqlc.SessionTypesCountByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("query session types count: %w", err)
+	}
+	return int(count), nil
 }
 
 func (r *SessionTypeRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.SessionType, error) {
@@ -54,7 +86,7 @@ func (r *SessionTypeRepository) GetByID(ctx context.Context, tenantID, branchID,
 	if err != nil {
 		return domain.SessionType{}, fmt.Errorf("query session type by id: %w", err)
 	}
-	return mapSessionType(row), nil
+	return mapSessionTypeFromGetRow(row), nil
 }
 
 func (r *SessionTypeRepository) Create(ctx context.Context, st domain.SessionType) error {
@@ -178,10 +210,10 @@ func (r *SessionTypeRepository) GetByIDForUpdate(ctx context.Context, tx domain.
 	if err != nil {
 		return domain.SessionType{}, fmt.Errorf("query session type for update: %w", err)
 	}
-	return mapSessionType(row), nil
+	return mapSessionTypeFromGetForUpdateRow(row), nil
 }
 
-func mapSessionType(row sqlc.SessionType) domain.SessionType {
+func mapSessionTypeFromListRow(row sqlc.SessionTypesListByBranchRow) domain.SessionType {
 	st := domain.SessionType{
 		ID:           pgtypeUUIDToUUID(row.ID),
 		TenantID:     pgtypeUUIDToUUID(row.TenantID),
@@ -199,6 +231,66 @@ func mapSessionType(row sqlc.SessionType) domain.SessionType {
 		st.FlatFeeMinor = &v
 	}
 	return st
+}
+
+func mapSessionTypeFromGetRow(row sqlc.SessionTypesGetByIDRow) domain.SessionType {
+	st := domain.SessionType{
+		ID:           pgtypeUUIDToUUID(row.ID),
+		TenantID:     pgtypeUUIDToUUID(row.TenantID),
+		BranchID:     pgtypeUUIDToUUID(row.BranchID),
+		Name:         row.Name,
+		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
+		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
+		IsActive:     row.IsActive,
+		Kind:         row.Kind,
+		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+	if row.FlatFeeMinor.Valid {
+		v := int(row.FlatFeeMinor.Int32)
+		st.FlatFeeMinor = &v
+	}
+	return st
+}
+
+func mapSessionTypeFromGetForUpdateRow(row sqlc.SessionTypesGetByIDForUpdateRow) domain.SessionType {
+	st := domain.SessionType{
+		ID:           pgtypeUUIDToUUID(row.ID),
+		TenantID:     pgtypeUUIDToUUID(row.TenantID),
+		BranchID:     pgtypeUUIDToUUID(row.BranchID),
+		Name:         row.Name,
+		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
+		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
+		IsActive:     row.IsActive,
+		Kind:         row.Kind,
+		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+	if row.FlatFeeMinor.Valid {
+		v := int(row.FlatFeeMinor.Int32)
+		st.FlatFeeMinor = &v
+	}
+	return st
+}
+
+func mapSessionTypeFromListPaginatedRow(row sqlc.SessionTypesListByBranchPaginatedRow) domain.SessionType {
+	st := domain.SessionType{
+		ID:           pgtypeUUIDToUUID(row.ID),
+		TenantID:     pgtypeUUIDToUUID(row.TenantID),
+		BranchID:     pgtypeUUIDToUUID(row.BranchID),
+		Name:         row.Name,
+		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
+		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
+		IsActive:     row.IsActive,
+		Kind:         row.Kind,
+		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+	if row.FlatFeeMinor.Valid {
+		v := int(row.FlatFeeMinor.Int32)
+		st.FlatFeeMinor = &v
+	}
+		return st
 }
 
 func isNoRows(err error) bool {

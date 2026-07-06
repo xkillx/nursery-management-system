@@ -440,6 +440,23 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 	return result, nil
 }
 
+func (r *Repository) CountInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.InvoiceCountForManagerReview(ctx, sqlc.InvoiceCountForManagerReviewParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
 func (r *Repository) GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.InvoiceGetForManagerReview(ctx, sqlc.InvoiceGetForManagerReviewParams{

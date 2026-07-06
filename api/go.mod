@@ -20,6 +20,9 @@ require (
 require (
 	cel.dev/expr v0.25.1 // indirect
 	filippo.io/edwards25519 v1.1.1 // indirect
+	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/PuerkitoBio/purell v1.1.1 // indirect
+	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
@@ -28,11 +31,16 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
+	github.com/go-openapi/jsonpointer v0.19.5 // indirect
+	github.com/go-openapi/jsonreference v0.19.6 // indirect
+	github.com/go-openapi/spec v0.20.4 // indirect
+	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.30.1 // indirect
@@ -46,10 +54,12 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
+	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -68,13 +78,16 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/sqlc-dev/doubleclick v1.0.0 // indirect
 	github.com/sqlc-dev/sqlc v1.31.1 // indirect
+	github.com/swaggo/swag v1.16.6 // indirect
 	github.com/tetratelabs/wazero v1.11.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
@@ -95,9 +108,13 @@ require (
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 tool github.com/google/wire/cmd/wire
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc
+
+tool github.com/swaggo/swag/cmd/swag

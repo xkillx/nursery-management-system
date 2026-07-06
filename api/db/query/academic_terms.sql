@@ -56,3 +56,19 @@ WHERE tenant_id = $1
   AND end_date >= $3
   AND start_date <= $4
 ORDER BY start_date ASC;
+
+-- name: AcademicTermsListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, name, kind, start_date, end_date, is_active, created_at, updated_at
+FROM academic_terms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY start_date DESC, name ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: AcademicTermsCountByBranch :one
+SELECT COUNT(*)
+FROM academic_terms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true);

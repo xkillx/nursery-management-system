@@ -41,6 +41,38 @@ func (r *RoomRepository) ListByBranch(ctx context.Context, tenantID, branchID uu
 	return out, nil
 }
 
+func (r *RoomRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.Room, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.RoomsListByBranchPaginated(ctx, sqlc.RoomsListByBranchPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query rooms list paginated: %w", err)
+	}
+	out := make([]domain.Room, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapRoom(row))
+	}
+	return out, nil
+}
+
+func (r *RoomRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.RoomsCountByBranch(ctx, sqlc.RoomsCountByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("query rooms count: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *RoomRepository) GetByID(ctx context.Context, tenantID, branchID, roomID uuid.UUID) (domain.Room, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.RoomsGetByID(ctx, sqlc.RoomsGetByIDParams{

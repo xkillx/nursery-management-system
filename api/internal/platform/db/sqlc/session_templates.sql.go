@@ -55,6 +55,27 @@ func (q *Queries) SessionTemplatesCheckActiveNameExists(ctx context.Context, arg
 	return exists, err
 }
 
+const sessionTemplatesCountByBranch = `-- name: SessionTemplatesCountByBranch :one
+SELECT COUNT(*)
+FROM session_templates
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+`
+
+type SessionTemplatesCountByBranchParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+}
+
+func (q *Queries) SessionTemplatesCountByBranch(ctx context.Context, arg SessionTemplatesCountByBranchParams) (int64, error) {
+	row := q.db.QueryRow(ctx, sessionTemplatesCountByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const sessionTemplatesCreate = `-- name: SessionTemplatesCreate :exec
 INSERT INTO session_templates (id, tenant_id, branch_id, name, description, is_active)
 VALUES ($1, $2, $3, $4, NULLIF($5, ''), true)
@@ -177,6 +198,59 @@ type SessionTemplatesListByBranchParams struct {
 
 func (q *Queries) SessionTemplatesListByBranch(ctx context.Context, arg SessionTemplatesListByBranchParams) ([]SessionTemplate, error) {
 	rows, err := q.db.Query(ctx, sessionTemplatesListByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SessionTemplate
+	for rows.Next() {
+		var i SessionTemplate
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Description,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sessionTemplatesListByBranchPaginated = `-- name: SessionTemplatesListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, name, description, is_active, created_at, updated_at
+FROM session_templates
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name ASC
+LIMIT $5 OFFSET $4
+`
+
+type SessionTemplatesListByBranchPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) SessionTemplatesListByBranchPaginated(ctx context.Context, arg SessionTemplatesListByBranchPaginatedParams) ([]SessionTemplate, error) {
+	rows, err := q.db.Query(ctx, sessionTemplatesListByBranchPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

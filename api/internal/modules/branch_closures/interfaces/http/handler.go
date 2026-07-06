@@ -9,6 +9,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/branch_closures/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -106,13 +107,16 @@ func (h *Handler) listClosureDays(c *gin.Context) {
 		return
 	}
 
-	closures, err := h.list.Execute(c.Request.Context(), tenantID, branchID, from, to)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	closures, total, err := h.list.ExecutePaginated(c.Request.Context(), tenantID, branchID, from, to, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"closure_days": toClosureDayListResponse(closures)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toClosureDayListResponse(closures), total, page, pageSize))
 }
 
 func (h *Handler) deleteClosureDay(c *gin.Context) {

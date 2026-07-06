@@ -58,8 +58,9 @@ interface InvoiceListItemApi extends ChildNameApi {
 
 interface InvoiceListResponseApi {
   items: InvoiceListItemApi[];
-  limit: number;
-  offset: number;
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 interface InvoiceLineApi {
@@ -269,8 +270,9 @@ export class ManagerInvoicesApiService {
   private toListResult(res: InvoiceListResponseApi): ManagerInvoiceListResult {
     return {
       items: res.items.map((i) => this.toListItem(i)),
-      limit: res.limit,
-      offset: res.offset,
+      total: res.total,
+      page: res.page,
+      page_size: res.page_size,
     };
   }
 

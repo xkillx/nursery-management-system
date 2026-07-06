@@ -41,6 +41,38 @@ func (r *SessionTemplateRepository) ListByBranch(ctx context.Context, tenantID, 
 	return out, nil
 }
 
+func (r *SessionTemplateRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]domain.SessionTemplate, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.SessionTemplatesListByBranchPaginated(ctx, sqlc.SessionTemplatesListByBranchPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query session templates list paginated: %w", err)
+	}
+	out := make([]domain.SessionTemplate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapSessionTemplate(row))
+	}
+	return out, nil
+}
+
+func (r *SessionTemplateRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.SessionTemplatesCountByBranch(ctx, sqlc.SessionTemplatesCountByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  !includeArchived,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("query session templates count: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *SessionTemplateRepository) GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.SessionTemplate, error) {
 	q := sqlc.New(r.pool)
 	row, err := q.SessionTemplatesGetByID(ctx, sqlc.SessionTemplatesGetByIDParams{

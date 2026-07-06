@@ -303,6 +303,16 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
+-- name: InvoiceCountForManagerReview :one
+SELECT COUNT(*)
+FROM invoices i
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid);
+
 -- name: InvoiceGetForManagerReview :one
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,

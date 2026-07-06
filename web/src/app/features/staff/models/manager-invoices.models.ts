@@ -41,8 +41,9 @@ export interface ManagerInvoiceListItem {
 
 export interface ManagerInvoiceListResult {
   items: ManagerInvoiceListItem[];
-  limit: number;
-  offset: number;
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface ManagerInvoiceGeneratedRunException {

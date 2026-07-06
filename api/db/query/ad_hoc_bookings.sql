@@ -43,3 +43,25 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, 'active');
 UPDATE ad_hoc_bookings
 SET status = 'cancelled', updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status = 'active';
+
+-- name: AdHocBookingsListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, child_id, calendar_date, session_type_id, booked_by_membership_id, status, created_at, updated_at
+FROM ad_hoc_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND ($3::uuid IS NULL OR child_id = $3)
+  AND ($4::date IS NULL OR calendar_date >= $4)
+  AND ($5::date IS NULL OR calendar_date <= $5)
+  AND (NOT $6::bool OR status = 'active')
+ORDER BY calendar_date ASC, created_at ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: AdHocBookingsCountByBranch :one
+SELECT COUNT(*)
+FROM ad_hoc_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND ($3::uuid IS NULL OR child_id = $3)
+  AND ($4::date IS NULL OR calendar_date >= $4)
+  AND ($5::date IS NULL OR calendar_date <= $5)
+  AND (NOT $6::bool OR status = 'active');

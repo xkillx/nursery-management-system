@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/term/domain"
@@ -148,6 +149,36 @@ func (r *TermRepository) ListByChild(ctx context.Context, tenantID, branchID, ch
 	return out, nil
 }
 
+func (r *TermRepository) ListByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]domain.Term, error) {
+	rows, err := r.q().TermListByChildPaginated(ctx, sqlc.TermListByChildPaginatedParams{
+		TenantID: pgtypeUUID(tenantID),
+		BranchID: pgtypeUUID(branchID),
+		ChildID:  pgtypeUUID(childID),
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list terms by child paginated: %w", err)
+	}
+	out := make([]domain.Term, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *mapTermRow(row))
+	}
+	return out, nil
+}
+
+func (r *TermRepository) CountByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error) {
+	count, err := r.q().TermCountByChild(ctx, sqlc.TermCountByChildParams{
+		TenantID: pgtypeUUID(tenantID),
+		BranchID: pgtypeUUID(branchID),
+		ChildID:  pgtypeUUID(childID),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count terms by child: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *TermRepository) ListActiveByBranch(ctx context.Context, tenantID, branchID uuid.UUID) ([]domain.Term, error) {
 	rows, err := r.q().TermListActiveByBranch(ctx, sqlc.TermListActiveByBranchParams{
 		TenantID: pgtypeUUID(tenantID),
@@ -177,6 +208,36 @@ func (r *TermRepository) ListExpiringWithin(ctx context.Context, tenantID, branc
 		out = append(out, *mapTermRow(row))
 	}
 	return out, nil
+}
+
+func (r *TermRepository) ListExpiringWithinPaginated(ctx context.Context, tenantID, branchID uuid.UUID, maxTermEndDate time.Time, limit, offset int) ([]domain.Term, error) {
+	rows, err := r.q().TermListExpiringWithinPaginated(ctx, sqlc.TermListExpiringWithinPaginatedParams{
+		TenantID:    pgtypeUUID(tenantID),
+		BranchID:    pgtypeUUID(branchID),
+		TermEndDate: pgtypeDate(maxTermEndDate),
+		Limit:       pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:      pgtype.Int4{Int32: int32(offset), Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list expiring terms paginated: %w", err)
+	}
+	out := make([]domain.Term, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *mapTermRow(row))
+	}
+	return out, nil
+}
+
+func (r *TermRepository) CountExpiringWithin(ctx context.Context, tenantID, branchID uuid.UUID, maxTermEndDate time.Time) (int, error) {
+	count, err := r.q().TermCountExpiringWithin(ctx, sqlc.TermCountExpiringWithinParams{
+		TenantID:    pgtypeUUID(tenantID),
+		BranchID:    pgtypeUUID(branchID),
+		TermEndDate: pgtypeDate(maxTermEndDate),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count expiring terms: %w", err)
+	}
+	return int(count), nil
 }
 
 func (r *TermRepository) ListEndingOnOrBefore(ctx context.Context, tenantID, branchID uuid.UUID, endDate time.Time) ([]domain.Term, error) {

@@ -16,4 +16,6 @@ type Repository interface {
 	UpdateAllowance(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time, minutes int) (FundingProfile, error)
 	GetChildEnrollmentForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (ChildEnrollment, bool, error)
 	ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]OverviewRow, error)
+	ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]OverviewRow, error)
+	CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error)
 }

@@ -11,6 +11,7 @@ import (
 	"nursery-management-system/api/internal/modules/owner/application"
 	"nursery-management-system/api/internal/modules/owner/domain"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -181,7 +182,10 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 		TenantID:     actor.TenantID,
 	}
 
-	items, err := h.listAccess.Execute(c.Request.Context(), ownerActor, siteID, status)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	items, total, err := h.listAccess.ExecutePaginated(c.Request.Context(), ownerActor, siteID, status, pageSize, offset)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSiteNotFound):
@@ -204,7 +208,7 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 	for _, item := range items {
 		out = append(out, toManagerAccessResponse(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(out, total, page, pageSize))
 }
 
 func (h *Handler) grantManagerAccess(c *gin.Context) {

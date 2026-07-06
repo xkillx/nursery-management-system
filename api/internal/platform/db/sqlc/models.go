@@ -296,9 +296,9 @@ type ChildBookingPattern struct {
 	EffectiveFrom pgtype.Date
 	EffectiveTo   pgtype.Date
 	IsCurrent     bool
+	TermTimeOnly  bool
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
-	TermTimeOnly  bool
 }
 
 type ChildBookingPatternEntry struct {
@@ -786,10 +786,10 @@ type SessionType struct {
 	StartTime    pgtype.Time
 	EndTime      pgtype.Time
 	IsActive     bool
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
 	Kind         string
 	FlatFeeMinor pgtype.Int4
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 type SiteProfile struct {

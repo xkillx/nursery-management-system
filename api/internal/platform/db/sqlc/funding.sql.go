@@ -37,6 +37,28 @@ func (q *Queries) FundingChildEnrollmentGetForUpdate(ctx context.Context, arg Fu
 	return i, err
 }
 
+const fundingOverviewCount = `-- name: FundingOverviewCount :one
+SELECT COUNT(*)
+FROM children c
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < ($3 + INTERVAL '1 month')::date
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+`
+
+type FundingOverviewCountParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  interface{}
+}
+
+func (q *Queries) FundingOverviewCount(ctx context.Context, arg FundingOverviewCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, fundingOverviewCount, arg.TenantID, arg.BranchID, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const fundingOverviewList = `-- name: FundingOverviewList :many
 SELECT
   c.id AS child_id,
@@ -90,6 +112,90 @@ func (q *Queries) FundingOverviewList(ctx context.Context, arg FundingOverviewLi
 	var items []FundingOverviewListRow
 	for rows.Next() {
 		var i FundingOverviewListRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.IsActive,
+			&i.StartDate,
+			&i.EndDate,
+			&i.FundingProfileID,
+			&i.FundedAllowanceMinutes,
+			&i.FundingUpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fundingOverviewListPaginated = `-- name: FundingOverviewListPaginated :many
+SELECT
+  c.id AS child_id,
+  c.first_name AS child_first_name,
+  c.middle_name AS child_middle_name,
+  c.last_name AS child_last_name,
+  c.is_active,
+  c.start_date,
+  c.end_date,
+  fp.id AS funding_profile_id,
+  fp.funded_allowance_minutes,
+  fp.updated_at AS funding_updated_at
+FROM children c
+LEFT JOIN funding_profiles fp
+  ON fp.tenant_id = c.tenant_id
+  AND fp.branch_id = c.branch_id
+  AND fp.child_id = c.id
+  AND fp.billing_month = $3
+WHERE c.tenant_id = $1
+  AND c.branch_id = $2
+  AND c.start_date < ($3 + INTERVAL '1 month')::date
+  AND (c.end_date IS NULL OR c.end_date >= $3)
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, c.id ASC
+LIMIT $5 OFFSET $4
+`
+
+type FundingOverviewListPaginatedParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	BillingMonth pgtype.Date
+	Offset       pgtype.Int4
+	Limit        pgtype.Int4
+}
+
+type FundingOverviewListPaginatedRow struct {
+	ChildID                pgtype.UUID
+	ChildFirstName         string
+	ChildMiddleName        pgtype.Text
+	ChildLastName          pgtype.Text
+	IsActive               bool
+	StartDate              pgtype.Date
+	EndDate                pgtype.Date
+	FundingProfileID       pgtype.UUID
+	FundedAllowanceMinutes pgtype.Int4
+	FundingUpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) FundingOverviewListPaginated(ctx context.Context, arg FundingOverviewListPaginatedParams) ([]FundingOverviewListPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, fundingOverviewListPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.BillingMonth,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FundingOverviewListPaginatedRow
+	for rows.Next() {
+		var i FundingOverviewListPaginatedRow
 		if err := rows.Scan(
 			&i.ChildID,
 			&i.ChildFirstName,

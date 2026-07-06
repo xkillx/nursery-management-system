@@ -17,7 +17,10 @@ interface ApiAdHocBooking {
 }
 
 interface ApiListResponse {
-  ad_hoc_bookings: ApiAdHocBooking[];
+  items: ApiAdHocBooking[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,7 +37,7 @@ export class AdHocBookingsApiService {
     if (params.to) httpParams = httpParams.set('to', params.to);
     return this.http
       .get<ApiListResponse>(apiUrl(`/sites/${siteId}/ad-hoc-bookings`), { params: httpParams })
-      .pipe(map((res) => res.ad_hoc_bookings.map((b) => this.toBooking(b))));
+      .pipe(map((res) => res.items.map((b) => this.toBooking(b))));
   }
 
   createBooking(siteId: string, payload: AdHocBookingInput): Observable<AdHocBooking> {

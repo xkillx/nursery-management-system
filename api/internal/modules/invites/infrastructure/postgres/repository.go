@@ -219,6 +219,44 @@ func (r *Repository) ListInvites(ctx context.Context, tenantID, branchID uuid.UU
 	}
 }
 
+func (r *Repository) ListInvitesPaginated(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus, limit, offset int) ([]domain.Invite, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := pgUUID(tenantID)
+	pgBranch := pgUUID(branchID)
+
+	switch status {
+	default:
+		rows, err := q.InviteListPendingPaginated(ctx, sqlc.InviteListPendingPaginatedParams{
+			TenantID: pgTenant,
+			BranchID: pgBranch,
+			Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+			Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+		})
+		if err != nil {
+			return nil, err
+		}
+		return mapRows(rows), nil
+	}
+}
+
+func (r *Repository) CountInvites(ctx context.Context, tenantID, branchID uuid.UUID, status domain.InviteStatus) (int, error) {
+	q := sqlc.New(r.pool)
+	pgTenant := pgUUID(tenantID)
+	pgBranch := pgUUID(branchID)
+
+	switch status {
+	default:
+		count, err := q.InviteCountPending(ctx, sqlc.InviteCountPendingParams{
+			TenantID: pgTenant,
+			BranchID: pgBranch,
+		})
+		if err != nil {
+			return 0, err
+		}
+		return int(count), nil
+	}
+}
+
 func (r *Repository) GetInviteForUpdate(ctx context.Context, tenantID, branchID, inviteID uuid.UUID) (domain.Invite, error) {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {

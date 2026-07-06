@@ -117,8 +117,8 @@ export class OwnerApiService {
       .set('status', status);
 
     return this.http
-      .get<ApiManagerAccessRecord[]>(apiUrl('/owner/manager-access'), { params })
-      .pipe(map((records) => records.map((r) => this.mapManagerAccessRecord(r))));
+      .get<{ items: ApiManagerAccessRecord[]; total: number; page: number; page_size: number }>(apiUrl('/owner/manager-access'), { params })
+      .pipe(map((response) => response.items.map((r) => this.mapManagerAccessRecord(r))));
   }
 
   grantManagerAccess(siteId: string, email: string): Observable<OwnerGrantManagerAccessResult> {
@@ -240,7 +240,7 @@ export class OwnerApiService {
     }
     return this.http
       .get<ApiRoomListResponse>(apiUrl(`/sites/${siteId}/rooms`), { params })
-      .pipe(map((response) => response.rooms.map((r) => this.mapRoom(r))));
+      .pipe(map((response) => response.items.map((r) => this.mapRoom(r))));
   }
 
   getRoom(siteId: string, roomId: string): Observable<Room> {

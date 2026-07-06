@@ -53,6 +53,64 @@ func (r *AdHocBookingRepository) ListByBranch(ctx context.Context, tenantID, bra
 	return out, nil
 }
 
+func (r *AdHocBookingRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, childID *uuid.UUID, from, to *time.Time, activeOnly bool, limit, offset int) ([]domain.AdHocBooking, error) {
+	q := sqlc.New(r.pool)
+	params := sqlc.AdHocBookingsListByBranchPaginatedParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  pgtype.UUID{Valid: false},
+		Column4:  pgtype.Date{Valid: false},
+		Column5:  pgtype.Date{Valid: false},
+		Column6:  activeOnly,
+		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
+		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
+	}
+	if childID != nil {
+		params.Column3 = uuidToPgtype(*childID)
+	}
+	if from != nil {
+		params.Column4 = timeToPgtypeDate(*from)
+	}
+	if to != nil {
+		params.Column5 = timeToPgtypeDate(*to)
+	}
+	rows, err := q.AdHocBookingsListByBranchPaginated(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("query ad-hoc bookings list paginated: %w", err)
+	}
+	out := make([]domain.AdHocBooking, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapAdHocBooking(row))
+	}
+	return out, nil
+}
+
+func (r *AdHocBookingRepository) CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, childID *uuid.UUID, from, to *time.Time, activeOnly bool) (int, error) {
+	q := sqlc.New(r.pool)
+	params := sqlc.AdHocBookingsCountByBranchParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  pgtype.UUID{Valid: false},
+		Column4:  pgtype.Date{Valid: false},
+		Column5:  pgtype.Date{Valid: false},
+		Column6:  activeOnly,
+	}
+	if childID != nil {
+		params.Column3 = uuidToPgtype(*childID)
+	}
+	if from != nil {
+		params.Column4 = timeToPgtypeDate(*from)
+	}
+	if to != nil {
+		params.Column5 = timeToPgtypeDate(*to)
+	}
+	count, err := q.AdHocBookingsCountByBranch(ctx, params)
+	if err != nil {
+		return 0, fmt.Errorf("query ad-hoc bookings count: %w", err)
+	}
+	return int(count), nil
+}
+
 func (r *AdHocBookingRepository) ListActiveByChildAndDateRange(ctx context.Context, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]domain.AdHocBooking, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.AdHocBookingsListByChildAndDateRange(ctx, sqlc.AdHocBookingsListByChildAndDateRangeParams{

@@ -33,3 +33,21 @@ WHERE tenant_id = $1
   AND date >= $3
   AND date <= $4
 ORDER BY date ASC;
+
+-- name: BranchClosureDaysListByBranchAndDateRangePaginated :many
+SELECT id, tenant_id, branch_id, date, reason, created_at
+FROM branch_closure_days
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND date >= $3
+  AND date <= $4
+ORDER BY date ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: BranchClosureDaysCountByBranchAndDateRange :one
+SELECT COUNT(*)
+FROM branch_closure_days
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND date >= $3
+  AND date <= $4;

@@ -15,6 +15,7 @@ import (
 	"nursery-management-system/api/internal/modules/billing/application"
 	"nursery-management-system/api/internal/modules/billing/domain"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -278,21 +279,27 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		return
 	}
 
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	limitStr := fmt.Sprintf("%d", pageSize)
+	offsetStr := fmt.Sprintf("%d", offset)
+
 	result, err := h.listInvoices.Execute(c.Request.Context(), actor, application.ListInvoicesParams{
 		BillingMonth:     queryParamPtr(c, "billing_month"),
 		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
 		Status:           queryParamPtr(c, "status"),
 		ChildID:          queryParamPtr(c, "child_id"),
-		Limit:            queryParamPtr(c, "limit"),
-		Offset:           queryParamPtr(c, "offset"),
+		Limit:            &limitStr,
+		Offset:           &offsetStr,
 	})
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toInvoiceListResponse(result))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toInvoiceListResponse(result), result.Total, page, pageSize))
 }
 
 func (h *Handler) getInvoiceHandler(c *gin.Context) {
@@ -793,7 +800,7 @@ func formatUUIDPtr(u *uuid.UUID) *string {
 	return &s
 }
 
-func toInvoiceListResponse(r application.ListInvoicesResult) invoiceListResponse {
+func toInvoiceListResponse(r application.ListInvoicesResult) []invoiceListItemResponse {
 	items := make([]invoiceListItemResponse, 0, len(r.Items))
 	for _, inv := range r.Items {
 		exceptionCount := countRunExceptions(inv.GeneratedRunDetails)
@@ -831,11 +838,7 @@ func toInvoiceListResponse(r application.ListInvoicesResult) invoiceListResponse
 		item.Period.StartDate = formatDate(inv.PeriodStartDate)
 		item.Period.EndDate = formatDate(inv.PeriodEndDate)
 	}
-	return invoiceListResponse{
-		Items:  items,
-		Limit:  r.Limit,
-		Offset: r.Offset,
-	}
+	return items
 }
 
 func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailResponse {

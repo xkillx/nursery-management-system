@@ -10,6 +10,8 @@ type Tx = any
 
 type Repository interface {
 	ListByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) ([]SessionType, error)
+	ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool, limit, offset int) ([]SessionType, error)
+	CountByBranch(ctx context.Context, tenantID, branchID uuid.UUID, includeArchived bool) (int, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (SessionType, error)
 	Create(ctx context.Context, st SessionType) error
 	Update(ctx context.Context, tenantID, branchID, id uuid.UUID, fields map[string]any) (int64, error)

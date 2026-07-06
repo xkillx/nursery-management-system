@@ -9,6 +9,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/term_calendar/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -75,13 +76,16 @@ func (h *Handler) listTerms(c *gin.Context) {
 
 	includeArchived := c.Query("include_archived") == "true"
 
-	terms, err := h.list.Execute(c.Request.Context(), actor, siteID, includeArchived)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	terms, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"academic_terms": toTermListResponse(terms)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toTermListResponse(terms), total, page, pageSize))
 }
 
 func (h *Handler) createTerm(c *gin.Context) {

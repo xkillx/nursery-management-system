@@ -9,6 +9,7 @@ import (
 
 	"nursery-management-system/api/internal/modules/sessiontemplates/application"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
@@ -102,13 +103,16 @@ func (h *Handler) listTemplates(c *gin.Context) {
 
 	includeArchived := c.Query("include_archived") == "true"
 
-	templates, err := h.list.Execute(c.Request.Context(), actor, siteID, includeArchived)
+	page, pageSize := pagination.ParsePageParams(c)
+	offset := (page - 1) * pageSize
+
+	templates, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, siteID, includeArchived, pageSize, offset)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session_templates": toSessionTemplateListResponse(templates)})
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toSessionTemplateListResponse(templates), total, page, pageSize))
 }
 
 func (h *Handler) getTemplate(c *gin.Context) {

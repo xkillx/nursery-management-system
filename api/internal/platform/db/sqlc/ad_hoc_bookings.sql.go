@@ -28,6 +28,40 @@ func (q *Queries) AdHocBookingsCancel(ctx context.Context, arg AdHocBookingsCanc
 	return err
 }
 
+const adHocBookingsCountByBranch = `-- name: AdHocBookingsCountByBranch :one
+SELECT COUNT(*)
+FROM ad_hoc_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND ($3::uuid IS NULL OR child_id = $3)
+  AND ($4::date IS NULL OR calendar_date >= $4)
+  AND ($5::date IS NULL OR calendar_date <= $5)
+  AND (NOT $6::bool OR status = 'active')
+`
+
+type AdHocBookingsCountByBranchParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  pgtype.UUID
+	Column4  pgtype.Date
+	Column5  pgtype.Date
+	Column6  bool
+}
+
+func (q *Queries) AdHocBookingsCountByBranch(ctx context.Context, arg AdHocBookingsCountByBranchParams) (int64, error) {
+	row := q.db.QueryRow(ctx, adHocBookingsCountByBranch,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+		arg.Column6,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const adHocBookingsCreate = `-- name: AdHocBookingsCreate :exec
 INSERT INTO ad_hoc_bookings (id, tenant_id, branch_id, child_id, calendar_date, session_type_id, booked_by_membership_id, status)
 VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
@@ -150,6 +184,70 @@ func (q *Queries) AdHocBookingsListByBranch(ctx context.Context, arg AdHocBookin
 		arg.Column4,
 		arg.Column5,
 		arg.Column6,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdHocBooking
+	for rows.Next() {
+		var i AdHocBooking
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.CalendarDate,
+			&i.SessionTypeID,
+			&i.BookedByMembershipID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adHocBookingsListByBranchPaginated = `-- name: AdHocBookingsListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, child_id, calendar_date, session_type_id, booked_by_membership_id, status, created_at, updated_at
+FROM ad_hoc_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND ($3::uuid IS NULL OR child_id = $3)
+  AND ($4::date IS NULL OR calendar_date >= $4)
+  AND ($5::date IS NULL OR calendar_date <= $5)
+  AND (NOT $6::bool OR status = 'active')
+ORDER BY calendar_date ASC, created_at ASC
+LIMIT $8 OFFSET $7
+`
+
+type AdHocBookingsListByBranchPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  pgtype.UUID
+	Column4  pgtype.Date
+	Column5  pgtype.Date
+	Column6  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) AdHocBookingsListByBranchPaginated(ctx context.Context, arg AdHocBookingsListByBranchPaginatedParams) ([]AdHocBooking, error) {
+	rows, err := q.db.Query(ctx, adHocBookingsListByBranchPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+		arg.Column6,
+		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err

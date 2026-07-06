@@ -109,6 +109,29 @@ func (uc *ListBookingPatterns) Execute(ctx context.Context, actor tenant.ActorCo
 	return patterns, nil
 }
 
+func (uc *ListBookingPatterns) ExecutePaginated(ctx context.Context, actor tenant.ActorContext, childID string, limit, offset int) ([]domain.BookingPattern, int, error) {
+	cid, err := parseUUID(childID)
+	if err != nil {
+		return nil, 0, domainerrors.Validation("Invalid request payload.", "child_id")
+	}
+	_, found, err := uc.repo.GetByID(ctx, actor.TenantID, actor.BranchID, cid)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("check child exists: %w", err))
+	}
+	if !found {
+		return nil, 0, domainerrors.NotFound("child", "Resource not found.")
+	}
+	patterns, err := uc.repo.ListByChildPaginated(ctx, actor.TenantID, actor.BranchID, cid, limit, offset)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("list child booking patterns paginated: %w", err))
+	}
+	total, err := uc.repo.CountByChild(ctx, actor.TenantID, actor.BranchID, cid)
+	if err != nil {
+		return nil, 0, domainerrors.Internal(fmt.Errorf("count child booking patterns: %w", err))
+	}
+	return patterns, total, nil
+}
+
 type GetBookingPattern struct {
 	repo domain.Repository
 }

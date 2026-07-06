@@ -118,3 +118,37 @@ WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
 UPDATE children
 SET current_term_id = NULL, updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
+
+-- name: TermListByChildPaginated :many
+SELECT id, tenant_id, branch_id, child_id,
+       term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
+       status, termination_reason_code, termination_reason_note, terminated_at,
+       created_at, created_by_membership_id, updated_at
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY term_start_date DESC, created_at DESC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: TermCountByChild :one
+SELECT COUNT(*)
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3;
+
+-- name: TermListExpiringWithinPaginated :many
+SELECT id, tenant_id, branch_id, child_id,
+       term_start_date, term_end_date, booking_pattern_id, site_hourly_rate_minor,
+       status, termination_reason_code, termination_reason_note, terminated_at,
+       created_at, created_by_membership_id, updated_at
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2
+  AND status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND term_end_date <= $3
+ORDER BY term_end_date ASC, child_id ASC
+LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
+
+-- name: TermCountExpiringWithin :one
+SELECT COUNT(*)
+FROM term
+WHERE tenant_id = $1 AND branch_id = $2
+  AND status = ANY (ARRAY['active', 'pending_renewal']::text[])
+  AND term_end_date <= $3;

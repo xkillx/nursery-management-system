@@ -128,6 +128,27 @@ func (q *Queries) RoomsCountAssignedChildrenByBranch(ctx context.Context, arg Ro
 	return items, nil
 }
 
+const roomsCountByBranch = `-- name: RoomsCountByBranch :one
+SELECT COUNT(*)
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+`
+
+type RoomsCountByBranchParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+}
+
+func (q *Queries) RoomsCountByBranch(ctx context.Context, arg RoomsCountByBranchParams) (int64, error) {
+	row := q.db.QueryRow(ctx, roomsCountByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const roomsCreate = `-- name: RoomsCreate :exec
 INSERT INTO rooms (id, tenant_id, branch_id, name, description, age_group, capacity, is_active)
 VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, true)
@@ -258,6 +279,61 @@ type RoomsListByBranchParams struct {
 
 func (q *Queries) RoomsListByBranch(ctx context.Context, arg RoomsListByBranchParams) ([]Room, error) {
 	rows, err := q.db.Query(ctx, roomsListByBranch, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.Name,
+			&i.Description,
+			&i.AgeGroup,
+			&i.Capacity,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const roomsListByBranchPaginated = `-- name: RoomsListByBranchPaginated :many
+SELECT id, tenant_id, branch_id, name, description, age_group, capacity, is_active, created_at, updated_at
+FROM rooms
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND (NOT $3::bool OR is_active = true)
+ORDER BY name ASC
+LIMIT $5 OFFSET $4
+`
+
+type RoomsListByBranchPaginatedParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  bool
+	Offset   pgtype.Int4
+	Limit    pgtype.Int4
+}
+
+func (q *Queries) RoomsListByBranchPaginated(ctx context.Context, arg RoomsListByBranchPaginatedParams) ([]Room, error) {
+	rows, err := q.db.Query(ctx, roomsListByBranchPaginated,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Column3,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
