@@ -20,11 +20,12 @@ type GenerateTermInvoices struct {
 	auditW            *audit.Writer
 	termDateLookup    domain.TermDateLookup
 	adHocLookup       domain.AdHocBookingLookup
+	hourlyLookup      domain.HourlyBookingLookup
 	closureDateLookup domain.ClosureDateLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, closureDateLookup domain.ClosureDateLookup) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, closureDateLookup: closureDateLookup}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -243,6 +244,65 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		subtotalMinor += adHocTotalMinor
 		totalDueMinor += adHocTotalMinor
 
+		var hourlyLines []struct {
+			description string
+			minutes     int
+			unitMinor   int
+			lineMinor   int
+			bookingID   uuid.UUID
+			calendarDate string
+			startTime   int
+		}
+		hourlyTotalMinor := 0
+		var hourlyBookingDetails []domain.HourlyBookingLineDetail
+		if uc.hourlyLookup != nil {
+			monthEnd := in.BillingMonth.AddDate(0, 1, 0).AddDate(0, 0, -1)
+			hourlyBookings, hourlyErr := uc.hourlyLookup.ListActiveByChildAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth, monthEnd)
+			if hourlyErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup hourly bookings for term %s: %w", termRow.TermID, hourlyErr)
+			}
+			for _, hb := range hourlyBookings {
+				if hb.CalendarDate.Before(in.BillingMonth) || hb.CalendarDate.After(monthEnd) {
+					continue
+				}
+				if hb.DurationMinutes <= 0 {
+					continue
+				}
+				minor, hrErr := domain.CalculateHourlyAmountMinor(hb.DurationMinutes, termRow.SiteHourlyRateMinor)
+				if hrErr != nil {
+					return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate hourly charge: %w", hrErr)
+				}
+				lineDesc := fmt.Sprintf("Hourly booking: %s (%dmin)", hb.CalendarDate.Format("02 Jan"), hb.DurationMinutes)
+				hourlyLines = append(hourlyLines, struct {
+					description string
+					minutes     int
+					unitMinor   int
+					lineMinor   int
+					bookingID   uuid.UUID
+					calendarDate string
+					startTime   int
+				}{
+					description: lineDesc,
+					minutes:     hb.DurationMinutes,
+					unitMinor:   minor,
+					lineMinor:   minor,
+					bookingID:   hb.ID,
+					calendarDate: hb.CalendarDate.Format("2006-01-02"),
+					startTime:   hb.StartTimeMinutes,
+				})
+				hourlyTotalMinor += minor
+				hourlyBookingDetails = append(hourlyBookingDetails, domain.HourlyBookingLineDetail{
+					HourlyBookingID:  hb.ID,
+					CalendarDate:     hb.CalendarDate.Format("2006-01-02"),
+					StartTimeMinutes: hb.StartTimeMinutes,
+					DurationMinutes:  hb.DurationMinutes,
+				})
+			}
+		}
+
+		subtotalMinor += hourlyTotalMinor
+		totalDueMinor += hourlyTotalMinor
+
 		calcDetails := domain.InvoiceCalculationDetails{
 			BillingMonth:           in.BillingMonthRaw,
 			ChildID:                termRow.ChildID,
@@ -263,6 +323,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			BookedCoreMinutes:      calc.TotalMinutes,
 			BookedSessions:         calc.Sessions,
 			BookedPerEntry:         calc.PerEntry,
+			HourlyBookings:         hourlyBookingDetails,
 		}
 		calcDetailsJSON, jsonErr := domain.MarshalCalculationDetails(calcDetails)
 		if jsonErr != nil {
@@ -393,6 +454,33 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			}
 		}
 
+		for i, hLine := range hourlyLines {
+			lineDetailsJSON, jsonErr := json.Marshal(domain.HourlyBookingLineDetail{
+				HourlyBookingID:  hLine.bookingID,
+				CalendarDate:     hLine.calendarDate,
+				StartTimeMinutes: hLine.startTime,
+				DurationMinutes:  hLine.minutes,
+			})
+			if jsonErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal hourly line details: %w", jsonErr)
+			}
+			if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
+				ID:              uid.NewUUID(),
+				TenantID:        in.Actor.TenantID,
+				BranchID:        in.Actor.BranchID,
+				InvoiceID:       invoiceID,
+				LineKind:        domain.LineKindHourly,
+				Description:     hLine.description,
+				SortOrder:       3 + len(adHocLines) + i,
+				QuantityMinutes: hLine.minutes,
+				UnitAmount:      domain.MustGBP(hLine.unitMinor),
+				LineAmount:      domain.MustGBP(hLine.lineMinor),
+				Details:         lineDetailsJSON,
+			}); insErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("insert hourly line: %w", insErr)
+			}
+		}
+
 		auditAction := domain.AuditInvoiceDraftGenerated
 		if action == domain.DraftUpdated {
 			auditAction = domain.AuditInvoiceDraftRegenerated
@@ -409,6 +497,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				"funded_deduction_min": fundedDeductionMinor,
 				"total_due_minor":      totalDueMinor + extrasTotalMinor,
 				"ad_hoc_total_minor":   adHocTotalMinor,
+				"hourly_total_minor":   hourlyTotalMinor,
 			},
 		}); auditErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("write audit: %w", auditErr)

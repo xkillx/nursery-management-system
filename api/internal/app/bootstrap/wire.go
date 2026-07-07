@@ -304,6 +304,8 @@ var billingSet = wire.NewSet(
 	wire.Bind(new(billingdomain.TermDateLookup), new(*termDateLookupAdapter)),
 	provideAdHocBookingLookupAdapter,
 	wire.Bind(new(billingdomain.AdHocBookingLookup), new(*adHocBookingLookupAdapter)),
+	provideHourlyBookingLookupAdapter,
+	wire.Bind(new(billingdomain.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)),
 	billingapp.NewPreflightDraftInvoices,
 	billingapp.NewComputeInvoicePrefill,
 	billingapp.NewCreateDraftInvoice,

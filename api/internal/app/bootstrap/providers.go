@@ -24,6 +24,7 @@ import (
 	absencehandler "nursery-management-system/api/internal/modules/absence/interfaces/http"
 	adhochttphandler "nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
+	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
@@ -231,6 +232,10 @@ func provideAdHocBookingLookupAdapter(repo *billingpostgres.Repository) *adHocBo
 
 func provideClosureDateLookupAdapter(repo *branchclosurepostgres.Repository) *closureDateLookupAdapter {
 	return &closureDateLookupAdapter{repo: repo}
+}
+
+func provideHourlyBookingLookupAdapter(repo *hourlypostgres.HourlyBookingRepository) *hourlyBookingLookupAdapter {
+	return &hourlyBookingLookupAdapter{repo: repo}
 }
 
 func provideTxManagerAdapter(mgr *transaction.Manager) *txManagerAdapter {

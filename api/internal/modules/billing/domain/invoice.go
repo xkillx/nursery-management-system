@@ -27,6 +27,7 @@ const (
 	LineKindFundedDeduction = "funded_deduction"
 	LineKindExtra           = "extra"
 	LineKindAdHoc           = "ad_hoc"
+	LineKindHourly          = "hourly"
 )
 
 // Invoice run status constants.
@@ -136,6 +137,7 @@ type InvoiceCalculationDetails struct {
 	BookedCoreMinutes int                    `json:"booked_core_minutes"`
 	BookedSessions    []BookedSession        `json:"booked_sessions"`
 	BookedPerEntry    []BookedEntryBreakdown `json:"booked_per_entry"`
+	HourlyBookings    []HourlyBookingLineDetail `json:"hourly_bookings,omitempty"`
 }
 
 // SourceSessionSnapshot is retained for backward-compatible JSON unmarshaling
@@ -169,6 +171,14 @@ type FundedDeductionLineDetails struct {
 	FundedDeductionMinutes int       `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int       `json:"core_billable_minutes"`
 	FundingModel           string    `json:"funding_model,omitempty"`
+}
+
+// HourlyBookingLineDetail is stored as JSON in the hourly invoice line details.
+type HourlyBookingLineDetail struct {
+	HourlyBookingID  uuid.UUID `json:"hourly_booking_id"`
+	CalendarDate     string    `json:"calendar_date"`
+	StartTimeMinutes int       `json:"start_time_minutes"`
+	DurationMinutes  int       `json:"duration_minutes"`
 }
 
 // Audit action types for draft invoice generation.

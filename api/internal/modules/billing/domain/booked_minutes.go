@@ -83,6 +83,18 @@ type AdHocBookingLookup interface {
 	ListActiveBookingsForChildInMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, month time.Time) ([]AdHocBookingRow, error)
 }
 
+type HourlyBookingRow struct {
+	ID               uuid.UUID
+	ChildID          uuid.UUID
+	CalendarDate     time.Time
+	StartTimeMinutes int
+	DurationMinutes  int
+}
+
+type HourlyBookingLookup interface {
+	ListActiveByChildAndMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, monthStart, monthEnd time.Time) ([]HourlyBookingRow, error)
+}
+
 type ClosureDateLookup interface {
 	GetClosureDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]time.Time, error)
 }

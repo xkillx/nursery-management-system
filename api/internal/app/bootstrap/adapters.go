@@ -18,6 +18,7 @@ import (
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
+	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
@@ -582,3 +583,29 @@ func (a *closureDateLookupAdapter) GetClosureDatesForBranchAndMonth(ctx context.
 }
 
 var _ billingdomain.ClosureDateLookup = (*closureDateLookupAdapter)(nil)
+
+// hourlyBookingLookupAdapter satisfies billingdomain.HourlyBookingLookup by
+// delegating to the hourly_bookings module's repository.
+type hourlyBookingLookupAdapter struct {
+	repo *hourlypostgres.HourlyBookingRepository
+}
+
+func (a *hourlyBookingLookupAdapter) ListActiveByChildAndMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, monthStart, monthEnd time.Time) ([]billingdomain.HourlyBookingRow, error) {
+	rows, err := a.repo.ListActiveByChildAndDateRange(ctx, tenantID, branchID, childID, monthStart, monthEnd)
+	if err != nil {
+		return nil, fmt.Errorf("hourly booking lookup: %w", err)
+	}
+	out := make([]billingdomain.HourlyBookingRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, billingdomain.HourlyBookingRow{
+			ID:               r.ID,
+			ChildID:          r.ChildID,
+			CalendarDate:     r.CalendarDate,
+			StartTimeMinutes: r.StartTimeMinutes,
+			DurationMinutes:  r.DurationMinutes,
+		})
+	}
+	return out, nil
+}
+
+var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
