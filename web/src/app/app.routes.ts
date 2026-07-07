@@ -24,6 +24,7 @@ import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/
 import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
 import { ManagerClosureDaysComponent } from './features/staff/pages/manager-closure-days/manager-closure-days.component';
 import { ManagerAdHocBookingComponent } from './features/staff/pages/manager-ad-hoc-booking/manager-ad-hoc-booking.component';
+import { ManagerHourlyBookingsComponent } from './features/staff/pages/manager-hourly-bookings/manager-hourly-bookings.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
@@ -263,6 +264,16 @@ export const routes: Routes = [
               breadcrumb: { label: 'Ad-hoc bookings' },
             },
             title: 'Ad-Hoc Bookings | Nursery Management',
+          },
+          {
+            path: 'manager/hourly-bookings',
+            component: ManagerHourlyBookingsComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Hourly bookings' },
+            },
+            title: 'Hourly Bookings | Nursery Management',
           },
           {
             path: 'manager/funding',
