@@ -401,16 +401,16 @@ func mapSessionTypeSortRow(row interface{}) domain.SessionType {
 		return domain.SessionType{}
 	}
 	st := domain.SessionType{
-		ID:        pgtypeUUIDToUUID(f.ID),
-		TenantID:  pgtypeUUIDToUUID(f.TenantID),
-		BranchID:  pgtypeUUIDToUUID(f.BranchID),
-		Name:      f.Name,
+		ID:           pgtypeUUIDToUUID(f.ID),
+		TenantID:     pgtypeUUIDToUUID(f.TenantID),
+		BranchID:     pgtypeUUIDToUUID(f.BranchID),
+		Name:         f.Name,
 		StartMinutes: pgtypeTimeToMinutes(f.StartTime),
 		EndMinutes:   pgtypeTimeToMinutes(f.EndTime),
-		IsActive:  f.IsActive,
-		Kind:      f.Kind,
-		CreatedAt: pgtypeTimestamptzToTime(f.CreatedAt),
-		UpdatedAt: pgtypeTimestamptzToTime(f.UpdatedAt),
+		IsActive:     f.IsActive,
+		Kind:         f.Kind,
+		CreatedAt:    pgtypeTimestamptzToTime(f.CreatedAt),
+		UpdatedAt:    pgtypeTimestamptzToTime(f.UpdatedAt),
 	}
 	if f.FlatFeeMinor.Valid {
 		v := int(f.FlatFeeMinor.Int32)
