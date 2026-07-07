@@ -132,11 +132,11 @@ type InvoiceCalculationDetails struct {
 	ClosureDaysExcluded    []string   `json:"closure_days_excluded,omitempty"`
 
 	// Advance-pay source.
-	TermID            uuid.UUID              `json:"term_id"`
-	BookingPatternID  uuid.UUID              `json:"booking_pattern_id"`
-	BookedCoreMinutes int                    `json:"booked_core_minutes"`
-	BookedSessions    []BookedSession        `json:"booked_sessions"`
-	BookedPerEntry    []BookedEntryBreakdown `json:"booked_per_entry"`
+	TermID            uuid.UUID                 `json:"term_id"`
+	BookingPatternID  uuid.UUID                 `json:"booking_pattern_id"`
+	BookedCoreMinutes int                       `json:"booked_core_minutes"`
+	BookedSessions    []BookedSession           `json:"booked_sessions"`
+	BookedPerEntry    []BookedEntryBreakdown    `json:"booked_per_entry"`
 	HourlyBookings    []HourlyBookingLineDetail `json:"hourly_bookings,omitempty"`
 }
 

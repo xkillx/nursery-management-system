@@ -245,13 +245,13 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		totalDueMinor += adHocTotalMinor
 
 		var hourlyLines []struct {
-			description string
-			minutes     int
-			unitMinor   int
-			lineMinor   int
-			bookingID   uuid.UUID
+			description  string
+			minutes      int
+			unitMinor    int
+			lineMinor    int
+			bookingID    uuid.UUID
 			calendarDate string
-			startTime   int
+			startTime    int
 		}
 		hourlyTotalMinor := 0
 		var hourlyBookingDetails []domain.HourlyBookingLineDetail
@@ -274,21 +274,21 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				}
 				lineDesc := fmt.Sprintf("Hourly booking: %s (%dmin)", hb.CalendarDate.Format("02 Jan"), hb.DurationMinutes)
 				hourlyLines = append(hourlyLines, struct {
-					description string
-					minutes     int
-					unitMinor   int
-					lineMinor   int
-					bookingID   uuid.UUID
+					description  string
+					minutes      int
+					unitMinor    int
+					lineMinor    int
+					bookingID    uuid.UUID
 					calendarDate string
-					startTime   int
+					startTime    int
 				}{
-					description: lineDesc,
-					minutes:     hb.DurationMinutes,
-					unitMinor:   minor,
-					lineMinor:   minor,
-					bookingID:   hb.ID,
+					description:  lineDesc,
+					minutes:      hb.DurationMinutes,
+					unitMinor:    minor,
+					lineMinor:    minor,
+					bookingID:    hb.ID,
 					calendarDate: hb.CalendarDate.Format("2006-01-02"),
-					startTime:   hb.StartTimeMinutes,
+					startTime:    hb.StartTimeMinutes,
 				})
 				hourlyTotalMinor += minor
 				hourlyBookingDetails = append(hourlyBookingDetails, domain.HourlyBookingLineDetail{
