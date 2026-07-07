@@ -71,6 +71,7 @@ type InvoiceReviewLineRow struct {
 	FundedDeductionMinutes *int
 	CoreBillableMinutes    *int
 	SessionCount           *int
+	FundingModel           *string
 }
 
 // InvoiceReviewCalculation is the curated calculation object for the API response.

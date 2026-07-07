@@ -200,17 +200,18 @@ type invoiceDetailResponse struct {
 }
 
 type invoiceLineResponse struct {
-	LineID                 string `json:"line_id"`
-	LineKind               string `json:"line_kind"`
-	Description            string `json:"description"`
-	SortOrder              int    `json:"sort_order"`
-	QuantityMinutes        *int   `json:"quantity_minutes"`
-	UnitAmountMinor        *int   `json:"unit_amount_minor"`
-	LineAmountMinor        int    `json:"line_amount_minor"`
-	FundedAllowanceMinutes *int   `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes *int   `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    *int   `json:"core_billable_minutes"`
-	SessionCount           *int   `json:"session_count"`
+	LineID                 string  `json:"line_id"`
+	LineKind               string  `json:"line_kind"`
+	Description            string  `json:"description"`
+	SortOrder              int     `json:"sort_order"`
+	QuantityMinutes        *int    `json:"quantity_minutes"`
+	UnitAmountMinor        *int    `json:"unit_amount_minor"`
+	LineAmountMinor        int     `json:"line_amount_minor"`
+	FundedAllowanceMinutes *int    `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes *int    `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    *int    `json:"core_billable_minutes"`
+	SessionCount           *int    `json:"session_count"`
+	FundingModel           *string `json:"funding_model,omitempty"`
 }
 
 type invoiceCalculationResponse struct {
@@ -420,12 +421,13 @@ type parentInvoiceDetailResponse struct {
 }
 
 type parentInvoiceLineResponse struct {
-	LineKind        string `json:"line_kind"`
-	Description     string `json:"description"`
-	SortOrder       int    `json:"sort_order"`
-	QuantityMinutes *int   `json:"quantity_minutes"`
-	UnitAmountMinor *int   `json:"unit_amount_minor"`
-	LineAmountMinor int    `json:"line_amount_minor"`
+	LineKind        string  `json:"line_kind"`
+	Description     string  `json:"description"`
+	SortOrder       int     `json:"sort_order"`
+	QuantityMinutes *int    `json:"quantity_minutes"`
+	UnitAmountMinor *int    `json:"unit_amount_minor"`
+	LineAmountMinor int     `json:"line_amount_minor"`
+	FundingModel    *string `json:"funding_model,omitempty"`
 }
 
 // --- Invoice Prefill DTOs ---

@@ -77,6 +77,7 @@ interface InvoiceLineApi {
   funded_deduction_minutes?: number | null;
   core_billable_minutes?: number | null;
   session_count?: number | null;
+  funding_model?: string | null;
 }
 
 interface InvoiceCalculationApi {
@@ -413,6 +414,7 @@ export class ManagerInvoicesApiService {
       fundedDeductionMinutes: l.funded_deduction_minutes ?? null,
       coreBillableMinutes: l.core_billable_minutes ?? null,
       sessionCount: l.session_count ?? null,
+      fundingModel: l.funding_model ?? null,
     };
   }
 

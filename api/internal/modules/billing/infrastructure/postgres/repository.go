@@ -550,7 +550,7 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 
 	result := make([]domain.InvoiceReviewLineRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.InvoiceReviewLineRow{
+		line := domain.InvoiceReviewLineRow{
 			ID:                     pgtypeUUIDToUUID(row.ID),
 			LineKind:               row.LineKind,
 			Description:            row.Description,
@@ -562,7 +562,16 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 			FundedDeductionMinutes: pgtypeInt4ToIntPtr(row.FundedDeductionMinutes),
 			CoreBillableMinutes:    pgtypeInt4ToIntPtr(row.CoreBillableMinutes),
 			SessionCount:           pgtypeInt4ToIntPtr(row.SessionCount),
-		})
+		}
+		if len(row.Details) > 0 {
+			var details struct {
+				FundingModel string `json:"funding_model"`
+			}
+			if json.Unmarshal(row.Details, &details) == nil && details.FundingModel != "" {
+				line.FundingModel = &details.FundingModel
+			}
+		}
+		result = append(result, line)
 	}
 	return result, nil
 }
@@ -808,14 +817,23 @@ func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, br
 
 	result := make([]domain.ParentInvoiceLineRow, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, domain.ParentInvoiceLineRow{
+		line := domain.ParentInvoiceLineRow{
 			LineKind:        row.LineKind,
 			Description:     row.Description,
 			SortOrder:       int(row.SortOrder),
 			QuantityMinutes: pgtypeInt4ToIntPtr(row.QuantityMinutes),
 			UnitAmount:      pgtypeInt4ToMoneyPtr(row.UnitAmountMinor),
 			LineAmount:      domain.MustGBP(int(row.LineAmountMinor)),
-		})
+		}
+		if len(row.Details) > 0 {
+			var details struct {
+				FundingModel string `json:"funding_model"`
+			}
+			if json.Unmarshal(row.Details, &details) == nil && details.FundingModel != "" {
+				line.FundingModel = &details.FundingModel
+			}
+		}
+		result = append(result, line)
 	}
 	return result, nil
 }

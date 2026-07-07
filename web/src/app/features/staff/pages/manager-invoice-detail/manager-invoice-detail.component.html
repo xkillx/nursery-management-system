@@ -209,7 +209,7 @@
                         @if (line.lineKind === 'funded_deduction') {
                           <p class="text-xs text-warning-700 dark:text-warning-400 mt-0.5 flex items-center gap-1">
                             <span class="inline-block size-1.5 rounded-full bg-warning-500"></span>
-                            30 Hours Extended Entitlement
+                            {{ fundingModelLabel(line.fundingModel) }}
                           </p>
                         }
                         @if (line.lineKind !== 'funded_deduction' && line.sessionCount) {

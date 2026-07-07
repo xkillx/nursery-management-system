@@ -419,13 +419,19 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		if deductionLineAmountAbs < 0 {
 			deductionLineAmountAbs = -deductionLineAmountAbs
 		}
+		deductionDescription := "Funded hours deduction"
+		if fundingModel == "term_time_only" && termRow.FundedHoursPerWeek != nil {
+			deductionDescription = fmt.Sprintf("Term-time funding (%.0fh × 38 weeks)", *termRow.FundedHoursPerWeek)
+		} else if fundingModel == "stretched" && termRow.FundedHoursPerWeek != nil {
+			deductionDescription = fmt.Sprintf("Stretched funding (≈%.1fh/week)", *termRow.FundedHoursPerWeek)
+		}
 		if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
 			ID:                     uid.NewUUID(),
 			TenantID:               in.Actor.TenantID,
 			BranchID:               in.Actor.BranchID,
 			InvoiceID:              invoiceID,
 			LineKind:               domain.LineKindFundedDeduction,
-			Description:            "Funded hours deduction",
+			Description:            deductionDescription,
 			SortOrder:              2,
 			FundedAllowanceMinutes: fundedAllowance,
 			FundedDeductionMinutes: fundedDeductionMinutes,

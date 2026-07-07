@@ -245,7 +245,7 @@ DELETE FROM invoice_lines
 WHERE tenant_id = $1
   AND branch_id = $2
   AND invoice_id = $3
-  AND line_kind IN ('core_childcare', 'funded_deduction');
+  AND line_kind IN ('core_childcare', 'funded_deduction', 'hourly');
 
 -- name: ListDraftExtraLines :many
 SELECT id, line_kind, line_amount_minor, details
@@ -519,7 +519,7 @@ SELECT
     quantity_minutes, unit_amount_minor, line_amount_minor,
     raw_attended_minutes, rounded_attended_minutes,
     funded_allowance_minutes, funded_deduction_minutes, core_billable_minutes,
-    session_count
+    session_count, details
 FROM invoice_lines
 WHERE tenant_id = $1 AND branch_id = $2 AND invoice_id = $3
 ORDER BY sort_order;
@@ -812,7 +812,7 @@ WHERE i.tenant_id = $1
 -- name: InvoiceLinesForParent :many
 SELECT
     il.line_kind, il.description, il.sort_order,
-    il.quantity_minutes, il.unit_amount_minor, il.line_amount_minor
+    il.quantity_minutes, il.unit_amount_minor, il.line_amount_minor, il.details
 FROM invoice_lines il
 JOIN invoices i ON i.tenant_id = il.tenant_id AND i.branch_id = il.branch_id AND i.id = il.invoice_id
 JOIN memberships m

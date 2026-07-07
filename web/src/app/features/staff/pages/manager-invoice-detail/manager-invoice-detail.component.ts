@@ -112,6 +112,12 @@ function lineKindTone(kind: string): 'primary' | 'accent' | 'success' | 'neutral
   return 'neutral';
 }
 
+function fundingModelLabel(model: string | null): string {
+  if (model === 'term_time_only') return 'Term-time funding';
+  if (model === 'stretched') return 'Stretched funding';
+  return 'Funded hours';
+}
+
 interface AuditTrailEntry {
   key: string;
   icon: string;
@@ -190,6 +196,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   readonly lineKindLabel = lineKindLabel;
   readonly lineQuantityLabel = lineQuantityLabel;
   readonly lineKindTone = lineKindTone;
+  readonly fundingModelLabel = fundingModelLabel;
 
   readonly canShowParentRetry = canShowParentRetry;
   readonly getPaymentDisplayState = getPaymentDisplayState;

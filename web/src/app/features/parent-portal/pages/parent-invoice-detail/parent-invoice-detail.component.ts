@@ -66,6 +66,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   readonly formatMinutes = formatMinutes;
   readonly lineKindLabel = lineKindLabel;
   readonly balanceDueMinor = balanceDueMinor;
+  readonly fundingModelLabel = fundingModelLabel;
 
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
@@ -262,4 +263,10 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
 
 function isTerminalStatus(status: ParentInvoiceStatus | undefined): boolean {
   return status === 'paid' || status === 'payment_failed';
+}
+
+function fundingModelLabel(model: string | null): string {
+  if (model === 'term_time_only') return 'Term-time funding';
+  if (model === 'stretched') return 'Stretched funding';
+  return 'Funded hours';
 }

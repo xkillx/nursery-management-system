@@ -54,6 +54,7 @@ type ParentInvoiceLineRow struct {
 	QuantityMinutes *int
 	UnitAmount      *Money
 	LineAmount      Money
+	FundingModel    *string
 }
 
 // ParentInvoiceDetail is the full detail response for a parent invoice.

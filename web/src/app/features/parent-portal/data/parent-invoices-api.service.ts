@@ -69,6 +69,7 @@ interface InvoiceLineApi {
   quantity_minutes?: number | null;
   unit_amount_minor?: number | null;
   line_amount_minor: number;
+  funding_model?: string | null;
 }
 
 interface InvoiceDetailApi extends ChildNameApi {
@@ -243,6 +244,7 @@ export class ParentInvoicesApiService {
       quantityMinutes: l.quantity_minutes ?? null,
       unitAmountMinor: l.unit_amount_minor ?? null,
       lineAmountMinor: l.line_amount_minor,
+      fundingModel: l.funding_model ?? null,
     };
   }
 

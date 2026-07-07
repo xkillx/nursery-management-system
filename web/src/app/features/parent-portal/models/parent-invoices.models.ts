@@ -56,6 +56,7 @@ export interface ParentInvoiceLine {
   quantityMinutes: number | null;
   unitAmountMinor: number | null;
   lineAmountMinor: number;
+  fundingModel: string | null;
 }
 
 export interface ParentInvoiceSiteProfile {

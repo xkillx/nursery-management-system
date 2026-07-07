@@ -1104,6 +1104,7 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			FundedDeductionMinutes: line.FundedDeductionMinutes,
 			CoreBillableMinutes:    line.CoreBillableMinutes,
 			SessionCount:           line.SessionCount,
+			FundingModel:           line.FundingModel,
 		})
 	}
 
@@ -1305,6 +1306,7 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 			QuantityMinutes: line.QuantityMinutes,
 			UnitAmountMinor: moneyPtrToIntPtr(line.UnitAmount),
 			LineAmountMinor: line.LineAmount.Minor(),
+			FundingModel:    line.FundingModel,
 		})
 	}
 

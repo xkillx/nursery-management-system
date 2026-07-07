@@ -226,7 +226,12 @@
             <tbody>
               @for (line of detail.lines; track line.sortOrder + '-' + line.description) {
                 <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-3 pr-4 text-gray-800 dark:text-white/90">{{ line.description }}</td>
+                  <td class="py-3 pr-4 text-gray-800 dark:text-white/90">
+                    {{ line.description }}
+                    @if (line.lineKind === 'funded_deduction' && line.fundingModel) {
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ fundingModelLabel(line.fundingModel) }}</p>
+                    }
+                  </td>
                   <td class="py-3 pr-4 text-gray-500 dark:text-gray-400">{{ lineKindLabel(line.lineKind) }}</td>
                   <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
                     @if (line.quantityMinutes !== null) {

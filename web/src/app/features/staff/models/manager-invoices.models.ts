@@ -78,6 +78,7 @@ export interface ManagerInvoiceLine {
   fundedDeductionMinutes: number | null;
   coreBillableMinutes: number | null;
   sessionCount: number | null;
+  fundingModel: string | null;
 }
 
 export interface ManagerInvoiceSiteProfile {
