@@ -23,6 +23,7 @@ import (
 	absencepostgres "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
 	absencehandler "nursery-management-system/api/internal/modules/absence/interfaces/http"
 	adhochttphandler "nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
+	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
@@ -314,6 +315,7 @@ type appComponents struct {
 	TermHandler             *termhttphandler.Handler
 	TermCalendarHandler     *termcalendarhttphandler.Handler
 	AdHocBookingsHandler    *adhochttphandler.Handler
+	HourlyBookingsHandler   *hourlyhttphandler.Handler
 	BranchClosureHandler    *branchclosurehandler.Handler
 	SiteProfileHandler      *siteprofilehandler.Handler
 }
@@ -389,6 +391,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.TermHandler.RegisterManagerRoutes(manager)
 	c.TermCalendarHandler.RegisterManagerRoutes(manager)
 	c.AdHocBookingsHandler.RegisterManagerRoutes(manager)
+	c.HourlyBookingsHandler.RegisterManagerRoutes(manager)
 	c.BranchClosureHandler.RegisterRoutes(protected)
 
 	return router
