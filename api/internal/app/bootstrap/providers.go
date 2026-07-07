@@ -142,10 +142,6 @@ func provideInviteIPLimiter() *ratelimit.FixedWindowLimiter {
 	return ratelimit.NewFixedWindowLimiter(10, 15*time.Minute)
 }
 
-func provideGlobalRateLimiter() *ratelimit.FixedWindowLimiter {
-	return ratelimit.NewFixedWindowLimiter(100, 1*time.Minute)
-}
-
 // ── Adapter providers ────────────────────────────────────────────────────
 
 func provideMembershipCheckerAdapter(repo *parentchildpostgres.ParentChildMappingRepository) *membershipCheckerAdapter {
@@ -301,8 +297,6 @@ type appComponents struct {
 	Registry    *prometheus.Registry
 	TokenParser httpserver.TokenParser
 
-	GlobalRateLimiter *ratelimit.FixedWindowLimiter
-
 	AuthHandler             *authhandler.Handler
 	ResetHandler            *resethandler.Handler
 	ChildrenHandler         *childhandler.Handler
@@ -353,7 +347,8 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	router.Use(httpserver.SecurityHeadersMiddleware())
 
 	api := registerHealthRoutes(router, c.Config.APIBasePath, c.Pool)
-	api.Use(httpserver.RateLimitMiddleware(c.GlobalRateLimiter))
+	globalRateLimiter := ratelimit.NewFixedWindowLimiter(100, 1*time.Minute)
+	api.Use(httpserver.RateLimitMiddleware(globalRateLimiter))
 
 	c.AuthHandler.RegisterRoutes(api)
 	c.ResetHandler.RegisterRoutes(api)

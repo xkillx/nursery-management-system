@@ -584,7 +584,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 
 		provideAttendanceClock,
 		provideWebBaseURL,
-		provideGlobalRateLimiter,
 		authSet,
 		passwordResetSet,
 		childrenSet,
@@ -638,7 +637,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 
 		provideAttendanceClock,
 		provideWebBaseURL,
-		provideGlobalRateLimiter,
 		authSet,
 		passwordResetSet,
 		childrenSet,
