@@ -56,6 +56,18 @@ type resetPasswordPayload struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
+// requestResetHandler requests a password reset.
+//
+//	@Summary		Request password reset
+//	@Description	Request a password reset email.
+//	@Tags			password-reset
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		resetRequestPayload	true	"Email address"
+//	@Success		202		{object}	object{status=string}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		429		{object}	object{code=string,message=string}
+//	@Router			/auth/password-reset-requests [post]
 func (h *Handler) requestResetHandler(c *gin.Context) {
 	var req resetRequestPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -83,6 +95,17 @@ func (h *Handler) requestResetHandler(c *gin.Context) {
 	}
 }
 
+// resetPasswordHandler resets a password.
+//
+//	@Summary		Reset password
+//	@Description	Reset password using a token.
+//	@Tags			password-reset
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		resetPasswordPayload	true	"Reset data"
+//	@Success		204
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Router			/auth/password-resets [post]
 func (h *Handler) resetPasswordHandler(c *gin.Context) {
 	var req resetPasswordPayload
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -2,6 +2,7 @@ package httpmapping
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -30,6 +31,20 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/parent-membership-children/:mapping_id/actions/end", h.endMappingHandler)
 }
 
+// createMappingHandler creates a parent-child mapping.
+//
+//	@Summary		Create parent-child mapping
+//	@Description	Create a mapping between a parent membership and a child.
+//	@Tags			parent-child-mappings
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		object{membership_id=string,child_id=string}	true	"Mapping data"
+//	@Success		201		{object}	parentChildMappingResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/parent-membership-children [post]
 func (h *Handler) createMappingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -48,12 +63,12 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 
 	membershipID, err := uuid.Parse(strings.TrimSpace(req.MembershipID))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "membership_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "membership_id"}})
 		return
 	}
 	childID, err := uuid.Parse(strings.TrimSpace(req.ChildID))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "child_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "child_id"}})
 		return
 	}
 
@@ -68,9 +83,27 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toMappingResponse(result))
+	resp := toMappingResponse(result)
+	c.Header("Location", fmt.Sprintf("/api/parent-child-links/%s", resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
+// endMappingHandler ends a parent-child mapping.
+//
+//	@Summary		End parent-child mapping
+//	@Description	End a parent-child mapping with a reason.
+//	@Tags			parent-child-mappings
+//	@Accept			json
+//	@Produce		json
+//	@Param			mapping_id	path		string	true	"Mapping ID"	format(uuid)
+//	@Param			body		body		object{reason_code=string,reason_note=string}	true	"End reason"
+//	@Success		200			{object}	parentChildMappingResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/parent-membership-children/{mapping_id}/actions/end [post]
 func (h *Handler) endMappingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -139,7 +172,7 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 func parseUUID(c *gin.Context, name string) (uuid.UUID, bool) {
 	id, err := uuid.Parse(strings.TrimSpace(c.Param(name)))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": name})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": name}})
 		return uuid.UUID{}, false
 	}
 	return id, true
@@ -159,19 +192,19 @@ func parseReasonPayload(c *gin.Context, missingCode string) (string, string, boo
 	req.ReasonNote = strings.TrimSpace(req.ReasonNote)
 
 	if req.ReasonCode == "" {
-		httpserver.WriteError(c, http.StatusBadRequest, missingCode, "Invalid request payload.", map[string]string{"field": "reason_code"})
+		httpserver.WriteError(c, http.StatusBadRequest, missingCode, "Invalid request payload.", []map[string]string{{"field": "reason_code"}})
 		return "", "", false
 	}
 	if !lifecycle.IsValidReasonCode(req.ReasonCode) {
-		httpserver.WriteError(c, http.StatusBadRequest, "lifecycle_reason_invalid", "Invalid request payload.", map[string]string{"field": "reason_code"})
+		httpserver.WriteError(c, http.StatusBadRequest, "lifecycle_reason_invalid", "Invalid request payload.", []map[string]string{{"field": "reason_code"}})
 		return "", "", false
 	}
 	if len(req.ReasonNote) > lifecycle.MaxReasonNoteLen {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": "reason_note"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "reason_note"}})
 		return "", "", false
 	}
 	if req.ReasonCode == lifecycle.ReasonOther && req.ReasonNote == "" {
-		httpserver.WriteError(c, http.StatusBadRequest, "reason_note_required_for_other", "Invalid request payload.", map[string]string{"field": "reason_note"})
+		httpserver.WriteError(c, http.StatusBadRequest, "reason_note_required_for_other", "Invalid request payload.", []map[string]string{{"field": "reason_note"}})
 		return "", "", false
 	}
 

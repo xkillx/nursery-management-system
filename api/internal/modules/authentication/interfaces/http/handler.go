@@ -129,7 +129,7 @@ func (h *Handler) loginHandler(c *gin.Context) {
 			h.recordAuthFailure(c, "login", "login_invalid_credentials")
 			h.unauthorized(c)
 		case errors.As(err, &valErr):
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", map[string]string{"field": valErr.Field, "message": valErr.Message})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": valErr.Field, "message": valErr.Message}})
 		case errors.As(err, &selErr):
 			msg := "Choose a nursery to continue."
 			if selErr.IsStaleChoice {

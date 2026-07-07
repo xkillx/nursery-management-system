@@ -1,7 +1,6 @@
 package httpowner
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -102,7 +101,7 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 	if raw := c.Query("site_id"); raw != "" {
 		parsed, err := uuid.Parse(raw)
 		if err != nil {
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 			return
 		}
 		siteID = &parsed
@@ -110,15 +109,7 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 
 	result, err := h.summaries.Execute(c.Request.Context(), ownerActor, billingMonth, siteID)
 	if err != nil {
-		var valErr *domain.ValidationError
-		switch {
-		case errors.As(err, &valErr):
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": valErr.Field, "message": valErr.Message})
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -151,18 +142,18 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 
 	siteIDStr := c.Query("site_id")
 	if siteIDStr == "" {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id is required"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id is required"}})
 		return
 	}
 	siteID, err := uuid.Parse(siteIDStr)
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 		return
 	}
 
 	status := c.DefaultQuery("status", "active")
 	if status != "active" && status != "inactive" && status != "all" {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "status", "message": "status must be active, inactive, or all"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "status", "message": "status must be active, inactive, or all"}})
 		return
 	}
 
@@ -177,12 +168,7 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 
 	items, total, err := h.listAccess.ExecutePaginated(c.Request.Context(), ownerActor, siteID, status, pageSize, offset)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -218,7 +204,7 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 		return
 	}
 
@@ -226,7 +212,7 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 		Email string `json:"email" binding:"required,email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "body", "message": "invalid JSON"}})
 		return
 	}
 
@@ -238,12 +224,7 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 
 	result, err := h.grant.Execute(c.Request.Context(), ownerActor, siteID, req.Email)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -274,12 +255,12 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 		return
 	}
 	membershipID, err := uuid.Parse(c.Param("membership_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "membership_id", "message": "membership_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "membership_id", "message": "membership_id must be a valid UUID"}})
 		return
 	}
 
@@ -291,14 +272,7 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 
 	err = h.deactivate.Execute(c.Request.Context(), ownerActor, siteID, membershipID)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		case errors.Is(err, domain.ErrMembershipNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "manager_membership_not_found", "Manager membership not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -329,12 +303,12 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 		return
 	}
 	membershipID, err := uuid.Parse(c.Param("membership_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "membership_id", "message": "membership_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "membership_id", "message": "membership_id must be a valid UUID"}})
 		return
 	}
 
@@ -346,12 +320,7 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 
 	err = h.reactivate.Execute(c.Request.Context(), ownerActor, siteID, membershipID)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -383,7 +352,7 @@ func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 
 	siteID, err := uuid.Parse(c.Param("site_id"))
 	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": "site_id", "message": "site_id must be a valid UUID"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", []map[string]string{{"field": "site_id", "message": "site_id must be a valid UUID"}})
 		return
 	}
 
@@ -391,7 +360,7 @@ func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 		CoreHourlyRateMinor int `json:"core_hourly_rate_minor"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "body", "message": "invalid JSON"}})
 		return
 	}
 
@@ -403,15 +372,7 @@ func (h *Handler) updateSiteBillingSetup(c *gin.Context) {
 
 	result, err := h.updateBillingSetup.Execute(c.Request.Context(), ownerActor, siteID, req.CoreHourlyRateMinor)
 	if err != nil {
-		var valErr *domain.ValidationError
-		switch {
-		case errors.As(err, &valErr):
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request parameters.", map[string]string{"field": valErr.Field, "message": valErr.Message})
-		case errors.Is(err, domain.ErrSiteNotFound):
-			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
-		default:
-			httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Something went wrong.", nil)
-		}
+		h.handleError(c, err)
 		return
 	}
 
@@ -606,4 +567,11 @@ func toTotalsResponse(t domain.SiteSummaryTotals) siteSummaryTotalsResponse {
 		OutstandingMinor:          t.OutstandingMinor,
 		OverdueOutstandingMinor:   t.OverdueOutstandingMinor,
 	}
+}
+
+func (h *Handler) handleError(c *gin.Context, err error) {
+	requestID := httpserver.RequestIDFromContext(c)
+	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
+	c.AbortWithStatusJSON(status, resp)
 }

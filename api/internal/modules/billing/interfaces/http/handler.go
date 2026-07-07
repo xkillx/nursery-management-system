@@ -237,7 +237,9 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toCreateDraftResponse(result))
+	resp := toCreateDraftResponse(result)
+	c.Header("Location", fmt.Sprintf("/api/invoices/%s", resp.InvoiceID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 // createAndIssueInvoiceHandler creates and immediately issues an invoice.

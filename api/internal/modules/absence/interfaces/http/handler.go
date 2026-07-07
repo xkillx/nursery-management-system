@@ -1,6 +1,7 @@
 package httpabsence
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -24,11 +25,26 @@ func NewHandler(markAbsent *application.MarkAbsent, clearMarker *application.Cle
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	g := protected.Group("")
-	g.Use(requireRoles("manager", "practitioner"))
+	g.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"))
 	g.POST("/attendance/absence-markers", h.markAbsentHandler)
 	g.POST("/attendance/absence-markers/:absence_marker_id/clear", h.clearMarkerHandler)
 }
 
+// markAbsentHandler marks a child as absent.
+//
+//	@Summary		Mark child absent
+//	@Description	Mark a child as absent for today.
+//	@Tags			absence
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		markAbsentRequest	true	"Child ID"
+//	@Success		201		{object}	absenceMarkerResponse
+//	@Success		200		{object}	absenceMarkerResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/attendance/absence-markers [post]
 func (h *Handler) markAbsentHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -48,13 +64,29 @@ func (h *Handler) markAbsentHandler(c *gin.Context) {
 		return
 	}
 
+	resp := toMarkerResponse(result.Marker)
 	if result.Created {
-		c.JSON(http.StatusCreated, toMarkerResponse(result.Marker))
+		c.Header("Location", fmt.Sprintf("/api/attendance/absence-markers/%s", resp.ID))
+		c.JSON(http.StatusCreated, resp)
 	} else {
-		c.JSON(http.StatusOK, toMarkerResponse(result.Marker))
+		c.JSON(http.StatusOK, resp)
 	}
 }
 
+// clearMarkerHandler clears an absence marker.
+//
+//	@Summary		Clear absence marker
+//	@Description	Clear an absence marker for a child.
+//	@Tags			absence
+//	@Produce		json
+//	@Param			absence_marker_id	path		string	true	"Absence Marker ID"	format(uuid)
+//	@Success		200					{object}	absenceMarkerResponse
+//	@Failure		400					{object}	object{code=string,message=string}
+//	@Failure		401					{object}	object{code=string,message=string}
+//	@Failure		404					{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/attendance/absence-markers/{absence_marker_id}/clear [post]
 func (h *Handler) clearMarkerHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -82,32 +114,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

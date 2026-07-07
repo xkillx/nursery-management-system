@@ -1,6 +1,7 @@
 package httpinvite
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -92,23 +93,23 @@ func (h *Handler) createHandler(c *gin.Context) {
 
 	var req createInviteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "body", "message": "invalid JSON"}})
 		return
 	}
 
 	result, err := h.create.Execute(c.Request.Context(), actor, req.Email, req.Role)
 	if err != nil {
-		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
-		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-		c.AbortWithStatusJSON(status, resp)
+		h.handleError(c, err)
 		return
 	}
 
-	status := http.StatusCreated
-	if !result.IsNew {
-		status = http.StatusOK
+	resp := toInviteResponse(result.Invite)
+	if result.IsNew {
+		c.Header("Location", fmt.Sprintf("/api/invites/%s", resp.ID))
+		c.JSON(http.StatusCreated, resp)
+	} else {
+		c.JSON(http.StatusOK, resp)
 	}
-	c.JSON(status, toInviteResponse(result.Invite))
 }
 
 // listHandler returns a paginated list of invites.
@@ -165,7 +166,7 @@ func (h *Handler) listHandler(c *gin.Context) {
 
 	result, total, err := h.list.ExecutePaginated(c.Request.Context(), actor, status, pageSize, offset, role, sortExpr.Field, sortExpr.Direction)
 	if err != nil {
-		httpserver.WriteInternalError(c)
+		h.handleError(c, err)
 		return
 	}
 
@@ -200,9 +201,7 @@ func (h *Handler) resendHandler(c *gin.Context) {
 
 	result, err := h.resend.Execute(c.Request.Context(), actor, inviteID)
 	if err != nil {
-		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
-		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-		c.AbortWithStatusJSON(status, resp)
+		h.handleError(c, err)
 		return
 	}
 
@@ -237,9 +236,7 @@ func (h *Handler) revokeHandler(c *gin.Context) {
 
 	result, err := h.revoke.Execute(c.Request.Context(), actor, inviteID)
 	if err != nil {
-		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
-		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-		c.AbortWithStatusJSON(status, resp)
+		h.handleError(c, err)
 		return
 	}
 
@@ -272,7 +269,7 @@ func (h *Handler) acceptHandler(c *gin.Context) {
 
 	var req acceptInviteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", err.Error())
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", []map[string]string{{"field": "body", "message": "invalid JSON"}})
 		return
 	}
 
@@ -280,9 +277,7 @@ func (h *Handler) acceptHandler(c *gin.Context) {
 
 	_, err := h.accept.Execute(c.Request.Context(), tokenHash, req.NewPassword)
 	if err != nil {
-		status, resp := httpserver.MapDomainError(err, httpserver.RequestIDFromContext(c))
-		httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-		c.AbortWithStatusJSON(status, resp)
+		h.handleError(c, err)
 		return
 	}
 
@@ -329,4 +324,11 @@ func formatTimePtr(t *time.Time) *string {
 	}
 	s := t.Format("2006-01-02T15:04:05Z")
 	return &s
+}
+
+func (h *Handler) handleError(c *gin.Context, err error) {
+	requestID := httpserver.RequestIDFromContext(c)
+	status, resp := httpserver.MapDomainError(err, requestID)
+	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
+	c.AbortWithStatusJSON(status, resp)
 }

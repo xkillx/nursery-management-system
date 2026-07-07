@@ -1,6 +1,7 @@
 package httpattendance
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -36,17 +37,31 @@ func NewHandler(
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	g := protected.Group("")
-	g.Use(requireRoles("manager", "practitioner"))
+	g.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"))
 	g.POST("/attendance/check-ins", h.checkInHandler)
 	g.POST("/attendance/check-outs", h.checkOutHandler)
 
 	managerOnly := protected.Group("")
-	managerOnly.Use(requireRoles("manager"))
+	managerOnly.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager"))
 	managerOnly.POST("/attendance/corrections", h.correctionHandler)
 	managerOnly.GET("/attendance/sessions", h.listSessionsHandler)
 	managerOnly.GET("/attendance/sessions/:session_id/history", h.listHistoryHandler)
 }
 
+// checkInHandler checks in a child.
+//
+//	@Summary		Check in child
+//	@Description	Check in a child for attendance.
+//	@Tags			attendance
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		checkInRequest	true	"Child ID"
+//	@Success		201		{object}	sessionResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/attendance/check-ins [post]
 func (h *Handler) checkInHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -72,9 +87,25 @@ func (h *Handler) checkInHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toSessionResponse(session))
+	resp := toSessionResponse(session)
+	c.Header("Location", fmt.Sprintf("/api/attendance/sessions/%s", resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
+// checkOutHandler checks out a child.
+//
+//	@Summary		Check out child
+//	@Description	Check out a child from attendance.
+//	@Tags			attendance
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		checkOutRequest	true	"Child ID"
+//	@Success		200		{object}	sessionResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","practitioner"]
+//	@Router			/attendance/check-outs [post]
 func (h *Handler) checkOutHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -103,6 +134,21 @@ func (h *Handler) checkOutHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toSessionResponse(session))
 }
 
+// correctionHandler corrects attendance.
+//
+//	@Summary		Correct attendance
+//	@Description	Correct attendance for a child.
+//	@Tags			attendance
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		correctionRequest	true	"Correction data"
+//	@Success		201		{object}	sessionResponse
+//	@Success		200		{object}	sessionResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/attendance/corrections [post]
 func (h *Handler) correctionHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -128,13 +174,29 @@ func (h *Handler) correctionHandler(c *gin.Context) {
 		return
 	}
 
+	resp := toSessionResponse(result.Session)
 	if result.Created {
-		c.JSON(http.StatusCreated, toSessionResponse(result.Session))
+		c.Header("Location", fmt.Sprintf("/api/attendance/sessions/%s", resp.ID))
+		c.JSON(http.StatusCreated, resp)
 	} else {
-		c.JSON(http.StatusOK, toSessionResponse(result.Session))
+		c.JSON(http.StatusOK, resp)
 	}
 }
 
+// listSessionsHandler lists attendance sessions.
+//
+//	@Summary		List attendance sessions
+//	@Description	Get a list of attendance sessions for a child on a date.
+//	@Tags			attendance
+//	@Produce		json
+//	@Param			child_id	query		string	true	"Child ID"	format(uuid)
+//	@Param			local_date	query		string	true	"Local date"	format(date)
+//	@Success		200			{object}	object{sessions=[]sessionResponse}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/attendance/sessions [get]
 func (h *Handler) listSessionsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -173,6 +235,20 @@ func (h *Handler) listSessionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toCorrectionSessionContextResponse(ctx))
 }
 
+// listHistoryHandler lists correction history for a session.
+//
+//	@Summary		List correction history
+//	@Description	Get correction history for an attendance session.
+//	@Tags			attendance
+//	@Produce		json
+//	@Param			session_id	path		string	true	"Session ID"	format(uuid)
+//	@Success		200			{object}	object{corrections=[]correctionHistoryResponse}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/attendance/sessions/{session_id}/history [get]
 func (h *Handler) listHistoryHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -200,32 +276,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

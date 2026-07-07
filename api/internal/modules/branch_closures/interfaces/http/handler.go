@@ -1,6 +1,7 @@
 package httpclosure
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -93,7 +94,9 @@ func (h *Handler) createClosureDay(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"closure_day": toClosureDayResponse(closure)})
+	resp := toClosureDayResponse(closure)
+	c.Header("Location", fmt.Sprintf("/api/sites/%s/branch-closures/%s", branchID, resp.ID))
+	c.JSON(http.StatusCreated, gin.H{"closure_day": resp})
 }
 
 // listClosureDays returns a paginated list of closure days for a site.

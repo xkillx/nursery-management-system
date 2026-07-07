@@ -1,6 +1,7 @@
 package httpadhocbookings
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -225,7 +226,9 @@ func (h *Handler) createBooking(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"ad_hoc_booking": toAdHocBookingResponse(booking)})
+	resp := toAdHocBookingResponse(booking)
+	c.Header("Location", fmt.Sprintf("/api/sites/%s/ad-hoc-bookings/%s", siteID, resp.ID))
+	c.JSON(http.StatusCreated, gin.H{"ad_hoc_booking": resp})
 }
 
 // cancelBooking cancels an ad hoc booking.
@@ -274,39 +277,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		switch authCtx.Role {
-		case "owner", "manager", "practitioner", "parent":
-		default:
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

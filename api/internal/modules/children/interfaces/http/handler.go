@@ -1,6 +1,7 @@
 package httpchild
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -179,16 +180,16 @@ func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
-	protected.GET("/children/attendance", requireRoles("manager", "practitioner"), h.listAttendanceHandler)
+	protected.GET("/children/attendance", httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"), h.listAttendanceHandler)
 
 	bookingRead := protected.Group("")
-	bookingRead.Use(requireRoles("manager", "practitioner"))
+	bookingRead.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"))
 	bookingRead.GET("/children/:child_id/booking-patterns", h.listBookingPatternsHandler)
 	bookingRead.GET("/children/:child_id/booking-patterns/current", h.getCurrentBookingPatternHandler)
 	bookingRead.GET("/children/:child_id/booking-patterns/:pattern_id", h.getBookingPatternHandler)
 
 	manager := protected.Group("")
-	manager.Use(requireRoles("manager"))
+	manager.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager"))
 
 	manager.GET("/children", h.listChildrenHandler)
 	manager.POST("/children", h.createChildHandler)
@@ -366,7 +367,9 @@ func (h *Handler) createChildHandler(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, toChildCreationResponse(result))
+	resp := toChildCreationResponse(result)
+	c.Header("Location", fmt.Sprintf("/api/children/%s", resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 // updateChildHandler updates an existing child.
@@ -785,7 +788,9 @@ func (h *Handler) createRoomAssignmentHandler(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, toRoomAssignmentResponse(*a))
+	resp := toRoomAssignmentResponse(*a)
+	c.Header("Location", fmt.Sprintf("/api/children/%s/room-assignments/%s", resp.ChildID, resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 func (h *Handler) closeRoomAssignmentHandler(c *gin.Context) {
@@ -960,7 +965,9 @@ func (h *Handler) createBookingPatternHandler(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, toBookingPatternResponse(*result))
+	resp := toBookingPatternResponse(*result)
+	c.Header("Location", fmt.Sprintf("/api/children/%s/booking-patterns/%s", resp.ChildID, resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
@@ -1014,40 +1021,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-// requireRoles checks that the authenticated user has one of the allowed roles.
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		switch authCtx.Role {
-		case "owner", "manager", "practitioner", "parent":
-		default:
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

@@ -1,6 +1,7 @@
 package httprooms
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -47,12 +48,12 @@ func NewHandler(
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	readOnly := protected.Group("")
-	readOnly.Use(requireRoles("manager", "owner", "practitioner"))
+	readOnly.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "owner", "practitioner"))
 	readOnly.GET("/sites/:site_id/rooms", h.listRooms)
 	readOnly.GET("/sites/:site_id/rooms/:room_id", h.getRoom)
 
 	writeOps := protected.Group("")
-	writeOps.Use(requireRoles("manager", "owner"))
+	writeOps.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "owner"))
 	writeOps.POST("/sites/:site_id/rooms", h.createRoom)
 	writeOps.PATCH("/sites/:site_id/rooms/:room_id", h.updateRoom)
 	writeOps.POST("/sites/:site_id/rooms/:room_id/actions/archive", h.archiveRoom)
@@ -192,7 +193,9 @@ func (h *Handler) createRoom(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toRoomResponse(room))
+	resp := toRoomResponse(room)
+	c.Header("Location", fmt.Sprintf("/api/sites/%s/rooms/%s", siteID, resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 // getRoom returns a single room by ID.
@@ -383,39 +386,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		switch authCtx.Role {
-		case "owner", "manager", "practitioner", "parent":
-		default:
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

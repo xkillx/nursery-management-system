@@ -88,6 +88,20 @@ func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices/:invoice_id/payment-events", h.managerPaymentEventsHandler)
 }
 
+// managerPaymentStatusHandler returns payment status for an invoice.
+//
+//	@Summary		Get payment status
+//	@Description	Get payment status for an invoice.
+//	@Tags			payments
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Success		200			{object}	managerPaymentStatusResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/payment-status [get]
 func (h *Handler) managerPaymentStatusHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -97,7 +111,7 @@ func (h *Handler) managerPaymentStatusHandler(c *gin.Context) {
 
 	invoiceIDRaw := c.Param("invoice_id")
 	if _, err := uuid.Parse(invoiceIDRaw); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", map[string]string{"field": "invoice_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", []map[string]string{{"field": "invoice_id"}})
 		return
 	}
 
@@ -110,6 +124,22 @@ func (h *Handler) managerPaymentStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toManagerPaymentStatusResponse(result))
 }
 
+// managerPaymentEventsHandler returns payment events for an invoice.
+//
+//	@Summary		List payment events
+//	@Description	Get payment events for an invoice.
+//	@Tags			payments
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Param			limit		query		int		false	"Limit"
+//	@Param			offset		query		int		false	"Offset"
+//	@Success		200			{object}	managerPaymentEventsResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/payment-events [get]
 func (h *Handler) managerPaymentEventsHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -119,7 +149,7 @@ func (h *Handler) managerPaymentEventsHandler(c *gin.Context) {
 
 	invoiceIDRaw := c.Param("invoice_id")
 	if _, err := uuid.Parse(invoiceIDRaw); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", map[string]string{"field": "invoice_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", []map[string]string{{"field": "invoice_id"}})
 		return
 	}
 
@@ -135,6 +165,20 @@ func (h *Handler) managerPaymentEventsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toManagerPaymentEventsResponse(result))
 }
 
+// createCheckoutSessionHandler creates a checkout session.
+//
+//	@Summary		Create checkout session
+//	@Description	Create a Stripe checkout session for an invoice.
+//	@Tags			payments
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Success		201			{object}	createCheckoutSessionResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/invoices/{invoice_id}/checkout-sessions [post]
 func (h *Handler) createCheckoutSessionHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -144,7 +188,7 @@ func (h *Handler) createCheckoutSessionHandler(c *gin.Context) {
 
 	invoiceIDRaw := c.Param("invoice_id")
 	if _, err := uuid.Parse(invoiceIDRaw); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", map[string]string{"field": "invoice_id"})
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", []map[string]string{{"field": "invoice_id"}})
 		return
 	}
 

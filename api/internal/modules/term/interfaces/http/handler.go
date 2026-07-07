@@ -2,6 +2,7 @@ package httpterm
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -128,7 +129,9 @@ func (h *Handler) createTermHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toTermResponse(term))
+	resp := toTermResponse(term)
+	c.Header("Location", fmt.Sprintf("/api/children/%s/terms/%s", resp.ChildID, resp.ID))
+	c.JSON(http.StatusCreated, resp)
 }
 
 // listTermsHandler returns a paginated list of terms for a child.

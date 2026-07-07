@@ -34,14 +34,25 @@ func NewHandler(
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	readOnly := protected.Group("")
-	readOnly.Use(requireRoles("manager", "owner", "practitioner"))
+	readOnly.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "owner", "practitioner"))
 	readOnly.GET("/site-profile", h.getSiteProfile)
 
 	writeOps := protected.Group("")
-	writeOps.Use(requireRoles("manager", "owner"))
+	writeOps.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "owner"))
 	writeOps.PUT("/site-profile", h.updateSiteProfile)
 }
 
+// getSiteProfile returns the site profile.
+//
+//	@Summary		Get site profile
+//	@Description	Get the site profile for the current branch.
+//	@Tags			site-profile
+//	@Produce		json
+//	@Success		200	{object}	getSiteProfileResponse
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner","practitioner"]
+//	@Router			/site-profile [get]
 func (h *Handler) getSiteProfile(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -67,6 +78,20 @@ func (h *Handler) getSiteProfile(c *gin.Context) {
 	})
 }
 
+// updateSiteProfile updates the site profile.
+//
+//	@Summary		Update site profile
+//	@Description	Update the site profile for the current branch.
+//	@Tags			site-profile
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		updateSiteProfileRequest	true	"Profile data"
+//	@Success		200		{object}	SiteProfileResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/site-profile [put]
 func (h *Handler) updateSiteProfile(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -105,39 +130,4 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 	status, resp := httpserver.MapDomainError(err, requestID)
 	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
 	c.AbortWithStatusJSON(status, resp)
-}
-
-func requireRoles(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		allowed[role] = struct{}{}
-	}
-
-	return func(c *gin.Context) {
-		v, ok := c.Get(tenant.AuthContextKey)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		authCtx, ok := v.(tenant.AuthorizationContext)
-		if !ok {
-			httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-			return
-		}
-
-		switch authCtx.Role {
-		case "owner", "manager", "practitioner", "parent":
-		default:
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role_unknown", "Access denied.", nil)
-			return
-		}
-
-		if _, exists := allowed[authCtx.Role]; !exists {
-			httpserver.WriteError(c, http.StatusForbidden, "forbidden_role", "Access denied.", nil)
-			return
-		}
-
-		c.Next()
-	}
 }

@@ -273,22 +273,20 @@ func TestSiteProfilePutEmptyName(t *testing.T) {
 
 	var errResp struct {
 		Code    string `json:"code"`
-		Details *struct {
-			Fields []struct {
-				Field   string `json:"field"`
-				Message string `json:"message"`
-			} `json:"field_errors"`
+		Details []struct {
+			Field   string `json:"field"`
+			Message string `json:"message"`
 		} `json:"details"`
 	}
 	decodeJSON(t, w, &errResp)
 	if errResp.Code != "validation_error" {
 		t.Fatalf("expected validation_error, got %s", errResp.Code)
 	}
-	if errResp.Details == nil {
-		t.Fatal("expected details with field_errors")
+	if len(errResp.Details) == 0 {
+		t.Fatal("expected details with field errors")
 	}
 	found := false
-	for _, f := range errResp.Details.Fields {
+	for _, f := range errResp.Details {
 		if f.Field == "nursery_name" {
 			found = true
 			break
@@ -318,19 +316,17 @@ func TestSiteProfilePutAllEmpty(t *testing.T) {
 
 	var errResp struct {
 		Code    string `json:"code"`
-		Details *struct {
-			Fields []struct {
-				Field   string `json:"field"`
-				Message string `json:"message"`
-			} `json:"field_errors"`
+		Details []struct {
+			Field   string `json:"field"`
+			Message string `json:"message"`
 		} `json:"details"`
 	}
 	decodeJSON(t, w, &errResp)
 	if errResp.Code != "validation_error" {
 		t.Fatalf("expected validation_error, got %s", errResp.Code)
 	}
-	if errResp.Details == nil || len(errResp.Details.Fields) < 7 {
-		t.Fatalf("expected at least 7 field errors, got %d", len(errResp.Details.Fields))
+	if len(errResp.Details) < 7 {
+		t.Fatalf("expected at least 7 field errors, got %d", len(errResp.Details))
 	}
 }
 

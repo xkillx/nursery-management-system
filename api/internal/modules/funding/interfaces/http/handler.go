@@ -1,6 +1,7 @@
 package httpfunding
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -147,7 +148,9 @@ func (h *Handler) upsertProfileHandler(c *gin.Context) {
 	}
 
 	if result.Created {
-		c.JSON(http.StatusCreated, toResponse(result.Profile))
+		resp := toResponse(result.Profile)
+		c.Header("Location", fmt.Sprintf("/api/children/%s/funding/%s", resp.ChildID, resp.ID))
+		c.JSON(http.StatusCreated, resp)
 	} else {
 		c.JSON(http.StatusOK, toResponse(result.Profile))
 	}
