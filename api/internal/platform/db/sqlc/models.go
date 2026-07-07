@@ -522,6 +522,21 @@ type FundingProfile struct {
 	UpdatedAt              pgtype.Timestamptz
 }
 
+type HourlyBooking struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	ChildID              pgtype.UUID
+	CalendarDate         pgtype.Date
+	StartTimeMinutes     int32
+	DurationMinutes      int32
+	SessionTypeID        pgtype.UUID
+	BookedByMembershipID pgtype.UUID
+	Status               string
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
 type Invoice struct {
 	ID                     pgtype.UUID
 	TenantID               pgtype.UUID
