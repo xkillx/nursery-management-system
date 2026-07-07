@@ -73,3 +73,14 @@ func LogMappedError(c *gin.Context, logger *slog.Logger, status int, code string
 
 	logger.Error("request_failed", args...)
 }
+
+// WriteMappedError maps a domain error to an HTTP response, sets the request
+// path, logs server errors, and aborts the request. Use this from handler
+// handleError functions to centralize error response construction.
+func WriteMappedError(c *gin.Context, logger *slog.Logger, err error) {
+	requestID := RequestIDFromContext(c)
+	status, resp := MapDomainError(err, requestID)
+	resp.Path = c.Request.URL.Path
+	LogMappedError(c, logger, status, resp.Code, err)
+	c.AbortWithStatusJSON(status, resp)
+}

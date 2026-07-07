@@ -151,11 +151,11 @@ func TestManagerPaymentEvents_Success_200(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("parse response: %v", err)
 	}
-	if resp["limit"] != float64(50) {
-		t.Errorf("expected limit 50, got %v", resp["limit"])
+	if resp["page"] != float64(1) {
+		t.Errorf("expected page 1, got %v", resp["page"])
 	}
-	if resp["offset"] != float64(0) {
-		t.Errorf("expected offset 0, got %v", resp["offset"])
+	if resp["page_size"] != float64(50) {
+		t.Errorf("expected page_size 50, got %v", resp["page_size"])
 	}
 	items, ok := resp["items"].([]interface{})
 	if !ok {
@@ -170,7 +170,7 @@ func TestManagerPaymentEvents_CustomPagination(t *testing.T) {
 	h := setupPaymentsHarness(t, nil)
 	invoiceID := seedPayableInvoice(t, h)
 
-	path := fmt.Sprintf("/api/v1/invoices/%s/payment-events?limit=10&offset=5", invoiceID)
+	path := fmt.Sprintf("/api/v1/invoices/%s/payment-events?page=2&page_size=10", invoiceID)
 	w := doRequest(t, h.router, http.MethodGet, path, h.managerToken, "")
 	requireStatus(t, w, http.StatusOK)
 
@@ -178,11 +178,11 @@ func TestManagerPaymentEvents_CustomPagination(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("parse response: %v", err)
 	}
-	if resp["limit"] != float64(10) {
-		t.Errorf("expected limit 10, got %v", resp["limit"])
+	if resp["page"] != float64(2) {
+		t.Errorf("expected page 2, got %v", resp["page"])
 	}
-	if resp["offset"] != float64(5) {
-		t.Errorf("expected offset 5, got %v", resp["offset"])
+	if resp["page_size"] != float64(10) {
+		t.Errorf("expected page_size 10, got %v", resp["page_size"])
 	}
 }
 
@@ -221,26 +221,6 @@ func TestManagerPaymentEvents_Unauthenticated(t *testing.T) {
 
 	w := doRequest(t, h.router, http.MethodGet, path, "", "")
 	requireStatus(t, w, http.StatusUnauthorized)
-}
-
-func TestManagerPaymentEvents_InvalidLimit_400(t *testing.T) {
-	h := setupPaymentsHarness(t, nil)
-	invoiceID := seedPayableInvoice(t, h)
-
-	path := fmt.Sprintf("/api/v1/invoices/%s/payment-events?limit=0", invoiceID)
-	w := doRequest(t, h.router, http.MethodGet, path, h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
-	requireErrorCode(t, w, "validation_error")
-}
-
-func TestManagerPaymentEvents_InvalidOffset_400(t *testing.T) {
-	h := setupPaymentsHarness(t, nil)
-	invoiceID := seedPayableInvoice(t, h)
-
-	path := fmt.Sprintf("/api/v1/invoices/%s/payment-events?offset=-1", invoiceID)
-	w := doRequest(t, h.router, http.MethodGet, path, h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
-	requireErrorCode(t, w, "validation_error")
 }
 
 func TestManagerPaymentDiagnostics_RouteInventory(t *testing.T) {

@@ -269,7 +269,7 @@ func TestSiteProfilePutEmptyName(t *testing.T) {
 	}`
 
 	w := doRequest(t, h.router, http.MethodPut, "/api/v1/site-profile", h.managerToken, body)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 
 	var errResp struct {
 		Code    string `json:"code"`
@@ -312,7 +312,7 @@ func TestSiteProfilePutAllEmpty(t *testing.T) {
 	}`
 
 	w := doRequest(t, h.router, http.MethodPut, "/api/v1/site-profile", h.managerToken, body)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 
 	var errResp struct {
 		Code    string `json:"code"`

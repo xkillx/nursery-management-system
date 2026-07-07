@@ -141,8 +141,6 @@ func toActor(a tenant.ActorContext) app.ActorContext {
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {
-	requestID := httpserver.RequestIDFromContext(c)
-
 	if errors.Is(err, app.ErrMembershipNotFound) {
 		httpserver.WriteError(c, http.StatusNotFound, "membership_not_found", "Resource not found.", nil)
 		return
@@ -164,9 +162,7 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 		return
 	}
 
-	status, resp := httpserver.MapDomainError(err, requestID)
-	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-	c.AbortWithStatusJSON(status, resp)
+	httpserver.WriteMappedError(c, h.logger, err)
 }
 
 func parseUUID(c *gin.Context, name string) (uuid.UUID, bool) {

@@ -76,4 +76,5 @@ type ManagerPaymentRepository interface {
 	GetLatestPaymentAttemptForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*PaymentAttemptDiagnostic, error)
 	GetLatestPaymentEventForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*PaymentEventDiagnostic, error)
 	ListPaymentEventsForInvoice(ctx context.Context, tenantID, branchID, invoiceID string, filters PaymentEventFilters) ([]PaymentEventDiagnostic, error)
+	CountPaymentEventsForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (int, error)
 }

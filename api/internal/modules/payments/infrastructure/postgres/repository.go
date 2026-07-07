@@ -555,6 +555,18 @@ func (m *managerQueries) ListPaymentEventsForInvoice(ctx context.Context, tenant
 	return result, nil
 }
 
+func (m *managerQueries) CountPaymentEventsForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (int, error) {
+	count, err := sqlc.New(m.pool).CountPaymentEventsForInvoice(ctx, sqlc.CountPaymentEventsForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
 func pgtypeDateToStr(d pgtype.Date) string {
 	if !d.Valid {
 		return ""

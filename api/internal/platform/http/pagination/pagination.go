@@ -32,11 +32,16 @@ func ParsePageParams(c *gin.Context) (page, pageSize int) {
 
 // PaginatedResponse returns the standard pagination envelope.
 func PaginatedResponse(items interface{}, total, page, pageSize int) gin.H {
+	pages := 0
+	if total > 0 && pageSize > 0 {
+		pages = (total + pageSize - 1) / pageSize
+	}
 	return gin.H{
 		"items":     items,
 		"total":     total,
 		"page":      page,
 		"page_size": pageSize,
+		"pages":     pages,
 	}
 }
 

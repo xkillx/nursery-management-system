@@ -556,7 +556,7 @@ func TestParentInvoiceListRejectsDraftStatus(t *testing.T) {
 	h := setupBillingHarness(t)
 
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/parent/invoices?status=draft", h.parentToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -833,7 +833,7 @@ func TestParentInvoiceDetailMalformedIDReturns400(t *testing.T) {
 	h := setupBillingHarness(t)
 
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/parent/invoices/not-a-uuid", h.parentToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -929,15 +929,12 @@ func TestParentInvoiceListValidationErrors(t *testing.T) {
 	}{
 		{"bad billing_month", "/api/v1/parent/invoices?billing_month=invalid"},
 		{"bad child_id", "/api/v1/parent/invoices?child_id=not-a-uuid"},
-		{"bad limit 0", "/api/v1/parent/invoices?limit=0"},
-		{"bad limit 201", "/api/v1/parent/invoices?limit=201"},
-		{"bad offset -1", "/api/v1/parent/invoices?offset=-1"},
 		{"unknown status", "/api/v1/parent/invoices?status=unknown"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			w := doRequest(t, h.router, http.MethodGet, tc.url, h.parentToken, "")
-			requireStatus(t, w, http.StatusBadRequest)
+			requireStatus(t, w, http.StatusUnprocessableEntity)
 			requireErrorCode(t, w, "validation_error")
 		})
 	}

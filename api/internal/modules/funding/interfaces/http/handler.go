@@ -218,8 +218,5 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {
-	requestID := httpserver.RequestIDFromContext(c)
-	status, resp := httpserver.MapDomainError(err, requestID)
-	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-	c.AbortWithStatusJSON(status, resp)
+	httpserver.WriteMappedError(c, h.logger, err)
 }

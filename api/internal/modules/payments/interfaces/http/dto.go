@@ -72,9 +72,3 @@ type paymentEventDiagnosticDTO struct {
 	WebhookProcessedAt      *string `json:"webhook_processed_at"`
 	CreatedAt               string  `json:"created_at"`
 }
-
-type managerPaymentEventsResponse struct {
-	Items  []paymentEventDiagnosticDTO `json:"items"`
-	Limit  int                         `json:"limit"`
-	Offset int                         `json:"offset"`
-}

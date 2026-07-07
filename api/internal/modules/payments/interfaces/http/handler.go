@@ -12,6 +12,7 @@ import (
 	"nursery-management-system/api/internal/modules/payments/application"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -29,7 +30,7 @@ type GetManagerPaymentStatusUseCase interface {
 }
 
 type ListManagerPaymentEventsUseCase interface {
-	Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw, limitRaw, offsetRaw string) (application.ListPaymentEventsResult, error)
+	Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, page, pageSize int) (application.ListPaymentEventsResult, error)
 }
 
 type Handler struct {
@@ -131,9 +132,9 @@ func (h *Handler) managerPaymentStatusHandler(c *gin.Context) {
 //	@Tags			payments
 //	@Produce		json
 //	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
-//	@Param			limit		query		int		false	"Limit"
-//	@Param			offset		query		int		false	"Offset"
-//	@Success		200			{object}	managerPaymentEventsResponse
+//	@Param			page		query		int		false	"Page number"	default(1)
+//	@Param			page_size	query		int		false	"Page size"		default(50)
+//	@Success		200			{object}	object{items=[]paymentEventDiagnosticDTO,total=int,page=int,page_size=int,pages=int}
 //	@Failure		400			{object}	object{code=string,message=string}
 //	@Failure		401			{object}	object{code=string,message=string}
 //	@Failure		404			{object}	object{code=string,message=string}
@@ -153,16 +154,15 @@ func (h *Handler) managerPaymentEventsHandler(c *gin.Context) {
 		return
 	}
 
-	limitRaw := c.Query("limit")
-	offsetRaw := c.Query("offset")
+	page, pageSize := pagination.ParsePageParams(c)
 
-	result, err := h.listManagerEvents.Execute(c.Request.Context(), actor, invoiceIDRaw, limitRaw, offsetRaw)
+	result, err := h.listManagerEvents.Execute(c.Request.Context(), actor, invoiceIDRaw, page, pageSize)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toManagerPaymentEventsResponse(result))
+	c.JSON(http.StatusOK, toManagerPaymentEventsResponse(result, page, pageSize))
 }
 
 // createCheckoutSessionHandler creates a checkout session.
@@ -227,6 +227,7 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 			domainErrorPaymentProviderUnconfigured(),
 			requestID,
 		)
+		resp.Path = c.Request.URL.Path
 		httpserver.LogMappedError(c, h.logger, status, resp.Code, nil)
 		c.AbortWithStatusJSON(status, resp)
 		return
@@ -256,10 +257,7 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {
-	requestID := httpserver.RequestIDFromContext(c)
-	status, resp := httpserver.MapDomainError(err, requestID)
-	httpserver.LogMappedError(c, h.logger, status, resp.Code, err)
-	c.AbortWithStatusJSON(status, resp)
+	httpserver.WriteMappedError(c, h.logger, err)
 }
 
 func domainErrorPaymentProviderUnconfigured() *domainerrors.DomainError {
@@ -343,14 +341,10 @@ func toPaymentEventDTO(e *application.PaymentEventResult) *paymentEventDiagnosti
 	}
 }
 
-func toManagerPaymentEventsResponse(r application.ListPaymentEventsResult) managerPaymentEventsResponse {
+func toManagerPaymentEventsResponse(r application.ListPaymentEventsResult, page, pageSize int) gin.H {
 	items := make([]paymentEventDiagnosticDTO, 0, len(r.Items))
 	for i := range r.Items {
 		items = append(items, *toPaymentEventDTO(&r.Items[i]))
 	}
-	return managerPaymentEventsResponse{
-		Items:  items,
-		Limit:  r.Limit,
-		Offset: r.Offset,
-	}
+	return pagination.PaginatedResponse(items, r.Total, page, pageSize)
 }

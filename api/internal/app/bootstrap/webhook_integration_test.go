@@ -335,10 +335,10 @@ func TestWebhook_UnconfiguredReturns503(t *testing.T) {
 	requireErrorCode(t, w, "payment_provider_unconfigured")
 }
 
-func TestWebhook_InvalidSignatureReturns400(t *testing.T) {
+func TestWebhook_InvalidSignatureReturns422(t *testing.T) {
 	h := setupWebhookHarness(t)
 	w := doWebhookRawRequest(t, h.router, []byte(`{"id":"evt_bad_sig"}`), "t=1,v1=invalidsignature")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "payment_webhook_invalid_signature")
 
 	if countWebhookEvents(t, h.pool, "evt_bad_sig") != 0 {

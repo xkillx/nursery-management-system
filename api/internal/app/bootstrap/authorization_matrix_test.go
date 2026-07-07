@@ -614,9 +614,9 @@ func TestAuthorizationMatrixPublicRoutesAreIntentional(t *testing.T) {
 		assertErrorCode(t, w, "password_reset_token_invalid")
 	})
 
-	t.Run("POST /api/v1/invites/accept invalid token returns 400", func(t *testing.T) {
+	t.Run("POST /api/v1/invites/accept invalid token returns 422", func(t *testing.T) {
 		w := h.post(t, "/api/v1/invites/accept", "", `{"token":"invalid","new_password":"Password123"}`)
-		assertStatus(t, w, http.StatusBadRequest)
+		assertStatus(t, w, http.StatusUnprocessableEntity)
 		assertErrorCode(t, w, "invite_token_invalid")
 	})
 

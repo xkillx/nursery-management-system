@@ -119,12 +119,12 @@ func TestBillingPreflightValidationErrors(t *testing.T) {
 
 	// Malformed billing_month
 	w = doRequest(t, h.router, http.MethodGet, "/api/v1/invoices/drafts/preflight?billing_month=invalid", h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Another malformed format
 	w = doRequest(t, h.router, http.MethodGet, "/api/v1/invoices/drafts/preflight?billing_month=2026-13", h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -598,12 +598,12 @@ func TestBillingGenerationValidationErrors(t *testing.T) {
 
 	// Malformed billing_month
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"invalid"}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Invalid child_id
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":["not-a-uuid"]}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -1564,14 +1564,11 @@ func TestInvoiceListValidationErrors(t *testing.T) {
 		{"bad billing_month", "/api/v1/invoices?billing_month=invalid"},
 		{"bad status", "/api/v1/invoices?status=unknown"},
 		{"bad child_id", "/api/v1/invoices?child_id=not-a-uuid"},
-		{"limit 0", "/api/v1/invoices?limit=0"},
-		{"limit 201", "/api/v1/invoices?limit=201"},
-		{"offset -1", "/api/v1/invoices?offset=-1"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			w := doRequest(t, h.router, http.MethodGet, tc.url, h.managerToken, "")
-			requireStatus(t, w, http.StatusBadRequest)
+			requireStatus(t, w, http.StatusUnprocessableEntity)
 			requireErrorCode(t, w, "validation_error")
 		})
 	}
@@ -1580,7 +1577,7 @@ func TestInvoiceListValidationErrors(t *testing.T) {
 func TestInvoiceDetailValidationErrors(t *testing.T) {
 	h := setupBillingHarness(t)
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/invoices/not-a-uuid", h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -2127,11 +2124,11 @@ func TestBillingSetupPutZeroRate(t *testing.T) {
 	h := setupBillingHarness(t)
 
 	w := doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":0}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	w = doRequest(t, h.router, http.MethodPut, "/api/v1/billing-setup", h.managerToken, `{"core_hourly_rate_minor":-100}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 

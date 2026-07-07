@@ -102,3 +102,10 @@ WHERE r.tenant_id = $1
   AND r.invoice_id = $3
 ORDER BY r.created_at DESC, r.id DESC
 LIMIT $4 OFFSET $5;
+
+-- name: CountPaymentEventsForInvoice :one
+SELECT COUNT(*)
+FROM payment_reconciliation_records r
+WHERE r.tenant_id = $1
+  AND r.branch_id = $2
+  AND r.invoice_id = $3;

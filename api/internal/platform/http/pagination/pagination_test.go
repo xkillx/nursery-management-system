@@ -63,4 +63,25 @@ func TestPaginatedResponse(t *testing.T) {
 	assert.Equal(t, 120, result["total"])
 	assert.Equal(t, 2, result["page"])
 	assert.Equal(t, 25, result["page_size"])
+	assert.Equal(t, 5, result["pages"])
+}
+
+func TestPaginatedResponse_PagesZeroTotal(t *testing.T) {
+	result := PaginatedResponse([]string{}, 0, 1, 50)
+	assert.Equal(t, 0, result["pages"])
+}
+
+func TestPaginatedResponse_PagesSingleItem(t *testing.T) {
+	result := PaginatedResponse([]string{"a"}, 1, 1, 50)
+	assert.Equal(t, 1, result["pages"])
+}
+
+func TestPaginatedResponse_PagesExactMultiple(t *testing.T) {
+	result := PaginatedResponse([]string{}, 50, 1, 50)
+	assert.Equal(t, 1, result["pages"])
+}
+
+func TestPaginatedResponse_PagesCeilingDivision(t *testing.T) {
+	result := PaginatedResponse([]string{}, 51, 1, 50)
+	assert.Equal(t, 2, result["pages"])
 }

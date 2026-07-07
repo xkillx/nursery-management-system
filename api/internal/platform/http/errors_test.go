@@ -104,6 +104,11 @@ func TestErrorResponseShape_FullShape(t *testing.T) {
 		t.Fatalf("expected message 'test message' (string), got %v (%T)", raw["message"], raw["message"])
 	}
 
+	path, ok := raw["path"].(string)
+	if !ok || path != "/test" {
+		t.Fatalf("expected path '/test' (string), got %v (%T)", raw["path"], raw["path"])
+	}
+
 	requestID, ok := raw["request_id"].(string)
 	if !ok || requestID != "req-shape" {
 		t.Fatalf("expected request_id 'req-shape' (string), got %v (%T)", raw["request_id"], raw["request_id"])
@@ -191,7 +196,7 @@ func TestErrorResponseShape_JSONKeysMatchStructTags(t *testing.T) {
 		t.Fatalf("parse response body: %v", err)
 	}
 
-	wantKeys := []string{"code", "message", "request_id", "timestamp", "details"}
+	wantKeys := []string{"code", "message", "request_id", "timestamp", "details", "path"}
 	for _, key := range wantKeys {
 		if _, exists := raw[key]; !exists {
 			t.Fatalf("expected JSON key %q to be present", key)

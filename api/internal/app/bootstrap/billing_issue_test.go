@@ -171,7 +171,7 @@ func TestInvoiceIssueValidationErrors(t *testing.T) {
 
 	// Bad invoice ID
 	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/not-a-uuid/issue", h.managerToken, `{"confirm":true}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Missing body
@@ -181,12 +181,12 @@ func TestInvoiceIssueValidationErrors(t *testing.T) {
 
 	// Missing confirm
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/"+uuid.New().String()+"/issue", h.managerToken, `{}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// confirm: false
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/"+uuid.New().String()+"/issue", h.managerToken, `{"confirm":false}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -352,22 +352,22 @@ func TestBulkIssueValidationErrors(t *testing.T) {
 
 	// Malformed billing_month
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"invalid","confirm":true}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Malformed invoice ID
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-05","invoice_ids":["not-a-uuid"],"confirm":true}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Missing confirm
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-05"}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// confirm: false
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/bulk-issue", h.managerToken, `{"billing_month":"2026-05","confirm":false}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 

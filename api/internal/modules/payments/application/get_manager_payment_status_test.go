@@ -37,6 +37,13 @@ func (f *fakeManagerRepo) ListPaymentEventsForInvoice(_ context.Context, _, _, _
 	return f.events, f.err
 }
 
+func (f *fakeManagerRepo) CountPaymentEventsForInvoice(_ context.Context, _, _, _ string) (int, error) {
+	if f.err != nil {
+		return 0, f.err
+	}
+	return len(f.events), nil
+}
+
 func makeActor() tenant.ActorContext {
 	return tenant.ActorContext{
 		TenantID:     uuid.MustParse("11111111-1111-1111-1111-111111111111"),

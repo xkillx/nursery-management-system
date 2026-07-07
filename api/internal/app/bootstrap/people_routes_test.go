@@ -429,12 +429,12 @@ func TestPeopleListingBehavior(t *testing.T) {
 		requireListIDs(t, w, []string{h.scopeA.activeChildID.String(), h.scopeA.inactiveChildID.String()})
 
 		w = doRequest(t, h.router, http.MethodGet, "/api/v1/children?status=unknown", h.managerToken, "")
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "validation_error")
 
 		// limit > 200 is rejected; limit <= 0 falls back to the default.
 		w = doRequest(t, h.router, http.MethodGet, "/api/v1/children?limit=201", h.managerToken, "")
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "validation_error")
 	})
 
@@ -456,18 +456,8 @@ func TestPeopleListingBehavior(t *testing.T) {
 		requireListIDs(t, w, []string{h.scopeA.activeGuardianID.String(), h.scopeA.otherGuardianID.String(), h.scopeA.inactiveGuardianID.String()})
 
 		w = doRequest(t, h.router, http.MethodGet, "/api/v1/guardians?status=unknown", h.managerToken, "")
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "validation_error")
-
-		for _, path := range []string{
-			"/api/v1/guardians?limit=0",
-			"/api/v1/guardians?limit=201",
-			"/api/v1/guardians?offset=-1",
-		} {
-			w = doRequest(t, h.router, http.MethodGet, path, h.managerToken, "")
-			requireStatus(t, w, http.StatusBadRequest)
-			requireErrorCode(t, w, "validation_error")
-		}
 	})
 }
 
@@ -478,15 +468,15 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		path := "/api/v1/children/" + h.scopeA.activeChildID.String() + "/actions/mark-inactive"
 
 		w := doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "child_lifecycle_reason_required")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"bad"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "lifecycle_reason_invalid")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"other"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "reason_note_required_for_other")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"left_nursery","reason_note":"moving"}`)
@@ -526,15 +516,15 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		path := "/api/v1/guardians/" + h.scopeA.otherGuardianID.String() + "/actions/deactivate"
 
 		w := doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "guardian_deactivation_reason_required")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"bad"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "lifecycle_reason_invalid")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"other"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "reason_note_required_for_other")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"access_revoked","reason_note":"staff change"}`)
@@ -565,15 +555,15 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		path := "/api/v1/guardian-child-links/" + h.scopeA.activeLinkID.String() + "/actions/end"
 
 		w := doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "relationship_reason_required")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"bad"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "lifecycle_reason_invalid")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"other"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "reason_note_required_for_other")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"contact_update","reason_note":"updated"}`)
@@ -600,15 +590,15 @@ func TestPeopleLifecycleReasonHandling(t *testing.T) {
 		path := "/api/v1/parent-membership-guardian-mappings/" + h.scopeA.activeMappingID.String() + "/actions/end"
 
 		w := doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "relationship_reason_required")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"bad"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "lifecycle_reason_invalid")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"other"}`)
-		requireStatus(t, w, http.StatusBadRequest)
+		requireStatus(t, w, http.StatusUnprocessableEntity)
 		requireErrorCode(t, w, "reason_note_required_for_other")
 
 		w = doRequest(t, h.router, http.MethodPost, path, h.managerToken, `{"reason_code":"contact_update","reason_note":"updated"}`)

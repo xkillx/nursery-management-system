@@ -11,6 +11,7 @@ type ErrorResponse struct {
 	Code      string      `json:"code"`
 	Message   string      `json:"message"`
 	Details   interface{} `json:"details,omitempty"`
+	Path      string      `json:"path"`
 	RequestID string      `json:"request_id"`
 	Timestamp string      `json:"timestamp"`
 }
@@ -20,6 +21,7 @@ func WriteError(c *gin.Context, status int, code, message string, details interf
 		Code:      code,
 		Message:   message,
 		Details:   details,
+		Path:      c.Request.URL.Path,
 		RequestID: requestIDFromContext(c),
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}

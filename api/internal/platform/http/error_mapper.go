@@ -56,7 +56,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"booking_pattern_backdated", "booking_pattern_effective_to_before_from",
 		"booking_pattern_overlap", "booking_pattern_duplicate_entry",
 		"session_type_archived":
-		status = http.StatusBadRequest
+		status = http.StatusUnprocessableEntity
 	case "attendance_session_already_open", "attendance_session_not_open",
 		"child_enrollment_incomplete", "attendance_invalid_time_order",
 		"attendance_correction_future_time", "attendance_session_overlap",

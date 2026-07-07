@@ -11,6 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countPaymentEventsForInvoice = `-- name: CountPaymentEventsForInvoice :one
+SELECT COUNT(*)
+FROM payment_reconciliation_records r
+WHERE r.tenant_id = $1
+  AND r.branch_id = $2
+  AND r.invoice_id = $3
+`
+
+type CountPaymentEventsForInvoiceParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+func (q *Queries) CountPaymentEventsForInvoice(ctx context.Context, arg CountPaymentEventsForInvoiceParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPaymentEventsForInvoice, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getLatestPaymentAttemptForInvoice = `-- name: GetLatestPaymentAttemptForInvoice :one
 SELECT
     pa.id AS payment_attempt_id,

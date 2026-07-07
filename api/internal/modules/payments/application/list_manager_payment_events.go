@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/google/uuid"
 
@@ -20,34 +19,18 @@ func NewListManagerPaymentEvents(repo domain.ManagerPaymentRepository) *ListMana
 }
 
 type ListPaymentEventsResult struct {
-	Items  []PaymentEventResult `json:"items"`
-	Limit  int                  `json:"limit"`
-	Offset int                  `json:"offset"`
+	Items    []PaymentEventResult `json:"items"`
+	Total    int                  `json:"total"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"page_size"`
 }
 
-func (uc *ListManagerPaymentEvents) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw, limitRaw, offsetRaw string) (ListPaymentEventsResult, error) {
+func (uc *ListManagerPaymentEvents) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, page, pageSize int) (ListPaymentEventsResult, error) {
 	if _, err := uuid.Parse(invoiceIDRaw); err != nil {
 		return ListPaymentEventsResult{}, domainerrors.Validation("Invalid invoice ID format.", "invoice_id")
 	}
 
-	limit := 50
-	offset := 0
-
-	if limitRaw != "" {
-		parsed, err := strconv.Atoi(limitRaw)
-		if err != nil || parsed < 1 || parsed > 200 {
-			return ListPaymentEventsResult{}, domainerrors.Validation("Invalid limit.", "limit")
-		}
-		limit = parsed
-	}
-
-	if offsetRaw != "" {
-		parsed, err := strconv.Atoi(offsetRaw)
-		if err != nil || parsed < 0 {
-			return ListPaymentEventsResult{}, domainerrors.Validation("Invalid offset.", "offset")
-		}
-		offset = parsed
-	}
+	offset := (page - 1) * pageSize
 
 	_, found, err := uc.repo.GetManagerInvoicePaymentStatus(ctx, actor.TenantID.String(), actor.BranchID.String(), invoiceIDRaw)
 	if err != nil {
@@ -58,9 +41,14 @@ func (uc *ListManagerPaymentEvents) Execute(ctx context.Context, actor tenant.Ac
 	}
 
 	events, err := uc.repo.ListPaymentEventsForInvoice(ctx, actor.TenantID.String(), actor.BranchID.String(), invoiceIDRaw, domain.PaymentEventFilters{
-		Limit:  limit,
+		Limit:  pageSize,
 		Offset: offset,
 	})
+	if err != nil {
+		return ListPaymentEventsResult{}, domainerrors.Internal(err)
+	}
+
+	total, err := uc.repo.CountPaymentEventsForInvoice(ctx, actor.TenantID.String(), actor.BranchID.String(), invoiceIDRaw)
 	if err != nil {
 		return ListPaymentEventsResult{}, domainerrors.Internal(err)
 	}
@@ -91,8 +79,9 @@ func (uc *ListManagerPaymentEvents) Execute(ctx context.Context, actor tenant.Ac
 	}
 
 	return ListPaymentEventsResult{
-		Items:  items,
-		Limit:  limit,
-		Offset: offset,
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	}, nil
 }

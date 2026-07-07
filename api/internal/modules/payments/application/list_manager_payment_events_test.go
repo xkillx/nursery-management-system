@@ -11,60 +11,42 @@ import (
 
 func TestListManagerPaymentEvents_MalformedInvoiceID(t *testing.T) {
 	uc := NewListManagerPaymentEvents(&fakeManagerRepo{})
-	_, err := uc.Execute(context.Background(), makeActor(), "not-a-uuid", "", "")
+	_, err := uc.Execute(context.Background(), makeActor(), "not-a-uuid", 1, 50)
 	assertDomainCode(t, err, "validation_error")
 }
 
 func TestListManagerPaymentEvents_InvoiceNotFound(t *testing.T) {
 	uc := NewListManagerPaymentEvents(&fakeManagerRepo{})
-	_, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "", "")
+	_, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), 1, 50)
 	assertDomainCode(t, err, "invoice_not_found")
 }
 
 func TestListManagerPaymentEvents_DefaultPagination(t *testing.T) {
 	uc := NewListManagerPaymentEvents(&fakeManagerRepo{found: true})
-	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "", "")
+	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), 1, 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Limit != 50 {
-		t.Errorf("expected limit 50, got %d", result.Limit)
+	if result.Page != 1 {
+		t.Errorf("expected page 1, got %d", result.Page)
 	}
-	if result.Offset != 0 {
-		t.Errorf("expected offset 0, got %d", result.Offset)
+	if result.PageSize != 50 {
+		t.Errorf("expected page_size 50, got %d", result.PageSize)
 	}
 }
 
 func TestListManagerPaymentEvents_CustomPagination(t *testing.T) {
 	uc := NewListManagerPaymentEvents(&fakeManagerRepo{found: true})
-	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "100", "25")
+	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), 3, 25)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Limit != 100 {
-		t.Errorf("expected limit 100, got %d", result.Limit)
+	if result.Page != 3 {
+		t.Errorf("expected page 3, got %d", result.Page)
 	}
-	if result.Offset != 25 {
-		t.Errorf("expected offset 25, got %d", result.Offset)
+	if result.PageSize != 25 {
+		t.Errorf("expected page_size 25, got %d", result.PageSize)
 	}
-}
-
-func TestListManagerPaymentEvents_InvalidLimit(t *testing.T) {
-	uc := NewListManagerPaymentEvents(&fakeManagerRepo{found: true})
-	_, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "0", "")
-	assertDomainCode(t, err, "validation_error")
-}
-
-func TestListManagerPaymentEvents_InvalidLimitTooLarge(t *testing.T) {
-	uc := NewListManagerPaymentEvents(&fakeManagerRepo{found: true})
-	_, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "201", "")
-	assertDomainCode(t, err, "validation_error")
-}
-
-func TestListManagerPaymentEvents_InvalidOffset(t *testing.T) {
-	uc := NewListManagerPaymentEvents(&fakeManagerRepo{found: true})
-	_, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "", "-1")
-	assertDomainCode(t, err, "validation_error")
 }
 
 func TestListManagerPaymentEvents_EventsReturned(t *testing.T) {
@@ -81,7 +63,7 @@ func TestListManagerPaymentEvents_EventsReturned(t *testing.T) {
 			},
 		},
 	})
-	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), "", "")
+	result, err := uc.Execute(context.Background(), makeActor(), uuid.New().String(), 1, 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -90,5 +72,8 @@ func TestListManagerPaymentEvents_EventsReturned(t *testing.T) {
 	}
 	if result.Items[0].PaymentEventID != eventID {
 		t.Errorf("event id mismatch: %s", result.Items[0].PaymentEventID)
+	}
+	if result.Total != 1 {
+		t.Errorf("expected total 1, got %d", result.Total)
 	}
 }

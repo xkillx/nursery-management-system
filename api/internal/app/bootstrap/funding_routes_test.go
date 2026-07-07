@@ -198,17 +198,17 @@ func TestFundingValidationErrors(t *testing.T) {
 
 	// Invalid month format
 	w = doRequest(t, h.router, http.MethodPut, "/api/v1/funding/children/"+h.childID.String(), h.managerToken, `{"billing_month":"invalid","funded_allowance_minutes":570}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Negative allowance
 	w = doRequest(t, h.router, http.MethodPut, "/api/v1/funding/children/"+h.childID.String(), h.managerToken, `{"billing_month":"2026-05","funded_allowance_minutes":-1}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Above max allowance
 	w = doRequest(t, h.router, http.MethodPut, "/api/v1/funding/children/"+h.childID.String(), h.managerToken, `{"billing_month":"2026-05","funded_allowance_minutes":44641}`)
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
@@ -348,7 +348,7 @@ func TestFundingOverview_MissingBillingMonth(t *testing.T) {
 func TestFundingOverview_InvalidBillingMonth(t *testing.T) {
 	h := setupFundingHarness(t)
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/overview?billing_month=bad", h.managerToken, "")
-	requireStatus(t, w, http.StatusBadRequest)
+	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
 
