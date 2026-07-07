@@ -917,7 +917,7 @@ CREATE TABLE invoice_lines (
     CONSTRAINT invoice_lines_funded_allowance_nonneg CHECK (((funded_allowance_minutes IS NULL) OR (funded_allowance_minutes >= 0))),
     CONSTRAINT invoice_lines_funded_deduction_nonneg CHECK (((funded_deduction_minutes IS NULL) OR (funded_deduction_minutes >= 0))),
     CONSTRAINT invoice_lines_funded_deduction_nonpos CHECK (((line_kind <> 'funded_deduction'::text) OR (line_amount_minor <= 0))),
-    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text, 'ad_hoc'::text]))),
+    CONSTRAINT invoice_lines_line_kind_valid CHECK ((line_kind = ANY (ARRAY['core_childcare'::text, 'funded_deduction'::text, 'extra'::text, 'adjustment'::text, 'ad_hoc'::text, 'hourly'::text]))),
     CONSTRAINT invoice_lines_quantity_nonneg CHECK (((quantity_minutes IS NULL) OR (quantity_minutes >= 0))),
     CONSTRAINT invoice_lines_raw_attended_nonneg CHECK (((raw_attended_minutes IS NULL) OR (raw_attended_minutes >= 0))),
     CONSTRAINT invoice_lines_rounded_attended_nonneg CHECK (((rounded_attended_minutes IS NULL) OR (rounded_attended_minutes >= 0))),
@@ -939,6 +939,28 @@ CREATE TABLE ad_hoc_bookings (
     CONSTRAINT ad_hoc_bookings_pkey PRIMARY KEY (id),
     CONSTRAINT ad_hoc_bookings_status_check CHECK (status IN ('active', 'cancelled'))
 );
+
+CREATE TABLE hourly_bookings (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    calendar_date date NOT NULL,
+    start_time_minutes integer NOT NULL CHECK (start_time_minutes >= 0 AND start_time_minutes <= 1439),
+    duration_minutes integer NOT NULL CHECK (duration_minutes > 0),
+    session_type_id uuid,
+    booked_by_membership_id uuid NOT NULL,
+    status text NOT NULL DEFAULT 'active',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT hourly_bookings_status_check CHECK (status IN ('active', 'cancelled'))
+);
+
+CREATE UNIQUE INDEX hourly_bookings_unique_slot
+    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date, start_time_minutes);
+
+CREATE INDEX hourly_bookings_child_date_idx
+    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date);
 
 CREATE TABLE branch_closure_days (
     id uuid PRIMARY KEY,
@@ -1846,6 +1868,18 @@ ALTER TABLE ONLY ad_hoc_bookings
 
 ALTER TABLE ONLY ad_hoc_bookings
     ADD CONSTRAINT ad_hoc_bookings_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY hourly_bookings
+    ADD CONSTRAINT hourly_bookings_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY hourly_bookings
+    ADD CONSTRAINT hourly_bookings_child_id_fkey FOREIGN KEY (child_id) REFERENCES children(id);
+
+ALTER TABLE ONLY hourly_bookings
+    ADD CONSTRAINT hourly_bookings_session_type_id_fkey FOREIGN KEY (session_type_id) REFERENCES session_types(id);
+
+ALTER TABLE ONLY hourly_bookings
+    ADD CONSTRAINT hourly_bookings_booked_by_membership_id_fkey FOREIGN KEY (booked_by_membership_id) REFERENCES memberships(id);
 
 ALTER TABLE ONLY payment_attempts
     ADD CONSTRAINT fk_payment_attempts_branch FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);

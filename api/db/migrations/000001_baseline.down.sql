@@ -1,6 +1,7 @@
 -- Reverse baseline: drop all schema objects created by 000001_baseline.up.sql.
 -- CASCADE so trigger bindings, FK dependents, and indexes fall with the tables.
 
+DROP TABLE IF EXISTS hourly_bookings CASCADE;
 DROP TABLE IF EXISTS payment_reconciliation_records CASCADE;
 DROP TABLE IF EXISTS payment_attempts CASCADE;
 DROP TABLE IF EXISTS invoice_lines CASCADE;
