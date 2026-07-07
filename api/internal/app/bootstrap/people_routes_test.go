@@ -1097,6 +1097,35 @@ func requireListIDs(t *testing.T, w *httptest.ResponseRecorder, want []string) {
 	}
 }
 
+func requireErrorResponse(t *testing.T, w *httptest.ResponseRecorder, wantStatus int, wantCode string) {
+	t.Helper()
+	requireStatus(t, w, wantStatus)
+
+	var resp struct {
+		Code      string `json:"code"`
+		Message   string `json:"message"`
+		RequestID string `json:"request_id"`
+		Timestamp string `json:"timestamp"`
+	}
+	decodeJSON(t, w, &resp)
+
+	if resp.Code != wantCode {
+		t.Fatalf("expected error code %s, got %s", wantCode, resp.Code)
+	}
+	if resp.Message == "" {
+		t.Fatal("expected message to be non-empty")
+	}
+	if resp.RequestID == "" {
+		t.Fatal("expected request_id to be non-empty")
+	}
+	if resp.Timestamp == "" {
+		t.Fatal("expected timestamp to be non-empty")
+	}
+	if _, err := time.Parse(time.RFC3339, resp.Timestamp); err != nil {
+		t.Fatalf("expected valid RFC3339 timestamp, got %q: %v", resp.Timestamp, err)
+	}
+}
+
 func isPeopleRoute(path string) bool {
 	switch {
 	case strings.HasPrefix(path, "/api/v1/children"),

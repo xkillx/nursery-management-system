@@ -350,6 +350,8 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	corsOrigins := httpserver.ParseAllowedOrigins(c.Config.CORSAllowedOrigins)
 	router.Use(httpserver.CORSMiddleware(corsOrigins, c.Config.WebBaseURL))
 
+	router.Use(httpserver.SecurityHeadersMiddleware())
+
 	api := registerHealthRoutes(router, c.Config.APIBasePath, c.Pool)
 	api.Use(httpserver.RateLimitMiddleware(c.GlobalRateLimiter))
 

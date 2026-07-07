@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"net/http"
+	"time"
 
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
@@ -11,12 +12,15 @@ func MapDomainError(err error, requestID string) (int, ErrorResponse) {
 }
 
 func mapDomainError(err error, requestID string) (int, ErrorResponse) {
+	now := time.Now().UTC().Format(time.RFC3339)
+
 	domainErr, ok := err.(*domainerrors.DomainError)
 	if !ok {
 		return http.StatusInternalServerError, ErrorResponse{
 			Code:      "internal_error",
 			Message:   "Something went wrong.",
 			RequestID: requestID,
+			Timestamp: now,
 		}
 	}
 
@@ -24,6 +28,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		Code:      domainErr.Code,
 		Message:   domainErr.Message,
 		RequestID: requestID,
+		Timestamp: now,
 	}
 
 	if len(domainErr.Details) > 0 {

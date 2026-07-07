@@ -1,12 +1,21 @@
-.PHONY: run-api run-web migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories swagger-generate swagger-validate
+.PHONY: run-api run-web build-api migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories swagger-generate swagger-validate
 
 API_DIR := api
 WEB_DIR := web
 API_ENV := $(API_DIR)/.env
 MIGRATIONS_DIR := $(API_DIR)/db/migrations
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS := -X nursery-management-system/api/internal/platform/version.Version=$(VERSION) \
+           -X nursery-management-system/api/internal/platform/version.Commit=$(COMMIT) \
+           -X nursery-management-system/api/internal/platform/version.Date=$(BUILD_DATE)
 
 run-api:
 	@if [ -f "$(API_ENV)" ]; then set -a; . "$(API_ENV)"; set +a; fi; cd "$(API_DIR)" && go run ./cmd/server
+
+build-api:
+	@cd "$(API_DIR)" && go build -ldflags "$(LDFLAGS)" -o ../bin/server ./cmd/server
 
 .PHONY: debug-api
 debug-api:

@@ -11,6 +11,7 @@ import (
 
 	"nursery-management-system/api/internal/platform/audit"
 	httpserver "nursery-management-system/api/internal/platform/http"
+	"nursery-management-system/api/internal/platform/version"
 
 	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
 	paymentsdomain "nursery-management-system/api/internal/modules/payments/domain"
@@ -31,8 +32,10 @@ func (a *txManagerAdapter) ExecTx(ctx context.Context, fn func(tx paymentsdomain
 
 func registerHealthRoutes(router *gin.Engine, basePath string, pinger healthPinger) *gin.RouterGroup {
 	router.GET("/health", healthHandler(pinger))
+	router.GET("/version", version.Handler())
 	api := router.Group(basePath)
 	api.GET("/health", healthHandler(pinger))
+	api.GET("/version", version.Handler())
 	return api
 }
 
