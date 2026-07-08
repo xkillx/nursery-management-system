@@ -12,7 +12,6 @@ import (
 
 	"nursery-management-system/api/internal/modules/invites/application"
 	"nursery-management-system/api/internal/modules/invites/domain"
-	"nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/http/queryparams"
@@ -26,7 +25,7 @@ type Handler struct {
 	resend    *application.ResendInviteUseCase
 	revoke    *application.RevokeInviteUseCase
 	accept    *application.AcceptInviteUseCase
-	tokenMgr  *tokens.Manager
+	tokenMgr  application.TokenValidator
 	ipLimiter *ratelimit.FixedWindowLimiter
 	logger    *slog.Logger
 }
@@ -37,7 +36,7 @@ func NewHandler(
 	resend *application.ResendInviteUseCase,
 	revoke *application.RevokeInviteUseCase,
 	accept *application.AcceptInviteUseCase,
-	tokenMgr *tokens.Manager,
+	tokenMgr application.TokenValidator,
 	ipLimiter *ratelimit.FixedWindowLimiter,
 	logger *slog.Logger,
 ) *Handler {
