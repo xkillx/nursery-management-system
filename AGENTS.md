@@ -8,6 +8,22 @@ Multi-tenant nursery management (UK). Go 1.26 (Gin+pgx) + Angular 21 + PostgreSQ
 - `make run-api` — starts API server (auto-loads `api/.env`)
 - `make sqlc-generate` — regenerates sqlc code from `db/query/*.sql` → `internal/platform/db/sqlc/`
 
+**Running servers with log files (for debugging):**
+```bash
+# Kill existing servers if running
+kill $(lsof -t -i :8080) $(lsof -t -i :4200) 2>/dev/null
+
+# Start both with logs in tmp/
+make run-api > tmp/api.log 2>&1 &
+cd web && npm start > ../tmp/web.log 2>&1 &
+
+# Monitor logs
+tail -f tmp/api.log
+tail -f tmp/web.log
+```
+- API runs on port 8080, Web on port 4200
+- Logs written to `tmp/api.log` and `tmp/web.log`
+
 **Static analysis (Go):** After any Go file change, run `go fmt ./...`, `go vet ./...`, and `go build ./...` in `api/`. Fix all `fmt` violations and `vet`/`build` warnings/errors before committing.
 
 **Static analysis (Angular):** After any Angular file change, run `npm run lint` in `web/` and fix all lint errors. After `npm test`, run `ng build` (production) to confirm zero errors and warnings — fail the task if any build diagnostic is emitted.
