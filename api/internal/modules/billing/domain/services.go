@@ -33,12 +33,12 @@ type InvoicePrefillLine struct {
 
 // InvoicePrefillResult holds the output of the billing prefill calculation.
 type InvoicePrefillResult struct {
-	Lines               []InvoicePrefillLine
-	SubtotalMinor       int
+	Lines                []InvoicePrefillLine
+	SubtotalMinor        int
 	FundedDeductionMinor int
-	TotalDueMinor       int
-	TotalMinutes        int
-	Warnings            []string
+	TotalDueMinor        int
+	TotalMinutes         int
+	Warnings             []string
 }
 
 // ComputeInvoicePrefill is a pure domain service that computes invoice line
@@ -122,11 +122,11 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 	}
 
 	return InvoicePrefillResult{
-		Lines:               lines,
-		SubtotalMinor:       subtotalMinor,
+		Lines:                lines,
+		SubtotalMinor:        subtotalMinor,
 		FundedDeductionMinor: fundedDeductionMinor,
-		TotalDueMinor:       totalDueMinor,
-		TotalMinutes:        calc.TotalMinutes,
-		Warnings:            warnings,
+		TotalDueMinor:        totalDueMinor,
+		TotalMinutes:         calc.TotalMinutes,
+		Warnings:             warnings,
 	}, nil
 }

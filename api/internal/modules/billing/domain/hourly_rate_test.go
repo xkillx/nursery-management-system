@@ -40,13 +40,13 @@ func TestHourlyRatePerMinute(t *testing.T) {
 		minor int
 		want  int
 	}{
-		{name: "exact hour", minor: 500, want: 9},     // ceil(500/60) = 9
+		{name: "exact hour", minor: 500, want: 9}, // ceil(500/60) = 9
 		{name: "zero rate", minor: 0, want: 0},
-		{name: "one pence", minor: 1, want: 1},         // ceil(1/60) = 1
-		{name: "60 pence", minor: 60, want: 1},         // ceil(60/60) = 1
-		{name: "61 pence", minor: 61, want: 2},         // ceil(61/60) = 2
-		{name: "500 pence", minor: 500, want: 9},       // ceil(500/60) = 9
-		{name: "120 pence", minor: 120, want: 2},       // ceil(120/60) = 2
+		{name: "one pence", minor: 1, want: 1},   // ceil(1/60) = 1
+		{name: "60 pence", minor: 60, want: 1},   // ceil(60/60) = 1
+		{name: "61 pence", minor: 61, want: 2},   // ceil(61/60) = 2
+		{name: "500 pence", minor: 500, want: 9}, // ceil(500/60) = 9
+		{name: "120 pence", minor: 120, want: 2}, // ceil(120/60) = 2
 	}
 
 	for _, tc := range tests {
