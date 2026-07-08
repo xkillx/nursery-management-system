@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
 
 // Invoice status constants.
@@ -14,6 +16,7 @@ const (
 	InvoiceStatusPaymentFailed = "payment_failed"
 	InvoiceStatusPaid          = "paid"
 	InvoiceStatusOverdue       = "overdue"
+	InvoiceStatusVoid          = "void"
 )
 
 // Invoice kind constants.
@@ -377,4 +380,109 @@ type OverdueTransitionResult struct {
 	CurrentLondonDate time.Time
 	CutoffUTC         time.Time
 	Transitioned      []OverdueTransitionedInvoice
+}
+
+// ── Invoice entity ────────────────────────────────────────────────────────
+
+// InvoiceLine represents a line item on an Invoice entity.
+type InvoiceLine struct {
+	LineKind               string
+	Description            string
+	SortOrder              int
+	QuantityMinutes        int
+	UnitAmount             Money
+	LineAmount             Money
+	FundedAllowanceMinutes int
+	FundedDeductionMinutes int
+	CoreBillableMinutes    int
+	SessionCount           int
+}
+
+// Invoice is the domain entity representing an invoice with lifecycle state.
+// DTOs (GenerateDraftInvoicesParams, InvoiceCalculationDetails, etc.) remain
+// unchanged for API transport — this entity is the domain model.
+type Invoice struct {
+	ID            uuid.UUID
+	TenantID      uuid.UUID
+	BranchID      uuid.UUID
+	ChildID       uuid.UUID
+	TermID        uuid.UUID
+	Status        string
+	InvoiceNumber string
+	Lines         []InvoiceLine
+	TotalMinor    int
+	IssuedAt      time.Time
+	DueDate       time.Time
+	PaidAt        *time.Time
+	OverdueAt     *time.Time
+	VoidedAt      *time.Time
+	VoidReason    string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+// Issue transitions the invoice from draft to issued, assigning an invoice number.
+func (inv *Invoice) Issue(invoiceNumber string, issuedAt time.Time) error {
+	if inv.Status != InvoiceStatusDraft {
+		return domainerrors.Conflict("invoice_not_draft", "Only draft invoices can be issued.")
+	}
+	if invoiceNumber == "" {
+		return domainerrors.Validation("Invoice number must not be empty.", "invoice_number")
+	}
+	inv.InvoiceNumber = invoiceNumber
+	inv.IssuedAt = issuedAt
+	inv.Status = InvoiceStatusIssued
+	return nil
+}
+
+// MarkOverdue transitions the invoice from issued to overdue.
+func (inv *Invoice) MarkOverdue(overdueAt time.Time) error {
+	if inv.Status != InvoiceStatusIssued {
+		return domainerrors.Conflict("invoice_not_issued", "Only issued invoices can be marked overdue.")
+	}
+	inv.OverdueAt = &overdueAt
+	inv.Status = InvoiceStatusOverdue
+	return nil
+}
+
+// Void transitions the invoice from draft to void (cancellation).
+func (inv *Invoice) Void(reason string, voidedAt time.Time) error {
+	if inv.Status != InvoiceStatusDraft {
+		return domainerrors.Conflict("invoice_not_draft", "Only draft invoices can be voided.")
+	}
+	inv.VoidedAt = &voidedAt
+	inv.VoidReason = reason
+	inv.Status = InvoiceStatusVoid
+	return nil
+}
+
+// AddLine appends an invoice line and recalculates the total. Only draft invoices accept lines.
+func (inv *Invoice) AddLine(line InvoiceLine) error {
+	if inv.Status != InvoiceStatusDraft {
+		return domainerrors.Conflict("invoice_not_draft", "Lines can only be added to draft invoices.")
+	}
+	if line.QuantityMinutes < 0 {
+		return domainerrors.Validation("Line quantity minutes must not be negative.", "quantity_minutes")
+	}
+	inv.Lines = append(inv.Lines, line)
+	inv.recalculateTotal()
+	return nil
+}
+
+// IsDraft returns true if the invoice is in draft status.
+func (inv Invoice) IsDraft() bool {
+	return inv.Status == InvoiceStatusDraft
+}
+
+// IsIssued returns true if the invoice is in issued status.
+func (inv Invoice) IsIssued() bool {
+	return inv.Status == InvoiceStatusIssued
+}
+
+func (inv *Invoice) recalculateTotal() {
+	total := 0
+	for _, line := range inv.Lines {
+		total += line.LineAmount.Minor()
+	}
+	inv.TotalMinor = total
 }
