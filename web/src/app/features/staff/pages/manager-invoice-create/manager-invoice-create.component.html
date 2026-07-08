@@ -10,12 +10,12 @@
 
   <!-- Header Title -->
   <section aria-labelledby="create-invoice-title">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div class="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <h1 id="create-invoice-title" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white/90">
           {{ mode === 'edit' ? 'Edit Draft Invoice' : 'Create New Invoice' }}
         </h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {{ mode === 'edit' ? 'Review and update the draft before issuing.' : 'Select a child and billing period to start.' }}
         </p>
       </div>
@@ -35,194 +35,195 @@
     ></app-alert>
   }
 
-  <!-- Two Column Layout -->
-  <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
-    <!-- Left Column: Form Cards -->
-    <div class="space-y-6">
+  <!-- Setup & Configuration Card -->
+  <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       
-      <!-- General & Recipient Card -->
-      <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          <!-- General details -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">General Details</h3>
-            
+      <!-- Left: Recipient Selection -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+            👦 Recipient Details
+          </h3>
+          @if (selectedChild) {
+            <button
+              type="button"
+              class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline dark:text-brand-400"
+              (click)="clearChild()"
+            >
+              Change Child
+            </button>
+          }
+        </div>
+
+        <div class="relative">
+          @if (!selectedChild) {
             <div class="space-y-3">
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Invoice Number</label>
+              <div class="relative">
+                <ng-icon
+                  name="heroMagnifyingGlass"
+                  size="18"
+                  class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
+                />
                 <input
-                  type="text"
-                  class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
-                  readonly
-                  [value]="mockInvoiceNumber"
+                  id="child-search"
+                  type="search"
+                  class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                  placeholder="Search by child's first or last name..."
+                  [ngModel]="childSearchTerm"
+                  (ngModelChange)="childSearchTerm = $event; onSearchInput()"
                 />
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Issue Date</label>
-                  <input
-                    type="date"
-                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
-                    readonly
-                    [value]="issueDate"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Due Date</label>
-                  <input
-                    type="date"
-                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
-                    readonly
-                    [value]="dueDate"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Recipient Selection -->
-          <div class="space-y-4 md:border-l md:border-gray-200 md:dark:border-gray-800 md:pl-8">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Recipient</h3>
-
-            <div class="space-y-3">
-              @if (!selectedChild) {
-                <div>
-                  <label for="child-search" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Search Child Name
-                  </label>
-                  <div class="relative">
-                    <ng-icon
-                      name="heroMagnifyingGlass"
-                      size="18"
-                      class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                      aria-hidden="true"
-                    />
-                    <input
-                      id="child-search"
-                      type="search"
-                      class="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                      placeholder="Type at least 2 characters to search..."
-                      [ngModel]="childSearchTerm"
-                      (ngModelChange)="childSearchTerm = $event; onSearchInput()"
-                    />
-                  </div>
-
-                  @if (isSearching) {
-                    <p class="mt-2 text-xs text-gray-500">Searching active roster...</p>
-                  }
-
-                  @if (searchResults.length > 0) {
-                    <ul class="absolute z-10 mt-1 max-h-56 w-full md:w-[calc(50%-3rem)] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                      @for (child of searchResults; track child.id) {
-                        <li>
-                          <button
-                            type="button"
-                            class="w-full px-4 py-2.5 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04]"
-                            (click)="selectChild(child)"
-                          >
-                            <span class="font-medium text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
-                          </button>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-              } @else {
-                <!-- Selected child context card matching reference layout -->
-                <div class="bg-brand-25 dark:bg-brand-950/20 p-4 rounded-xl border border-brand-100 dark:border-brand-900/50 flex items-center justify-between gap-4">
-                  <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400">
-                      <span class="text-2xl font-bold">👦</span>
-                    </div>
-                    <div>
-                      <p class="text-base font-bold text-gray-900 dark:text-white/90 leading-tight">{{ selectedChild.fullName }}</p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Parent: <span class="font-medium text-gray-700 dark:text-gray-300">{{ parentCarerName() }}</span> • Room: <span class="font-medium text-gray-700 dark:text-gray-300">{{ roomName() }}</span>
-                      </p>
-                      <span class="inline-block px-2.5 py-0.5 mt-1.5 text-[10px] font-bold uppercase tracking-wider bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-full">
-                        Age Group: {{ ageGroup() }}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-brand-100 dark:hover:bg-brand-900/20 hover:text-brand-600"
-                    (click)="clearChild()"
-                    aria-label="Clear child selection"
-                  >
-                    <ng-icon name="heroXMark" size="18" />
-                  </button>
+              @if (isSearching) {
+                <div class="flex items-center gap-2 text-xs text-gray-400">
+                  <span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-500 border-t-transparent"></span>
+                  <span>Searching active roster...</span>
                 </div>
               }
+
+              @if (searchResults.length > 0) {
+                <ul class="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                  @for (child of searchResults; track child.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="w-full px-4 py-3 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04] flex flex-col gap-0.5"
+                        (click)="selectChild(child)"
+                      >
+                        <span class="font-bold text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                          Room: {{ getRoomNameByAgeGroup(calculateAgeGroup(child.dateOfBirth)) }} • DOB: {{ child.dateOfBirth | date:'dd/MM/yyyy' }}
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
             </div>
-          </div>
-
-        </div>
-
-        <!-- Billing Period & Entitlement Status underneath -->
-        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            
-            <div class="flex flex-col gap-1.5 w-full sm:w-2/3">
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing Period</label>
-              <div class="flex items-center gap-3">
-                <input
-                  type="month"
-                  class="h-10 w-full sm:w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                  [ngModel]="billingMonth"
-                  (ngModelChange)="billingMonth = $event; selectedChild ? loadPrefill() : null"
-                />
-                <span class="text-gray-400 text-sm">to</span>
-                <div class="flex gap-2 w-full">
-                  <input
-                    type="date"
-                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
-                    readonly
-                    [value]="billingPeriodStart()"
-                  />
-                  <input
-                    type="date"
-                    class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 text-sm text-gray-500 cursor-not-allowed"
-                    readonly
-                    [value]="billingPeriodEnd()"
-                  />
-                </div>
+          } @else {
+            <div class="bg-brand-25/50 dark:bg-brand-950/10 p-5 rounded-xl border border-brand-100/50 dark:border-brand-900/30 flex items-center gap-4 transition-all">
+              <div class="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400 border border-brand-200/20 text-xl font-bold">
+                👦
               </div>
-            </div>
-
-            @if (entitlementLabel) {
-              <div class="text-left sm:text-right mt-1 sm:mt-0">
-                <p class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Entitlement Status</p>
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 font-bold text-xs border border-success-200/50">
-                  <ng-icon name="heroSparkles" size="14" class="mr-1.5 shrink-0" aria-hidden="true" />
-                  {{ entitlementLabel }}
+              <div class="flex-1">
+                <p class="text-base font-bold text-gray-900 dark:text-white/90 leading-tight">{{ selectedChild.fullName }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Parent: <span class="font-medium text-gray-700 dark:text-gray-300">{{ parentCarerName() }}</span> • Room: <span class="font-medium text-gray-700 dark:text-gray-300">{{ roomName() }}</span>
+                </p>
+                <span class="inline-flex items-center px-2.5 py-0.5 mt-2 text-[10px] font-bold uppercase tracking-wider bg-brand-100/60 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-full">
+                  Age Group: {{ ageGroup() }}
                 </span>
               </div>
-            }
+            </div>
+          }
+        </div>
+      </div>
 
+      <!-- Right: Billing Month & Period Details -->
+      <div class="space-y-4 lg:border-l lg:border-gray-100 lg:dark:border-gray-800/60 lg:pl-8">
+        <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+          <ng-icon name="heroCalendar" class="text-brand-500" /> Invoice Period & Metadata
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Billing Month Selection -->
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Month</label>
+            <input
+              type="month"
+              class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+              [ngModel]="billingMonth()"
+              (ngModelChange)="billingMonth.set($event); selectedChild ? loadPrefill() : null"
+            />
+          </div>
+
+          <!-- Date Range Display -->
+          <div class="space-y-1">
+            <span class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Period</span>
+            @if (billingMonth()) {
+              <span class="inline-flex items-center gap-2 bg-gray-50 dark:bg-white/[0.02] border border-gray-150 dark:border-gray-800 px-3 py-2.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 font-semibold w-full">
+                <ng-icon name="heroCalendar" size="14" class="text-brand-500 shrink-0" />
+                <span>{{ billingPeriodStart() | date:'d MMM yyyy' }} - {{ billingPeriodEnd() | date:'d MMM yyyy' }}</span>
+              </span>
+            } @else {
+              <span class="text-xs text-gray-400 italic block py-2.5">Select billing month...</span>
+            }
           </div>
         </div>
-      </section>
 
-      @if (isLoadingPrefill) {
-        <app-loading-state label="Computing billing schedules and attendance records..."></app-loading-state>
-      }
+        <!-- Readonly Metadata Details Grid -->
+        <div class="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-800/60">
+          <div class="space-y-1">
+            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Invoice Number</span>
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center truncate">
+              {{ mockInvoiceNumber }}
+            </span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Issue Date</span>
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center">
+              {{ issueDate | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Due Date</span>
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center">
+              {{ dueDate | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
 
-      @if (prefillError) {
-        <app-alert variant="error" [message]="prefillError"></app-alert>
-      }
+        @if (entitlementLabel && selectedChild) {
+          <div class="pt-3 flex items-center justify-between border-t border-gray-100 dark:border-gray-800/60">
+            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Funding Profile</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 font-bold text-xs border border-success-200/30">
+              <ng-icon name="heroSparkles" size="14" class="mr-1.5 shrink-0" aria-hidden="true" />
+              {{ entitlementLabel }}
+            </span>
+          </div>
+        }
+      </div>
 
-      <!-- Line Items Section -->
-      @if (lines().length > 0 && !isLoadingPrefill) {
+    </div>
+  </section>
+
+  @if (isLoadingPrefill) {
+    <app-loading-state label="Computing billing schedules and attendance records..."></app-loading-state>
+  }
+
+  @if (prefillError) {
+    <app-alert variant="error" [message]="prefillError"></app-alert>
+  }
+
+  <!-- Empty workspace state -->
+  @if (!selectedChild && !isLoadingPrefill) {
+    <div class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-850 p-12 text-center max-w-xl mx-auto mt-6">
+      <div class="inline-flex items-center justify-center size-14 rounded-full bg-brand-50 dark:bg-brand-950/20 text-brand-500 mb-4 text-2xl">
+        📝
+      </div>
+      <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Draft Your Invoice</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+        Choose a child from the active roster on the left, then select the billing month. We'll automatically pull attendance logs and schedule templates.
+      </p>
+    </div>
+  }
+
+  <!-- Two Column Workspace Layout -->
+  @if (lines().length > 0 && !isLoadingPrefill) {
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+      
+      <!-- Left Column: Line Items, Notes & Terms -->
+      <div class="space-y-6 min-w-0">
+        
+        <!-- Line Items Section -->
         <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
-          
           <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Line Items</h3>
             <button
               type="button"
-              class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/30 px-3 text-xs font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
+              class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/30 px-3.5 text-xs font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
               (click)="addBlankLine()"
             >
               <ng-icon name="heroPlus" size="14" aria-hidden="true" />
@@ -231,40 +232,40 @@
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[700px] border-collapse text-left text-sm">
+            <table class="w-full border-collapse text-left text-sm">
               <thead>
-                <tr class="border-b border-gray-200 bg-gray-50/50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
-                  <th class="px-6 py-3 w-10"></th>
-                  <th class="px-6 py-3">Description</th>
-                  <th class="px-6 py-3 w-28 text-center">Quantity</th>
-                  <th class="px-6 py-3 w-36 text-right">Unit Price</th>
-                  <th class="px-6 py-3 w-36 text-right">Total</th>
-                  <th class="px-6 py-3 w-14 text-center"></th>
+                <tr class="border-b border-gray-200 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-850 dark:bg-white/[0.02] dark:text-gray-500">
+                  <th class="px-3 py-3.5 w-10 text-center">#</th>
+                  <th class="px-3 py-3.5">Item Description</th>
+                  <th class="px-3 py-3.5 w-24 text-center">Quantity (Min)</th>
+                  <th class="px-3 py-3.5 w-28 text-right">Unit Price</th>
+                  <th class="px-3 py-3.5 w-28 text-right">Total</th>
+                  <th class="px-3 py-3.5 w-10 text-center"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 @for (line of lines(); track line.id; let i = $index) {
                   <tr
-                    class="transition-colors hover:bg-gray-50/30 dark:hover:bg-white/[0.01]"
-                    [ngClass]="{'bg-brand-50/20 dark:bg-brand-950/10': line.isFundingOffset}"
+                    class="transition-all hover:bg-gray-50/30 dark:hover:bg-white/[0.01]"
+                    [ngClass]="{'border-l-4 border-l-brand-500 bg-brand-25/30 dark:bg-brand-950/10': line.isFundingOffset}"
                   >
                     <!-- Line Index -->
-                    <td class="px-6 py-3 text-xs text-gray-400">{{ i + 1 }}</td>
+                    <td class="px-3 py-3 text-xs text-gray-400 text-center font-medium">{{ i + 1 }}</td>
                     
                     <!-- Description -->
-                    <td class="px-6 py-3">
-                      <div class="flex items-center gap-2">
+                    <td class="px-3 py-3">
+                      <div class="flex items-center gap-2.5">
                         @if (line.isFundingOffset) {
-                          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 uppercase shrink-0">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 uppercase tracking-wide shrink-0 border border-success-200/20">
                             Funding Offset
                           </span>
-                          <span class="text-sm font-semibold text-brand-800 dark:text-brand-300 leading-tight">
+                          <span class="text-sm font-bold text-gray-900 dark:text-white/90 leading-tight">
                             {{ line.description }}
                           </span>
                         } @else {
                           <input
                             type="text"
-                            class="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                            class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-3 text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
                             [ngModel]="line.description"
                             (ngModelChange)="updateLine(line.id, 'description', $event)"
                             placeholder="e.g. Session Hours, Fees..."
@@ -274,28 +275,28 @@
                     </td>
 
                     <!-- Quantity -->
-                    <td class="px-6 py-3 text-center">
+                    <td class="px-3 py-3 text-center">
                       @if (!line.isFundingOffset) {
                         <input
                           type="number"
-                          class="h-9 w-20 mx-auto rounded-md border border-gray-200 bg-white px-2 text-center text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                          class="h-9 w-20 mx-auto rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-2 text-center text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
                           [ngModel]="line.quantityMinutes"
                           (ngModelChange)="updateLine(line.id, 'quantityMinutes', Number($event))"
                           min="0"
                         />
                       } @else {
-                        <span class="text-sm text-gray-500">{{ line.quantityMinutes }}</span>
+                        <span class="text-sm text-gray-500 font-semibold">{{ line.quantityMinutes }}</span>
                       }
                     </td>
 
                     <!-- Unit Price -->
-                    <td class="px-6 py-3">
+                    <td class="px-3 py-3">
                       @if (!line.isFundingOffset) {
-                        <div class="relative w-28 ml-auto">
+                        <div class="relative w-28 ml-auto group">
                           <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&pound;</span>
                           <input
                             type="number"
-                            class="h-9 w-full rounded-md border border-gray-200 bg-white pl-6 pr-3 text-right text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                            class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 pl-6 pr-3 text-right text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
                             [ngModel]="line.unitAmountMinor / 100"
                             (ngModelChange)="updateLine(line.id, 'unitAmountMinor', Math.round(Number($event) * 100))"
                             min="0"
@@ -303,27 +304,27 @@
                           />
                         </div>
                       } @else {
-                        <span class="block text-right text-sm text-error-600 dark:text-error-400 font-medium">
+                        <span class="block text-right text-sm text-error-600 dark:text-error-400 font-bold">
                           &minus;{{ formatGbp(Math.abs(line.unitAmountMinor)) }}
                         </span>
                       }
                     </td>
 
                     <!-- Row Total -->
-                    <td class="px-6 py-3 text-right font-semibold text-sm">
+                    <td class="px-3 py-3 text-right font-bold text-sm">
                       @if (line.lineKind === 'funded_deduction') {
-                        <span class="text-error-600 dark:text-error-400 font-bold">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
+                        <span class="text-error-600 dark:text-error-400">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
                       } @else {
                         <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
                       }
                     </td>
 
                     <!-- Action Button -->
-                    <td class="px-6 py-3 text-center">
+                    <td class="px-3 py-3 text-center">
                       @if (!line.isFundingOffset) {
                         <button
                           type="button"
-                          class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-error-50 dark:hover:bg-error-950/20 hover:text-error-500 focus:outline-hidden"
+                          class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 dark:hover:bg-error-950/20 hover:text-error-500 focus:outline-hidden"
                           (click)="removeLine(line.id)"
                           aria-label="Remove row"
                         >
@@ -341,7 +342,7 @@
         <!-- Notes & Terms -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Internal Notes</h3>
+            <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Internal Notes</h3>
             <textarea
               class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               [ngModel]="internalNotes"
@@ -351,7 +352,7 @@
           </section>
 
           <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Payment Terms</h3>
+            <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Payment Terms</h3>
             <textarea
               class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               [ngModel]="paymentTerms"
@@ -359,16 +360,13 @@
             ></textarea>
           </section>
         </div>
-      }
+      </div>
 
-    </div>
-
-    <!-- Right Column: Sidebar Actions & Presets -->
-    @if (lines().length > 0 && !isLoadingPrefill) {
-      <aside class="space-y-6">
+      <!-- Right Column: Sidebar Actions & Presets (Sticky) -->
+      <aside class="space-y-6 sticky top-24 h-fit">
         
-        <!-- Summary Card -->
-        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6 sticky top-6">
+        <!-- Summary Receipt Card -->
+        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Invoice Summary</h3>
 
           <dl class="space-y-3.5 text-sm">
@@ -393,6 +391,7 @@
             </div>
 
             <div class="border-t border-gray-200 dark:border-gray-800 pt-4"></div>
+            
             <div class="flex items-center justify-between">
               <dt class="text-base font-bold text-gray-900 dark:text-white/90">Grand Total</dt>
               <dd class="text-2xl font-black text-brand-600 dark:text-brand-400 tracking-tight">
@@ -402,14 +401,15 @@
           </dl>
 
           <!-- Submit Buttons -->
-          <div class="space-y-3">
+          <div class="space-y-3 pt-2">
             <button
               type="button"
-              class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-bold text-white shadow-theme-sm transition hover:bg-brand-700 active:scale-98 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
               [disabled]="!canSubmit() || isSaving || isIssuing"
               (click)="issueInvoice()"
             >
               @if (isIssuing) {
+                <span class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span>
                 <span>Issuing Invoice...</span>
               } @else {
                 <ng-icon name="heroCheck" size="18" aria-hidden="true" />
@@ -420,11 +420,12 @@
             <div class="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
                 [disabled]="!canSubmit() || isSaving || isIssuing"
                 (click)="saveDraft()"
               >
                 @if (isSaving) {
+                  <span class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></span>
                   <span>Saving...</span>
                 } @else {
                   <ng-icon name="heroDocumentText" size="15" aria-hidden="true" />
@@ -434,7 +435,7 @@
 
               <button
                 type="button"
-                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
                 [disabled]="!canSubmit()"
               >
                 <span>Preview</span>
@@ -442,60 +443,61 @@
             </div>
           </div>
 
-          <!-- Bottom Notice -->
-          <div class="p-3.5 bg-warning-50 dark:bg-warning-950/10 rounded-xl border border-warning-100 dark:border-warning-900/30 flex gap-2.5">
-            <span class="text-lg">⚠️</span>
-            <p class="text-xs text-warning-800 dark:text-warning-300 leading-normal">
+          <!-- Bottom Notice styled beautifully in Amber warning tone -->
+          <div class="p-4 bg-amber-50 dark:bg-amber-950/10 rounded-xl border border-amber-200/50 dark:border-amber-900/30 flex gap-3">
+            <span class="text-amber-500 text-lg shrink-0">⚠️</span>
+            <p class="text-xs text-amber-800 dark:text-amber-300 leading-normal font-medium">
               Confirm all attendance logs for the selected billing month are validated before issuing this invoice.
             </p>
           </div>
         </section>
 
-        <!-- Presets Card -->
-        <section class="bg-gray-100 dark:bg-white/[0.02] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
-          <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest">Nursery Presets</h4>
+        <!-- Presets Card styled as modern tag widgets -->
+        <section class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+          <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1">
+            ✨ Nursery Presets
+          </h4>
           
-          <div class="space-y-2">
+          <div class="space-y-3">
             <button
               type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
               (click)="addPresetLine('Full Day Session', 6500, 1)"
             >
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between w-full">
                 <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Full Day Session</p>
-                <span class="text-xs font-bold text-brand-600">Add</span>
+                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
               </div>
-              <p class="text-xs text-gray-400 mt-1">£65.00 • 8:00am - 6:00pm</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£65.00 • 8:00am - 6:00pm</p>
             </button>
 
             <button
               type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
               (click)="addPresetLine('Morning Session', 4200, 1)"
             >
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between w-full">
                 <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Morning Session</p>
-                <span class="text-xs font-bold text-brand-600">Add</span>
+                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
               </div>
-              <p class="text-xs text-gray-400 mt-1">£42.00 • 8:00am - 1:00pm</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£42.00 • 8:00am - 1:00pm</p>
             </button>
 
             <button
               type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group"
+              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
               (click)="addPresetLine('Afternoon Session', 4200, 1)"
             >
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between w-full">
                 <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Afternoon Session</p>
-                <span class="text-xs font-bold text-brand-600">Add</span>
+                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
               </div>
-              <p class="text-xs text-gray-400 mt-1">£42.00 • 1:00pm - 6:00pm</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£42.00 • 1:00pm - 6:00pm</p>
             </button>
           </div>
         </section>
 
       </aside>
-    }
-  </div>
+    </div>
+  }
 </div>
-

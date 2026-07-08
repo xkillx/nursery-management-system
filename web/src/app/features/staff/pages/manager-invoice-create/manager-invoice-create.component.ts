@@ -13,6 +13,7 @@ import {
   heroCheck,
   heroXMark,
   heroChevronRight,
+  heroCalendar,
 } from '@ng-icons/heroicons/outline';
 import { catchError, of } from 'rxjs';
 
@@ -51,6 +52,7 @@ import { ChildRecord } from '../../models/children.models';
       heroCheck,
       heroXMark,
       heroChevronRight,
+      heroCalendar,
     }),
   ],
 })
@@ -86,7 +88,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   roomName = signal<string>('');
   ageGroup = signal<string>('');
 
-  billingMonth = '';
+  billingMonth = signal<string>('');
   isLoadingPrefill = false;
   prefillError: string | null = null;
 
@@ -102,13 +104,13 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   submitError: string | null = null;
 
   readonly billingPeriodStart = computed(() => {
-    const month = this.billingMonth;
+    const month = this.billingMonth();
     if (!month) return '';
     return `${month}-01`;
   });
 
   readonly billingPeriodEnd = computed(() => {
-    const month = this.billingMonth;
+    const month = this.billingMonth();
     if (!month) return '';
     const [year, m] = month.split('-').map(Number);
     const lastDay = new Date(year, m, 0).getDate();
@@ -149,7 +151,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth()).padStart(2, '0');
-    this.billingMonth = `${y}-${m}`;
+    this.billingMonth.set(`${y}-${m}`);
   }
 
   onSearchInput(): void {
@@ -213,7 +215,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.loadPrefill();
   }
 
-  private calculateAgeGroup(dobString: string): string {
+  calculateAgeGroup(dobString: string): string {
     if (!dobString) return 'Unknown';
     const dob = new Date(dobString);
     const today = new Date();
@@ -228,7 +230,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     return '3-5 Years';
   }
 
-  private getRoomNameByAgeGroup(ageGroupStr: string): string {
+  getRoomNameByAgeGroup(ageGroupStr: string): string {
     switch (ageGroupStr) {
       case 'Under 1 Year':
         return 'Babies Room';
@@ -255,12 +257,12 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   }
 
   loadPrefill(): void {
-    if (!this.selectedChild || !this.billingMonth) return;
+    if (!this.selectedChild || !this.billingMonth()) return;
 
     this.isLoadingPrefill = true;
     this.prefillError = null;
 
-    this.api.getPrefill(this.selectedChild.id, this.billingMonth).subscribe({
+    this.api.getPrefill(this.selectedChild.id, this.billingMonth()).subscribe({
       next: (prefill) => {
         this.lines.set(
           prefill.lines.map((l, i) => ({
@@ -343,7 +345,11 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         if (field === 'quantityMinutes' || field === 'unitAmountMinor') {
           const q = typeof updated.quantityMinutes === 'number' ? updated.quantityMinutes : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
-          updated.lineAmountMinor = q * u;
+          if (updated.lineKind === 'core_childcare') {
+            updated.lineAmountMinor = Math.round((q / 60) * u);
+          } else {
+            updated.lineAmountMinor = q * u;
+          }
         }
         return updated;
       }),
@@ -358,7 +364,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.api
       .createDraft({
         childId: this.selectedChild!.id,
-        billingMonth: this.billingMonth,
+        billingMonth: this.billingMonth(),
         lines: this.lines().map((l) => ({
           lineKind: l.lineKind,
           description: l.description,
@@ -392,7 +398,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.api
       .createAndIssue({
         childId: this.selectedChild!.id,
-        billingMonth: this.billingMonth,
+        billingMonth: this.billingMonth(),
         lines: this.lines().map((l) => ({
           lineKind: l.lineKind,
           description: l.description,
@@ -419,7 +425,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   }
 
   canSubmit(): boolean {
-    if (!this.selectedChild || !this.billingMonth) return false;
+    if (!this.selectedChild || !this.billingMonth()) return false;
     return this.lines().length > 0;
   }
 }
