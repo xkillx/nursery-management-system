@@ -104,81 +104,40 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			})
 		}
 
-		calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
-			termRow.BookingPatternID.String(),
-			domainEntries,
-			billingMonth,
-			termRow.SiteHourlyRateMinor,
-			nil,
-			nil,
-		)
-		if calcErr != nil {
-			return fmt.Errorf("calculate booked minutes: %w", calcErr)
-		}
-
 		fundedAllowance := 0
 		if termRow.FundedAllowanceMinutes != nil {
 			fundedAllowance = *termRow.FundedAllowanceMinutes
 		}
 
-		subtotalMinor := calc.Subtotal.Minor()
-		fundedDeductionMinor := 0
-		fundedDeductionMinutes := 0
-		billableMinutes := calc.TotalMinutes
-
-		if termRow.FundingProfileID != nil {
-			var fundErr error
-			fundedDeductionMinutes, billableMinutes, fundedDeductionMinor, _, fundErr = domain.ComputeFundedDeductionMinor(
-				calc.TotalMinutes, fundedAllowance, termRow.SiteHourlyRateMinor,
-			)
-			if fundErr != nil {
-				return fmt.Errorf("compute funded deduction: %w", fundErr)
-			}
-		}
-
-		totalDueMinor := subtotalMinor - fundedDeductionMinor
-		if totalDueMinor < 0 {
-			totalDueMinor = 0
-		}
-
-		lines := make([]PrefillLine, 0, 2)
-		lines = append(lines, PrefillLine{
-			LineKind:               domain.LineKindCoreChildcare,
-			Description:            "Core childcare",
-			SortOrder:              1,
-			QuantityMinutes:        calc.TotalMinutes,
-			UnitAmountMinor:        termRow.SiteHourlyRateMinor,
-			LineAmountMinor:        subtotalMinor,
-			FundedAllowanceMinutes: fundedAllowance,
-			FundedDeductionMinutes: fundedDeductionMinutes,
-			CoreBillableMinutes:    billableMinutes,
-			SessionCount:           len(calc.Sessions),
+		prefillResult, prefillErr := domain.ComputeInvoicePrefill(domain.InvoicePrefillParams{
+			BookingPatternID:    termRow.BookingPatternID.String(),
+			Entries:             domainEntries,
+			BillingMonthStart:   billingMonth,
+			SiteHourlyRateMinor: termRow.SiteHourlyRateMinor,
+			FundedAllowance:     fundedAllowance,
+			HasFundingProfile:   termRow.FundingProfileID != nil,
 		})
+		if prefillErr != nil {
+			return fmt.Errorf("compute invoice prefill: %w", prefillErr)
+		}
 
-		if termRow.FundingProfileID != nil && fundedDeductionMinor > 0 {
+		lines := make([]PrefillLine, 0, len(prefillResult.Lines))
+		for _, l := range prefillResult.Lines {
 			lines = append(lines, PrefillLine{
-				LineKind:               domain.LineKindFundedDeduction,
-				Description:            "Funded hours deduction",
-				SortOrder:              2,
-				FundedAllowanceMinutes: fundedAllowance,
-				FundedDeductionMinutes: fundedDeductionMinutes,
-				CoreBillableMinutes:    billableMinutes,
-				LineAmountMinor:        fundedDeductionMinor,
+				LineKind:               l.LineKind,
+				Description:            l.Description,
+				SortOrder:              l.SortOrder,
+				QuantityMinutes:        l.QuantityMinutes,
+				UnitAmountMinor:        l.UnitAmountMinor,
+				LineAmountMinor:        l.LineAmountMinor,
+				FundedAllowanceMinutes: l.FundedAllowanceMinutes,
+				FundedDeductionMinutes: l.FundedDeductionMinutes,
+				CoreBillableMinutes:    l.CoreBillableMinutes,
+				SessionCount:           l.SessionCount,
 			})
 		}
 
-		if termRow.SiteHourlyRateMinor <= 0 {
-			warnings = append(warnings, "site_rate_not_set")
-		}
-		if termRow.FundingProfileID == nil {
-			warnings = append(warnings, "missing_funding_profile")
-		}
-		if fundedDeductionMinor > 0 && subtotalMinor > 0 {
-			threshold := subtotalMinor / 4
-			if fundedDeductionMinor > threshold {
-				warnings = append(warnings, "significant_funding_deduction")
-			}
-		}
+		warnings = append(warnings, prefillResult.Warnings...)
 
 		result = ComputeInvoicePrefillResult{
 			ChildID:                termRow.ChildID,
@@ -189,9 +148,9 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			FundingProfileID:       termRow.FundingProfileID,
 			FundedAllowanceMinutes: fundedAllowance,
 			Lines:                  lines,
-			SubtotalMinor:          subtotalMinor,
-			FundedDeductionMinor:   fundedDeductionMinor,
-			TotalDueMinor:          totalDueMinor,
+			SubtotalMinor:          prefillResult.SubtotalMinor,
+			FundedDeductionMinor:   prefillResult.FundedDeductionMinor,
+			TotalDueMinor:          prefillResult.TotalDueMinor,
 			Warnings:               warnings,
 		}
 
