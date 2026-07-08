@@ -41,6 +41,7 @@ SELECT c.id,
                AND cbp.child_id = c.id
                AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
          ) AS has_booking_pattern,
+         c.profile_photo_path,
          c.created_at,
          c.updated_at
 FROM children c
@@ -103,6 +104,7 @@ SELECT c.id,
               AND cbp.child_id = c.id
               AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
+        c.profile_photo_path,
         c.created_at,
         c.updated_at
 FROM children c
@@ -179,6 +181,7 @@ SELECT c.id,
               AND cbp.child_id = c.id
               AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
+        c.profile_photo_path,
         c.created_at,
         c.updated_at
 FROM children c
@@ -277,6 +280,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -303,6 +307,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -329,6 +334,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -355,6 +361,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -365,3 +372,10 @@ WHERE c.tenant_id = $1
   AND (sqlc.narg('room_id')::uuid IS NULL OR c.id IN (SELECT cra.child_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.room_id = sqlc.narg('room_id')::uuid AND cra.is_current))
 ORDER BY c.created_at DESC
 LIMIT $3 OFFSET $4;
+
+-- name: UpdateChildPhotoPath :exec
+UPDATE children
+SET profile_photo_path = $4, updated_at = NOW()
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND id = $3;

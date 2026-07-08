@@ -27,6 +27,7 @@ import (
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
+	childstorage "nursery-management-system/api/internal/modules/children/infrastructure/storage"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
@@ -180,9 +181,14 @@ var passwordResetSet = wire.NewSet(
 
 // ── Children module ────────────────────────────────────────────────────
 
+func provideFileStorage() childdomain.FileStorage {
+	return childstorage.NewLocalStorage(".")
+}
+
 var childrenSet = wire.NewSet(
 	childpostgres.NewChildRepository,
 	wire.Bind(new(childdomain.Repository), new(*childpostgres.ChildRepository)),
+	provideFileStorage,
 	provideSessionTypeLookupAdapter,
 	wire.Bind(new(childapp.SessionTypeLookup), new(*sessionTypeLookupAdapter)),
 	provideEnrollmentTermCreatorAdapter,
@@ -220,6 +226,8 @@ var childrenSet = wire.NewSet(
 	childapp.NewGetCurrentBookingPattern,
 	childapp.NewCreateBookingPattern,
 	childapp.NewUpdateBookingPattern,
+	childapp.NewUploadPhoto,
+	childapp.NewRemovePhoto,
 	wire.Struct(new(childhandler.CoreUseCases), "*"),
 	wire.Struct(new(childhandler.ProfileUseCases), "*"),
 	wire.Struct(new(childhandler.ContactsUseCases), "*"),
@@ -231,6 +239,7 @@ var childrenSet = wire.NewSet(
 	wire.Struct(new(childhandler.RoomAssignmentUseCases), "*"),
 	wire.Struct(new(childhandler.BillingProfileUseCases), "*"),
 	wire.Struct(new(childhandler.BookingPatternUseCases), "*"),
+	wire.Struct(new(childhandler.PhotoUseCases), "*"),
 	wire.Struct(new(childhandler.ChildrenHandlerConfig), "*"),
 	childhandler.NewHandler,
 )

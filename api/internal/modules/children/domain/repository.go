@@ -104,4 +104,7 @@ type Repository interface {
 	ReplaceEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, entries []BookingPatternEntry) error
 	UpdateEffectiveFrom(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error
 	UpdateTermTimeOnly(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, termTimeOnly bool) error
+
+	// Photo
+	UpdatePhotoPath(ctx context.Context, tenantID, branchID, childID uuid.UUID, path *string) error
 }

@@ -93,6 +93,7 @@ type (
 		BillingProfile  BillingProfileUseCases
 		LeavingRecord   *application.GetLeavingRecord
 		BookingPatterns BookingPatternUseCases
+		Photo           PhotoUseCases
 	}
 )
 
@@ -140,6 +141,9 @@ type Handler struct {
 	getCurrentBookingPattern *application.GetCurrentBookingPattern
 	createBookingPattern     *application.CreateBookingPattern
 	updateBookingPattern     *application.UpdateBookingPattern
+
+	uploadPhoto *application.UploadPhoto
+	removePhoto *application.RemovePhoto
 }
 
 func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
@@ -176,6 +180,8 @@ func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 		getCurrentBookingPattern: cfg.BookingPatterns.GetCurrent,
 		createBookingPattern:     cfg.BookingPatterns.Create,
 		updateBookingPattern:     cfg.BookingPatterns.Update,
+		uploadPhoto:              cfg.Photo.Upload,
+		removePhoto:              cfg.Photo.Remove,
 	}
 }
 
@@ -229,6 +235,10 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 
 	manager.POST("/children/:child_id/booking-patterns", h.createBookingPatternHandler)
 	manager.PATCH("/children/:child_id/booking-patterns/:pattern_id", h.updateBookingPatternHandler)
+
+	manager.PUT("/children/:child_id/photo", h.uploadPhotoHandler)
+	manager.DELETE("/children/:child_id/photo", h.removePhotoHandler)
+	manager.GET("/children/:child_id/photo", h.getPhotoHandler)
 }
 
 // listChildrenHandler returns a paginated list of children.

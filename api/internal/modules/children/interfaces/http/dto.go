@@ -24,6 +24,7 @@ type childResponse struct {
 	HasBookingPattern       bool     `json:"has_booking_pattern"`
 	EnrollmentComplete      bool     `json:"enrollment_complete"`
 	MissingRequirements     []string `json:"missing_requirements,omitempty"`
+	PhotoURL                *string  `json:"photo_url,omitempty"`
 	CreatedAt               string   `json:"created_at"`
 	UpdatedAt               string   `json:"updated_at"`
 }
@@ -58,6 +59,11 @@ type reasonRequest struct {
 }
 
 func toChildResponse(child domain.Child) childResponse {
+	var photoURL *string
+	if child.ProfilePhotoPath != nil {
+		url := "/api/v1/children/" + child.ID.String() + "/photo"
+		photoURL = &url
+	}
 	return childResponse{
 		ID:                      child.ID.String(),
 		FirstName:               child.FirstName,
@@ -74,6 +80,7 @@ func toChildResponse(child domain.Child) childResponse {
 		HasBookingPattern:       child.HasBookingPattern,
 		EnrollmentComplete:      child.EnrollmentComplete(),
 		MissingRequirements:     child.MissingRequirements(),
+		PhotoURL:                photoURL,
 		CreatedAt:               child.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt:               child.UpdatedAt.UTC().Format(time.RFC3339),
 	}

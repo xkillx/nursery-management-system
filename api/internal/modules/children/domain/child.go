@@ -22,6 +22,7 @@ type Child struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        *string
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }

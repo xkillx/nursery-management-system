@@ -1917,3 +1917,17 @@ func pgtypeTimeToMinutes(t pgtype.Time) int {
 	}
 	return int(t.Microseconds / 60 / 1_000_000)
 }
+
+func (r *ChildRepository) UpdatePhotoPath(ctx context.Context, tenantID, branchID, childID uuid.UUID, path *string) error {
+	q := sqlc.New(r.pool)
+	var pgPath pgtype.Text
+	if path != nil {
+		pgPath = pgtype.Text{String: *path, Valid: true}
+	}
+	return q.UpdateChildPhotoPath(ctx, sqlc.UpdateChildPhotoPathParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		ID:               uuidToPgtype(childID),
+		ProfilePhotoPath: pgPath,
+	})
+}

@@ -341,6 +341,9 @@ func (f *fakeChildBPRepo) GetLeavingRecordByChild(ctx context.Context, tenantID,
 func (f *fakeChildBPRepo) InsertLeavingRecord(ctx context.Context, tx domain.Tx, p *domain.ChildLeavingRecord) error {
 	return nil
 }
+func (f *fakeChildBPRepo) UpdatePhotoPath(ctx context.Context, tenantID, branchID, childID uuid.UUID, path *string) error {
+	return nil
+}
 
 // ── Session type lookup ───────────────────────────────────────────────────
 

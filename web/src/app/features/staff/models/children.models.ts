@@ -16,6 +16,7 @@ export interface ChildRecord {
   hasBookingPattern?: boolean;
   enrollmentComplete: boolean;
   missingRequirements: string[];
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   // Legacy alias for the still-imported manager-registration-intake stepper.

@@ -260,20 +260,21 @@ type BranchClosureDay struct {
 }
 
 type Child struct {
-	ID            pgtype.UUID
-	TenantID      pgtype.UUID
-	BranchID      pgtype.UUID
-	DateOfBirth   pgtype.Date
-	StartDate     pgtype.Date
-	EndDate       pgtype.Date
-	IsActive      bool
-	Notes         pgtype.Text
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
-	FirstName     string
-	MiddleName    pgtype.Text
-	LastName      pgtype.Text
-	CurrentTermID pgtype.UUID
+	ID               pgtype.UUID
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	DateOfBirth      pgtype.Date
+	StartDate        pgtype.Date
+	EndDate          pgtype.Date
+	IsActive         bool
+	Notes            pgtype.Text
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	FirstName        string
+	MiddleName       pgtype.Text
+	LastName         pgtype.Text
+	CurrentTermID    pgtype.UUID
+	ProfilePhotoPath pgtype.Text
 }
 
 type ChildBillingProfile struct {

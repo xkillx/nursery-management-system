@@ -47,6 +47,7 @@ interface ChildApiModel {
   has_booking_pattern?: boolean;
   enrollment_complete: boolean;
   missing_requirements?: string[];
+  photo_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -203,6 +204,18 @@ export class StaffApiService {
     return this.http
       .get<ChildApiModel>(apiUrl(`/children/${childId}`))
       .pipe(map((child) => this.toChildRecord(child)));
+  }
+
+  uploadPhoto(childId: string, file: File): Observable<{ photo_url: string }> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.http
+      .put<{ photo_url: string }>(apiUrl(`/children/${childId}/photo`), formData);
+  }
+
+  removePhoto(childId: string): Observable<{ photo_url: null }> {
+    return this.http
+      .delete<{ photo_url: null }>(apiUrl(`/children/${childId}/photo`));
   }
 
   getChildProfile(childId: string): Observable<ChildProfile | null> {
@@ -592,6 +605,7 @@ export class StaffApiService {
       hasBookingPattern: child.has_booking_pattern ?? false,
       enrollmentComplete: child.enrollment_complete,
       missingRequirements: child.missing_requirements ?? [],
+      photoUrl: child.photo_url ?? null,
       createdAt: child.created_at,
       updatedAt: child.updated_at,
     };

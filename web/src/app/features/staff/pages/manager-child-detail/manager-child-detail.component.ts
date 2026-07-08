@@ -30,7 +30,9 @@ import {
   heroPlus,
   heroLockClosed,
   heroXCircle,
-  heroUser
+  heroUser,
+  heroCamera,
+  heroTrash
 } from '@ng-icons/heroicons/outline';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
@@ -95,7 +97,9 @@ export type ChildProfileTab = 'overview' | 'attendance' | 'funding' | 'health' |
       heroPlus,
       heroLockClosed,
       heroXCircle,
-      heroUser
+      heroUser,
+      heroCamera,
+      heroTrash
     })
   ],
   templateUrl: './manager-child-detail.component.html',
@@ -135,6 +139,9 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
 
   isLoading = false;
   errorMessage: string | null = null;
+
+  isUploadingPhoto = false;
+  photoErrorMessage: string | null = null;
 
   billingMonth = '';
   monthlyProfile: FundingProfileRecord | null = null;
@@ -340,5 +347,70 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
         this.errorMessage = err?.message ?? 'Failed to save monthly funding profile.';
       },
     });
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.photoErrorMessage = 'File exceeds maximum size of 5 MB.';
+      input.value = '';
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      this.photoErrorMessage = 'Invalid file type. Only JPEG and PNG are accepted.';
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingPhoto = true;
+    this.photoErrorMessage = null;
+
+    this.staffApi.uploadPhoto(this.childId, file).subscribe({
+      next: (result) => {
+        if (this.child) {
+          this.child = { ...this.child, photoUrl: result.photo_url };
+        }
+        this.isUploadingPhoto = false;
+      },
+      error: (err) => {
+        this.photoErrorMessage = err?.message ?? 'Failed to upload photo.';
+        this.isUploadingPhoto = false;
+      },
+    });
+
+    input.value = '';
+  }
+
+  removePhoto(): void {
+    this.isUploadingPhoto = true;
+    this.photoErrorMessage = null;
+
+    this.staffApi.removePhoto(this.childId).subscribe({
+      next: () => {
+        if (this.child) {
+          this.child = { ...this.child, photoUrl: null };
+        }
+        this.isUploadingPhoto = false;
+      },
+      error: (err) => {
+        this.photoErrorMessage = err?.message ?? 'Failed to remove photo.';
+        this.isUploadingPhoto = false;
+      },
+    });
+  }
+
+  onPhotoError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const parent = img.parentElement;
+    if (parent) {
+      const fallback = parent.querySelector('.photo-fallback') as HTMLElement;
+      if (fallback) fallback.style.display = 'flex';
+    }
   }
 }

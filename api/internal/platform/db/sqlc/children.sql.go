@@ -147,6 +147,7 @@ SELECT c.id,
               AND cbp.child_id = c.id
               AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
+        c.profile_photo_path,
         c.created_at,
         c.updated_at
 FROM children c
@@ -177,6 +178,7 @@ type ChildrenGetByIDRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -199,6 +201,7 @@ func (q *Queries) ChildrenGetByID(ctx context.Context, arg ChildrenGetByIDParams
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
 		&i.HasBookingPattern,
+		&i.ProfilePhotoPath,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -248,6 +251,7 @@ SELECT c.id,
               AND cbp.child_id = c.id
               AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
         ) AS has_booking_pattern,
+        c.profile_photo_path,
         c.created_at,
         c.updated_at
 FROM children c
@@ -279,6 +283,7 @@ type ChildrenGetByIDForUpdateRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -301,6 +306,7 @@ func (q *Queries) ChildrenGetByIDForUpdate(ctx context.Context, arg ChildrenGetB
 		&i.HasCurrentRoom,
 		&i.HasParentCarerContact,
 		&i.HasBookingPattern,
+		&i.ProfilePhotoPath,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -377,6 +383,7 @@ SELECT c.id,
                AND cbp.child_id = c.id
                AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)
          ) AS has_booking_pattern,
+         c.profile_photo_path,
          c.created_at,
          c.updated_at
 FROM children c
@@ -421,6 +428,7 @@ type ChildrenListRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -456,6 +464,7 @@ func (q *Queries) ChildrenList(ctx context.Context, arg ChildrenListParams) ([]C
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,
+			&i.ProfilePhotoPath,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -583,6 +592,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -619,6 +629,7 @@ type ChildrenListSortByCreatedAtAscRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -654,6 +665,7 @@ func (q *Queries) ChildrenListSortByCreatedAtAsc(ctx context.Context, arg Childr
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,
+			&i.ProfilePhotoPath,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -682,6 +694,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -718,6 +731,7 @@ type ChildrenListSortByCreatedAtDescRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -753,6 +767,7 @@ func (q *Queries) ChildrenListSortByCreatedAtDesc(ctx context.Context, arg Child
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,
+			&i.ProfilePhotoPath,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -781,6 +796,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -817,6 +833,7 @@ type ChildrenListSortByNameAscRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -852,6 +869,7 @@ func (q *Queries) ChildrenListSortByNameAsc(ctx context.Context, arg ChildrenLis
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,
+			&i.ProfilePhotoPath,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -880,6 +898,7 @@ SELECT c.id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
        EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
+       c.profile_photo_path,
        c.created_at,
        c.updated_at
 FROM children c
@@ -916,6 +935,7 @@ type ChildrenListSortByNameDescRow struct {
 	HasCurrentRoom          bool
 	HasParentCarerContact   bool
 	HasBookingPattern       bool
+	ProfilePhotoPath        pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 }
@@ -951,6 +971,7 @@ func (q *Queries) ChildrenListSortByNameDesc(ctx context.Context, arg ChildrenLi
 			&i.HasCurrentRoom,
 			&i.HasParentCarerContact,
 			&i.HasBookingPattern,
+			&i.ProfilePhotoPath,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -1040,4 +1061,29 @@ func (q *Queries) ChildrenUpdate(ctx context.Context, arg ChildrenUpdateParams) 
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const updateChildPhotoPath = `-- name: UpdateChildPhotoPath :exec
+UPDATE children
+SET profile_photo_path = $4, updated_at = NOW()
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND id = $3
+`
+
+type UpdateChildPhotoPathParams struct {
+	TenantID         pgtype.UUID
+	BranchID         pgtype.UUID
+	ID               pgtype.UUID
+	ProfilePhotoPath pgtype.Text
+}
+
+func (q *Queries) UpdateChildPhotoPath(ctx context.Context, arg UpdateChildPhotoPathParams) error {
+	_, err := q.db.Exec(ctx, updateChildPhotoPath,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.ProfilePhotoPath,
+	)
+	return err
 }
