@@ -1,11 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroUserGroup,
+  heroClipboardDocumentCheck,
+  heroClipboardDocumentList,
+  heroDocumentText,
+  heroCheckCircle,
+  heroExclamationTriangle,
+  heroClock,
+  heroArrowRight,
+  heroExclamationCircle,
+} from '@ng-icons/heroicons/outline';
 
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
+import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
 import {
   MANAGER_DASHBOARD_MOCK,
   ManagerDashboardSnapshot,
@@ -34,6 +47,21 @@ interface AttendanceTile {
     PageHeaderComponent,
     StatusBadgeComponent,
     TableShellComponent,
+    NgIcon,
+    AvatarTextComponent,
+  ],
+  providers: [
+    provideIcons({
+      heroUserGroup,
+      heroClipboardDocumentCheck,
+      heroClipboardDocumentList,
+      heroDocumentText,
+      heroCheckCircle,
+      heroExclamationTriangle,
+      heroClock,
+      heroArrowRight,
+      heroExclamationCircle,
+    }),
   ],
   template: `
     <div class="space-y-6">
@@ -45,81 +73,135 @@ interface AttendanceTile {
         <a
           actions
           [routerLink]="attendanceRoute"
-          class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 sm:w-auto"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 sm:w-auto"
         >
-          Open attendance
+          <span>Open attendance</span>
+          <ng-icon name="heroArrowRight" size="16" class="shrink-0"></ng-icon>
         </a>
       </app-page-header>
 
       <section aria-labelledby="attendance-heading" class="space-y-3">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Today</p>
-            <h2 id="attendance-heading" class="text-lg font-semibold text-gray-800 dark:text-white/90">Attendance snapshot</h2>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Today</p>
+            <h2 id="attendance-heading" class="text-lg font-bold text-gray-800 dark:text-white/90">Attendance snapshot</h2>
           </div>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
+          <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
             {{ attendanceCompletionRate }}% attendance completion across {{ totalChildrenToday }} expected children.
           </p>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           @for (tile of attendanceTiles; track tile.label) {
-            <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:-translate-y-0.5 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+            <article 
+              [ngClass]="getCardHoverClass(tile.tone, tile.label)"
+              class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
               <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ tile.value }}</p>
-                  <p class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-200">{{ tile.label }}</p>
+                <div class="flex items-center gap-3">
+                  <div [ngClass]="getIconBgClass(tile.tone, tile.label)" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                    <ng-icon [name]="getIconName(tile.tone, tile.label)" size="20" [ngClass]="getIconColorClass(tile.tone, tile.label)"></ng-icon>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90 leading-tight">{{ tile.label }}</h3>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-1">{{ tile.meta }}</p>
+                  </div>
                 </div>
-                <span
-                  class="rounded-full px-2.5 py-1 text-xs font-medium"
-                  [ngClass]="tile.tone === 'warning'
-                    ? 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400'
-                    : tile.tone === 'success'
-                      ? 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500'
-                      : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80'"
-                >
-                  {{ tile.meta }}
-                </span>
               </div>
-              <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">{{ tile.description }}</p>
+              <div class="mt-5 flex items-baseline gap-2">
+                <span class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white tabular-nums">{{ tile.value }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500 font-medium">children</span>
+              </div>
+              <p class="mt-2.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-2 h-9">{{ tile.description }}</p>
             </article>
           }
         </div>
       </section>
 
       <section aria-labelledby="invoice-heading" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800/60">
           <div>
-            <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Billing month</p>
-            <h2 id="invoice-heading" class="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Billing month</p>
+            <h2 id="invoice-heading" class="text-lg font-bold text-gray-800 dark:text-white/90">
               {{ snapshot.invoiceRunStatus.billingMonthLabel }} invoice run
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ snapshot.invoiceRunStatus.nextStep }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
+              {{ snapshot.invoiceRunStatus.nextStep }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 dark:bg-white/[0.04] dark:text-gray-300 self-start">
+            <ng-icon name="heroClock" size="14" class="text-gray-400 shrink-0"></ng-icon>
+            <span>Last run: <strong class="font-semibold text-gray-800 dark:text-white">{{ snapshot.invoiceRunStatus.lastRunLabel }}</strong></span>
           </div>
         </div>
 
-        <dl class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-            <dt class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Eligible</dt>
-            <dd class="mt-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ snapshot.invoiceRunStatus.eligibleChildren }}</dd>
+        <div class="mt-6">
+          <div class="flex items-center justify-between text-xs font-semibold mb-2">
+            <span class="text-gray-600 dark:text-gray-300">Run progress</span>
+            <span class="text-brand-600 dark:text-brand-400">{{ invoiceProgressPercentage }}% complete</span>
           </div>
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-            <dt class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Blocked</dt>
-            <dd class="mt-1 text-2xl font-semibold tabular-nums text-warning-700 dark:text-warning-400">{{ snapshot.invoiceRunStatus.blockedChildren }}</dd>
+          <div class="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div 
+              class="bg-brand-500 transition-all duration-500" 
+              [style.width.%]="issuedPercentage" 
+              title="Issued: {{ snapshot.invoiceRunStatus.issuedInvoices }}">
+            </div>
+            <div 
+              class="bg-blue-light-400 transition-all duration-500" 
+              [style.width.%]="draftsPercentage" 
+              title="Drafts: {{ snapshot.invoiceRunStatus.draftInvoices }}">
+            </div>
+            <div 
+              class="bg-warning-500 transition-all duration-500" 
+              [style.width.%]="blockedPercentage" 
+              title="Blocked: {{ snapshot.invoiceRunStatus.blockedChildren }}">
+            </div>
           </div>
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-            <dt class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Drafts</dt>
-            <dd class="mt-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ snapshot.invoiceRunStatus.draftInvoices }}</dd>
+          <div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <span class="flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+              <span>Issued ({{ snapshot.invoiceRunStatus.issuedInvoices }})</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-blue-light-400"></span>
+              <span>Drafts ({{ snapshot.invoiceRunStatus.draftInvoices }})</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-warning-500"></span>
+              <span>Blocked ({{ snapshot.invoiceRunStatus.blockedChildren }})</span>
+            </span>
           </div>
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-            <dt class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Issued</dt>
-            <dd class="mt-1 text-2xl font-semibold tabular-nums text-brand-600 dark:text-brand-400">{{ snapshot.invoiceRunStatus.issuedInvoices }}</dd>
+        </div>
+
+        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800/40 dark:bg-white/[0.01]">
+            <dt class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Eligible</dt>
+            <dd class="mt-2 flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ snapshot.invoiceRunStatus.eligibleChildren }}</span>
+              <span class="text-xs text-gray-400 font-medium">children</span>
+            </dd>
           </div>
-          <div class="col-span-2 rounded-xl bg-gray-50 p-4 md:col-span-1 dark:bg-white/[0.04]">
-            <dt class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Last run</dt>
-            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-white/90">{{ snapshot.invoiceRunStatus.lastRunLabel }}</dd>
+          <div class="rounded-xl border border-warning-100 bg-warning-50/20 p-4 dark:border-warning-500/10 dark:bg-warning-500/5">
+            <dt class="text-xs font-semibold uppercase tracking-wider text-warning-700 dark:text-warning-400">Blocked</dt>
+            <dd class="mt-2 flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums text-warning-600 dark:text-warning-500">{{ snapshot.invoiceRunStatus.blockedChildren }}</span>
+              <span class="text-xs text-warning-400 font-medium">need review</span>
+            </dd>
           </div>
-        </dl>
+          <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800/40 dark:bg-white/[0.01]">
+            <dt class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Drafts</dt>
+            <dd class="mt-2 flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ snapshot.invoiceRunStatus.draftInvoices }}</span>
+              <span class="text-xs text-gray-400 font-medium">in drafts</span>
+            </dd>
+          </div>
+          <div class="rounded-xl border border-brand-100 bg-brand-50/20 p-4 dark:border-brand-500/10 dark:bg-brand-500/5">
+            <dt class="text-xs font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-400">Issued</dt>
+            <dd class="mt-2 flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums text-brand-600 dark:text-brand-400">{{ snapshot.invoiceRunStatus.issuedInvoices }}</span>
+              <span class="text-xs text-brand-400 font-medium">sent</span>
+            </dd>
+          </div>
+        </div>
       </section>
 
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -138,37 +220,46 @@ interface AttendanceTile {
               <table class="min-w-full text-left text-sm">
                 <thead>
                   <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                    <th class="py-2 pr-3 font-medium">Child</th>
-                    <th class="py-2 pr-3 font-medium">Date</th>
-                    <th class="py-2 pr-3 font-medium">Issue</th>
-                    <th class="py-2 font-medium">Action</th>
+                    <th class="py-2.5 pr-3 font-semibold">Child</th>
+                    <th class="py-2.5 pr-3 font-semibold">Date</th>
+                    <th class="py-2.5 pr-3 font-semibold">Issue</th>
+                    <th class="py-2.5 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (item of snapshot.incompleteAttendance; track item.id) {
-                    <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800/60 dark:hover:bg-white/[0.03]">
-                      <td class="py-3 pr-3 font-medium text-gray-800 dark:text-white/90">{{ item.childName }}</td>
-                      <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">
+                    <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 dark:border-gray-800/60 dark:hover:bg-white/[0.02]">
+                      <td class="py-3.5 pr-3 font-medium text-gray-800 dark:text-white/90">
+                        <div class="flex items-center gap-3">
+                          <app-avatar-text [name]="item.childName" className="h-8 w-8 text-[11px] shrink-0 font-semibold"></app-avatar-text>
+                          <span>{{ item.childName }}</span>
+                        </div>
+                      </td>
+                      <td class="py-3.5 pr-3 text-gray-600 dark:text-gray-300">
                         <span class="inline-flex items-center gap-2">
-                          {{ item.localDateLabel }}
                           @if (item.isToday) {
                             <app-status-badge status="due" label="Today" size="sm" />
+                          } @else {
+                            {{ item.localDateLabel }}
                           }
                         </span>
                       </td>
-                      <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ item.issue }}</td>
-                      <td class="py-3">
+                      <td class="py-3.5 pr-3 text-gray-600 dark:text-gray-300">{{ item.issue }}</td>
+                      <td class="py-3.5">
                         @if (item.childId && item.localDate) {
                           <a
-                            class="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-medium text-brand-600 transition hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-brand-400 dark:hover:bg-brand-500/15"
+                            class="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-brand-100 bg-brand-25/50 px-3 text-xs font-semibold text-brand-600 transition hover:bg-brand-50 hover:text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
                             [routerLink]="['/manager/attendance-corrections']"
                             [queryParams]="{ child_id: item.childId, local_date: item.localDate, session_id: item.sessionId || undefined }"
                             [attr.aria-label]="'Correct attendance for ' + item.childName"
                           >
-                            Correct
+                            <span>Correct</span>
+                            <ng-icon name="heroArrowRight" size="12"></ng-icon>
                           </a>
                         } @else {
-                          <span class="text-gray-500 dark:text-gray-400">{{ item.actionHint }}</span>
+                          <span class="inline-flex items-center rounded-lg bg-gray-50 border border-gray-100 px-2 py-1 text-xs font-semibold text-gray-500 dark:bg-white/5 dark:border-gray-800 dark:text-gray-400">
+                            {{ item.actionHint }}
+                          </span>
                         }
                       </td>
                     </tr>
@@ -180,20 +271,28 @@ interface AttendanceTile {
         </section>
 
         <section aria-labelledby="actions-heading">
-          <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] h-full flex flex-col justify-between">
             <div class="mb-4">
-              <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Workflow</p>
-              <h2 id="actions-heading" class="text-lg font-semibold text-gray-800 dark:text-white/90">Quick actions</h2>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Workflow</p>
+              <h2 id="actions-heading" class="text-lg font-bold text-gray-800 dark:text-white/90">Quick actions</h2>
             </div>
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div class="grid grid-cols-1 gap-3 flex-1">
               @for (action of snapshot.quickActions; track action.label) {
                 @if (action.disabled) {
                   <div
-                    class="rounded-xl border border-gray-200 bg-gray-50 p-4 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
+                    class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 opacity-50 dark:border-gray-800/60 dark:bg-white/[0.01]"
                     aria-disabled="true"
                   >
-                    <p class="text-sm font-medium text-gray-700 dark:text-white/80">{{ action.label }}</p>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ action.description }}</p>
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-white/5">
+                      <ng-icon [name]="getActionIcon(action.label)" size="18"></ng-icon>
+                    </div>
+                    <div>
+                      <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                        {{ action.label }}
+                        <span class="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-white/5">Coming soon</span>
+                      </p>
+                      <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ action.description }}</p>
+                    </div>
                   </div>
                 } @else {
                   <a
@@ -201,11 +300,18 @@ interface AttendanceTile {
                     class="group block min-h-20 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-brand-200 hover:bg-brand-50/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10"
                   >
                     <span class="flex items-start justify-between gap-3">
-                      <span>
-                        <span class="block text-sm font-medium text-gray-800 group-hover:text-brand-700 dark:text-white/90 dark:group-hover:text-brand-300">{{ action.label }}</span>
-                        <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ action.description }}</span>
+                      <span class="flex items-start gap-3">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 transition-colors duration-200 group-hover:bg-brand-100 group-hover:text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 dark:group-hover:bg-brand-500/20">
+                          <ng-icon [name]="getActionIcon(action.label)" size="18"></ng-icon>
+                        </span>
+                        <span>
+                          <span class="block text-sm font-semibold text-gray-800 group-hover:text-brand-700 dark:text-white/90 dark:group-hover:text-brand-300">{{ action.label }}</span>
+                          <span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{{ action.description }}</span>
+                        </span>
                       </span>
-                      <span aria-hidden="true" class="text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-brand-500">-&gt;</span>
+                      <span aria-hidden="true" class="text-gray-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-brand-500">
+                        <ng-icon name="heroArrowRight" size="14"></ng-icon>
+                      </span>
                     </span>
                   </a>
                 }
@@ -221,8 +327,9 @@ interface AttendanceTile {
           title="Payment follow-up"
           description="Sorted by urgency so overdue and failed payments are reviewed first."
         >
-          <div shell-actions class="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {{ formatGbp(outstandingTotalMinor) }} outstanding
+          <div shell-actions class="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-1 text-xs font-semibold text-error-700 dark:bg-error-500/15 dark:text-error-400 border border-error-100 dark:border-error-500/20">
+            <span class="h-1.5 w-1.5 rounded-full bg-error-500"></span>
+            <span>{{ formatGbp(outstandingTotalMinor) }} outstanding</span>
           </div>
           @if (sortedPayments.length === 0) {
             <app-empty-state title="No outstanding payments" message="All issued invoices are currently settled." />
@@ -230,23 +337,33 @@ interface AttendanceTile {
             <table class="min-w-full text-left text-sm">
               <thead>
                 <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                  <th class="py-2 pr-3 font-medium">Invoice</th>
-                  <th class="py-2 pr-3 font-medium">Child</th>
-                  <th class="py-2 pr-3 font-medium">Payer</th>
-                  <th class="py-2 pr-3 font-medium">Due</th>
-                  <th class="py-2 pr-3 font-medium">Status</th>
-                  <th class="py-2 text-right font-medium">Outstanding</th>
+                  <th class="py-2.5 pr-3 font-semibold">Invoice</th>
+                  <th class="py-2.5 pr-3 font-semibold">Child</th>
+                  <th class="py-2.5 pr-3 font-semibold">Payer</th>
+                  <th class="py-2.5 pr-3 font-semibold">Due</th>
+                  <th class="py-2.5 pr-3 font-semibold">Status</th>
+                  <th class="py-2.5 text-right font-semibold">Outstanding</th>
                 </tr>
               </thead>
               <tbody>
                 @for (item of sortedPayments; track item.id) {
-                  <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800/60 dark:hover:bg-white/[0.03]">
-                    <td class="py-3 pr-3 font-medium text-gray-800 dark:text-white/90">{{ item.invoiceNumber }}</td>
-                    <td class="py-3 pr-3 text-gray-800 dark:text-white/90">{{ item.childName }}</td>
-                    <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ item.payerName }}</td>
-                    <td class="py-3 pr-3 text-gray-600 dark:text-gray-300">{{ item.dueDateLabel }}</td>
-                    <td class="py-3 pr-3"><app-status-badge [status]="item.status" size="sm" /></td>
-                    <td class="py-3 text-right font-semibold tabular-nums text-gray-900 dark:text-white">{{ formatGbp(item.outstandingMinor) }}</td>
+                  <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 dark:border-gray-800/60 dark:hover:bg-white/[0.02]">
+                    <td class="py-3.5 pr-3 font-semibold text-gray-800 dark:text-white/90">{{ item.invoiceNumber }}</td>
+                    <td class="py-3.5 pr-3 text-gray-800 dark:text-white/90 font-medium">
+                      <div class="flex items-center gap-3">
+                        <app-avatar-text [name]="item.childName" className="h-8 w-8 text-[11px] shrink-0 font-semibold"></app-avatar-text>
+                        <span>{{ item.childName }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 pr-3 text-gray-600 dark:text-gray-300 font-medium">
+                      <div class="flex items-center gap-1.5">
+                        <ng-icon name="heroUserGroup" size="14" class="text-gray-400 shrink-0"></ng-icon>
+                        <span>{{ item.payerName }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 pr-3 text-gray-600 dark:text-gray-300">{{ item.dueDateLabel }}</td>
+                    <td class="py-3.5 pr-3"><app-status-badge [status]="item.status" size="sm" /></td>
+                    <td class="py-3.5 text-right font-bold tabular-nums text-gray-900 dark:text-white">{{ formatGbp(item.outstandingMinor) }}</td>
                   </tr>
                 }
               </tbody>
@@ -317,5 +434,72 @@ export class ManagerDashboardComponent {
 
   formatGbp(minorUnits: number): string {
     return formatGbp(minorUnits);
+  }
+
+  getIconName(tone: AttendanceTileTone, label: string): string {
+    if (label.includes('Checked in')) return 'heroClipboardDocumentCheck';
+    if (label.includes('Not in yet')) return 'heroClock';
+    if (label.includes('Enrollment')) return 'heroExclamationCircle';
+    return 'heroExclamationTriangle';
+  }
+
+  getIconColorClass(tone: AttendanceTileTone, label: string): string {
+    if (label.includes('Checked in')) return 'text-success-600 dark:text-success-400';
+    if (label.includes('Not in yet')) return 'text-gray-500 dark:text-gray-400';
+    if (label.includes('Enrollment')) return 'text-warning-600 dark:text-warning-400';
+    return 'text-orange-600 dark:text-orange-400';
+  }
+
+  getIconBgClass(tone: AttendanceTileTone, label: string): string {
+    if (label.includes('Checked in')) return 'bg-success-50/85 border border-success-100/50 dark:bg-success-500/10 dark:border-success-500/20';
+    if (label.includes('Not in yet')) return 'bg-gray-50/85 border border-gray-100/50 dark:bg-white/5 dark:border-white/10';
+    if (label.includes('Enrollment')) return 'bg-warning-50/85 border border-warning-100/50 dark:bg-warning-500/10 dark:border-warning-500/20';
+    return 'bg-orange-50/85 border border-orange-100/50 dark:bg-orange-500/10 dark:border-orange-500/20';
+  }
+
+  getCardHoverClass(tone: AttendanceTileTone, label: string): string {
+    if (label.includes('Checked in')) return 'hover:border-success-200 dark:hover:border-success-500/30';
+    if (label.includes('Not in yet')) return 'hover:border-gray-300 dark:hover:border-white/20';
+    if (label.includes('Enrollment')) return 'hover:border-warning-200 dark:hover:border-warning-500/30';
+    return 'hover:border-orange-200 dark:hover:border-orange-500/30';
+  }
+
+  getActionIcon(label: string): string {
+    switch (label) {
+      case 'Open attendance':
+        return 'heroClipboardDocumentCheck';
+      case 'Attendance corrections':
+        return 'heroClipboardDocumentList';
+      case 'Manage children':
+        return 'heroUserGroup';
+      case 'Review payment follow-up':
+        return 'heroDocumentText';
+      default:
+        return 'heroCheckCircle';
+    }
+  }
+
+  get issuedPercentage(): number {
+    const total = this.snapshot.invoiceRunStatus.eligibleChildren;
+    if (total === 0) return 0;
+    return (this.snapshot.invoiceRunStatus.issuedInvoices / total) * 100;
+  }
+
+  get draftsPercentage(): number {
+    const total = this.snapshot.invoiceRunStatus.eligibleChildren;
+    if (total === 0) return 0;
+    return (this.snapshot.invoiceRunStatus.draftInvoices / total) * 100;
+  }
+
+  get blockedPercentage(): number {
+    const total = this.snapshot.invoiceRunStatus.eligibleChildren;
+    if (total === 0) return 0;
+    return (this.snapshot.invoiceRunStatus.blockedChildren / total) * 100;
+  }
+
+  get invoiceProgressPercentage(): number {
+    const run = this.snapshot.invoiceRunStatus;
+    if (run.eligibleChildren === 0) return 0;
+    return Math.round(((run.issuedInvoices + run.draftInvoices) / run.eligibleChildren) * 100);
   }
 }
