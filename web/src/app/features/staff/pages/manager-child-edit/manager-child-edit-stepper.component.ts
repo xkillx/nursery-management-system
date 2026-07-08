@@ -1798,8 +1798,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
+        const presented = presentApiError(mapped, 'registration.intake');
         this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake')) || 'Registration could not be completed.';
+        this.errorMessage = formatPresentedApiError(presented) || 'Registration could not be completed.';
+        this.toast.error(this.errorMessage, { title: presented.title });
       },
     });
   }

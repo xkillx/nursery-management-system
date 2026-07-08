@@ -471,7 +471,7 @@ func (a *enrollmentTermCreatorAdapter) CreateEnrollmentTerm(ctx context.Context,
 		return uuid.Nil, fmt.Errorf("lookup site rate: %w", err)
 	}
 	if !rateFound || rate <= 0 {
-		return uuid.Nil, fmt.Errorf("site rate not found or invalid for branch %s", actor.BranchID)
+		return uuid.Nil, domainerrors.New("site_rate_missing", "A site hourly rate must be configured before enrolling a child.", "site_hourly_rate")
 	}
 
 	// 3. Build the Term.

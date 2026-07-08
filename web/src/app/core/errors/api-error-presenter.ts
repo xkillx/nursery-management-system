@@ -124,6 +124,7 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'funding_month_outside_enrollment_window',
 
   'site_not_found',
+  'site_rate_missing',
   'manager_membership_not_found',
   'user_not_found',
   'user_inactive',
@@ -362,6 +363,12 @@ function presentKnownError(
     // Funding
     case 'funding_profile_not_found':
       base.message = 'Funding profile not found. Refresh the page.';
+      break;
+
+    // Billing setup
+    case 'site_rate_missing':
+      base.message = 'A site hourly rate must be configured before enrolling a child. Set it in Billing Setup.';
+      base.action = { label: 'Go to Billing Setup', route: ['/manager/billing-setup'] };
       break;
 
     // Owner

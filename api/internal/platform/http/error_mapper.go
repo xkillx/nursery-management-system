@@ -55,7 +55,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"payment_webhook_invalid_signature",
 		"booking_pattern_backdated", "booking_pattern_effective_to_before_from",
 		"booking_pattern_overlap", "booking_pattern_duplicate_entry",
-		"session_type_archived":
+		"session_type_archived", "site_rate_missing":
 		status = http.StatusUnprocessableEntity
 	case "attendance_session_already_open", "attendance_session_not_open",
 		"child_enrollment_incomplete", "attendance_invalid_time_order",
