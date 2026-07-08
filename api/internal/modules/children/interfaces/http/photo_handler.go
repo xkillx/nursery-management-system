@@ -74,13 +74,13 @@ func (h *Handler) uploadPhotoHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := h.uploadPhoto.Execute(c.Request.Context(), actor, c.Param("child_id"), f, ext)
-	if err != nil {
+	if _, err := h.uploadPhoto.Execute(c.Request.Context(), actor, c.Param("child_id"), f, ext); err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"photo_url": result.PhotoURL})
+	photoURL := fmt.Sprintf("/api/v1/children/%s/photo", c.Param("child_id"))
+	c.JSON(http.StatusOK, gin.H{"photo_url": photoURL})
 }
 
 func (h *Handler) removePhotoHandler(c *gin.Context) {
@@ -126,8 +126,8 @@ func (h *Handler) getPhotoHandler(c *gin.Context) {
 	}
 
 	c.Header("Cache-Control", "private, max-age=3600")
-	c.File(*child.ProfilePhotoPath)
 	c.Header("Content-Type", contentType)
+	c.File(*child.ProfilePhotoPath)
 }
 
 func (h *Handler) getPhotoURLEndpoint(c *gin.Context) {
