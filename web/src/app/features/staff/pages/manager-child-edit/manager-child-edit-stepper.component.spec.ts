@@ -1121,4 +1121,200 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(toastErrorSpy).toHaveBeenCalled();
     });
   });
+
+  describe('photo picker', () => {
+    it('onPhotoSelected stores file and creates preview URL for valid JPEG under 5 MB', () => {
+      const file = new File(['x'.repeat(100)], 'photo.jpg', { type: 'image/jpeg' });
+      const input = document.createElement('input');
+      input.type = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      const event = new Event('change');
+      Object.defineProperty(event, 'target', { value: input });
+
+      component.onPhotoSelected(event);
+
+      expect(component.selectedPhotoFile).toBe(file);
+      expect(component.photoPreviewUrl).toBeTruthy();
+      expect(component.photoErrorMessage).toBeNull();
+    });
+
+    it('onPhotoSelected stores file and creates preview URL for valid PNG under 5 MB', () => {
+      const file = new File(['x'.repeat(100)], 'photo.png', { type: 'image/png' });
+      const input = document.createElement('input');
+      input.type = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      const event = new Event('change');
+      Object.defineProperty(event, 'target', { value: input });
+
+      component.onPhotoSelected(event);
+
+      expect(component.selectedPhotoFile).toBe(file);
+      expect(component.photoPreviewUrl).toBeTruthy();
+      expect(component.photoErrorMessage).toBeNull();
+    });
+
+    it('onPhotoSelected rejects file over 5 MB', () => {
+      const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+      const input = document.createElement('input');
+      input.type = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(largeFile);
+      input.files = dt.files;
+      const event = new Event('change');
+      Object.defineProperty(event, 'target', { value: input });
+
+      component.onPhotoSelected(event);
+
+      expect(component.selectedPhotoFile).toBeNull();
+      expect(component.photoErrorMessage).toContain('5 MB');
+    });
+
+    it('onPhotoSelected rejects non-JPEG/PNG file', () => {
+      const file = new File(['data'], 'doc.pdf', { type: 'application/pdf' });
+      const input = document.createElement('input');
+      input.type = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      const event = new Event('change');
+      Object.defineProperty(event, 'target', { value: input });
+
+      component.onPhotoSelected(event);
+
+      expect(component.selectedPhotoFile).toBeNull();
+      expect(component.photoErrorMessage).toContain('JPEG and PNG');
+    });
+
+    it('onPhotoSelected replaces old file and revokes old preview URL', () => {
+      const file1 = new File(['a'], 'photo1.jpg', { type: 'image/jpeg' });
+      const file2 = new File(['b'], 'photo2.jpg', { type: 'image/jpeg' });
+
+      const input1 = document.createElement('input');
+      input1.type = 'file';
+      const dt1 = new DataTransfer();
+      dt1.items.add(file1);
+      input1.files = dt1.files;
+      const event1 = new Event('change');
+      Object.defineProperty(event1, 'target', { value: input1 });
+      component.onPhotoSelected(event1);
+
+      const firstUrl = component.photoPreviewUrl;
+      expect(firstUrl).toBeTruthy();
+
+      const input2 = document.createElement('input');
+      input2.type = 'file';
+      const dt2 = new DataTransfer();
+      dt2.items.add(file2);
+      input2.files = dt2.files;
+      const event2 = new Event('change');
+      Object.defineProperty(event2, 'target', { value: input2 });
+      component.onPhotoSelected(event2);
+
+      expect(component.selectedPhotoFile).toBe(file2);
+      expect(component.photoPreviewUrl).toBeTruthy();
+      expect(component.photoPreviewUrl).not.toBe(firstUrl);
+    });
+
+    it('removePhoto clears stored file and preview URL in registration mode', () => {
+      const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+      component.selectedPhotoFile = file;
+      component.photoPreviewUrl = 'blob:test';
+      component.isNewRegistration = true;
+
+      component.removePhoto();
+
+      expect(component.selectedPhotoFile).toBeNull();
+      expect(component.photoPreviewUrl).toBeNull();
+    });
+
+    it('removePhoto calls API in edit mode with existing photo', () => {
+      component.isNewRegistration = false;
+      component.childId = 'child-1';
+      component.child = { id: 'child-1', photoUrl: 'https://example.com/photo.jpg' } as any;
+
+      const staffApi = TestBed.inject(StaffApiService);
+      const removeSpy = spyOn(staffApi, 'removePhoto').and.returnValue(of({ photo_url: null }));
+
+      component.removePhoto();
+
+      expect(removeSpy).toHaveBeenCalledWith('child-1');
+      expect(component.child!.photoUrl).toBeNull();
+    });
+
+    it('createChildFromSessionPatternStep uploads staged photo after child creation', () => {
+      fillRequiredForCompletion();
+      component.currentStep = 'session-pattern';
+      component.isNewRegistration = true;
+      component.patternEffectiveFrom = '2026-09-01';
+      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
+
+      const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+      component.selectedPhotoFile = file;
+
+      const staffApi = TestBed.inject(StaffApiService);
+      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+      );
+      const uploadSpy = spyOn(staffApi, 'uploadPhoto').and.returnValue(of({ photo_url: 'https://example.com/photo.jpg' }));
+      const router = TestBed.inject(Router);
+      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
+
+      component.createChildFromSessionPatternStep();
+
+      expect(uploadSpy).toHaveBeenCalledWith('new-child-1', file);
+      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
+      expect(component.selectedPhotoFile).toBeNull();
+    });
+
+    it('createChildFromSessionPatternStep navigates even when photo upload fails', () => {
+      fillRequiredForCompletion();
+      component.currentStep = 'session-pattern';
+      component.isNewRegistration = true;
+      component.patternEffectiveFrom = '2026-09-01';
+      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
+
+      component.selectedPhotoFile = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+
+      const staffApi = TestBed.inject(StaffApiService);
+      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+      );
+      spyOn(staffApi, 'uploadPhoto').and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
+      const router = TestBed.inject(Router);
+      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
+
+      component.createChildFromSessionPatternStep();
+
+      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
+      expect(component.photoErrorMessage).toContain('Photo upload failed');
+    });
+
+    it('createChildFromSessionPatternStep skips upload when no photo selected', () => {
+      fillRequiredForCompletion();
+      component.currentStep = 'session-pattern';
+      component.isNewRegistration = true;
+      component.patternEffectiveFrom = '2026-09-01';
+      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
+      component.selectedPhotoFile = null;
+
+      const staffApi = TestBed.inject(StaffApiService);
+      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+      );
+      const uploadSpy = spyOn(staffApi, 'uploadPhoto');
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate').and.callThrough();
+
+      component.createChildFromSessionPatternStep();
+
+      expect(uploadSpy).not.toHaveBeenCalled();
+    });
+  });
 });
+

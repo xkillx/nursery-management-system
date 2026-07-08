@@ -622,6 +622,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
   fieldErrors: Record<string, string> = {};
   successMessage: string | null = null;
+
+  selectedPhotoFile: File | null = null;
+  photoPreviewUrl: string | null = null;
+  isUploadingPhoto = false;
+  photoErrorMessage: string | null = null;
   step1Submitted = false;
   step1Touched: Partial<Record<Step1Field, boolean>> = {};
   step2Submitted = false;
@@ -936,6 +941,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (this.dismissTimeout) {
       clearTimeout(this.dismissTimeout);
       this.dismissTimeout = null;
+    }
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
     }
     this.destroy$.next();
     this.destroy$.complete();
@@ -1791,9 +1799,31 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.draftSavedAt = null;
         this.draftRestoredAt = null;
         this.isDraftRestoredBannerVisible = false;
-        this.isSaving = false;
-        this.toast.success('Child created.');
-        this.router.navigate(['/manager/children', result.id]);
+
+        if (this.selectedPhotoFile) {
+          this.isUploadingPhoto = true;
+          this.staffApi.uploadPhoto(result.id, this.selectedPhotoFile).subscribe({
+            next: (photoResult) => {
+              this.isUploadingPhoto = false;
+              this.clearPhotoState();
+              this.isSaving = false;
+              this.toast.success('Child created.');
+              this.router.navigate(['/manager/children', result.id]);
+            },
+            error: (err) => {
+              this.isUploadingPhoto = false;
+              this.photoErrorMessage = err?.message ?? 'Photo upload failed. You can add it from the detail page.';
+              this.clearPhotoState();
+              this.isSaving = false;
+              this.toast.success('Child created.');
+              this.router.navigate(['/manager/children', result.id]);
+            },
+          });
+        } else {
+          this.isSaving = false;
+          this.toast.success('Child created.');
+          this.router.navigate(['/manager/children', result.id]);
+        }
       },
       error: (error) => {
         this.isSaving = false;
@@ -2013,6 +2043,101 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   navigateToChildDetail(): void {
     if (this.childId) {
       this.router.navigate(['/manager/children', this.childId]);
+    }
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.photoErrorMessage = 'File exceeds maximum size of 5 MB.';
+      input.value = '';
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      this.photoErrorMessage = 'Invalid file type. Only JPEG and PNG are accepted.';
+      input.value = '';
+      return;
+    }
+
+    this.photoErrorMessage = null;
+
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+    }
+
+    this.selectedPhotoFile = file;
+    this.photoPreviewUrl = URL.createObjectURL(file);
+
+    if (!this.isNewRegistration && this.childId) {
+      this.uploadPhotoImmediately();
+    }
+
+    input.value = '';
+  }
+
+  removePhoto(): void {
+    if (!this.isNewRegistration && this.childId && this.child?.photoUrl) {
+      this.isUploadingPhoto = true;
+      this.photoErrorMessage = null;
+      this.staffApi.removePhoto(this.childId).subscribe({
+        next: () => {
+          if (this.child) {
+            this.child = { ...this.child, photoUrl: null };
+          }
+          this.clearPhotoState();
+          this.isUploadingPhoto = false;
+        },
+        error: (err) => {
+          this.photoErrorMessage = err?.message ?? 'Failed to remove photo.';
+          this.isUploadingPhoto = false;
+        },
+      });
+    } else {
+      this.clearPhotoState();
+    }
+  }
+
+  onPhotoError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const parent = img.parentElement;
+    if (parent) {
+      const fallback = parent.querySelector('.photo-fallback') as HTMLElement;
+      if (fallback) fallback.style.display = 'flex';
+    }
+  }
+
+  private uploadPhotoImmediately(): void {
+    if (!this.selectedPhotoFile || !this.childId) return;
+
+    this.isUploadingPhoto = true;
+    this.photoErrorMessage = null;
+
+    this.staffApi.uploadPhoto(this.childId, this.selectedPhotoFile).subscribe({
+      next: (result) => {
+        if (this.child) {
+          this.child = { ...this.child, photoUrl: result.photo_url };
+        }
+        this.clearPhotoState();
+        this.isUploadingPhoto = false;
+      },
+      error: (err) => {
+        this.photoErrorMessage = err?.message ?? 'Failed to upload photo.';
+        this.isUploadingPhoto = false;
+      },
+    });
+  }
+
+  private clearPhotoState(): void {
+    this.selectedPhotoFile = null;
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+      this.photoPreviewUrl = null;
     }
   }
 
