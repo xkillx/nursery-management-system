@@ -139,7 +139,7 @@ func (a *siteRateUpdateAdapter) GetCoreHourlyRate(ctx context.Context, tenantID,
 	return *site.CoreHourlyRateMinor, true, nil
 }
 
-func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error {
+func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx billingdomain.Tx, tenantID, branchID uuid.UUID, rateMinor int) error {
 	prev, _, err := a.repo.UpdateSiteCoreHourlyRate(ctx, tx, tenantID, branchID, rateMinor)
 	if err != nil {
 		return err

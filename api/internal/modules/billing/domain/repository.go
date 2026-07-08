@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type Tx = any
@@ -26,7 +25,7 @@ func (e *ValidationError) Error() string { return e.Message }
 // in bootstrap by wrapping the owner module's repository.
 type SiteRateRepository interface {
 	GetCoreHourlyRate(ctx context.Context, tenantID, branchID uuid.UUID) (int, bool, error)
-	UpdateCoreHourlyRate(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, rateMinor int) error
+	UpdateCoreHourlyRate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, rateMinor int) error
 }
 
 type BillingRepository interface {
