@@ -301,6 +301,41 @@ func TestIsEligibleForAttendance(t *testing.T) {
 	}
 }
 
+func TestNewReasonCode(t *testing.T) {
+	t.Run("valid code", func(t *testing.T) {
+		code, err := NewReasonCode("left_nursery")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if code != ReasonLeftNursery {
+			t.Errorf("got %q, want %q", code, ReasonLeftNursery)
+		}
+	})
+
+	t.Run("all valid codes", func(t *testing.T) {
+		for valid := range ValidReasonCodes {
+			_, err := NewReasonCode(string(valid))
+			if err != nil {
+				t.Errorf("NewReasonCode(%q) unexpected error: %v", valid, err)
+			}
+		}
+	})
+
+	t.Run("empty string returns error", func(t *testing.T) {
+		_, err := NewReasonCode("")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+	})
+
+	t.Run("invalid code returns error", func(t *testing.T) {
+		_, err := NewReasonCode("invalid_code")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+	})
+}
+
 func intPtr(i int) *int { return &i }
 
 func timePtr(t time.Time) *time.Time { return &t }

@@ -49,6 +49,19 @@ var ValidReasonCodes = map[ReasonCode]struct{}{
 	ReasonOther:           {},
 }
 
+// NewReasonCode creates a validated ReasonCode.
+// Returns an error if the raw string is empty or not a valid reason code.
+func NewReasonCode(raw string) (ReasonCode, error) {
+	if raw == "" {
+		return "", fmt.Errorf("reason code must not be empty")
+	}
+	code := ReasonCode(raw)
+	if _, ok := ValidReasonCodes[code]; !ok {
+		return "", fmt.Errorf("invalid reason code: %s", raw)
+	}
+	return code, nil
+}
+
 func (c Child) MissingRequirements() []string {
 	missing := make([]string, 0)
 	if c.FirstName == "" {
