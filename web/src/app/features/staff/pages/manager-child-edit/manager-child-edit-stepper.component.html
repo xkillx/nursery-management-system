@@ -2724,21 +2724,16 @@
                         [error]="step6Errors.funding_type"
                         errorId="funding-type-error"
                       >
-                        <select
+                        <app-select
                           id="funding_type"
                           name="funding_type"
                           [ngModel]="step6.funding_type"
                           (ngModelChange)="onFundingTypeChange($event)"
-                          class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-850 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:focus:border-brand-400"
-                          [attr.aria-invalid]="!!step6Errors.funding_type"
-                          aria-describedby="funding-type-error"
-                        >
-                          <option value="none">No funding</option>
-                          <option value="fifteen_hours">15 Hours</option>
-                          <option value="thirty_hours">30 Hours</option>
-                          <option value="two_year_old">Two-Year-Old Funding</option>
-                          <option value="custom">Custom</option>
-                        </select>
+                          [error]="!!step6Errors.funding_type"
+                          [describedBy]="!!step6Errors.funding_type ? 'funding-type-error' : undefined"
+                          [options]="fundingTypeOptions"
+                          placeholder="Select funding type..."
+                        />
                       </app-form-field>
 
                       <div></div>
