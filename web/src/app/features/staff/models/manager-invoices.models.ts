@@ -35,6 +35,7 @@ export interface ManagerInvoiceListItem {
   generatedRunStartedAt: string | null;
   generatedRunCompletedAt: string | null;
   generatedRunExceptionCount: number | null;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +136,7 @@ export interface ManagerInvoiceDetail {
   site_profile: ManagerInvoiceSiteProfile | null;
   roomName: string | null;
   parentContact: ManagerInvoiceParentContact | null;
+  photoUrl: string | null;
   calculation: ManagerInvoiceCalculation | null;
   lines: ManagerInvoiceLine[];
   createdAt: string;

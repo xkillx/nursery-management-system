@@ -52,6 +52,7 @@ interface InvoiceListItemApi extends ChildNameApi {
   generated_run_started_at?: string | null;
   generated_run_completed_at?: string | null;
   generated_run_exception_count?: number | null;
+  child_photo_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -142,6 +143,7 @@ interface InvoiceDetailApi extends ChildNameApi {
   parent_contact?: ParentContactApi | null;
   calculation?: InvoiceCalculationApi | null;
   lines?: InvoiceLineApi[] | null;
+  child_photo_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -304,6 +306,7 @@ export class ManagerInvoicesApiService {
       generatedRunStartedAt: i.generated_run_started_at ?? null,
       generatedRunCompletedAt: i.generated_run_completed_at ?? null,
       generatedRunExceptionCount: i.generated_run_exception_count ?? null,
+      photoUrl: i.child_photo_url ?? null,
       createdAt: i.created_at,
       updatedAt: i.updated_at,
     };
@@ -344,6 +347,7 @@ export class ManagerInvoicesApiService {
       site_profile: d.site_profile ?? null,
       roomName: d.room_name ?? null,
       parentContact: d.parent_contact ? this.toParentContact(d.parent_contact) : null,
+      photoUrl: d.child_photo_url ?? null,
       calculation: d.calculation ? this.toCalculation(d.calculation) : null,
       lines: (d.lines ?? [])
         .sort((a, b) => a.sort_order - b.sort_order)

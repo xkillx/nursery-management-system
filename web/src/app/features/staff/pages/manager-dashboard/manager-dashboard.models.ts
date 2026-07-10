@@ -15,6 +15,7 @@ export interface IncompleteAttendanceItem {
   childId?: string;
   localDate?: string;
   sessionId?: string;
+  photoUrl: string | null;
 }
 
 export interface InvoiceRunStatus {
@@ -37,6 +38,7 @@ export interface PaymentFollowUpInvoice {
   status: PaymentFollowUpStatus;
   dueDateLabel: string;
   outstandingMinor: number;
+  photoUrl: string | null;
 }
 
 export interface QuickAction {
@@ -87,6 +89,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       issue: 'Missing check-out',
       actionHint: 'Needs manager correction',
       isToday: true,
+      photoUrl: null,
     },
     {
       id: 'inc-2',
@@ -95,6 +98,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       issue: 'Missing check-out',
       actionHint: 'Needs manager correction',
       isToday: true,
+      photoUrl: null,
     },
     {
       id: 'inc-3',
@@ -103,6 +107,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       issue: 'Missing check-out',
       actionHint: 'Needs manager correction',
       isToday: false,
+      photoUrl: null,
     },
     {
       id: 'inc-4',
@@ -111,6 +116,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       issue: 'No check-in or check-out recorded',
       actionHint: 'Needs manager correction',
       isToday: false,
+      photoUrl: null,
     },
   ],
 
@@ -133,6 +139,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       status: 'overdue',
       dueDateLabel: '28 May 2026',
       outstandingMinor: 45000,
+      photoUrl: null,
     },
     {
       id: 'pay-2',
@@ -142,6 +149,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       status: 'overdue',
       dueDateLabel: '1 Jun 2026',
       outstandingMinor: 45000,
+      photoUrl: null,
     },
     {
       id: 'pay-3',
@@ -151,6 +159,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       status: 'payment_failed',
       dueDateLabel: '4 Jun 2026',
       outstandingMinor: 22500,
+      photoUrl: null,
     },
     {
       id: 'pay-4',
@@ -160,6 +169,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       status: 'payment_failed',
       dueDateLabel: '4 Jun 2026',
       outstandingMinor: 45000,
+      photoUrl: null,
     },
     {
       id: 'pay-5',
@@ -169,6 +179,7 @@ export const MANAGER_DASHBOARD_MOCK: ManagerDashboardSnapshot = {
       status: 'issued',
       dueDateLabel: '12 Jun 2026',
       outstandingMinor: 45000,
+      photoUrl: null,
     },
   ],
 

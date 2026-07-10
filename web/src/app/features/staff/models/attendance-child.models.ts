@@ -23,6 +23,7 @@ export interface AttendanceChildRecord {
   hasIncompleteSession: boolean;
   absenceMarkerId: string | null;
   absenceMarkedAt: string | null;
+  photoUrl: string | null;
 }
 
 export interface AttendanceSessionRecord {

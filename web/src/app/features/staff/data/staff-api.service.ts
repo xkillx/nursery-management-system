@@ -74,6 +74,7 @@ interface AttendanceChildApiModel {
   has_incomplete_session: boolean;
   absence_marker_id?: string;
   absence_marked_at?: string;
+  photo_url?: string | null;
 }
 
 interface AttendanceSessionApiModel {
@@ -158,6 +159,7 @@ interface FundingOverviewItemApiModel {
   funding_profile_id?: string | null;
   funded_allowance_minutes?: number | null;
   funding_updated_at?: string | null;
+  child_photo_url?: string | null;
   flags: string[];
 }
 
@@ -453,6 +455,7 @@ export class StaffApiService {
             hasIncompleteSession: child.has_incomplete_session,
             absenceMarkerId: child.absence_marker_id ?? null,
             absenceMarkedAt: child.absence_marked_at ?? null,
+            photoUrl: child.photo_url ?? null,
           })),
         ),
       );
@@ -710,6 +713,7 @@ export class StaffApiService {
       fundingProfileId: item.funding_profile_id ?? null,
       fundedAllowanceMinutes: item.funded_allowance_minutes ?? null,
       fundingUpdatedAt: item.funding_updated_at ?? null,
+      photoUrl: item.child_photo_url ?? null,
       flags: item.flags as FundingOverviewFlag[],
     };
   }

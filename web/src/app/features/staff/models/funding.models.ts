@@ -22,6 +22,7 @@ export interface FundingOverviewItem {
   fundingProfileId: string | null;
   fundedAllowanceMinutes: number | null;
   fundingUpdatedAt: string | null;
+  photoUrl: string | null;
   flags: FundingOverviewFlag[];
 }
 
