@@ -384,6 +384,7 @@ func mapChildRow(row interface{}) domain.Child {
 		HasCurrentRoom          bool
 		HasParentCarerContact   bool
 		HasBookingPattern       bool
+		ProfilePhotoPath        pgtype.Text
 		CreatedAt               pgtype.Timestamptz
 		UpdatedAt               pgtype.Timestamptz
 	}
@@ -397,6 +398,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDRow:
@@ -407,6 +409,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenGetByIDForUpdateRow:
@@ -417,6 +420,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenListSortByNameAscRow:
@@ -427,6 +431,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenListSortByNameDescRow:
@@ -437,6 +442,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenListSortByCreatedAtAscRow:
@@ -447,6 +453,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	case sqlc.ChildrenListSortByCreatedAtDescRow:
@@ -457,6 +464,7 @@ func mapChildRow(row interface{}) domain.Child {
 			IsActive: v.IsActive, PrimaryRoomID: v.PrimaryRoomID, HasCurrentRoom: v.HasCurrentRoom,
 			HasParentCarerContact: v.HasParentCarerContact,
 			HasBookingPattern:     v.HasBookingPattern,
+			ProfilePhotoPath:      v.ProfilePhotoPath,
 			CreatedAt:             v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		}
 	default:
@@ -477,6 +485,7 @@ func mapChildRow(row interface{}) domain.Child {
 		HasCurrentRoom:          f.HasCurrentRoom,
 		HasParentCarerContact:   f.HasParentCarerContact,
 		HasBookingPattern:       f.HasBookingPattern,
+		ProfilePhotoPath:        pgtypeTextToStringPtr(f.ProfilePhotoPath),
 		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
 	}
