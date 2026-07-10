@@ -5,9 +5,11 @@
 Thumbs.db
 
 # =====================
-# Logs
+# Logs / Temp
 # =====================
 logs/
+tmp/
+api/uploads/
 
 # =====================
 # IDE / Editor
