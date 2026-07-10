@@ -733,7 +733,8 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     r.name AS room_name,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -783,6 +784,7 @@ type InvoiceGetForManagerReviewRow struct {
 	RoomName                pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGetForManagerReviewParams) (InvoiceGetForManagerReviewRow, error) {
@@ -823,6 +825,7 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 		&i.RoomName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChildProfilePhotoPath,
 	)
 	return i, err
 }
@@ -1154,7 +1157,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1214,6 +1218,7 @@ type InvoiceListForManagerReviewRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceListForManagerReviewParams) ([]InvoiceListForManagerReviewRow, error) {
@@ -1269,6 +1274,7 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -1301,7 +1307,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1361,6 +1368,7 @@ type InvoiceListForManagerReviewSortByBillingMonthAscRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReviewSortByBillingMonthAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByBillingMonthAscParams) ([]InvoiceListForManagerReviewSortByBillingMonthAscRow, error) {
@@ -1416,6 +1424,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByBillingMonthAsc(ctx context.C
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -1448,7 +1457,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1508,6 +1518,7 @@ type InvoiceListForManagerReviewSortByDueAtAscRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReviewSortByDueAtAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByDueAtAscParams) ([]InvoiceListForManagerReviewSortByDueAtAscRow, error) {
@@ -1563,6 +1574,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByDueAtAsc(ctx context.Context,
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -1595,7 +1607,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1655,6 +1668,7 @@ type InvoiceListForManagerReviewSortByDueAtDescRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReviewSortByDueAtDesc(ctx context.Context, arg InvoiceListForManagerReviewSortByDueAtDescParams) ([]InvoiceListForManagerReviewSortByDueAtDescRow, error) {
@@ -1710,6 +1724,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByDueAtDesc(ctx context.Context
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -1742,7 +1757,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1802,6 +1818,7 @@ type InvoiceListForManagerReviewSortByTotalAmountAscRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountAsc(ctx context.Context, arg InvoiceListForManagerReviewSortByTotalAmountAscParams) ([]InvoiceListForManagerReviewSortByTotalAmountAscRow, error) {
@@ -1857,6 +1874,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountAsc(ctx context.Co
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -1889,7 +1907,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -1949,6 +1968,7 @@ type InvoiceListForManagerReviewSortByTotalAmountDescRow struct {
 	CalculationDetails      []byte
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
+	ChildProfilePhotoPath   pgtype.Text
 }
 
 func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountDesc(ctx context.Context, arg InvoiceListForManagerReviewSortByTotalAmountDescParams) ([]InvoiceListForManagerReviewSortByTotalAmountDescRow, error) {
@@ -2004,6 +2024,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountDesc(ctx context.C
 			&i.CalculationDetails,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChildProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}

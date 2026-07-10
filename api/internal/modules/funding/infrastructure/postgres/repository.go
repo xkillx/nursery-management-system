@@ -236,6 +236,7 @@ func mapOverviewRowFromPaginatedRow(row sqlc.FundingOverviewListPaginatedRow) do
 		FundingProfileID:       profileID,
 		FundedAllowanceMinutes: allowance,
 		FundingUpdatedAt:       updatedAt,
+		ChildPhotoPath:         pgtypeTextToStringPtr(row.ProfilePhotoPath),
 	}
 }
 
@@ -269,5 +270,6 @@ func mapOverviewRow(row sqlc.FundingOverviewListRow) domain.OverviewRow {
 		FundingProfileID:       profileID,
 		FundedAllowanceMinutes: allowance,
 		FundingUpdatedAt:       updatedAt,
+		ChildPhotoPath:         pgtypeTextToStringPtr(row.ProfilePhotoPath),
 	}
 }

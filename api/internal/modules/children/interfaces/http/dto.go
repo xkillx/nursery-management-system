@@ -41,6 +41,7 @@ type attendanceChildResponse struct {
 	HasIncompleteSession bool    `json:"has_incomplete_session"`
 	AbsenceMarkerID      *string `json:"absence_marker_id,omitempty"`
 	AbsenceMarkedAt      *string `json:"absence_marked_at,omitempty"`
+	PhotoURL             *string `json:"photo_url,omitempty"`
 }
 
 type childWriteRequest struct {
@@ -111,6 +112,10 @@ func toAttendanceResponse(child domain.AttendanceChild) attendanceChildResponse 
 	if child.AbsenceMarkedAt != nil {
 		at := child.AbsenceMarkedAt.UTC().Format(time.RFC3339)
 		resp.AbsenceMarkedAt = &at
+	}
+	if child.ProfilePhotoPath != nil {
+		url := "/api/v1/children/" + child.ID.String() + "/photo"
+		resp.PhotoURL = &url
 	}
 	return resp
 }

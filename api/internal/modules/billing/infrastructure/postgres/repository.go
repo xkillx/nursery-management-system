@@ -609,6 +609,8 @@ func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.Invoice
 		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
 		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
 		CalculationDetails:      json.RawMessage(row.CalculationDetails),
+		RoomName:                nil,
+		ChildPhotoPath:          pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
@@ -647,21 +649,22 @@ func mapInvoiceReviewRowSort(row interface{}) domain.InvoiceReviewRow {
 		GeneratedRunCompletedAt pgtype.Timestamptz
 		GeneratedRunDetails     []byte
 		CalculationDetails      []byte
+		ChildProfilePhotoPath   pgtype.Text
 		CreatedAt               pgtype.Timestamptz
 		UpdatedAt               pgtype.Timestamptz
 	}
 	var f fields
 	switch v := row.(type) {
 	case sqlc.InvoiceListForManagerReviewSortByBillingMonthAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByDueAtAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByDueAtDescRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByTotalAmountAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByTotalAmountDescRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
 	default:
 		return domain.InvoiceReviewRow{}
 	}
@@ -697,6 +700,7 @@ func mapInvoiceReviewRowSort(row interface{}) domain.InvoiceReviewRow {
 		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(f.GeneratedRunCompletedAt),
 		GeneratedRunDetails:     json.RawMessage(f.GeneratedRunDetails),
 		CalculationDetails:      json.RawMessage(f.CalculationDetails),
+		ChildPhotoPath:          pgtypeTextToStrPtr(f.ChildProfilePhotoPath),
 		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
 	}
@@ -736,6 +740,7 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
 		CalculationDetails:      json.RawMessage(row.CalculationDetails),
 		RoomName:                pgtypeTextToStrPtr(row.RoomName),
+		ChildPhotoPath:          pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
 	}

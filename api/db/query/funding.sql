@@ -37,7 +37,8 @@ SELECT
   c.end_date,
   fp.id AS funding_profile_id,
   fp.funded_allowance_minutes,
-  fp.updated_at AS funding_updated_at
+  fp.updated_at AS funding_updated_at,
+  c.profile_photo_path
 FROM children c
 LEFT JOIN funding_profiles fp
   ON fp.tenant_id = c.tenant_id
@@ -61,7 +62,8 @@ SELECT
   c.end_date,
   fp.id AS funding_profile_id,
   fp.funded_allowance_minutes,
-  fp.updated_at AS funding_updated_at
+  fp.updated_at AS funding_updated_at,
+  c.profile_photo_path
 FROM children c
 LEFT JOIN funding_profiles fp
   ON fp.tenant_id = c.tenant_id

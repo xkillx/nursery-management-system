@@ -70,7 +70,8 @@ SELECT
   c.end_date,
   fp.id AS funding_profile_id,
   fp.funded_allowance_minutes,
-  fp.updated_at AS funding_updated_at
+  fp.updated_at AS funding_updated_at,
+  c.profile_photo_path
 FROM children c
 LEFT JOIN funding_profiles fp
   ON fp.tenant_id = c.tenant_id
@@ -101,6 +102,7 @@ type FundingOverviewListRow struct {
 	FundingProfileID       pgtype.UUID
 	FundedAllowanceMinutes pgtype.Int4
 	FundingUpdatedAt       pgtype.Timestamptz
+	ProfilePhotoPath       pgtype.Text
 }
 
 func (q *Queries) FundingOverviewList(ctx context.Context, arg FundingOverviewListParams) ([]FundingOverviewListRow, error) {
@@ -123,6 +125,7 @@ func (q *Queries) FundingOverviewList(ctx context.Context, arg FundingOverviewLi
 			&i.FundingProfileID,
 			&i.FundedAllowanceMinutes,
 			&i.FundingUpdatedAt,
+			&i.ProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
@@ -145,7 +148,8 @@ SELECT
   c.end_date,
   fp.id AS funding_profile_id,
   fp.funded_allowance_minutes,
-  fp.updated_at AS funding_updated_at
+  fp.updated_at AS funding_updated_at,
+  c.profile_photo_path
 FROM children c
 LEFT JOIN funding_profiles fp
   ON fp.tenant_id = c.tenant_id
@@ -179,6 +183,7 @@ type FundingOverviewListPaginatedRow struct {
 	FundingProfileID       pgtype.UUID
 	FundedAllowanceMinutes pgtype.Int4
 	FundingUpdatedAt       pgtype.Timestamptz
+	ProfilePhotoPath       pgtype.Text
 }
 
 func (q *Queries) FundingOverviewListPaginated(ctx context.Context, arg FundingOverviewListPaginatedParams) ([]FundingOverviewListPaginatedRow, error) {
@@ -207,6 +212,7 @@ func (q *Queries) FundingOverviewListPaginated(ctx context.Context, arg FundingO
 			&i.FundingProfileID,
 			&i.FundedAllowanceMinutes,
 			&i.FundingUpdatedAt,
+			&i.ProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}

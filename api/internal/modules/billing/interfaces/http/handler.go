@@ -979,6 +979,13 @@ func toInvoiceListResponse(r application.ListInvoicesResult) []invoiceListItemRe
 	items := make([]invoiceListItemResponse, 0, len(r.Items))
 	for _, inv := range r.Items {
 		exceptionCount := countRunExceptions(inv.GeneratedRunDetails)
+
+		var photoURL *string
+		if inv.ChildPhotoPath != nil {
+			url := "/api/v1/children/" + inv.ChildID.String() + "/photo"
+			photoURL = &url
+		}
+
 		items = append(items, invoiceListItemResponse{
 			InvoiceID:                  inv.ID.String(),
 			InvoiceKind:                inv.InvoiceKind,
@@ -988,6 +995,7 @@ func toInvoiceListResponse(r application.ListInvoicesResult) []invoiceListItemRe
 			ChildFirstName:             inv.ChildFirstName,
 			ChildMiddleName:            inv.ChildMiddleName,
 			ChildLastName:              inv.ChildLastName,
+			PhotoURL:                   photoURL,
 			BillingMonth:               formatBillingMonth(inv.BillingMonth),
 			Status:                     inv.Status,
 			DueStatus:                  dueStatus(inv.Status),

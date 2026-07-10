@@ -128,6 +128,7 @@ type invoiceListItemResponse struct {
 	ChildFirstName       string  `json:"child_first_name"`
 	ChildMiddleName      *string `json:"child_middle_name"`
 	ChildLastName        *string `json:"child_last_name"`
+	PhotoURL             *string `json:"photo_url,omitempty"`
 	BillingMonth         string  `json:"billing_month"`
 	Period               struct {
 		StartDate string `json:"start_date"`

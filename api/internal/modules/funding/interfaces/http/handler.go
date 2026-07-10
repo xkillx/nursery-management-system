@@ -214,6 +214,10 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 	if row.FundingUpdatedAt != nil {
 		resp.FundingUpdatedAt = row.FundingUpdatedAt
 	}
+	if row.ChildPhotoPath != nil {
+		url := "/api/v1/children/" + row.ChildID.String() + "/photo"
+		resp.ChildPhotoURL = &url
+	}
 	return resp
 }
 

@@ -290,7 +290,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -334,7 +335,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -368,7 +370,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -402,7 +405,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -436,7 +440,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -470,7 +475,8 @@ SELECT
     gr.completed_at AS generated_run_completed_at,
     gr.details AS generated_run_details,
     i.calculation_details,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
@@ -505,7 +511,8 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     r.name AS room_name,
-    i.created_at, i.updated_at
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id

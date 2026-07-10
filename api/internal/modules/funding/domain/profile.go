@@ -43,6 +43,7 @@ type OverviewRow struct {
 	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes *int
 	FundingUpdatedAt       *time.Time
+	ChildPhotoPath         *string
 }
 
 type OverviewSummary struct {

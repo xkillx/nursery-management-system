@@ -42,5 +42,6 @@ type overviewItemResponse struct {
 	FundingProfileID       string     `json:"funding_profile_id,omitempty"`
 	FundedAllowanceMinutes *int       `json:"funded_allowance_minutes"`
 	FundingUpdatedAt       *time.Time `json:"funding_updated_at"`
+	ChildPhotoURL          *string    `json:"photo_url,omitempty"`
 	Flags                  []string   `json:"flags"`
 }

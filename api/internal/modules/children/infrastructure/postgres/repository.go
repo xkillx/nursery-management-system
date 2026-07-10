@@ -326,6 +326,7 @@ func (r *ChildRepository) ListAttendance(ctx context.Context, tenantID, branchID
 			HasIncompleteSession: hasIncomplete,
 			AbsenceMarkerID:      pgtypeUUIDToUUIDPtr(row.AbsenceMarkerID),
 			AbsenceMarkedAt:      pgtypeTimestamptzToTimePtr(row.AbsenceMarkedAt),
+			ProfilePhotoPath:     pgtypeTextToStringPtr(row.ProfilePhotoPath),
 		})
 	}
 	return out, nil

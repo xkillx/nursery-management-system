@@ -157,4 +157,5 @@ type AttendanceChild struct {
 	HasIncompleteSession bool
 	AbsenceMarkerID      *uuid.UUID
 	AbsenceMarkedAt      *time.Time
+	ProfilePhotoPath     *string
 }

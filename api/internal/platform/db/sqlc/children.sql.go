@@ -503,7 +503,8 @@ SELECT c.id,
        s.check_in_at AS checked_in_at,
        s.id IS NOT NULL AS has_incomplete_session,
        am.id AS absence_marker_id,
-       am.marked_at AS absence_marked_at
+       am.marked_at AS absence_marked_at,
+       c.profile_photo_path
 FROM children c
 LEFT JOIN attendance_sessions s
   ON s.tenant_id = c.tenant_id
@@ -543,6 +544,7 @@ type ChildrenListAttendanceRow struct {
 	HasIncompleteSession interface{}
 	AbsenceMarkerID      pgtype.UUID
 	AbsenceMarkedAt      pgtype.Timestamptz
+	ProfilePhotoPath     pgtype.Text
 }
 
 func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAttendanceParams) ([]ChildrenListAttendanceRow, error) {
@@ -566,6 +568,7 @@ func (q *Queries) ChildrenListAttendance(ctx context.Context, arg ChildrenListAt
 			&i.HasIncompleteSession,
 			&i.AbsenceMarkerID,
 			&i.AbsenceMarkedAt,
+			&i.ProfilePhotoPath,
 		); err != nil {
 			return nil, err
 		}
