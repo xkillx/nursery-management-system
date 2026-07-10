@@ -77,7 +77,7 @@
   </div>
 
 
-<app-modal [isOpen]="isOpen" (close)="closeModal()" className="relative w-full m-5 sm:m-0 max-w-[558px] rounded-3xl bg-white p-6 lg:p-10 dark:bg-gray-900">
+<app-modal [isOpen]="isOpen" (closed)="closeModal()" className="relative w-full m-5 sm:m-0 max-w-[558px] rounded-3xl bg-white p-6 lg:p-10 dark:bg-gray-900">
   <div>
     <div class="px-1">
       <h4 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">
@@ -92,30 +92,30 @@
       <form action="#">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               First Name
-            </label>
+            </span>
             <input type="text" value="Mushafrof"
               class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Last Name
-            </label>
+            </span>
             <input type="text" value="Chowdhury"
               class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
           </div>
           <div class="sm:col-span-full">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Street
-            </label>
+            </span>
             <input type="text" value="800 E Elcamino Real, suite #400"
               class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
           </div>
           <div class="sm:col-span-1">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Country
-            </label>
+            </span>
             <div x-data="{ isOptionSelected: false }" class="relative z-20 bg-transparent">
               <select
                 class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30">
@@ -149,9 +149,9 @@
             </div>
           </div>
           <div class="sm:col-span-1">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Town/City
-            </label>
+            </span>
             <div x-data="{ isOptionSelected: false }" class="relative z-20 bg-transparent">
               <select
                 class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30">
@@ -185,16 +185,16 @@
             </div>
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Zip/Postal code
-            </label>
+            </span>
             <input type="text" value="19029"
               class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               VAT Number
-            </label>
+            </span>
             <input type="text" value="DE4920348"
               class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
           </div>

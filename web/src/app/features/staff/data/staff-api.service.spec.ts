@@ -3,7 +3,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord, AbsenceMarkerRecord } from '../models/attendance-child.models';
-import { ChildRecord } from '../models/children.models';
 import { FundingProfileRecord, FundingOverviewRecord } from '../models/funding.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';

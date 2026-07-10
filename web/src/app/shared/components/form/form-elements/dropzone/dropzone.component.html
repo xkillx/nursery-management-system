@@ -12,6 +12,8 @@
       (dragleave)="onDragLeave($event)"
       (drop)="onDrop($event)"
       (click)="fileInput.click()"
+      (keydown.enter)="fileInput.click()"
+      tabindex="0"
       style="position: relative;"
     >
       <!-- Hidden Input -->

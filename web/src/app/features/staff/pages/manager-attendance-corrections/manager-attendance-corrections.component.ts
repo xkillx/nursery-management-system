@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck } from '@ng-icons/heroicons/outline';
-import { Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -22,7 +22,6 @@ import {
   AttendanceCorrectionReasonCode,
   AttendanceSessionRecord,
   CorrectionHistory,
-  CorrectionHistoryEvent,
   CorrectionSessionContext,
   IssuedInvoiceWarning,
 } from '../../models/attendance-child.models';

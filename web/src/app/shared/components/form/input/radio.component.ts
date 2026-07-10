@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-radio',
@@ -55,10 +55,10 @@ export class RadioComponent {
   @Input() id!: string;
   @Input() name!: string;
   @Input() value!: string;
-  @Input() checked: boolean = false;
+  @Input() checked = false;
   @Input() label!: string;
-  @Input() className: string = '';
-  @Input() disabled: boolean = false;
+  @Input() className = '';
+  @Input() disabled = false;
 
   @Output() valueChange = new EventEmitter<string>();
 

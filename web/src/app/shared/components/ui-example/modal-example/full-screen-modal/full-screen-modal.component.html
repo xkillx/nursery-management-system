@@ -2,7 +2,7 @@
   <app-button size="sm" (btnClick)="openModal()"> Open Modal </app-button>
   <app-modal
     [isOpen]="isOpen"
-    (close)="closeModal()"
+    (closed)="closeModal()"
     [isFullscreen]="true"
     [showCloseButton]="true"
   >

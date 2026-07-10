@@ -25,7 +25,7 @@ describe('ResetPasswordComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { queryParamMap: { get: (key: string) => token } },
+            snapshot: { queryParamMap: { get: () => token } },
           },
         },
       ],

@@ -137,6 +137,10 @@
                   <div
                     class="flex cursor-pointer items-center gap-3"
                     (click)="sortBy('customer')"
+                    (keydown.enter)="sortBy('customer')"
+                    (keydown.space)="sortBy('customer')"
+                    tabindex="0"
+                    role="button"
                   >
                     <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                       Customer
@@ -183,6 +187,10 @@
                   <div
                     class="flex cursor-pointer items-center gap-3"
                     (click)="sortBy('email')"
+                    (keydown.enter)="sortBy('email')"
+                    (keydown.space)="sortBy('email')"
+                    tabindex="0"
+                    role="button"
                   >
                     <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                       Email
@@ -229,6 +237,10 @@
                   <div
                     class="flex cursor-pointer items-center gap-3"
                     (click)="sortBy('amount')"
+                    (keydown.enter)="sortBy('amount')"
+                    (keydown.space)="sortBy('amount')"
+                    tabindex="0"
+                    role="button"
                   >
                     <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                       Total Amount

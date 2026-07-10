@@ -5,28 +5,32 @@
   />
 
   <!-- Success Alert -->
-  <app-alert *ngIf="successMessage" variant="success" [message]="successMessage" />
+  @if (successMessage) {
+    <app-alert variant="success" [message]="successMessage" />
+  }
 
   <!-- Correction Error (form-level, no specific field) -->
-  <app-alert
-    *ngIf="correctionError && !correctionError.field"
-    [variant]="correctionError.kind === 'authorization' ? 'warning' : 'error'"
-    [title]="correctionError.title"
-    [message]="correctionError.message"
-  />
+  @if (correctionError && !correctionError.field) {
+    <app-alert
+      [variant]="correctionError.kind === 'authorization' ? 'warning' : 'error'"
+      [title]="correctionError.title"
+      [message]="correctionError.message"
+    />
+  }
 
   <!-- Invoice Warning -->
-  <app-alert
-    *ngIf="invoiceWarning"
-    variant="warning"
-    title="Invoice issued"
-    [message]="'Invoice ' + invoiceWarning.invoiceNumber + ' (' + invoiceWarning.status + ') exists for this period. Correction will not change the invoice.'"
-  />
+  @if (invoiceWarning) {
+    <app-alert
+      variant="warning"
+      title="Invoice issued"
+      [message]="'Invoice ' + invoiceWarning.invoiceNumber + ' (' + invoiceWarning.status + ') exists for this period. Correction will not change the invoice.'"
+    />
+  }
 
   <!-- Selector Row -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Child</label>
+      <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Child</span>
       <app-select
         [options]="childSelectOptions"
         [ngModel]="selectedChildId ?? ''"
@@ -36,7 +40,7 @@
       />
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Local date</label>
+      <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Local date</span>
       <app-date-picker
         [ngModel]="selectedLocalDate"
         (ngModelChange)="selectedLocalDate = $event; onDateChange()"
@@ -45,192 +49,244 @@
   </div>
 
   <!-- Loading Sessions -->
-  <app-loading-state *ngIf="loadingSessions" label="Loading sessions..." variant="block" />
+  @if (loadingSessions) {
+    <app-loading-state label="Loading sessions..." variant="block" />
+  }
 
   <!-- Session List -->
-  <div *ngIf="!loadingSessions && selectedChildId && selectedLocalDate" class="space-y-4">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-      Sessions for {{ selectedLocalDate }}
-    </h3>
+  @if (!loadingSessions && selectedChildId && selectedLocalDate) {
+    <div class="space-y-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Sessions for {{ selectedLocalDate }}
+      </h3>
 
-    <app-empty-state
-      *ngIf="sessions.length === 0"
-      title="No sessions found"
-      message="No sessions recorded for this child on this date. Use missed-session mode below to create one."
-      [compact]="true"
-    />
+      @if (sessions.length === 0) {
+        <app-empty-state
+          title="No sessions found"
+          message="No sessions recorded for this child on this date. Use missed-session mode below to create one."
+          [compact]="true"
+        />
+      }
 
-    <div *ngIf="sessions.length > 0" class="space-y-2">
-      <div
-        *ngFor="let session of sessions"
-        class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors"
-        [class.border-blue-500]="selectedSessionId === session.id"
-        [class.bg-blue-50]="selectedSessionId === session.id"
-        [class.dark:bg-blue-900/20]="selectedSessionId === session.id"
-        [class.border-gray-200]="selectedSessionId !== session.id"
-        [class.dark:border-gray-700]="selectedSessionId !== session.id"
-        (click)="onSessionSelect(session.id)"
-      >
-        <div class="flex items-center gap-3">
-          <app-status-badge
-            [status]="session.status"
-            [label]="session.status"
-            size="sm"
-          />
-          <span class="text-sm">
-            {{ formatTime(session.checkInAt) }}
-            <span *ngIf="session.checkOutAt"> &mdash; {{ formatTime(session.checkOutAt) }}</span>
-            <span *ngIf="!session.checkOutAt" class="text-gray-400"> &mdash; open</span>
-          </span>
+      @if (sessions.length > 0) {
+        <div class="space-y-2">
+          @for (session of sessions; track session.id) {
+            <div
+              class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors"
+              [class.border-blue-500]="selectedSessionId === session.id"
+              [class.bg-blue-50]="selectedSessionId === session.id"
+              [class.dark:bg-blue-900/20]="selectedSessionId === session.id"
+              [class.border-gray-200]="selectedSessionId !== session.id"
+              [class.dark:border-gray-700]="selectedSessionId !== session.id"
+              (click)="onSessionSelect(session.id)"
+              (keydown.enter)="onSessionSelect(session.id)"
+              (keydown.space)="onSessionSelect(session.id)"
+              tabindex="0"
+              role="button"
+            >
+              <div class="flex items-center gap-3">
+                <app-status-badge
+                  [status]="session.status"
+                  [label]="session.status"
+                  size="sm"
+                />
+                <span class="text-sm">
+                  {{ formatTime(session.checkInAt) }}
+                  @if (session.checkOutAt) {
+                    <span> &mdash; {{ formatTime(session.checkOutAt) }}</span>
+                  }
+                  @if (!session.checkOutAt) {
+                    <span class="text-gray-400"> &mdash; open</span>
+                  }
+                </span>
+              </div>
+              @if (session.durationMinutes) {
+                <span class="text-xs text-gray-500">
+                  {{ session.durationMinutes }} min
+                </span>
+              }
+            </div>
+          }
         </div>
-        <span *ngIf="session.durationMinutes" class="text-xs text-gray-500">
-          {{ session.durationMinutes }} min
-        </span>
-      </div>
-    </div>
+      }
 
-    <!-- Missed Session Mode Toggle -->
-    <button
-      *ngIf="selectedSessionId !== null"
-      class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
-      (click)="onSessionSelect(null)"
-    >
-      Switch to missed-session mode
-    </button>
-  </div>
+      <!-- Missed Session Mode Toggle -->
+      @if (selectedSessionId !== null) {
+        <button
+          class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
+          (click)="onSessionSelect(null)"
+        >
+          Switch to missed-session mode
+        </button>
+      }
+    </div>
+  }
 
   <!-- Incomplete Session Warning -->
-  <app-alert
-    *ngIf="isSessionIncomplete"
-    variant="info"
-    title="Incomplete session"
-    message="This session has no check-out time. Enter the complete corrected check-in and check-out times and a reason below."
-  />
+  @if (isSessionIncomplete) {
+    <app-alert
+      variant="info"
+      title="Incomplete session"
+      message="This session has no check-out time. Enter the complete corrected check-in and check-out times and a reason below."
+    />
+  }
 
   <!-- Correction Form -->
-  <div
-    *ngIf="showCorrectionForm"
-    class="border rounded-lg p-4 space-y-4 dark:border-gray-700"
-  >
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-      {{ selectedSessionId ? 'Correct selected session' : 'Create missed session' }}
-    </h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Check-in time
-        </label>
-        <input
-          type="time"
-          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-          [ngModel]="checkInTime"
-          (ngModelChange)="checkInTime = $event; onTimeChange()"
-          name="checkInTime"
-        />
-        <p *ngIf="getFieldError('checkInTime')" class="mt-1 text-xs text-error-500">
-          {{ getFieldError('checkInTime') }}
-        </p>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Check-out time
-        </label>
-        <input
-          type="time"
-          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-          [ngModel]="checkOutTime"
-          (ngModelChange)="checkOutTime = $event; onTimeChange()"
-          name="checkOutTime"
-        />
-        <p *ngIf="getFieldError('checkOutTime')" class="mt-1 text-xs text-error-500">
-          {{ getFieldError('checkOutTime') }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Time order hint (local validation) -->
-    <p *ngIf="localFieldErrors['timeOrder']" class="text-xs text-warning-600 dark:text-warning-400">
-      {{ localFieldErrors['timeOrder'] }}
-    </p>
-
-    <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
-      <app-select
-        [options]="reasonSelectOptions"
-        [(ngModel)]="reasonCode"
-        placeholder="Select a reason..."
-        [placeholderDisabled]="false"
-        (ngModelChange)="onReasonChange()"
-      />
-      <p *ngIf="getFieldError('reasonCode')" class="mt-1 text-xs text-error-500">
-        {{ getFieldError('reasonCode') }}
-      </p>
-    </div>
-
-    <div *ngIf="reasonCode === 'other'">
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note (required)</label>
-      <textarea
-        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        rows="2"
-        [ngModel]="reasonNote"
-        (ngModelChange)="reasonNote = $event; onNoteChange()"
-        name="reasonNote"
-        placeholder="Explain the reason for this correction"
-      ></textarea>
-      <p *ngIf="getFieldError('reasonNote')" class="mt-1 text-xs text-error-500">
-        {{ getFieldError('reasonNote') }}
-      </p>
-    </div>
-
-    <app-button
-      variant="primary"
-      size="sm"
-      [disabled]="!canSubmit"
-      [loading]="submitting"
-      (btnClick)="onSubmit()"
+  @if (showCorrectionForm) {
+    <div
+      class="border rounded-lg p-4 space-y-4 dark:border-gray-700"
     >
-      <ng-icon name="heroCheck" size="16" aria-hidden="true" />
-      Submit correction
-    </app-button>
-  </div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        {{ selectedSessionId ? 'Correct selected session' : 'Create missed session' }}
+      </h3>
 
-  <!-- History Panel -->
-  <div *ngIf="history" class="border rounded-lg p-4 space-y-3 dark:border-gray-700">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Correction history</h3>
-
-    <app-loading-state *ngIf="loadingHistory" label="Loading history..." variant="block" />
-
-    <div *ngIf="!loadingHistory" class="space-y-2">
-      <div
-        *ngFor="let evt of history.items"
-        class="flex items-start gap-3 p-2 text-sm border-b last:border-b-0 dark:border-gray-700"
-      >
-        <app-status-badge
-          [status]="evt.eventType === 'correction' ? 'corrected' : 'complete'"
-          [label]="evt.eventType === 'check_in' ? 'Check-in' : evt.eventType === 'check_out' ? 'Check-out' : 'Correction'"
-          size="sm"
-        />
-        <div class="flex-1 space-y-1">
-          <div class="text-gray-600 dark:text-gray-400">
-            {{ formatDateTime(evt.occurredAt) }}
-            <span *ngIf="evt.recordedByLabel"> by {{ evt.recordedByLabel }}</span>
-          </div>
-          <div *ngIf="evt.reasonCode" class="text-xs">
-            Reason: {{ getReasonLabel(evt.reasonCode) }}
-          </div>
-          <div *ngIf="evt.reasonNote" class="text-xs text-gray-500 italic">
-            "{{ evt.reasonNote }}"
-          </div>
-          <div *ngIf="evt.correctedCheckInAt" class="text-xs">
-            Corrected: {{ formatTime(evt.correctedCheckInAt) }} &mdash; {{ formatTime(evt.correctedCheckOutAt) }}
-            <span *ngIf="evt.previousCheckInAt">
-              (was {{ formatTime(evt.previousCheckInAt) }}
-              <span *ngIf="evt.previousCheckOutAt"> &mdash; {{ formatTime(evt.previousCheckOutAt) }}</span>)
-            </span>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Check-in time
+          </span>
+          <input
+            type="time"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            [ngModel]="checkInTime"
+            (ngModelChange)="checkInTime = $event; onTimeChange()"
+            name="checkInTime"
+          />
+          @if (getFieldError('checkInTime')) {
+            <p class="mt-1 text-xs text-error-500">
+              {{ getFieldError('checkInTime') }}
+            </p>
+          }
+        </div>
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Check-out time
+          </span>
+          <input
+            type="time"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            [ngModel]="checkOutTime"
+            (ngModelChange)="checkOutTime = $event; onTimeChange()"
+            name="checkOutTime"
+          />
+          @if (getFieldError('checkOutTime')) {
+            <p class="mt-1 text-xs text-error-500">
+              {{ getFieldError('checkOutTime') }}
+            </p>
+          }
         </div>
       </div>
+
+      <!-- Time order hint (local validation) -->
+      @if (localFieldErrors['timeOrder']) {
+        <p class="text-xs text-warning-600 dark:text-warning-400">
+          {{ localFieldErrors['timeOrder'] }}
+        </p>
+      }
+
+      <div>
+        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</span>
+        <app-select
+          [options]="reasonSelectOptions"
+          [(ngModel)]="reasonCode"
+          placeholder="Select a reason..."
+          [placeholderDisabled]="false"
+          (ngModelChange)="onReasonChange()"
+        />
+        @if (getFieldError('reasonCode')) {
+          <p class="mt-1 text-xs text-error-500">
+            {{ getFieldError('reasonCode') }}
+          </p>
+        }
+      </div>
+
+      @if (reasonCode === 'other') {
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note (required)</span>
+          <textarea
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            rows="2"
+            [ngModel]="reasonNote"
+            (ngModelChange)="reasonNote = $event; onNoteChange()"
+            name="reasonNote"
+            placeholder="Explain the reason for this correction"
+          ></textarea>
+          @if (getFieldError('reasonNote')) {
+            <p class="mt-1 text-xs text-error-500">
+              {{ getFieldError('reasonNote') }}
+            </p>
+          }
+        </div>
+      }
+
+      <app-button
+        variant="primary"
+        size="sm"
+        [disabled]="!canSubmit"
+        [loading]="submitting"
+        (btnClick)="onSubmit()"
+      >
+        <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+        Submit correction
+      </app-button>
     </div>
-  </div>
+  }
+
+  <!-- History Panel -->
+  @if (history) {
+    <div class="border rounded-lg p-4 space-y-3 dark:border-gray-700">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Correction history</h3>
+
+      @if (loadingHistory) {
+        <app-loading-state label="Loading history..." variant="block" />
+      }
+
+      @if (!loadingHistory) {
+        <div class="space-y-2">
+          @for (evt of history.items; track $index) {
+            <div
+              class="flex items-start gap-3 p-2 text-sm border-b last:border-b-0 dark:border-gray-700"
+            >
+              <app-status-badge
+                [status]="evt.eventType === 'correction' ? 'corrected' : 'complete'"
+                [label]="evt.eventType === 'check_in' ? 'Check-in' : evt.eventType === 'check_out' ? 'Check-out' : 'Correction'"
+                size="sm"
+              />
+              <div class="flex-1 space-y-1">
+                <div class="text-gray-600 dark:text-gray-400">
+                  {{ formatDateTime(evt.occurredAt) }}
+                  @if (evt.recordedByLabel) {
+                    <span> by {{ evt.recordedByLabel }}</span>
+                  }
+                </div>
+                @if (evt.reasonCode) {
+                  <div class="text-xs">
+                    Reason: {{ getReasonLabel(evt.reasonCode) }}
+                  </div>
+                }
+                @if (evt.reasonNote) {
+                  <div class="text-xs text-gray-500 italic">
+                    "{{ evt.reasonNote }}"
+                  </div>
+                }
+                @if (evt.correctedCheckInAt) {
+                  <div class="text-xs">
+                    Corrected: {{ formatTime(evt.correctedCheckInAt) }} &mdash; {{ formatTime(evt.correctedCheckOutAt) }}
+                    @if (evt.previousCheckInAt) {
+                      <span>
+                        (was {{ formatTime(evt.previousCheckInAt) }}
+                        @if (evt.previousCheckOutAt) {
+                          <span> &mdash; {{ formatTime(evt.previousCheckOutAt) }}</span>
+                        })
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
 </div>

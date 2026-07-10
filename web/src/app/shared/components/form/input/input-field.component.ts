@@ -53,7 +53,7 @@ export class InputFieldComponent implements ControlValueAccessor {
 
   @ViewChild('inputRef', { static: false }) inputRef!: ElementRef<HTMLInputElement>;
 
-  @Input() type: string = 'text';
+  @Input() type = 'text';
   @Input() id?: string = '';
   @Input() name?: string = '';
   @Input() placeholder?: string = '';
@@ -61,11 +61,11 @@ export class InputFieldComponent implements ControlValueAccessor {
   @Input() min?: string;
   @Input() max?: string;
   @Input() step?: number;
-  @Input() disabled: boolean = false;
-  @Input() success: boolean = false;
-  @Input() error: boolean = false;
+  @Input() disabled = false;
+  @Input() success = false;
+  @Input() error = false;
   @Input() hint?: string;
-  @Input() className: string = '';
+  @Input() className = '';
   @Input() describedBy?: string;
   @Input() autocomplete?: string;
   @Input() inputMode?: string;
@@ -79,8 +79,8 @@ export class InputFieldComponent implements ControlValueAccessor {
     }
   }
 
-  private onChange: (value: string | number) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string | number) => void = () => { /* Set via registerOnChange */ };
+  private onTouched: () => void = () => { /* Set via registerOnTouched */ };
 
   get inputClasses(): string {
     let inputClasses = `h-12 w-full rounded-xl border appearance-none px-4 py-3 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${this.className}`;

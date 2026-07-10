@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCalendar,
@@ -108,7 +108,7 @@ export class ManagerTermCalendarComponent implements OnInit {
         this.terms.set(terms);
         this.loading = false;
       },
-      error: (err) => {
+      error: () => {
         this.loading = false;
         this.toast.error('Failed to load academic terms.');
       },

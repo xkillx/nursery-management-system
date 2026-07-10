@@ -60,7 +60,7 @@ export class BasicTableTwoComponent {
   ];
 
   selectedRows: string[] = [];
-  selectAll: boolean = false;
+  selectAll = false;
 
   handleSelectAll() {
     this.selectAll = !this.selectAll;

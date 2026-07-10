@@ -76,9 +76,6 @@ function compareDesc(a: string | null, b: string | null): number {
   return a < b ? 1 : a > b ? -1 : 0;
 }
 
-function compareDescValue(a: number, b: number): number {
-  return a < b ? 1 : a > b ? -1 : 0;
-}
 
 export function sortAttentionInvoices(a: ParentInvoiceListItem, b: ParentInvoiceListItem): number {
   const pa = attentionPriority(a);

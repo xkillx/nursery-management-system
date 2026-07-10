@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -126,7 +126,7 @@ export class OwnerSessionTypeFormComponent implements OnInit {
     });
   }
 
-  onSubmit(formRef: NgForm): void {
+  onSubmit(): void {
     this.fieldErrors = {};
     if (!this.form.name.trim()) {
       this.fieldErrors.name = 'Name is required.';

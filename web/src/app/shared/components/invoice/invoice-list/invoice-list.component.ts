@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableDropdownComponent } from '../../common/table-dropdown/table-dropdown.component';
 
@@ -260,13 +260,13 @@ export class InvoiceListComponent {
 
   selected: number[] = [];
   sort: SortState = { sortBy: 'number', sortDirection: 'asc' };
-  currentPage: number = 1;
+  currentPage = 1;
   filterStatus: 'All' | 'Unpaid' | 'Draft' | 'Paid' = 'All';
-  search: string = '';
-  showFilter: boolean = false;
-  itemsPerPage: number = 10;
+  search = '';
+  showFilter = false;
+  itemsPerPage = 10;
 
-  constructor(private elementRef: ElementRef) {}
+  private readonly elementRef = inject(ElementRef);
 
   @HostListener('document:click', ['$event'])
   handleClickOutside(event: MouseEvent) {
@@ -327,7 +327,7 @@ export class InvoiceListComponent {
   get visiblePages(): number[] {
     const maxVisible = 5;
     let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
+    const end = Math.min(this.totalPages, start + maxVisible - 1);
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
@@ -337,8 +337,6 @@ export class InvoiceListComponent {
   get allPaginatedSelected(): boolean {
     return this.paginatedInvoices.length > 0 && this.paginatedInvoices.every(invoice => this.selected.includes(invoice.id));
   }
-
-  ngOnInit(): void {}
 
   toggleSelectAll(): void {
     if (this.allPaginatedSelected) {

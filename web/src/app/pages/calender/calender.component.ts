@@ -2,8 +2,8 @@ import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 
-import { Component, ViewChild } from '@angular/core';
-import { EventInput, CalendarOptions, DateSelectArg, EventClickArg } from '@fullcalendar/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
+import { EventInput, CalendarOptions, DateSelectArg, EventClickArg, EventContentArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -28,7 +28,7 @@ interface CalendarEvent extends EventInput {
   templateUrl: './calender.component.html',
   styles: ``
 })
-export class CalenderComponent {
+export class CalenderComponent implements OnInit {
 
   @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
 
@@ -102,13 +102,13 @@ export class CalenderComponent {
   }
 
   handleEventClick(clickInfo: EventClickArg) {
-    const event = clickInfo.event as any;
+    const event = clickInfo.event;
     this.selectedEvent = {
       id: event.id,
       title: event.title,
       start: event.startStr,
       end: event.endStr,
-      extendedProps: { calendar: event.extendedProps.calendar }
+      extendedProps: { calendar: (event.extendedProps as Record<string, string>).calendar }
     };
     this.eventTitle = event.title;
     this.eventStartDate = event.startStr;
@@ -163,7 +163,7 @@ export class CalenderComponent {
     this.resetModalFields();
   }
 
-  renderEventContent(eventInfo: any) {
+  renderEventContent(eventInfo: EventContentArg) {
     const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar?.toLowerCase()}`;
     return {
       html: `

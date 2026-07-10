@@ -130,10 +130,6 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'user_inactive',
 ]);
 
-function shouldShowRequestId(code: string): boolean {
-  return !CODES_WITHOUT_REQUEST_ID.has(code);
-}
-
 function isKnown(code: string): boolean {
   return CODES_WITHOUT_REQUEST_ID.has(code);
 }
@@ -151,7 +147,6 @@ function parentSafeNotFound(context: ApiErrorContext): string {
 function presentKnownError(
   mapped: MappedApiError,
   context: ApiErrorContext,
-  _options: PresentOptions,
 ): ApiErrorPresentation {
   const base: ApiErrorPresentation = {
     message: mapped.message,
@@ -391,7 +386,7 @@ function presentKnownError(
 
     default:
       // Unknown code — fall through to unknown handling
-      return presentUnknownError(mapped, context);
+      return presentUnknownError(mapped);
   }
 
   return base;
@@ -399,7 +394,6 @@ function presentKnownError(
 
 function presentUnknownError(
   mapped: MappedApiError,
-  _context: ApiErrorContext,
 ): ApiErrorPresentation {
   return {
     message: GENERIC_MESSAGE,
@@ -413,10 +407,7 @@ function presentUnknownError(
 export function presentApiError(
   mapped: MappedApiError,
   context: ApiErrorContext,
-  options?: PresentOptions,
 ): ApiErrorPresentation {
-  const opts = options ?? {};
-
   // Provider/service codes always get request ID + generic message
   if (
     mapped.code === 'internal_error' ||
@@ -435,14 +426,14 @@ export function presentApiError(
         };
       }
     }
-    return presentUnknownError(mapped, context);
+    return presentUnknownError(mapped);
   }
 
   if (isKnown(mapped.code)) {
-    return presentKnownError(mapped, context, opts);
+    return presentKnownError(mapped, context);
   }
 
-  return presentUnknownError(mapped, context);
+  return presentUnknownError(mapped);
 }
 
 export function formatPresentedApiError(presentation: ApiErrorPresentation): string {

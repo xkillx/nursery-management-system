@@ -21,7 +21,6 @@ export interface ChildRecord {
   updatedAt: string;
   // Legacy alias for the still-imported manager-registration-intake stepper.
   primaryRoomId?: string | null;
-  [key: string]: any;
 }
 
 export interface ChildWritePayload {
@@ -33,7 +32,6 @@ export interface ChildWritePayload {
   end_date?: string;
   notes?: string;
   primary_room_id?: string | null;
-  [key: string]: any;
 }
 
 export interface StaffListQuery {

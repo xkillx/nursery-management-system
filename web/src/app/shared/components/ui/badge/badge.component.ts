@@ -18,13 +18,9 @@ export class BadgeComponent {
   @Input() startIcon?: string;
   @Input() endIcon?: string;
 
-  @HostBinding('class') get hostClasses(): string {
-    return `flex`;
-  }
+  @HostBinding('class') readonly hostClasses = 'flex';
 
-  get baseStyles() {
-    return 'inline-flex items-center px-2.5 py-0.5 justify-center gap-1 rounded-full font-medium';
-  }
+  readonly baseStyles = 'inline-flex items-center px-2.5 py-0.5 justify-center gap-1 rounded-full font-medium';
 
   get sizeClass() {
     return {

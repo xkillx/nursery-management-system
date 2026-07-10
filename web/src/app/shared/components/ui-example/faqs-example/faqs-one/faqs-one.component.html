@@ -3,6 +3,10 @@
   <div
     class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] cursor-pointer"
     (click)="toggleAccordion(i)"
+    (keydown.enter)="toggleAccordion(i)"
+    (keydown.space)="toggleAccordion(i)"
+    tabindex="0"
+    role="button"
   >
     <div class="flex items-center justify-between">
       <h4 class="text-base font-medium text-gray-800 dark:text-white/90">{{ faq.title }}</h4>

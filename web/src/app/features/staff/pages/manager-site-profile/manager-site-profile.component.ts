@@ -15,7 +15,7 @@ import { ROLE_ROUTES } from '../../../../core/constants/roles';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { StaffSiteProfileApiService } from '../../data/staff-site-profile-api.service';
-import { SiteProfile, SiteProfileInput } from '../../models/site-profile.models';
+import { SiteProfileInput } from '../../models/site-profile.models';
 
 interface SiteProfileFormModel {
   nursery_name: string;
@@ -230,8 +230,8 @@ export class ManagerSiteProfileComponent implements OnInit {
     return Object.keys(this.fieldErrors).length === 0;
   }
 
-  private applyApiError(err: any): void {
-    const body = err?.error;
+  private applyApiError(err: unknown): void {
+    const body = (err as { error?: { code?: string; details?: { field_errors?: { field: string; message: string }[] } } })?.error;
     if (body?.code === 'validation_error' && body?.details?.field_errors) {
       for (const fe of body.details.field_errors) {
         const key = fe.field as keyof SiteProfileFormModel;

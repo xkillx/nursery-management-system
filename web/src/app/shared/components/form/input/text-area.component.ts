@@ -56,8 +56,8 @@ export class TextAreaComponent implements ControlValueAccessor {
   @Output() valueChange = new EventEmitter<string>();
   @Output() blurred = new EventEmitter<void>();
 
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string) => void = () => { /* Set via registerOnChange */ };
+  private onTouched: () => void = () => { /* Set via registerOnTouched */ };
 
   onInput(event: Event) {
     const val = (event.target as HTMLTextAreaElement).value;

@@ -172,7 +172,7 @@ describe('AuthService', () => {
     expect(service.activeMembership()?.membership_id).toBe('membership-1');
     expect(service.activeMembership()?.role).toBe('manager');
     expect(service.activeMembership()?.tenant_name).toBe('Little Sprouts Nursery');
-    const memberships = (service as any).state().availableMemberships;
+    const memberships = (service as unknown as { state: () => { availableMemberships: unknown[] } }).state().availableMemberships;
     expect(memberships.length).toBe(1);
     expect(service.isAuthenticated()).toBeTrue();
     expect(service.currentRole()).toBe('manager');

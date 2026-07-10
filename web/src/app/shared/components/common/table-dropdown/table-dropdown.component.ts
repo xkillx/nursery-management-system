@@ -4,7 +4,7 @@ import {
   Input,
   ElementRef,
   ViewChild,
-  TemplateRef,
+  AfterViewInit, OnDestroy,
 } from '@angular/core';
 import { createPopper, Instance } from '@popperjs/core';
 
@@ -15,17 +15,17 @@ import { createPopper, Instance } from '@popperjs/core';
   templateUrl: './table-dropdown.component.html',
   styles: ``
 })
-export class TableDropdownComponent {
+export class TableDropdownComponent implements AfterViewInit, OnDestroy {
 
-  @Input() dropdownButton: any;
-  @Input() dropdownContent: any;
+  @Input() dropdownButton?: HTMLElement;
+  @Input() dropdownContent?: HTMLElement;
   @ViewChild('buttonRef') buttonRef!: ElementRef<HTMLDivElement>;
   @ViewChild('contentRef') contentRef!: ElementRef<HTMLDivElement>;
   
   isOpen = false;
   private popperInstance: Instance | null = null;
 
-  constructor() {}
+  constructor() { /* No dependencies to inject */ }
 
   ngAfterViewInit() {
     document.addEventListener('click', this.close.bind(this));

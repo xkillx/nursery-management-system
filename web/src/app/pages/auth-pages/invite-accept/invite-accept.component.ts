@@ -92,7 +92,7 @@ export class InviteAcceptComponent {
     });
   }
 
-  private handleError(error: any) {
+  private handleError(error: unknown) {
     const mapped = this.errorMapper.map(error);
 
     const tokenStateMap: Record<string, ScreenState> = {

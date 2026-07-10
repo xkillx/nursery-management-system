@@ -54,7 +54,7 @@ last_name: 'Hopper',
     httpMock.verify();
   });
 
-  function flushChildren(items: any[] = []): void {
+  function flushChildren(items: Record<string, unknown>[] = []): void {
     const req = httpMock.expectOne(
       (r) => r.url === '/api/v1/children' && r.params.get('status') === 'active',
     );
@@ -105,7 +105,6 @@ last_name: 'Hopper',
   });
 
   it('does not contain delete or lifecycle action references', () => {
-    const ts = document.documentElement.innerHTML;
     expect(component).toBeDefined();
   });
 
@@ -140,7 +139,7 @@ last_name: 'Hopper',
   it('navigates to the edit stepper route when openEdit is called', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = spyOn(router, 'navigate').and.resolveTo();
-    component.openEdit({ ...childApi } as any);
+    component.openEdit({ ...childApi } as unknown as import('../../models/children.models').ChildRecord);
     expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'child-1', 'edit']);
   });
 
@@ -180,7 +179,7 @@ last_name: 'Hopper',
     const incompleteChild = { ...childApi, id: 'c2', isActive: true, enrollmentComplete: false, missingRequirements: ['parent_carer_contact'] };
     const inactiveChild = { ...childApi, id: 'c3', isActive: false, enrollmentComplete: false, missingRequirements: [] };
     
-    component.children = [activeChild, incompleteChild, inactiveChild] as any[];
+    component.children = [activeChild, incompleteChild, inactiveChild] as unknown as import('../../models/children.models').ChildRecord[];
 
     component.selectedCardFilter = 'all';
     expect(component.filteredChildren.length).toBe(3);

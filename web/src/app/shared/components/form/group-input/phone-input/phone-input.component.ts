@@ -14,17 +14,17 @@ export interface CountryCode {
   templateUrl: './phone-input.component.html',
   styles: ``
 })
-export class PhoneInputComponent {
+export class PhoneInputComponent implements OnInit {
 
   @Input() countries: CountryCode[] = [];
-  @Input() placeholder: string = '+1 (555) 000-0000';
+  @Input() placeholder = '+1 (555) 000-0000';
   @Input() selectPosition: 'start' | 'end' = 'start';
   @Output() phoneChange = new EventEmitter<string>();
 
-  selectedCountry: string = '';
-  phoneNumber: string = '';
+  selectedCountry = '';
+  phoneNumber = '';
 
-  countryCodes: { [key: string]: string } = {};
+  countryCodes: Record<string, string> = {};
 
   ngOnInit() {
     if (this.countries.length > 0) {

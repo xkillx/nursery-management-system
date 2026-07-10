@@ -24,44 +24,6 @@ describe('ManagerFundingOverviewComponent', () => {
     items: [],
   };
 
-  const flaggedOverview: FundingOverviewRecord = {
-    billingMonth: '2026-06',
-    summary: {
-      includedChildCount: 3,
-      flaggedChildCount: 2,
-      missingProfileCount: 1,
-      explicitZeroCount: 1,
-      underOneHourCount: 0,
-      above160HoursCount: 0,
-    },
-    items: [
-      {
-        childId: 'child-1',
-        childName: 'Alice',
-        isActive: true,
-        startDate: '2026-01-01',
-        endDate: null,
-        fundingProfileId: null,
-        fundedAllowanceMinutes: null,
-        fundingUpdatedAt: null,
-        photoUrl: null,
-        flags: ['missing_profile'],
-      },
-      {
-        childId: 'child-2',
-        childName: 'Bob',
-        isActive: true,
-        startDate: '2026-01-01',
-        endDate: null,
-        fundingProfileId: 'fp-2',
-        fundedAllowanceMinutes: 0,
-        fundingUpdatedAt: '2026-06-01T10:00:00Z',
-        photoUrl: null,
-        flags: ['explicit_zero_allowance'],
-      },
-    ],
-  };
-
   function createComponent(): void {
     const fixture = TestBed.createComponent(ManagerFundingOverviewComponent);
     component = fixture.componentInstance;

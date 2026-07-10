@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -17,11 +17,8 @@ import { UserDropdownComponent } from '../../components/header/user-dropdown/use
 })
 export class AppHeaderComponent {
   isApplicationMenuOpen = false;
-  readonly isMobileOpen$;
-
-  constructor(public sidebarService: SidebarService) {
-    this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
-  }
+  readonly sidebarService = inject(SidebarService);
+  readonly isMobileOpen$ = this.sidebarService.isMobileOpen$;
 
   handleToggle() {
     if (window.innerWidth >= 1280) {

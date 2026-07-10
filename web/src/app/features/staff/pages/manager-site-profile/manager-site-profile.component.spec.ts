@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 import { ManagerSiteProfileComponent } from './manager-site-profile.component';
-import { SiteProfileResponse, SiteProfile } from '../../models/site-profile.models';
+import { SiteProfileResponse } from '../../models/site-profile.models';
 
 describe('ManagerSiteProfileComponent', () => {
   let component: ManagerSiteProfileComponent;
@@ -70,16 +70,16 @@ describe('ManagerSiteProfileComponent', () => {
     fixture.detectChanges();
     flushGet({ site_profile: null });
 
-    component.submit({ control: { markAllAsTouched: () => {} } } as any);
+    component.submit({ control: { markAllAsTouched: () => { /* Test stub */ } } } as unknown as import('@angular/forms').NgForm);
 
     expect(Object.keys(component.fieldErrors).length).toBeGreaterThanOrEqual(7);
-    expect(component.fieldErrors.nursery_name).toBe('is required');
-    expect(component.fieldErrors.phone).toBe('is required');
-    expect(component.fieldErrors.email).toBe('is required');
-    expect(component.fieldErrors.website).toBe('is required');
-    expect(component.fieldErrors.address_street).toBe('is required');
-    expect(component.fieldErrors.address_city).toBe('is required');
-    expect(component.fieldErrors.address_postcode).toBe('is required');
+    expect(component.fieldErrors.nursery_name).toBe('Enter your nursery name.');
+    expect(component.fieldErrors.phone).toBe('Enter your phone number.');
+    expect(component.fieldErrors.email).toBe('Enter your email address.');
+    expect(component.fieldErrors.website).toBe('Enter your website address.');
+    expect(component.fieldErrors.address_street).toBe('Enter your street address.');
+    expect(component.fieldErrors.address_city).toBe('Enter your city.');
+    expect(component.fieldErrors.address_postcode).toBe('Enter your postcode.');
   });
 
   it('submit with whitespace-only name: shows required error', () => {
@@ -94,9 +94,9 @@ describe('ManagerSiteProfileComponent', () => {
     component.model.address_city = 'Manchester';
     component.model.address_postcode = 'M1 4BT';
 
-    component.submit({ control: { markAllAsTouched: () => {} } } as any);
+    component.submit({ control: { markAllAsTouched: () => { /* Test stub */ } } } as unknown as import('@angular/forms').NgForm);
 
-    expect(component.fieldErrors.nursery_name).toBe('is required');
+    expect(component.fieldErrors.nursery_name).toBe('Enter your nursery name.');
   });
 
   it('submit valid form: calls service once, navigates on success', () => {
@@ -105,6 +105,7 @@ describe('ManagerSiteProfileComponent', () => {
     flushGet({ site_profile: null });
 
     component.model.nursery_name = 'Little Stars Nursery';
+    component.model.description = 'A warm nursery';
     component.model.phone = '+44 161 555 0100';
     component.model.email = 'hello@littlestars.example';
     component.model.website = 'https://littlestars.example';
@@ -112,7 +113,7 @@ describe('ManagerSiteProfileComponent', () => {
     component.model.address_city = 'Manchester';
     component.model.address_postcode = 'M1 4BT';
 
-    component.submit({ control: { markAllAsTouched: () => {} } } as any);
+    component.submit({ control: { markAllAsTouched: () => { /* Test stub */ } } } as unknown as import('@angular/forms').NgForm);
 
     const putReq = httpMock.expectOne('/api/v1/site-profile');
     expect(putReq.request.method).toBe('PUT');
@@ -126,6 +127,7 @@ describe('ManagerSiteProfileComponent', () => {
     flushGet({ site_profile: null });
 
     component.model.nursery_name = 'Little Stars Nursery';
+    component.model.description = 'A warm nursery';
     component.model.phone = '+44 161 555 0100';
     component.model.email = 'hello@littlestars.example';
     component.model.website = 'https://littlestars.example';
@@ -133,7 +135,7 @@ describe('ManagerSiteProfileComponent', () => {
     component.model.address_city = 'Manchester';
     component.model.address_postcode = 'M1 4BT';
 
-    component.submit({ control: { markAllAsTouched: () => {} } } as any);
+    component.submit({ control: { markAllAsTouched: () => { /* Test stub */ } } } as unknown as import('@angular/forms').NgForm);
 
     const putReq = httpMock.expectOne('/api/v1/site-profile');
     putReq.flush(
@@ -159,6 +161,7 @@ describe('ManagerSiteProfileComponent', () => {
     flushGet({ site_profile: null });
 
     component.model.nursery_name = 'Little Stars Nursery';
+    component.model.description = 'A warm nursery';
     component.model.phone = '+44 161 555 0100';
     component.model.email = 'hello@littlestars.example';
     component.model.website = 'https://littlestars.example';
@@ -166,7 +169,7 @@ describe('ManagerSiteProfileComponent', () => {
     component.model.address_city = 'Manchester';
     component.model.address_postcode = 'M1 4BT';
 
-    component.submit({ control: { markAllAsTouched: () => {} } } as any);
+    component.submit({ control: { markAllAsTouched: () => { /* Test stub */ } } } as unknown as import('@angular/forms').NgForm);
 
     const putReq = httpMock.expectOne('/api/v1/site-profile');
     putReq.flush({ message: 'Server error' }, { status: 500, statusText: 'Server Error' });

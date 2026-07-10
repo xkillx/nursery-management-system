@@ -29,7 +29,7 @@ export class DefaultInputsComponent {
     { value: 'development', label: 'Development' },
   ];
   selectedOption = '';
-  dateValue: any;
+  dateValue: string | null = null;
   timeValue = '';
   cardNumber = '';
 
@@ -38,13 +38,13 @@ export class DefaultInputsComponent {
     console.log('Selected value:', value);
   }
 
-  handleDateChange(event: any) {
+  handleDateChange(event: string) {
     this.dateValue = event;
     console.log('Date changed:', event);
   }
 
-  handleTimeChange(event: any) {
-    this.timeValue = event.target.value;
+  handleTimeChange(event: Event) {
+    this.timeValue = (event.target as HTMLInputElement).value;
     console.log(this.timeValue);
   }
 

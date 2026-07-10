@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { SigninFormComponent } from './signin-form.component';
 import { AuthService } from '../../../../core/services/auth.service';
-import { MembershipModel } from '../../../../core/models/auth.models';
+import { AuthResponse, MembershipModel } from '../../../../core/models/auth.models';
 
 const mockOwnerMembership: MembershipModel = {
   membership_id: '00000000-0000-0000-0000-000000000040',
@@ -65,7 +65,7 @@ describe('SigninFormComponent', () => {
   });
 
   it('direct one-scope success calls login(email, password) and navigates', fakeAsync(() => {
-    authServiceMock.login.and.returnValue(of({} as any));
+    authServiceMock.login.and.returnValue(of({} as unknown as AuthResponse));
     authServiceMock.currentRole.and.returnValue('manager');
 
     component.email = 'user@test.com';
@@ -116,7 +116,7 @@ describe('SigninFormComponent', () => {
     };
     authServiceMock.login.and.returnValues(
       throwError(() => new HttpErrorResponse({ error: errorBody, status: 400 })),
-      of({} as any),
+      of({} as unknown as AuthResponse),
     );
     authServiceMock.currentRole.and.returnValue('manager');
 
@@ -214,7 +214,7 @@ describe('SigninFormComponent', () => {
   }));
 
   it('owner login routes to /owner', fakeAsync(() => {
-    authServiceMock.login.and.returnValue(of({} as any));
+    authServiceMock.login.and.returnValue(of({} as unknown as AuthResponse));
     authServiceMock.currentRole.and.returnValue('owner');
 
     component.email = 'owner@example.com';

@@ -68,8 +68,8 @@
   }
 
   @if (showCreateForm) {
-    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" (click)="closeCreate()">
-      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" (click)="closeCreate()" (keydown.escape)="closeCreate()" (keydown.enter)="closeCreate()" tabindex="0">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.space)="$event.stopPropagation()" tabindex="0">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">New hourly booking</h2>
           <button (click)="closeCreate()" class="p-1 rounded hover:bg-gray-100">
@@ -84,7 +84,7 @@
         <form #bookingForm="ngForm" (ngSubmit)="save()">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Child ID</label>
+              <span class="block text-sm font-medium text-gray-700 mb-1">Child ID</span>
               <input
                 type="text"
                 [(ngModel)]="form.child_id"
@@ -100,7 +100,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <span class="block text-sm font-medium text-gray-700 mb-1">Date</span>
               <input
                 type="date"
                 [(ngModel)]="form.calendar_date"
@@ -115,7 +115,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Start time</label>
+              <span class="block text-sm font-medium text-gray-700 mb-1">Start time</span>
               <input
                 type="time"
                 [(ngModel)]="form.start_time_minutes"
@@ -130,7 +130,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+              <span class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</span>
               <input
                 type="number"
                 [(ngModel)]="form.duration_minutes"

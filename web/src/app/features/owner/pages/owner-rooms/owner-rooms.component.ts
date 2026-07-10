@@ -195,9 +195,7 @@ export class OwnerRoomsComponent implements OnInit {
     return this.totalRooms === 0 ? 'No rooms yet' : 'Demo-ready room setup';
   }
 
-  get totalCapacityPill(): string {
-    return 'Across displayed rooms';
-  }
+  readonly totalCapacityPill = 'Across displayed rooms';
 
   get occupancyPill(): string {
     return this.activeRows.length === 0 ? 'Awaiting rooms' : 'Live snapshot';
@@ -377,15 +375,16 @@ export class OwnerRoomsComponent implements OnInit {
     return a.room.name.localeCompare(b.room.name);
   }
 
-  private mapError(err: any): string {
-    const code = err?.error?.code;
+  private mapError(err: unknown): string {
+    const body = (err as { error?: { code?: string; details?: { assigned_count?: number }; message?: string } })?.error;
+    const code = body?.code;
     if (code === 'site_not_found') return 'Site not found or no longer active.';
     if (code === 'room_has_children') {
-      const assigned = err?.error?.details?.assigned_count;
+      const assigned = body?.details?.assigned_count;
       if (typeof assigned === 'number') {
         return `${assigned} ${assigned === 1 ? 'child is' : 'children are'} still assigned — reassign them before archiving.`;
       }
-      return err?.error?.message ?? 'Children must be reassigned before archiving this room.';
+      return body?.message ?? 'Children must be reassigned before archiving this room.';
     }
     if (code === 'room_not_found') return 'Room not found. The list has been refreshed.';
     return 'Failed to update rooms. Please try again.';

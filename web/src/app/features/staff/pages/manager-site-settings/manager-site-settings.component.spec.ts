@@ -144,7 +144,7 @@ describe('ManagerSiteSettingsComponent', () => {
     fixture.detectChanges();
     httpMock.expectOne(apiUrl('/billing-setup')).flush({ core_hourly_rate_minor: 0, has_rate: false });
     httpMock.expectOne(apiUrl('/sites/site-1/rooms')).error(new ProgressEvent('error'));
-    httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-types')).flush({ session_types: [] });
+    httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-types')).flush({ items: [] });
     fixture.detectChanges();
 
     expect(component.pageError()).toContain('Failed to load');

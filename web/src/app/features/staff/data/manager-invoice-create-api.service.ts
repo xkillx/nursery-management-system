@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
-import { formatChildName } from '../utils/manager-list-formatters';
 import {
   ManagerInvoicePrefill,
   ManagerInvoicePrefillLine,

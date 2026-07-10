@@ -26,7 +26,7 @@ type AvatarStatus = 'online' | 'offline' | 'busy' | 'none';
 export class AvatarComponent {
 
   @Input() src!: string;
-  @Input() alt: string = 'User Avatar';
+  @Input() alt = 'User Avatar';
   @Input() size: AvatarSize = 'medium';
   @Input() status: AvatarStatus = 'none';
 

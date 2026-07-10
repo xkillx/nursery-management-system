@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { interval, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { interval } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowPath,
@@ -17,7 +17,7 @@ import {
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { StaffApiService } from '../../data/staff-api.service';
-import { AttendanceChildRecord, AttendanceState } from '../../models/attendance-child.models';
+import { AttendanceChildRecord } from '../../models/attendance-child.models';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
@@ -49,7 +49,7 @@ type LoadSource = 'initial' | 'manual' | 'mutation' | 'poll';
   ],
   templateUrl: './practitioner-attendance-children.component.html',
 })
-export class PractitionerAttendanceChildrenComponent implements OnDestroy {
+export class PractitionerAttendanceChildrenComponent implements OnDestroy, OnInit {
   private readonly staffApi = inject(StaffApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly destroyRef = inject(DestroyRef);
@@ -141,7 +141,6 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
     if (this.listRequestInFlight && source === 'poll') return;
 
     const isBackground = source === 'poll';
-    const showForegroundLoading = !isBackground && this.children.length === 0;
 
     if (isBackground) {
       this.isBackgroundRefreshing = true;
@@ -321,7 +320,7 @@ export class PractitionerAttendanceChildrenComponent implements OnDestroy {
         this.pendingChildIds.delete(childId);
         this.loadChildren('mutation');
       },
-      complete: () => {},
+      complete: () => { /* No action needed on stream completion */ },
     };
 
     (mutation() as import('rxjs').Observable<unknown>).subscribe({ next, error, complete });

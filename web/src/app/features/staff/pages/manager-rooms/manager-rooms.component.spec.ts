@@ -22,7 +22,7 @@ describe('ManagerRoomsComponent', () => {
   };
 
   const roomsResponse = {
-    rooms: [
+    items: [
       {
         id: 'room-baby',
         name: 'Baby Room',
@@ -138,7 +138,7 @@ describe('ManagerRoomsComponent', () => {
 
   it('shows an empty state when the rooms list is empty', () => {
     fixture.detectChanges();
-    httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms').flush({ rooms: [] });
+    httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms').flush({ items: [] });
     fixture.detectChanges();
 
     expect(component.filteredRows.length).toBe(0);

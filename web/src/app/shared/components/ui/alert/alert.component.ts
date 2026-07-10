@@ -16,11 +16,11 @@ import { RouterModule } from '@angular/router';
 export class AlertComponent {
 
   @Input() variant: 'success' | 'error' | 'warning' | 'info' = 'info';
-  @Input() title: string = '';
-  @Input() message: string = '';
-  @Input() showLink: boolean = false;
-  @Input() linkHref: string = '#';
-  @Input() linkText: string = 'Learn more';
+  @Input() title = '';
+  @Input() message = '';
+  @Input() showLink = false;
+  @Input() linkHref = '#';
+  @Input() linkText = 'Learn more';
   @Input() compact = false;
   @Input() dismissible = false;
   @Output() dismissed = new EventEmitter<void>();

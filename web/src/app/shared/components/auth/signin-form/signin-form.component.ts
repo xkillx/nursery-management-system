@@ -119,10 +119,10 @@ export class SigninFormComponent {
     this.router.navigateByUrl(defaultRouteForRole(role));
   }
 
-  private handleError(error: any) {
+  private handleError(error: unknown) {
     this.isSubmitting = false;
 
-    const body = error?.error;
+    const body = (error as { error?: unknown })?.error;
     if (isMembershipSelectionRequired(body)) {
       this.membershipChoices = body.available_memberships;
       this.membershipChallengeMessage = body.message;

@@ -44,7 +44,7 @@ const summariesResponse = {
 };
 
 const roomsResponse = {
-  rooms: [
+  items: [
     {
       id: 'room-1',
       name: 'Baby Room',
@@ -183,7 +183,7 @@ describe('OwnerRoomsComponent', () => {
     expect(component.canLoadMore).toBeFalse();
 
     const bigList = {
-      rooms: Array.from({ length: 30 }, (_, i) => ({
+      items: Array.from({ length: 30 }, (_, i) => ({
         id: `room-${i}`,
         name: `Room ${i}`,
         description: null,

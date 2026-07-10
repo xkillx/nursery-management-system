@@ -1,4 +1,4 @@
-import { of, throwError, Subject } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';

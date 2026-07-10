@@ -17,10 +17,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class FileInputComponent {
 
-  @Input() className: string = '';
-  @Output() change = new EventEmitter<Event>();
+  @Input() className = '';
+  @Output() fileChange = new EventEmitter<Event>();
 
   onChange(event: Event) {
-    this.change.emit(event);
+    this.fileChange.emit(event);
   }
 }

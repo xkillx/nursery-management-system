@@ -8,7 +8,7 @@ import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterVie
 })
 export class DropdownComponent implements AfterViewInit, OnDestroy {
   @Input() isOpen = false;
-  @Output() close = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
   @Input() className = '';
 
   @ViewChild('dropdownRef') dropdownRef!: ElementRef<HTMLDivElement>;
@@ -21,7 +21,7 @@ export class DropdownComponent implements AfterViewInit, OnDestroy {
       !this.dropdownRef.nativeElement.contains(event.target as Node) &&
       !(event.target as HTMLElement).closest('.dropdown-toggle')
     ) {
-      this.close.emit();
+      this.closed.emit();
     }
   };
 

@@ -32,7 +32,6 @@ import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.servi
 import {
   ManagerInvoiceDetail,
   ManagerInvoiceLine,
-  ManagerInvoiceParentContact,
   ManagerPaymentStatus,
   PaymentEvent,
   PaginatedPaymentEvents,

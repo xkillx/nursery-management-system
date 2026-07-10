@@ -66,11 +66,10 @@ import {
   ConsentRecord,
   ConsentWritePayload,
   RegistrationContactEntry,
-  StepperProfileView,
   CompleteRegistrationPayload,
   StepperCompletionStatus,
 } from '../../models/child-legacy-compat.models';
-import { BookingPattern, BookingPatternInput, BookingPatternEntryInput } from '../../models/booking-pattern.models';
+import { BookingPattern, BookingPatternInput } from '../../models/booking-pattern.models';
 import {
   ChildProfile,
   ChildHealthProfile,
@@ -85,6 +84,10 @@ import {
   ChildCollectionSettingsInput,
   ChildFundingRecordInput,
   CreateChildPayload,
+  ProfessionalReferral,
+  FundingType,
+  FundingModel,
+  BenefitsStatus,
 } from '../../models/child-profile.models';
 
 type StepperStep =
@@ -98,17 +101,17 @@ type StepperStep =
 type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
 type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
 
-type FinalCompletionIssue = {
+interface FinalCompletionIssue {
   stepKey: StepperStep;
   field: string;
   message: string;
-};
+}
 
-type ConsentAdvisory = {
+interface ConsentAdvisory {
   stepKey: 'consents-evidence';
   field: string;
   message: string;
-};
+}
 
 type ConsentTier = 'required' | 'required_acknowledged' | 'optional';
 
@@ -149,12 +152,12 @@ const REQUIRED_KEYS = (Object.keys(CONSENT_TIERS) as (keyof ConsentWritePayload)
   (k) => CONSENT_TIERS[k] === 'required',
 );
 
-type IntakeStep = {
+interface IntakeStep {
   key: StepperStep;
   label: string;
   shortLabel: string;
   description: string;
-};
+}
 
 type Step1Field =
   | 'first_name'
@@ -182,21 +185,21 @@ type Step1RequiredField = Extract<
   'first_name' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language' | 'primary_room_id' | 'registration_date'
 >;
 
-type ReferralEntry = {
+interface ReferralEntry {
   type: string;
   referredDate: string;
   referredBy: string;
   waitingListStatus: string;
   notes: string;
-};
+}
 
-type ConsentItem = {
+interface ConsentItem {
   key: keyof ConsentWritePayload;
   label: string;
   detail: string;
-};
+}
 
-type RegistrationDraft = {
+interface RegistrationDraft {
   currentStep: StepperStep;
   step1: {
     first_name: string;
@@ -301,7 +304,7 @@ type RegistrationDraft = {
   emergencyAuthorisedFlags: boolean[];
   emergencyContactAddresses: string[];
   referralsDraft: ReferralEntry[];
-};
+}
 
 @Component({
   selector: 'app-manager-child-edit-stepper',
@@ -1294,14 +1297,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }));
 
     this.staffApi.patchChildHealth(this.childId!, {
-      medical_conditions_status: (this.step2.allergy_status || 'unknown') as any,
+      medical_conditions_status: (this.step2.allergy_status || 'unknown'),
       medical_conditions_notes: this.step2.allergy_details.trim() || null,
-      prescribed_medication_status: (this.step2.medication_status || 'unknown') as any,
+      prescribed_medication_status: (this.step2.medication_status || 'unknown'),
       medication_notes: medicationNotes || null,
-      dietary_requirements_status: this.dietaryApiStatus() as any,
+      dietary_requirements_status: this.dietaryApiStatus(),
       dietary_requirements_notes: dietaryNotes || null,
       dietary_side_effects: this.step2.dietary_side_effects.trim() || null,
-      immunisation_status: (this.step2.immunisation_status || 'unknown') as any,
+      immunisation_status: (this.step2.immunisation_status || 'unknown'),
       immunisation_country: this.step2.immunisation_country.trim() || null,
       illness_diagnosis_history: this.step2.illness_diagnosis_history.trim() || null,
       doctor_name: this.step2.doctor_name.trim() || null,
@@ -1322,24 +1325,24 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  private saveStep2Safeguarding(childId: string, referrals: any[], advance: boolean): void {
+  private saveStep2Safeguarding(childId: string, referrals: ProfessionalReferral[], advance: boolean): void {
     if (!this.loadedSections.has('safeguarding')) {
       this.isSaving = false;
       this.errorMessage = 'Safeguarding data unavailable — could not save. Please reload the page.';
       return;
     }
     this.staffApi.patchChildSafeguarding(childId, {
-      social_services_status: (this.step2.social_services_status || 'unknown') as any,
+      social_services_status: (this.step2.social_services_status || 'unknown'),
       social_services_notes: this.step2.social_services_details.trim() || null,
       social_worker_name: this.step2.social_worker_name.trim() || null,
       social_worker_phone: this.step2.social_worker_phone.trim() || null,
       social_worker_email: this.step2.social_worker_email.trim() || null,
-      concern_walking: (this.step2.concern_walking ? 'yes' : 'no') as any,
-      concern_speech_language: (this.step2.concern_speech_language ? 'yes' : 'no') as any,
-      concern_hearing: (this.step2.concern_hearing ? 'yes' : 'no') as any,
-      concern_sight: (this.step2.concern_sight ? 'yes' : 'no') as any,
-      concern_emotional_wellbeing: (this.step2.concern_emotional_wellbeing ? 'yes' : 'no') as any,
-      concern_behaviour: (this.step2.concern_behaviour ? 'yes' : 'no') as any,
+      concern_walking: (this.step2.concern_walking ? 'yes' : 'no'),
+      concern_speech_language: (this.step2.concern_speech_language ? 'yes' : 'no'),
+      concern_hearing: (this.step2.concern_hearing ? 'yes' : 'no'),
+      concern_sight: (this.step2.concern_sight ? 'yes' : 'no'),
+      concern_emotional_wellbeing: (this.step2.concern_emotional_wellbeing ? 'yes' : 'no'),
+      concern_behaviour: (this.step2.concern_behaviour ? 'yes' : 'no'),
       professional_referrals: referrals.length > 0 ? referrals : [],
     }).subscribe({
       next: () => this.saveStep2RoutineCare(this.childId!, advance),
@@ -1362,13 +1365,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.patchChildProfile(childId, {
       sex: this.step1.sex || null,
       first_language: this.step1.first_language || null,
-      home_address: this.stringToAddress(this.step1.home_address) as any,
+      home_address: this.stringToAddress(this.step1.home_address) ?? undefined,
       home_postcode: this.step1.home_postcode.trim() || null,
       home_telephone: this.step1.home_telephone.trim() || null,
       religion: this.step1.religion.trim() || null,
       ethnic_origin: this.step1.ethnic_origin.trim() || null,
       other_languages: this.step1.other_languages || null,
-      disability_status: this.parseYesNoUnknown(this.step1.disability_status) as any,
+      disability_status: this.parseYesNoUnknown(this.step1.disability_status) ?? 'unknown',
       disability_notes: this.step1.disability_notes.trim() || null,
       access_requirements: this.step1.access_requirements.trim() || null,
       registration_date: this.step1.registration_date || null,
@@ -1383,7 +1386,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       gdpr_declared_by_name: this.loadedProfile?.gdpr_declared_by_name || null,
       gdpr_declared_at: this.loadedProfile?.gdpr_declared_at || null,
       gdpr_declaration_date: this.loadedProfile?.gdpr_declaration_date || null,
-    } as any).subscribe({
+    }).subscribe({
       next: () => {
         this.isSaving = false;
         if (advance) {
@@ -1555,7 +1558,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { social_media_channel_notes: _ignored, ...step4Base } = this.step4;
+    const step4Base = Object.fromEntries(
+      Object.entries(this.step4).filter(([k]) => k !== 'social_media_channel_notes'),
+    ) as ConsentWritePayload;
     const signedDate = this.step4.signed_date || this.todayIso;
     const valuesChanged = this.consentValuesChangedSince(this.originalStep4Snapshot);
     const consentChangeReason = valuesChanged
@@ -1808,7 +1813,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         if (this.selectedPhotoFile) {
           this.isUploadingPhoto = true;
           this.staffApi.uploadPhoto(result.id, this.selectedPhotoFile).subscribe({
-            next: (photoResult) => {
+            next: () => {
               this.isUploadingPhoto = false;
               this.clearPhotoState();
               this.isSaving = false;
@@ -2272,15 +2277,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     return {
       funding_enabled: !this.step6.no_funding,
-      funding_type: (this.step6?.funding_type ?? 'none') as any,
-      funding_model: (this.step6?.funding_model ?? 'term_time_only') as any,
+      funding_type: (this.step6?.funding_type ?? 'none') as FundingType,
+      funding_model: (this.step6?.funding_model ?? 'term_time_only') as FundingModel,
       funded_hours_per_week: this.step6?.funded_hours_per_week ?? null,
       funding_start_date: this.step6?.funding_start_date || null,
       funding_end_date: this.step6?.funding_end_date || null,
       eligibility_code: null,
       eligibility_code_validated: false,
       evidence_received: false,
-      benefits_status: (this.step6?.benefits_status ?? 'unknown') as any,
+      benefits_status: (this.step6?.benefits_status ?? 'unknown') as BenefitsStatus,
       benefits: this.step6.benefits,
       other_benefit_name: this.step6.other_benefit_name || null,
       benefit_notes: this.step6.benefit_notes || null,
@@ -2482,14 +2487,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     };
 
     if (this.patternEntriesCount > 0) {
-      const bp: any = {
+      const bp: { effective_from: string; effective_to?: string; entries: { day_of_week: number; session_type_id: string }[] } = {
         effective_from: this.patternEffectiveFrom || this.step1.start_date,
         entries: this.patternEntriesToPayload(),
       };
       if (this.patternEffectiveTo) {
         bp.effective_to = this.patternEffectiveTo;
       }
-      (payload as any).booking_pattern = bp;
+      payload.booking_pattern = bp;
     }
 
     return payload;
@@ -2856,13 +2861,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.patchChildProfile(childId, {
       sex: this.step1.sex || null,
       first_language: this.step1.first_language || null,
-      home_address: this.stringToAddress(this.step1.home_address) as any,
+      home_address: this.stringToAddress(this.step1.home_address) ?? undefined,
       home_postcode: this.step1.home_postcode.trim() || null,
       home_telephone: this.step1.home_telephone.trim() || null,
       religion: this.step1.religion.trim() || null,
       ethnic_origin: this.step1.ethnic_origin.trim() || null,
       other_languages: this.step1.other_languages || null,
-      disability_status: this.parseYesNoUnknown(this.step1.disability_status) as any,
+      disability_status: this.parseYesNoUnknown(this.step1.disability_status) ?? 'unknown',
       disability_notes: this.step1.disability_notes.trim() || null,
       access_requirements: this.step1.access_requirements.trim() || null,
       demographics_home_reviewed: true,
@@ -2877,7 +2882,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       gdpr_declared_by_name: this.loadedProfile?.gdpr_declared_by_name || null,
       gdpr_declared_at: this.loadedProfile?.gdpr_declared_at || null,
       gdpr_declaration_date: this.loadedProfile?.gdpr_declaration_date || null,
-    } as any).subscribe({
+    }).subscribe({
       next: () => {
         this.isSaving = false;
         if (advance) {
@@ -3077,7 +3082,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }
       this.step1.sex = p.sex ?? '';
       this.step1.first_language = p.first_language ?? '';
-      this.step1.home_address = this.addressToString(p.home_address as any);
+      this.step1.home_address = this.addressToString(p.home_address);
       this.step1.home_postcode = p.home_postcode ?? '';
       this.step1.home_telephone = p.home_telephone ?? '';
       this.step1.religion = p.religion ?? '';
@@ -3140,7 +3145,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.concern_emotional_wellbeing = s.concern_emotional_wellbeing === 'yes';
       this.step2.concern_behaviour = s.concern_behaviour === 'yes';
       this.referralsDraft = s.professional_referrals?.length
-        ? s.professional_referrals.map((r: any) => ({
+        ? s.professional_referrals.map((r) => ({
             type: r.type,
             referredDate: r.referred_date ?? '',
             referredBy: r.referred_by ?? '',
@@ -3160,8 +3165,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         ? raw.parentCarers.map(contact => ({ ...contact }))
         : [this.emptyContact('Mother')];
       if (raw.parentCarers.length > 0) {
-        this.addressToStructuredFields(raw.parentCarers[0].address as any, 'parent1');
-        this.step3.parent1_work_address = this.addressToString(raw.parentCarers[0].workAddress as any);
+        this.addressToStructuredFields(raw.parentCarers[0].address, 'parent1');
+        this.step3.parent1_work_address = this.addressToString(raw.parentCarers[0].workAddress);
         this.step3.parent1_has_responsibility = raw.parentCarers[0].hasParentalResponsibility ?? null;
       }
       if (raw.parentCarers.length > 1) {
@@ -3170,8 +3175,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.step3.second_parent_relationship = raw.parentCarers[1].relationshipToChild ?? '';
         this.step3.second_parent_telephone = raw.parentCarers[1].telephone ?? '';
         this.step3.second_parent_email = raw.parentCarers[1].email ?? '';
-        this.addressToStructuredFields(raw.parentCarers[1].address as any, 'second_parent');
-        this.step3.second_parent_work_address = this.addressToString(raw.parentCarers[1].workAddress as any);
+        this.addressToStructuredFields(raw.parentCarers[1].address, 'second_parent');
+        this.step3.second_parent_work_address = this.addressToString(raw.parentCarers[1].workAddress);
         this.step3.second_parent_has_responsibility = raw.parentCarers[1].hasParentalResponsibility ?? null;
       } else {
         this.step3.show_second_parent = false;
@@ -3191,11 +3196,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         ? raw.emergencyContacts.map(contact => ({ ...contact }))
         : [this.emptyContact('Grandparent')];
       this.emergencyContactAddresses = raw.emergencyContacts.length
-        ? raw.emergencyContacts.map(contact => this.addressToString(contact.address as any))
+        ? raw.emergencyContacts.map(contact => this.addressToString(contact.address))
         : [''];
       this.emergencyAuthorisedFlags = this.emergencyContactsDraft.map((contact) =>
         raw.authorisedCollectors.some(
-          (collector: any) => collector.fullName === contact.fullName && !!contact.fullName,
+          (collector) => collector.fullName === contact.fullName && !!contact.fullName,
         ),
       );
       if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
@@ -3486,11 +3491,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   private isEmptyDraft(): boolean {
     const step1Empty = Object.values(this.step1).every(value => !String(value ?? '').trim());
-    const step2Empty = Object.entries(this.step2).every(([key, value]) => {
+    const step2Empty = Object.values(this.step2).every((value) => {
       if (typeof value === 'boolean') return value === false;
       return !String(value ?? '').trim();
     }) && this.referralsDraft.length === 0;
-    const step3Empty = Object.entries(this.step3).every(([key, value]) => {
+    const step3Empty = Object.values(this.step3).every((value) => {
       if (typeof value === 'boolean') return value === false;
       return !String(value ?? '').trim();
     });

@@ -1,8 +1,12 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { routes } from './app.routes';
 import { authGuard } from './core/guards/auth.guard';
 import { roleDefaultRedirectGuard } from './core/guards/role-default-redirect.guard';
 import { roleGuard } from './core/guards/role.guard';
+
+interface RouteWithFullPath extends Route {
+  fullPath: string;
+}
 
 function flattenPaths(routes: Routes, parentPath = ''): string[] {
   const paths: string[] = [];
@@ -19,13 +23,13 @@ function flattenPaths(routes: Routes, parentPath = ''): string[] {
 }
 
 function findLeafRoute(routes: Routes, path: string) {
-  const matches: any[] = [];
+  const matches: RouteWithFullPath[] = [];
   collectByPath(routes, '', matches);
   return matches.find((r) => r.fullPath === path);
 }
 
-function findRouteChain(routes: Routes, path: string): any[] {
-  const matches: any[] = [];
+function findRouteChain(routes: Routes, path: string): RouteWithFullPath[] {
+  const matches: RouteWithFullPath[] = [];
   collectByPath(routes, '', matches);
   return matches.filter((r) => path === '' || path.startsWith(r.fullPath));
 }
@@ -41,7 +45,7 @@ function findBreadcrumbInChain(routes: Routes, path: string): { label: string; r
   return undefined;
 }
 
-function collectByPath(routes: Routes, parentPath: string, out: any[]): void {
+function collectByPath(routes: Routes, parentPath: string, out: RouteWithFullPath[]): void {
   for (const r of routes) {
     if (r.path === undefined) continue;
     const fullPath = r.path === '' ? parentPath : parentPath ? `${parentPath}/${r.path}` : r.path;
@@ -52,8 +56,8 @@ function collectByPath(routes: Routes, parentPath: string, out: any[]): void {
   }
 }
 
-function allDescendantRoutes(routes: Routes): any[] {
-  const out: any[] = [];
+function allDescendantRoutes(routes: Routes): Route[] {
+  const out: Route[] = [];
   const walk = (rs: Routes) => {
     for (const r of rs) {
       out.push(r);
@@ -62,12 +66,6 @@ function allDescendantRoutes(routes: Routes): any[] {
   };
   walk(routes);
   return out;
-}
-
-function topLevelRouteChildren(routes: Routes): any[] {
-  return routes
-    .flatMap(r => r.children ?? [])
-    .filter(r => r.path !== undefined);
 }
 
 describe('app.routes', () => {
@@ -127,7 +125,7 @@ describe('app.routes', () => {
 
   for (const dynamic of dynamicPaths) {
     it(`registers dynamic MVP route /${dynamic}`, () => {
-      const allPaths: any[] = [];
+      const allPaths: RouteWithFullPath[] = [];
       collectByPath(routes, '', allPaths);
       const found = allPaths.some(r => r.fullPath === dynamic);
       expect(found).toBeTrue();
@@ -161,7 +159,7 @@ describe('app.routes', () => {
       .find(r => r.path === 'manager/children');
 
     expect(listParent).toBeDefined();
-    const childPaths = (listParent!.children ?? []).map((c: any) => c.path);
+    const childPaths = (listParent!.children ?? []).map((c: Route) => c.path);
     const newIndex = childPaths.indexOf('new');
     const childIdIndex = childPaths.indexOf(':childId');
     expect(newIndex).toBeGreaterThanOrEqual(0);
@@ -406,15 +404,15 @@ describe('app.routes breadcrumb wiring', () => {
 
   it('uses a resolve function for dynamic child-name and invoice-number segments', () => {
     const childDetail = findLeafRoute(routes, 'manager/children/:childId');
-    expect(typeof childDetail!.data.breadcrumb.resolve).toBe('function');
+    expect(typeof childDetail!.data?.['breadcrumb'].resolve).toBe('function');
 
     const managerInvoice = findLeafRoute(routes, 'manager/invoices/:invoiceId');
-    expect(typeof managerInvoice!.data.breadcrumb.resolve).toBe('function');
+    expect(typeof managerInvoice!.data?.['breadcrumb'].resolve).toBe('function');
 
     const parentInvoice = findLeafRoute(routes, 'parent/invoices/:invoiceId');
-    expect(typeof parentInvoice!.data.breadcrumb.resolve).toBe('function');
+    expect(typeof parentInvoice!.data?.['breadcrumb'].resolve).toBe('function');
 
     const ownerRoomEdit = findLeafRoute(routes, 'owner/rooms/:roomId/edit');
-    expect(typeof ownerRoomEdit!.data.breadcrumb.resolve).toBe('function');
+    expect(typeof ownerRoomEdit!.data?.['breadcrumb'].resolve).toBe('function');
   });
 });

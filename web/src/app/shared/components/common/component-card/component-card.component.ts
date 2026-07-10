@@ -10,6 +10,6 @@ import { Component, Input } from '@angular/core';
 export class ComponentCardComponent {
 
   @Input() title!: string;
-  @Input() desc: string = '';
-  @Input() className: string = '';
+  @Input() desc = '';
+  @Input() className = '';
 }

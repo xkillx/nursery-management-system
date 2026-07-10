@@ -51,7 +51,7 @@ export interface ChildProfile {
   concernSight?: string;
   concernEmotionalWellbeing?: string;
   concernBehaviour?: string;
-  professionalReferrals?: any[];
+  professionalReferrals?: ProfessionalReferral[];
   benefitsContributeToFees?: string;
   workingTaxCredit?: string;
   collegeUniPaidToParent?: string;
@@ -60,12 +60,11 @@ export interface ChildProfile {
   funding2yoTermTime?: string;
   fundingSupportNotes?: string;
   fundingSupportReviewed?: boolean;
-  demographicsHome?: any;
+  demographicsHome?: unknown;
   emergencyCollectionReviewed?: boolean;
-  fundingSupport?: any;
+  fundingSupport?: unknown;
   hasFundingSupport?: boolean;
   medicalHistoryStatus?: string;
-  [key: string]: any;
 }
 
 export interface ChildProfileInput {
@@ -227,7 +226,6 @@ export interface ChildConsent {
   paper_form_on_file: boolean;
   created_at: string;
   updated_at: string;
-  [key: string]: any;
 }
 
 export interface ChildConsentInput {
@@ -370,7 +368,6 @@ export interface CreateChildPayload {
     start_date: string;
     end_date?: string;
     notes?: string;
-    [key: string]: any;
   };
   profile?: ChildProfileInput;
   health?: ChildHealthProfileInput;
@@ -386,6 +383,11 @@ export interface CreateChildPayload {
   room: {
     room_id: string;
     start_date: string;
+  };
+  booking_pattern?: {
+    effective_from: string;
+    effective_to?: string;
+    entries: { day_of_week: number; session_type_id: string }[];
   };
 }
 

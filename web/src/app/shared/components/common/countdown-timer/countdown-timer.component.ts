@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 
 @Component({
   selector: 'app-countdown-timer',
@@ -9,7 +9,7 @@ import { Component, Input } from '@angular/core';
   templateUrl: './countdown-timer.component.html',
   styles: ``
 })
-export class CountdownTimerComponent {
+export class CountdownTimerComponent implements OnInit, OnDestroy {
 
   @Input() targetDate!: Date;
 
@@ -20,7 +20,7 @@ export class CountdownTimerComponent {
     seconds: 0,
   };
 
-  private intervalId: any;
+  private intervalId: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit(): void {
     this.startCountdown();

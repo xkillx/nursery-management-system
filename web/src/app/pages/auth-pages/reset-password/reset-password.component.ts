@@ -92,7 +92,7 @@ export class ResetPasswordComponent {
     });
   }
 
-  private handleError(error: any) {
+  private handleError(error: unknown) {
     const mapped = this.errorMapper.map(error);
     const tokenErrorCodes = [
       'password_reset_token_invalid',

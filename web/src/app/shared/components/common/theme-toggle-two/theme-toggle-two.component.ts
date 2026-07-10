@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
 
 
@@ -10,11 +10,8 @@ import { ThemeService } from '../../../services/theme.service';
 })
 export class ThemeToggleTwoComponent {
 
-  theme$;
-
-  constructor(private themeService: ThemeService) {
-    this.theme$ = this.themeService.theme$;
-  }
+  private readonly themeService = inject(ThemeService);
+  theme$ = this.themeService.theme$;
 
   toggleTheme() {
     this.themeService.toggleTheme();

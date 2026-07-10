@@ -1,5 +1,5 @@
 
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, forwardRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import flatpickr from 'flatpickr';
 import { LabelComponent } from '../label/label.component';
@@ -18,28 +18,28 @@ import "flatpickr/dist/flatpickr.css";
   templateUrl: './date-picker.component.html',
   styles: ``
 })
-export class DatePickerComponent implements ControlValueAccessor {
+export class DatePickerComponent implements ControlValueAccessor, AfterViewInit, OnDestroy {
 
   @Input() id!: string;
-  @Input() name: string = '';
+  @Input() name = '';
   @Input() mode: 'single' | 'multiple' | 'range' | 'time' = 'single';
   @Input() defaultDate?: string | Date | string[] | Date[];
   @Input() label?: string;
-  @Input() placeholder: string = 'Select date';
-  @Input() error: boolean = false;
-  @Input() className: string = '';
+  @Input() placeholder = 'Select date';
+  @Input() error = false;
+  @Input() className = '';
   @Input() min?: string;
   @Input() max?: string;
-  @Input() disabled: boolean = false;
+  @Input() disabled = false;
   @Input() describedBy?: string;
-  @Output() dateChange = new EventEmitter<any>();
+  @Output() dateChange = new EventEmitter<{ selectedDates: Date[]; dateStr: string; instance: flatpickr.Instance }>();
   @Output() blurred = new EventEmitter<void>();
 
   @ViewChild('dateInput', { static: false }) dateInput!: ElementRef<HTMLInputElement>;
 
   private flatpickrInstance: flatpickr.Instance | undefined;
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string) => void = () => { /* Set via registerOnChange */ };
+  private onTouched: () => void = () => { /* Set via registerOnTouched */ };
   private pendingValue: string | null = null;
 
   get inputClasses(): string {

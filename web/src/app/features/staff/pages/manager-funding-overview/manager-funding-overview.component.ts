@@ -6,7 +6,7 @@ import { heroEye } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { StaffApiService } from '../../data/staff-api.service';
-import { FundingOverviewFlag, FundingOverviewItem, FundingOverviewRecord } from '../../models/funding.models';
+import { FundingOverviewFlag, FundingOverviewRecord } from '../../models/funding.models';
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';

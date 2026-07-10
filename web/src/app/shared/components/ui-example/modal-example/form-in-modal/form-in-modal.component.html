@@ -2,7 +2,7 @@
   <app-button size="sm" (btnClick)="openModal()"> Open Modal </app-button>
   <app-modal
     [isOpen]="isOpen"
-    (close)="closeModal()"
+    (closed)="closeModal()"
     className="max-w-[584px] p-5 lg:p-10"
   >
     <form class="">

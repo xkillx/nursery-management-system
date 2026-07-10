@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -27,18 +27,18 @@ export type SidebarIcon =
   | 'invoices'
   | 'site-settings';
 
-export type SidebarNavItem = {
+export interface SidebarNavItem {
   label: string;
   path: string;
   testId: string;
   icon: SidebarIcon;
   matchPaths?: string[];
-};
+}
 
-export type SidebarNavGroup = {
+export interface SidebarNavGroup {
   label: string;
   items: SidebarNavItem[];
-};
+}
 
 @Component({
   selector: 'app-sidebar',
@@ -61,11 +61,7 @@ export type SidebarNavGroup = {
   ],
   templateUrl: './app-sidebar.component.html',
 })
-export class AppSidebarComponent {
-
-  readonly isExpanded$;
-  readonly isMobileOpen$;
-  readonly isHovered$;
+export class AppSidebarComponent implements OnInit, OnDestroy {
 
   iconMap: Record<SidebarIcon, string> = {
     dashboard: 'heroSquares2x2',
@@ -79,16 +75,14 @@ export class AppSidebarComponent {
 
   private subscription: Subscription = new Subscription();
 
-  constructor(
-    public sidebarService: SidebarService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-    private authService: AuthService
-  ) {
-    this.isExpanded$ = this.sidebarService.isExpanded$;
-    this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
-    this.isHovered$ = this.sidebarService.isHovered$;
-  }
+  readonly sidebarService = inject(SidebarService);
+  private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly authService = inject(AuthService);
+
+  readonly isExpanded$ = this.sidebarService.isExpanded$;
+  readonly isMobileOpen$ = this.sidebarService.isMobileOpen$;
+  readonly isHovered$ = this.sidebarService.isHovered$;
 
   ngOnInit() {
     this.subscription.add(

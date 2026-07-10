@@ -33,9 +33,9 @@ import {
 
 type EditorMode = 'closed' | 'create' | 'edit';
 
-type DayEntry = {
+interface DayEntry {
   sessionTypeId: string;
-};
+}
 
 const DAY_LABELS: Record<number, string> = {
   1: 'Mon',

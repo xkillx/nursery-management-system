@@ -93,8 +93,8 @@ export class CheckboxComponent implements ControlValueAccessor {
   @Input() ariaLabel?: string;
   @Output() checkedChange = new EventEmitter<boolean>();
 
-  private propagateChange: (value: boolean) => void = () => {};
-  private propagateTouched: () => void = () => {};
+  private propagateChange: (value: boolean) => void = () => { /* Set via registerOnChange */ };
+  private propagateTouched: () => void = () => { /* Set via registerOnTouched */ };
 
   onChange(event: Event) {
     const input = event.target as HTMLInputElement;

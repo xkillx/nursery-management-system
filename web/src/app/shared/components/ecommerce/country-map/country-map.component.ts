@@ -1,4 +1,4 @@
-import { Component, NgZone, ElementRef, ViewChild } from '@angular/core';
+import { Component, NgZone, ElementRef, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
 import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
@@ -7,17 +7,17 @@ import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
   selector: 'app-country-map',
   template: `<div #chartdiv style="width: 100%; height: 300px; border-radius: 1rem;"></div>`,
 })
-export class CountryMapComponent {
+export class CountryMapComponent implements OnInit, OnDestroy {
   @ViewChild('chartdiv', { static: true }) chartdiv!: ElementRef;
   root!: am5.Root;
 
-  constructor(private zone: NgZone) { }
+  private readonly zone = inject(NgZone);
 
   ngOnInit() {
     this.zone.runOutsideAngular(() => {
       this.root = am5.Root.new(this.chartdiv.nativeElement);
 
-      let chart = this.root.container.children.push(
+      const chart = this.root.container.children.push(
         am5map.MapChart.new(this.root, {
           panX: "none",
           panY: "none",
@@ -27,7 +27,7 @@ export class CountryMapComponent {
         })
       );
 
-      let polygonSeries = chart.series.push(
+      const polygonSeries = chart.series.push(
         am5map.MapPolygonSeries.new(this.root, {
           geoJSON: am5geodata_worldLow,
           exclude: ["AQ"],
@@ -46,7 +46,7 @@ export class CountryMapComponent {
       });
 
       // Add blue dot markers
-      let pointSeries = chart.series.push(
+      const pointSeries = chart.series.push(
         am5map.MapPointSeries.new(this.root, {})
       );
 
@@ -58,12 +58,12 @@ export class CountryMapComponent {
       ];
 
       markers.forEach(m => {
-        let point = pointSeries.pushDataItem({
+        pointSeries.pushDataItem({
           latitude: m.lat,
           longitude: m.lon,
         });
 
-        let circle = am5.Circle.new(this.root, {
+        const circle = am5.Circle.new(this.root, {
           radius: 6,
           fill: am5.color(0x465FFF),
           stroke: am5.color(0xffffff),

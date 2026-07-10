@@ -48,9 +48,9 @@ export class RadioSmComponent {
   @Input() id!: string;
   @Input() name!: string;
   @Input() value!: string;
-  @Input() checked: boolean = false;
+  @Input() checked = false;
   @Input() label!: string;
-  @Input() className: string = '';
+  @Input() className = '';
 
   @Output() valueChange = new EventEmitter<string>();
 

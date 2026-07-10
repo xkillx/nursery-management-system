@@ -590,7 +590,6 @@ describe('ManagerInvoiceDetailComponent error handling', () => {
 
 describe('ManagerInvoiceDetailComponent payment diagnostics error', () => {
   let fixture: ComponentFixture<ManagerInvoiceDetailComponent>;
-  let apiService: jasmine.SpyObj<ManagerInvoicesApiService>;
 
   beforeEach(() => {
     const spy = createSpy();
@@ -617,7 +616,6 @@ describe('ManagerInvoiceDetailComponent payment diagnostics error', () => {
       ],
     });
 
-    apiService = TestBed.inject(ManagerInvoicesApiService) as jasmine.SpyObj<ManagerInvoicesApiService>;
     fixture = TestBed.createComponent(ManagerInvoiceDetailComponent);
     fixture.detectChanges();
   });

@@ -66,7 +66,7 @@ describe('ToastService', () => {
   });
 
   it('auto-dismisses after duration', (done) => {
-    const id = service.success('auto', { durationMs: 100 });
+    service.success('auto', { durationMs: 100 });
     setTimeout(() => {
       expect(service.state.toasts().length).toBe(0);
       done();

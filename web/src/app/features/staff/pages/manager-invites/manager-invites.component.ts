@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroEnvelope, heroPaperAirplane, heroXCircle } from '@ng-icons/heroicons/outline';
@@ -53,7 +53,7 @@ const ROLE_OPTIONS: Option[] = [
     provideIcons({ heroEnvelope, heroPaperAirplane, heroXCircle }),
   ],
 })
-export class ManagerInvitesComponent {
+export class ManagerInvitesComponent implements OnInit {
   private readonly staffApi = inject(StaffApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly toast = inject(ToastService);

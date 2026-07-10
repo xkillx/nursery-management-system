@@ -1,8 +1,7 @@
 import { of, Subject, throwError } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter, Router } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 import { ParentInvoicesComponent } from './parent-invoices.component';
 import { ParentInvoicesApiService } from '../../data/parent-invoices-api.service';

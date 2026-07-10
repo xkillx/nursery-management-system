@@ -15,7 +15,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class RadioButtonsComponent {
 
-  selectedValue: string = 'option2';
+  selectedValue = 'option2';
 
   handleRadioChange(value: string) {
     console.log(value,'value')

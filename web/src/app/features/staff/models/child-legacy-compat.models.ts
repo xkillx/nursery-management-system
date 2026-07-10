@@ -32,7 +32,7 @@ export type {
 // Aggregated view of a child + all its sub-records, used by the stepper for
 // load+populate. Built by the StaffApiService loader that fans out to the
 // per-resource endpoints.
-export type StepperProfileView = {
+export interface StepperProfileView {
   child: ChildProfile;
   profile: ChildProfile | null;
   health: ChildHealthProfile | null;
@@ -47,15 +47,15 @@ export type StepperProfileView = {
     isComplete: boolean;
     missingSections: string[];
   };
-};
+}
 
 // Aggregated completion state. The old "workflow status" endpoint was dropped;
 // the stepper now derives this from the per-resource responses it has already
 // loaded.
-export type StepperCompletionStatus = {
+export interface StepperCompletionStatus {
   isReviewedComplete: boolean;
   canMarkComplete: boolean;
   needsReview: boolean;
   missingGroups: string[];
   currentConsent: ConsentRecord | null;
-};
+}

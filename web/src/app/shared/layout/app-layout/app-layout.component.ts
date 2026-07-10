@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { AppSidebarComponent } from '../app-sidebar/app-sidebar.component';
@@ -23,15 +23,10 @@ import { PageBreadcrumbComponent } from '../../components/common/page-breadcrumb
 })
 
 export class AppLayoutComponent {
-  readonly isExpanded$;
-  readonly isHovered$;
-  readonly isMobileOpen$;
-
-  constructor(public sidebarService: SidebarService) {
-    this.isExpanded$ = this.sidebarService.isExpanded$;
-    this.isHovered$ = this.sidebarService.isHovered$;
-    this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
-  }
+  readonly sidebarService = inject(SidebarService);
+  readonly isExpanded$ = this.sidebarService.isExpanded$;
+  readonly isHovered$ = this.sidebarService.isHovered$;
+  readonly isMobileOpen$ = this.sidebarService.isMobileOpen$;
 
   get containerClasses() {
     return [

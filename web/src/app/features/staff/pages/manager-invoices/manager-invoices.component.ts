@@ -37,7 +37,6 @@ import {
 import {
   formatGbp,
   formatBillingMonthLabel,
-  defaultCompletedBillingMonth,
 } from '../../utils/invoice-run-formatters';
 import {
   PaymentDisplayState,
@@ -169,7 +168,7 @@ export class ManagerInvoicesComponent implements OnInit {
     });
   }
 
-  viewInvoice(invoiceId: string, event: MouseEvent): void {
+  viewInvoice(invoiceId: string, event: Event): void {
     const target = event.target as HTMLElement;
     if (target.closest('a') || target.closest('button') || target.closest('input') || target.closest('select')) {
       return;

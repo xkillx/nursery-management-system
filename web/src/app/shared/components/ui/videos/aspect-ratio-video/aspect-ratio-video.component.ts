@@ -12,8 +12,8 @@ import { Component, Input } from '@angular/core';
 export class AspectRatioVideoComponent {
 
   @Input() videoUrl!: string;
-  @Input() aspectRatio: string = 'video'; // Tailwind's aspect-ratio value like '16/9'
-  @Input() title: string = 'Embedded Video';
+  @Input() aspectRatio = 'video'; // Tailwind's aspect-ratio value like '16/9'
+  @Input() title = 'Embedded Video';
 
   get aspectRatioClass(): string {
     return `aspect-${this.aspectRatio}`;

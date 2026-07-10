@@ -65,7 +65,7 @@ export class ForgotPasswordComponent {
     });
   }
 
-  private handleError(error: any) {
+  private handleError(error: unknown) {
     const mapped = this.errorMapper.map(error);
     const presented = presentApiError(mapped, 'auth.forgotPassword');
 

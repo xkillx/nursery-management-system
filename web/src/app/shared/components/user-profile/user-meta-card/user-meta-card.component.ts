@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { InputFieldComponent } from './../../form/input/input-field.component';
 import { ModalService } from '../../../services/modal.service';
 
@@ -17,7 +17,7 @@ import { ButtonComponent } from '../../ui/button/button.component';
 })
 export class UserMetaCardComponent {
 
-  constructor(public modal: ModalService) {}
+  readonly modal = inject(ModalService);
 
   isOpen = false;
   openModal() { this.isOpen = true; }

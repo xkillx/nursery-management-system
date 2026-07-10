@@ -47,7 +47,7 @@ export class AddProductFormComponent {
     { value: '4', label: 'Gray' }
   ];
 
-  stockQuantity: number = 1;
+  stockQuantity = 1;
 
   handleSelectChange(value: string) {
     console.log('Selected value:', value);

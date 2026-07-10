@@ -297,8 +297,12 @@ export class StaffApiService {
 
   getChildConsent(childId: string): Observable<ChildConsent | null> {
     return this.http
-      .get<any>(apiUrl(`/children/${childId}/consent`))
-      .pipe(map((r) => (r && r.consent !== undefined) ? r.consent : r));
+      .get<{ consent: ChildConsent | null } | ChildConsent | null>(apiUrl(`/children/${childId}/consent`))
+      .pipe(map((r) => {
+        if (!r) return null;
+        if ('consent' in r) return r.consent;
+        return r as ChildConsent;
+      }));
   }
 
   updateChildConsent(childId: string, payload: ChildConsentInput): Observable<ChildConsent> {
@@ -308,20 +312,28 @@ export class StaffApiService {
 
   getChildFunding(childId: string): Observable<ChildFundingRecord | null> {
     return this.http
-      .get<any>(apiUrl(`/children/${childId}/funding`))
-      .pipe(map((r) => (r && r.funding !== undefined) ? r.funding : r));
+      .get<{ funding: ChildFundingRecord | null } | ChildFundingRecord | null>(apiUrl(`/children/${childId}/funding`))
+      .pipe(map((r) => {
+        if (!r) return null;
+        if ('funding' in r) return r.funding;
+        return r as ChildFundingRecord;
+      }));
   }
 
   patchChildFunding(childId: string, payload: ChildFundingRecordInput): Observable<ChildFundingRecord> {
     return this.http
-      .patch<any>(apiUrl(`/children/${childId}/funding`), payload)
-      .pipe(map((r) => (r && r.funding !== undefined) ? r.funding : r));
+      .patch<{ funding: ChildFundingRecord } | ChildFundingRecord>(apiUrl(`/children/${childId}/funding`), payload)
+      .pipe(map((r) => ('funding' in r) ? r.funding : r as ChildFundingRecord));
   }
 
   getChildCollectionSettings(childId: string): Observable<ChildCollectionSettings | null> {
     return this.http
-      .get<any>(apiUrl(`/children/${childId}/collection-settings`))
-      .pipe(map((r) => (r && r.collection_settings !== undefined) ? r.collection_settings : r));
+      .get<{ collection_settings: ChildCollectionSettings | null } | ChildCollectionSettings | null>(apiUrl(`/children/${childId}/collection-settings`))
+      .pipe(map((r) => {
+        if (!r) return null;
+        if ('collection_settings' in r) return r.collection_settings;
+        return r as ChildCollectionSettings;
+      }));
   }
 
   putChildCollectionSettings(childId: string, payload: ChildCollectionSettingsInput): Observable<ChildCollectionSettings> {
@@ -379,8 +391,12 @@ export class StaffApiService {
 
   getChildBillingProfile(childId: string): Observable<ChildBillingProfile | null> {
     return this.http
-      .get<any>(apiUrl(`/children/${childId}/billing-profile`))
-      .pipe(map((r) => (r && r.billing_profile !== undefined) ? r.billing_profile : r));
+      .get<{ billing_profile: ChildBillingProfile | null } | ChildBillingProfile | null>(apiUrl(`/children/${childId}/billing-profile`))
+      .pipe(map((r) => {
+        if (!r) return null;
+        if ('billing_profile' in r) return r.billing_profile;
+        return r as ChildBillingProfile;
+      }));
   }
 
   patchChildBillingProfile(childId: string, payload: ChildBillingProfileInput): Observable<ChildBillingProfile> {
@@ -390,14 +406,18 @@ export class StaffApiService {
 
   getChildLeavingRecord(childId: string): Observable<ChildLeavingRecord | null> {
     return this.http
-      .get<any>(apiUrl(`/children/${childId}/leaving-record`))
-      .pipe(map((r) => (r && r.leaving_record !== undefined) ? r.leaving_record : r));
+      .get<{ leaving_record: ChildLeavingRecord | null } | ChildLeavingRecord | null>(apiUrl(`/children/${childId}/leaving-record`))
+      .pipe(map((r) => {
+        if (!r) return null;
+        if ('leaving_record' in r) return r.leaving_record;
+        return r as ChildLeavingRecord;
+      }));
   }
 
   static readonly LOAD_ERROR = { __loadError: true };
 
   static isLoadError<T>(value: T | typeof StaffApiService.LOAD_ERROR): value is typeof StaffApiService.LOAD_ERROR {
-    return value === StaffApiService.LOAD_ERROR || (value !== null && typeof value === 'object' && '__loadError' in (value as any));
+    return value === StaffApiService.LOAD_ERROR || (value !== null && typeof value === 'object' && '__loadError' in (value as Record<string, unknown>));
   }
 
   // Aggregated loader used by the manager-child-edit stepper. Fans out to

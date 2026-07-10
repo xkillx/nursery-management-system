@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { OwnerOverviewComponent } from './owner-overview.component';
-import { OwnerApiService } from '../../data/owner-api.service';
+import { OwnerSiteSummary } from '../../models/owner.models';
 
 const summariesResponse = {
   billing_month: '2026-06',
@@ -132,7 +132,7 @@ describe('OwnerOverviewComponent', () => {
 
   it('cancels rate edit', () => {
     const component = fixture.componentInstance;
-    component.startRateEdit({ siteId: 'site-1', siteCoreHourlyRateMinor: 750 } as any);
+    component.startRateEdit({ siteId: 'site-1', siteCoreHourlyRateMinor: 750 } as Partial<OwnerSiteSummary> as OwnerSiteSummary);
     component.cancelRateEdit();
 
     expect(component.editingRateSiteId).toBeNull();

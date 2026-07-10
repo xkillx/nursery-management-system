@@ -238,10 +238,10 @@ export class TransactionListComponent {
 
   selected: number[] = [];
   sort: SortState = { key: 'customer', asc: true };
-  page: number = 1;
-  search: string = '';
-  filterDays: string = 'Last 7 Days';
-  perPage: number = 10;
+  page = 1;
+  search = '';
+  filterDays = 'Last 7 Days';
+  perPage = 10;
 
   get totalPages(): number {
     return Math.ceil(this.transactions.length / this.perPage) || 1;

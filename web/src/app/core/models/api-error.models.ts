@@ -21,21 +21,24 @@ export interface MembershipSelectionRequiredResponse {
   available_memberships: MembershipModel[];
 }
 
-export function isMembershipSelectionRequired(body: any): body is MembershipSelectionRequiredResponse {
-  if (body?.code !== 'membership_selection_required') {
+export function isMembershipSelectionRequired(body: unknown): body is MembershipSelectionRequiredResponse {
+  if (!body || typeof body !== 'object' || (body as Record<string, unknown>).code !== 'membership_selection_required') {
     return false;
   }
 
-  const memberships: unknown[] = body.available_memberships;
+  const memberships: unknown[] = (body as MembershipSelectionRequiredResponse).available_memberships ?? [];
   if (!Array.isArray(memberships) || memberships.length === 0) {
     return false;
   }
 
   return memberships.every(
-    (m: any) =>
-      typeof m?.membership_id === 'string' &&
-      typeof m?.tenant_name === 'string' &&
-      (m?.branch_name === null || typeof m?.branch_name === 'string') &&
-      typeof m?.role === 'string',
+    (m: unknown) => {
+      if (!m || typeof m !== 'object') return false;
+      const obj = m as Record<string, unknown>;
+      return typeof obj.membership_id === 'string' &&
+        typeof obj.tenant_name === 'string' &&
+        (obj.branch_name === null || typeof obj.branch_name === 'string') &&
+        typeof obj.role === 'string';
+    },
   );
 }

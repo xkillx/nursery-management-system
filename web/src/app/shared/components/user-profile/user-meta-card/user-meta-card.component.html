@@ -134,7 +134,7 @@
 <!-- Modal -->
 <app-modal
   [isOpen]="isOpen"
-  (close)="closeModal()"
+  (closed)="closeModal()"
   className="max-w-[700px] m-4"
 >
   <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
@@ -154,19 +154,19 @@
           </h5>
           <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
             <div>
-              <label>Facebook</label>
+              <span>Facebook</span>
               <app-input-field type="text" [value]="user.social.facebook" />
             </div>
             <div>
-              <label>X.com</label>
+              <span>X.com</span>
               <app-input-field type="text" [value]="user.social.x" />
             </div>
             <div>
-              <label>Linkedin</label>
+              <span>Linkedin</span>
               <app-input-field type="text" [value]="user.social.linkedin" />
             </div>
             <div>
-              <label>Instagram</label>
+              <span>Instagram</span>
               <app-input-field type="text" [value]="user.social.instagram" />
             </div>
           </div>
@@ -177,23 +177,23 @@
           </h5>
           <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
             <div class="col-span-2 lg:col-span-1">
-              <label>First Name</label>
+              <span>First Name</span>
               <app-input-field type="text" [value]="user.firstName" />
             </div>
             <div class="col-span-2 lg:col-span-1">
-              <label>Last Name</label>
+              <span>Last Name</span>
               <app-input-field type="text" [value]="user.lastName" />
             </div>
             <div class="col-span-2 lg:col-span-1">
-              <label>Email Address</label>
+              <span>Email Address</span>
               <app-input-field type="text" [value]="user.email" />
             </div>
             <div class="col-span-2 lg:col-span-1">
-              <label>Phone</label>
+              <span>Phone</span>
               <app-input-field type="text" [value]="user.phone" />
             </div>
             <div class="col-span-2">
-              <label>Bio</label>
+              <span>Bio</span>
               <app-input-field type="text" [value]="user.bio" />
             </div>
           </div>

@@ -28,7 +28,7 @@
   <!-- Success Modal -->
   <app-modal
     [isOpen]="successModal"
-    (close)="handleCloseModal('success')"
+    (closed)="handleCloseModal('success')"
     className="max-w-[600px] p-5 lg:p-10"
   >
     <div class="text-center">
@@ -92,7 +92,7 @@
   <!-- Info Modal -->
   <app-modal
     [isOpen]="infoModal"
-    (close)="handleCloseModal('info')"
+    (closed)="handleCloseModal('info')"
     className="max-w-[600px] p-5 lg:p-10"
   >
     <div class="text-center">
@@ -157,7 +157,7 @@
   <!-- Warning Modal -->
   <app-modal
     [isOpen]="warningModal"
-    (close)="handleCloseModal('warning')"
+    (closed)="handleCloseModal('warning')"
     className="max-w-[600px] p-5 lg:p-10"
   >
     <div class="text-center">
@@ -222,7 +222,7 @@
   <!-- Error Modal -->
   <app-modal
     [isOpen]="errorModal"
-    (close)="handleCloseModal('error')"
+    (closed)="handleCloseModal('error')"
     className="max-w-[600px] p-5 lg:p-10"
   >
     <div class="text-center">

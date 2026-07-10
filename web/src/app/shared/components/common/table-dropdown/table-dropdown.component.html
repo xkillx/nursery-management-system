@@ -1,5 +1,5 @@
 <div>
-  <div #buttonRef (click)="toggle()">
+  <div #buttonRef (click)="toggle()" (keydown.enter)="toggle()" (keydown.space)="toggle()" tabindex="0" role="button">
     <ng-content select="[dropdown-button]"></ng-content>
   </div>
   <div class="z-10" #contentRef>

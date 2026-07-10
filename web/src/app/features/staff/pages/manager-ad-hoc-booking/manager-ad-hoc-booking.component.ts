@@ -93,7 +93,7 @@ export class ManagerAdHocBookingComponent implements OnInit {
 
     this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
       next: (types) => this.sessionTypes.set(types.filter((t) => t.isActive)),
-      error: () => {},
+      error: () => { /* Session types load failure handled by template defaults */ },
     });
   }
 

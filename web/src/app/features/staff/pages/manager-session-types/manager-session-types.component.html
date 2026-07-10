@@ -10,15 +10,16 @@
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <a
-        *ngIf="siteId"
-        [routerLink]="newRoute"
-        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
-        data-testid="session-type-add-link"
-      >
-        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
-        New Session Type
-      </a>
+      @if (siteId) {
+        <a
+          [routerLink]="newRoute"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+          data-testid="session-type-add-link"
+        >
+          <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+          New Session Type
+        </a>
+      }
     </div>
   </section>
 
@@ -134,38 +135,41 @@
 
               <div class="mt-4 flex gap-2">
                 @if (t.isActive) {
-                  <a
-                    *ngIf="siteId"
-                    [routerLink]="editRoute(t)"
-                    class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                    [attr.aria-label]="'Edit session type ' + t.name"
-                  >
-                    <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
-                    Edit
-                  </a>
-                  <button
-                    *ngIf="siteId"
-                    type="button"
-                    class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
-                    [disabled]="mutatingId === t.id"
-                    (click)="archive(t)"
-                    [attr.aria-label]="'Archive session type ' + t.name"
-                  >
-                    <ng-icon name="heroArchiveBoxXMark" size="16" aria-hidden="true" />
-                    Archive
-                  </button>
+                  @if (siteId) {
+                    <a
+                      [routerLink]="editRoute(t)"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                      [attr.aria-label]="'Edit session type ' + t.name"
+                    >
+                      <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
+                      Edit
+                    </a>
+                  }
+                  @if (siteId) {
+                    <button
+                      type="button"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
+                      [disabled]="mutatingId === t.id"
+                      (click)="archive(t)"
+                      [attr.aria-label]="'Archive session type ' + t.name"
+                    >
+                      <ng-icon name="heroArchiveBoxXMark" size="16" aria-hidden="true" />
+                      Archive
+                    </button>
+                  }
                 } @else {
-                  <button
-                    *ngIf="siteId"
-                    type="button"
-                    class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
-                    [disabled]="mutatingId === t.id"
-                    (click)="reactivate(t)"
-                    [attr.aria-label]="'Reactivate session type ' + t.name"
-                  >
-                    <ng-icon name="heroArrowUturnLeft" size="16" aria-hidden="true" />
-                    Reactivate
-                  </button>
+                  @if (siteId) {
+                    <button
+                      type="button"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50"
+                      [disabled]="mutatingId === t.id"
+                      (click)="reactivate(t)"
+                      [attr.aria-label]="'Reactivate session type ' + t.name"
+                    >
+                      <ng-icon name="heroArrowUturnLeft" size="16" aria-hidden="true" />
+                      Reactivate
+                    </button>
+                  }
                 }
               </div>
             </article>
@@ -235,35 +239,38 @@
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-end gap-2">
                     @if (t.isActive) {
-                      <a
-                        *ngIf="siteId"
-                        [routerLink]="editRoute(t)"
-                        class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                      >
-                        <ng-icon name="heroPencilSquare" size="15" aria-hidden="true" />
-                        Edit
-                      </a>
-                      <button
-                        *ngIf="siteId"
-                        type="button"
-                        class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 disabled:opacity-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
-                        [disabled]="mutatingId === t.id"
-                        (click)="archive(t)"
-                      >
-                        <ng-icon name="heroArchiveBoxXMark" size="15" aria-hidden="true" />
-                        Archive
-                      </button>
+                      @if (siteId) {
+                        <a
+                          [routerLink]="editRoute(t)"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                        >
+                          <ng-icon name="heroPencilSquare" size="15" aria-hidden="true" />
+                          Edit
+                        </a>
+                      }
+                      @if (siteId) {
+                        <button
+                          type="button"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 disabled:opacity-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
+                          [disabled]="mutatingId === t.id"
+                          (click)="archive(t)"
+                        >
+                          <ng-icon name="heroArchiveBoxXMark" size="15" aria-hidden="true" />
+                          Archive
+                        </button>
+                      }
                     } @else {
-                      <button
-                        *ngIf="siteId"
-                        type="button"
-                        class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                        [disabled]="mutatingId === t.id"
-                        (click)="reactivate(t)"
-                      >
-                        <ng-icon name="heroArrowUturnLeft" size="15" aria-hidden="true" />
-                        Reactivate
-                      </button>
+                      @if (siteId) {
+                        <button
+                          type="button"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                          [disabled]="mutatingId === t.id"
+                          (click)="reactivate(t)"
+                        >
+                          <ng-icon name="heroArrowUturnLeft" size="15" aria-hidden="true" />
+                          Reactivate
+                        </button>
+                      }
                     }
                   </div>
                 </td>

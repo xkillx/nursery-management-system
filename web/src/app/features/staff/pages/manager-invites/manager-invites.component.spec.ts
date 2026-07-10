@@ -83,7 +83,7 @@ describe('ManagerInvitesComponent', () => {
     httpMock.verify();
   });
 
-  function flushInvites(items: any[] = []): void {
+  function flushInvites(items: Record<string, unknown>[] = []): void {
     const req = httpMock.expectOne((r) => r.url === '/api/v1/invites' && r.params.get('status') === 'pending');
     req.flush({ items });
   }

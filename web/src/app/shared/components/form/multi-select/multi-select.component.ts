@@ -16,10 +16,10 @@ export interface Option {
 })
 export class MultiSelectComponent implements OnInit, OnChanges {
 
-  @Input() label: string = '';
+  @Input() label = '';
   @Input() options: Option[] = [];
   @Input() defaultSelected: string[] = [];
-  @Input() disabled: boolean = false;
+  @Input() disabled = false;
   @Output() selectionChange = new EventEmitter<string[]>();
 
   selectedOptions: string[] = [];

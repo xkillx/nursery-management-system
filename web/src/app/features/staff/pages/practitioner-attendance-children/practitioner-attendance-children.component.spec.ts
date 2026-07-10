@@ -1,10 +1,8 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
-
-import { MappedApiError } from '../../../../core/models/api-error.models';
 import { StaffApiService } from '../../data/staff-api.service';
-import { AttendanceChildRecord } from '../../models/attendance-child.models';
+import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceSessionRecord } from '../../models/attendance-child.models';
 import { PractitionerAttendanceChildrenComponent } from './practitioner-attendance-children.component';
 
 describe('PractitionerAttendanceChildrenComponent', () => {
@@ -172,7 +170,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
   it('calls checkInChild then reloads list on successful check-in', () => {
     setChildrenAndDetectChanges(mockChildren);
 
-    staffApiSpy.checkInChild.and.returnValue(of({ id: 'session-new' } as any));
+    staffApiSpy.checkInChild.and.returnValue(of({ id: 'session-new' } as unknown as AttendanceSessionRecord));
     staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
 
     component.checkIn(mockChildren[0]);
@@ -185,7 +183,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
   it('calls checkOutChild then reloads list on successful check-out', () => {
     setChildrenAndDetectChanges(mockChildren);
 
-    staffApiSpy.checkOutChild.and.returnValue(of({ id: 'session-1' } as any));
+    staffApiSpy.checkOutChild.and.returnValue(of({ id: 'session-1' } as unknown as AttendanceSessionRecord));
     staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
 
     component.checkOut(mockChildren[2]);
@@ -349,25 +347,24 @@ describe('PractitionerAttendanceChildrenComponent', () => {
   });
 
   it('does not render guardian, billing, or child ID fields', () => {
-    const childrenWithExtraFields: AttendanceChildRecord[] = [
-      {
-        id: 'child-1',
-        fullName: 'Ada Lovelace',
-        enrollmentComplete: true,
-        attendanceState: 'not_checked_in',
-        openSessionId: null,
-        checkedInAt: null,
-        hasIncompleteSession: false,
-        absenceMarkerId: null,
-        absenceMarkedAt: null,
-        photoUrl: null,
-      } as any,
-    ];
-    (childrenWithExtraFields[0] as any).guardianEmail = 'secret@example.com';
-    (childrenWithExtraFields[0] as any).guardianPhone = '07123456789';
-    (childrenWithExtraFields[0] as any).guardianName = 'Secret Guardian';
-    (childrenWithExtraFields[0] as any).siteCoreHourlyRateMinor = 1500;
-    (childrenWithExtraFields[0] as any).fundingValue = 10000;
+    const childWithExtras = {
+      id: 'child-1',
+      fullName: 'Ada Lovelace',
+      enrollmentComplete: true,
+      attendanceState: 'not_checked_in',
+      openSessionId: null,
+      checkedInAt: null,
+      hasIncompleteSession: false,
+      absenceMarkerId: null,
+      absenceMarkedAt: null,
+      photoUrl: null,
+      guardianEmail: 'secret@example.com',
+      guardianPhone: '07123456789',
+      guardianName: 'Secret Guardian',
+      siteCoreHourlyRateMinor: 1500,
+      fundingValue: 10000,
+    } as unknown as AttendanceChildRecord;
+    const childrenWithExtraFields: AttendanceChildRecord[] = [childWithExtras];
 
     setChildrenAndDetectChanges(childrenWithExtraFields);
 
@@ -546,7 +543,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     it('calls markChildAbsent then reloads list on successful mark', () => {
       setChildrenAndDetectChanges(mockChildren);
 
-      staffApiSpy.markChildAbsent.and.returnValue(of({ id: 'marker-new' } as any));
+      staffApiSpy.markChildAbsent.and.returnValue(of({ id: 'marker-new' } as unknown as AbsenceMarkerRecord));
       staffApiSpy.listAttendanceChildren.and.returnValue(of(mockChildren));
 
       component.markAbsent(mockChildren[0]);
@@ -640,7 +637,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     };
     setChildrenAndDetectChanges([absentChild]);
 
-    staffApiSpy.clearAbsenceMarker.and.returnValue(of({ id: 'marker-1' } as any));
+    staffApiSpy.clearAbsenceMarker.and.returnValue(of({ id: 'marker-1' } as unknown as AbsenceMarkerRecord));
       staffApiSpy.listAttendanceChildren.and.returnValue(of([mockChildren[0]]));
 
       component.clearAbsence(absentChild);

@@ -19,7 +19,7 @@ class HostComponent {}
 
 interface TestEnv {
   router: Router;
-  runNavigation: (commands: any[]) => Promise<boolean>;
+  runNavigation: (commands: unknown[]) => Promise<boolean>;
   fixture: ComponentFixture<HostComponent>;
 }
 

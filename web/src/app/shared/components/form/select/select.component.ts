@@ -22,10 +22,10 @@ export class SelectComponent implements ControlValueAccessor, OnInit {
   @ViewChild('selectRef', { static: false }) selectRef!: ElementRef<HTMLSelectElement>;
 
   @Input() options: Option[] = [];
-  @Input() placeholder: string = 'Select an option';
-  @Input() className: string = '';
-  @Input() defaultValue: string = '';
-  @Input() value: string = '';
+  @Input() placeholder = 'Select an option';
+  @Input() className = '';
+  @Input() defaultValue = '';
+  @Input() value = '';
   @Input() id?: string = '';
   @Input() name?: string = '';
   @Input() disabled = false;
@@ -42,8 +42,8 @@ export class SelectComponent implements ControlValueAccessor, OnInit {
     }
   }
 
-  private propagateChange: (value: string) => void = () => {};
-  private propagateTouched: () => void = () => {};
+  private propagateChange: (value: string) => void = () => { /* Set via registerOnChange */ };
+  private propagateTouched: () => void = () => { /* Set via registerOnTouched */ };
 
   ngOnInit() {
     if (!this.value && this.defaultValue) {

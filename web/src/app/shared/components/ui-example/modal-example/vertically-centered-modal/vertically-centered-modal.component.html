@@ -4,7 +4,7 @@
       Open Modal
     </app-button>
 
-    <app-modal [isOpen]="isOpen" (close)="closeModal()" className="max-w-[507px] p-6 lg:p-10" [showCloseButton]="false">
+    <app-modal [isOpen]="isOpen" (closed)="closeModal()" className="max-w-[507px] p-6 lg:p-10" [showCloseButton]="false">
       <div class="text-center">
         <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
           All Done! Success Confirmed

@@ -307,6 +307,10 @@
             class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer border-l-4"
             [ngClass]="getStatusBorderClass(item.status, item.dueStatus)"
             (click)="viewInvoice(item.invoiceId, $event)"
+            (keydown.enter)="viewInvoice(item.invoiceId, $event)"
+            (keydown.space)="viewInvoice(item.invoiceId, $event)"
+            tabindex="0"
+            role="link"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="flex min-w-0 items-center gap-3">

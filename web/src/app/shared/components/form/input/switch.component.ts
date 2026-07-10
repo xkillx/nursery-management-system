@@ -13,12 +13,17 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     },
   ],
   template: `
-    <label
+    <div
       class="inline-flex cursor-pointer select-none items-center gap-3 text-sm font-medium"
       [ngClass]="disabled ? 'cursor-not-allowed opacity-60' : ''"
       [attr.aria-label]="ariaLabel || null"
       [attr.aria-describedby]="describedBy || null"
+      role="switch"
+      [attr.aria-checked]="isChecked"
+      tabindex="0"
       (click)="handleClick($event)"
+      (keydown.enter)="handleClick($event)"
+      (keydown.space)="handleClick($event)"
     >
       <span class="relative inline-block">
         <span
@@ -33,14 +38,14 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       @if (label) {
         <span [ngClass]="disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-400'">{{ label }}</span>
       }
-    </label>
+    </div>
   `,
 })
 export class SwitchComponent implements OnInit, ControlValueAccessor {
   @Input() label?: string;
-  @Input() checked: boolean = false;
-  @Input() defaultChecked: boolean = false;
-  @Input() disabled: boolean = false;
+  @Input() checked = false;
+  @Input() defaultChecked = false;
+  @Input() disabled = false;
   @Input() color: 'blue' | 'gray' = 'blue';
   @Input() name?: string;
   @Input() id?: string;
@@ -50,10 +55,10 @@ export class SwitchComponent implements OnInit, ControlValueAccessor {
   @Output() valueChange = new EventEmitter<boolean>();
   @Output() checkedChange = new EventEmitter<boolean>();
 
-  isChecked: boolean = false;
+  isChecked = false;
 
-  private propagateChange: (value: boolean) => void = () => {};
-  private propagateTouched: () => void = () => {};
+  private propagateChange: (value: boolean) => void = () => { /* Set via registerOnChange */ };
+  private propagateTouched: () => void = () => { /* Set via registerOnTouched */ };
 
   ngOnInit(): void {
     this.isChecked = this.checked || this.defaultChecked;

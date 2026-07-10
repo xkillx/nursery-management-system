@@ -257,9 +257,10 @@ export class OwnerRoomFormComponent implements OnInit {
     return Object.keys(this.fieldErrors).length === 0;
   }
 
-  private applyApiError(err: any): void {
-    const code = err?.error?.code;
-    const field = err?.error?.field;
+  private applyApiError(err: unknown): void {
+    const body = (err as { error?: { code?: string; field?: string; message?: string } })?.error;
+    const code = body?.code;
+    const field = body?.field;
 
     if (code === 'room_name_duplicate') {
       this.fieldErrors.name = 'An active room with this name already exists in this site.';
@@ -270,7 +271,7 @@ export class OwnerRoomFormComponent implements OnInit {
       return;
     }
     if (code === 'validation_error' && field) {
-      this.fieldErrors[this.mapApiField(field)] = err?.error?.message ?? 'Check this field.';
+      this.fieldErrors[this.mapApiField(field)] = body?.message ?? 'Check this field.';
       return;
     }
     if (code === 'site_not_found') {

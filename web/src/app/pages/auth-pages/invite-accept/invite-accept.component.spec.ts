@@ -25,7 +25,7 @@ describe('InviteAcceptComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { queryParamMap: { get: (key: string) => token } },
+            snapshot: { queryParamMap: { get: () => token } },
           },
         },
       ],

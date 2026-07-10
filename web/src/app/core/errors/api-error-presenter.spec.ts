@@ -1,6 +1,5 @@
 import { MappedApiError } from '../models/api-error.models';
 import {
-  ApiErrorContext,
   presentApiError,
   formatPresentedApiError,
   ApiErrorPresentation,

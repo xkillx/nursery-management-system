@@ -9,11 +9,12 @@ import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.c
 import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
-import { AuthService } from '../../../../core/services/auth.service';
-import { ConsentWritePayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
+import { ConsentRecord, ConsentWritePayload, CompleteRegistrationPayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BookingPattern } from '../../models/booking-pattern.models';
-import { ChildFundingRecordInput } from '../../models/child-profile.models';
+import { ChildRecord } from '../../models/children.models';
+import { CreateChildResponse } from '../../models/child-profile.models';
+import { ChildFundingRecord } from '../../models/child-profile.models';
 
 describe('ManagerChildEditStepperComponent', () => {
   let fixture: ComponentFixture<ManagerChildEditStepperComponent>;
@@ -573,12 +574,12 @@ describe('ManagerChildEditStepperComponent', () => {
       component.step4.consent_change_reason = 'Parent called to withdraw social media consent';
 
       const staffApi = TestBed.inject(StaffApiService);
-      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as unknown as ConsentRecord));
 
       component.saveConsentsEvidence();
 
       expect(updateSpy).toHaveBeenCalled();
-      const payload = updateSpy.calls.mostRecent().args[1] as any;
+      const payload = updateSpy.calls.mostRecent().args[1] as unknown as ConsentWritePayload;
       expect(payload.consent_change_reason).toBe('Parent called to withdraw social media consent');
       expect(payload.signer_name).toBe('Sarah Johnson');
       expect(payload.signed_date).toBe(component.todayIso);
@@ -594,11 +595,11 @@ describe('ManagerChildEditStepperComponent', () => {
       component.step4.consent_change_reason = 'Should not be sent';
 
       const staffApi = TestBed.inject(StaffApiService);
-      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+      const updateSpy = spyOn(staffApi, 'updateChildConsent').and.returnValue(of({ ...component.step4 } as unknown as ConsentRecord));
 
       component.saveConsentsEvidence();
 
-      const payload = updateSpy.calls.mostRecent().args[1] as any;
+      const payload = updateSpy.calls.mostRecent().args[1] as unknown as ConsentWritePayload;
       expect(payload.consent_change_reason).toBeNull();
     });
   });
@@ -681,7 +682,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.currentStep = 'consents-evidence';
       component.loadedSections.add('consent');
 
-      spyOn(component['staffApi'], 'updateChildConsent').and.returnValue(of({ ...component.step4 } as any));
+      spyOn(component['staffApi'], 'updateChildConsent').and.returnValue(of({ ...component.step4 } as unknown as ConsentRecord));
       component.saveConsentsEvidence();
 
       expect(toastErrorSpy).not.toHaveBeenCalled();
@@ -790,7 +791,7 @@ describe('ManagerChildEditStepperComponent', () => {
       component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
       const staffApi = TestBed.inject(StaffApiService);
       const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
       const bookingPatternSpy = spyOn(staffApi, 'createChildBookingPattern').and.callThrough();
       const router = TestBed.inject(Router);
@@ -799,10 +800,10 @@ describe('ManagerChildEditStepperComponent', () => {
       component.createChildFromSessionPatternStep();
 
       expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as any;
+      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
       expect(payload.booking_pattern).toBeDefined();
-      expect(payload.booking_pattern.effective_from).toBe('2026-09-01');
-      expect(payload.booking_pattern.entries).toEqual([{ day_of_week: 1, session_type_id: 'st-1' }]);
+      expect(payload.booking_pattern!.effective_from).toBe('2026-09-01');
+      expect(payload.booking_pattern!.entries).toEqual([{ day_of_week: 1, session_type_id: 'st-1' }]);
       expect(bookingPatternSpy).not.toHaveBeenCalled();
       expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
       expect(localStorage.getItem('nursery.registration_intake.draft')).toBeNull();
@@ -845,14 +846,14 @@ describe('ManagerChildEditStepperComponent', () => {
       component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
       const staffApi = TestBed.inject(StaffApiService);
       const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
 
       component.createChildFromSessionPatternStep();
 
       expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as any;
-      expect(payload.booking_pattern.effective_to).toBe('2026-12-31');
+      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
+      expect(payload.booking_pattern!.effective_to).toBe('2026-12-31');
     });
 
     it('omits effective_to from payload when not set', () => {
@@ -864,14 +865,14 @@ describe('ManagerChildEditStepperComponent', () => {
       component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
       const staffApi = TestBed.inject(StaffApiService);
       const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
 
       component.createChildFromSessionPatternStep();
 
       expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as any;
-      expect(payload.booking_pattern.effective_to).toBeUndefined();
+      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
+      expect(payload.booking_pattern!.effective_to).toBeUndefined();
     });
 
     it('rejects effective_to before effective_from with patternError', () => {
@@ -1084,7 +1085,7 @@ describe('ManagerChildEditStepperComponent', () => {
       };
 
       const staffApi = TestBed.inject(StaffApiService);
-      const fundingSpy = spyOn(staffApi, 'patchChildFunding').and.returnValue(of({} as any));
+      const fundingSpy = spyOn(staffApi, 'patchChildFunding').and.returnValue(of({} as unknown as ChildFundingRecord));
 
       component.saveFundingBenefits(false);
 
@@ -1234,7 +1235,7 @@ describe('ManagerChildEditStepperComponent', () => {
     it('removePhoto calls API in edit mode with existing photo', () => {
       component.isNewRegistration = false;
       component.childId = 'child-1';
-      component.child = { id: 'child-1', photoUrl: 'https://example.com/photo.jpg' } as any;
+      component.child = { id: 'child-1', photoUrl: 'https://example.com/photo.jpg' } as unknown as ChildRecord;
 
       const staffApi = TestBed.inject(StaffApiService);
       const removeSpy = spyOn(staffApi, 'removePhoto').and.returnValue(of({ photo_url: null }));
@@ -1257,7 +1258,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
       const staffApi = TestBed.inject(StaffApiService);
       spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
       const uploadSpy = spyOn(staffApi, 'uploadPhoto').and.returnValue(of({ photo_url: 'https://example.com/photo.jpg' }));
       const router = TestBed.inject(Router);
@@ -1281,7 +1282,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
       const staffApi = TestBed.inject(StaffApiService);
       spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
       spyOn(staffApi, 'uploadPhoto').and.returnValue(
         throwError(() => new HttpErrorResponse({ status: 500 })),
@@ -1305,7 +1306,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
       const staffApi = TestBed.inject(StaffApiService);
       spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as any),
+        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
       );
       const uploadSpy = spyOn(staffApi, 'uploadPhoto');
       const router = TestBed.inject(Router);

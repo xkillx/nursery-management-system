@@ -237,21 +237,17 @@ export class ProductListTableComponent {
 
   selected: number[] = [];
   sort: Sort = { key: 'name', asc: true };
-  page: number = 1;
-  perPage: number = 7;
-  showFilter: boolean = false;
-
-  ngOnInit() {
-    // Initialize component
-  }
+  page = 1;
+  perPage = 7;
+  showFilter = false;
 
   sortedProducts(): Product[] {
     return [...this.products].sort((a, b) => {
-      let valA: any = a[this.sort.key];
-      let valB: any = b[this.sort.key];
+      let valA: string | number = String(a[this.sort.key]);
+      let valB: string | number = String(b[this.sort.key]);
       if (this.sort.key === 'price') {
-        valA = parseFloat(valA.replace(/[^\d.]/g, ''));
-        valB = parseFloat(valB.replace(/[^\d.]/g, ''));
+        valA = parseFloat((valA as string).replace(/[^\d.]/g, ''));
+        valB = parseFloat((valB as string).replace(/[^\d.]/g, ''));
       }
       if (valA < valB) return this.sort.asc ? -1 : 1;
       if (valA > valB) return this.sort.asc ? 1 : -1;

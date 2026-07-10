@@ -14,7 +14,6 @@ import { OwnerApiService } from '../../data/owner-api.service';
 import {
   OwnerManagerAccessRecord,
   OwnerSiteSummary,
-  OwnerGrantManagerAccessResult,
 } from '../../models/owner.models';
 import { formatGrantOutcome } from '../../utils/owner-formatters';
 
@@ -195,8 +194,8 @@ export class OwnerManagerAccessComponent implements OnInit {
     });
   }
 
-  private mapError(err: any): string {
-    const code = err?.error?.code;
+  private mapError(err: unknown): string {
+    const code = (err as { error?: { code?: string } })?.error?.code;
     if (code === 'site_not_found') return 'Site not found or no longer active.';
     if (code === 'manager_membership_not_found') return 'Manager membership not found. The list has been refreshed.';
     return 'An unexpected error occurred. Please try again.';

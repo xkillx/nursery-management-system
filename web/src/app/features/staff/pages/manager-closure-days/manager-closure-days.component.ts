@@ -117,7 +117,7 @@ export class ManagerClosureDaysComponent implements OnInit {
     ];
 
     for (const d of sorted) {
-      const [yearStr, monthStr, dayStr] = d.date.split('-');
+      const [yearStr, monthStr] = d.date.split('-');
       const year = parseInt(yearStr, 10);
       const month = parseInt(monthStr, 10) - 1; // 0-indexed
       const monthName = `${monthNames[month]} ${year}`;
@@ -163,12 +163,9 @@ export class ManagerClosureDaysComponent implements OnInit {
   addClosureDay(form: NgForm): void {
     if (!this.siteId || !this.formDate) return;
 
-    let reason = '';
-    if (this.selectedReasonOption === 'Other') {
-      reason = this.customReason.trim();
-    } else {
-      reason = this.selectedReasonOption;
-    }
+    const reason = this.selectedReasonOption === 'Other'
+      ? this.customReason.trim()
+      : this.selectedReasonOption;
 
     this.formSaving = true;
     this.formError = null;
