@@ -26,7 +26,7 @@ tail -f tmp/web.log
 
 **Static analysis (Go):** After any Go file change, run `go fmt ./...`, `go vet ./...`, and `go build ./...` in `api/`. Fix all `fmt` violations and `vet`/`build` warnings/errors before committing.
 
-**Static analysis (Angular):** After any Angular file change, run `npm run lint` in `web/` and fix all lint errors. After `npm test`, run `ng build` (production) to confirm zero errors and warnings — fail the task if any build diagnostic is emitted.
+**Static analysis (Angular):** After any Angular file change, run `npx ng lint` in `web/` and fix all lint errors. After `npm test`, run `ng build` (production) to confirm zero errors and warnings — fail the task if any build diagnostic is emitted.
 
 **Cross-cutting rules (applies to every task):**
 - **Plan first:** Before writing or modifying any code, create an implementation plan covering the approach, files affected, and any design decisions.
