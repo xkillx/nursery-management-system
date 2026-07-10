@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
+import { ChildPhotoService } from '../../../../services/child-photo.service';
 
 @Component({
   selector: 'app-child-avatar',
@@ -8,10 +9,10 @@ import { Component, Input } from '@angular/core';
     class="flex items-center justify-center overflow-hidden"
     [ngClass]="[sizeClass, shapeClass, bgClass]"
   >
-    @if (photoUrl && !imageError) {
+    @if (resolvedUrl() && !imageError) {
       <img
-        [src]="photoUrl"
-        [alt]="name"
+        [src]="resolvedUrl()"
+        [alt]="name()"
         class="h-full w-full object-cover"
         (error)="onImageError()"
       />
@@ -21,17 +22,36 @@ import { Component, Input } from '@angular/core';
   </div>`,
 })
 export class ChildAvatarComponent {
-  @Input() photoUrl: string | null = null;
-  @Input() name = '';
-  @Input() size: 'sm' | 'md' | 'lg' = 'md';
-  @Input() shape: 'circle' | 'rounded' = 'circle';
-  @Input() statusColor: string | null = null;
+  private readonly photoService = inject(ChildPhotoService);
+
+  photoUrl = input<string | null>(null);
+  name = input('');
+  size = input<'sm' | 'md' | 'lg'>('md');
+  shape = input<'circle' | 'rounded'>('circle');
+  statusColor = input<string | null>(null);
 
   imageError = false;
+  resolvedUrl = signal<string | null>(null);
+
+  constructor() {
+    effect((onCleanup) => {
+      const url = this.photoUrl();
+      if (!url) {
+        this.resolvedUrl.set(null);
+        return;
+      }
+      const sub = this.photoService.getPhotoUrl(url).subscribe({
+        next: (blobUrl) => this.resolvedUrl.set(blobUrl),
+        error: () => this.resolvedUrl.set(null),
+      });
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
 
   get initials(): string {
-    if (!this.name) return '';
-    const parts = this.name.trim().split(/\s+/);
+    const n = this.name();
+    if (!n) return '';
+    const parts = n.trim().split(/\s+/);
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
@@ -42,7 +62,7 @@ export class ChildAvatarComponent {
       md: 'size-10',
       lg: 'size-12',
     };
-    return sizes[this.size] || sizes['md'];
+    return sizes[this.size()] || sizes['md'];
   }
 
   get textSizeClass(): string {
@@ -51,15 +71,16 @@ export class ChildAvatarComponent {
       md: 'text-sm',
       lg: 'text-base',
     };
-    return sizes[this.size] || sizes['md'];
+    return sizes[this.size()] || sizes['md'];
   }
 
   get shapeClass(): string {
-    return this.shape === 'rounded' ? 'rounded-lg' : 'rounded-full';
+    return this.shape() === 'rounded' ? 'rounded-lg' : 'rounded-full';
   }
 
   get bgClass(): string {
-    if (this.statusColor) return this.statusColor;
+    const sc = this.statusColor();
+    if (sc) return sc;
     return this.deterministicColor;
   }
 
@@ -74,7 +95,8 @@ export class ChildAvatarComponent {
       'bg-yellow-100 text-yellow-600',
       'bg-error-100 text-error-600',
     ];
-    const index = this.name
+    const n = this.name();
+    const index = n
       .split('')
       .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];

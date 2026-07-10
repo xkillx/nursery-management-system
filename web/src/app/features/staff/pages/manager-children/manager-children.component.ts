@@ -29,7 +29,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -46,7 +46,7 @@ type SortDirection = 'asc' | 'desc';
     StatusBadgeComponent,
     EmptyStateComponent,
     LoadingStateComponent,
-    AvatarTextComponent,
+    ChildAvatarComponent,
     TablePaginationComponent,
     NgIcon,
   ],

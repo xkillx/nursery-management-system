@@ -3,7 +3,7 @@ import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, Subscription, debounceTime, takeUntil } from 'rxjs';
 import {
   heroAcademicCap,
   heroArrowLeft,
@@ -60,6 +60,7 @@ import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { ChildPhotoService } from '../../../../shared/services/child-photo.service';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
   ConsentRecord,
@@ -369,8 +370,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly draftStorage = inject(RegistrationDraftStorage);
   private readonly toast = inject(ToastService);
+  private readonly photoService = inject(ChildPhotoService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroy$ = new Subject<void>();
+  private photoSub: Subscription | null = null;
   private readonly draftChanges$ = new Subject<void>();
   private dismissTimeout: ReturnType<typeof setTimeout> | null = null;
   private hasRestoredDraft = false;
@@ -625,6 +628,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   selectedPhotoFile: File | null = null;
   photoPreviewUrl: string | null = null;
+  resolvedPhotoUrl: string | null = null;
   isUploadingPhoto = false;
   photoErrorMessage: string | null = null;
   step1Submitted = false;
@@ -945,6 +949,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (this.photoPreviewUrl) {
       URL.revokeObjectURL(this.photoPreviewUrl);
     }
+    this.photoSub?.unsubscribe();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -2088,6 +2093,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         next: () => {
           if (this.child) {
             this.child = { ...this.child, photoUrl: null };
+            this.resolvedPhotoUrl = null;
+            this.photoService.invalidate(`/api/v1/children/${this.childId}/photo`);
           }
           this.clearPhotoState();
           this.isUploadingPhoto = false;
@@ -2122,6 +2129,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       next: (result) => {
         if (this.child) {
           this.child = { ...this.child, photoUrl: result.photo_url };
+          this.resolvePhotoUrl();
         }
         this.clearPhotoState();
         this.isUploadingPhoto = false;
@@ -2139,6 +2147,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       URL.revokeObjectURL(this.photoPreviewUrl);
       this.photoPreviewUrl = null;
     }
+  }
+
+  private resolvePhotoUrl(): void {
+    this.photoSub?.unsubscribe();
+    this.resolvedPhotoUrl = null;
+    const url = this.child?.photoUrl;
+    if (!url) return;
+    this.photoSub = this.photoService.getPhotoUrl(url).subscribe({
+      next: (blobUrl) => (this.resolvedPhotoUrl = blobUrl),
+      error: () => (this.resolvedPhotoUrl = null),
+    });
   }
 
   addEmergencyContact(): void {
@@ -2884,6 +2903,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.getChild(this.childId).subscribe({
       next: (child) => {
         this.child = child;
+        this.resolvePhotoUrl();
         this.populateStep1FromChild(child);
         this.loadChildView();
       },

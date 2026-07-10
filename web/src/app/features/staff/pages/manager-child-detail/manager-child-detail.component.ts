@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of, Subject } from 'rxjs';
+import { forkJoin, of, Subject, Subscription } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -57,6 +57,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { ChildPhotoService } from '../../../../shared/services/child-photo.service';
 
 export type ChildProfileTab = 'overview' | 'attendance' | 'funding' | 'health' | 'contacts';
 
@@ -110,7 +111,9 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly photoService = inject(ChildPhotoService);
   private readonly destroy$ = new Subject<void>();
+  private photoSub: Subscription | null = null;
 
   private readonly validTabs: readonly ChildProfileTab[] = ['overview', 'attendance', 'funding', 'health', 'contacts'];
 
@@ -142,6 +145,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
 
   isUploadingPhoto = false;
   photoErrorMessage: string | null = null;
+  resolvedPhotoUrl: string | null = null;
 
   billingMonth = '';
   monthlyProfile: FundingProfileRecord | null = null;
@@ -226,6 +230,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.photoSub?.unsubscribe();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -255,12 +260,24 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
     this.staffApi.getChild(this.childId).subscribe({
       next: (child) => {
         this.child = child;
+        this.resolvePhotoUrl();
         this.loadSubRecords();
       },
       error: (err) => {
         this.errorMessage = err?.message ?? 'Failed to load child.';
         this.isLoading = false;
       },
+    });
+  }
+
+  private resolvePhotoUrl(): void {
+    this.photoSub?.unsubscribe();
+    this.resolvedPhotoUrl = null;
+    const url = this.child?.photoUrl;
+    if (!url) return;
+    this.photoSub = this.photoService.getPhotoUrl(url).subscribe({
+      next: (blobUrl) => (this.resolvedPhotoUrl = blobUrl),
+      error: () => (this.resolvedPhotoUrl = null),
     });
   }
 
@@ -374,6 +391,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       next: (result) => {
         if (this.child) {
           this.child = { ...this.child, photoUrl: result.photo_url };
+          this.resolvePhotoUrl();
         }
         this.isUploadingPhoto = false;
       },
@@ -394,6 +412,8 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       next: () => {
         if (this.child) {
           this.child = { ...this.child, photoUrl: null };
+          this.resolvedPhotoUrl = null;
+          this.photoService.invalidate(`/api/v1/children/${this.childId}/photo`);
         }
         this.isUploadingPhoto = false;
       },
