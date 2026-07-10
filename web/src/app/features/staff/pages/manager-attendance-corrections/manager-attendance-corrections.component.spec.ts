@@ -34,6 +34,7 @@ describe('ManagerAttendanceCorrectionsComponent', () => {
     isActive: true,
     enrollmentComplete: true,
     missingRequirements: [],
+    photoUrl: null,
     createdAt: '2022-08-01T00:00:00Z',
     updatedAt: '2022-08-01T00:00:00Z',
   };

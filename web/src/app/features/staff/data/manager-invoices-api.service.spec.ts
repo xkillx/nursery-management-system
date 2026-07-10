@@ -54,8 +54,9 @@ child_last_name: null,
             updated_at: '2026-06-09T10:00:00Z',
           },
         ],
-        limit: 50,
-        offset: 0,
+        total: 1,
+        page: 1,
+        page_size: 50,
       };
 
       service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
@@ -63,8 +64,9 @@ child_last_name: null,
         expect(result.items[0].invoiceId).toBe('inv-1');
         expect(result.items[0].invoiceNumberDisplay).toBe('Draft invoice');
         expect(result.items[0].dueStatus).toBe('not_due');
-        expect(result.limit).toBe(50);
-        expect(result.offset).toBe(0);
+        expect(result.total).toBe(1);
+        expect(result.page).toBe(1);
+        expect(result.page_size).toBe(50);
       });
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
@@ -81,7 +83,7 @@ child_last_name: null,
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
       expect(req.request.params.get('status')).toBe('issued');
-      req.flush({ items: [], limit: 50, offset: 0 });
+      req.flush({ items: [], total: 0, page: 1, page_size: 50 });
     });
 
     it('sends limit and offset for pagination', () => {
@@ -90,7 +92,7 @@ child_last_name: null,
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
       expect(req.request.params.get('limit')).toBe('50');
       expect(req.request.params.get('offset')).toBe('50');
-      req.flush({ items: [], limit: 50, offset: 50 });
+      req.flush({ items: [], total: 0, page: 2, page_size: 50 });
     });
 
     it('maps camelCase fields from snake_case response', () => {
@@ -127,8 +129,9 @@ child_last_name: null,
             updated_at: '2026-06-09T12:00:00Z',
           },
         ],
-        limit: 50,
-        offset: 0,
+        total: 1,
+        page: 1,
+        page_size: 50,
       };
 
       service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
@@ -172,7 +175,7 @@ child_last_name: null,
       });
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
-      req.flush({ items: [minimalItem], limit: 50, offset: 0 });
+      req.flush({ items: [minimalItem], total: 1, page: 1, page_size: 50 });
     });
 
     it('maps null generated run fields to null', () => {
@@ -208,7 +211,7 @@ child_last_name: null,
       });
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
-      req.flush({ items: [itemWithNullRun], limit: 50, offset: 0 });
+      req.flush({ items: [itemWithNullRun], total: 1, page: 1, page_size: 50 });
     });
   });
 

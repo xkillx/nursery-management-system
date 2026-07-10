@@ -50,6 +50,7 @@ const issuedDetail: ManagerInvoiceDetail = {
     email: 'burhan@example.com',
     telephone: '07700 900123',
   },
+  photoUrl: null,
   generatedRunExceptions: [
     { childId: 'c2', childName: 'Alice', blockerCodes: ['incomplete_attendance'] },
   ],
@@ -79,6 +80,7 @@ const issuedDetail: ManagerInvoiceDetail = {
       fundedDeductionMinutes: null,
       coreBillableMinutes: null,
       sessionCount: null,
+      fundingModel: null,
     },
     {
       lineId: 'l2',
@@ -94,6 +96,7 @@ const issuedDetail: ManagerInvoiceDetail = {
       fundedDeductionMinutes: null,
       coreBillableMinutes: null,
       sessionCount: null,
+      fundingModel: null,
     },
   ],
   createdAt: '2026-06-09T10:00:00Z',

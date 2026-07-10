@@ -110,7 +110,7 @@ describe('ParentInvoiceDetailComponent', () => {
     createTestBed();
     const detail = makeDetail({
       lines: [
-        { lineKind: 'core', description: 'Core sessions', sortOrder: 1, quantityMinutes: 450, unitAmountMinor: 100, lineAmountMinor: 45000 },
+        { lineKind: 'core', description: 'Core sessions', sortOrder: 1, quantityMinutes: 450, unitAmountMinor: 100, lineAmountMinor: 45000, fundingModel: null },
       ],
     });
     apiMock.getInvoice.and.returnValue(of(detail));
@@ -171,8 +171,8 @@ describe('ParentInvoiceDetailComponent', () => {
     createTestBed();
     const detail = makeDetail({
       lines: [
-        { lineKind: 'core', description: 'Core', sortOrder: 1, quantityMinutes: null, unitAmountMinor: null, lineAmountMinor: 45000 },
-        { lineKind: 'extras', description: 'Extras', sortOrder: 2, quantityMinutes: null, unitAmountMinor: null, lineAmountMinor: 5000 },
+        { lineKind: 'core', description: 'Core', sortOrder: 1, quantityMinutes: null, unitAmountMinor: null, lineAmountMinor: 45000, fundingModel: null },
+        { lineKind: 'extras', description: 'Extras', sortOrder: 2, quantityMinutes: null, unitAmountMinor: null, lineAmountMinor: 5000, fundingModel: null },
       ],
     });
     apiMock.getInvoice.and.returnValue(of(detail));

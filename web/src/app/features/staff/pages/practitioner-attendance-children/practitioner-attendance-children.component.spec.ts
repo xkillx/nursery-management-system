@@ -23,6 +23,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       hasIncompleteSession: false,
       absenceMarkerId: null,
       absenceMarkedAt: null,
+      photoUrl: null,
     },
     {
       id: 'child-2',
@@ -34,6 +35,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       hasIncompleteSession: false,
       absenceMarkerId: null,
       absenceMarkedAt: null,
+      photoUrl: null,
     },
     {
       id: 'child-3',
@@ -45,6 +47,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       hasIncompleteSession: true,
       absenceMarkerId: null,
       absenceMarkedAt: null,
+      photoUrl: null,
     },
   ];
 
@@ -58,6 +61,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
     hasIncompleteSession: true,
     absenceMarkerId: null,
     absenceMarkedAt: null,
+    photoUrl: null,
   };
 
   beforeEach(async () => {
@@ -356,6 +360,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         hasIncompleteSession: false,
         absenceMarkerId: null,
         absenceMarkedAt: null,
+        photoUrl: null,
       } as any,
     ];
     (childrenWithExtraFields[0] as any).guardianEmail = 'secret@example.com';
@@ -410,6 +415,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       hasIncompleteSession: true,
       absenceMarkerId: null,
       absenceMarkedAt: null,
+      photoUrl: null,
     };
     setChildrenAndDetectChanges([childWithIncompleteSession]);
 
@@ -428,6 +434,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
       hasIncompleteSession: false,
       absenceMarkerId: 'marker-1',
       absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
     };
 
     it('shows Absent badge and Marked absent today for absent child', () => {
@@ -528,11 +535,12 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild]);
-      expect(component.canMarkAbsent(absentChild)).toBeFalse();
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild]);
+    expect(component.canMarkAbsent(absentChild)).toBeFalse();
     });
 
     it('calls markChildAbsent then reloads list on successful mark', () => {
@@ -626,12 +634,13 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild]);
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild]);
 
-      staffApiSpy.clearAbsenceMarker.and.returnValue(of({ id: 'marker-1' } as any));
+    staffApiSpy.clearAbsenceMarker.and.returnValue(of({ id: 'marker-1' } as any));
       staffApiSpy.listAttendanceChildren.and.returnValue(of([mockChildren[0]]));
 
       component.clearAbsence(absentChild);
@@ -650,12 +659,13 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild]);
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild]);
 
-      const clearError = new HttpErrorResponse({
+    const clearError = new HttpErrorResponse({
         status: 409,
         error: {
           code: 'absence_already_cleared',
@@ -684,14 +694,15 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild]);
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild]);
 
-      staffApiSpy.clearAbsenceMarker.and.returnValue(new Observable());
+    staffApiSpy.clearAbsenceMarker.and.returnValue(new Observable());
 
-      component.clearAbsence(absentChild);
+    component.clearAbsence(absentChild);
       fixture.detectChanges();
 
       const clearBtn = fixture.nativeElement.querySelector('[data-testid="attendance-clear-absence-child-absent"]') as HTMLButtonElement;
@@ -710,12 +721,13 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
 
-      expect(component.notInCount).toBe(1);
+    expect(component.notInCount).toBe(1);
       expect(component.checkedInCount).toBe(1);
 
       component.setStatusFilter('not_checked_in');
@@ -735,12 +747,13 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         openSessionId: null,
         checkedInAt: null,
         hasIncompleteSession: false,
-        absenceMarkerId: 'marker-1',
-        absenceMarkedAt: '2026-06-08T08:00:00Z',
-      };
-      setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
+      absenceMarkerId: 'marker-1',
+      absenceMarkedAt: '2026-06-08T08:00:00Z',
+      photoUrl: null,
+    };
+    setChildrenAndDetectChanges([absentChild, mockChildren[2]]);
 
-      component.setStatusFilter('checked_in');
+    component.setStatusFilter('checked_in');
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
@@ -761,6 +774,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         hasIncompleteSession: false,
         absenceMarkerId: null,
         absenceMarkedAt: null,
+        photoUrl: null,
       };
       setChildrenAndDetectChanges([childWithOpenSession]);
 
@@ -781,6 +795,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         hasIncompleteSession: false,
         absenceMarkerId: 'marker-x',
         absenceMarkedAt: '2026-06-09T08:00:00Z',
+        photoUrl: null,
       };
       setChildrenAndDetectChanges([absentChild]);
 
@@ -823,6 +838,7 @@ describe('PractitionerAttendanceChildrenComponent', () => {
         hasIncompleteSession: false,
         absenceMarkerId: null,
         absenceMarkedAt: null,
+        photoUrl: null,
       };
 
       expect(component.canCheckIn(otherEligibleChild)).toBeTrue();

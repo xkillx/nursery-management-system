@@ -36,6 +36,7 @@ const mockItems: ManagerInvoiceListItem[] = [
     generatedRunStartedAt: null,
     generatedRunCompletedAt: null,
     generatedRunExceptionCount: null,
+    photoUrl: null,
     createdAt: '2026-06-09T10:00:00Z',
     updatedAt: '2026-06-09T12:00:00Z',
   },
@@ -65,6 +66,7 @@ const mockItems: ManagerInvoiceListItem[] = [
     generatedRunStartedAt: null,
     generatedRunCompletedAt: null,
     generatedRunExceptionCount: null,
+    photoUrl: null,
     createdAt: '2026-06-09T10:00:00Z',
     updatedAt: '2026-06-09T10:00:00Z',
   },
@@ -76,7 +78,7 @@ describe('ManagerInvoicesComponent', () => {
 
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['listInvoices']);
-    spy.listInvoices.and.returnValue(of({ items: mockItems, limit: 50, offset: 0 }));
+    spy.listInvoices.and.returnValue(of({ items: mockItems, total: 2, page: 1, page_size: 50 }));
 
     await TestBed.configureTestingModule({
       imports: [ManagerInvoicesComponent, HttpClientTestingModule],
@@ -171,7 +173,7 @@ describe('ManagerInvoicesComponent', () => {
   });
 
   it('shows empty state when no invoices', () => {
-    apiService.listInvoices.and.returnValue(of({ items: [], limit: 50, offset: 0 }));
+    apiService.listInvoices.and.returnValue(of({ items: [], total: 0, page: 1, page_size: 50 }));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
@@ -215,7 +217,7 @@ describe('ManagerInvoicesComponent', () => {
       amountPaidMinor: 0,
       paidAt: null,
     };
-    apiService.listInvoices.and.returnValue(of({ items: [unpaidItem], limit: 50, offset: 0 }));
+    apiService.listInvoices.and.returnValue(of({ items: [unpaidItem], total: 1, page: 1, page_size: 50 }));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
@@ -231,7 +233,7 @@ describe('ManagerInvoicesComponent', () => {
       amountPaidMinor: 0,
       paidAt: null,
     };
-    apiService.listInvoices.and.returnValue(of({ items: [overdueItem], limit: 50, offset: 0 }));
+    apiService.listInvoices.and.returnValue(of({ items: [overdueItem], total: 1, page: 1, page_size: 50 }));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
@@ -248,7 +250,7 @@ describe('ManagerInvoicesComponent', () => {
       amountPaidMinor: 24000,
       paidAt: '2026-06-09T15:00:00Z',
     };
-    apiService.listInvoices.and.returnValue(of({ items: [paidItem], limit: 50, offset: 0 }));
+    apiService.listInvoices.and.returnValue(of({ items: [paidItem], total: 1, page: 1, page_size: 50 }));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
@@ -264,7 +266,7 @@ describe('ManagerInvoicesComponent', () => {
       amountPaidMinor: 0,
       paymentFailedAt: '2026-06-09T16:00:00Z',
     };
-    apiService.listInvoices.and.returnValue(of({ items: [failedItem], limit: 50, offset: 0 }));
+    apiService.listInvoices.and.returnValue(of({ items: [failedItem], total: 1, page: 1, page_size: 50 }));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
