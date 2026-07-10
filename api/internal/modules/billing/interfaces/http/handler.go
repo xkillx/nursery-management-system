@@ -35,6 +35,7 @@ type (
 		IssueInvoice          *application.IssueInvoice
 		BulkIssueInvoices     *application.BulkIssueInvoices
 		OverrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
+		VoidInvoice           *application.VoidInvoice
 	}
 
 	ParentInvoiceUseCases struct {
@@ -66,6 +67,7 @@ type Handler struct {
 	issueInvoice           *application.IssueInvoice
 	bulkIssueInvoices      *application.BulkIssueInvoices
 	overrideAttendanceBlk  *application.OverrideAttendanceBlockUseCase
+	voidInvoice            *application.VoidInvoice
 	listParentInvoices     *application.ListParentInvoices
 	getParentInvoice       *application.GetParentInvoice
 	updateSiteRate         *application.UpdateSiteRateUseCase
@@ -84,6 +86,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		issueInvoice:           cfg.Lifecycle.IssueInvoice,
 		bulkIssueInvoices:      cfg.Lifecycle.BulkIssueInvoices,
 		overrideAttendanceBlk:  cfg.Lifecycle.OverrideAttendanceBlk,
+		voidInvoice:            cfg.Lifecycle.VoidInvoice,
 		listParentInvoices:     cfg.Parent.List,
 		getParentInvoice:       cfg.Parent.Get,
 		updateSiteRate:         cfg.Admin.UpdateSiteRate,
@@ -96,8 +99,11 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices", h.listInvoicesHandler)
 	manager.GET("/invoices/:invoice_id", h.getInvoiceHandler)
 	manager.POST("/invoices/drafts", h.createDraftHandler)
+	manager.POST("/invoices/drafts/generate", h.generateDraftsHandler)
 	manager.POST("/invoices/drafts/issue", h.createAndIssueInvoiceHandler)
+	manager.POST("/invoices/drafts/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
+	manager.POST("/invoices/:invoice_id/void", h.voidInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 	manager.GET("/billing-setup", h.getSiteRateHandler)
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
@@ -378,6 +384,7 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
 		Status:           queryParamPtr(c, "status"),
 		ChildID:          queryParamPtr(c, "child_id"),
+		Q:                queryParamPtr(c, "q"),
 		Limit:            &limitStr,
 		Offset:           &offsetStr,
 		SortField:        sortExpr.Field,
@@ -504,6 +511,44 @@ func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toIssueInvoiceResponse(result))
+}
+
+// voidInvoiceHandler voids a draft invoice.
+//
+//	@Summary		Void invoice
+//	@Description	Void a draft invoice with a reason.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			invoice_id	path		string				true	"Invoice ID"	format(uuid)
+//	@Param			body		body		voidInvoiceRequest	true	"Void reason"
+//	@Success		200			{object}	voidInvoiceResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/void [post]
+func (h *Handler) voidInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	var req voidInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
+		return
+	}
+
+	result, err := h.voidInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"), req.Reason)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toVoidInvoiceResponse(result))
 }
 
 func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
@@ -1176,6 +1221,15 @@ func toIssueInvoiceResponse(r domain.IssueInvoiceResult) issueInvoiceResponse {
 		DueAt:         formatTime(r.DueAt),
 		IssuedRunID:   r.IssuedRunID.String(),
 		TotalDueMinor: r.TotalDue.Minor(),
+	}
+}
+
+func toVoidInvoiceResponse(r application.VoidInvoiceResult) voidInvoiceResponse {
+	return voidInvoiceResponse{
+		InvoiceID:  r.InvoiceID.String(),
+		Status:     r.Status,
+		VoidedAt:   formatTime(r.VoidedAt),
+		VoidReason: r.VoidReason,
 	}
 }
 

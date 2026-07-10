@@ -61,6 +61,9 @@ type BillingRepository interface {
 	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
 	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) (int64, error)
 
+	// Invoice Void — transactional method using Tx.
+	MarkInvoiceVoid(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, reason string, voidedAt time.Time) (int64, error)
+
 	// Parent Invoice View (API-21) — read-only, no transaction required.
 	ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) ([]ParentInvoiceRow, error)
 	CountInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) (int, error)

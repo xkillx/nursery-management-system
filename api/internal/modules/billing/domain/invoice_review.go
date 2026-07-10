@@ -14,6 +14,7 @@ type InvoiceReviewFilters struct {
 	BillingMonthTo   *time.Time
 	Status           *string
 	ChildID          *uuid.UUID
+	Search           *string
 	Limit            int
 	Offset           int
 	SortField        string

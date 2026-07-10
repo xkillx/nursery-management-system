@@ -103,6 +103,10 @@ func (s *stubPrefillRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ do
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) MarkInvoiceVoid(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ uuid.UUID, _ string, _ time.Time) (int64, error) {
+	panic("unused")
+}
+
 func (s *stubPrefillRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
 	panic("unused")
 }

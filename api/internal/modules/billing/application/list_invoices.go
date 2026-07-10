@@ -27,6 +27,7 @@ type ListInvoicesParams struct {
 	BillingMonthTo   *string
 	Status           *string
 	ChildID          *string
+	Q                *string
 	Limit            *string
 	Offset           *string
 	SortField        string
@@ -92,6 +93,13 @@ func (uc *ListInvoices) Execute(ctx context.Context, actor tenant.ActorContext, 
 			return ListInvoicesResult{}, domainerrors.Validation("Invalid child_id format.", "child_id")
 		}
 		filters.ChildID = &cid
+	}
+
+	if params.Q != nil {
+		q := strings.TrimSpace(*params.Q)
+		if q != "" {
+			filters.Search = &q
+		}
 	}
 
 	if params.Limit != nil {

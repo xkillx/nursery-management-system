@@ -301,18 +301,21 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
 -- name: InvoiceCountForManagerReview :one
 SELECT COUNT(*)
 FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
-  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid);
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%');
 
 -- name: InvoiceListForManagerReviewSortByBillingMonthAsc :many
 SELECT
@@ -346,6 +349,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -381,6 +385,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.due_at ASC NULLS LAST
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -416,6 +421,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.due_at DESC NULLS LAST
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -451,6 +457,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.total_due_minor ASC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -486,6 +493,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
   AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.total_due_minor DESC
 LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 
@@ -598,6 +606,17 @@ SET status = 'issued',
     issued_by_membership_id = $9,
     locked_at = $7,
     due_at = $10,
+    updated_at = now()
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND status = 'draft';
+
+-- name: MarkInvoiceVoid :execrows
+UPDATE invoices
+SET status = 'void',
+    voided_at = $4,
+    void_reason = $5,
     updated_at = now()
 WHERE id = $1
   AND tenant_id = $2

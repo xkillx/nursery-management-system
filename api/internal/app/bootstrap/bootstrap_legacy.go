@@ -324,6 +324,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			IssueInvoice:          billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 			BulkIssueInvoices:     billingapp.NewBulkIssueInvoices(billingRepo, txManager, auditWriter),
 			OverrideAttendanceBlk: billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
+			VoidInvoice:           billingapp.NewVoidInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 		},
 		Parent: billinghandler.ParentInvoiceUseCases{
 			List: billingapp.NewListParentInvoices(billingRepo),

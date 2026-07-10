@@ -571,6 +571,8 @@ type Invoice struct {
 	CalculationDetails     []byte
 	CreatedAt              pgtype.Timestamptz
 	UpdatedAt              pgtype.Timestamptz
+	VoidedAt               pgtype.Timestamptz
+	VoidReason             pgtype.Text
 }
 
 type InvoiceLine struct {

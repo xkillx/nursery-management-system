@@ -95,6 +95,9 @@ func (s *stubBillingRepo) AllocateInvoiceNumberSequence(_ context.Context, _ dom
 func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ domain.IssueInvoiceUpdateParams) (int64, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) MarkInvoiceVoid(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ uuid.UUID, _ string, _ time.Time) (int64, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
 	panic("stub")
 }

@@ -425,13 +425,14 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 	pgBillingMonthTo := timeToPgtypeDatePtr(filters.BillingMonthTo)
 	pgStatus := strToPgtypeTextPtr(filters.Status)
 	pgChildID := uuidToPgtypePtr(filters.ChildID)
+	pgSearch := strToPgtypeTextPtr(filters.Search)
 	pgLimit := pgtype.Int4{Int32: int32(filters.Limit), Valid: true}
 	pgOffset := pgtype.Int4{Int32: int32(filters.Offset), Valid: true}
 
 	switch filters.SortField + ":" + filters.SortDir {
 	case "billing_month:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByBillingMonthAsc(ctx, sqlc.InvoiceListForManagerReviewSortByBillingMonthAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -443,7 +444,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "due_at:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByDueAtAsc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -455,7 +456,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "due_at:desc":
 		rows, err := q.InvoiceListForManagerReviewSortByDueAtDesc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtDescParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -467,7 +468,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "total_amount:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountAsc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -479,7 +480,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "total_amount:desc":
 		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountDesc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountDescParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -491,7 +492,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	default:
 		rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -514,6 +515,7 @@ func (r *Repository) CountInvoicesForManagerReview(ctx context.Context, tenantID
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
 		Status:           strToPgtypeTextPtr(filters.Status),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
+		Search:           strToPgtypeTextPtr(filters.Search),
 	})
 	if err != nil {
 		return 0, err
@@ -940,6 +942,22 @@ func (r *Repository) MarkInvoiceIssued(ctx context.Context, tx domain.Tx, params
 		IssuedByUserID:       uuidToPgtype(params.IssuedByUserID),
 		IssuedByMembershipID: uuidToPgtype(params.IssuedByMembershipID),
 		DueAt:                pgtype.Timestamptz{Time: params.DueAt, Valid: true},
+	})
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// --- Invoice Void ---
+
+func (r *Repository) MarkInvoiceVoid(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID, reason string, voidedAt time.Time) (int64, error) {
+	n, err := r.queriesTx(tx).MarkInvoiceVoid(ctx, sqlc.MarkInvoiceVoidParams{
+		ID:         uuidToPgtype(invoiceID),
+		TenantID:   uuidToPgtype(tenantID),
+		BranchID:   uuidToPgtype(branchID),
+		VoidedAt:   pgtype.Timestamptz{Time: voidedAt, Valid: true},
+		VoidReason: pgtype.Text{String: reason, Valid: true},
 	})
 	if err != nil {
 		return 0, err

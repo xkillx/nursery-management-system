@@ -280,6 +280,17 @@ type issueInvoiceResponse struct {
 	TotalDueMinor int    `json:"total_due_minor"`
 }
 
+type voidInvoiceRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+type voidInvoiceResponse struct {
+	InvoiceID  string `json:"invoice_id"`
+	Status     string `json:"status"`
+	VoidedAt   string `json:"voided_at"`
+	VoidReason string `json:"void_reason"`
+}
+
 type overrideAttendanceBlockRequest struct {
 	BillingMonth string `json:"billing_month"`
 	Note         string `json:"note"`

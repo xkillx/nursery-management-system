@@ -19,3 +19,11 @@ type InvoiceMarkedOverdue struct {
 }
 
 func (e InvoiceMarkedOverdue) OccurredAt() time.Time { return e.Occurred }
+
+type InvoiceVoided struct {
+	InvoiceID uuid.UUID
+	Reason    string
+	Occurred  time.Time
+}
+
+func (e InvoiceVoided) OccurredAt() time.Time { return e.Occurred }

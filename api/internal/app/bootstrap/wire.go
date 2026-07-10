@@ -325,6 +325,7 @@ var billingSet = wire.NewSet(
 	billingapp.NewIssueInvoice,
 	billingapp.NewBulkIssueInvoices,
 	billingapp.NewOverrideAttendanceBlockUseCase,
+	billingapp.NewVoidInvoice,
 	billingapp.NewListParentInvoices,
 	billingapp.NewGetParentInvoice,
 	billingapp.NewUpdateSiteRateUseCase,

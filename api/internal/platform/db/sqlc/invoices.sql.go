@@ -566,12 +566,14 @@ func (q *Queries) InsertInvoiceLine(ctx context.Context, arg InsertInvoiceLinePa
 const invoiceCountForManagerReview = `-- name: InvoiceCountForManagerReview :one
 SELECT COUNT(*)
 FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($3::date IS NULL OR i.billing_month = $3::date)
   AND ($4::date IS NULL OR i.billing_month >= $4::date)
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 `
 
 type InvoiceCountForManagerReviewParams struct {
@@ -582,6 +584,7 @@ type InvoiceCountForManagerReviewParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 }
 
 func (q *Queries) InvoiceCountForManagerReview(ctx context.Context, arg InvoiceCountForManagerReviewParams) (int64, error) {
@@ -593,6 +596,7 @@ func (q *Queries) InvoiceCountForManagerReview(ctx context.Context, arg InvoiceC
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -671,9 +675,44 @@ type InvoiceGetParams struct {
 	ID       pgtype.UUID
 }
 
-func (q *Queries) InvoiceGet(ctx context.Context, arg InvoiceGetParams) (Invoice, error) {
+type InvoiceGetRow struct {
+	ID                     pgtype.UUID
+	TenantID               pgtype.UUID
+	BranchID               pgtype.UUID
+	ChildID                pgtype.UUID
+	BillingMonth           pgtype.Date
+	InvoiceKind            string
+	Status                 string
+	InvoiceNumber          pgtype.Text
+	IssuedSequence         pgtype.Int4
+	GeneratedRunID         pgtype.UUID
+	IssuedRunID            pgtype.UUID
+	IssuedAt               pgtype.Timestamptz
+	IssuedByUserID         pgtype.UUID
+	IssuedByMembershipID   pgtype.UUID
+	LockedAt               pgtype.Timestamptz
+	DueAt                  pgtype.Timestamptz
+	CurrencyCode           string
+	SubtotalMinor          int32
+	FundedDeductionMinor   int32
+	TotalDueMinor          int32
+	AmountPaidMinor        int32
+	PaidAt                 pgtype.Timestamptz
+	PaymentFailedAt        pgtype.Timestamptz
+	PaymentStatusUpdatedAt pgtype.Timestamptz
+	AdjustsInvoiceID       pgtype.UUID
+	AdjustmentReasonCode   pgtype.Text
+	AdjustmentReasonNote   pgtype.Text
+	PeriodStartDate        pgtype.Date
+	PeriodEndDate          pgtype.Date
+	CalculationDetails     []byte
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
+func (q *Queries) InvoiceGet(ctx context.Context, arg InvoiceGetParams) (InvoiceGetRow, error) {
 	row := q.db.QueryRow(ctx, invoiceGet, arg.TenantID, arg.BranchID, arg.ID)
-	var i Invoice
+	var i InvoiceGetRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -1168,8 +1207,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewParams struct {
@@ -1180,6 +1220,7 @@ type InvoiceListForManagerReviewParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1230,6 +1271,7 @@ func (q *Queries) InvoiceListForManagerReview(ctx context.Context, arg InvoiceLi
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -1318,8 +1360,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.billing_month ASC
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewSortByBillingMonthAscParams struct {
@@ -1330,6 +1373,7 @@ type InvoiceListForManagerReviewSortByBillingMonthAscParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1380,6 +1424,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByBillingMonthAsc(ctx context.C
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -1468,8 +1513,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.due_at ASC NULLS LAST
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewSortByDueAtAscParams struct {
@@ -1480,6 +1526,7 @@ type InvoiceListForManagerReviewSortByDueAtAscParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1530,6 +1577,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByDueAtAsc(ctx context.Context,
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -1618,8 +1666,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.due_at DESC NULLS LAST
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewSortByDueAtDescParams struct {
@@ -1630,6 +1679,7 @@ type InvoiceListForManagerReviewSortByDueAtDescParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1680,6 +1730,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByDueAtDesc(ctx context.Context
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -1768,8 +1819,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.total_due_minor ASC
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewSortByTotalAmountAscParams struct {
@@ -1780,6 +1832,7 @@ type InvoiceListForManagerReviewSortByTotalAmountAscParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1830,6 +1883,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountAsc(ctx context.Co
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -1918,8 +1972,9 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND ($5::date IS NULL OR i.billing_month <= $5::date)
   AND ($6::text IS NULL OR i.status = $6::text)
   AND ($7::uuid IS NULL OR i.child_id = $7::uuid)
+  AND ($8::text IS NULL OR i.invoice_number ILIKE '%' || $8::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || $8::text || '%')
 ORDER BY i.total_due_minor DESC
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type InvoiceListForManagerReviewSortByTotalAmountDescParams struct {
@@ -1930,6 +1985,7 @@ type InvoiceListForManagerReviewSortByTotalAmountDescParams struct {
 	BillingMonthTo   pgtype.Date
 	Status           pgtype.Text
 	ChildID          pgtype.UUID
+	Search           pgtype.Text
 	Offset           pgtype.Int4
 	Limit            pgtype.Int4
 }
@@ -1980,6 +2036,7 @@ func (q *Queries) InvoiceListForManagerReviewSortByTotalAmountDesc(ctx context.C
 		arg.BillingMonthTo,
 		arg.Status,
 		arg.ChildID,
+		arg.Search,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -2748,6 +2805,40 @@ func (q *Queries) MarkInvoiceIssued(ctx context.Context, arg MarkInvoiceIssuedPa
 		arg.IssuedByUserID,
 		arg.IssuedByMembershipID,
 		arg.DueAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const markInvoiceVoid = `-- name: MarkInvoiceVoid :execrows
+UPDATE invoices
+SET status = 'void',
+    voided_at = $4,
+    void_reason = $5,
+    updated_at = now()
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND status = 'draft'
+`
+
+type MarkInvoiceVoidParams struct {
+	ID         pgtype.UUID
+	TenantID   pgtype.UUID
+	BranchID   pgtype.UUID
+	VoidedAt   pgtype.Timestamptz
+	VoidReason pgtype.Text
+}
+
+func (q *Queries) MarkInvoiceVoid(ctx context.Context, arg MarkInvoiceVoidParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markInvoiceVoid,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.VoidedAt,
+		arg.VoidReason,
 	)
 	if err != nil {
 		return 0, err
