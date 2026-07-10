@@ -12,6 +12,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 
 const FLAG_LABELS: Record<FundingOverviewFlag, string> = {
   missing_profile: 'Missing allowance',
@@ -57,6 +58,7 @@ function flagColor(flag: FundingOverviewFlag): 'warning' | 'danger' | 'info' {
     TableShellComponent,
     EmptyStateComponent,
     LoadingStateComponent,
+    ChildAvatarComponent,
   ],
   templateUrl: './manager-funding-overview.component.html',
   providers: [

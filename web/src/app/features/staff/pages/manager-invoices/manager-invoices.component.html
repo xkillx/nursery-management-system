@@ -217,12 +217,7 @@
               >
                 <td class="pl-8 pr-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div
-                      class="flex size-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs tracking-wider border transition-all duration-300 group-hover:scale-105"
-                      [ngClass]="getAvatarColorClass(item.childName)"
-                    >
-                      {{ getChildInitials(item.childName) }}
-                    </div>
+                    <app-child-avatar [photoUrl]="item.photoUrl" [name]="item.childName" shape="rounded" size="md" />
                     <div class="min-w-0">
                       <p class="font-semibold text-gray-900 dark:text-white/95 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         {{ invoiceIdentity(item) }}
@@ -315,12 +310,7 @@
           >
             <div class="flex items-start justify-between gap-3">
               <div class="flex min-w-0 items-center gap-3">
-                <div
-                  class="flex size-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs tracking-wider border"
-                  [ngClass]="getAvatarColorClass(item.childName)"
-                >
-                  {{ getChildInitials(item.childName) }}
-                </div>
+                <app-child-avatar [photoUrl]="item.photoUrl" [name]="item.childName" shape="rounded" size="md" />
                 <div class="min-w-0">
                   <p class="font-semibold text-gray-900 dark:text-white/95">{{ invoiceIdentity(item) }}</p>
                   <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mt-0.5">{{ item.childName }}</p>

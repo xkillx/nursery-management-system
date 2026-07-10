@@ -280,17 +280,17 @@
                   [class.opacity-60]="isAbsent(child)"
                 >
                   <div class="flex items-start gap-3.5">
-                    <!-- Gradient Avatars -->
-                    <div
-                      class="flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-theme-xs border"
-                      [ngClass]="{
-                        'bg-linear-to-br from-gray-100 to-gray-200 text-gray-500 border-gray-300/30 dark:from-gray-800/40 dark:to-gray-700/40 dark:text-gray-400 dark:border-gray-700/30': isAbsent(child),
-                        'bg-linear-to-br from-brand-100 to-brand-200 text-brand-700 border-brand-300/30 dark:from-brand-900/30 dark:to-brand-800/40 dark:text-brand-300 dark:border-brand-850/30': !isCheckedIn(child) && !isAbsent(child),
-                        'bg-linear-to-br from-success-100 to-success-200 text-success-700 border-success-300/30 dark:from-success-900/30 dark:to-success-800/40 dark:text-success-300 dark:border-success-850/30': isCheckedIn(child)
-                      }"
-                    >
-                      {{ child.fullName | slice:0:2 | uppercase }}
-                    </div>
+                    <app-child-avatar
+                      [photoUrl]="child.photoUrl"
+                      [name]="child.fullName"
+                      size="md"
+                      shape="circle"
+                      [statusColor]="
+                        isAbsent(child) ? 'bg-gray-200 text-gray-600'
+                        : isCheckedIn(child) ? 'bg-green-100 text-green-600'
+                        : 'bg-brand-100 text-brand-600'
+                      "
+                    />
                     <div class="min-w-0 flex-1">
                       <div class="flex flex-wrap items-center gap-2">
                         <h2 class="text-sm font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</h2>
@@ -443,17 +443,17 @@
                 >
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-4">
-                      <!-- Gradient Avatars -->
-                      <div
-                        class="flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-theme-xs border"
-                        [ngClass]="{
-                          'bg-linear-to-br from-gray-100 to-gray-200 text-gray-500 border-gray-300/30 dark:from-gray-800/40 dark:to-gray-700/40 dark:text-gray-400 dark:border-gray-700/30': isAbsent(child),
-                          'bg-linear-to-br from-brand-100 to-brand-200 text-brand-700 border-brand-300/30 dark:from-brand-900/30 dark:to-brand-800/40 dark:text-brand-300 dark:border-brand-850/30': !isCheckedIn(child) && !isAbsent(child),
-                          'bg-linear-to-br from-success-100 to-success-200 text-success-700 border-success-300/30 dark:from-success-900/30 dark:to-success-800/40 dark:text-success-300 dark:border-success-850/30': isCheckedIn(child)
-                        }"
-                      >
-                        {{ child.fullName | slice:0:2 | uppercase }}
-                      </div>
+                      <app-child-avatar
+                        [photoUrl]="child.photoUrl"
+                        [name]="child.fullName"
+                        size="md"
+                        shape="circle"
+                        [statusColor]="
+                          isAbsent(child) ? 'bg-gray-200 text-gray-600'
+                          : isCheckedIn(child) ? 'bg-green-100 text-green-600'
+                          : 'bg-brand-100 text-brand-600'
+                        "
+                      />
                       <div class="min-w-0">
                         <p class="font-semibold text-gray-900 dark:text-white/90">{{ child.fullName }}</p>
                         <p class="mt-1 font-mono text-[10px] tracking-wider text-gray-400 dark:text-gray-500">ID: #{{ child.id | slice:0:8 | uppercase }}</p>

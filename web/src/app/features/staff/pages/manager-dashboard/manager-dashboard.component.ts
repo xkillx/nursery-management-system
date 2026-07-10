@@ -18,7 +18,7 @@ import { EmptyStateComponent } from '../../../../shared/components/common/empty-
 import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
-import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import {
   MANAGER_DASHBOARD_MOCK,
   ManagerDashboardSnapshot,
@@ -48,7 +48,7 @@ interface AttendanceTile {
     StatusBadgeComponent,
     TableShellComponent,
     NgIcon,
-    AvatarTextComponent,
+    ChildAvatarComponent,
   ],
   providers: [
     provideIcons({
@@ -231,7 +231,7 @@ interface AttendanceTile {
                     <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 dark:border-gray-800/60 dark:hover:bg-white/[0.02]">
                       <td class="py-3.5 pr-3 font-medium text-gray-800 dark:text-white/90">
                         <div class="flex items-center gap-3">
-                          <app-avatar-text [name]="item.childName" className="h-8 w-8 text-[11px] shrink-0 font-semibold"></app-avatar-text>
+                          <span class="shrink-0"><app-child-avatar [photoUrl]="item.photoUrl ?? null" [name]="item.childName" size="sm"></app-child-avatar></span>
                           <span>{{ item.childName }}</span>
                         </div>
                       </td>
@@ -351,7 +351,7 @@ interface AttendanceTile {
                     <td class="py-3.5 pr-3 font-semibold text-gray-800 dark:text-white/90">{{ item.invoiceNumber }}</td>
                     <td class="py-3.5 pr-3 text-gray-800 dark:text-white/90 font-medium">
                       <div class="flex items-center gap-3">
-                        <app-avatar-text [name]="item.childName" className="h-8 w-8 text-[11px] shrink-0 font-semibold"></app-avatar-text>
+                        <span class="shrink-0"><app-child-avatar [photoUrl]="item.photoUrl ?? null" [name]="item.childName" size="sm"></app-child-avatar></span>
                         <span>{{ item.childName }}</span>
                       </div>
                     </td>

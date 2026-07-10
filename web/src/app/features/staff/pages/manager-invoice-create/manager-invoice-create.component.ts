@@ -25,6 +25,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { formatGbp } from '../../../owner/utils/owner-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import { formatChildName } from '../../utils/manager-list-formatters';
@@ -39,6 +40,7 @@ import { ChildRecord } from '../../models/children.models';
     NgIcon,
     AlertComponent,
     LoadingStateComponent,
+    ChildAvatarComponent,
   ],
   templateUrl: './manager-invoice-create.component.html',
   providers: [
