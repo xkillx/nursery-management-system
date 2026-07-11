@@ -1,7 +1,0 @@
-# Booking Patterns Are the Source of Monthly Invoice Billable Minutes
-
-Supersedes [ADR-0005](./0005-booking-patterns-capture-only-ahead-of-billing.md).
-
-Under the booking-based advance-pay invoicing model, the monthly invoice's billable core minutes are derived from the active Term's Booking Pattern, not from attendance actuals. The previous "Invoice Source of Truth = attendance actuals" decision is reversed: bookings are a parent commitment (a 12-month fixed-term advance-pay agreement), they match UK nursery commercial reality, and they make the advance-pay invoice model coherent. Attendance is still captured for child safety and operational reporting, but it is no longer a billing input. The legacy attendance-minutes calculation is replaced by a per-Term monthly count: `booked_core_minutes = Σ over the pattern's (day-of-week × session type) entries of (session duration × occurrences of that day-of-week in the calendar month)`. Funded-hours deduction is applied to the booked minutes, not attended minutes. Always bill 52 weeks (no closure calendar, no pro-rating).
-
-The trade-off is that bookings are a commitment: there is no automatic refund for under-attendance, and no automatic charge for over-attendance. This matches the advance-pay contract and the UK nursery norm; it would be a wrong fit for a pay-as-you-go attendance-driven model. The plan's "captured and retained" attendance data still exists for register generation, correction, and operational reporting, so the data is not lost.
