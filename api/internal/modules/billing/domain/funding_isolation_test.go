@@ -10,7 +10,7 @@ import (
 // TestFundingIsolation proves that the billing module never reads from
 // child_funding_records. This invariant is critical: child_funding_records
 // is registration guidance only, and monthly invoice deductions read exclusively
-// from funding_profiles. See ADR 0011-registration-funding-guidance-only.md.
+// from funding_profiles.
 func TestFundingIsolation(t *testing.T) {
 	billingDir := filepath.Join("..", "..", "..", "modules", "billing")
 

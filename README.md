@@ -59,7 +59,6 @@ nursery-management-system/
   web/                 Angular frontend workspace
   docs/                Product docs, API contract, ADRs, delivery notes
   docs/forms/          Nursery form templates
-  CONTEXT.md           Domain glossary and MVP decision baseline
   Makefile             Common local development commands
   README.md            Project setup and usage guide
 ```
@@ -427,13 +426,8 @@ npm start -- --port 4300
 
 Start with these files:
 
-- `CONTEXT.md`: domain glossary, decision baseline, and owner access definitions
 - `docs/POST-MVP-ROADMAP.md`: current roadmap, priority lanes, and owner lane status
-- `docs/DECISION-BASELINE.md`: historical MVP decision lock
-- `docs/BOOTSTRAP-SPEC.md`: backend bootstrap decisions
 - `docs/API-CONTRACT.openapi.yaml`: API contract
-- `docs/API-SCHEMA-STATE.md`: current API/schema state
-- `docs/adr/`: architecture decision records
 - `docs/forms/`: nursery form templates
 
 ## License
