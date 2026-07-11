@@ -52,6 +52,14 @@
     <div class="flex flex-wrap items-center gap-3">
       <app-status-badge [status]="detail.status" size="md" />
       <app-status-badge [status]="detail.dueStatus" size="md" />
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05]"
+        (click)="downloadPdf()"
+      >
+        <ng-icon name="heroArrowDownTray" size="18" class="text-gray-400" aria-hidden="true" />
+        Download PDF
+      </button>
     </div>
 
     <!-- Pay action for payable invoices -->

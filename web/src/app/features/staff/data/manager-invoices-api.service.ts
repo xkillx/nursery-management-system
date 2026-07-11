@@ -270,6 +270,10 @@ export class ManagerInvoicesApiService {
       .pipe(map((res) => this.toPaginatedEvents(res)));
   }
 
+  downloadPdf(invoiceId: string): Observable<Blob> {
+    return this.http.get(apiUrl(`/invoices/${invoiceId}/pdf`), { responseType: 'blob' });
+  }
+
   private toListResult(res: InvoiceListResponseApi): ManagerInvoiceListResult {
     return {
       items: res.items.map((i) => this.toListItem(i)),

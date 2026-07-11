@@ -1,6 +1,7 @@
 package httpbilling
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,11 @@ import (
 	"nursery-management-system/api/internal/platform/http/queryparams"
 	"nursery-management-system/api/internal/platform/tenant"
 )
+
+type InvoicePDFRenderer interface {
+	RenderManagerInvoice(ctx context.Context, sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, lines []domain.InvoiceReviewLineRow, pc *domain.ParentContact, subtotal, deduction, total domain.Money) ([]byte, error)
+	RenderParentInvoice(ctx context.Context, sp *domain.ParentInvoiceSiteProfile, inv domain.ParentInvoiceRow, lines []domain.ParentInvoiceLineRow, subtotal, deduction, total domain.Money) ([]byte, error)
+}
 
 type (
 	DraftUseCases struct {
@@ -52,6 +58,7 @@ type (
 		Lifecycle LifecycleUseCases
 		Parent    ParentInvoiceUseCases
 		Admin     AdminUseCases
+		PDF       InvoicePDFRenderer
 	}
 )
 
@@ -71,6 +78,7 @@ type Handler struct {
 	listParentInvoices     *application.ListParentInvoices
 	getParentInvoice       *application.GetParentInvoice
 	updateSiteRate         *application.UpdateSiteRateUseCase
+	pdf                    InvoicePDFRenderer
 }
 
 func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
@@ -90,6 +98,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		listParentInvoices:     cfg.Parent.List,
 		getParentInvoice:       cfg.Parent.Get,
 		updateSiteRate:         cfg.Admin.UpdateSiteRate,
+		pdf:                    cfg.PDF,
 	}
 }
 
@@ -107,11 +116,13 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 	manager.GET("/billing-setup", h.getSiteRateHandler)
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
+	manager.GET("/invoices/:invoice_id/pdf", h.pdfHandler)
 }
 
 func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
 	parent.GET("/invoices", h.listParentInvoicesHandler)
 	parent.GET("/invoices/:invoice_id", h.getParentInvoiceHandler)
+	parent.GET("/invoices/:invoice_id/pdf", h.parentPdfHandler)
 }
 
 // preflightHandler returns preflight data for draft invoice generation.
@@ -731,6 +742,84 @@ func (h *Handler) getParentInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toParentInvoiceDetailResponse(result))
+}
+
+func (h *Handler) pdfHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.getInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	pdfBytes, err := h.pdf.RenderManagerInvoice(
+		c.Request.Context(),
+		result.SiteProfile,
+		result.Invoice,
+		result.Lines,
+		result.ParentContact,
+		result.Invoice.Subtotal,
+		result.Invoice.FundedDeduction,
+		result.Invoice.TotalDue,
+	)
+	if err != nil {
+		h.logger.ErrorContext(c.Request.Context(), "failed to render invoice PDF", "error", err)
+		httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Failed to generate PDF.", nil)
+		return
+	}
+
+	filename := fmt.Sprintf("INV-%s.pdf", invoiceNumberOrID(result.Invoice.InvoiceNumber, result.Invoice.ID.String()))
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
+	c.Data(http.StatusOK, "application/pdf", pdfBytes)
+}
+
+func (h *Handler) parentPdfHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.getParentInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	pdfBytes, err := h.pdf.RenderParentInvoice(
+		c.Request.Context(),
+		result.SiteProfile,
+		result.Invoice,
+		result.Lines,
+		result.Invoice.Subtotal,
+		result.Invoice.FundedDeduction,
+		result.Invoice.TotalDue,
+	)
+	if err != nil {
+		h.logger.ErrorContext(c.Request.Context(), "failed to render parent invoice PDF", "error", err)
+		httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Failed to generate PDF.", nil)
+		return
+	}
+
+	filename := fmt.Sprintf("INV-%s.pdf", invoiceNumberOrID(result.Invoice.InvoiceNumber, result.Invoice.ID.String()))
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
+	c.Data(http.StatusOK, "application/pdf", pdfBytes)
+}
+
+func invoiceNumberOrID(number *string, id string) string {
+	if number != nil && *number != "" {
+		return *number
+	}
+	return id
 }
 
 func queryParamPtr(c *gin.Context, key string) *string {

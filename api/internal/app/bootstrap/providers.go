@@ -28,6 +28,7 @@ import (
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
 	authhandler "nursery-management-system/api/internal/modules/authentication/interfaces/http"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
@@ -236,6 +237,14 @@ func provideClosureDateLookupAdapter(repo *branchclosurepostgres.Repository) *cl
 
 func provideHourlyBookingLookupAdapter(repo *hourlypostgres.HourlyBookingRepository) *hourlyBookingLookupAdapter {
 	return &hourlyBookingLookupAdapter{repo: repo}
+}
+
+func provideInvoicePDFRenderer() *billingpdf.Renderer {
+	r, err := billingpdf.NewRenderer()
+	if err != nil {
+		panic("failed to create invoice PDF renderer: " + err.Error())
+	}
+	return r
 }
 
 func provideTxManagerAdapter(mgr *transaction.Manager) *txManagerAdapter {

@@ -3,6 +3,8 @@ import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, Subscription, timer } from 'rxjs';
 import { switchMap, takeUntil, takeWhile } from 'rxjs/operators';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroArrowDownTray } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -22,6 +24,7 @@ import {
   balanceDueMinor,
   isPayableInvoice,
 } from '../../utils/parent-invoice-formatters';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 export type PaymentReturnKind = 'none' | 'success' | 'cancelled';
 export type PaymentReturnDisplayState = 'paid' | 'failed' | 'cancelled' | 'processing' | null;
@@ -39,6 +42,10 @@ const POLL_MAX_DURATION_MS = 20000;
     AlertComponent,
     TableShellComponent,
     StatusBadgeComponent,
+    NgIcon,
+  ],
+  providers: [
+    provideIcons({ heroArrowDownTray }),
   ],
   templateUrl: './parent-invoice-detail.component.html',
 })
@@ -47,6 +54,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   private readonly destroy$ = new Subject<void>();
   private pollSub: Subscription | null = null;
@@ -155,6 +163,24 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
 
   redirectTo(url: string): void {
     window.location.href = url;
+  }
+
+  downloadPdf(): void {
+    if (!this.detail) return;
+
+    this.apiService.downloadPdf(this.detail.invoiceId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.detail!.invoiceNumber ? `INV-${this.detail!.invoiceNumber}.pdf` : `INV-${this.detail!.invoiceId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.toast.error('Failed to download PDF. Please try again.');
+      },
+    });
   }
 
   private parseReturnKind(): void {

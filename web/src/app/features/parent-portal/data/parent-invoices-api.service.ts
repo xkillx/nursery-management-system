@@ -146,6 +146,10 @@ export class ParentInvoicesApiService {
       .pipe(map((res) => this.toCheckoutSession(res)));
   }
 
+  downloadPdf(invoiceId: string): Observable<Blob> {
+    return this.http.get(apiUrl(`/parent/invoices/${invoiceId}/pdf`), { responseType: 'blob' });
+  }
+
   private toListResult(res: InvoiceListResponseApi): ParentInvoiceListResult {
     return {
       items: res.items.map((i) => this.toListItem(i)),

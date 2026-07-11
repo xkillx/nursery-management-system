@@ -51,6 +51,7 @@ import (
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
 
@@ -329,6 +330,7 @@ var billingSet = wire.NewSet(
 	billingapp.NewListParentInvoices,
 	billingapp.NewGetParentInvoice,
 	billingapp.NewUpdateSiteRateUseCase,
+	provideInvoicePDFRenderer,
 	wire.Struct(new(billinghandler.DraftUseCases), "*"),
 	wire.Struct(new(billinghandler.LifecycleUseCases), "*"),
 	wire.Struct(new(billinghandler.ParentInvoiceUseCases), "*"),

@@ -48,6 +48,7 @@ import {
   isOpenPaymentAttempt,
   PaymentDisplayState,
 } from '../../utils/manager-payment-formatters';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 const IMMUTABLE_STATUSES = new Set(['issued', 'payment_failed', 'paid', 'overdue']);
 
@@ -173,6 +174,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
 
   detail: ManagerInvoiceDetail | null = null;
   isLoading = false;
@@ -426,6 +428,24 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   nextPaymentEventsPage(): void {
     this.paymentEventsOffset += this.paymentEventsLimit;
     this.loadPaymentEvents(this.detail!.invoiceId);
+  }
+
+  downloadPdf(): void {
+    if (!this.detail) return;
+
+    this.apiService.downloadPdf(this.detail.invoiceId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.detail!.invoiceNumber ? `INV-${this.detail!.invoiceNumber}.pdf` : `INV-${this.detail!.invoiceId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.toast.error('Failed to download PDF. Please try again.');
+      },
+    });
   }
 
   private loadDetail(invoiceId: string): void {
