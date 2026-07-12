@@ -248,6 +248,7 @@ type Branch struct {
 	IsActive            bool
 	CoreHourlyRateMinor pgtype.Int4
 	AdHocRateMultiplier pgtype.Numeric
+	OverdueGraceDays    int32
 }
 
 type BranchClosureDay struct {
@@ -605,6 +606,16 @@ type InvoiceNumberSequence struct {
 	NextSequence int32
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
+}
+
+type InvoiceReminderLog struct {
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	InvoiceID    pgtype.UUID
+	ReminderType string
+	SentAtDate   pgtype.Date
+	SentAt       pgtype.Timestamptz
 }
 
 type InvoiceRun struct {

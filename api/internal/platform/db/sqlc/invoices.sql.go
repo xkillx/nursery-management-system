@@ -2851,10 +2851,13 @@ UPDATE invoices
 SET status = 'overdue',
     payment_status_updated_at = now(),
     updated_at = now()
-WHERE status = 'issued'
-  AND amount_paid_minor < total_due_minor
-   AND due_at < $1
-RETURNING id, tenant_id, branch_id
+FROM branches b
+WHERE invoices.branch_id = b.id
+  AND invoices.tenant_id = b.tenant_id
+  AND invoices.status = 'issued'
+  AND invoices.amount_paid_minor < invoices.total_due_minor
+  AND invoices.due_at + (b.overdue_grace_days || ' days')::interval < $1
+RETURNING invoices.id, invoices.tenant_id, invoices.branch_id
 `
 
 type MarkIssuedInvoicesOverdueRow struct {

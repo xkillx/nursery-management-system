@@ -13,6 +13,7 @@ CREATE TABLE invoice_reminder_log (
     branch_id uuid NOT NULL,
     invoice_id uuid NOT NULL REFERENCES invoices(id),
     reminder_type text NOT NULL CHECK (reminder_type IN ('due_soon', 'due_today')),
+    sent_at_date date NOT NULL DEFAULT CURRENT_DATE,
     sent_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (invoice_id, reminder_type, sent_at::date)
+    UNIQUE (invoice_id, reminder_type, sent_at_date)
 );
