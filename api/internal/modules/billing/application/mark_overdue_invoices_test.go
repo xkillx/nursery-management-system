@@ -111,6 +111,19 @@ func (s *stubBillingRepo) ListInvoiceLinesForParent(_ context.Context, _, _, _, 
 	panic("stub")
 }
 
+func (s *stubBillingRepo) TryAcquireReminderJobLock(_ context.Context, _ domain.Tx) (bool, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ListInvoicesDueSoon(_ context.Context, _ domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ListInvoicesDueToday(_ context.Context, _ domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) InsertInvoiceReminderLog(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string) error {
+	panic("stub")
+}
+
 type stubTxMgr struct {
 	repo *stubBillingRepo
 }

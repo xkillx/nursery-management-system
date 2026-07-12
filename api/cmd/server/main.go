@@ -76,6 +76,7 @@ func main() {
 		txMgr := transaction.NewManager(pool)
 		eventDispatcher := events.NewEventDispatcher(txMgr)
 		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
+		reminderUC := billingapp.NewSendDueSoonReminders(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
 
 		termRepo := termpostgres.NewTermRepository(pool)
 		auditWriter := audit.NewWriter()
@@ -85,7 +86,7 @@ func main() {
 		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
 
 		var schedErr error
-		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, nil)
+		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, nil, reminderUC)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)

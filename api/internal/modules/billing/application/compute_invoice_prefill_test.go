@@ -131,6 +131,19 @@ func (s *stubPrefillRepo) MarkIssuedInvoicesOverdue(_ context.Context, _ domain.
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) TryAcquireReminderJobLock(_ context.Context, _ domain.Tx) (bool, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) ListInvoicesDueSoon(_ context.Context, _ domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) ListInvoicesDueToday(_ context.Context, _ domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) InsertInvoiceReminderLog(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string) error {
+	panic("unused")
+}
+
 type stubPrefillTxMgr struct {
 	repo *stubPrefillRepo
 }

@@ -18,6 +18,11 @@ type OverdueRunner interface {
 	Execute(ctx context.Context) (domain.OverdueTransitionResult, error)
 }
 
+// ReminderRunner is the pre-overdue reminder job runner.
+type ReminderRunner interface {
+	Execute(ctx context.Context) (domain.ReminderJobResult, error)
+}
+
 // Scheduler is the cron-style runner for the three advance-pay jobs:
 //
 //   - 02:00 Europe/London daily — mark_overdue_advance_invoices
@@ -32,13 +37,14 @@ type OverdueRunner interface {
 // All jobs run in their own goroutine on the cron tick. Job locks
 // (advisory transactions) keep concurrent invocations safe.
 type Scheduler struct {
-	logger   *slog.Logger
-	cron     *cron.Cron
-	overdue  OverdueRunner
-	expire   *ExpireTermsRunner
-	recorder *metrics.Recorder
-	ctx      context.Context
-	started  bool
+	logger    *slog.Logger
+	cron      *cron.Cron
+	overdue   OverdueRunner
+	reminder  ReminderRunner
+	expire    *ExpireTermsRunner
+	recorder  *metrics.Recorder
+	ctx       context.Context
+	started   bool
 }
 
 func NewScheduler(
@@ -46,6 +52,7 @@ func NewScheduler(
 	overdue OverdueRunner,
 	expire *ExpireTermsRunner,
 	recorder *metrics.Recorder,
+	reminder ReminderRunner,
 ) (*Scheduler, error) {
 	london, err := time.LoadLocation("Europe/London")
 	if err != nil {
@@ -57,6 +64,7 @@ func NewScheduler(
 		logger:   logger,
 		cron:     c,
 		overdue:  overdue,
+		reminder: reminder,
 		expire:   expire,
 		recorder: recorder,
 	}
@@ -69,6 +77,10 @@ func NewScheduler(
 	if _, addErr := c.AddFunc("0 2 * * *", s.runExpireTerms); addErr != nil {
 		return nil, fmt.Errorf("register expire-terms job: %w", addErr)
 	}
+	// Daily 08:00 — pre-overdue reminders.
+	if _, addErr := c.AddFunc("0 8 * * *", s.runReminders); addErr != nil {
+		return nil, fmt.Errorf("register reminders job: %w", addErr)
+	}
 	return s, nil
 }
 
@@ -78,6 +90,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 	s.started = true
 	go s.runOverdueStartup()
 	go s.runExpireTermsStartup()
+	go s.runRemindersStartup()
 }
 
 func (s *Scheduler) Stop(ctx context.Context) {
@@ -191,4 +204,58 @@ func (s *Scheduler) runExpireTermsWithTrigger(trigger string) {
 		"latency_ms", time.Since(startedAt).Milliseconds(),
 	)
 	s.recorder.SchedulerRun("expire_terms_job", trigger, "completed", elapsed)
+}
+
+// runReminders is the cron callback for the daily 08:00 reminder job.
+func (s *Scheduler) runReminders() {
+	s.runRemindersWithTrigger("schedule")
+}
+
+func (s *Scheduler) runRemindersStartup() {
+	s.runRemindersWithTrigger("startup")
+}
+
+func (s *Scheduler) runRemindersWithTrigger(trigger string) {
+	if s.reminder == nil {
+		return
+	}
+	startedAt := time.Now()
+	runCtx, cancel := context.WithTimeout(s.ctx, 5*time.Minute)
+	defer cancel()
+
+	requestID := httpserver.NewRequestID()
+	s.logger.Info("reminder_job_started",
+		"trigger", trigger,
+		"request_id", requestID,
+	)
+
+	result, err := s.reminder.Execute(runCtx)
+	elapsed := time.Since(startedAt).Seconds()
+
+	if err != nil {
+		s.logger.Error("reminder_job_failed",
+			"request_id", requestID,
+			"error", err,
+			"latency_ms", time.Since(startedAt).Milliseconds(),
+		)
+		s.recorder.SchedulerRun("reminder_job", trigger, "error", elapsed)
+		return
+	}
+
+	if !result.LockAcquired {
+		s.logger.Info("reminder_job_skipped_lock_held",
+			"request_id", requestID,
+			"latency_ms", time.Since(startedAt).Milliseconds(),
+		)
+		s.recorder.SchedulerRun("reminder_job", trigger, "skipped_lock_held", elapsed)
+		return
+	}
+
+	s.logger.Info("reminder_job_completed",
+		"request_id", requestID,
+		"due_soon_count", len(result.DueSoon),
+		"due_today_count", len(result.DueToday),
+		"latency_ms", time.Since(startedAt).Milliseconds(),
+	)
+	s.recorder.SchedulerRun("reminder_job", trigger, "completed", elapsed)
 }
