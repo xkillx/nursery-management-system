@@ -1241,3 +1241,45 @@ func uuidToPgtypePtr(u *uuid.UUID) pgtype.UUID {
 	}
 	return pgtype.UUID{Bytes: [16]byte(*u), Valid: true}
 }
+
+// --- BranchSettingsRepository implementation ---
+
+func (r *Repository) GetOverdueGraceDays(ctx context.Context, tenantID, branchID uuid.UUID) (int, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.GetOverdueGraceDays(ctx, sqlc.GetOverdueGraceDaysParams{
+		TenantID: uuidToPgtype(tenantID),
+		ID:       uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(row), nil
+}
+
+func (r *Repository) UpdateOverdueGraceDays(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, days int) error {
+	return r.queriesTx(tx).UpdateOverdueGraceDays(ctx, sqlc.UpdateOverdueGraceDaysParams{
+		TenantID:         uuidToPgtype(tenantID),
+		ID:               uuidToPgtype(branchID),
+		OverdueGraceDays: int32(days),
+	})
+}
+
+func (r *Repository) GetReminderDaysBefore(ctx context.Context, tenantID, branchID uuid.UUID) (int, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.GetReminderDaysBefore(ctx, sqlc.GetReminderDaysBeforeParams{
+		TenantID: uuidToPgtype(tenantID),
+		ID:       uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int(row), nil
+}
+
+func (r *Repository) UpdateReminderDaysBefore(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, days int) error {
+	return r.queriesTx(tx).UpdateReminderDaysBefore(ctx, sqlc.UpdateReminderDaysBeforeParams{
+		TenantID:           uuidToPgtype(tenantID),
+		ID:                 uuidToPgtype(branchID),
+		ReminderDaysBefore: int32(days),
+	})
+}

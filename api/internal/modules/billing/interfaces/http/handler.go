@@ -50,7 +50,8 @@ type (
 	}
 
 	AdminUseCases struct {
-		UpdateSiteRate *application.UpdateSiteRateUseCase
+		UpdateSiteRate       *application.UpdateSiteRateUseCase
+		UpdateBranchSettings *application.UpdateBranchSettingsUseCase
 	}
 
 	BillingHandlerConfig struct {
@@ -78,6 +79,7 @@ type Handler struct {
 	listParentInvoices     *application.ListParentInvoices
 	getParentInvoice       *application.GetParentInvoice
 	updateSiteRate         *application.UpdateSiteRateUseCase
+	updateBranchSettings   *application.UpdateBranchSettingsUseCase
 	pdf                    InvoicePDFRenderer
 }
 
@@ -98,6 +100,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		listParentInvoices:     cfg.Parent.List,
 		getParentInvoice:       cfg.Parent.Get,
 		updateSiteRate:         cfg.Admin.UpdateSiteRate,
+		updateBranchSettings:   cfg.Admin.UpdateBranchSettings,
 		pdf:                    cfg.PDF,
 	}
 }
@@ -116,6 +119,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 	manager.GET("/billing-setup", h.getSiteRateHandler)
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
+	manager.GET("/branch-settings", h.getBranchSettingsHandler)
+	manager.PUT("/branch-settings", h.updateBranchSettingsHandler)
 	manager.GET("/invoices/:invoice_id/pdf", h.pdfHandler)
 }
 
@@ -658,6 +663,84 @@ func (h *Handler) updateSiteRateHandler(c *gin.Context) {
 			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": valErr.Field, "message": valErr.Message}})
 		case errors.Is(err, domain.ErrSiteNotFound):
 			httpserver.WriteError(c, http.StatusNotFound, "site_not_found", "Site not found.", nil)
+		default:
+			h.handleError(c, err)
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// getBranchSettingsHandler returns branch billing settings.
+//
+//	@Summary		Get branch settings
+//	@Description	Get branch billing settings (grace period, reminder days).
+//	@Tags			branch-settings
+//	@Produce		json
+//	@Success		200	{object}	object{overdue_grace_days=int,reminder_days_before=int}
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/branch-settings [get]
+func (h *Handler) getBranchSettingsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	settings, err := h.updateBranchSettings.GetSettings(c.Request.Context(), actor)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"overdue_grace_days":   settings.OverdueGraceDays,
+		"reminder_days_before": settings.ReminderDaysBefore,
+	})
+}
+
+// updateBranchSettingsHandler updates branch billing settings.
+//
+//	@Summary		Update branch settings
+//	@Description	Update branch billing settings (grace period, reminder days).
+//	@Tags			branch-settings
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		object{overdue_grace_days=int,reminder_days_before=int}	true	"Settings data"
+//	@Success		204
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/branch-settings [put]
+func (h *Handler) updateBranchSettingsHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	var req struct {
+		OverdueGraceDays   int `json:"overdue_grace_days"`
+		ReminderDaysBefore int `json:"reminder_days_before"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	err := h.updateBranchSettings.Execute(c.Request.Context(), actor, application.BranchSettings{
+		OverdueGraceDays:   req.OverdueGraceDays,
+		ReminderDaysBefore: req.ReminderDaysBefore,
+	})
+	if err != nil {
+		var valErr *domain.ValidationError
+		switch {
+		case errors.As(err, &valErr):
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": valErr.Field, "message": valErr.Message}})
 		default:
 			h.handleError(c, err)
 		}

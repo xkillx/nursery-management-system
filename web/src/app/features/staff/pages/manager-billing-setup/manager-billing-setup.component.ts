@@ -30,8 +30,17 @@ export class ManagerBillingSetupComponent implements OnInit {
   editError: string | null = null;
   saving = false;
 
+  gracePeriod = 3;
+  reminderDays = 3;
+  editingGrace = false;
+  graceEditValue = '3';
+  reminderEditValue = '3';
+  graceEditError: string | null = null;
+  savingGrace = false;
+
   ngOnInit(): void {
     this.loadRate();
+    this.loadBranchSettings();
   }
 
   get displayRate(): string {
@@ -90,6 +99,63 @@ export class ManagerBillingSetupComponent implements OnInit {
       error: () => {
         this.error = 'Failed to load billing setup. Please try again.';
         this.loading = false;
+      },
+    });
+  }
+
+  startGraceEdit(): void {
+    this.editingGrace = true;
+    this.graceEditValue = String(this.gracePeriod);
+    this.reminderEditValue = String(this.reminderDays);
+    this.graceEditError = null;
+  }
+
+  cancelGraceEdit(): void {
+    this.editingGrace = false;
+    this.graceEditValue = '3';
+    this.reminderEditValue = '3';
+    this.graceEditError = null;
+  }
+
+  saveGrace(): void {
+    const graceDays = parseInt(this.graceEditValue, 10);
+    const reminderDays = parseInt(this.reminderEditValue, 10);
+
+    if (isNaN(graceDays) || graceDays < 0 || graceDays > 30) {
+      this.graceEditError = 'Grace period must be between 0 and 30 days.';
+      return;
+    }
+
+    if (isNaN(reminderDays) || reminderDays < 1 || reminderDays > 30) {
+      this.graceEditError = 'Reminder days must be between 1 and 30.';
+      return;
+    }
+
+    this.graceEditError = null;
+    this.savingGrace = true;
+
+    this.api.updateBranchSettings(graceDays, reminderDays).subscribe({
+      next: () => {
+        this.savingGrace = false;
+        this.editingGrace = false;
+        this.gracePeriod = graceDays;
+        this.reminderDays = reminderDays;
+      },
+      error: () => {
+        this.savingGrace = false;
+        this.graceEditError = 'Failed to save settings. Please try again.';
+      },
+    });
+  }
+
+  private loadBranchSettings(): void {
+    this.api.getBranchSettings().subscribe({
+      next: (res) => {
+        this.gracePeriod = res.overdue_grace_days;
+        this.reminderDays = res.reminder_days_before;
+      },
+      error: () => {
+        // Silently fail - use defaults
       },
     });
   }

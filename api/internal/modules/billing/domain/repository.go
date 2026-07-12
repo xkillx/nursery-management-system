@@ -28,6 +28,15 @@ type SiteRateRepository interface {
 	UpdateCoreHourlyRate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, rateMinor int) error
 }
 
+// BranchSettingsRepository is the interface for reading and updating branch-level
+// billing settings (grace period, reminder days).
+type BranchSettingsRepository interface {
+	GetOverdueGraceDays(ctx context.Context, tenantID, branchID uuid.UUID) (int, error)
+	UpdateOverdueGraceDays(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, days int) error
+	GetReminderDaysBefore(ctx context.Context, tenantID, branchID uuid.UUID) (int, error)
+	UpdateReminderDaysBefore(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, days int) error
+}
+
 type BillingRepository interface {
 	// Advance-pay generation: list active terms covering the billing month,
 	// joined with child + funding data, locked FOR UPDATE.

@@ -25,7 +25,7 @@ func newTestLogger() *slog.Logger {
 func TestNewScheduler_RegistersAllJobs(t *testing.T) {
 	lister := &fakeLister{}
 	expire := NewExpireTermsRunner(nil, nil, lister)
-	s, err := NewScheduler(newTestLogger(), nil, expire, nil)
+	s, err := NewScheduler(newTestLogger(), nil, expire, nil, nil)
 	if err != nil {
 		t.Fatalf("NewScheduler: %v", err)
 	}

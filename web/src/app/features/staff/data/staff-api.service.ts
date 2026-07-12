@@ -748,6 +748,17 @@ export class StaffApiService {
     });
   }
 
+  getBranchSettings(): Observable<{ overdue_grace_days: number; reminder_days_before: number }> {
+    return this.http.get<{ overdue_grace_days: number; reminder_days_before: number }>(apiUrl('/branch-settings'));
+  }
+
+  updateBranchSettings(overdueGraceDays: number, reminderDaysBefore: number): Observable<void> {
+    return this.http.put<void>(apiUrl('/branch-settings'), {
+      overdue_grace_days: overdueGraceDays,
+      reminder_days_before: reminderDaysBefore,
+    });
+  }
+
   private toFundingProfileRecord(profile: FundingProfileApiModel): FundingProfileRecord {
     return {
       id: profile.id,

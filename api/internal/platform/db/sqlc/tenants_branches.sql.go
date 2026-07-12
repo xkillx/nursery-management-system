@@ -11,6 +11,42 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getOverdueGraceDays = `-- name: GetOverdueGraceDays :one
+SELECT overdue_grace_days
+FROM branches
+WHERE tenant_id = $1 AND id = $2
+`
+
+type GetOverdueGraceDaysParams struct {
+	TenantID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+func (q *Queries) GetOverdueGraceDays(ctx context.Context, arg GetOverdueGraceDaysParams) (int32, error) {
+	row := q.db.QueryRow(ctx, getOverdueGraceDays, arg.TenantID, arg.ID)
+	var overdue_grace_days int32
+	err := row.Scan(&overdue_grace_days)
+	return overdue_grace_days, err
+}
+
+const getReminderDaysBefore = `-- name: GetReminderDaysBefore :one
+SELECT reminder_days_before
+FROM branches
+WHERE tenant_id = $1 AND id = $2
+`
+
+type GetReminderDaysBeforeParams struct {
+	TenantID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+func (q *Queries) GetReminderDaysBefore(ctx context.Context, arg GetReminderDaysBeforeParams) (int32, error) {
+	row := q.db.QueryRow(ctx, getReminderDaysBefore, arg.TenantID, arg.ID)
+	var reminder_days_before int32
+	err := row.Scan(&reminder_days_before)
+	return reminder_days_before, err
+}
+
 const listAllTenantBranches = `-- name: ListAllTenantBranches :many
 SELECT tenant_id, id AS branch_id
 FROM branches
@@ -41,4 +77,38 @@ func (q *Queries) ListAllTenantBranches(ctx context.Context) ([]ListAllTenantBra
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateOverdueGraceDays = `-- name: UpdateOverdueGraceDays :exec
+UPDATE branches
+SET overdue_grace_days = $3, updated_at = now()
+WHERE tenant_id = $1 AND id = $2
+`
+
+type UpdateOverdueGraceDaysParams struct {
+	TenantID         pgtype.UUID
+	ID               pgtype.UUID
+	OverdueGraceDays int32
+}
+
+func (q *Queries) UpdateOverdueGraceDays(ctx context.Context, arg UpdateOverdueGraceDaysParams) error {
+	_, err := q.db.Exec(ctx, updateOverdueGraceDays, arg.TenantID, arg.ID, arg.OverdueGraceDays)
+	return err
+}
+
+const updateReminderDaysBefore = `-- name: UpdateReminderDaysBefore :exec
+UPDATE branches
+SET reminder_days_before = $3, updated_at = now()
+WHERE tenant_id = $1 AND id = $2
+`
+
+type UpdateReminderDaysBeforeParams struct {
+	TenantID           pgtype.UUID
+	ID                 pgtype.UUID
+	ReminderDaysBefore int32
+}
+
+func (q *Queries) UpdateReminderDaysBefore(ctx context.Context, arg UpdateReminderDaysBeforeParams) error {
+	_, err := q.db.Exec(ctx, updateReminderDaysBefore, arg.TenantID, arg.ID, arg.ReminderDaysBefore)
+	return err
 }
