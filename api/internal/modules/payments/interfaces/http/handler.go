@@ -33,11 +33,16 @@ type ListManagerPaymentEventsUseCase interface {
 	Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, page, pageSize int) (application.ListPaymentEventsResult, error)
 }
 
+type CreatePaymentLinkUseCase interface {
+	Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string) (application.CreatePaymentLinkResult, error)
+}
+
 type Handler struct {
 	createCheckoutSession CreateCheckoutSessionUseCase
 	handleWebhook         HandleWebhookUseCase
 	getManagerStatus      GetManagerPaymentStatusUseCase
 	listManagerEvents     ListManagerPaymentEventsUseCase
+	createPaymentLink     CreatePaymentLinkUseCase
 	logger                *slog.Logger
 	recorder              *metrics.Recorder
 }
@@ -47,6 +52,7 @@ func NewHandler(
 	handleWebhook *application.HandleStripeWebhook,
 	getManagerStatus *application.GetManagerPaymentStatus,
 	listManagerEvents *application.ListManagerPaymentEvents,
+	createPaymentLink *application.CreatePaymentLink,
 	recorder *metrics.Recorder,
 	logger *slog.Logger,
 ) *Handler {
@@ -54,11 +60,16 @@ func NewHandler(
 	if handleWebhook != nil {
 		hw = handleWebhook
 	}
+	var cpl CreatePaymentLinkUseCase
+	if createPaymentLink != nil {
+		cpl = createPaymentLink
+	}
 	return &Handler{
 		createCheckoutSession: createCheckoutSession,
 		handleWebhook:         hw,
 		getManagerStatus:      getManagerStatus,
 		listManagerEvents:     listManagerEvents,
+		createPaymentLink:     cpl,
 		recorder:              recorder,
 		logger:                logger,
 	}
@@ -87,6 +98,7 @@ func (h *Handler) RegisterStripeRoutes(api *gin.RouterGroup) {
 func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 	manager.GET("/invoices/:invoice_id/payment-status", h.managerPaymentStatusHandler)
 	manager.GET("/invoices/:invoice_id/payment-events", h.managerPaymentEventsHandler)
+	manager.POST("/invoices/:invoice_id/payment-link", h.createPaymentLinkHandler)
 }
 
 // managerPaymentStatusHandler returns payment status for an invoice.
@@ -254,6 +266,37 @@ func (h *Handler) stripeWebhookHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, webhookResponse{Status: result.Status})
+}
+
+func (h *Handler) createPaymentLinkHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	invoiceIDRaw := c.Param("invoice_id")
+	if _, err := uuid.Parse(invoiceIDRaw); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid invoice ID format.", []map[string]string{{"field": "invoice_id"}})
+		return
+	}
+
+	if h.createPaymentLink == nil {
+		httpserver.WriteError(c, http.StatusServiceUnavailable, "payment_provider_unconfigured", "Payment provider is not configured.", nil)
+		return
+	}
+
+	result, err := h.createPaymentLink.Execute(c.Request.Context(), actor, invoiceIDRaw)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, createPaymentLinkResponse{
+		PaymentLinkID: result.PaymentLinkID,
+		URL:           result.URL,
+		Existing:      result.Existing,
+	})
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

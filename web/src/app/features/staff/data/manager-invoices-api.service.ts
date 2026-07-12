@@ -22,6 +22,7 @@ import {
   UpdateInvoiceLineInput,
   InvoiceLineResult,
   DeleteLineResult,
+  PaymentLinkResult,
 } from '../models/manager-invoices.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
@@ -211,6 +212,12 @@ interface PaginatedPaymentEventsApi {
   offset: number;
 }
 
+interface PaymentLinkResultApi {
+  payment_link_id: string;
+  url: string;
+  existing: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ManagerInvoicesApiService {
   private readonly http = inject(HttpClient);
@@ -299,6 +306,18 @@ export class ManagerInvoicesApiService {
 
   deleteLine(invoiceId: string, lineId: string): Observable<DeleteLineResult> {
     return this.http.delete<DeleteLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`));
+  }
+
+  createPaymentLink(invoiceId: string): Observable<PaymentLinkResult> {
+    return this.http
+      .post<PaymentLinkResultApi>(apiUrl(`/invoices/${invoiceId}/payment-link`), {})
+      .pipe(
+        map((res) => ({
+          paymentLinkId: res.payment_link_id,
+          url: res.url,
+          existing: res.existing,
+        })),
+      );
   }
 
   private toListResult(res: InvoiceListResponseApi): ManagerInvoiceListResult {

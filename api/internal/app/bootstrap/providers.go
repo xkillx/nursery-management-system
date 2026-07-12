@@ -282,10 +282,11 @@ func providePaymentsHandler(
 	handleWebhook *paymentsapp.HandleStripeWebhook,
 	getStatus *paymentsapp.GetManagerPaymentStatus,
 	listEvents *paymentsapp.ListManagerPaymentEvents,
+	createPaymentLink *paymentsapp.CreatePaymentLink,
 	recorder *metrics.Recorder,
 	logger *slog.Logger,
 ) *paymentshandler.Handler {
-	return paymentshandler.NewHandler(checkoutSession, handleWebhook, getStatus, listEvents, recorder, logger)
+	return paymentshandler.NewHandler(checkoutSession, handleWebhook, getStatus, listEvents, createPaymentLink, recorder, logger)
 }
 
 // ── Token parser adapter ───────────────────────────────────────────────

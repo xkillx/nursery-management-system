@@ -199,6 +199,9 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
 
   isPaymentReviewCollapsed = true;
 
+  paymentLinkUrl: string | null = null;
+  isPaymentLinkLoading = false;
+
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
@@ -434,6 +437,35 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
 
   togglePaymentReview(): void {
     this.isPaymentReviewCollapsed = !this.isPaymentReviewCollapsed;
+  }
+
+  generatePaymentLink(): void {
+    if (!this.detail || this.isPaymentLinkLoading) return;
+    this.isPaymentLinkLoading = true;
+
+    this.apiService.createPaymentLink(this.detail.invoiceId).subscribe({
+      next: (result) => {
+        this.paymentLinkUrl = result.url;
+        this.isPaymentLinkLoading = false;
+        if (result.existing) {
+          this.toast.success('Payment link copied.');
+        } else {
+          this.toast.success('Payment link generated.');
+        }
+        this.copyPaymentLink();
+      },
+      error: () => {
+        this.isPaymentLinkLoading = false;
+        this.toast.error('Failed to generate payment link. Please try again.');
+      },
+    });
+  }
+
+  copyPaymentLink(): void {
+    if (!this.paymentLinkUrl) return;
+    navigator.clipboard.writeText(this.paymentLinkUrl).then(() => {
+      this.toast.success('Link copied to clipboard.');
+    });
   }
 
   previousPaymentEventsPage(): void {

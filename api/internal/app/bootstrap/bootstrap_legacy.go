@@ -344,12 +344,16 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	paymentsRepo := paymentspostgres.NewRepository(pool)
 	var checkoutProvider paymentsdomain.CheckoutProvider
+	var paymentLinkProvider paymentsdomain.PaymentLinkProvider
 	stripeConfigured := cfg.StripeSecretKey != ""
 	if opts.CheckoutProvider != nil {
 		checkoutProvider = opts.CheckoutProvider
 		stripeConfigured = true
 	} else if stripeConfigured {
 		checkoutProvider = stripeclient.NewClient(cfg.StripeSecretKey)
+	}
+	if stripeConfigured {
+		paymentLinkProvider = checkoutProvider.(paymentsdomain.PaymentLinkProvider)
 	}
 	paymentsTxMgr := &txManagerAdapter{mgr: txManager}
 	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured).WithObservability(logger, recorder)
@@ -371,11 +375,19 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		).WithObservability(logger, recorder)
 	}
 
+	createPaymentLinkUC := paymentsapp.NewCreatePaymentLink(
+		paymentsRepo.ManagerRepo(),
+		paymentLinkProvider,
+		paymentsRepo.PaymentLinkRepo(),
+		stripeConfigured,
+	).WithObservability(logger, recorder)
+
 	paymentsHandler := paymentshandler.NewHandler(
 		paymentsUC,
 		handleWebhookUC,
 		paymentsapp.NewGetManagerPaymentStatus(paymentsRepo.ManagerRepo()),
 		paymentsapp.NewListManagerPaymentEvents(paymentsRepo.ManagerRepo()),
+		createPaymentLinkUC,
 		recorder,
 		logger,
 	)

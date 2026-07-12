@@ -6,6 +6,12 @@ type createCheckoutSessionResponse struct {
 	PaymentAttemptID  string `json:"payment_attempt_id"`
 }
 
+type createPaymentLinkResponse struct {
+	PaymentLinkID string `json:"payment_link_id"`
+	URL           string `json:"url"`
+	Existing      bool   `json:"existing"`
+}
+
 type webhookResponse struct {
 	Status string `json:"status"`
 }

@@ -16,8 +16,9 @@ import (
 )
 
 type Repository struct {
-	pool        *pgxpool.Pool
-	managerRepo domain.ManagerPaymentRepository
+	pool            *pgxpool.Pool
+	managerRepo     domain.ManagerPaymentRepository
+	paymentLinkRepo domain.PaymentLinkRepository
 }
 
 // ManagerRepo returns the ManagerPaymentRepository interface for manager diagnostics.
@@ -26,6 +27,14 @@ func (r *Repository) ManagerRepo() domain.ManagerPaymentRepository {
 		r.managerRepo = &managerQueries{pool: r.pool}
 	}
 	return r.managerRepo
+}
+
+// PaymentLinkRepo returns the PaymentLinkRepository interface.
+func (r *Repository) PaymentLinkRepo() domain.PaymentLinkRepository {
+	if r.paymentLinkRepo == nil {
+		r.paymentLinkRepo = &paymentLinkQueries{pool: r.pool}
+	}
+	return r.paymentLinkRepo
 }
 
 type managerQueries struct {
@@ -572,4 +581,51 @@ func pgtypeDateToStr(d pgtype.Date) string {
 		return ""
 	}
 	return d.Time.Format("2006-01-02")
+}
+
+type paymentLinkQueries struct {
+	pool *pgxpool.Pool
+}
+
+func (p *paymentLinkQueries) CreatePaymentLink(ctx context.Context, params domain.PaymentLinkRecord) error {
+	return sqlc.New(p.pool).CreatePaymentLink(ctx, sqlc.CreatePaymentLinkParams{
+		ID:                    uuidToPgtype(mustParseUUID(params.ID)),
+		TenantID:              uuidToPgtype(mustParseUUID(params.TenantID)),
+		BranchID:              uuidToPgtype(mustParseUUID(params.BranchID)),
+		InvoiceID:             uuidToPgtype(mustParseUUID(params.InvoiceID)),
+		StripePaymentLinkID:   params.StripePaymentLinkID,
+		StripePaymentLinkUrl:  params.StripePaymentLinkURL,
+		AmountMinor:           int32(params.AmountMinor),
+		CurrencyCode:          params.CurrencyCode,
+		CreatedByUserID:       uuidToPgtype(mustParseUUID(params.CreatedByUserID)),
+		CreatedByMembershipID: uuidToPgtype(mustParseUUID(params.CreatedByMembershipID)),
+		Status:                params.Status,
+	})
+}
+
+func (p *paymentLinkQueries) GetActivePaymentLinkForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*domain.PaymentLinkRecord, bool, error) {
+	row, err := sqlc.New(p.pool).GetActivePaymentLinkForInvoice(ctx, sqlc.GetActivePaymentLinkForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return &domain.PaymentLinkRecord{
+		ID:                    pgtypeUUIDToStr(row.ID),
+		TenantID:              pgtypeUUIDToStr(row.TenantID),
+		BranchID:              pgtypeUUIDToStr(row.BranchID),
+		InvoiceID:             pgtypeUUIDToStr(row.InvoiceID),
+		StripePaymentLinkID:   row.StripePaymentLinkID,
+		StripePaymentLinkURL:  row.StripePaymentLinkUrl,
+		AmountMinor:           int(row.AmountMinor),
+		CurrencyCode:          row.CurrencyCode,
+		CreatedByUserID:       pgtypeUUIDToStr(row.CreatedByUserID),
+		CreatedByMembershipID: pgtypeUUIDToStr(row.CreatedByMembershipID),
+		Status:                row.Status,
+	}, true, nil
 }

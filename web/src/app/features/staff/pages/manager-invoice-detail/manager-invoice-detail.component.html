@@ -22,6 +22,17 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manage billing details and track transaction history for this child care account.</p>
       </div>
       <div class="flex items-center gap-3">
+        @if (isPayable) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
+            (click)="generatePaymentLink()"
+            [disabled]="isPaymentLinkLoading"
+          >
+            <ng-icon name="heroCreditCard" size="18" class="text-gray-400" aria-hidden="true" />
+            {{ isPaymentLinkLoading ? 'Generating...' : (paymentLinkUrl ? 'Copy Payment Link' : 'Generate Payment Link') }}
+          </button>
+        }
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05]"

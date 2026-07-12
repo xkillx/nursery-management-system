@@ -736,6 +736,22 @@ type PaymentAttempt struct {
 	UpdatedAt               pgtype.Timestamptz
 }
 
+type PaymentLink struct {
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	BranchID              pgtype.UUID
+	InvoiceID             pgtype.UUID
+	StripePaymentLinkID   string
+	StripePaymentLinkUrl  string
+	AmountMinor           int32
+	CurrencyCode          string
+	CreatedByUserID       pgtype.UUID
+	CreatedByMembershipID pgtype.UUID
+	Status                string
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
 type PaymentReconciliationRecord struct {
 	ID                      pgtype.UUID
 	TenantID                pgtype.UUID

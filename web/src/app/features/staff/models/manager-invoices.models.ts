@@ -234,3 +234,9 @@ export interface DeleteLineResult {
   subtotalMinor: number;
   totalDueMinor: number;
 }
+
+export interface PaymentLinkResult {
+  paymentLinkId: string;
+  url: string;
+  existing: boolean;
+}
