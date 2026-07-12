@@ -37,14 +37,14 @@ type ReminderRunner interface {
 // All jobs run in their own goroutine on the cron tick. Job locks
 // (advisory transactions) keep concurrent invocations safe.
 type Scheduler struct {
-	logger    *slog.Logger
-	cron      *cron.Cron
-	overdue   OverdueRunner
-	reminder  ReminderRunner
-	expire    *ExpireTermsRunner
-	recorder  *metrics.Recorder
-	ctx       context.Context
-	started   bool
+	logger   *slog.Logger
+	cron     *cron.Cron
+	overdue  OverdueRunner
+	reminder ReminderRunner
+	expire   *ExpireTermsRunner
+	recorder *metrics.Recorder
+	ctx      context.Context
+	started  bool
 }
 
 func NewScheduler(
