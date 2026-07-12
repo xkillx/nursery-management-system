@@ -530,3 +530,38 @@ type parentInvoiceCalculationResponse struct {
 	CoreSubtotalMinor      int `json:"core_subtotal_minor"`
 	ExtrasTotalMinor       int `json:"extras_total_minor"`
 }
+
+// --- Invoice Line CRUD DTOs ---
+
+type addLineRequest struct {
+	LineKind        string `json:"line_kind" binding:"required"`
+	Description     string `json:"description" binding:"required"`
+	QuantityMinutes int    `json:"quantity_minutes"`
+	UnitAmountMinor int    `json:"unit_amount_minor"`
+	LineAmountMinor int    `json:"line_amount_minor"`
+}
+
+type updateLineRequest struct {
+	Description     string `json:"description" binding:"required"`
+	QuantityMinutes int    `json:"quantity_minutes"`
+	UnitAmountMinor int    `json:"unit_amount_minor"`
+	LineAmountMinor int    `json:"line_amount_minor"`
+}
+
+type lineResponse struct {
+	LineID          string `json:"line_id"`
+	LineKind        string `json:"line_kind"`
+	Description     string `json:"description"`
+	SortOrder       int    `json:"sort_order"`
+	QuantityMinutes int    `json:"quantity_minutes"`
+	UnitAmountMinor int    `json:"unit_amount_minor"`
+	LineAmountMinor int    `json:"line_amount_minor"`
+	SubtotalMinor   int    `json:"subtotal_minor"`
+	TotalDueMinor   int    `json:"total_due_minor"`
+}
+
+type deleteLineResponse struct {
+	LineID        string `json:"line_id"`
+	SubtotalMinor int    `json:"subtotal_minor"`
+	TotalDueMinor int    `json:"total_due_minor"`
+}

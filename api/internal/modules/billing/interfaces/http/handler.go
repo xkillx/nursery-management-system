@@ -42,6 +42,7 @@ type (
 		BulkIssueInvoices     *application.BulkIssueInvoices
 		OverrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
 		VoidInvoice           *application.VoidInvoice
+		ManageInvoiceLines    *application.ManageInvoiceLines
 	}
 
 	ParentInvoiceUseCases struct {
@@ -76,6 +77,7 @@ type Handler struct {
 	bulkIssueInvoices      *application.BulkIssueInvoices
 	overrideAttendanceBlk  *application.OverrideAttendanceBlockUseCase
 	voidInvoice            *application.VoidInvoice
+	manageInvoiceLines     *application.ManageInvoiceLines
 	listParentInvoices     *application.ListParentInvoices
 	getParentInvoice       *application.GetParentInvoice
 	updateSiteRate         *application.UpdateSiteRateUseCase
@@ -97,6 +99,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		bulkIssueInvoices:      cfg.Lifecycle.BulkIssueInvoices,
 		overrideAttendanceBlk:  cfg.Lifecycle.OverrideAttendanceBlk,
 		voidInvoice:            cfg.Lifecycle.VoidInvoice,
+		manageInvoiceLines:     cfg.Lifecycle.ManageInvoiceLines,
 		listParentInvoices:     cfg.Parent.List,
 		getParentInvoice:       cfg.Parent.Get,
 		updateSiteRate:         cfg.Admin.UpdateSiteRate,
@@ -117,6 +120,9 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/void", h.voidInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
+	manager.POST("/invoices/:invoice_id/lines", h.addLineHandler)
+	manager.PUT("/invoices/:invoice_id/lines/:line_id", h.updateLineHandler)
+	manager.DELETE("/invoices/:invoice_id/lines/:line_id", h.deleteLineHandler)
 	manager.GET("/billing-setup", h.getSiteRateHandler)
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
 	manager.GET("/branch-settings", h.getBranchSettingsHandler)
@@ -565,6 +571,101 @@ func (h *Handler) voidInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toVoidInvoiceResponse(result))
+}
+
+func (h *Handler) addLineHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	var req addLineRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
+		return
+	}
+
+	result, err := h.manageInvoiceLines.AddLine(c.Request.Context(), actor, c.Param("invoice_id"), application.AddLineInput{
+		LineKind:        req.LineKind,
+		Description:     req.Description,
+		QuantityMinutes: req.QuantityMinutes,
+		UnitAmountMinor: req.UnitAmountMinor,
+		LineAmountMinor: req.LineAmountMinor,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, lineResponse{
+		LineID:          result.LineID.String(),
+		LineKind:        result.LineKind,
+		Description:     result.Description,
+		SortOrder:       result.SortOrder,
+		QuantityMinutes: result.QuantityMinutes,
+		UnitAmountMinor: result.UnitAmountMinor,
+		LineAmountMinor: result.LineAmountMinor,
+		SubtotalMinor:   result.SubtotalMinor,
+		TotalDueMinor:   result.TotalDueMinor,
+	})
+}
+
+func (h *Handler) updateLineHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	var req updateLineRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
+		return
+	}
+
+	result, err := h.manageInvoiceLines.UpdateLine(c.Request.Context(), actor, c.Param("invoice_id"), c.Param("line_id"), application.UpdateLineInput{
+		Description:     req.Description,
+		QuantityMinutes: req.QuantityMinutes,
+		UnitAmountMinor: req.UnitAmountMinor,
+		LineAmountMinor: req.LineAmountMinor,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, lineResponse{
+		LineID:          result.LineID.String(),
+		LineKind:        result.LineKind,
+		Description:     result.Description,
+		SortOrder:       result.SortOrder,
+		QuantityMinutes: result.QuantityMinutes,
+		UnitAmountMinor: result.UnitAmountMinor,
+		LineAmountMinor: result.LineAmountMinor,
+		SubtotalMinor:   result.SubtotalMinor,
+		TotalDueMinor:   result.TotalDueMinor,
+	})
+}
+
+func (h *Handler) deleteLineHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.manageInvoiceLines.DeleteLine(c.Request.Context(), actor, c.Param("invoice_id"), c.Param("line_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, deleteLineResponse{
+		LineID:        result.LineID.String(),
+		SubtotalMinor: result.SubtotalMinor,
+		TotalDueMinor: result.TotalDueMinor,
+	})
 }
 
 func (h *Handler) bulkIssueInvoicesHandler(c *gin.Context) {
