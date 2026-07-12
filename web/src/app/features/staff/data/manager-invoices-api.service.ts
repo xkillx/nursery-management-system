@@ -18,6 +18,10 @@ import {
   PaymentEvent,
   ManagerPaymentStatus,
   PaginatedPaymentEvents,
+  AddInvoiceLineInput,
+  UpdateInvoiceLineInput,
+  InvoiceLineResult,
+  DeleteLineResult,
 } from '../models/manager-invoices.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
@@ -272,6 +276,29 @@ export class ManagerInvoicesApiService {
 
   downloadPdf(invoiceId: string): Observable<Blob> {
     return this.http.get(apiUrl(`/invoices/${invoiceId}/pdf`), { responseType: 'blob' });
+  }
+
+  addLine(invoiceId: string, input: AddInvoiceLineInput): Observable<InvoiceLineResult> {
+    return this.http.post<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines`), {
+      line_kind: input.lineKind,
+      description: input.description,
+      quantity_minutes: input.quantityMinutes,
+      unit_amount_minor: input.unitAmountMinor,
+      line_amount_minor: input.lineAmountMinor,
+    });
+  }
+
+  updateLine(invoiceId: string, lineId: string, input: UpdateInvoiceLineInput): Observable<InvoiceLineResult> {
+    return this.http.put<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`), {
+      description: input.description,
+      quantity_minutes: input.quantityMinutes,
+      unit_amount_minor: input.unitAmountMinor,
+      line_amount_minor: input.lineAmountMinor,
+    });
+  }
+
+  deleteLine(invoiceId: string, lineId: string): Observable<DeleteLineResult> {
+    return this.http.delete<DeleteLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`));
   }
 
   private toListResult(res: InvoiceListResponseApi): ManagerInvoiceListResult {

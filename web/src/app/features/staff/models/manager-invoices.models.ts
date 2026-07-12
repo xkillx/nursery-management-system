@@ -201,3 +201,36 @@ export interface PaginatedPaymentEvents {
   limit: number;
   offset: number;
 }
+
+export interface AddInvoiceLineInput {
+  lineKind: string;
+  description: string;
+  quantityMinutes: number;
+  unitAmountMinor: number;
+  lineAmountMinor: number;
+}
+
+export interface UpdateInvoiceLineInput {
+  description: string;
+  quantityMinutes: number;
+  unitAmountMinor: number;
+  lineAmountMinor: number;
+}
+
+export interface InvoiceLineResult {
+  lineId: string;
+  lineKind: string;
+  description: string;
+  sortOrder: number;
+  quantityMinutes: number;
+  unitAmountMinor: number;
+  lineAmountMinor: number;
+  subtotalMinor: number;
+  totalDueMinor: number;
+}
+
+export interface DeleteLineResult {
+  lineId: string;
+  subtotalMinor: number;
+  totalDueMinor: number;
+}
