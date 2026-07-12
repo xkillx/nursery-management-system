@@ -70,6 +70,11 @@ type BillingRepository interface {
 	AllocateInvoiceNumberSequence(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, year, month int) (int, error)
 	MarkInvoiceIssued(ctx context.Context, tx Tx, params IssueInvoiceUpdateParams) (int64, error)
 
+	// Invoice Line CRUD — transactional methods using Tx.
+	GetInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, invoiceID, lineID uuid.UUID) (InvoiceLine, bool, error)
+	UpdateInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount Money) (int64, error)
+	DeleteInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, lineID uuid.UUID) (int64, error)
+
 	// Invoice Void — transactional method using Tx.
 	MarkInvoiceVoid(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, reason string, voidedAt time.Time) (int64, error)
 

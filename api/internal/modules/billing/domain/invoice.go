@@ -402,6 +402,7 @@ type ReminderJobResult struct {
 
 // InvoiceLine represents a line item on an Invoice entity.
 type InvoiceLine struct {
+	ID                     uuid.UUID
 	LineKind               string
 	Description            string
 	SortOrder              int

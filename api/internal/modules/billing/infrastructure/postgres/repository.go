@@ -414,6 +414,62 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 	})
 }
 
+func (r *Repository) GetInvoiceLine(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID, lineID uuid.UUID) (domain.InvoiceLine, bool, error) {
+	row, err := r.queriesTx(tx).InvoiceLineGet(ctx, sqlc.InvoiceLineGetParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		InvoiceID: uuidToPgtype(invoiceID),
+		ID:        uuidToPgtype(lineID),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.InvoiceLine{}, false, nil
+		}
+		return domain.InvoiceLine{}, false, err
+	}
+	return domain.InvoiceLine{
+		ID:                     pgtypeUUIDToUUID(row.ID),
+		LineKind:               row.LineKind,
+		Description:            row.Description,
+		SortOrder:              int(row.SortOrder),
+		QuantityMinutes:        pgtypeInt4ToInt(row.QuantityMinutes),
+		UnitAmount:             pgtypeInt4ToMoney(row.UnitAmountMinor),
+		LineAmount:             domain.MustGBP(int(row.LineAmountMinor)),
+		FundedAllowanceMinutes: pgtypeInt4ToInt(row.FundedAllowanceMinutes),
+		FundedDeductionMinutes: pgtypeInt4ToInt(row.FundedDeductionMinutes),
+		CoreBillableMinutes:    pgtypeInt4ToInt(row.CoreBillableMinutes),
+		SessionCount:           pgtypeInt4ToInt(row.SessionCount),
+	}, true, nil
+}
+
+func (r *Repository) UpdateInvoiceLine(ctx context.Context, tx domain.Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount domain.Money) (int64, error) {
+	n, err := r.queriesTx(tx).InvoiceLineUpdate(ctx, sqlc.InvoiceLineUpdateParams{
+		ID:              uuidToPgtype(lineID),
+		TenantID:        uuidToPgtype(tenantID),
+		BranchID:        uuidToPgtype(branchID),
+		Description:     description,
+		QuantityMinutes: pgtypeInt4OrNil(quantityMinutes),
+		UnitAmountMinor: pgtypeInt4OrNil(unitAmount.Minor()),
+		LineAmountMinor: int32(lineAmount.Minor()),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+func (r *Repository) DeleteInvoiceLine(ctx context.Context, tx domain.Tx, tenantID, branchID, lineID uuid.UUID) (int64, error) {
+	n, err := r.queriesTx(tx).InvoiceLineDelete(ctx, sqlc.InvoiceLineDeleteParams{
+		ID:       uuidToPgtype(lineID),
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 // --- Manager Invoice Review (API-18) read-only methods ---
 
 func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceReviewFilters) ([]domain.InvoiceReviewRow, error) {
@@ -1173,6 +1229,17 @@ func pgtypeTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
 		return nil
 	}
 	return &t.Time
+}
+
+func pgtypeInt4ToInt(i pgtype.Int4) int {
+	if !i.Valid {
+		return 0
+	}
+	return int(i.Int32)
+}
+
+func pgtypeInt4ToMoney(i pgtype.Int4) domain.Money {
+	return domain.MustGBP(pgtypeInt4ToInt(i))
 }
 
 func pgtypeInt4ToIntPtr(i pgtype.Int4) *int {

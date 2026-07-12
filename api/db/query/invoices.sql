@@ -269,6 +269,34 @@ INSERT INTO invoice_lines (
     $14, $15, $16, $17
 );
 
+-- name: InvoiceLineGet :one
+SELECT id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
+       quantity_minutes, unit_amount_minor, line_amount_minor,
+       raw_attended_minutes, rounded_attended_minutes, funded_allowance_minutes,
+       funded_deduction_minutes, core_billable_minutes, session_count, details,
+       created_at, updated_at
+FROM invoice_lines
+WHERE tenant_id = $1 AND branch_id = $2 AND invoice_id = $3 AND id = $4;
+
+-- name: InvoiceLineUpdate :execrows
+UPDATE invoice_lines
+SET description = $4,
+    quantity_minutes = $5,
+    unit_amount_minor = $6,
+    line_amount_minor = $7,
+    updated_at = now()
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND line_kind IN ('extra', 'ad_hoc');
+
+-- name: InvoiceLineDelete :execrows
+DELETE FROM invoice_lines
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND line_kind IN ('extra', 'ad_hoc');
+
 -- name: InvoiceListForManagerReview :many
 SELECT
     i.id, i.invoice_kind, i.invoice_number, i.status,

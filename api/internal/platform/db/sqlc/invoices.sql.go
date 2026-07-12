@@ -994,6 +994,77 @@ func (q *Queries) InvoiceGetForParent(ctx context.Context, arg InvoiceGetForPare
 	return i, err
 }
 
+const invoiceLineDelete = `-- name: InvoiceLineDelete :execrows
+DELETE FROM invoice_lines
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND line_kind IN ('extra', 'ad_hoc')
+`
+
+type InvoiceLineDeleteParams struct {
+	ID       pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+func (q *Queries) InvoiceLineDelete(ctx context.Context, arg InvoiceLineDeleteParams) (int64, error) {
+	result, err := q.db.Exec(ctx, invoiceLineDelete, arg.ID, arg.TenantID, arg.BranchID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const invoiceLineGet = `-- name: InvoiceLineGet :one
+SELECT id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
+       quantity_minutes, unit_amount_minor, line_amount_minor,
+       raw_attended_minutes, rounded_attended_minutes, funded_allowance_minutes,
+       funded_deduction_minutes, core_billable_minutes, session_count, details,
+       created_at, updated_at
+FROM invoice_lines
+WHERE tenant_id = $1 AND branch_id = $2 AND invoice_id = $3 AND id = $4
+`
+
+type InvoiceLineGetParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+	ID        pgtype.UUID
+}
+
+func (q *Queries) InvoiceLineGet(ctx context.Context, arg InvoiceLineGetParams) (InvoiceLine, error) {
+	row := q.db.QueryRow(ctx, invoiceLineGet,
+		arg.TenantID,
+		arg.BranchID,
+		arg.InvoiceID,
+		arg.ID,
+	)
+	var i InvoiceLine
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.InvoiceID,
+		&i.LineKind,
+		&i.Description,
+		&i.SortOrder,
+		&i.QuantityMinutes,
+		&i.UnitAmountMinor,
+		&i.LineAmountMinor,
+		&i.RawAttendedMinutes,
+		&i.RoundedAttendedMinutes,
+		&i.FundedAllowanceMinutes,
+		&i.FundedDeductionMinutes,
+		&i.CoreBillableMinutes,
+		&i.SessionCount,
+		&i.Details,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const invoiceLineListByInvoice = `-- name: InvoiceLineListByInvoice :many
 SELECT id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order,
        quantity_minutes, unit_amount_minor, line_amount_minor,
@@ -1049,6 +1120,45 @@ func (q *Queries) InvoiceLineListByInvoice(ctx context.Context, arg InvoiceLineL
 		return nil, err
 	}
 	return items, nil
+}
+
+const invoiceLineUpdate = `-- name: InvoiceLineUpdate :execrows
+UPDATE invoice_lines
+SET description = $4,
+    quantity_minutes = $5,
+    unit_amount_minor = $6,
+    line_amount_minor = $7,
+    updated_at = now()
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND line_kind IN ('extra', 'ad_hoc')
+`
+
+type InvoiceLineUpdateParams struct {
+	ID              pgtype.UUID
+	TenantID        pgtype.UUID
+	BranchID        pgtype.UUID
+	Description     string
+	QuantityMinutes pgtype.Int4
+	UnitAmountMinor pgtype.Int4
+	LineAmountMinor int32
+}
+
+func (q *Queries) InvoiceLineUpdate(ctx context.Context, arg InvoiceLineUpdateParams) (int64, error) {
+	result, err := q.db.Exec(ctx, invoiceLineUpdate,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.Description,
+		arg.QuantityMinutes,
+		arg.UnitAmountMinor,
+		arg.LineAmountMinor,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const invoiceLinesForManagerReview = `-- name: InvoiceLinesForManagerReview :many
