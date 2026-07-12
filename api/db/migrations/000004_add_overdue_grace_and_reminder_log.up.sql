@@ -6,6 +6,13 @@ ALTER TABLE branches
     ADD CONSTRAINT branches_overdue_grace_days_range
     CHECK (overdue_grace_days >= 0 AND overdue_grace_days <= 30);
 
+ALTER TABLE branches
+    ADD COLUMN reminder_days_before integer NOT NULL DEFAULT 3;
+
+ALTER TABLE branches
+    ADD CONSTRAINT branches_reminder_days_before_range
+    CHECK (reminder_days_before >= 1 AND reminder_days_before <= 30);
+
 -- U7: Create invoice_reminder_log for idempotency
 CREATE TABLE invoice_reminder_log (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

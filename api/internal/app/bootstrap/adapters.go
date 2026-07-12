@@ -782,6 +782,154 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 	return nil
 }
 
+func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return nil
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	totalDue := formatMoney(invoice.TotalDue)
+	dueDate := ""
+	if invoice.DueAt != nil {
+		dueDate = invoice.DueAt.Format("2 January 2006")
+	}
+
+	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
+
+	data := notificationTemplateData{
+		NurseryName:   site.NurseryName,
+		ChildName:     childName,
+		InvoiceNumber: invoiceNumber,
+		TotalDue:      totalDue,
+		DueDate:       dueDate,
+		PortalLink:    portalLink,
+	}
+
+	subject := fmt.Sprintf("Payment Reminder: Invoice %s Due Soon - %s", invoiceNumber, site.NurseryName)
+	htmlBody, textBody, err := renderTemplates("due-soon", data)
+	if err != nil {
+		return fmt.Errorf("render templates: %w", err)
+	}
+
+	msg := email.Message{
+		To:      parent.Email,
+		Subject: subject,
+		Text:    textBody,
+		HTML:    htmlBody,
+	}
+
+	if err := a.sender.Send(ctx, msg); err != nil {
+		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonFailed, err)
+		return fmt.Errorf("send email: %w", err)
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonSent, nil)
+	return nil
+}
+
+func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return nil
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	totalDue := formatMoney(invoice.TotalDue)
+	dueDate := ""
+	if invoice.DueAt != nil {
+		dueDate = invoice.DueAt.Format("2 January 2006")
+	}
+
+	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
+
+	data := notificationTemplateData{
+		NurseryName:   site.NurseryName,
+		ChildName:     childName,
+		InvoiceNumber: invoiceNumber,
+		TotalDue:      totalDue,
+		DueDate:       dueDate,
+		PortalLink:    portalLink,
+	}
+
+	subject := fmt.Sprintf("Payment Due Today: Invoice %s - %s", invoiceNumber, site.NurseryName)
+	htmlBody, textBody, err := renderTemplates("due-reminder", data)
+	if err != nil {
+		return fmt.Errorf("render templates: %w", err)
+	}
+
+	msg := email.Message{
+		To:      parent.Email,
+		Subject: subject,
+		Text:    textBody,
+		HTML:    htmlBody,
+	}
+
+	if err := a.sender.Send(ctx, msg); err != nil {
+		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderFailed, err)
+		return fmt.Errorf("send email: %w", err)
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderSent, nil)
+	return nil
+}
+
 func renderTemplates(name string, data notificationTemplateData) (htmlBody, textBody string, err error) {
 	htmlTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".html")
 	if err != nil {

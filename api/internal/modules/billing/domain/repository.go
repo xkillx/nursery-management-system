@@ -73,6 +73,12 @@ type BillingRepository interface {
 	// Overdue Transition (API-20) — transactional methods using Tx.
 	TryAcquireOverdueTransitionJobLock(ctx context.Context, tx Tx) (bool, error)
 	MarkIssuedInvoicesOverdue(ctx context.Context, tx Tx, cutoffUTC time.Time) ([]OverdueTransitionedInvoice, error)
+
+	// Pre-Overdue Reminders — transactional methods using Tx.
+	TryAcquireReminderJobLock(ctx context.Context, tx Tx) (bool, error)
+	ListInvoicesDueSoon(ctx context.Context, tx Tx) ([]InvoiceReminderRow, error)
+	ListInvoicesDueToday(ctx context.Context, tx Tx) ([]InvoiceReminderRow, error)
+	InsertInvoiceReminderLog(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, reminderType string) error
 }
 
 // InvoiceRow maps a row from the invoices table.

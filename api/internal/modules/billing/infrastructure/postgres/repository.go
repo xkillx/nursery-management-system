@@ -988,6 +988,55 @@ func (r *Repository) MarkIssuedInvoicesOverdue(ctx context.Context, tx domain.Tx
 	return result, nil
 }
 
+// --- Pre-Overdue Reminders transactional methods ---
+
+func (r *Repository) TryAcquireReminderJobLock(ctx context.Context, tx domain.Tx) (bool, error) {
+	return r.queriesTx(tx).TryAcquireReminderJobLock(ctx)
+}
+
+func (r *Repository) ListInvoicesDueSoon(ctx context.Context, tx domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	rows, err := r.queriesTx(tx).ListInvoicesDueSoon(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.InvoiceReminderRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceReminderRow{
+			ID:       pgtypeUUIDToUUID(row.ID),
+			TenantID: pgtypeUUIDToUUID(row.TenantID),
+			BranchID: pgtypeUUIDToUUID(row.BranchID),
+			DueDate:  pgtypeTimestamptzToTime(row.DueAt),
+		})
+	}
+	return result, nil
+}
+
+func (r *Repository) ListInvoicesDueToday(ctx context.Context, tx domain.Tx) ([]domain.InvoiceReminderRow, error) {
+	rows, err := r.queriesTx(tx).ListInvoicesDueToday(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.InvoiceReminderRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceReminderRow{
+			ID:       pgtypeUUIDToUUID(row.ID),
+			TenantID: pgtypeUUIDToUUID(row.TenantID),
+			BranchID: pgtypeUUIDToUUID(row.BranchID),
+			DueDate:  pgtypeTimestamptzToTime(row.DueAt),
+		})
+	}
+	return result, nil
+}
+
+func (r *Repository) InsertInvoiceReminderLog(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID, reminderType string) error {
+	return r.queriesTx(tx).InsertInvoiceReminderLog(ctx, sqlc.InsertInvoiceReminderLogParams{
+		TenantID:     uuidToPgtype(tenantID),
+		BranchID:     uuidToPgtype(branchID),
+		InvoiceID:    uuidToPgtype(invoiceID),
+		ReminderType: reminderType,
+	})
+}
+
 func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {
 	return domain.InvoiceIssueCandidateRow{
 		ID:              pgtypeUUIDToUUID(row.ID),

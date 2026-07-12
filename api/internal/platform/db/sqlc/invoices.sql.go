@@ -563,6 +563,28 @@ func (q *Queries) InsertInvoiceLine(ctx context.Context, arg InsertInvoiceLinePa
 	return err
 }
 
+const insertInvoiceReminderLog = `-- name: InsertInvoiceReminderLog :exec
+INSERT INTO invoice_reminder_log (tenant_id, branch_id, invoice_id, reminder_type, sent_at_date)
+VALUES ($1, $2, $3, $4, CURRENT_DATE)
+`
+
+type InsertInvoiceReminderLogParams struct {
+	TenantID     pgtype.UUID
+	BranchID     pgtype.UUID
+	InvoiceID    pgtype.UUID
+	ReminderType string
+}
+
+func (q *Queries) InsertInvoiceReminderLog(ctx context.Context, arg InsertInvoiceReminderLogParams) error {
+	_, err := q.db.Exec(ctx, insertInvoiceReminderLog,
+		arg.TenantID,
+		arg.BranchID,
+		arg.InvoiceID,
+		arg.ReminderType,
+	)
+	return err
+}
+
 const invoiceCountForManagerReview = `-- name: InvoiceCountForManagerReview :one
 SELECT COUNT(*)
 FROM invoices i
@@ -2602,6 +2624,107 @@ func (q *Queries) ListDraftInvoicesForIssueForUpdate(ctx context.Context, arg Li
 	return items, nil
 }
 
+const listInvoicesDueSoon = `-- name: ListInvoicesDueSoon :many
+SELECT
+    i.id,
+    i.tenant_id,
+    i.branch_id,
+    i.due_at
+FROM invoices i
+JOIN branches b ON b.id = i.branch_id AND b.tenant_id = i.tenant_id
+WHERE i.status = 'issued'
+  AND i.amount_paid_minor < i.total_due_minor
+  AND i.due_at::date = (now() + (b.reminder_days_before || ' days')::interval)::date
+  AND NOT EXISTS (
+      SELECT 1 FROM invoice_reminder_log l
+      WHERE l.invoice_id = i.id
+        AND l.reminder_type = 'due_soon'
+        AND l.sent_at_date = CURRENT_DATE
+  )
+`
+
+type ListInvoicesDueSoonRow struct {
+	ID       pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	DueAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListInvoicesDueSoon(ctx context.Context) ([]ListInvoicesDueSoonRow, error) {
+	rows, err := q.db.Query(ctx, listInvoicesDueSoon)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListInvoicesDueSoonRow
+	for rows.Next() {
+		var i ListInvoicesDueSoonRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.DueAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInvoicesDueToday = `-- name: ListInvoicesDueToday :many
+SELECT
+    i.id,
+    i.tenant_id,
+    i.branch_id,
+    i.due_at
+FROM invoices i
+WHERE i.status = 'issued'
+  AND i.amount_paid_minor < i.total_due_minor
+  AND i.due_at::date = CURRENT_DATE
+  AND NOT EXISTS (
+      SELECT 1 FROM invoice_reminder_log l
+      WHERE l.invoice_id = i.id
+        AND l.reminder_type = 'due_today'
+        AND l.sent_at_date = CURRENT_DATE
+  )
+`
+
+type ListInvoicesDueTodayRow struct {
+	ID       pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	DueAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListInvoicesDueToday(ctx context.Context) ([]ListInvoicesDueTodayRow, error) {
+	rows, err := q.db.Query(ctx, listInvoicesDueToday)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListInvoicesDueTodayRow
+	for rows.Next() {
+		var i ListInvoicesDueTodayRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.DueAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSelectedChildrenForUpdate = `-- name: ListSelectedChildrenForUpdate :many
 SELECT
     c.id AS child_id,
@@ -3064,6 +3187,17 @@ SELECT pg_try_advisory_xact_lock(200020) AS acquired
 
 func (q *Queries) TryAcquireOverdueTransitionJobLock(ctx context.Context) (bool, error) {
 	row := q.db.QueryRow(ctx, tryAcquireOverdueTransitionJobLock)
+	var acquired bool
+	err := row.Scan(&acquired)
+	return acquired, err
+}
+
+const tryAcquireReminderJobLock = `-- name: TryAcquireReminderJobLock :one
+SELECT pg_try_advisory_xact_lock(200021) AS acquired
+`
+
+func (q *Queries) TryAcquireReminderJobLock(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, tryAcquireReminderJobLock)
 	var acquired bool
 	err := row.Scan(&acquired)
 	return acquired, err

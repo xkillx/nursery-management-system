@@ -383,6 +383,21 @@ type OverdueTransitionResult struct {
 	Transitioned      []OverdueTransitionedInvoice
 }
 
+// InvoiceReminderRow represents an invoice that needs a reminder notification.
+type InvoiceReminderRow struct {
+	ID       uuid.UUID
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	DueDate  time.Time
+}
+
+// ReminderJobResult is the result of a reminder job run.
+type ReminderJobResult struct {
+	LockAcquired bool
+	DueSoon      []InvoiceReminderRow
+	DueToday     []InvoiceReminderRow
+}
+
 // ── Invoice entity ────────────────────────────────────────────────────────
 
 // InvoiceLine represents a line item on an Invoice entity.

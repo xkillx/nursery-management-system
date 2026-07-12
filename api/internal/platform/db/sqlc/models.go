@@ -249,6 +249,7 @@ type Branch struct {
 	CoreHourlyRateMinor pgtype.Int4
 	AdHocRateMultiplier pgtype.Numeric
 	OverdueGraceDays    int32
+	ReminderDaysBefore  int32
 }
 
 type BranchClosureDay struct {

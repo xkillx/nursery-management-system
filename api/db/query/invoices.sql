@@ -626,6 +626,9 @@ WHERE id = $1
 -- name: TryAcquireOverdueTransitionJobLock :one
 SELECT pg_try_advisory_xact_lock(200020) AS acquired;
 
+-- name: TryAcquireReminderJobLock :one
+SELECT pg_try_advisory_xact_lock(200021) AS acquired;
+
 -- name: MarkIssuedInvoicesOverdue :many
 UPDATE invoices
 SET status = 'overdue',
@@ -638,6 +641,45 @@ WHERE invoices.branch_id = b.id
   AND invoices.amount_paid_minor < invoices.total_due_minor
   AND invoices.due_at + (b.overdue_grace_days || ' days')::interval < $1
 RETURNING invoices.id, invoices.tenant_id, invoices.branch_id;
+
+-- name: ListInvoicesDueSoon :many
+SELECT
+    i.id,
+    i.tenant_id,
+    i.branch_id,
+    i.due_at
+FROM invoices i
+JOIN branches b ON b.id = i.branch_id AND b.tenant_id = i.tenant_id
+WHERE i.status = 'issued'
+  AND i.amount_paid_minor < i.total_due_minor
+  AND i.due_at::date = (now() + (b.reminder_days_before || ' days')::interval)::date
+  AND NOT EXISTS (
+      SELECT 1 FROM invoice_reminder_log l
+      WHERE l.invoice_id = i.id
+        AND l.reminder_type = 'due_soon'
+        AND l.sent_at_date = CURRENT_DATE
+  );
+
+-- name: ListInvoicesDueToday :many
+SELECT
+    i.id,
+    i.tenant_id,
+    i.branch_id,
+    i.due_at
+FROM invoices i
+WHERE i.status = 'issued'
+  AND i.amount_paid_minor < i.total_due_minor
+  AND i.due_at::date = CURRENT_DATE
+  AND NOT EXISTS (
+      SELECT 1 FROM invoice_reminder_log l
+      WHERE l.invoice_id = i.id
+        AND l.reminder_type = 'due_today'
+        AND l.sent_at_date = CURRENT_DATE
+  );
+
+-- name: InsertInvoiceReminderLog :exec
+INSERT INTO invoice_reminder_log (tenant_id, branch_id, invoice_id, reminder_type, sent_at_date)
+VALUES ($1, $2, $3, $4, CURRENT_DATE);
 
 -- name: BillingListAdHocBookingsForMonth :many
 SELECT
