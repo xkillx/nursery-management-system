@@ -167,6 +167,8 @@ func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter eve
 
 	emitter.Emit(domain.InvoiceIssued{
 		InvoiceID: invoiceID,
+		TenantID:  actor.TenantID,
+		BranchID:  actor.BranchID,
 		Occurred:  issueTime,
 	})
 

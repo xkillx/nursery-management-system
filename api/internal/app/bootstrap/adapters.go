@@ -2,9 +2,12 @@ package bootstrap
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,6 +26,7 @@ import (
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
+	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
@@ -606,6 +610,236 @@ func (a *hourlyBookingLookupAdapter) ListActiveByChildAndMonth(ctx context.Conte
 		})
 	}
 	return out, nil
+}
+
+var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
+
+// ── Billing Notification adapter ──────────────────────────────────────────
+
+//go:embed templates/*.html templates/*.txt
+var notificationTemplatesFS embed.FS
+
+type notificationTemplateData struct {
+	NurseryName   string
+	ChildName     string
+	InvoiceNumber string
+	BillingMonth  string
+	TotalDue      string
+	DueDate       string
+	PortalLink    string
+}
+
+type billingNotificationAdapter struct {
+	repo           billingdomain.BillingRepository
+	parentContacts billingapp.ParentContactLookup
+	siteProfiles   billingapp.SiteProfileLookup
+	sender         email.Sender
+	auditWriter    *audit.Writer
+	webBaseURL     string
+}
+
+func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return nil
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	billingMonth := invoice.BillingMonth.Format("January 2006")
+	totalDue := formatMoney(invoice.TotalDue)
+	dueDate := ""
+	if invoice.DueAt != nil {
+		dueDate = invoice.DueAt.Format("2 January 2006")
+	}
+
+	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
+
+	data := notificationTemplateData{
+		NurseryName:   site.NurseryName,
+		ChildName:     childName,
+		InvoiceNumber: invoiceNumber,
+		BillingMonth:  billingMonth,
+		TotalDue:      totalDue,
+		DueDate:       dueDate,
+		PortalLink:    portalLink,
+	}
+
+	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
+	htmlBody, textBody, err := renderTemplates("issued", data)
+	if err != nil {
+		return fmt.Errorf("render templates: %w", err)
+	}
+
+	msg := email.Message{
+		To:      parent.Email,
+		Subject: subject,
+		Text:    textBody,
+		HTML:    htmlBody,
+	}
+
+	if err := a.sender.Send(ctx, msg); err != nil {
+		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedFailed, err)
+		return fmt.Errorf("send email: %w", err)
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedSent, nil)
+	return nil
+}
+
+func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return nil
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	totalDue := formatMoney(invoice.TotalDue)
+	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
+
+	data := notificationTemplateData{
+		NurseryName:   site.NurseryName,
+		ChildName:     childName,
+		InvoiceNumber: invoiceNumber,
+		TotalDue:      totalDue,
+		PortalLink:    portalLink,
+	}
+
+	subject := fmt.Sprintf("Invoice Overdue %s - %s", invoiceNumber, site.NurseryName)
+	htmlBody, textBody, err := renderTemplates("overdue", data)
+	if err != nil {
+		return fmt.Errorf("render templates: %w", err)
+	}
+
+	msg := email.Message{
+		To:      parent.Email,
+		Subject: subject,
+		Text:    textBody,
+		HTML:    htmlBody,
+	}
+
+	if err := a.sender.Send(ctx, msg); err != nil {
+		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueFailed, err)
+		return fmt.Errorf("send email: %w", err)
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueSent, nil)
+	return nil
+}
+
+func renderTemplates(name string, data notificationTemplateData) (htmlBody, textBody string, err error) {
+	htmlTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".html")
+	if err != nil {
+		return "", "", fmt.Errorf("parse html template: %w", err)
+	}
+
+	var htmlBuf strings.Builder
+	if err := htmlTmpl.Execute(&htmlBuf, data); err != nil {
+		return "", "", fmt.Errorf("execute html template: %w", err)
+	}
+
+	textTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".txt")
+	if err != nil {
+		return "", "", fmt.Errorf("parse text template: %w", err)
+	}
+
+	var textBuf strings.Builder
+	if err := textTmpl.Execute(&textBuf, data); err != nil {
+		return "", "", fmt.Errorf("execute text template: %w", err)
+	}
+
+	return htmlBuf.String(), textBuf.String(), nil
+}
+
+func formatMoney(m billingdomain.Money) string {
+	minor := m.Minor()
+	pounds := minor / 100
+	pence := minor % 100
+	if pence < 0 {
+		pence = -pence
+	}
+	return fmt.Sprintf("£%d.%02d", pounds, pence)
+}
+
+func (a *billingNotificationAdapter) writeAudit(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID uuid.UUID, emailAddr, actionType string, sendErr error) {
+	actor := tenant.ActorContext{
+		TenantID: tenantID,
+		BranchID: branchID,
+	}
+	details := map[string]any{
+		"invoice_id":        invoiceID.String(),
+		"notification_type": actionType,
+	}
+	if emailAddr != "" {
+		parts := strings.SplitN(emailAddr, "@", 2)
+		if len(parts) == 2 {
+			details["parent_email_domain"] = parts[1]
+		}
+	}
+	if sendErr != nil {
+		details["error"] = sendErr.Error()
+	}
+	_ = a.auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+		ActionType: actionType,
+		EntityType: "invoice",
+		EntityID:   invoiceID,
+		Details:    details,
+	})
 }
 
 var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)

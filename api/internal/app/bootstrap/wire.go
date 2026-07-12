@@ -65,6 +65,8 @@ import (
 	invitepostgres "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
 	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
 
+	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
+
 	ownerapp "nursery-management-system/api/internal/modules/owner/application"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
@@ -584,6 +586,15 @@ var branchClosuresSet = wire.NewSet(
 	wire.Bind(new(billingdomain.ClosureDateLookup), new(*closureDateLookupAdapter)),
 )
 
+// ── Notifications module ──────────────────────────────────────────────
+
+var notificationsSet = wire.NewSet(
+	provideBillingNotificationAdapter,
+	wire.Bind(new(notificationsapp.InvoiceNotificationSender), new(*billingNotificationAdapter)),
+	notificationsapp.NewInvoiceIssuedHandler,
+	notificationsapp.NewInvoiceOverdueHandler,
+)
+
 // ── Injector ────────────────────────────────────────────────────────────
 
 func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
@@ -635,6 +646,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		hourlyBookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
+		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
@@ -690,6 +702,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		hourlyBookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
+		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)

@@ -1,0 +1,18 @@
+Dear Parent/Carer,
+
+A new invoice has been issued for {{.ChildName}} at {{.NurseryName}}.
+
+Invoice Details:
+- Invoice Number: {{.InvoiceNumber}}
+- Billing Month: {{.BillingMonth}}
+- Amount Due: {{.TotalDue}}
+- Due Date: {{.DueDate}}
+
+Please review the invoice details and make payment by the due date.
+
+View your invoice: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

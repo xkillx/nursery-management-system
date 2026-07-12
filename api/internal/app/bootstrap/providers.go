@@ -27,6 +27,7 @@ import (
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
 	authhandler "nursery-management-system/api/internal/modules/authentication/interfaces/http"
+	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
@@ -42,6 +43,7 @@ import (
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
+	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	ownerhandler "nursery-management-system/api/internal/modules/owner/interfaces/http"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
@@ -76,17 +78,13 @@ func provideAuditWriter() *audit.Writer {
 	return audit.NewWriter()
 }
 
-func provideEventDispatcher(txMgr *transaction.Manager) *events.EventDispatcher {
+func provideEventDispatcher(txMgr *transaction.Manager, billingNotifier *billingNotificationAdapter) *events.EventDispatcher {
 	d := events.NewEventDispatcher(txMgr)
 	events.Register(d, events.TypedHandlerFunc[childdomain.ChildDeactivated](func(ctx context.Context, tx pgx.Tx, event childdomain.ChildDeactivated) error {
 		return nil
 	}))
-	events.Register(d, events.TypedHandlerFunc[billingdomain.InvoiceIssued](func(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceIssued) error {
-		return nil
-	}))
-	events.Register(d, events.TypedHandlerFunc[billingdomain.InvoiceMarkedOverdue](func(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceMarkedOverdue) error {
-		return nil
-	}))
+	events.Register(d, notificationsapp.NewInvoiceIssuedHandler(billingNotifier))
+	events.Register(d, notificationsapp.NewInvoiceOverdueHandler(billingNotifier))
 	return d
 }
 
@@ -245,6 +243,24 @@ func provideInvoicePDFRenderer() *billingpdf.Renderer {
 		panic("failed to create invoice PDF renderer: " + err.Error())
 	}
 	return r
+}
+
+func provideBillingNotificationAdapter(
+	repo billingdomain.BillingRepository,
+	parentContacts billingapp.ParentContactLookup,
+	siteProfiles billingapp.SiteProfileLookup,
+	sender email.Sender,
+	auditWriter *audit.Writer,
+	webBaseURL string,
+) *billingNotificationAdapter {
+	return &billingNotificationAdapter{
+		repo:           repo,
+		parentContacts: parentContacts,
+		siteProfiles:   siteProfiles,
+		sender:         sender,
+		auditWriter:    auditWriter,
+		webBaseURL:     webBaseURL,
+	}
 }
 
 func provideTxManagerAdapter(mgr *transaction.Manager) *txManagerAdapter {

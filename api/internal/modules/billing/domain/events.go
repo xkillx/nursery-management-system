@@ -8,6 +8,8 @@ import (
 
 type InvoiceIssued struct {
 	InvoiceID uuid.UUID
+	TenantID  uuid.UUID
+	BranchID  uuid.UUID
 	Occurred  time.Time
 }
 
