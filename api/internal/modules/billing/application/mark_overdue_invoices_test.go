@@ -95,7 +95,7 @@ func (s *stubBillingRepo) AllocateInvoiceNumberSequence(_ context.Context, _ dom
 func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ domain.IssueInvoiceUpdateParams) (int64, error) {
 	panic("stub")
 }
-func (s *stubBillingRepo) MarkInvoiceVoid(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ uuid.UUID, _ string, _ time.Time) (int64, error) {
+func (s *stubBillingRepo) MarkInvoiceVoid(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ time.Time) (int64, error) {
 	panic("stub")
 }
 func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
@@ -121,6 +121,15 @@ func (s *stubBillingRepo) ListInvoicesDueToday(_ context.Context, _ domain.Tx) (
 	panic("stub")
 }
 func (s *stubBillingRepo) InsertInvoiceReminderLog(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string) error {
+	panic("stub")
+}
+func (s *stubBillingRepo) GetInvoiceLine(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) (domain.InvoiceLine, bool, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
 	panic("stub")
 }
 

@@ -143,6 +143,15 @@ func (s *stubPrefillRepo) ListInvoicesDueToday(_ context.Context, _ domain.Tx) (
 func (s *stubPrefillRepo) InsertInvoiceReminderLog(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string) error {
 	panic("unused")
 }
+func (s *stubPrefillRepo) GetInvoiceLine(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) (domain.InvoiceLine, bool, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
+	panic("unused")
+}
 
 type stubPrefillTxMgr struct {
 	repo *stubPrefillRepo
