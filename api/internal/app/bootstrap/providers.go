@@ -85,6 +85,8 @@ func provideEventDispatcher(txMgr *transaction.Manager, billingNotifier *billing
 	}))
 	events.Register(d, notificationsapp.NewInvoiceIssuedHandler(billingNotifier))
 	events.Register(d, notificationsapp.NewInvoiceOverdueHandler(billingNotifier))
+	events.Register(d, notificationsapp.NewInvoiceDueSoonHandler(billingNotifier))
+	events.Register(d, notificationsapp.NewInvoiceDueReminderHandler(billingNotifier))
 	return d
 }
 

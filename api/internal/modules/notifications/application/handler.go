@@ -49,3 +49,41 @@ func (h *InvoiceOverdueHandler) Handle(ctx context.Context, tx pgx.Tx, event bil
 	}
 	return nil
 }
+
+// InvoiceDueSoonHandler handles InvoiceDueSoon domain events by sending
+// notification emails to parents.
+type InvoiceDueSoonHandler struct {
+	sender InvoiceNotificationSender
+}
+
+// NewInvoiceDueSoonHandler creates a new handler for InvoiceDueSoon events.
+func NewInvoiceDueSoonHandler(sender InvoiceNotificationSender) *InvoiceDueSoonHandler {
+	return &InvoiceDueSoonHandler{sender: sender}
+}
+
+// Handle implements events.TypedHandler[billingdomain.InvoiceDueSoon].
+func (h *InvoiceDueSoonHandler) Handle(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceDueSoon) error {
+	if err := h.sender.SendInvoiceDueSoonEmail(ctx, tx, event.InvoiceID, event.TenantID, event.BranchID); err != nil {
+		return fmt.Errorf("send invoice due soon email: %w", err)
+	}
+	return nil
+}
+
+// InvoiceDueReminderHandler handles InvoiceDueReminder domain events by sending
+// notification emails to parents.
+type InvoiceDueReminderHandler struct {
+	sender InvoiceNotificationSender
+}
+
+// NewInvoiceDueReminderHandler creates a new handler for InvoiceDueReminder events.
+func NewInvoiceDueReminderHandler(sender InvoiceNotificationSender) *InvoiceDueReminderHandler {
+	return &InvoiceDueReminderHandler{sender: sender}
+}
+
+// Handle implements events.TypedHandler[billingdomain.InvoiceDueReminder].
+func (h *InvoiceDueReminderHandler) Handle(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceDueReminder) error {
+	if err := h.sender.SendInvoiceDueReminderEmail(ctx, tx, event.InvoiceID, event.TenantID, event.BranchID); err != nil {
+		return fmt.Errorf("send invoice due reminder email: %w", err)
+	}
+	return nil
+}
