@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, AfterViewInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -18,8 +19,11 @@ import {
   heroEye,
   heroInformationCircle,
   heroLockClosed,
+  heroPencil,
+  heroPlus,
   heroReceiptPercent,
   heroShieldCheck,
+  heroTrash,
   heroUserCircle,
 } from '@ng-icons/heroicons/outline';
 
@@ -35,6 +39,8 @@ import {
   ManagerPaymentStatus,
   PaymentEvent,
   PaginatedPaymentEvents,
+  AddInvoiceLineInput,
+  UpdateInvoiceLineInput,
 } from '../../models/manager-invoices.models';
 import { formatGbp, formatMinutes, formatBillingMonthLabel } from '../../utils/invoice-run-formatters';
 import {
@@ -131,6 +137,7 @@ interface AuditTrailEntry {
   selector: 'app-manager-invoice-detail',
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     LoadingStateComponent,
     AlertComponent,
@@ -155,8 +162,11 @@ interface AuditTrailEntry {
       heroEye,
       heroInformationCircle,
       heroLockClosed,
+      heroPencil,
+      heroPlus,
       heroReceiptPercent,
       heroShieldCheck,
+      heroTrash,
       heroUserCircle,
     }),
   ],
@@ -209,6 +219,12 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   readonly isOpenPaymentAttempt = isOpenPaymentAttempt;
 
   totalAnimated = false;
+
+  editingLineId: string | null = null;
+  editForm = { description: '', quantityMinutes: 0, unitAmountMinor: 0, lineAmountMinor: 0 };
+  isAddingLine = false;
+  addForm: AddInvoiceLineInput = { lineKind: 'extra', description: '', quantityMinutes: 0, unitAmountMinor: 0, lineAmountMinor: 0 };
+  isSavingLine = false;
 
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
@@ -444,6 +460,102 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
       },
       error: () => {
         this.toast.error('Failed to download PDF. Please try again.');
+      },
+    });
+  }
+
+  isEditableLine(line: ManagerInvoiceLine): boolean {
+    return line.lineKind === 'extra' || line.lineKind === 'ad_hoc';
+  }
+
+  startEditLine(line: ManagerInvoiceLine): void {
+    this.editingLineId = line.lineId;
+    this.editForm = {
+      description: line.description,
+      quantityMinutes: line.quantityMinutes ?? 0,
+      unitAmountMinor: line.unitAmountMinor ?? 0,
+      lineAmountMinor: line.lineAmountMinor,
+    };
+  }
+
+  cancelEditLine(): void {
+    this.editingLineId = null;
+  }
+
+  saveEditLine(lineId: string): void {
+    if (!this.detail || this.isSavingLine) return;
+    this.isSavingLine = true;
+
+    const input: UpdateInvoiceLineInput = {
+      description: this.editForm.description,
+      quantityMinutes: this.editForm.quantityMinutes,
+      unitAmountMinor: this.editForm.unitAmountMinor,
+      lineAmountMinor: this.editForm.lineAmountMinor,
+    };
+
+    this.apiService.updateLine(this.detail.invoiceId, lineId, input).subscribe({
+      next: () => {
+        this.editingLineId = null;
+        this.isSavingLine = false;
+        this.toast.success('Line updated.');
+        this.reloadDetail();
+      },
+      error: () => {
+        this.isSavingLine = false;
+        this.toast.error('Failed to update line. Please try again.');
+      },
+    });
+  }
+
+  deleteLine(lineId: string): void {
+    if (!this.detail || this.isSavingLine) return;
+    this.isSavingLine = true;
+
+    this.apiService.deleteLine(this.detail.invoiceId, lineId).subscribe({
+      next: () => {
+        this.isSavingLine = false;
+        this.toast.success('Line deleted.');
+        this.reloadDetail();
+      },
+      error: () => {
+        this.isSavingLine = false;
+        this.toast.error('Failed to delete line. Please try again.');
+      },
+    });
+  }
+
+  startAddLine(): void {
+    this.isAddingLine = true;
+    this.addForm = { lineKind: 'extra', description: '', quantityMinutes: 0, unitAmountMinor: 0, lineAmountMinor: 0 };
+  }
+
+  cancelAddLine(): void {
+    this.isAddingLine = false;
+  }
+
+  saveAddLine(): void {
+    if (!this.detail || this.isSavingLine) return;
+    this.isSavingLine = true;
+
+    this.apiService.addLine(this.detail.invoiceId, this.addForm).subscribe({
+      next: () => {
+        this.isAddingLine = false;
+        this.isSavingLine = false;
+        this.toast.success('Line added.');
+        this.reloadDetail();
+      },
+      error: () => {
+        this.isSavingLine = false;
+        this.toast.error('Failed to add line. Please try again.');
+      },
+    });
+  }
+
+  private reloadDetail(): void {
+    if (!this.detail) return;
+    this.apiService.getInvoice(this.detail.invoiceId).subscribe({
+      next: (detail) => {
+        this.detail = detail;
       },
     });
   }
