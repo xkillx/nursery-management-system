@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroArrowDownTray } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -21,6 +23,7 @@ import {
   groupHistoryByChild,
   balanceDueMinor,
 } from '../../utils/parent-invoice-formatters';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 const PAGE_SIZE = 50;
 
@@ -34,12 +37,17 @@ const PAGE_SIZE = 50;
     LoadingStateComponent,
     AlertComponent,
     StatusBadgeComponent,
+    NgIcon,
+  ],
+  providers: [
+    provideIcons({ heroArrowDownTray }),
   ],
   templateUrl: './parent-invoices.component.html',
 })
 export class ParentInvoicesComponent implements OnInit {
   private readonly apiService = inject(ParentInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly toast = inject(ToastService);
 
   items: ParentInvoiceListItem[] = [];
   page = 1;
@@ -48,6 +56,7 @@ export class ParentInvoicesComponent implements OnInit {
   isLoadingMore = false;
   errorMessage: string | null = null;
   payingInvoiceIds = new Set<string>();
+  downloadingInvoiceIds = new Set<string>();
 
   readonly formatGbp = formatGbp;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
@@ -100,6 +109,31 @@ export class ParentInvoicesComponent implements OnInit {
 
   isPaying(invoiceId: string): boolean {
     return this.payingInvoiceIds.has(invoiceId);
+  }
+
+  downloadPdf(invoice: ParentInvoiceListItem): void {
+    if (this.downloadingInvoiceIds.has(invoice.invoiceId)) return;
+    this.downloadingInvoiceIds.add(invoice.invoiceId);
+
+    this.apiService.downloadPdf(invoice.invoiceId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = invoice.invoiceNumber ? `INV-${invoice.invoiceNumber}.pdf` : `INV-${invoice.invoiceId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloadingInvoiceIds.delete(invoice.invoiceId);
+      },
+      error: () => {
+        this.downloadingInvoiceIds.delete(invoice.invoiceId);
+        this.toast.error('Failed to download PDF. Please try again.');
+      },
+    });
+  }
+
+  isDownloading(invoiceId: string): boolean {
+    return this.downloadingInvoiceIds.has(invoiceId);
   }
 
   private loadInvoices(): void {

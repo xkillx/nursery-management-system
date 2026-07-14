@@ -63,6 +63,7 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   isLoading = false;
   errorMessage: string | null = null;
   isPaying = false;
+  isDownloadingPdf = false;
 
   returnKind: PaymentReturnKind = 'none';
   returnDisplayState: PaymentReturnDisplayState = null;
@@ -166,7 +167,8 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   downloadPdf(): void {
-    if (!this.detail) return;
+    if (!this.detail || this.isDownloadingPdf) return;
+    this.isDownloadingPdf = true;
 
     this.apiService.downloadPdf(this.detail.invoiceId).subscribe({
       next: (blob) => {
@@ -176,8 +178,10 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
         a.download = this.detail!.invoiceNumber ? `INV-${this.detail!.invoiceNumber}.pdf` : `INV-${this.detail!.invoiceId}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
+        this.isDownloadingPdf = false;
       },
       error: () => {
+        this.isDownloadingPdf = false;
         this.toast.error('Failed to download PDF. Please try again.');
       },
     });
