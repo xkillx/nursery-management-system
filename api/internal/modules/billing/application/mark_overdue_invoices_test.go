@@ -141,6 +141,12 @@ func (s *stubBillingRepo) ExportInvoiceDetailsForManagerReview(_ context.Context
 func (s *stubBillingRepo) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) InvoiceOverdueSummary(_ context.Context, _, _ uuid.UUID) (domain.OverdueSummary, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) InvoiceOverdueTopItems(_ context.Context, _, _ uuid.UUID) ([]domain.OverdueSummaryItem, error) {
+	panic("stub")
+}
 
 type stubTxMgr struct {
 	repo *stubBillingRepo

@@ -1426,6 +1426,49 @@ func (r *Repository) InvoiceSummaryByMonth(ctx context.Context, tenantID, branch
 	return result, nil
 }
 
+func (r *Repository) InvoiceOverdueSummary(ctx context.Context, tenantID, branchID uuid.UUID) (domain.OverdueSummary, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.InvoiceOverdueSummary(ctx, sqlc.InvoiceOverdueSummaryParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return domain.OverdueSummary{}, err
+	}
+	return domain.OverdueSummary{
+		TotalOverdueMinor: int(row.TotalOverdueMinor),
+		OverdueCount:      int(row.OverdueCount),
+	}, nil
+}
+
+func (r *Repository) InvoiceOverdueTopItems(ctx context.Context, tenantID, branchID uuid.UUID) ([]domain.OverdueSummaryItem, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceOverdueTopItems(ctx, sqlc.InvoiceOverdueTopItemsParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.OverdueSummaryItem, 0, len(rows))
+	for _, row := range rows {
+		invoiceNumber := ""
+		if row.InvoiceNumber.Valid {
+			invoiceNumber = row.InvoiceNumber.String
+		}
+		result = append(result, domain.OverdueSummaryItem{
+			ID:               pgtypeUUIDToUUID(row.ID),
+			InvoiceNumber:    invoiceNumber,
+			ChildID:          pgtypeUUIDToUUID(row.ChildID),
+			ChildName:        row.ChildName,
+			OutstandingMinor: int(row.OutstandingMinor),
+			DueDate:          pgtypeTimestamptzToTime(row.DueAt),
+			DaysOverdue:      int(row.DaysOverdue),
+		})
+	}
+	return result, nil
+}
+
 // --- BranchSettingsRepository implementation ---
 
 func (r *Repository) GetOverdueGraceDays(ctx context.Context, tenantID, branchID uuid.UUID) (int, error) {

@@ -23,6 +23,7 @@ import {
   InvoiceLineResult,
   DeleteLineResult,
   PaymentLinkResult,
+  OverdueSummary,
 } from '../models/manager-invoices.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
@@ -218,6 +219,22 @@ interface PaymentLinkResultApi {
   existing: boolean;
 }
 
+interface OverdueSummaryItemApi {
+  id: string;
+  invoice_number: string;
+  child_id: string;
+  child_name: string;
+  outstanding_minor: number;
+  due_date: string;
+  days_overdue: number;
+}
+
+interface OverdueSummaryApi {
+  total_overdue_minor: number;
+  overdue_count: number;
+  items: OverdueSummaryItemApi[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ManagerInvoicesApiService {
   private readonly http = inject(HttpClient);
@@ -327,6 +344,26 @@ export class ManagerInvoicesApiService {
           paymentLinkId: res.payment_link_id,
           url: res.url,
           existing: res.existing,
+        })),
+      );
+  }
+
+  getOverdueSummary(): Observable<OverdueSummary> {
+    return this.http
+      .get<OverdueSummaryApi>(apiUrl('/invoices/overdue-summary'))
+      .pipe(
+        map((res) => ({
+          totalOverdueMinor: res.total_overdue_minor,
+          overdueCount: res.overdue_count,
+          items: res.items.map((item) => ({
+            id: item.id,
+            invoiceNumber: item.invoice_number,
+            childId: item.child_id,
+            childName: item.child_name,
+            outstandingMinor: item.outstanding_minor,
+            dueDate: item.due_date,
+            daysOverdue: item.days_overdue,
+          })),
         })),
       );
   }

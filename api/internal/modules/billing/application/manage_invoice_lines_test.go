@@ -151,6 +151,12 @@ func (s *manageLinesRepoStub) ExportInvoiceDetailsForManagerReview(_ context.Con
 func (s *manageLinesRepoStub) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
 	panic("stub")
 }
+func (s *manageLinesRepoStub) InvoiceOverdueSummary(_ context.Context, _, _ uuid.UUID) (domain.OverdueSummary, error) {
+	panic("stub")
+}
+func (s *manageLinesRepoStub) InvoiceOverdueTopItems(_ context.Context, _, _ uuid.UUID) ([]domain.OverdueSummaryItem, error) {
+	panic("stub")
+}
 
 // --- Stub TxManager ---
 

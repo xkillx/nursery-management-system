@@ -1007,3 +1007,27 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
 GROUP BY i.billing_month
 ORDER BY i.billing_month DESC;
+
+-- name: InvoiceOverdueSummary :one
+SELECT
+    COALESCE(SUM(i.total_due_minor - i.amount_paid_minor), 0)::integer AS total_overdue_minor,
+    COUNT(*)::integer AS overdue_count
+FROM invoices i
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND i.status = 'overdue';
+
+-- name: InvoiceOverdueTopItems :many
+SELECT
+    i.id,
+    i.invoice_number,
+    i.child_id,
+    TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.middle_name, '') || ' ' || COALESCE(c.last_name, '')) AS child_name,
+    (i.total_due_minor - i.amount_paid_minor)::integer AS outstanding_minor,
+    i.due_at,
+    (CURRENT_DATE - i.due_at::date)::integer AS days_overdue
+FROM invoices i
+JOIN children c ON c.id = i.child_id AND c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND i.status = 'overdue'
+ORDER BY i.due_at ASC
+LIMIT 5;

@@ -161,6 +161,12 @@ func (s *stubPrefillRepo) ExportInvoiceDetailsForManagerReview(_ context.Context
 func (s *stubPrefillRepo) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
 	panic("unused")
 }
+func (s *stubPrefillRepo) InvoiceOverdueSummary(_ context.Context, _, _ uuid.UUID) (domain.OverdueSummary, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) InvoiceOverdueTopItems(_ context.Context, _, _ uuid.UUID) ([]domain.OverdueSummaryItem, error) {
+	panic("unused")
+}
 
 type stubPrefillTxMgr struct {
 	repo *stubPrefillRepo

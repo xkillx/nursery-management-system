@@ -2646,6 +2646,92 @@ func (q *Queries) InvoiceNumberSequenceGetForUpdate(ctx context.Context, arg Inv
 	return i, err
 }
 
+const invoiceOverdueSummary = `-- name: InvoiceOverdueSummary :one
+SELECT
+    COALESCE(SUM(i.total_due_minor - i.amount_paid_minor), 0)::integer AS total_overdue_minor,
+    COUNT(*)::integer AS overdue_count
+FROM invoices i
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND i.status = 'overdue'
+`
+
+type InvoiceOverdueSummaryParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+type InvoiceOverdueSummaryRow struct {
+	TotalOverdueMinor int32
+	OverdueCount      int32
+}
+
+func (q *Queries) InvoiceOverdueSummary(ctx context.Context, arg InvoiceOverdueSummaryParams) (InvoiceOverdueSummaryRow, error) {
+	row := q.db.QueryRow(ctx, invoiceOverdueSummary, arg.TenantID, arg.BranchID)
+	var i InvoiceOverdueSummaryRow
+	err := row.Scan(&i.TotalOverdueMinor, &i.OverdueCount)
+	return i, err
+}
+
+const invoiceOverdueTopItems = `-- name: InvoiceOverdueTopItems :many
+SELECT
+    i.id,
+    i.invoice_number,
+    i.child_id,
+    TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.middle_name, '') || ' ' || COALESCE(c.last_name, '')) AS child_name,
+    (i.total_due_minor - i.amount_paid_minor)::integer AS outstanding_minor,
+    i.due_at,
+    (CURRENT_DATE - i.due_at::date)::integer AS days_overdue
+FROM invoices i
+JOIN children c ON c.id = i.child_id AND c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND i.status = 'overdue'
+ORDER BY i.due_at ASC
+LIMIT 5
+`
+
+type InvoiceOverdueTopItemsParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+type InvoiceOverdueTopItemsRow struct {
+	ID               pgtype.UUID
+	InvoiceNumber    pgtype.Text
+	ChildID          pgtype.UUID
+	ChildName        string
+	OutstandingMinor int32
+	DueAt            pgtype.Timestamptz
+	DaysOverdue      int32
+}
+
+func (q *Queries) InvoiceOverdueTopItems(ctx context.Context, arg InvoiceOverdueTopItemsParams) ([]InvoiceOverdueTopItemsRow, error) {
+	rows, err := q.db.Query(ctx, invoiceOverdueTopItems, arg.TenantID, arg.BranchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InvoiceOverdueTopItemsRow
+	for rows.Next() {
+		var i InvoiceOverdueTopItemsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.InvoiceNumber,
+			&i.ChildID,
+			&i.ChildName,
+			&i.OutstandingMinor,
+			&i.DueAt,
+			&i.DaysOverdue,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const invoiceRunGet = `-- name: InvoiceRunGet :one
 SELECT id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at,
        requested_by_user_id, requested_by_membership_id, request_id,

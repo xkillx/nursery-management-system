@@ -26,6 +26,7 @@ import {
   formatGbp,
   sortPaymentFollowUp,
 } from './manager-dashboard.models';
+import { InvoiceCollectionsWidgetComponent } from './invoice-collections-widget/invoice-collections-widget.component';
 
 type AttendanceTileTone = 'success' | 'warning' | 'neutral';
 
@@ -49,6 +50,7 @@ interface AttendanceTile {
     TableShellComponent,
     NgIcon,
     ChildAvatarComponent,
+    InvoiceCollectionsWidgetComponent,
   ],
   providers: [
     provideIcons({
@@ -203,6 +205,8 @@ interface AttendanceTile {
           </div>
         </div>
       </section>
+
+      <app-invoice-collections-widget />
 
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <section aria-labelledby="incomplete-heading">

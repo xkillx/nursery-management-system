@@ -240,3 +240,19 @@ export interface PaymentLinkResult {
   url: string;
   existing: boolean;
 }
+
+export interface OverdueSummaryItem {
+  id: string;
+  invoiceNumber: string;
+  childId: string;
+  childName: string;
+  outstandingMinor: number;
+  dueDate: string;
+  daysOverdue: number;
+}
+
+export interface OverdueSummary {
+  totalOverdueMinor: number;
+  overdueCount: number;
+  items: OverdueSummaryItem[];
+}

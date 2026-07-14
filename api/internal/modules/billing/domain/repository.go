@@ -70,6 +70,10 @@ type BillingRepository interface {
 	// Invoice Summary — aggregated monthly metrics, read-only.
 	InvoiceSummaryByMonth(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceExportFilters) ([]InvoiceMonthSummary, error)
 
+	// Invoice Overdue Summary — aggregated overdue metrics and top-5 items, read-only.
+	InvoiceOverdueSummary(ctx context.Context, tenantID, branchID uuid.UUID) (OverdueSummary, error)
+	InvoiceOverdueTopItems(ctx context.Context, tenantID, branchID uuid.UUID) ([]OverdueSummaryItem, error)
+
 	// Invoice Issue (API-19) — transactional methods using Tx.
 	GetInvoiceForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (InvoiceIssueCandidateRow, bool, error)
 	ListDraftInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]InvoiceIssueCandidateRow, error)

@@ -144,3 +144,20 @@ type InvoiceMonthSummary struct {
 	TotalOverdueMinor     int
 	InvoiceCount          int
 }
+
+// OverdueSummary holds aggregated overdue invoice metrics.
+type OverdueSummary struct {
+	TotalOverdueMinor int
+	OverdueCount      int
+}
+
+// OverdueSummaryItem holds a single top-N overdue invoice for the summary widget.
+type OverdueSummaryItem struct {
+	ID               uuid.UUID
+	InvoiceNumber    string
+	ChildID          uuid.UUID
+	ChildName        string
+	OutstandingMinor int
+	DueDate          time.Time
+	DaysOverdue      int
+}

@@ -335,8 +335,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			UpdateSiteRate: updateSiteRateUC,
 		},
 		Export: billinghandler.ExportUseCases{
-			Export:  billingapp.NewExportInvoices(billingRepo),
-			Summary: billingapp.NewInvoiceSummary(billingRepo),
+			Export:         billingapp.NewExportInvoices(billingRepo),
+			Summary:        billingapp.NewInvoiceSummary(billingRepo),
+			OverdueSummary: billingapp.NewOverdueSummary(billingRepo),
 		},
 	}
 	billingHandler := billinghandler.NewHandler(billingCfg, logger)

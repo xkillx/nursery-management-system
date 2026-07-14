@@ -56,8 +56,9 @@ type (
 	}
 
 	ExportUseCases struct {
-		Export  *application.ExportInvoices
-		Summary *application.InvoiceSummary
+		Export         *application.ExportInvoices
+		Summary        *application.InvoiceSummary
+		OverdueSummary *application.OverdueSummary
 	}
 
 	BillingHandlerConfig struct {
@@ -90,6 +91,7 @@ type Handler struct {
 	updateBranchSettings   *application.UpdateBranchSettingsUseCase
 	exportInvoices         *application.ExportInvoices
 	invoiceSummary         *application.InvoiceSummary
+	overdueSummary         *application.OverdueSummary
 	pdf                    InvoicePDFRenderer
 }
 
@@ -114,6 +116,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		updateBranchSettings:   cfg.Admin.UpdateBranchSettings,
 		exportInvoices:         cfg.Export.Export,
 		invoiceSummary:         cfg.Export.Summary,
+		overdueSummary:         cfg.Export.OverdueSummary,
 		pdf:                    cfg.PDF,
 	}
 }
@@ -139,6 +142,7 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.PUT("/branch-settings", h.updateBranchSettingsHandler)
 	manager.GET("/invoices/export", h.exportHandler)
 	manager.GET("/invoices/summary", h.summaryHandler)
+	manager.GET("/invoices/overdue-summary", h.overdueSummaryHandler)
 	manager.GET("/invoices/:invoice_id/pdf", h.pdfHandler)
 }
 
@@ -1752,4 +1756,51 @@ func (h *Handler) summaryHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"months": months})
+}
+
+func (h *Handler) overdueSummaryHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.overdueSummary.Execute(c.Request.Context(), actor)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	type overdueItemResponse struct {
+		ID               string `json:"id"`
+		InvoiceNumber    string `json:"invoice_number"`
+		ChildID          string `json:"child_id"`
+		ChildName        string `json:"child_name"`
+		OutstandingMinor int    `json:"outstanding_minor"`
+		DueDate          string `json:"due_date"`
+		DaysOverdue      int    `json:"days_overdue"`
+	}
+
+	items := make([]overdueItemResponse, 0, len(result.Items))
+	for _, item := range result.Items {
+		invoiceNumber := item.InvoiceNumber
+		if invoiceNumber == "" {
+			invoiceNumber = ""
+		}
+		items = append(items, overdueItemResponse{
+			ID:               item.ID.String(),
+			InvoiceNumber:    invoiceNumber,
+			ChildID:          item.ChildID.String(),
+			ChildName:        item.ChildName,
+			OutstandingMinor: item.OutstandingMinor,
+			DueDate:          item.DueDate.Format("2006-01-02"),
+			DaysOverdue:      item.DaysOverdue,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_overdue_minor": result.TotalOverdueMinor,
+		"overdue_count":       result.OverdueCount,
+		"items":               items,
+	})
 }

@@ -1,0 +1,108 @@
+<section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+  <div class="mb-4 flex items-center justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Collections</p>
+      <h2 class="text-lg font-bold text-gray-800 dark:text-white/90">Invoice collections</h2>
+    </div>
+    @if (state() === 'ready' && summary() && summary()!.overdueCount > 0) {
+      <a
+        routerLink="/manager/invoices"
+        [queryParams]="{ status: 'overdue' }"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+      >
+        View all overdue
+      </a>
+    }
+  </div>
+
+  @switch (state()) {
+    @case ('loading') {
+      <div class="flex flex-col gap-4 animate-pulse">
+        <div class="h-10 w-48 rounded-lg bg-gray-100 dark:bg-gray-800"></div>
+        <div class="h-4 w-32 rounded bg-gray-100 dark:bg-gray-800"></div>
+        <div class="mt-2 space-y-3">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="flex items-center gap-3">
+              <div class="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800"></div>
+              <div class="h-4 flex-1 rounded bg-gray-100 dark:bg-gray-800"></div>
+              <div class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"></div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @case ('error') {
+      <div class="flex flex-col items-center gap-3 py-6 text-center">
+        <p class="text-sm text-gray-600 dark:text-gray-400">{{ errorMessage() }}</p>
+        <button
+          (click)="load()"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
+        >
+          Retry
+        </button>
+      </div>
+    }
+    @case ('ready') {
+      @if (summary(); as s) {
+        @if (s.overdueCount === 0) {
+          <app-empty-state
+            title="No overdue invoices"
+            message="All invoices are currently up to date."
+            [compact]="true"
+          />
+        } @else {
+          <div class="mb-4">
+            <p class="text-3xl font-bold tabular-nums text-error-600 dark:text-error-400">
+              {{ formatGbp(s.totalOverdueMinor) }}
+            </p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ s.overdueCount }} overdue invoice{{ s.overdueCount === 1 ? '' : 's' }}
+            </p>
+          </div>
+
+          <table class="min-w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                <th class="py-2.5 pr-3 font-semibold">Child</th>
+                <th class="py-2.5 pr-3 font-semibold">Invoice</th>
+                <th class="py-2.5 text-right font-semibold">Outstanding</th>
+                <th class="py-2.5 pl-3 text-right font-semibold">Age</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of s.items; track item.id) {
+                <tr
+                  class="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 dark:border-gray-800/60 dark:hover:bg-white/[0.02]"
+                  [routerLink]="['/manager/invoices', item.id]"
+                >
+                  <td class="py-3.5 pr-3 text-gray-800 dark:text-white/90 font-medium">
+                    <div class="flex items-center gap-3">
+                      <span class="shrink-0">
+                        <app-child-avatar [name]="item.childName" size="sm"></app-child-avatar>
+                      </span>
+                      <span>{{ item.childName }}</span>
+                    </div>
+                  </td>
+                  <td class="py-3.5 pr-3 text-gray-600 dark:text-gray-300">
+                    {{ item.invoiceNumber || '—' }}
+                  </td>
+                  <td class="py-3.5 pr-3 text-right font-bold tabular-nums text-gray-900 dark:text-white">
+                    {{ formatGbp(item.outstandingMinor) }}
+                  </td>
+                  <td class="py-3.5 pl-3 text-right">
+                    <span
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                      [ngClass]="daysOverdueClass(item.daysOverdue)"
+                    >
+                      {{ item.daysOverdue }}d
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    }
+  }
+</section>
