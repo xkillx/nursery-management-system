@@ -308,6 +308,17 @@ export class ManagerInvoicesApiService {
     return this.http.delete<DeleteLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`));
   }
 
+  issueInvoice(invoiceId: string): Observable<{ invoiceId: string; status: string }> {
+    return this.http
+      .post<{ invoice_id: string; status: string }>(apiUrl(`/invoices/${invoiceId}/issue`), { confirm: true })
+      .pipe(
+        map((res) => ({
+          invoiceId: res.invoice_id,
+          status: res.status,
+        })),
+      );
+  }
+
   createPaymentLink(invoiceId: string): Observable<PaymentLinkResult> {
     return this.http
       .post<PaymentLinkResultApi>(apiUrl(`/invoices/${invoiceId}/payment-link`), {})

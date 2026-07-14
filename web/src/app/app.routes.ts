@@ -15,6 +15,7 @@ import { ManagerSessionTemplatesComponent } from './features/staff/pages/manager
 import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceCreateComponent } from './features/staff/pages/manager-invoice-create/manager-invoice-create.component';
+import { ManagerInvoiceEditComponent } from './features/staff/pages/manager-invoice-edit/manager-invoice-edit.component';
 import { ManagerInvoicesComponent } from './features/staff/pages/manager-invoices/manager-invoices.component';
 import { ManagerBillingSetupComponent } from './features/staff/pages/manager-billing-setup/manager-billing-setup.component';
 import { ManagerSiteSettingsComponent } from './features/staff/pages/manager-site-settings/manager-site-settings.component';
@@ -316,7 +317,7 @@ export const routes: Routes = [
               },
               {
                 path: ':invoiceId/edit',
-                component: ManagerInvoiceCreateComponent,
+                component: ManagerInvoiceEditComponent,
                 data: {
                   breadcrumb: { label: 'Edit invoice' },
                 },
