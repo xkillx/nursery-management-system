@@ -221,8 +221,9 @@
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">New Line</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Type</label>
+                  <label for="lineKind" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Type</label>
                   <select
+                    id="lineKind"
                     [(ngModel)]="addForm.lineKind"
                     class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
                   >
@@ -231,8 +232,9 @@
                   </select>
                 </div>
                 <div>
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Description</label>
+                  <label for="lineDesc" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Description</label>
                   <input
+                    id="lineDesc"
                     type="text"
                     [(ngModel)]="addForm.description"
                     class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
@@ -240,24 +242,27 @@
                   />
                 </div>
                 <div>
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Qty (minutes)</label>
+                  <label for="lineQty" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Qty (minutes)</label>
                   <input
+                    id="lineQty"
                     type="number"
                     [(ngModel)]="addForm.quantityMinutes"
                     class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
                   />
                 </div>
                 <div>
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Unit Amount (pence)</label>
+                  <label for="lineUnitAmt" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Unit Amount (pence)</label>
                   <input
+                    id="lineUnitAmt"
                     type="number"
                     [(ngModel)]="addForm.unitAmountMinor"
                     class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
                   />
                 </div>
                 <div>
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Line Amount (pence)</label>
+                  <label for="lineLineAmt" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Line Amount (pence)</label>
                   <input
+                    id="lineLineAmt"
                     type="number"
                     [(ngModel)]="addForm.lineAmountMinor"
                     class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"

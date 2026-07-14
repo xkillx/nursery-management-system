@@ -60,8 +60,9 @@
       @if (editingGrace) {
         <div class="space-y-4">
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Grace period (days):</label>
+            <label for="graceDays" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Grace period (days):</label>
             <input
+              id="graceDays"
               type="number"
               min="0"
               max="30"
@@ -71,8 +72,9 @@
             <span class="text-xs text-gray-500">0-30 days. Default: 3</span>
           </div>
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Reminder days before due:</label>
+            <label for="reminderDays" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Reminder days before due:</label>
             <input
+              id="reminderDays"
               type="number"
               min="1"
               max="30"
