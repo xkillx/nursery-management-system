@@ -334,6 +334,10 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		Admin: billinghandler.AdminUseCases{
 			UpdateSiteRate: updateSiteRateUC,
 		},
+		Export: billinghandler.ExportUseCases{
+			Export:  billingapp.NewExportInvoices(billingRepo),
+			Summary: billingapp.NewInvoiceSummary(billingRepo),
+		},
 	}
 	billingHandler := billinghandler.NewHandler(billingCfg, logger)
 	billingHandler.RegisterRoutes(manager)

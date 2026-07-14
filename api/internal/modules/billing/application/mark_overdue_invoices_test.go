@@ -132,6 +132,15 @@ func (s *stubBillingRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _
 func (s *stubBillingRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) ExportInvoiceDetailsForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceExportLineRow, error) {
+	panic("stub")
+}
+func (s *stubBillingRepo) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
+	panic("stub")
+}
 
 type stubTxMgr struct {
 	repo *stubBillingRepo

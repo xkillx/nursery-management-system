@@ -55,11 +55,17 @@ type (
 		UpdateBranchSettings *application.UpdateBranchSettingsUseCase
 	}
 
+	ExportUseCases struct {
+		Export  *application.ExportInvoices
+		Summary *application.InvoiceSummary
+	}
+
 	BillingHandlerConfig struct {
 		Drafting  DraftUseCases
 		Lifecycle LifecycleUseCases
 		Parent    ParentInvoiceUseCases
 		Admin     AdminUseCases
+		Export    ExportUseCases
 		PDF       InvoicePDFRenderer
 	}
 )
@@ -82,6 +88,8 @@ type Handler struct {
 	getParentInvoice       *application.GetParentInvoice
 	updateSiteRate         *application.UpdateSiteRateUseCase
 	updateBranchSettings   *application.UpdateBranchSettingsUseCase
+	exportInvoices         *application.ExportInvoices
+	invoiceSummary         *application.InvoiceSummary
 	pdf                    InvoicePDFRenderer
 }
 
@@ -104,6 +112,8 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		getParentInvoice:       cfg.Parent.Get,
 		updateSiteRate:         cfg.Admin.UpdateSiteRate,
 		updateBranchSettings:   cfg.Admin.UpdateBranchSettings,
+		exportInvoices:         cfg.Export.Export,
+		invoiceSummary:         cfg.Export.Summary,
 		pdf:                    cfg.PDF,
 	}
 }
@@ -127,6 +137,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.PUT("/billing-setup", h.updateSiteRateHandler)
 	manager.GET("/branch-settings", h.getBranchSettingsHandler)
 	manager.PUT("/branch-settings", h.updateBranchSettingsHandler)
+	manager.GET("/invoices/export", h.exportHandler)
+	manager.GET("/invoices/summary", h.summaryHandler)
 	manager.GET("/invoices/:invoice_id/pdf", h.pdfHandler)
 }
 
@@ -1672,4 +1684,72 @@ func countRunExceptions(raw json.RawMessage) int {
 		return 0
 	}
 	return len(details.BlockedChildren)
+}
+
+func (h *Handler) exportHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	format := c.DefaultQuery("format", "csv")
+	if format != "csv" && format != "csv-detail" {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Format must be 'csv' or 'csv-detail'.", nil)
+		return
+	}
+
+	filename := "invoices-export.csv"
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+
+	err := h.exportInvoices.Execute(c.Request.Context(), actor, c.Writer, application.ExportInvoicesParams{
+		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
+		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
+		Status:           queryParamPtr(c, "status"),
+		Format:           format,
+	})
+	if err != nil {
+		h.handleError(c, err)
+	}
+}
+
+func (h *Handler) summaryHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.invoiceSummary.Execute(c.Request.Context(), actor, application.InvoiceSummaryParams{
+		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
+		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	type monthSummaryResponse struct {
+		BillingMonth          string `json:"billing_month"`
+		TotalInvoicedMinor    int    `json:"total_invoiced_minor"`
+		TotalCollectedMinor   int    `json:"total_collected_minor"`
+		TotalOutstandingMinor int    `json:"total_outstanding_minor"`
+		TotalOverdueMinor     int    `json:"total_overdue_minor"`
+		InvoiceCount          int    `json:"invoice_count"`
+	}
+
+	months := make([]monthSummaryResponse, 0, len(result.Months))
+	for _, m := range result.Months {
+		months = append(months, monthSummaryResponse{
+			BillingMonth:          m.BillingMonth.Format("2006-01"),
+			TotalInvoicedMinor:    m.TotalInvoicedMinor,
+			TotalCollectedMinor:   m.TotalCollectedMinor,
+			TotalOutstandingMinor: m.TotalOutstandingMinor,
+			TotalOverdueMinor:     m.TotalOverdueMinor,
+			InvoiceCount:          m.InvoiceCount,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"months": months})
 }

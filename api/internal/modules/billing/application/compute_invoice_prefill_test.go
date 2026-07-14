@@ -152,6 +152,15 @@ func (s *stubPrefillRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _
 func (s *stubPrefillRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
 	panic("unused")
 }
+func (s *stubPrefillRepo) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) ExportInvoiceDetailsForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceExportLineRow, error) {
+	panic("unused")
+}
+func (s *stubPrefillRepo) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
+	panic("unused")
+}
 
 type stubPrefillTxMgr struct {
 	repo *stubPrefillRepo

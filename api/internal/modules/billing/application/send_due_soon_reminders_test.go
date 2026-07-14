@@ -148,6 +148,15 @@ func (s *stubReminderRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, 
 func (s *stubReminderRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
 	panic("stub")
 }
+func (s *stubReminderRepo) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
+	panic("stub")
+}
+func (s *stubReminderRepo) ExportInvoiceDetailsForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceExportLineRow, error) {
+	panic("stub")
+}
+func (s *stubReminderRepo) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
+	panic("stub")
+}
 
 type stubReminderTxMgr struct {
 	repo *stubReminderRepo

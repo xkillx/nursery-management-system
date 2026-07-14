@@ -142,6 +142,15 @@ func (s *manageLinesRepoStub) ListInvoicesDueToday(_ context.Context, _ domain.T
 func (s *manageLinesRepoStub) InsertInvoiceReminderLog(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string) error {
 	panic("stub")
 }
+func (s *manageLinesRepoStub) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
+	panic("stub")
+}
+func (s *manageLinesRepoStub) ExportInvoiceDetailsForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceExportLineRow, error) {
+	panic("stub")
+}
+func (s *manageLinesRepoStub) InvoiceSummaryByMonth(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
+	panic("stub")
+}
 
 // --- Stub TxManager ---
 

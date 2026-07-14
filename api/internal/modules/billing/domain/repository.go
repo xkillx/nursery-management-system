@@ -63,6 +63,13 @@ type BillingRepository interface {
 	GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
 	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
 
+	// Invoice Export — read-only, no pagination.
+	ExportInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceExportFilters) ([]InvoiceReviewRow, error)
+	ExportInvoiceDetailsForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceExportFilters) ([]InvoiceExportLineRow, error)
+
+	// Invoice Summary — aggregated monthly metrics, read-only.
+	InvoiceSummaryByMonth(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceExportFilters) ([]InvoiceMonthSummary, error)
+
 	// Invoice Issue (API-19) — transactional methods using Tx.
 	GetInvoiceForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (InvoiceIssueCandidateRow, bool, error)
 	ListDraftInvoicesForIssueForUpdate(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]InvoiceIssueCandidateRow, error)

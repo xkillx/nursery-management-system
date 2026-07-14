@@ -110,3 +110,37 @@ type InvoiceReviewDetail struct {
 	GeneratedRunExceptions     []InvoiceRunExceptionReference
 	GeneratedRunExceptionCount int
 }
+
+// InvoiceExportFilters holds optional filters for invoice export (no pagination).
+type InvoiceExportFilters struct {
+	BillingMonth     *time.Time
+	BillingMonthFrom *time.Time
+	BillingMonthTo   *time.Time
+	Status           *string
+	ChildID          *uuid.UUID
+	Search           *string
+}
+
+// InvoiceExportLineRow maps a flattened invoice + line row for csv-detail export.
+type InvoiceExportLineRow struct {
+	InvoiceNumber   *string
+	ChildFirstName  string
+	ChildLastName   *string
+	BillingMonth    time.Time
+	Status          string
+	LineKind        string
+	Description     string
+	QuantityMinutes *int
+	UnitAmountMinor *int
+	LineAmountMinor int
+}
+
+// InvoiceMonthSummary holds aggregated metrics for a single billing month.
+type InvoiceMonthSummary struct {
+	BillingMonth          time.Time
+	TotalInvoicedMinor    int
+	TotalCollectedMinor   int
+	TotalOutstandingMinor int
+	TotalOverdueMinor     int
+	InvoiceCount          int
+}

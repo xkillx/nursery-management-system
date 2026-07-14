@@ -1309,6 +1309,123 @@ func uuidToPgtypePtr(u *uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: [16]byte(*u), Valid: true}
 }
 
+// --- Invoice Export ---
+
+func (r *Repository) ExportInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceExportForManagerReview(ctx, sqlc.InvoiceExportForManagerReviewParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+		Search:           strToPgtypeTextPtr(filters.Search),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.InvoiceReviewRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceReviewRow{
+			ID:                      pgtypeUUIDToUUID(row.ID),
+			InvoiceKind:             row.InvoiceKind,
+			InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
+			Status:                  row.Status,
+			ChildID:                 pgtypeUUIDToUUID(row.ChildID),
+			ChildFirstName:          row.ChildFirstName,
+			ChildMiddleName:         pgtypeTextToStrPtr(row.ChildMiddleName),
+			ChildLastName:           pgtypeTextToStrPtr(row.ChildLastName),
+			BillingMonth:            pgtypeDateToTime(row.BillingMonth),
+			PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
+			PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
+			CurrencyCode:            row.CurrencyCode,
+			Subtotal:                domain.MustGBP(int(row.SubtotalMinor)),
+			FundedDeduction:         domain.MustGBP(int(row.FundedDeductionMinor)),
+			TotalDue:                domain.MustGBP(int(row.TotalDueMinor)),
+			AmountPaid:              domain.MustGBP(int(row.AmountPaidMinor)),
+			DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
+			IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
+			LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
+			PaidAt:                  pgtypeTimestamptzToTimePtr(row.PaidAt),
+			PaymentFailedAt:         pgtypeTimestamptzToTimePtr(row.PaymentFailedAt),
+			PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(row.PaymentStatusUpdatedAt),
+			AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(row.AdjustsInvoiceID),
+			AdjustmentReasonCode:    pgtypeTextToStrPtr(row.AdjustmentReasonCode),
+			AdjustmentReasonNote:    pgtypeTextToStrPtr(row.AdjustmentReasonNote),
+			GeneratedRunID:          pgtypeUUIDToUUIDPtr(row.GeneratedRunID),
+			GeneratedRunStatus:      pgtypeTextToStrPtr(row.GeneratedRunStatus),
+			GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(row.GeneratedRunStartedAt),
+			GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
+			GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
+			CalculationDetails:      json.RawMessage(row.CalculationDetails),
+			ChildPhotoPath:          pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
+			CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
+			UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
+		})
+	}
+	return result, nil
+}
+
+func (r *Repository) ExportInvoiceDetailsForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceExportFilters) ([]domain.InvoiceExportLineRow, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceExportDetailForManagerReview(ctx, sqlc.InvoiceExportDetailForManagerReviewParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+		Status:           strToPgtypeTextPtr(filters.Status),
+		ChildID:          uuidToPgtypePtr(filters.ChildID),
+		Search:           strToPgtypeTextPtr(filters.Search),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.InvoiceExportLineRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceExportLineRow{
+			InvoiceNumber:   pgtypeTextToStrPtr(row.InvoiceNumber),
+			ChildFirstName:  row.ChildFirstName,
+			ChildLastName:   pgtypeTextToStrPtr(row.ChildLastName),
+			BillingMonth:    pgtypeDateToTime(row.BillingMonth),
+			Status:          row.Status,
+			LineKind:        row.LineKind,
+			Description:     row.Description,
+			QuantityMinutes: pgtypeInt4ToIntPtr(row.QuantityMinutes),
+			UnitAmountMinor: pgtypeInt4ToIntPtr(row.UnitAmountMinor),
+			LineAmountMinor: int(row.LineAmountMinor),
+		})
+	}
+	return result, nil
+}
+
+func (r *Repository) InvoiceSummaryByMonth(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.InvoiceExportFilters) ([]domain.InvoiceMonthSummary, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.InvoiceSummaryByMonth(ctx, sqlc.InvoiceSummaryByMonthParams{
+		TenantID:         uuidToPgtype(tenantID),
+		BranchID:         uuidToPgtype(branchID),
+		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
+		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.InvoiceMonthSummary, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.InvoiceMonthSummary{
+			BillingMonth:          pgtypeDateToTime(row.BillingMonth),
+			TotalInvoicedMinor:    int(row.TotalInvoicedMinor),
+			TotalCollectedMinor:   int(row.TotalCollectedMinor),
+			TotalOutstandingMinor: int(row.TotalOutstandingMinor),
+			TotalOverdueMinor:     int(row.TotalOverdueMinor),
+			InvoiceCount:          int(row.InvoiceCount),
+		})
+	}
+	return result, nil
+}
+
 // --- BranchSettingsRepository implementation ---
 
 func (r *Repository) GetOverdueGraceDays(ctx context.Context, tenantID, branchID uuid.UUID) (int, error) {

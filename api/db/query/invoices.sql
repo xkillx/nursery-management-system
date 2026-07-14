@@ -932,3 +932,78 @@ WHERE il.tenant_id = $1
   AND il.invoice_id = $4
   AND i.status IN ('issued', 'payment_failed', 'paid', 'overdue')
 ORDER BY il.sort_order;
+
+-- name: InvoiceExportForManagerReview :many
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.middle_name AS child_middle_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    i.period_start_date, i.period_end_date,
+    i.currency_code,
+    i.subtotal_minor, i.funded_deduction_minor, i.total_due_minor,
+    i.amount_paid_minor,
+    i.due_at, i.issued_at, i.locked_at,
+    i.paid_at, i.payment_failed_at, i.payment_status_updated_at,
+    i.adjusts_invoice_id, i.adjustment_reason_code, i.adjustment_reason_note,
+    i.generated_run_id,
+    gr.status AS generated_run_status,
+    gr.started_at AS generated_run_started_at,
+    gr.completed_at AS generated_run_completed_at,
+    gr.details AS generated_run_details,
+    i.calculation_details,
+    i.created_at, i.updated_at,
+    c.profile_photo_path AS child_profile_photo_path
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
+ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC;
+
+-- name: InvoiceExportDetailForManagerReview :many
+SELECT
+    i.invoice_number,
+    i.status,
+    i.child_id,
+    c.first_name AS child_first_name,
+    c.last_name AS child_last_name,
+    i.billing_month,
+    il.line_kind,
+    il.description,
+    il.quantity_minutes,
+    il.unit_amount_minor,
+    il.line_amount_minor
+FROM invoices i
+JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
+JOIN invoice_lines il ON il.tenant_id = i.tenant_id AND il.branch_id = i.branch_id AND il.invoice_id = i.id
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
+  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
+  AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
+ORDER BY i.billing_month DESC, c.first_name ASC, c.last_name ASC, il.sort_order ASC;
+
+-- name: InvoiceSummaryByMonth :many
+SELECT
+    i.billing_month,
+    COALESCE(SUM(i.total_due_minor), 0)::integer AS total_invoiced_minor,
+    COALESCE(SUM(CASE WHEN i.status = 'paid' THEN i.amount_paid_minor ELSE 0 END), 0)::integer AS total_collected_minor,
+    COALESCE(SUM(CASE WHEN i.status IN ('issued', 'overdue', 'payment_failed') THEN i.total_due_minor - i.amount_paid_minor ELSE 0 END), 0)::integer AS total_outstanding_minor,
+    COALESCE(SUM(CASE WHEN i.status = 'overdue' THEN i.total_due_minor - i.amount_paid_minor ELSE 0 END), 0)::integer AS total_overdue_minor,
+    COUNT(*)::integer AS invoice_count
+FROM invoices i
+WHERE i.tenant_id = $1 AND i.branch_id = $2
+  AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
+  AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
+GROUP BY i.billing_month
+ORDER BY i.billing_month DESC;
