@@ -733,21 +733,10 @@
             <ng-icon name="heroShieldCheck" size="18" aria-hidden="true" />
             <h2 id="audit-heading" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Audit Trail &amp; History</h2>
           </div>
-          
-          <ol class="relative mt-5 space-y-6 pl-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100 dark:before:bg-gray-800 animate-fade-in">
-            @for (entry of auditTrail; track entry.key) {
-              <li class="relative">
-                <span class="absolute -left-6.5 top-0.5 flex size-5 items-center justify-center rounded-full ring-4 ring-white dark:ring-gray-900" [ngClass]="auditTrailIconClasses(entry.tone)">
-                  <ng-icon [name]="entry.icon" size="12" aria-hidden="true" />
-                </span>
-                <div class="text-xs">
-                  <p class="font-bold text-gray-800 dark:text-white/90">{{ entry.title }}</p>
-                  <p class="text-gray-400 dark:text-gray-505 mt-0.5 leading-relaxed">{{ entry.description }}</p>
-                  <p class="mt-1 text-[10px] font-medium text-gray-450">{{ formatInstant(entry.timestamp) }}</p>
-                </div>
-              </li>
-            }
-          </ol>
+
+          <div class="mt-5 animate-fade-in">
+            <app-invoice-timeline [entries]="auditTrail" />
+          </div>
         </section>
 
         <!-- Nursery Notes -->

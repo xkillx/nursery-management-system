@@ -32,6 +32,7 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { InvoiceTimelineComponent, TimelineEntry } from '../../../../shared/components/invoice/invoice-timeline/invoice-timeline.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import {
   ManagerInvoiceDetail,
@@ -124,15 +125,6 @@ function fundingModelLabel(model: string | null): string {
   return 'Funded hours';
 }
 
-interface AuditTrailEntry {
-  key: string;
-  icon: string;
-  tone: 'success' | 'primary' | 'warning' | 'error' | 'neutral';
-  title: string;
-  description: string;
-  timestamp: string | null;
-}
-
 @Component({
   selector: 'app-manager-invoice-detail',
   imports: [
@@ -142,6 +134,7 @@ interface AuditTrailEntry {
     LoadingStateComponent,
     AlertComponent,
     StatusBadgeComponent,
+    InvoiceTimelineComponent,
     NgIcon,
   ],
   templateUrl: './manager-invoice-detail.component.html',
@@ -306,9 +299,9 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
     return this.detail.roomName;
   }
 
-  get auditTrail(): AuditTrailEntry[] {
+  get auditTrail(): TimelineEntry[] {
     if (!this.detail) return [];
-    const entries: AuditTrailEntry[] = [];
+    const entries: TimelineEntry[] = [];
 
     entries.push({
       key: 'generated',
@@ -389,18 +382,29 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
       });
     }
 
-    return entries;
-  }
+    if (
+      this.detail.issuedAt &&
+      !this.detail.paidAt &&
+      !this.detail.paymentFailedAt &&
+      this.detail.dueAt
+    ) {
+      const dueDate = new Date(this.detail.dueAt);
+      const now = new Date();
+      if (dueDate > now) {
+        const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        entries.push({
+          key: 'due',
+          icon: 'heroClock',
+          tone: 'warning',
+          title: `Due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
+          description: `Payment due on ${formatDate(this.detail.dueAt)}`,
+          timestamp: this.detail.dueAt,
+          isPending: true,
+        });
+      }
+    }
 
-  auditTrailIconClasses(tone: AuditTrailEntry['tone']): string {
-    const map: Record<AuditTrailEntry['tone'], string> = {
-      success: 'bg-success-500 text-white',
-      primary: 'bg-brand-500 text-white',
-      warning: 'bg-warning-500 text-white',
-      error: 'bg-error-500 text-white',
-      neutral: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
-    };
-    return map[tone];
+    return entries;
   }
 
   lineToneClasses(kind: string): string {
