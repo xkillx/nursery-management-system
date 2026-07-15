@@ -198,7 +198,17 @@
         <table class="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr class="border-b border-gray-100 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-500">
-              <th class="pl-8 pr-6 py-3.5">Invoice</th>
+              <th class="pl-4 pr-2 py-3.5 w-10">
+                <input
+                  type="checkbox"
+                  class="size-4 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                  [checked]="isAllDraftsSelected"
+                  (change)="toggleAll()"
+                  [disabled]="draftItems.length === 0"
+                  aria-label="Select all draft invoices"
+                />
+              </th>
+              <th class="pl-4 pr-6 py-3.5">Invoice</th>
               <th class="px-6 py-3.5">Billing month</th>
               <th class="px-6 py-3.5">Status</th>
               <th class="px-6 py-3.5">Due status</th>
@@ -215,7 +225,25 @@
                 [ngClass]="getStatusBorderClass(item.status, item.dueStatus)"
                 (click)="viewInvoice(item.invoiceId, $event)"
               >
-                <td class="pl-8 pr-6 py-4">
+                <td class="pl-4 pr-2 py-4 w-10">
+                  @if (item.status === 'draft') {
+                    @if (issuingIds.has(item.invoiceId)) {
+                      <svg class="size-4 animate-spin text-brand-500" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                      </svg>
+                    } @else {
+                      <input
+                        type="checkbox"
+                        class="size-4 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                        [checked]="isSelected(item.invoiceId)"
+                        (change)="toggleRow(item.invoiceId, $event)"
+                        aria-label="Select invoice"
+                      />
+                    }
+                  }
+                </td>
+                <td class="pl-4 pr-6 py-4">
                   <div class="flex items-center gap-3">
                     <app-child-avatar [photoUrl]="item.photoUrl" [name]="item.childName" shape="rounded" size="md" />
                     <div class="min-w-0">
@@ -430,4 +458,66 @@
       </div>
     }
   </section>
+
+  <!-- Floating bulk actions bar -->
+  @if (selectedIds.size > 0) {
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm shadow-lg dark:border-gray-700 dark:bg-gray-900/95"
+      role="toolbar"
+      aria-label="Bulk actions"
+    >
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">
+            {{ selectedDraftCount }} invoice{{ selectedDraftCount === 1 ? '' : 's' }} selected
+          </span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">&middot;</span>
+          <span class="text-sm font-bold font-mono text-gray-900 dark:text-white">
+            {{ formatGbp(selectedTotal) }}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            disabled
+            class="inline-flex min-h-9 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-xs font-semibold text-gray-400 transition dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-500"
+            title="Export coming soon"
+            aria-disabled="true"
+          >
+            <ng-icon name="heroArrowDownTray" size="14" aria-hidden="true" />
+            Export selected
+          </button>
+          <button
+            type="button"
+            (click)="openIssueConfirmation()"
+            [disabled]="isIssuing"
+            class="inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-4 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ng-icon name="heroCheck" size="14" aria-hidden="true" />
+            Issue selected
+          </button>
+          <button
+            type="button"
+            (click)="clearSelection()"
+            class="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            aria-label="Dismiss selection"
+          >
+            <ng-icon name="heroXMark" size="18" />
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Confirmation dialog for bulk issue -->
+  <app-confirmation-dialog
+    [isOpen]="isConfirmIssueOpen"
+    title="Issue invoices"
+    [message]="'Issue ' + selectedDraftCount + ' invoice' + (selectedDraftCount === 1 ? '' : 's') + ' totalling ' + formatGbp(selectedTotal) + '?'"
+    confirmText="Issue"
+    variant="primary"
+    [loading]="isIssuing"
+    (confirmed)="confirmIssue()"
+    (cancelled)="cancelIssue()"
+  />
 </div>

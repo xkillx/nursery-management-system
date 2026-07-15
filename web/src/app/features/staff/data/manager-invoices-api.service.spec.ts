@@ -215,6 +215,106 @@ child_last_name: null,
     });
   });
 
+  describe('bulkIssueInvoices', () => {
+    it('sends correct request body and maps response', () => {
+      const response = {
+        run_id: 'run-1',
+        billing_month: '2026-05',
+        status: 'completed',
+        summary: { eligible_count: 3, success_count: 2, blocked_count: 1, total_due_minor: 50000 },
+        issued: [
+          {
+            invoice_id: 'inv-1',
+            child_id: 'c1',
+            child_first_name: 'Ben',
+            child_middle_name: null,
+            child_last_name: null,
+            invoice_number: 'INV-001',
+            issued_at: '2026-06-09T12:00:00Z',
+            due_at: '2026-06-10T00:00:00Z',
+            total_due_minor: 24000,
+          },
+          {
+            invoice_id: 'inv-2',
+            child_id: 'c2',
+            child_first_name: 'Alice',
+            child_middle_name: null,
+            child_last_name: null,
+            invoice_number: 'INV-002',
+            issued_at: '2026-06-09T12:00:00Z',
+            due_at: '2026-06-10T00:00:00Z',
+            total_due_minor: 26000,
+          },
+        ],
+        blocked: [
+          {
+            invoice_id: 'inv-3',
+            child_id: 'c3',
+            child_first_name: 'Chloe',
+            child_middle_name: null,
+            child_last_name: null,
+            blockers: [{ code: 'incomplete_attendance', message: 'Attendance incomplete' }],
+          },
+        ],
+      };
+
+      service.bulkIssueInvoices({ billingMonth: '2026-05', invoiceIds: ['inv-1', 'inv-2', 'inv-3'] }).subscribe((result) => {
+        expect(result.runId).toBe('run-1');
+        expect(result.billingMonth).toBe('2026-05');
+        expect(result.status).toBe('completed');
+        expect(result.summary.successCount).toBe(2);
+        expect(result.summary.blockedCount).toBe(1);
+        expect(result.issued.length).toBe(2);
+        expect(result.issued[0].invoiceId).toBe('inv-1');
+        expect(result.issued[0].childName).toBe('Ben');
+        expect(result.blocked.length).toBe(1);
+        expect(result.blocked[0].blockers[0].code).toBe('incomplete_attendance');
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/drafts/bulk-issue');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        billing_month: '2026-05',
+        invoice_ids: ['inv-1', 'inv-2', 'inv-3'],
+        confirm: true,
+      });
+      req.flush(response);
+    });
+
+    it('handles empty invoice IDs array', () => {
+      const response = {
+        run_id: 'run-2',
+        billing_month: '2026-05',
+        status: 'completed',
+        summary: { eligible_count: 0, success_count: 0, blocked_count: 0, total_due_minor: 0 },
+        issued: [],
+        blocked: [],
+      };
+
+      service.bulkIssueInvoices({ billingMonth: '2026-05', invoiceIds: [] }).subscribe((result) => {
+        expect(result.issued).toEqual([]);
+        expect(result.blocked).toEqual([]);
+        expect(result.summary.successCount).toBe(0);
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/drafts/bulk-issue');
+      expect(req.request.body.invoice_ids).toEqual([]);
+      req.flush(response);
+    });
+
+    it('propagates HTTP errors', () => {
+      service.bulkIssueInvoices({ billingMonth: '2026-05', invoiceIds: ['inv-1'] }).subscribe({
+        next: () => fail('should have errored'),
+        error: (err) => {
+          expect(err.status).toBe(400);
+        },
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices/drafts/bulk-issue');
+      req.flush({ code: 'invalid_request', message: 'Bad request' }, { status: 400, statusText: 'Bad Request' });
+    });
+  });
+
   describe('getInvoice', () => {
     it('maps detail with due status, locked timestamp, calculation, and line sorting', () => {
       const detailResponse = {

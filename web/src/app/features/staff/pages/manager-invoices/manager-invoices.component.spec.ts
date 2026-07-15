@@ -6,6 +6,7 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ManagerInvoicesComponent } from './manager-invoices.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import { ManagerInvoiceListItem } from '../../models/manager-invoices.models';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -75,10 +76,12 @@ const mockItems: ManagerInvoiceListItem[] = [
 describe('ManagerInvoicesComponent', () => {
   let fixture: ComponentFixture<ManagerInvoicesComponent>;
   let apiService: jasmine.SpyObj<ManagerInvoicesApiService>;
+  let toastService: jasmine.SpyObj<ToastService>;
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['listInvoices']);
+    const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['listInvoices', 'bulkIssueInvoices']);
     spy.listInvoices.and.returnValue(of({ items: mockItems, total: 2, page: 1, page_size: 50 }));
+    const toastSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'warning', 'info']);
 
     await TestBed.configureTestingModule({
       imports: [ManagerInvoicesComponent, HttpClientTestingModule],
@@ -86,10 +89,12 @@ describe('ManagerInvoicesComponent', () => {
         provideRouter([]),
         ApiErrorMapper,
         { provide: ManagerInvoicesApiService, useValue: spy },
+        { provide: ToastService, useValue: toastSpy },
       ],
     }).compileComponents();
 
     apiService = TestBed.inject(ManagerInvoicesApiService) as jasmine.SpyObj<ManagerInvoicesApiService>;
+    toastService = TestBed.inject(ToastService) as jasmine.SpyObj<ToastService>;
     fixture = TestBed.createComponent(ManagerInvoicesComponent);
   });
 
@@ -291,5 +296,211 @@ describe('ManagerInvoicesComponent', () => {
     const allElements: HTMLElement[] = [...buttons, ...anchors];
     const payActions = allElements.filter((el) => el.textContent?.trim() === 'Pay' || el.textContent?.trim() === 'Retry payment');
     expect(payActions.length).toBe(0);
+  });
+
+  describe('selection', () => {
+    it('renders checkboxes on draft rows only', () => {
+      fixture.detectChanges();
+      const checkboxes: HTMLInputElement[] = fixture.nativeElement.querySelectorAll('tbody input[type="checkbox"]');
+      expect(checkboxes.length).toBe(1);
+    });
+
+    it('selects a draft row when checkbox is clicked', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      expect(comp.selectedIds.size).toBe(0);
+
+      comp.toggleRow('inv-2', new Event('change'));
+      expect(comp.selectedIds.has('inv-2')).toBeTrue();
+      expect(comp.selectedIds.size).toBe(1);
+    });
+
+    it('deselects a row when toggled again', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      expect(comp.selectedIds.size).toBe(1);
+
+      comp.toggleRow('inv-2', new Event('change'));
+      expect(comp.selectedIds.size).toBe(0);
+    });
+
+    it('selects all drafts when toggleAll is called', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleAll();
+      expect(comp.selectedIds.has('inv-2')).toBeTrue();
+      expect(comp.selectedIds.size).toBe(1);
+    });
+
+    it('deselects all when toggleAll is called and all drafts are selected', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleAll();
+      expect(comp.selectedIds.size).toBe(1);
+
+      comp.toggleAll();
+      expect(comp.selectedIds.size).toBe(0);
+    });
+
+    it('clears selection when loadList is called', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      expect(comp.selectedIds.size).toBe(1);
+
+      comp.onStatusChange('issued');
+      expect(comp.selectedIds.size).toBe(0);
+    });
+  });
+
+  describe('floating action bar', () => {
+    it('does not show bar when no items are selected', () => {
+      fixture.detectChanges();
+      const bar = fixture.nativeElement.querySelector('[role="toolbar"]');
+      expect(bar).toBeNull();
+    });
+
+    it('shows bar with count and total when items are selected', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      fixture.detectChanges();
+
+      const bar = fixture.nativeElement.querySelector('[role="toolbar"]');
+      expect(bar).not.toBeNull();
+      expect(bar.textContent).toContain('1 invoice selected');
+      expect(bar.textContent).toContain('£100.00');
+    });
+
+    it('hides bar when selection is cleared', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[role="toolbar"]')).not.toBeNull();
+
+      comp.selectedIds = new Set();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[role="toolbar"]')).toBeNull();
+    });
+
+    it('shows Issue selected and Export selected buttons', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      fixture.detectChanges();
+
+      const bar = fixture.nativeElement.querySelector('[role="toolbar"]');
+      expect(bar.textContent).toContain('Issue selected');
+      expect(bar.textContent).toContain('Export selected');
+    });
+  });
+
+  describe('bulk issue', () => {
+    it('opens confirmation dialog when Issue selected is clicked', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+      fixture.detectChanges();
+
+      comp.openIssueConfirmation();
+      fixture.detectChanges();
+
+      expect(comp.isConfirmIssueOpen).toBeTrue();
+      const dialog = fixture.nativeElement.querySelector('app-confirmation-dialog');
+      expect(dialog).not.toBeNull();
+    });
+
+    it('calls bulkIssueInvoices on confirm with correct IDs', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+
+      apiService.bulkIssueInvoices.and.returnValue(of({
+        runId: 'run-1',
+        billingMonth: '2026-05',
+        status: 'completed',
+        summary: { eligibleCount: 1, successCount: 1, blockedCount: 0, totalDueMinor: 10000 },
+        issued: [{
+          invoiceId: 'inv-2',
+          childId: 'c2',
+          childName: 'Alice',
+          invoiceNumber: '',
+          issuedAt: '2026-06-09T12:00:00Z',
+          dueAt: '2026-06-10T00:00:00Z',
+          totalDueMinor: 10000,
+        }],
+        blocked: [],
+      }));
+
+      comp.confirmIssue();
+
+      expect(apiService.bulkIssueInvoices).toHaveBeenCalledWith({
+        billingMonth: '2026-05',
+        invoiceIds: ['inv-2'],
+      });
+      expect(toastService.success).toHaveBeenCalledWith('1 invoice issued successfully');
+      expect(comp.selectedIds.size).toBe(0);
+    });
+
+    it('shows warning toast on partial failure', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+
+      apiService.bulkIssueInvoices.and.returnValue(of({
+        runId: 'run-1',
+        billingMonth: '2026-05',
+        status: 'completed',
+        summary: { eligibleCount: 2, successCount: 1, blockedCount: 1, totalDueMinor: 30000 },
+        issued: [{
+          invoiceId: 'inv-2',
+          childId: 'c2',
+          childName: 'Alice',
+          invoiceNumber: '',
+          issuedAt: '2026-06-09T12:00:00Z',
+          dueAt: '2026-06-10T00:00:00Z',
+          totalDueMinor: 10000,
+        }],
+        blocked: [{
+          invoiceId: 'inv-3',
+          childId: 'c3',
+          childName: 'Chloe',
+          blockers: [{ code: 'already_issued', message: 'Already issued' }],
+        }],
+      }));
+
+      comp.confirmIssue();
+
+      expect(toastService.warning).toHaveBeenCalledWith('1 issued, 1 blocked');
+    });
+
+    it('shows error toast on API error', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.toggleRow('inv-2', new Event('change'));
+
+      apiService.bulkIssueInvoices.and.returnValue(throwError(() => new HttpErrorResponse({
+        error: { code: 'internal_error', message: 'Server error', request_id: 'req-1' },
+        status: 500,
+      })));
+
+      comp.confirmIssue();
+
+      expect(toastService.error).toHaveBeenCalled();
+      expect(comp.selectedIds.size).toBe(1);
+    });
+
+    it('closes dialog on cancel without calling API', () => {
+      fixture.detectChanges();
+      const comp = fixture.componentInstance;
+      comp.isConfirmIssueOpen = true;
+
+      comp.cancelIssue();
+
+      expect(comp.isConfirmIssueOpen).toBeFalse();
+      expect(apiService.bulkIssueInvoices).not.toHaveBeenCalled();
+    });
   });
 });

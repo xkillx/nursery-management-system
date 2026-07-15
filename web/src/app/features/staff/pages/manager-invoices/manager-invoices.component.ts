@@ -6,6 +6,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
   heroCalendarDays,
+  heroCheck,
   heroCheckCircle,
   heroChevronLeft,
   heroChevronRight,
@@ -19,6 +20,7 @@ import {
   heroPencilSquare,
   heroPlus,
   heroReceiptPercent,
+  heroXMark,
 } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
@@ -29,7 +31,9 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import {
   ManagerInvoiceStatusFilter,
   ManagerInvoiceListItem,
@@ -109,6 +113,7 @@ function formatBillingMonth(date: Date): string {
     AlertComponent,
     StatusBadgeComponent,
     ChildAvatarComponent,
+    ConfirmationDialogComponent,
     NgIcon,
   ],
   templateUrl: './manager-invoices.component.html',
@@ -116,6 +121,7 @@ function formatBillingMonth(date: Date): string {
     provideIcons({
       heroArrowDownTray,
       heroCalendarDays,
+      heroCheck,
       heroCheckCircle,
       heroChevronLeft,
       heroChevronRight,
@@ -129,6 +135,7 @@ function formatBillingMonth(date: Date): string {
       heroPencilSquare,
       heroPlus,
       heroReceiptPercent,
+      heroXMark,
     }),
   ],
 })
@@ -136,6 +143,7 @@ export class ManagerInvoicesComponent implements OnInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   readonly statusFilters = STATUS_FILTERS;
   readonly rangePresets = RANGE_PRESETS;
@@ -151,6 +159,12 @@ export class ManagerInvoicesComponent implements OnInit {
   items: ManagerInvoiceListItem[] = [];
   isLoading = false;
   errorMessage: string | null = null;
+
+  selectedIds = new Set<string>();
+
+  isConfirmIssueOpen = false;
+  isIssuing = false;
+  issuingIds = new Set<string>();
 
   readonly formatGbp = formatGbp;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
@@ -174,6 +188,92 @@ export class ManagerInvoicesComponent implements OnInit {
       return;
     }
     this.router.navigate(['/manager/invoices', invoiceId]);
+  }
+
+  isSelected(invoiceId: string): boolean {
+    return this.selectedIds.has(invoiceId);
+  }
+
+  get draftItems(): ManagerInvoiceListItem[] {
+    return this.filteredItems.filter((i) => i.status === 'draft');
+  }
+
+  get isAllDraftsSelected(): boolean {
+    const drafts = this.draftItems;
+    return drafts.length > 0 && drafts.every((i) => this.selectedIds.has(i.invoiceId));
+  }
+
+  toggleRow(invoiceId: string, event: Event): void {
+    event.stopPropagation();
+    if (this.selectedIds.has(invoiceId)) {
+      this.selectedIds.delete(invoiceId);
+    } else {
+      this.selectedIds.add(invoiceId);
+    }
+    this.selectedIds = new Set(this.selectedIds);
+  }
+
+  toggleAll(): void {
+    if (this.isAllDraftsSelected) {
+      this.selectedIds = new Set();
+    } else {
+      this.selectedIds = new Set(this.draftItems.map((i) => i.invoiceId));
+    }
+  }
+
+  get selectedItems(): ManagerInvoiceListItem[] {
+    return this.items.filter((i) => this.selectedIds.has(i.invoiceId));
+  }
+
+  get selectedDraftCount(): number {
+    return this.selectedItems.filter((i) => i.status === 'draft').length;
+  }
+
+  get selectedTotal(): number {
+    return this.selectedItems.reduce((sum, i) => sum + i.totalDueMinor, 0);
+  }
+
+  openIssueConfirmation(): void {
+    this.isConfirmIssueOpen = true;
+  }
+
+  cancelIssue(): void {
+    this.isConfirmIssueOpen = false;
+  }
+
+  clearSelection(): void {
+    this.selectedIds = new Set();
+  }
+
+  confirmIssue(): void {
+    const ids = Array.from(this.selectedIds);
+    const billingMonth = this.selectedItems[0]?.billingMonth;
+    if (!billingMonth || ids.length === 0) return;
+
+    this.isIssuing = true;
+    this.issuingIds = new Set(ids);
+    this.isConfirmIssueOpen = false;
+
+    this.apiService.bulkIssueInvoices({ billingMonth, invoiceIds: ids }).subscribe({
+      next: (result) => {
+        const { successCount, blockedCount } = result.summary;
+        if (blockedCount > 0) {
+          this.toast.warning(`${successCount} issued, ${blockedCount} blocked`);
+        } else {
+          this.toast.success(`${successCount} invoice${successCount === 1 ? '' : 's'} issued successfully`);
+        }
+        this.selectedIds = new Set();
+        this.issuingIds = new Set();
+        this.isIssuing = false;
+        this.loadList();
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.issue')));
+        this.issuingIds = new Set();
+        this.isIssuing = false;
+      },
+    });
   }
 
   getStatusBorderClass(status: string, dueStatus: string): string {
@@ -369,6 +469,7 @@ export class ManagerInvoicesComponent implements OnInit {
   private loadList(): void {
     this.isLoading = true;
     this.errorMessage = null;
+    this.selectedIds = new Set();
 
     this.apiService
       .listInvoices({

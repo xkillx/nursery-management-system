@@ -24,6 +24,7 @@ import {
   DeleteLineResult,
   PaymentLinkResult,
   OverdueSummary,
+  BulkIssueResult,
 } from '../models/manager-invoices.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
@@ -235,6 +236,43 @@ interface OverdueSummaryApi {
   items: OverdueSummaryItemApi[];
 }
 
+interface BulkIssueSummaryApi {
+  eligible_count: number;
+  success_count: number;
+  blocked_count: number;
+  total_due_minor: number;
+}
+
+interface BulkIssueIssuedInvoiceApi {
+  invoice_id: string;
+  child_id: string;
+  child_first_name: string;
+  child_middle_name?: string | null;
+  child_last_name?: string | null;
+  invoice_number: string;
+  issued_at: string;
+  due_at: string;
+  total_due_minor: number;
+}
+
+interface BulkIssueBlockedInvoiceApi {
+  invoice_id: string;
+  child_id?: string | null;
+  child_first_name?: string;
+  child_middle_name?: string | null;
+  child_last_name?: string | null;
+  blockers: { code: string; message: string }[];
+}
+
+interface BulkIssueResponseApi {
+  run_id: string;
+  billing_month: string;
+  status: string;
+  summary: BulkIssueSummaryApi;
+  issued: BulkIssueIssuedInvoiceApi[];
+  blocked: BulkIssueBlockedInvoiceApi[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ManagerInvoicesApiService {
   private readonly http = inject(HttpClient);
@@ -363,6 +401,45 @@ export class ManagerInvoicesApiService {
             outstandingMinor: item.outstanding_minor,
             dueDate: item.due_date,
             daysOverdue: item.days_overdue,
+          })),
+        })),
+      );
+  }
+
+  bulkIssueInvoices(params: { billingMonth: string; invoiceIds: string[] }): Observable<BulkIssueResult> {
+    return this.http
+      .post<BulkIssueResponseApi>(apiUrl('/invoices/drafts/bulk-issue'), {
+        billing_month: params.billingMonth,
+        invoice_ids: params.invoiceIds,
+        confirm: true,
+      })
+      .pipe(
+        map((res) => ({
+          runId: res.run_id,
+          billingMonth: res.billing_month,
+          status: res.status,
+          summary: {
+            eligibleCount: res.summary.eligible_count,
+            successCount: res.summary.success_count,
+            blockedCount: res.summary.blocked_count,
+            totalDueMinor: res.summary.total_due_minor,
+          },
+          issued: res.issued.map((inv) => ({
+            invoiceId: inv.invoice_id,
+            childId: inv.child_id,
+            childName: this.childName(inv),
+            invoiceNumber: inv.invoice_number,
+            issuedAt: inv.issued_at,
+            dueAt: inv.due_at,
+            totalDueMinor: inv.total_due_minor,
+          })),
+          blocked: res.blocked.map((b) => ({
+            invoiceId: b.invoice_id,
+            childId: b.child_id ?? null,
+            childName: b.child_first_name
+              ? formatChildName({ firstName: b.child_first_name, middleName: b.child_middle_name, lastName: b.child_last_name })
+              : '',
+            blockers: b.blockers,
           })),
         })),
       );

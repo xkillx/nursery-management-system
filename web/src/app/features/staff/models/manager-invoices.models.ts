@@ -256,3 +256,34 @@ export interface OverdueSummary {
   overdueCount: number;
   items: OverdueSummaryItem[];
 }
+
+export interface BulkIssueIssuedInvoice {
+  invoiceId: string;
+  childId: string;
+  childName: string;
+  invoiceNumber: string;
+  issuedAt: string;
+  dueAt: string;
+  totalDueMinor: number;
+}
+
+export interface BulkIssueBlockedInvoice {
+  invoiceId: string;
+  childId: string | null;
+  childName: string;
+  blockers: { code: string; message: string }[];
+}
+
+export interface BulkIssueResult {
+  runId: string;
+  billingMonth: string;
+  status: string;
+  summary: {
+    eligibleCount: number;
+    successCount: number;
+    blockedCount: number;
+    totalDueMinor: number;
+  };
+  issued: BulkIssueIssuedInvoice[];
+  blocked: BulkIssueBlockedInvoice[];
+}
