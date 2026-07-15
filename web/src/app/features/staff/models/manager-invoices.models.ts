@@ -1,7 +1,5 @@
 export type ManagerInvoiceStatus = 'draft' | 'issued' | 'payment_failed' | 'paid' | 'overdue';
 
-export type ManagerInvoiceStatusFilter = 'all' | ManagerInvoiceStatus;
-
 export type ManagerInvoiceDueStatus = 'not_due' | 'due' | 'overdue' | 'paid';
 
 export interface ManagerInvoicePeriod {

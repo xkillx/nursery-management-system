@@ -420,7 +420,7 @@ func (h *Handler) listInvoicesHandler(c *gin.Context) {
 		BillingMonth:     queryParamPtr(c, "billing_month"),
 		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
-		Status:           queryParamPtr(c, "status"),
+		Statuses:         queryParamPtr(c, "status"),
 		ChildID:          queryParamPtr(c, "child_id"),
 		Q:                queryParamPtr(c, "q"),
 		Limit:            &limitStr,
@@ -902,7 +902,7 @@ func (h *Handler) listParentInvoicesHandler(c *gin.Context) {
 		BillingMonth:     queryParamPtr(c, "billing_month"),
 		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
-		Status:           queryParamPtr(c, "status"),
+		Statuses:         queryParamPtr(c, "status"),
 		ChildID:          queryParamPtr(c, "child_id"),
 		Limit:            &limitStr,
 		Offset:           &offsetStr,
@@ -1753,7 +1753,7 @@ func (h *Handler) exportHandler(c *gin.Context) {
 	err := h.exportInvoices.Execute(c.Request.Context(), actor, c.Writer, application.ExportInvoicesParams{
 		BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 		BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
-		Status:           queryParamPtr(c, "status"),
+		Statuses:         queryParamPtr(c, "status"),
 		Format:           format,
 	})
 	if err != nil {

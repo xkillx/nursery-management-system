@@ -12,7 +12,7 @@ type InvoiceReviewFilters struct {
 	BillingMonth     *time.Time
 	BillingMonthFrom *time.Time
 	BillingMonthTo   *time.Time
-	Status           *string
+	Statuses         []string
 	ChildID          *uuid.UUID
 	Search           *string
 	Limit            int
@@ -118,7 +118,7 @@ type InvoiceExportFilters struct {
 	BillingMonth     *time.Time
 	BillingMonthFrom *time.Time
 	BillingMonthTo   *time.Time
-	Status           *string
+	Statuses         []string
 	ChildID          *uuid.UUID
 	Search           *string
 }

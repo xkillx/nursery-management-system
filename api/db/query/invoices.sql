@@ -338,7 +338,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC
@@ -352,7 +352,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%');
 
@@ -397,7 +397,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month ASC
@@ -444,7 +444,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.due_at ASC NULLS LAST
@@ -491,7 +491,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.due_at DESC NULLS LAST
@@ -538,7 +538,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.total_due_minor ASC
@@ -585,7 +585,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.total_due_minor DESC
@@ -896,7 +896,7 @@ WHERE i.tenant_id = $1
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
 ORDER BY
   CASE i.status
@@ -936,7 +936,7 @@ WHERE i.tenant_id = $1
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid);
 
 -- name: InvoiceGetForParent :one
@@ -1029,7 +1029,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month DESC, c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, i.created_at DESC, i.id ASC;
@@ -1054,7 +1054,7 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
   AND (sqlc.narg('billing_month_to')::date IS NULL OR i.billing_month <= sqlc.narg('billing_month_to')::date)
-  AND (sqlc.narg('status')::text IS NULL OR i.status = sqlc.narg('status')::text)
+  AND (sqlc.narg('statuses')::text[] IS NULL OR i.status = ANY(sqlc.narg('statuses')::text[]))
   AND (sqlc.narg('child_id')::uuid IS NULL OR i.child_id = sqlc.narg('child_id')::uuid)
   AND (sqlc.narg('search')::text IS NULL OR i.invoice_number ILIKE '%' || sqlc.narg('search')::text || '%' OR (c.first_name || ' ' || c.last_name) ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY i.billing_month DESC, c.first_name ASC, c.last_name ASC, il.sort_order ASC;

@@ -5,7 +5,6 @@ import { Observable, map } from 'rxjs';
 import { apiUrl } from '../../../core/config/api.config';
 import {
   ManagerInvoiceStatus,
-  ManagerInvoiceStatusFilter,
   ManagerInvoiceListItem,
   ManagerInvoiceListResult,
   ManagerInvoiceDetail,
@@ -284,8 +283,9 @@ export class ManagerInvoicesApiService {
     billingMonth?: string;
     billingMonthFrom?: string;
     billingMonthTo?: string;
-    status: ManagerInvoiceStatusFilter;
+    status?: string;
     childId?: string;
+    q?: string;
     limit: number;
     offset: number;
   }): Observable<ManagerInvoiceListResult> {
@@ -304,12 +304,16 @@ export class ManagerInvoicesApiService {
       queryObj['billing_month_to'] = params.billingMonthTo;
     }
 
-    if (params.status !== 'all') {
+    if (params.status) {
       queryObj['status'] = params.status;
     }
 
     if (params.childId) {
       queryObj['child_id'] = params.childId;
+    }
+
+    if (params.q) {
+      queryObj['q'] = params.q;
     }
 
     return this.http

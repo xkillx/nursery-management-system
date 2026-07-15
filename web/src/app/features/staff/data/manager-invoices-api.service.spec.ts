@@ -21,7 +21,7 @@ describe('ManagerInvoicesApiService', () => {
   });
 
   describe('listInvoices', () => {
-    it('omits status query param when filter is all', () => {
+    it('omits status query param when not provided', () => {
       const response = {
         items: [
           {
@@ -59,7 +59,7 @@ child_last_name: null,
         page_size: 50,
       };
 
-      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ billingMonth: '2026-05', limit: 50, offset: 0 }).subscribe((result) => {
         expect(result.items.length).toBe(1);
         expect(result.items[0].invoiceId).toBe('inv-1');
         expect(result.items[0].invoiceNumberDisplay).toBe('Draft invoice');
@@ -87,7 +87,7 @@ child_last_name: null,
     });
 
     it('sends limit and offset for pagination', () => {
-      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 50 }).subscribe();
+      service.listInvoices({ billingMonth: '2026-05', limit: 50, offset: 50 }).subscribe();
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/invoices');
       expect(req.request.params.get('limit')).toBe('50');
@@ -134,7 +134,7 @@ child_last_name: null,
         page_size: 50,
       };
 
-      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ billingMonth: '2026-05', limit: 50, offset: 0 }).subscribe((result) => {
         const item = result.items[0];
         expect(item.childName).toBe('Alice');
         expect(item.invoiceNumber).toBe('INV-202605-0001');
@@ -166,7 +166,7 @@ child_last_name: null,
         updated_at: '2026-06-09T10:00:00Z',
       };
 
-      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ billingMonth: '2026-05', limit: 50, offset: 0 }).subscribe((result) => {
         const item = result.items[0];
         expect(item.dueStatus).toBe('not_due');
         expect(item.amountPaidMinor).toBe(0);
@@ -201,7 +201,7 @@ child_last_name: null,
         updated_at: '2026-06-09T10:00:00Z',
       };
 
-      service.listInvoices({ billingMonth: '2026-05', status: 'all', limit: 50, offset: 0 }).subscribe((result) => {
+      service.listInvoices({ billingMonth: '2026-05', limit: 50, offset: 0 }).subscribe((result) => {
         const item = result.items[0];
         expect(item.generatedRunId).toBeNull();
         expect(item.generatedRunStatus).toBeNull();

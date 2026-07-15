@@ -88,14 +88,15 @@
           </span>
           <input
             type="text"
-            [(ngModel)]="searchQuery"
+            [ngModel]="searchQuery"
+            (ngModelChange)="onSearchInput($event)"
             placeholder="Search by child name or invoice no..."
             class="w-full h-10 pl-10 pr-9 rounded-xl border border-gray-200 bg-gray-50/50 dark:bg-gray-900/50 dark:border-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 transition-all duration-200"
           />
           @if (searchQuery) {
             <button
               type="button"
-              (click)="searchQuery = ''"
+              (click)="clearSearch()"
               class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
               title="Clear search"
             >
@@ -106,40 +107,56 @@
           }
         </div>
 
-        <!-- Status Filter Segmented Controls -->
-        <div class="flex items-center bg-gray-100/60 dark:bg-white/[0.03] p-1 rounded-xl gap-0.5 overflow-x-auto self-start lg:self-auto max-w-full">
-          @for (filter of statusFilters; track filter.value) {
-            <button
-              type="button"
-              class="cursor-pointer rounded-lg px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-all duration-200"
+        <!-- Status Filter Checkboxes -->
+        <div class="flex items-center flex-wrap gap-2 self-start lg:self-auto">
+          @for (option of statusOptions; track option.value) {
+            <label
+              class="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200"
               [ngClass]="{
-                'bg-white text-brand-600 shadow-sm dark:bg-gray-800 dark:text-white': selectedStatus === filter.value,
-                'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/[0.01]': selectedStatus !== filter.value
+                'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-500/15 dark:text-brand-300': isStatusSelected(option.value),
+                'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600': !isStatusSelected(option.value)
               }"
-              [attr.aria-pressed]="selectedStatus === filter.value"
-              (click)="onStatusChange(filter.value)"
             >
-              {{ filter.label }}
-            </button>
+              <input
+                type="checkbox"
+                class="size-3.5 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                [checked]="isStatusSelected(option.value)"
+                (change)="onStatusToggle(option.value)"
+              />
+              {{ option.label }}
+            </label>
           }
         </div>
       </div>
 
-      <!-- Row 2: Range Presets and Date Controls -->
+      <!-- Row 2: Range Presets, Date Controls, and Clear All -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-gray-100 dark:border-gray-800/50 pt-4">
-        <div class="flex items-center bg-gray-100/60 dark:bg-white/[0.03] p-1 rounded-xl gap-0.5 self-start">
-          @for (preset of rangePresets; track preset.value) {
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex items-center bg-gray-100/60 dark:bg-white/[0.03] p-1 rounded-xl gap-0.5 self-start">
+            @for (preset of rangePresets; track preset.value) {
+              <button
+                type="button"
+                class="cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200"
+                [ngClass]="{
+                  'bg-white text-brand-600 shadow-sm dark:bg-gray-800 dark:text-white': activePreset === preset.value,
+                  'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/[0.01]': activePreset !== preset.value
+                }"
+                [attr.aria-pressed]="activePreset === preset.value"
+                (click)="onRangePreset(preset.value)"
+              >
+                {{ preset.label }}
+              </button>
+            }
+          </div>
+          @if (hasActiveFilters) {
             <button
               type="button"
-              class="cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200"
-              [ngClass]="{
-                'bg-white text-brand-600 shadow-sm dark:bg-gray-800 dark:text-white': activePreset === preset.value,
-                'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/[0.01]': activePreset !== preset.value
-              }"
-              [attr.aria-pressed]="activePreset === preset.value"
-              (click)="onRangePreset(preset.value)"
+              (click)="clearAllFilters()"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-error-600 hover:bg-error-50 dark:text-gray-400 dark:hover:text-error-400 dark:hover:bg-error-500/10 transition-all duration-200 cursor-pointer"
+              title="Clear all filters"
             >
-              {{ preset.label }}
+              <ng-icon name="heroXMark" size="14" />
+              Clear all
             </button>
           }
         </div>
@@ -193,7 +210,7 @@
 
     @if (isLoading) {
       <app-loading-state label="Loading invoices..."></app-loading-state>
-    } @else if (filteredItems.length > 0) {
+    } @else if (items.length > 0) {
       <div class="overflow-x-auto hidden lg:block">
         <table class="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
@@ -219,7 +236,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100/80 dark:divide-gray-800/50">
-            @for (item of filteredItems; track item.invoiceId) {
+            @for (item of items; track item.invoiceId) {
               <tr
                 class="group transition-all duration-200 hover:bg-gray-50/40 dark:hover:bg-white/[0.01] cursor-pointer border-l-4"
                 [ngClass]="getStatusBorderClass(item.status, item.dueStatus)"
@@ -362,7 +379,7 @@
 
       <!-- Mobile cards view -->
       <div class="divide-y divide-gray-100/80 lg:hidden dark:divide-gray-800/60">
-        @for (item of filteredItems; track item.invoiceId) {
+        @for (item of items; track item.invoiceId) {
           <article
             class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer border-l-4"
             [ngClass]="getStatusBorderClass(item.status, item.dueStatus)"
@@ -434,30 +451,10 @@
           </article>
         }
       </div>
-    } @else if (items.length > 0 && filteredItems.length === 0) {
-      <!-- Empty matching search state -->
-      <div class="py-16 px-4 text-center">
-        <div class="flex justify-center mb-4">
-          <div class="p-3 bg-gray-50 dark:bg-white/[0.02] rounded-full text-gray-400">
-            <ng-icon name="heroMagnifyingGlass" size="32" />
-          </div>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">No matching invoices</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-          We couldn't find any invoices matching "{{ searchQuery }}". Check your spelling or try another query.
-        </p>
-        <button
-          type="button"
-          (click)="searchQuery = ''"
-          class="mt-4 cursor-pointer inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-        >
-          Clear search query
-        </button>
-      </div>
     } @else {
       <app-empty-state
         title="No invoices found"
-        [message]="'No invoices for ' + billingMonthLabel + ' with filter: ' + (selectedStatus === 'all' ? 'All' : selectedStatus) + '.'"
+        [message]="'No invoices for ' + billingMonthLabel + (selectedStatuses.length > 0 ? ' with statuses: ' + selectedStatuses.join(', ') : '') + '.'"
       ></app-empty-state>
     }
 

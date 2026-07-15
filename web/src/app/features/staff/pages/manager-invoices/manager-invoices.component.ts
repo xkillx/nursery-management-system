@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
@@ -22,6 +22,7 @@ import {
   heroReceiptPercent,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
@@ -35,7 +36,7 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/ui/mo
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import {
-  ManagerInvoiceStatusFilter,
+  ManagerInvoiceStatus,
   ManagerInvoiceListItem,
 } from '../../models/manager-invoices.models';
 import {
@@ -48,8 +49,7 @@ import {
   paymentDisplayLabel,
 } from '../../utils/manager-payment-formatters';
 
-const STATUS_FILTERS: { value: ManagerInvoiceStatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
+const STATUS_OPTIONS: { value: ManagerInvoiceStatus; label: string }[] = [
   { value: 'draft', label: 'Draft' },
   { value: 'issued', label: 'Issued' },
   { value: 'payment_failed', label: 'Payment failed' },
@@ -58,6 +58,15 @@ const STATUS_FILTERS: { value: ManagerInvoiceStatusFilter; label: string }[] = [
 ];
 
 const LIMIT = 50;
+const LS_KEY = 'nursery.invoice_filters';
+
+interface FilterState {
+  statuses: ManagerInvoiceStatus[];
+  billingMonthFrom: string;
+  billingMonthTo: string;
+  activePreset: string;
+  q: string;
+}
 
 function formatInstant(iso: string | null): string {
   if (!iso) return '';
@@ -95,6 +104,8 @@ const RANGE_PRESETS: RangePreset[] = [
   { value: '6m', label: 'Last 6 months' },
   { value: 'custom', label: 'Custom' },
 ];
+
+const VALID_STATUSES = new Set<string>(['draft', 'issued', 'payment_failed', 'paid', 'overdue']);
 
 function formatBillingMonth(date: Date): string {
   const y = date.getFullYear();
@@ -139,20 +150,23 @@ function formatBillingMonth(date: Date): string {
     }),
   ],
 })
-export class ManagerInvoicesComponent implements OnInit {
+export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
+  private readonly searchChanged$ = new Subject<string>();
 
-  readonly statusFilters = STATUS_FILTERS;
+  readonly statusOptions = STATUS_OPTIONS;
   readonly rangePresets = RANGE_PRESETS;
   readonly invoicesRoute = ROLE_ROUTES.managerInvoices;
 
   selectedBillingMonthFrom: string;
   selectedBillingMonthTo: string;
   activePreset = 'this';
-  selectedStatus: ManagerInvoiceStatusFilter = 'all';
+  selectedStatuses: ManagerInvoiceStatus[] = [];
   searchQuery = '';
   offset = 0;
 
@@ -171,15 +185,8 @@ export class ManagerInvoicesComponent implements OnInit {
   readonly formatInstant = formatInstant;
   readonly invoiceIdentity = invoiceIdentity;
 
-  get filteredItems(): ManagerInvoiceListItem[] {
-    const q = this.searchQuery.trim().toLowerCase();
-    if (!q) return this.items;
-    return this.items.filter(item => {
-      const childMatch = item.childName?.toLowerCase().includes(q);
-      const numberMatch = item.invoiceNumber?.toLowerCase().includes(q) || 
-                          item.invoiceNumberDisplay?.toLowerCase().includes(q);
-      return childMatch || numberMatch;
-    });
+  get draftItems(): ManagerInvoiceListItem[] {
+    return this.items.filter((i) => i.status === 'draft');
   }
 
   viewInvoice(invoiceId: string, event: Event): void {
@@ -192,10 +199,6 @@ export class ManagerInvoicesComponent implements OnInit {
 
   isSelected(invoiceId: string): boolean {
     return this.selectedIds.has(invoiceId);
-  }
-
-  get draftItems(): ManagerInvoiceListItem[] {
-    return this.filteredItems.filter((i) => i.status === 'draft');
   }
 
   get isAllDraftsSelected(): boolean {
@@ -299,7 +302,26 @@ export class ManagerInvoicesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadList();
+    this.searchChanged$.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe(() => {
+      this.offset = 0;
+      this.loadList();
+    });
+
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      const hasUrlParams = Object.keys(params).length > 0;
+
+      if (hasUrlParams) {
+        this.applyQueryParams(params);
+      } else {
+        this.restoreFromLocalStorage();
+      }
+      this.loadList();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onRangePreset(preset: string): void {
@@ -314,21 +336,66 @@ export class ManagerInvoicesComponent implements OnInit {
     } else if (preset === '6m') {
       this.selectedBillingMonthFrom = formatBillingMonth(new Date(now.getFullYear(), now.getMonth() - 5, 1));
     }
-    // 'custom' leaves existing from/to values unchanged
     this.offset = 0;
-    this.loadList();
+    this.onFilterChange();
   }
 
   onCustomRangeChange(): void {
     this.activePreset = 'custom';
     this.offset = 0;
+    this.onFilterChange();
+  }
+
+  onStatusToggle(status: ManagerInvoiceStatus): void {
+    const idx = this.selectedStatuses.indexOf(status);
+    if (idx >= 0) {
+      this.selectedStatuses = this.selectedStatuses.filter((s) => s !== status);
+    } else {
+      this.selectedStatuses = [...this.selectedStatuses, status];
+    }
+    this.offset = 0;
+    this.onFilterChange();
+  }
+
+  isStatusSelected(status: ManagerInvoiceStatus): boolean {
+    return this.selectedStatuses.includes(status);
+  }
+
+  onSearchInput(value: string): void {
+    this.searchQuery = value;
+    this.searchChanged$.next(value);
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.offset = 0;
+    this.onFilterChange();
+  }
+
+  clearAllFilters(): void {
+    const now = new Date();
+    this.selectedStatuses = [];
+    this.activePreset = 'this';
+    this.selectedBillingMonthFrom = formatBillingMonth(now);
+    this.selectedBillingMonthTo = formatBillingMonth(now);
+    this.searchQuery = '';
+    this.offset = 0;
+    localStorage.removeItem(LS_KEY);
+    this.router.navigate([], { queryParams: {} });
     this.loadList();
   }
 
-  onStatusChange(status: ManagerInvoiceStatusFilter): void {
-    this.selectedStatus = status;
-    this.offset = 0;
-    this.loadList();
+  get hasActiveFilters(): boolean {
+    const now = new Date();
+    const defaultFrom = formatBillingMonth(now);
+    const defaultTo = formatBillingMonth(now);
+    return (
+      this.selectedStatuses.length > 0 ||
+      this.searchQuery.trim() !== '' ||
+      this.activePreset !== 'this' ||
+      this.selectedBillingMonthFrom !== defaultFrom ||
+      this.selectedBillingMonthTo !== defaultTo
+    );
   }
 
   get hasPrevious(): boolean {
@@ -498,6 +565,108 @@ export class ManagerInvoicesComponent implements OnInit {
     this.loadList();
   }
 
+  private onFilterChange(): void {
+    this.saveToLocalStorage();
+    this.syncUrlParams();
+    this.loadList();
+  }
+
+  private applyQueryParams(params: Record<string, string>): void {
+    if (params['status']) {
+      const statuses = params['status']
+        .split(',')
+        .filter((s): s is ManagerInvoiceStatus => VALID_STATUSES.has(s));
+      this.selectedStatuses = statuses;
+    } else {
+      this.selectedStatuses = [];
+    }
+
+    if (params['billing_month_from']) {
+      this.selectedBillingMonthFrom = params['billing_month_from'];
+    }
+    if (params['billing_month_to']) {
+      this.selectedBillingMonthTo = params['billing_month_to'];
+    }
+
+    if (params['billing_month_from'] && params['billing_month_to']) {
+      this.activePreset = 'custom';
+    }
+
+    if (params['q']) {
+      this.searchQuery = params['q'];
+    }
+
+    if (params['offset']) {
+      const o = parseInt(params['offset'], 10);
+      if (!isNaN(o) && o >= 0) {
+        this.offset = o;
+      }
+    }
+  }
+
+  private restoreFromLocalStorage(): void {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const state: FilterState = JSON.parse(raw);
+
+      if (state.statuses && Array.isArray(state.statuses)) {
+        this.selectedStatuses = state.statuses.filter((s) => VALID_STATUSES.has(s));
+      }
+      if (state.billingMonthFrom) {
+        this.selectedBillingMonthFrom = state.billingMonthFrom;
+      }
+      if (state.billingMonthTo) {
+        this.selectedBillingMonthTo = state.billingMonthTo;
+      }
+      if (state.activePreset) {
+        this.activePreset = state.activePreset;
+      }
+      if (state.q) {
+        this.searchQuery = state.q;
+      }
+    } catch {
+      // corrupted localStorage — ignore
+    }
+  }
+
+  private saveToLocalStorage(): void {
+    const state: FilterState = {
+      statuses: this.selectedStatuses,
+      billingMonthFrom: this.selectedBillingMonthFrom,
+      billingMonthTo: this.selectedBillingMonthTo,
+      activePreset: this.activePreset,
+      q: this.searchQuery,
+    };
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+    } catch {
+      // localStorage full or unavailable — ignore
+    }
+  }
+
+  private syncUrlParams(): void {
+    const queryParams: Record<string, string> = {};
+
+    if (this.selectedStatuses.length > 0) {
+      queryParams['status'] = this.selectedStatuses.join(',');
+    }
+    if (this.selectedBillingMonthFrom) {
+      queryParams['billing_month_from'] = this.selectedBillingMonthFrom;
+    }
+    if (this.selectedBillingMonthTo) {
+      queryParams['billing_month_to'] = this.selectedBillingMonthTo;
+    }
+    if (this.searchQuery.trim()) {
+      queryParams['q'] = this.searchQuery.trim();
+    }
+    if (this.offset > 0) {
+      queryParams['offset'] = String(this.offset);
+    }
+
+    this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
   private loadList(): void {
     this.isLoading = true;
     this.errorMessage = null;
@@ -507,7 +676,8 @@ export class ManagerInvoicesComponent implements OnInit {
       .listInvoices({
         billingMonthFrom: this.selectedBillingMonthFrom,
         billingMonthTo: this.selectedBillingMonthTo,
-        status: this.selectedStatus,
+        status: this.selectedStatuses.length > 0 ? this.selectedStatuses.join(',') : undefined,
+        q: this.searchQuery.trim() || undefined,
         limit: LIMIT,
         offset: this.offset,
       })

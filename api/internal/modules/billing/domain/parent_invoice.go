@@ -12,7 +12,7 @@ type ParentInvoiceFilters struct {
 	BillingMonth     *time.Time
 	BillingMonthFrom *time.Time
 	BillingMonthTo   *time.Time
-	Status           *string
+	Statuses         []string
 	ChildID          *uuid.UUID
 	Limit            int
 	Offset           int

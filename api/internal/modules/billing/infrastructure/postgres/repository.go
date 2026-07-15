@@ -479,7 +479,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 	pgBillingMonth := timeToPgtypeDatePtr(filters.BillingMonth)
 	pgBillingMonthFrom := timeToPgtypeDatePtr(filters.BillingMonthFrom)
 	pgBillingMonthTo := timeToPgtypeDatePtr(filters.BillingMonthTo)
-	pgStatus := strToPgtypeTextPtr(filters.Status)
+	pgStatuses := strSliceToPgtypeTextArray(filters.Statuses)
 	pgChildID := uuidToPgtypePtr(filters.ChildID)
 	pgSearch := strToPgtypeTextPtr(filters.Search)
 	pgLimit := pgtype.Int4{Int32: int32(filters.Limit), Valid: true}
@@ -488,7 +488,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 	switch filters.SortField + ":" + filters.SortDir {
 	case "billing_month:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByBillingMonthAsc(ctx, sqlc.InvoiceListForManagerReviewSortByBillingMonthAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -500,7 +500,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "due_at:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByDueAtAsc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -512,7 +512,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "due_at:desc":
 		rows, err := q.InvoiceListForManagerReviewSortByDueAtDesc(ctx, sqlc.InvoiceListForManagerReviewSortByDueAtDescParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -524,7 +524,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "total_amount:asc":
 		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountAsc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountAscParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -536,7 +536,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	case "total_amount:desc":
 		rows, err := q.InvoiceListForManagerReviewSortByTotalAmountDesc(ctx, sqlc.InvoiceListForManagerReviewSortByTotalAmountDescParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -548,7 +548,7 @@ func (r *Repository) ListInvoicesForManagerReview(ctx context.Context, tenantID,
 		return result, nil
 	default:
 		rows, err := q.InvoiceListForManagerReview(ctx, sqlc.InvoiceListForManagerReviewParams{
-			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Status: pgStatus, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
+			TenantID: pgTenant, BranchID: pgBranch, BillingMonth: pgBillingMonth, BillingMonthFrom: pgBillingMonthFrom, BillingMonthTo: pgBillingMonthTo, Statuses: pgStatuses, ChildID: pgChildID, Search: pgSearch, Limit: pgLimit, Offset: pgOffset,
 		})
 		if err != nil {
 			return nil, err
@@ -569,7 +569,7 @@ func (r *Repository) CountInvoicesForManagerReview(ctx context.Context, tenantID
 		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
 		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
+		Statuses:         strSliceToPgtypeTextArray(filters.Statuses),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
 		Search:           strToPgtypeTextPtr(filters.Search),
 	})
@@ -821,7 +821,7 @@ func (r *Repository) ListInvoicesForParent(ctx context.Context, tenantID, branch
 		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
 		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
+		Statuses:         strSliceToPgtypeTextArray(filters.Statuses),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
 		Limit:            pgtype.Int4{Int32: int32(filters.Limit), Valid: true},
 		Offset:           pgtype.Int4{Int32: int32(filters.Offset), Valid: true},
@@ -846,7 +846,7 @@ func (r *Repository) CountInvoicesForParent(ctx context.Context, tenantID, branc
 		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
 		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
+		Statuses:         strSliceToPgtypeTextArray(filters.Statuses),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
 	})
 	if err != nil {
@@ -1289,6 +1289,13 @@ func strToPgtypeTextPtr(s *string) pgtype.Text {
 	return pgtype.Text{String: *s, Valid: true}
 }
 
+func strSliceToPgtypeTextArray(ss []string) []string {
+	if len(ss) == 0 {
+		return nil
+	}
+	return ss
+}
+
 func pgtypeNumericToFloat64(n pgtype.Numeric) float64 {
 	if !n.Valid {
 		return 0
@@ -1325,7 +1332,7 @@ func (r *Repository) ExportInvoicesForManagerReview(ctx context.Context, tenantI
 		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
 		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
+		Statuses:         strSliceToPgtypeTextArray(filters.Statuses),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
 		Search:           strToPgtypeTextPtr(filters.Search),
 	})
@@ -1382,7 +1389,7 @@ func (r *Repository) ExportInvoiceDetailsForManagerReview(ctx context.Context, t
 		BillingMonth:     timeToPgtypeDatePtr(filters.BillingMonth),
 		BillingMonthFrom: timeToPgtypeDatePtr(filters.BillingMonthFrom),
 		BillingMonthTo:   timeToPgtypeDatePtr(filters.BillingMonthTo),
-		Status:           strToPgtypeTextPtr(filters.Status),
+		Statuses:         strSliceToPgtypeTextArray(filters.Statuses),
 		ChildID:          uuidToPgtypePtr(filters.ChildID),
 		Search:           strToPgtypeTextPtr(filters.Search),
 	})

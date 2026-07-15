@@ -25,7 +25,7 @@ type ListInvoicesParams struct {
 	BillingMonth     *string
 	BillingMonthFrom *string
 	BillingMonthTo   *string
-	Status           *string
+	Statuses         *string
 	ChildID          *string
 	Q                *string
 	Limit            *string
@@ -79,12 +79,25 @@ func (uc *ListInvoices) Execute(ctx context.Context, actor tenant.ActorContext, 
 		filters.BillingMonthTo = &bm
 	}
 
-	if params.Status != nil {
-		s := strings.TrimSpace(*params.Status)
-		if !validStatuses[s] {
-			return ListInvoicesResult{}, domainerrors.Validation(fmt.Sprintf("Invalid status filter: %s.", s), "status")
+	if params.Statuses != nil {
+		raw := strings.TrimSpace(*params.Statuses)
+		if raw != "" {
+			parts := strings.Split(raw, ",")
+			statuses := make([]string, 0, len(parts))
+			for _, p := range parts {
+				s := strings.TrimSpace(p)
+				if s == "" {
+					continue
+				}
+				if !validStatuses[s] {
+					return ListInvoicesResult{}, domainerrors.Validation(fmt.Sprintf("Invalid status filter: %s.", s), "status")
+				}
+				statuses = append(statuses, s)
+			}
+			if len(statuses) > 0 {
+				filters.Statuses = statuses
+			}
 		}
-		filters.Status = &s
 	}
 
 	if params.ChildID != nil {

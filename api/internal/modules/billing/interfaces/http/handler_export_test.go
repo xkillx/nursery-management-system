@@ -76,7 +76,7 @@ func setupExportRouter(exportUC *stubExportUseCase, summaryUC *stubSummaryUseCas
 		err := exportUC.Execute(c.Request.Context(), actor, c.Writer, application.ExportInvoicesParams{
 			BillingMonthFrom: queryParamPtr(c, "billing_month_from"),
 			BillingMonthTo:   queryParamPtr(c, "billing_month_to"),
-			Status:           queryParamPtr(c, "status"),
+			Statuses:         queryParamPtr(c, "status"),
 			Format:           format,
 		})
 		if err != nil {

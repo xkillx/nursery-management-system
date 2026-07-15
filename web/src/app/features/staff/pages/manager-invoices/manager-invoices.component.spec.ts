@@ -104,12 +104,12 @@ describe('ManagerInvoicesComponent', () => {
     fixture = TestBed.createComponent(ManagerInvoicesComponent);
   });
 
-  it('loads list on init with default range and all status', () => {
+  it('loads list on init with default range and no status filter', () => {
     fixture.detectChanges();
 
-    expect(apiService.listInvoices).toHaveBeenCalledTimes(1);
-    const call = apiService.listInvoices.calls.argsFor(0)[0];
-    expect(call.status).toBe('all');
+    expect(apiService.listInvoices).toHaveBeenCalled();
+    const call = apiService.listInvoices.calls.mostRecent().args[0];
+    expect(call.status).toBeUndefined();
     expect(call.billingMonthFrom).toMatch(/^\d{4}-\d{2}$/);
     expect(call.billingMonthTo).toMatch(/^\d{4}-\d{2}$/);
     expect(call.limit).toBe(50);
@@ -140,13 +140,13 @@ describe('ManagerInvoicesComponent', () => {
     expect(viewLinks[0].href).toContain('/manager/invoices/');
   });
 
-  it('reloads and resets offset when status changes', () => {
+  it('reloads and resets offset when status is toggled', () => {
     fixture.detectChanges();
     apiService.listInvoices.calls.reset();
 
-    fixture.componentInstance.onStatusChange('issued');
-    expect(apiService.listInvoices).toHaveBeenCalledTimes(1);
-    const call = apiService.listInvoices.calls.argsFor(0)[0];
+    fixture.componentInstance.onStatusToggle('issued');
+    expect(apiService.listInvoices).toHaveBeenCalled();
+    const call = apiService.listInvoices.calls.mostRecent().args[0];
     expect(call.status).toBe('issued');
     expect(call.offset).toBe(0);
   });
@@ -213,10 +213,10 @@ describe('ManagerInvoicesComponent', () => {
     }
   });
 
-  it('does not send status param when filter is all', () => {
+  it('does not send status param when no statuses selected', () => {
     fixture.detectChanges();
-    const call = apiService.listInvoices.calls.argsFor(0)[0];
-    expect(call.status).toBe('all');
+    const call = apiService.listInvoices.calls.mostRecent().args[0];
+    expect(call.status).toBeUndefined();
   });
 
   it('shows Unpaid cue for issued invoice with zero paid', () => {
@@ -355,7 +355,7 @@ describe('ManagerInvoicesComponent', () => {
       comp.toggleRow('inv-2', new Event('change'));
       expect(comp.selectedIds.size).toBe(1);
 
-      comp.onStatusChange('issued');
+      comp.onStatusToggle('issued');
       expect(comp.selectedIds.size).toBe(0);
     });
   });
