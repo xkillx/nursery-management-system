@@ -1,0 +1,40 @@
+@if (entries().length === 0) {
+  <p class="text-sm text-gray-500 dark:text-gray-400">No timeline entries.</p>
+} @else {
+  <ol class="flex flex-col md:flex-row md:items-start md:gap-0 relative">
+    @for (entry of entries(); track entry.key; let last = $last) {
+      <li class="flex md:flex-col md:items-center md:flex-1 relative">
+        <!-- Vertical connector (mobile) -->
+        @if (!last) {
+          <div
+            class="absolute left-[11px] top-7 bottom-0 w-0.5 md:hidden"
+            [ngClass]="connectorClasses(entry)"
+          ></div>
+        }
+
+        <!-- Horizontal connector (desktop) -->
+        @if (!last) {
+          <div
+            class="hidden md:block absolute top-[11px] left-1/2 right-0 h-0.5 -translate-x-0"
+            [ngClass]="connectorClasses(entry)"
+          ></div>
+        }
+
+        <!-- Node circle -->
+        <div
+          class="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full md:mx-auto"
+          [ngClass]="nodeClasses(entry)"
+        >
+          <ng-icon [name]="entry.icon" size="12" aria-hidden="true" />
+        </div>
+
+        <!-- Content -->
+        <div class="ml-4 md:ml-0 md:mt-2 md:text-center md:px-2 min-w-0">
+          <p class="text-xs font-bold text-gray-800 dark:text-white/90">{{ entry.title }}</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-relaxed">{{ entry.description }}</p>
+          <p class="mt-1 text-[10px] font-medium text-gray-450 dark:text-gray-500">{{ formatTimestamp(entry.timestamp) }}</p>
+        </div>
+      </li>
+    }
+  </ol>
+}
