@@ -303,9 +303,9 @@ export const routes: Routes = [
                 path: 'new',
                 component: ManagerInvoiceCreateComponent,
                 data: {
-                  breadcrumb: { label: 'New invoice' },
+                  breadcrumb: { label: 'Create Invoice' },
                 },
-                title: 'New Invoice | Nursery Management',
+                title: 'Create Invoice | Nursery Management',
               },
               {
                 path: ':invoiceId',

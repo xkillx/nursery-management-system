@@ -5,7 +5,7 @@
     <ng-icon name="heroChevronRight" size="14" aria-hidden="true" />
     <a routerLink="/manager/invoices" class="hover:text-brand-600 transition-colors">Invoices</a>
     <ng-icon name="heroChevronRight" size="14" aria-hidden="true" />
-    <span class="font-semibold text-gray-900 dark:text-white/90">New Invoice</span>
+    <span class="font-semibold text-gray-900 dark:text-white/90">Create Invoice</span>
   </nav>
 
   <!-- Header Title -->
@@ -16,7 +16,7 @@
           {{ mode === 'edit' ? 'Edit Draft Invoice' : 'Create New Invoice' }}
         </h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {{ mode === 'edit' ? 'Review and update the draft before issuing.' : 'Select a child and billing period to start.' }}
+          {{ mode === 'edit' ? 'Review and update the draft before issuing.' : 'Follow the steps to create and issue an invoice.' }}
         </p>
       </div>
     </div>
@@ -24,6 +24,108 @@
 
   @if (submitError) {
     <app-alert variant="error" [message]="submitError" class="block"></app-alert>
+  }
+
+  <!-- Stepper Progress Navigation -->
+  <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+    <!-- Desktop view -->
+    <nav class="hidden md:block" aria-label="Invoice creation progress">
+      <ol class="relative flex items-start justify-between">
+        <!-- Connecting lines background -->
+        <div class="absolute left-[12.5%] right-[12.5%] top-[22px] h-[2px] bg-gray-100 dark:bg-gray-800" aria-hidden="true">
+          <div
+            class="h-full bg-brand-500 transition-all duration-500 ease-in-out dark:bg-brand-400"
+            [style.width.%]="(activeStepIndex() / (steps.length - 1)) * 100"
+          ></div>
+        </div>
+
+        @for (step of steps; track step.key; let i = $index) {
+          <li class="relative z-10 flex w-0 flex-1 flex-col items-center">
+            <button
+              type="button"
+              (click)="goToStep(step.key)"
+              [disabled]="!canOpenStep(step.key)"
+              class="group flex flex-col items-center focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 focus:rounded-xl dark:focus:ring-brand-400/15"
+              [attr.aria-current]="stepIsActive(step.key) ? 'step' : null"
+              [attr.aria-disabled]="!canOpenStep(step.key)"
+            >
+              <!-- Badge Circle -->
+              <span
+                class="flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-300 shadow-theme-xs"
+                [ngClass]="{
+                  'border-brand-500 bg-brand-500 text-white ring-4 ring-brand-500/15 scale-110 dark:border-brand-400 dark:bg-brand-400 dark:ring-brand-400/20': stepIsActive(step.key),
+                  'border-success-500 bg-success-500 text-white hover:bg-success-600 hover:border-success-600': stepIsComplete(step.key) && !stepIsActive(step.key),
+                  'border-gray-200 bg-white text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400': !stepIsActive(step.key) && !stepIsComplete(step.key)
+                }"
+              >
+                @if (stepIsComplete(step.key)) {
+                  <ng-icon name="heroCheck" size="18" aria-hidden="true" />
+                } @else if (!canOpenStep(step.key)) {
+                  <ng-icon name="heroLockClosed" size="16" aria-hidden="true" class="opacity-60" />
+                } @else {
+                  {{ i + 1 }}
+                }
+              </span>
+
+              <!-- Label -->
+              <span
+                class="mt-3 text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors duration-200 dark:text-gray-400"
+                [class.text-brand-600]="stepIsActive(step.key)"
+                [class.text-success-600]="stepIsComplete(step.key) && !stepIsActive(step.key)"
+                [ngClass]="{
+                  'dark:text-brand-300 font-bold': stepIsActive(step.key),
+                  'dark:text-success-400': stepIsComplete(step.key) && !stepIsActive(step.key)
+                }"
+              >
+                {{ step.shortLabel }}
+              </span>
+
+              <!-- Description -->
+              <span class="mt-0.5 text-[10px] text-gray-400 max-w-[100px] text-center hidden lg:block dark:text-gray-500">
+                {{ step.description }}
+              </span>
+            </button>
+          </li>
+        }
+      </ol>
+    </nav>
+
+    <!-- Mobile view -->
+    <nav class="md:hidden" aria-label="Invoice creation progress">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Step {{ activeStepIndex() + 1 }} of {{ steps.length }}
+          </p>
+          <h4 class="text-base font-bold text-gray-900 dark:text-white/90">
+            {{ steps[activeStepIndex()].label }}
+          </h4>
+        </div>
+        <div class="flex items-center gap-1.5">
+          @if (activeStepIndex() > 0) {
+            <button type="button" (click)="prevStep()" class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900/50">
+              <ng-icon name="heroChevronLeft" size="18" />
+            </button>
+          }
+          @if (activeStepIndex() < steps.length - 1 && stepIsComplete(steps[activeStepIndex()].key)) {
+            <button type="button" (click)="nextStep()" class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900/50">
+              <ng-icon name="heroArrowRight" size="18" />
+            </button>
+          }
+        </div>
+      </div>
+      <!-- Progress Bar -->
+      <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+        <div
+          class="h-full bg-brand-500 transition-all duration-300 ease-out dark:bg-brand-400"
+          [style.width.%]="((activeStepIndex() + 1) / steps.length) * 100"
+        ></div>
+      </div>
+    </nav>
+  </section>
+
+  @if (stepErrors[currentStep()]) {
+    <app-alert variant="error" [message]="stepErrors[currentStep()]!" class="block"></app-alert>
   }
 
   @if (showWarningBanner()) {
@@ -35,394 +137,707 @@
     ></app-alert>
   }
 
-  <!-- Setup & Configuration Card -->
-  <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      
-      <!-- Left: Recipient Selection -->
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-            👦 Recipient Details
-          </h3>
-          @if (selectedChild) {
-            <button
-              type="button"
-              class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline dark:text-brand-400"
-              (click)="clearChild()"
-            >
-              Change Child
-            </button>
-          }
-        </div>
+  <!-- Step 1: Child & Month -->
+  @if (currentStep() === 'child-month') {
+    <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        <div class="relative">
-          @if (!selectedChild) {
-            <div class="space-y-3">
-              <div class="relative">
-                <ng-icon
-                  name="heroMagnifyingGlass"
-                  size="18"
-                  class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                  aria-hidden="true"
-                />
-                <input
-                  id="child-search"
-                  type="search"
-                  class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                  placeholder="Search by child's first or last name..."
-                  [ngModel]="childSearchTerm"
-                  (ngModelChange)="childSearchTerm = $event; onSearchInput()"
-                />
-              </div>
-
-              @if (isSearching) {
-                <div class="flex items-center gap-2 text-xs text-gray-400">
-                  <span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-500 border-t-transparent"></span>
-                  <span>Searching active roster...</span>
-                </div>
-              }
-
-              @if (searchResults.length > 0) {
-                <ul class="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                  @for (child of searchResults; track child.id) {
-                    <li>
-                      <button
-                        type="button"
-                        class="w-full px-4 py-3 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04] flex flex-col gap-0.5"
-                        (click)="selectChild(child)"
-                      >
-                        <div class="flex items-center gap-2.5">
-                          <app-child-avatar [photoUrl]="child.photoUrl" [name]="child.fullName" size="sm"></app-child-avatar>
-                          <span class="font-bold text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
-                        </div>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                          Room: {{ getRoomNameByAgeGroup(calculateAgeGroup(child.dateOfBirth)) }} • DOB: {{ child.dateOfBirth | date:'dd/MM/yyyy' }}
-                        </span>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
-          } @else {
-            <div class="bg-brand-25/50 dark:bg-brand-950/10 p-5 rounded-xl border border-brand-100/50 dark:border-brand-900/30 flex items-center gap-4 transition-all">
-              <app-child-avatar [photoUrl]="selectedChild.photoUrl" [name]="selectedChild.fullName" size="lg"></app-child-avatar>
-              <div class="flex-1">
-                <p class="text-base font-bold text-gray-900 dark:text-white/90 leading-tight">{{ selectedChild.fullName }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Parent: <span class="font-medium text-gray-700 dark:text-gray-300">{{ parentCarerName() }}</span> • Room: <span class="font-medium text-gray-700 dark:text-gray-300">{{ roomName() }}</span>
-                </p>
-                <span class="inline-flex items-center px-2.5 py-0.5 mt-2 text-[10px] font-bold uppercase tracking-wider bg-brand-100/60 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-full">
-                  Age Group: {{ ageGroup() }}
-                </span>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- Right: Billing Month & Period Details -->
-      <div class="space-y-4 lg:border-l lg:border-gray-100 lg:dark:border-gray-800/60 lg:pl-8">
-        <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-          <ng-icon name="heroCalendar" class="text-brand-500" /> Invoice Period & Metadata
-        </h3>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Billing Month Selection -->
-          <div class="space-y-1">
-            <span class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Month</span>
-            <input
-              type="month"
-              class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
-              [ngModel]="billingMonth()"
-              (ngModelChange)="billingMonth.set($event); selectedChild ? loadPrefill() : null"
-            />
+        <!-- Left: Recipient Selection -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+              Recipient Details
+            </h3>
+            @if (selectedChild) {
+              <button
+                type="button"
+                class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline dark:text-brand-400"
+                (click)="clearChild()"
+              >
+                Change Child
+              </button>
+            }
           </div>
 
-          <!-- Date Range Display -->
-          <div class="space-y-1">
-            <span class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Period</span>
-            @if (billingMonth()) {
-              <span class="inline-flex items-center gap-2 bg-gray-50 dark:bg-white/[0.02] border border-gray-150 dark:border-gray-800 px-3 py-2.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 font-semibold w-full">
-                <ng-icon name="heroCalendar" size="14" class="text-brand-500 shrink-0" />
-                <span>{{ billingPeriodStart() | date:'d MMM yyyy' }} - {{ billingPeriodEnd() | date:'d MMM yyyy' }}</span>
-              </span>
+          <div class="relative">
+            @if (!selectedChild) {
+              <div class="space-y-3">
+                <div class="relative">
+                  <ng-icon
+                    name="heroMagnifyingGlass"
+                    size="18"
+                    class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                    aria-hidden="true"
+                  />
+                  <input
+                    id="child-search"
+                    type="search"
+                    class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    placeholder="Search by child's first or last name..."
+                    [ngModel]="childSearchTerm"
+                    (ngModelChange)="childSearchTerm = $event; onSearchInput()"
+                  />
+                </div>
+
+                @if (isSearching) {
+                  <div class="flex items-center gap-2 text-xs text-gray-400">
+                    <span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-500 border-t-transparent"></span>
+                    <span>Searching active roster...</span>
+                  </div>
+                }
+
+                @if (searchResults.length > 0) {
+                  <ul class="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                    @for (child of searchResults; track child.id) {
+                      <li>
+                        <button
+                          type="button"
+                          class="w-full px-4 py-3 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04] flex flex-col gap-0.5"
+                          (click)="selectChild(child)"
+                        >
+                          <div class="flex items-center gap-2.5">
+                            <app-child-avatar [photoUrl]="child.photoUrl" [name]="child.fullName" size="sm"></app-child-avatar>
+                            <span class="font-bold text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
+                          </div>
+                          <span class="text-xs text-gray-500 dark:text-gray-400">
+                            Room: {{ getRoomNameByAgeGroup(calculateAgeGroup(child.dateOfBirth)) }} &bull; DOB: {{ child.dateOfBirth | date:'dd/MM/yyyy' }}
+                          </span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
             } @else {
-              <span class="text-xs text-gray-400 italic block py-2.5">Select billing month...</span>
+              <div class="bg-brand-25/50 dark:bg-brand-950/10 p-5 rounded-xl border border-brand-100/50 dark:border-brand-900/30 flex items-center gap-4 transition-all">
+                <app-child-avatar [photoUrl]="selectedChild.photoUrl" [name]="selectedChild.fullName" size="lg"></app-child-avatar>
+                <div class="flex-1">
+                  <p class="text-base font-bold text-gray-900 dark:text-white/90 leading-tight">{{ selectedChild.fullName }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Parent: <span class="font-medium text-gray-700 dark:text-gray-300">{{ parentCarerName() }}</span> &bull; Room: <span class="font-medium text-gray-700 dark:text-gray-300">{{ roomName() }}</span>
+                  </p>
+                  <span class="inline-flex items-center px-2.5 py-0.5 mt-2 text-[10px] font-bold uppercase tracking-wider bg-brand-100/60 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-full">
+                    Age Group: {{ ageGroup() }}
+                  </span>
+                </div>
+              </div>
             }
           </div>
         </div>
 
-        <!-- Readonly Metadata Details Grid -->
-        <div class="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-800/60">
-          <div class="space-y-1">
-            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Invoice Number</span>
-            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center truncate">
-              {{ mockInvoiceNumber }}
-            </span>
+        <!-- Right: Billing Month -->
+        <div class="space-y-4 lg:border-l lg:border-gray-100 lg:dark:border-gray-800/60 lg:pl-8">
+          <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+            <ng-icon name="heroCalendar" class="text-brand-500" /> Invoice Period
+          </h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Month</span>
+              <input
+                type="month"
+                class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                [ngModel]="billingMonth()"
+                (ngModelChange)="billingMonth.set($event); selectedChild ? loadPrefill() : null"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing Period</span>
+              @if (billingMonth()) {
+                <span class="inline-flex items-center gap-2 bg-gray-50 dark:bg-white/[0.02] border border-gray-150 dark:border-gray-800 px-3 py-2.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 font-semibold w-full">
+                  <ng-icon name="heroCalendar" size="14" class="text-brand-500 shrink-0" />
+                  <span>{{ billingPeriodStart() | date:'d MMM yyyy' }} - {{ billingPeriodEnd() | date:'d MMM yyyy' }}</span>
+                </span>
+              } @else {
+                <span class="text-xs text-gray-400 italic block py-2.5">Select billing month...</span>
+              }
+            </div>
           </div>
-          <div class="space-y-1">
-            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Issue Date</span>
-            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center">
-              {{ issueDate | date:'dd/MM/yyyy' }}
-            </span>
+
+          @if (entitlementLabel && selectedChild) {
+            <div class="pt-3 flex items-center justify-between border-t border-gray-100 dark:border-gray-800/60">
+              <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Funding Profile</span>
+              <span class="inline-flex items-center px-3 py-1 rounded-full bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 font-bold text-xs border border-success-200/30">
+                <ng-icon name="heroSparkles" size="14" class="mr-1.5 shrink-0" aria-hidden="true" />
+                {{ entitlementLabel }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (isLoadingPrefill) {
+        <div class="mt-6">
+          <app-loading-state label="Computing billing schedules and attendance records..."></app-loading-state>
+        </div>
+      }
+
+      @if (prefillError) {
+        <div class="mt-4">
+          <app-alert variant="error" [message]="prefillError"></app-alert>
+        </div>
+      }
+
+      <!-- Empty state when no child selected -->
+      @if (!selectedChild && !isLoadingPrefill) {
+        <div class="mt-6 bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-850 p-12 text-center max-w-xl mx-auto">
+          <div class="inline-flex items-center justify-center size-14 rounded-full bg-brand-50 dark:bg-brand-950/20 text-brand-500 mb-4 text-2xl">
+            &#128221;
           </div>
-          <div class="space-y-1">
-            <span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Due Date</span>
-            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 block text-center">
-              {{ dueDate | date:'dd/MM/yyyy' }}
-            </span>
-          </div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Select a Child</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+            Choose a child from the active roster, then select the billing month. We'll automatically pull attendance logs and schedule templates.
+          </p>
+        </div>
+      }
+
+      <!-- Step 1 Navigation -->
+      <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/60">
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          [disabled]="!canSaveDraft()"
+          (click)="saveDraft()"
+        >
+          @if (isSaving) {
+            <span class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></span>
+            <span>Saving...</span>
+          } @else {
+            <ng-icon name="heroDocumentText" size="15" aria-hidden="true" />
+            Save Draft
+          }
+        </button>
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-5 text-xs font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!selectedChild || !billingMonth() || isLoadingPrefill"
+          (click)="nextStep()"
+        >
+          Next
+          <ng-icon name="heroArrowRight" size="16" aria-hidden="true" />
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- Step 2: Review Lines -->
+  @if (currentStep() === 'review-lines') {
+    <section class="space-y-6">
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+        <div class="space-y-6 min-w-0">
+          <!-- Line Items Table -->
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
+            <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Auto-Generated Lines</h3>
+              <span class="text-xs text-gray-400 dark:text-gray-500 font-medium">Editable for quantity and price</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr class="border-b border-gray-200 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-850 dark:bg-white/[0.02] dark:text-gray-500">
+                    <th class="px-3 py-3.5 w-10 text-center">#</th>
+                    <th class="px-3 py-3.5">Item Description</th>
+                    <th class="px-3 py-3.5 w-24 text-center">Quantity (Min)</th>
+                    <th class="px-3 py-3.5 w-28 text-right">Unit Price</th>
+                    <th class="px-3 py-3.5 w-28 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                  @for (line of autoGeneratedLines(); track line.id; let i = $index) {
+                    <tr
+                      class="transition-all hover:bg-gray-50/30 dark:hover:bg-white/[0.01]"
+                      [ngClass]="{'border-l-4 border-l-brand-500 bg-brand-25/30 dark:bg-brand-950/10': line.isFundingOffset}"
+                    >
+                      <td class="px-3 py-3 text-xs text-gray-400 text-center font-medium">{{ i + 1 }}</td>
+                      <td class="px-3 py-3">
+                        @if (line.isFundingOffset) {
+                          <div class="flex items-center gap-2.5">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 uppercase tracking-wide shrink-0 border border-success-200/20">
+                              Funding Offset
+                            </span>
+                            <span class="text-sm font-bold text-gray-900 dark:text-white/90 leading-tight">{{ line.description }}</span>
+                          </div>
+                        } @else {
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ line.description }}</span>
+                        }
+                      </td>
+                      <td class="px-3 py-3 text-center">
+                        @if (!line.isFundingOffset) {
+                          <input
+                            type="number"
+                            class="h-9 w-20 mx-auto rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-2 text-center text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
+                            [ngModel]="line.quantityMinutes"
+                            (ngModelChange)="updateLine(line.id, 'quantityMinutes', Number($event))"
+                            min="0"
+                          />
+                        } @else {
+                          <span class="text-sm text-gray-500 font-semibold">{{ line.quantityMinutes }}</span>
+                        }
+                      </td>
+                      <td class="px-3 py-3">
+                        @if (!line.isFundingOffset) {
+                          <div class="relative w-28 ml-auto group">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&pound;</span>
+                            <input
+                              type="number"
+                              class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 pl-6 pr-3 text-right text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
+                              [ngModel]="line.unitAmountMinor / 100"
+                              (ngModelChange)="updateLine(line.id, 'unitAmountMinor', Math.round(Number($event) * 100))"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        } @else {
+                          <span class="block text-right text-sm text-error-600 dark:text-error-400 font-bold">
+                            &minus;{{ formatGbp(Math.abs(line.unitAmountMinor)) }}
+                          </span>
+                        }
+                      </td>
+                      <td class="px-3 py-3 text-right font-bold text-sm">
+                        @if (line.lineKind === 'funded_deduction') {
+                          <span class="text-error-600 dark:text-error-400">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
+                        } @else {
+                          <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
-        @if (entitlementLabel && selectedChild) {
-          <div class="pt-3 flex items-center justify-between border-t border-gray-100 dark:border-gray-800/60">
-            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Funding Profile</span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 font-bold text-xs border border-success-200/30">
-              <ng-icon name="heroSparkles" size="14" class="mr-1.5 shrink-0" aria-hidden="true" />
-              {{ entitlementLabel }}
-            </span>
-          </div>
-        }
+        <!-- Sidebar: Summary + Presets -->
+        <aside class="space-y-6 sticky top-24 h-fit">
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Invoice Summary</h3>
+            <dl class="space-y-3.5 text-sm">
+              <div class="flex items-center justify-between">
+                <dt class="text-gray-500 dark:text-gray-400">Subtotal</dt>
+                <dd class="font-semibold text-gray-950 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
+              </div>
+              @if (fundedDeductionMinor() > 0) {
+                <div class="flex items-center justify-between">
+                  <dt class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                    <ng-icon name="heroSparkles" size="14" class="text-brand-500" aria-hidden="true" />
+                    Funding deduction
+                  </dt>
+                  <dd class="font-bold text-error-600 dark:text-error-400">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
+                </div>
+              }
+              <div class="border-t border-gray-200 dark:border-gray-800 pt-4"></div>
+              <div class="flex items-center justify-between">
+                <dt class="text-base font-bold text-gray-900 dark:text-white/90">Grand Total</dt>
+                <dd class="text-2xl font-black text-brand-600 dark:text-brand-400 tracking-tight">
+                  {{ formatGbp(totalDueMinor()) }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- Presets -->
+          <section class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+            <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1">
+              Nursery Presets
+            </h4>
+            <div class="space-y-3">
+              <button
+                type="button"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Full Day Session', 6500, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Full Day Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;65.00 &bull; 8:00am - 6:00pm</p>
+              </button>
+              <button
+                type="button"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Morning Session', 4200, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Morning Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;42.00 &bull; 8:00am - 1:00pm</p>
+              </button>
+              <button
+                type="button"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Afternoon Session', 4200, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Afternoon Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;42.00 &bull; 1:00pm - 6:00pm</p>
+              </button>
+            </div>
+          </section>
+        </aside>
       </div>
 
-    </div>
-  </section>
-
-  @if (isLoadingPrefill) {
-    <app-loading-state label="Computing billing schedules and attendance records..."></app-loading-state>
-  }
-
-  @if (prefillError) {
-    <app-alert variant="error" [message]="prefillError"></app-alert>
-  }
-
-  <!-- Empty workspace state -->
-  @if (!selectedChild && !isLoadingPrefill) {
-    <div class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-850 p-12 text-center max-w-xl mx-auto mt-6">
-      <div class="inline-flex items-center justify-center size-14 rounded-full bg-brand-50 dark:bg-brand-950/20 text-brand-500 mb-4 text-2xl">
-        📝
+      <!-- Step 2 Navigation -->
+      <div class="flex items-center justify-between">
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          (click)="prevStep()"
+        >
+          <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
+          Back
+        </button>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!canSaveDraft()"
+            (click)="saveDraft()"
+          >
+            @if (isSaving) {
+              <span class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></span>
+              <span>Saving...</span>
+            } @else {
+              <ng-icon name="heroDocumentText" size="15" aria-hidden="true" />
+              Save Draft
+            }
+          </button>
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-5 text-xs font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+            (click)="nextStep()"
+          >
+            Next
+            <ng-icon name="heroArrowRight" size="16" aria-hidden="true" />
+          </button>
+        </div>
       </div>
-      <h3 class="text-base font-bold text-gray-900 dark:text-white/90">Draft Your Invoice</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
-        Choose a child from the active roster on the left, then select the billing month. We'll automatically pull attendance logs and schedule templates.
-      </p>
-    </div>
+    </section>
   }
 
-  <!-- Two Column Workspace Layout -->
-  @if (lines().length > 0 && !isLoadingPrefill) {
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
-      
-      <!-- Left Column: Line Items, Notes & Terms -->
-      <div class="space-y-6 min-w-0">
-        
-        <!-- Line Items Section -->
-        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
-          <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Line Items</h3>
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/30 px-3.5 text-xs font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
-              (click)="addBlankLine()"
-            >
-              <ng-icon name="heroPlus" size="14" aria-hidden="true" />
-              Add Row
-            </button>
-          </div>
+  <!-- Step 3: Add Extras -->
+  @if (currentStep() === 'add-extras') {
+    <section class="space-y-6">
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+        <div class="space-y-6 min-w-0">
+          <!-- Extra Lines Table -->
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
+            <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Extra / Ad-Hoc Lines</h3>
+              <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/30 px-3.5 text-xs font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
+                (click)="addBlankLine()"
+              >
+                <ng-icon name="heroPlus" size="14" aria-hidden="true" />
+                Add Blank Line
+              </button>
+            </div>
 
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse text-left text-sm">
-              <thead>
-                <tr class="border-b border-gray-200 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-850 dark:bg-white/[0.02] dark:text-gray-500">
-                  <th class="px-3 py-3.5 w-10 text-center">#</th>
-                  <th class="px-3 py-3.5">Item Description</th>
-                  <th class="px-3 py-3.5 w-24 text-center">Quantity (Min)</th>
-                  <th class="px-3 py-3.5 w-28 text-right">Unit Price</th>
-                  <th class="px-3 py-3.5 w-28 text-right">Total</th>
-                  <th class="px-3 py-3.5 w-10 text-center"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                @for (line of lines(); track line.id; let i = $index) {
-                  <tr
-                    class="transition-all hover:bg-gray-50/30 dark:hover:bg-white/[0.01]"
-                    [ngClass]="{'border-l-4 border-l-brand-500 bg-brand-25/30 dark:bg-brand-950/10': line.isFundingOffset}"
-                  >
-                    <!-- Line Index -->
-                    <td class="px-3 py-3 text-xs text-gray-400 text-center font-medium">{{ i + 1 }}</td>
-                    
-                    <!-- Description -->
-                    <td class="px-3 py-3">
-                      <div class="flex items-center gap-2.5">
-                        @if (line.isFundingOffset) {
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 uppercase tracking-wide shrink-0 border border-success-200/20">
-                            Funding Offset
-                          </span>
-                          <span class="text-sm font-bold text-gray-900 dark:text-white/90 leading-tight">
-                            {{ line.description }}
-                          </span>
-                        } @else {
+            @if (extraLines().length === 0) {
+              <div class="p-12 text-center">
+                <p class="text-sm text-gray-400 dark:text-gray-500">No extra lines added yet. Use the button above or the presets to add ad-hoc charges.</p>
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr class="border-b border-gray-200 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-850 dark:bg-white/[0.02] dark:text-gray-500">
+                      <th class="px-3 py-3.5 w-10 text-center">#</th>
+                      <th class="px-3 py-3.5">Item Description</th>
+                      <th class="px-3 py-3.5 w-24 text-center">Quantity</th>
+                      <th class="px-3 py-3.5 w-28 text-right">Unit Price</th>
+                      <th class="px-3 py-3.5 w-28 text-right">Total</th>
+                      <th class="px-3 py-3.5 w-10 text-center"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @for (line of extraLines(); track line.id; let i = $index) {
+                      <tr class="transition-all hover:bg-gray-50/30 dark:hover:bg-white/[0.01]">
+                        <td class="px-3 py-3 text-xs text-gray-400 text-center font-medium">{{ i + 1 }}</td>
+                        <td class="px-3 py-3">
                           <input
                             type="text"
                             class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-3 text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
                             [ngModel]="line.description"
                             (ngModelChange)="updateLine(line.id, 'description', $event)"
-                            placeholder="e.g. Session Hours, Fees..."
+                            placeholder="e.g. Late Pickup, Extra Session..."
                           />
-                        }
-                      </div>
-                    </td>
-
-                    <!-- Quantity -->
-                    <td class="px-3 py-3 text-center">
-                      @if (!line.isFundingOffset) {
-                        <input
-                          type="number"
-                          class="h-9 w-20 mx-auto rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-2 text-center text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
-                          [ngModel]="line.quantityMinutes"
-                          (ngModelChange)="updateLine(line.id, 'quantityMinutes', Number($event))"
-                          min="0"
-                        />
-                      } @else {
-                        <span class="text-sm text-gray-500 font-semibold">{{ line.quantityMinutes }}</span>
-                      }
-                    </td>
-
-                    <!-- Unit Price -->
-                    <td class="px-3 py-3">
-                      @if (!line.isFundingOffset) {
-                        <div class="relative w-28 ml-auto group">
-                          <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&pound;</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
                           <input
                             type="number"
-                            class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 pl-6 pr-3 text-right text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
-                            [ngModel]="line.unitAmountMinor / 100"
-                            (ngModelChange)="updateLine(line.id, 'unitAmountMinor', Math.round(Number($event) * 100))"
+                            class="h-9 w-20 mx-auto rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 px-2 text-center text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
+                            [ngModel]="line.quantityMinutes"
+                            (ngModelChange)="updateLine(line.id, 'quantityMinutes', Number($event))"
                             min="0"
-                            step="0.01"
                           />
-                        </div>
-                      } @else {
-                        <span class="block text-right text-sm text-error-600 dark:text-error-400 font-bold">
-                          &minus;{{ formatGbp(Math.abs(line.unitAmountMinor)) }}
-                        </span>
-                      }
-                    </td>
-
-                    <!-- Row Total -->
-                    <td class="px-3 py-3 text-right font-bold text-sm">
-                      @if (line.lineKind === 'funded_deduction') {
-                        <span class="text-error-600 dark:text-error-400">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
-                      } @else {
-                        <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
-                      }
-                    </td>
-
-                    <!-- Action Button -->
-                    <td class="px-3 py-3 text-center">
-                      @if (!line.isFundingOffset) {
-                        <button
-                          type="button"
-                          class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 dark:hover:bg-error-950/20 hover:text-error-500 focus:outline-hidden"
-                          (click)="removeLine(line.id)"
-                          aria-label="Remove row"
-                        >
-                          <ng-icon name="heroTrash" size="16" />
-                        </button>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Notes & Terms -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
-            <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Internal Notes</h3>
-            <textarea
-              class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              [ngModel]="internalNotes"
-              (ngModelChange)="internalNotes = $event"
-              placeholder="Private details for internal staff view only..."
-            ></textarea>
-          </section>
-
-          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
-            <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Payment Terms</h3>
-            <textarea
-              class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              [ngModel]="paymentTerms"
-              (ngModelChange)="paymentTerms = $event"
-            ></textarea>
-          </section>
-        </div>
-      </div>
-
-      <!-- Right Column: Sidebar Actions & Presets (Sticky) -->
-      <aside class="space-y-6 sticky top-24 h-fit">
-        
-        <!-- Summary Receipt Card -->
-        <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6">
-          <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Invoice Summary</h3>
-
-          <dl class="space-y-3.5 text-sm">
-            <div class="flex items-center justify-between">
-              <dt class="text-gray-500 dark:text-gray-400">Subtotal</dt>
-              <dd class="font-semibold text-gray-950 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
-            </div>
-
-            @if (fundedDeductionMinor() > 0) {
-              <div class="flex items-center justify-between">
-                <dt class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                  <ng-icon name="heroSparkles" size="14" class="text-brand-500" aria-hidden="true" />
-                  Funding deduction
-                </dt>
-                <dd class="font-bold text-error-600 dark:text-error-400">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
+                        </td>
+                        <td class="px-3 py-3">
+                          <div class="relative w-28 ml-auto group">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&pound;</span>
+                            <input
+                              type="number"
+                              class="h-9 w-full rounded-md border border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-900 pl-6 pr-3 text-right text-sm text-gray-800 dark:text-white/90 transition-all focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/25 focus:bg-white dark:focus:bg-gray-900"
+                              [ngModel]="line.unitAmountMinor / 100"
+                              (ngModelChange)="updateLine(line.id, 'unitAmountMinor', Math.round(Number($event) * 100))"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </td>
+                        <td class="px-3 py-3 text-right font-bold text-sm">
+                          <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                          <button
+                            type="button"
+                            class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 dark:hover:bg-error-950/20 hover:text-error-500 focus:outline-hidden"
+                            (click)="removeLine(line.id)"
+                            aria-label="Remove row"
+                          >
+                            <ng-icon name="heroTrash" size="16" />
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
+          </section>
+        </div>
 
-            <div class="flex items-center justify-between">
-              <dt class="text-gray-500 dark:text-gray-400">Total Tax (0%)</dt>
-              <dd class="font-medium text-gray-950 dark:text-white/90">£0.00</dd>
-            </div>
-
-            <div class="border-t border-gray-200 dark:border-gray-800 pt-4"></div>
-            
-            <div class="flex items-center justify-between">
-              <dt class="text-base font-bold text-gray-900 dark:text-white/90">Grand Total</dt>
-              <dd class="text-2xl font-black text-brand-600 dark:text-brand-400 tracking-tight">
-                {{ formatGbp(totalDueMinor()) }}
-              </dd>
-            </div>
-          </dl>
-
-          <!-- Submit Buttons -->
-          <div class="space-y-3 pt-2">
-            <button
-              type="button"
-              class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
-              [disabled]="!canSubmit() || isSaving || isIssuing"
-              (click)="issueInvoice()"
-            >
-              @if (isIssuing) {
-                <span class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span>
-                <span>Issuing Invoice...</span>
-              } @else {
-                <ng-icon name="heroCheck" size="18" aria-hidden="true" />
-                Issue Invoice
-              }
-            </button>
-
-            <div class="grid grid-cols-2 gap-3">
+        <!-- Sidebar: Presets -->
+        <aside class="space-y-6 sticky top-24 h-fit">
+          <section class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+            <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1">
+              Nursery Presets
+            </h4>
+            <div class="space-y-3">
               <button
                 type="button"
-                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                [disabled]="!canSubmit() || isSaving || isIssuing"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Full Day Session', 6500, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Full Day Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;65.00 &bull; 8:00am - 6:00pm</p>
+              </button>
+              <button
+                type="button"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Morning Session', 4200, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Morning Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;42.00 &bull; 8:00am - 1:00pm</p>
+              </button>
+              <button
+                type="button"
+                class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
+                (click)="addPresetLine('Afternoon Session', 4200, 1)"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Afternoon Session</p>
+                  <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">&pound;42.00 &bull; 1:00pm - 6:00pm</p>
+              </button>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <!-- Step 3 Navigation -->
+      <div class="flex items-center justify-between">
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          (click)="prevStep()"
+        >
+          <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
+          Back
+        </button>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!canSaveDraft()"
+            (click)="saveDraft()"
+          >
+            @if (isSaving) {
+              <span class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></span>
+              <span>Saving...</span>
+            } @else {
+              <ng-icon name="heroDocumentText" size="15" aria-hidden="true" />
+              Save Draft
+            }
+          </button>
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-5 text-xs font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+            (click)="nextStep()"
+          >
+            Next
+            <ng-icon name="heroArrowRight" size="16" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Step 4: Summary & Confirm -->
+  @if (currentStep() === 'summary-confirm') {
+    <section class="space-y-6">
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+        <div class="space-y-6 min-w-0">
+          <!-- Full Line Breakdown (Read-only) -->
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-theme-sm">
+            <div class="border-b border-gray-100 dark:border-gray-800 px-6 py-4">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white/90">Invoice Line Breakdown</h3>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr class="border-b border-gray-200 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-850 dark:bg-white/[0.02] dark:text-gray-500">
+                    <th class="px-3 py-3.5 w-10 text-center">#</th>
+                    <th class="px-3 py-3.5">Item Description</th>
+                    <th class="px-3 py-3.5 w-24 text-center">Quantity (Min)</th>
+                    <th class="px-3 py-3.5 w-28 text-right">Unit Price</th>
+                    <th class="px-3 py-3.5 w-28 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                  @for (line of lines(); track line.id; let i = $index) {
+                    <tr
+                      class="transition-all"
+                      [ngClass]="{'border-l-4 border-l-brand-500 bg-brand-25/30 dark:bg-brand-950/10': line.isFundingOffset}"
+                    >
+                      <td class="px-3 py-3 text-xs text-gray-400 text-center font-medium">{{ i + 1 }}</td>
+                      <td class="px-3 py-3">
+                        @if (line.isFundingOffset) {
+                          <div class="flex items-center gap-2.5">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-success-50 text-success-700 dark:bg-success-950/20 dark:text-success-400 uppercase tracking-wide shrink-0 border border-success-200/20">
+                              Funding Offset
+                            </span>
+                            <span class="text-sm font-bold text-gray-900 dark:text-white/90 leading-tight">{{ line.description }}</span>
+                          </div>
+                        } @else {
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ line.description }}</span>
+                        }
+                      </td>
+                      <td class="px-3 py-3 text-center text-sm text-gray-600 dark:text-gray-400">{{ line.quantityMinutes }}</td>
+                      <td class="px-3 py-3 text-right text-sm text-gray-600 dark:text-gray-400">
+                        @if (line.lineKind === 'funded_deduction') {
+                          <span class="text-error-600 dark:text-error-400 font-bold">&minus;{{ formatGbp(Math.abs(line.unitAmountMinor)) }}</span>
+                        } @else {
+                          {{ formatGbp(line.unitAmountMinor) }}
+                        }
+                      </td>
+                      <td class="px-3 py-3 text-right font-bold text-sm">
+                        @if (line.lineKind === 'funded_deduction') {
+                          <span class="text-error-600 dark:text-error-400">&minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}</span>
+                        } @else {
+                          <span class="text-gray-900 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Notes & Terms -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
+              <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Internal Notes</h3>
+              <textarea
+                class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                [ngModel]="internalNotes"
+                (ngModelChange)="internalNotes = $event"
+                placeholder="Private details for internal staff view only..."
+              ></textarea>
+            </section>
+            <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-3">
+              <h3 class="text-sm font-bold text-gray-900 dark:text-white/90 uppercase tracking-wider">Payment Terms</h3>
+              <textarea
+                class="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                [ngModel]="paymentTerms"
+                (ngModelChange)="paymentTerms = $event"
+              ></textarea>
+            </section>
+          </div>
+        </div>
+
+        <!-- Sidebar: Summary + Submit -->
+        <aside class="space-y-6 sticky top-24 h-fit">
+          <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm space-y-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white/90 border-b border-gray-100 dark:border-gray-800 pb-2">Invoice Summary</h3>
+
+            <dl class="space-y-3.5 text-sm">
+              <div class="flex items-center justify-between">
+                <dt class="text-gray-500 dark:text-gray-400">Subtotal</dt>
+                <dd class="font-semibold text-gray-950 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
+              </div>
+
+              @if (fundedDeductionMinor() > 0) {
+                <div class="flex items-center justify-between">
+                  <dt class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                    <ng-icon name="heroSparkles" size="14" class="text-brand-500" aria-hidden="true" />
+                    Funding deduction
+                  </dt>
+                  <dd class="font-bold text-error-600 dark:text-error-400">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
+                </div>
+              }
+
+              <div class="flex items-center justify-between">
+                <dt class="text-gray-500 dark:text-gray-400">Total Tax (0%)</dt>
+                <dd class="font-medium text-gray-950 dark:text-white/90">&pound;0.00</dd>
+              </div>
+
+              <div class="border-t border-gray-200 dark:border-gray-800 pt-4"></div>
+
+              <div class="flex items-center justify-between">
+                <dt class="text-base font-bold text-gray-900 dark:text-white/90">Grand Total</dt>
+                <dd class="text-2xl font-black text-brand-600 dark:text-brand-400 tracking-tight">
+                  {{ formatGbp(totalDueMinor()) }}
+                </dd>
+              </div>
+            </dl>
+
+            <!-- Submit Buttons -->
+            <div class="space-y-3 pt-2">
+              <button
+                type="button"
+                class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-bold text-white shadow-theme-sm hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                [disabled]="!canIssue() || isSaving || isIssuing"
+                (click)="issueInvoice()"
+              >
+                @if (isIssuing) {
+                  <span class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span>
+                  <span>Issuing Invoice...</span>
+                } @else {
+                  <ng-icon name="heroCheck" size="18" aria-hidden="true" />
+                  Create &amp; Issue
+                }
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                [disabled]="!canSaveDraft() || isSaving || isIssuing"
                 (click)="saveDraft()"
               >
                 @if (isSaving) {
@@ -433,72 +848,30 @@
                   Save Draft
                 }
               </button>
-
-              <button
-                type="button"
-                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-                [disabled]="!canSubmit()"
-              >
-                <span>Preview</span>
-              </button>
             </div>
-          </div>
 
-          <!-- Bottom Notice styled beautifully in Amber warning tone -->
-          <div class="p-4 bg-amber-50 dark:bg-amber-950/10 rounded-xl border border-amber-200/50 dark:border-amber-900/30 flex gap-3">
-            <span class="text-amber-500 text-lg shrink-0">⚠️</span>
-            <p class="text-xs text-amber-800 dark:text-amber-300 leading-normal font-medium">
-              Confirm all attendance logs for the selected billing month are validated before issuing this invoice.
-            </p>
-          </div>
-        </section>
+            <!-- Warning notice -->
+            <div class="p-4 bg-amber-50 dark:bg-amber-950/10 rounded-xl border border-amber-200/50 dark:border-amber-900/30 flex gap-3">
+              <span class="text-amber-500 text-lg shrink-0">&#9888;&#65039;</span>
+              <p class="text-xs text-amber-800 dark:text-amber-300 leading-normal font-medium">
+                Confirm all attendance logs for the selected billing month are validated before issuing this invoice.
+              </p>
+            </div>
+          </section>
+        </aside>
+      </div>
 
-        <!-- Presets Card styled as modern tag widgets -->
-        <section class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
-          <h4 class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1">
-            ✨ Nursery Presets
-          </h4>
-          
-          <div class="space-y-3">
-            <button
-              type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
-              (click)="addPresetLine('Full Day Session', 6500, 1)"
-            >
-              <div class="flex items-center justify-between w-full">
-                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Full Day Session</p>
-                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
-              </div>
-              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£65.00 • 8:00am - 6:00pm</p>
-            </button>
-
-            <button
-              type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
-              (click)="addPresetLine('Morning Session', 4200, 1)"
-            >
-              <div class="flex items-center justify-between w-full">
-                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Morning Session</p>
-                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
-              </div>
-              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£42.00 • 8:00am - 1:00pm</p>
-            </button>
-
-            <button
-              type="button"
-              class="w-full text-left p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col gap-1"
-              (click)="addPresetLine('Afternoon Session', 4200, 1)"
-            >
-              <div class="flex items-center justify-between w-full">
-                <p class="text-sm font-bold text-gray-900 dark:text-white/90 group-hover:text-brand-600 transition-colors">Afternoon Session</p>
-                <span class="text-xs font-bold text-brand-600 group-hover:underline">+ Add</span>
-              </div>
-              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">£42.00 • 1:00pm - 6:00pm</p>
-            </button>
-          </div>
-        </section>
-
-      </aside>
-    </div>
+      <!-- Step 4 Navigation -->
+      <div class="flex items-center justify-between">
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          (click)="prevStep()"
+        >
+          <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
+          Back
+        </button>
+      </div>
+    </section>
   }
 </div>
