@@ -636,131 +636,137 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 
 func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.InvoiceReviewRow {
 	return domain.InvoiceReviewRow{
-		ID:                      pgtypeUUIDToUUID(row.ID),
-		InvoiceKind:             row.InvoiceKind,
-		InvoiceNumber:           pgtypeTextToStrPtr(row.InvoiceNumber),
-		Status:                  row.Status,
-		ChildID:                 pgtypeUUIDToUUID(row.ChildID),
-		ChildFirstName:          row.ChildFirstName,
-		ChildMiddleName:         pgtypeTextToStrPtr(row.ChildMiddleName),
-		ChildLastName:           pgtypeTextToStrPtr(row.ChildLastName),
-		BillingMonth:            pgtypeDateToTime(row.BillingMonth),
-		PeriodStartDate:         pgtypeDateToTime(row.PeriodStartDate),
-		PeriodEndDate:           pgtypeDateToTime(row.PeriodEndDate),
-		CurrencyCode:            row.CurrencyCode,
-		Subtotal:                domain.MustGBP(int(row.SubtotalMinor)),
-		FundedDeduction:         domain.MustGBP(int(row.FundedDeductionMinor)),
-		TotalDue:                domain.MustGBP(int(row.TotalDueMinor)),
-		AmountPaid:              domain.MustGBP(int(row.AmountPaidMinor)),
-		DueAt:                   pgtypeTimestamptzToTimePtr(row.DueAt),
-		IssuedAt:                pgtypeTimestamptzToTimePtr(row.IssuedAt),
-		LockedAt:                pgtypeTimestamptzToTimePtr(row.LockedAt),
-		PaidAt:                  pgtypeTimestamptzToTimePtr(row.PaidAt),
-		PaymentFailedAt:         pgtypeTimestamptzToTimePtr(row.PaymentFailedAt),
-		PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(row.PaymentStatusUpdatedAt),
-		AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(row.AdjustsInvoiceID),
-		AdjustmentReasonCode:    pgtypeTextToStrPtr(row.AdjustmentReasonCode),
-		AdjustmentReasonNote:    pgtypeTextToStrPtr(row.AdjustmentReasonNote),
-		GeneratedRunID:          pgtypeUUIDToUUIDPtr(row.GeneratedRunID),
-		GeneratedRunStatus:      pgtypeTextToStrPtr(row.GeneratedRunStatus),
-		GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(row.GeneratedRunStartedAt),
-		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
-		GeneratedRunDetails:     json.RawMessage(row.GeneratedRunDetails),
-		CalculationDetails:      json.RawMessage(row.CalculationDetails),
-		RoomName:                nil,
-		ChildPhotoPath:          pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
-		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
+		ID:                            pgtypeUUIDToUUID(row.ID),
+		InvoiceKind:                   row.InvoiceKind,
+		InvoiceNumber:                 pgtypeTextToStrPtr(row.InvoiceNumber),
+		Status:                        row.Status,
+		ChildID:                       pgtypeUUIDToUUID(row.ChildID),
+		ChildFirstName:                row.ChildFirstName,
+		ChildMiddleName:               pgtypeTextToStrPtr(row.ChildMiddleName),
+		ChildLastName:                 pgtypeTextToStrPtr(row.ChildLastName),
+		BillingMonth:                  pgtypeDateToTime(row.BillingMonth),
+		PeriodStartDate:               pgtypeDateToTime(row.PeriodStartDate),
+		PeriodEndDate:                 pgtypeDateToTime(row.PeriodEndDate),
+		CurrencyCode:                  row.CurrencyCode,
+		Subtotal:                      domain.MustGBP(int(row.SubtotalMinor)),
+		FundedDeduction:               domain.MustGBP(int(row.FundedDeductionMinor)),
+		TotalDue:                      domain.MustGBP(int(row.TotalDueMinor)),
+		AmountPaid:                    domain.MustGBP(int(row.AmountPaidMinor)),
+		DueAt:                         pgtypeTimestamptzToTimePtr(row.DueAt),
+		IssuedAt:                      pgtypeTimestamptzToTimePtr(row.IssuedAt),
+		LockedAt:                      pgtypeTimestamptzToTimePtr(row.LockedAt),
+		PaidAt:                        pgtypeTimestamptzToTimePtr(row.PaidAt),
+		PaymentFailedAt:               pgtypeTimestamptzToTimePtr(row.PaymentFailedAt),
+		PaymentStatusUpdatedAt:        pgtypeTimestamptzToTimePtr(row.PaymentStatusUpdatedAt),
+		AdjustsInvoiceID:              pgtypeUUIDToUUIDPtr(row.AdjustsInvoiceID),
+		AdjustmentReasonCode:          pgtypeTextToStrPtr(row.AdjustmentReasonCode),
+		AdjustmentReasonNote:          pgtypeTextToStrPtr(row.AdjustmentReasonNote),
+		GeneratedRunID:                pgtypeUUIDToUUIDPtr(row.GeneratedRunID),
+		GeneratedRunStatus:            pgtypeTextToStrPtr(row.GeneratedRunStatus),
+		GeneratedRunStartedAt:         pgtypeTimestamptzToTimePtr(row.GeneratedRunStartedAt),
+		GeneratedRunCompletedAt:       pgtypeTimestamptzToTimePtr(row.GeneratedRunCompletedAt),
+		GeneratedRunDetails:           json.RawMessage(row.GeneratedRunDetails),
+		CalculationDetails:            json.RawMessage(row.CalculationDetails),
+		RoomName:                      nil,
+		ChildPhotoPath:                pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
+		CreatedAt:                     pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:                     pgtypeTimestamptzToTime(row.UpdatedAt),
+		LatestPaymentAttemptStatus:    row.LatestPaymentAttemptStatus,
+		LatestPaymentAttemptCreatedAt: pgtypeTimestamptzToTimePtr(row.LatestPaymentAttemptCreatedAt),
 	}
 }
 
 func mapInvoiceReviewRowSort(row interface{}) domain.InvoiceReviewRow {
 	type fields struct {
-		ID                      pgtype.UUID
-		InvoiceKind             string
-		InvoiceNumber           pgtype.Text
-		Status                  string
-		ChildID                 pgtype.UUID
-		ChildFirstName          string
-		ChildMiddleName         pgtype.Text
-		ChildLastName           pgtype.Text
-		BillingMonth            pgtype.Date
-		PeriodStartDate         pgtype.Date
-		PeriodEndDate           pgtype.Date
-		CurrencyCode            string
-		SubtotalMinor           int32
-		FundedDeductionMinor    int32
-		TotalDueMinor           int32
-		AmountPaidMinor         int32
-		DueAt                   pgtype.Timestamptz
-		IssuedAt                pgtype.Timestamptz
-		LockedAt                pgtype.Timestamptz
-		PaidAt                  pgtype.Timestamptz
-		PaymentFailedAt         pgtype.Timestamptz
-		PaymentStatusUpdatedAt  pgtype.Timestamptz
-		AdjustsInvoiceID        pgtype.UUID
-		AdjustmentReasonCode    pgtype.Text
-		AdjustmentReasonNote    pgtype.Text
-		GeneratedRunID          pgtype.UUID
-		GeneratedRunStatus      pgtype.Text
-		GeneratedRunStartedAt   pgtype.Timestamptz
-		GeneratedRunCompletedAt pgtype.Timestamptz
-		GeneratedRunDetails     []byte
-		CalculationDetails      []byte
-		ChildProfilePhotoPath   pgtype.Text
-		CreatedAt               pgtype.Timestamptz
-		UpdatedAt               pgtype.Timestamptz
+		ID                            pgtype.UUID
+		InvoiceKind                   string
+		InvoiceNumber                 pgtype.Text
+		Status                        string
+		ChildID                       pgtype.UUID
+		ChildFirstName                string
+		ChildMiddleName               pgtype.Text
+		ChildLastName                 pgtype.Text
+		BillingMonth                  pgtype.Date
+		PeriodStartDate               pgtype.Date
+		PeriodEndDate                 pgtype.Date
+		CurrencyCode                  string
+		SubtotalMinor                 int32
+		FundedDeductionMinor          int32
+		TotalDueMinor                 int32
+		AmountPaidMinor               int32
+		DueAt                         pgtype.Timestamptz
+		IssuedAt                      pgtype.Timestamptz
+		LockedAt                      pgtype.Timestamptz
+		PaidAt                        pgtype.Timestamptz
+		PaymentFailedAt               pgtype.Timestamptz
+		PaymentStatusUpdatedAt        pgtype.Timestamptz
+		AdjustsInvoiceID              pgtype.UUID
+		AdjustmentReasonCode          pgtype.Text
+		AdjustmentReasonNote          pgtype.Text
+		GeneratedRunID                pgtype.UUID
+		GeneratedRunStatus            pgtype.Text
+		GeneratedRunStartedAt         pgtype.Timestamptz
+		GeneratedRunCompletedAt       pgtype.Timestamptz
+		GeneratedRunDetails           []byte
+		CalculationDetails            []byte
+		ChildProfilePhotoPath         pgtype.Text
+		CreatedAt                     pgtype.Timestamptz
+		UpdatedAt                     pgtype.Timestamptz
+		LatestPaymentAttemptStatus    string
+		LatestPaymentAttemptCreatedAt pgtype.Timestamptz
 	}
 	var f fields
 	switch v := row.(type) {
 	case sqlc.InvoiceListForManagerReviewSortByBillingMonthAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt, v.LatestPaymentAttemptStatus, v.LatestPaymentAttemptCreatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByDueAtAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt, v.LatestPaymentAttemptStatus, v.LatestPaymentAttemptCreatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByDueAtDescRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt, v.LatestPaymentAttemptStatus, v.LatestPaymentAttemptCreatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByTotalAmountAscRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt, v.LatestPaymentAttemptStatus, v.LatestPaymentAttemptCreatedAt}
 	case sqlc.InvoiceListForManagerReviewSortByTotalAmountDescRow:
-		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt}
+		f = fields{v.ID, v.InvoiceKind, v.InvoiceNumber, v.Status, v.ChildID, v.ChildFirstName, v.ChildMiddleName, v.ChildLastName, v.BillingMonth, v.PeriodStartDate, v.PeriodEndDate, v.CurrencyCode, v.SubtotalMinor, v.FundedDeductionMinor, v.TotalDueMinor, v.AmountPaidMinor, v.DueAt, v.IssuedAt, v.LockedAt, v.PaidAt, v.PaymentFailedAt, v.PaymentStatusUpdatedAt, v.AdjustsInvoiceID, v.AdjustmentReasonCode, v.AdjustmentReasonNote, v.GeneratedRunID, v.GeneratedRunStatus, v.GeneratedRunStartedAt, v.GeneratedRunCompletedAt, v.GeneratedRunDetails, v.CalculationDetails, v.ChildProfilePhotoPath, v.CreatedAt, v.UpdatedAt, v.LatestPaymentAttemptStatus, v.LatestPaymentAttemptCreatedAt}
 	default:
 		return domain.InvoiceReviewRow{}
 	}
 	return domain.InvoiceReviewRow{
-		ID:                      pgtypeUUIDToUUID(f.ID),
-		InvoiceKind:             f.InvoiceKind,
-		InvoiceNumber:           pgtypeTextToStrPtr(f.InvoiceNumber),
-		Status:                  f.Status,
-		ChildID:                 pgtypeUUIDToUUID(f.ChildID),
-		ChildFirstName:          f.ChildFirstName,
-		ChildMiddleName:         pgtypeTextToStrPtr(f.ChildMiddleName),
-		ChildLastName:           pgtypeTextToStrPtr(f.ChildLastName),
-		BillingMonth:            pgtypeDateToTime(f.BillingMonth),
-		PeriodStartDate:         pgtypeDateToTime(f.PeriodStartDate),
-		PeriodEndDate:           pgtypeDateToTime(f.PeriodEndDate),
-		CurrencyCode:            f.CurrencyCode,
-		Subtotal:                domain.MustGBP(int(f.SubtotalMinor)),
-		FundedDeduction:         domain.MustGBP(int(f.FundedDeductionMinor)),
-		TotalDue:                domain.MustGBP(int(f.TotalDueMinor)),
-		AmountPaid:              domain.MustGBP(int(f.AmountPaidMinor)),
-		DueAt:                   pgtypeTimestamptzToTimePtr(f.DueAt),
-		IssuedAt:                pgtypeTimestamptzToTimePtr(f.IssuedAt),
-		LockedAt:                pgtypeTimestamptzToTimePtr(f.LockedAt),
-		PaidAt:                  pgtypeTimestamptzToTimePtr(f.PaidAt),
-		PaymentFailedAt:         pgtypeTimestamptzToTimePtr(f.PaymentFailedAt),
-		PaymentStatusUpdatedAt:  pgtypeTimestamptzToTimePtr(f.PaymentStatusUpdatedAt),
-		AdjustsInvoiceID:        pgtypeUUIDToUUIDPtr(f.AdjustsInvoiceID),
-		AdjustmentReasonCode:    pgtypeTextToStrPtr(f.AdjustmentReasonCode),
-		AdjustmentReasonNote:    pgtypeTextToStrPtr(f.AdjustmentReasonNote),
-		GeneratedRunID:          pgtypeUUIDToUUIDPtr(f.GeneratedRunID),
-		GeneratedRunStatus:      pgtypeTextToStrPtr(f.GeneratedRunStatus),
-		GeneratedRunStartedAt:   pgtypeTimestamptzToTimePtr(f.GeneratedRunStartedAt),
-		GeneratedRunCompletedAt: pgtypeTimestamptzToTimePtr(f.GeneratedRunCompletedAt),
-		GeneratedRunDetails:     json.RawMessage(f.GeneratedRunDetails),
-		CalculationDetails:      json.RawMessage(f.CalculationDetails),
-		ChildPhotoPath:          pgtypeTextToStrPtr(f.ChildProfilePhotoPath),
-		CreatedAt:               pgtypeTimestamptzToTime(f.CreatedAt),
-		UpdatedAt:               pgtypeTimestamptzToTime(f.UpdatedAt),
+		ID:                            pgtypeUUIDToUUID(f.ID),
+		InvoiceKind:                   f.InvoiceKind,
+		InvoiceNumber:                 pgtypeTextToStrPtr(f.InvoiceNumber),
+		Status:                        f.Status,
+		ChildID:                       pgtypeUUIDToUUID(f.ChildID),
+		ChildFirstName:                f.ChildFirstName,
+		ChildMiddleName:               pgtypeTextToStrPtr(f.ChildMiddleName),
+		ChildLastName:                 pgtypeTextToStrPtr(f.ChildLastName),
+		BillingMonth:                  pgtypeDateToTime(f.BillingMonth),
+		PeriodStartDate:               pgtypeDateToTime(f.PeriodStartDate),
+		PeriodEndDate:                 pgtypeDateToTime(f.PeriodEndDate),
+		CurrencyCode:                  f.CurrencyCode,
+		Subtotal:                      domain.MustGBP(int(f.SubtotalMinor)),
+		FundedDeduction:               domain.MustGBP(int(f.FundedDeductionMinor)),
+		TotalDue:                      domain.MustGBP(int(f.TotalDueMinor)),
+		AmountPaid:                    domain.MustGBP(int(f.AmountPaidMinor)),
+		DueAt:                         pgtypeTimestamptzToTimePtr(f.DueAt),
+		IssuedAt:                      pgtypeTimestamptzToTimePtr(f.IssuedAt),
+		LockedAt:                      pgtypeTimestamptzToTimePtr(f.LockedAt),
+		PaidAt:                        pgtypeTimestamptzToTimePtr(f.PaidAt),
+		PaymentFailedAt:               pgtypeTimestamptzToTimePtr(f.PaymentFailedAt),
+		PaymentStatusUpdatedAt:        pgtypeTimestamptzToTimePtr(f.PaymentStatusUpdatedAt),
+		AdjustsInvoiceID:              pgtypeUUIDToUUIDPtr(f.AdjustsInvoiceID),
+		AdjustmentReasonCode:          pgtypeTextToStrPtr(f.AdjustmentReasonCode),
+		AdjustmentReasonNote:          pgtypeTextToStrPtr(f.AdjustmentReasonNote),
+		GeneratedRunID:                pgtypeUUIDToUUIDPtr(f.GeneratedRunID),
+		GeneratedRunStatus:            pgtypeTextToStrPtr(f.GeneratedRunStatus),
+		GeneratedRunStartedAt:         pgtypeTimestamptzToTimePtr(f.GeneratedRunStartedAt),
+		GeneratedRunCompletedAt:       pgtypeTimestamptzToTimePtr(f.GeneratedRunCompletedAt),
+		GeneratedRunDetails:           json.RawMessage(f.GeneratedRunDetails),
+		CalculationDetails:            json.RawMessage(f.CalculationDetails),
+		ChildPhotoPath:                pgtypeTextToStrPtr(f.ChildProfilePhotoPath),
+		CreatedAt:                     pgtypeTimestamptzToTime(f.CreatedAt),
+		UpdatedAt:                     pgtypeTimestamptzToTime(f.UpdatedAt),
+		LatestPaymentAttemptStatus:    f.LatestPaymentAttemptStatus,
+		LatestPaymentAttemptCreatedAt: pgtypeTimestamptzToTimePtr(f.LatestPaymentAttemptCreatedAt),
 	}
 }
 

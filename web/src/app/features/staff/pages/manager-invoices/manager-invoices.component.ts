@@ -456,6 +456,38 @@ export class ManagerInvoicesComponent implements OnInit {
     return paymentDisplayLabel(this.paymentCueState(item));
   }
 
+  daysOverdue(dueAt: string | null): number | null {
+    if (!dueAt) return null;
+    const due = new Date(dueAt);
+    const now = new Date();
+    const diffMs = now.getTime() - due.getTime();
+    if (diffMs <= 0) return null;
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  }
+
+  attemptStatusLabel(status: string | null): string {
+    if (!status) return '';
+    const labels: Record<string, string> = {
+      pending: 'Pending',
+      processing: 'Processing',
+      succeeded: 'Succeeded',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+      expired: 'Expired',
+    };
+    return labels[status] ?? status;
+  }
+
+  attemptTooltipText(item: ManagerInvoiceListItem): string | null {
+    if (!item.latestPaymentAttemptStatus) return null;
+    const parts: string[] = [];
+    parts.push(this.attemptStatusLabel(item.latestPaymentAttemptStatus));
+    if (item.latestPaymentAttemptCreatedAt) {
+      parts.push(formatInstant(item.latestPaymentAttemptCreatedAt));
+    }
+    return parts.join(' · ');
+  }
+
   previousPage(): void {
     this.offset = Math.max(0, this.offset - LIMIT);
     this.loadList();

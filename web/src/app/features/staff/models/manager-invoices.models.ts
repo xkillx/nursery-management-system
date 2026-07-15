@@ -38,6 +38,9 @@ export interface ManagerInvoiceListItem {
   photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  checkoutRetryAvailable: boolean;
+  latestPaymentAttemptStatus: string | null;
+  latestPaymentAttemptCreatedAt: string | null;
 }
 
 export interface ManagerInvoiceListResult {

@@ -62,6 +62,9 @@ interface InvoiceListItemApi extends ChildNameApi {
   child_photo_url?: string | null;
   created_at: string;
   updated_at: string;
+  checkout_retry_available?: boolean;
+  latest_payment_attempt_status?: string | null;
+  latest_payment_attempt_created_at?: string | null;
 }
 
 interface InvoiceListResponseApi {
@@ -484,6 +487,9 @@ export class ManagerInvoicesApiService {
       photoUrl: i.child_photo_url ?? null,
       createdAt: i.created_at,
       updatedAt: i.updated_at,
+      checkoutRetryAvailable: i.checkout_retry_available ?? false,
+      latestPaymentAttemptStatus: i.latest_payment_attempt_status ?? null,
+      latestPaymentAttemptCreatedAt: i.latest_payment_attempt_created_at ?? null,
     };
   }
 

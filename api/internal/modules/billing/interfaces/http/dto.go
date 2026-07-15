@@ -134,25 +134,28 @@ type invoiceListItemResponse struct {
 		StartDate string `json:"start_date"`
 		EndDate   string `json:"end_date"`
 	} `json:"period"`
-	Status                     string  `json:"status"`
-	DueStatus                  string  `json:"due_status"`
-	CurrencyCode               string  `json:"currency_code"`
-	SubtotalMinor              int     `json:"subtotal_minor"`
-	FundedDeductionMinor       int     `json:"funded_deduction_minor"`
-	TotalDueMinor              int     `json:"total_due_minor"`
-	AmountPaidMinor            int     `json:"amount_paid_minor"`
-	DueAt                      *string `json:"due_at"`
-	IssuedAt                   *string `json:"issued_at"`
-	PaidAt                     *string `json:"paid_at"`
-	PaymentFailedAt            *string `json:"payment_failed_at"`
-	PaymentStatusUpdatedAt     *string `json:"payment_status_updated_at"`
-	GeneratedRunID             *string `json:"generated_run_id"`
-	GeneratedRunStatus         *string `json:"generated_run_status"`
-	GeneratedRunStartedAt      *string `json:"generated_run_started_at"`
-	GeneratedRunCompletedAt    *string `json:"generated_run_completed_at"`
-	GeneratedRunExceptionCount int     `json:"generated_run_exception_count"`
-	CreatedAt                  string  `json:"created_at"`
-	UpdatedAt                  string  `json:"updated_at"`
+	Status                        string  `json:"status"`
+	DueStatus                     string  `json:"due_status"`
+	CurrencyCode                  string  `json:"currency_code"`
+	SubtotalMinor                 int     `json:"subtotal_minor"`
+	FundedDeductionMinor          int     `json:"funded_deduction_minor"`
+	TotalDueMinor                 int     `json:"total_due_minor"`
+	AmountPaidMinor               int     `json:"amount_paid_minor"`
+	DueAt                         *string `json:"due_at"`
+	IssuedAt                      *string `json:"issued_at"`
+	PaidAt                        *string `json:"paid_at"`
+	PaymentFailedAt               *string `json:"payment_failed_at"`
+	PaymentStatusUpdatedAt        *string `json:"payment_status_updated_at"`
+	GeneratedRunID                *string `json:"generated_run_id"`
+	GeneratedRunStatus            *string `json:"generated_run_status"`
+	GeneratedRunStartedAt         *string `json:"generated_run_started_at"`
+	GeneratedRunCompletedAt       *string `json:"generated_run_completed_at"`
+	GeneratedRunExceptionCount    int     `json:"generated_run_exception_count"`
+	CreatedAt                     string  `json:"created_at"`
+	UpdatedAt                     string  `json:"updated_at"`
+	CheckoutRetryAvailable        bool    `json:"checkout_retry_available"`
+	LatestPaymentAttemptStatus    *string `json:"latest_payment_attempt_status"`
+	LatestPaymentAttemptCreatedAt *string `json:"latest_payment_attempt_created_at"`
 }
 
 type invoiceDetailResponse struct {

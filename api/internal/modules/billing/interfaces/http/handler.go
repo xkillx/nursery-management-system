@@ -1309,6 +1309,33 @@ func formatUUIDPtr(u *uuid.UUID) *string {
 	return &s
 }
 
+func computeRetryAvailability(status, invoiceKind, currencyCode string, totalDueMinor, amountPaidMinor int) bool {
+	if invoiceKind != "monthly" {
+		return false
+	}
+	if status == "paid" {
+		return false
+	}
+	payableStatuses := map[string]bool{
+		"issued":         true,
+		"payment_failed": true,
+		"overdue":        true,
+	}
+	if !payableStatuses[status] {
+		return false
+	}
+	if totalDueMinor <= 0 {
+		return false
+	}
+	if amountPaidMinor > 0 {
+		return false
+	}
+	if currencyCode != "GBP" {
+		return false
+	}
+	return true
+}
+
 func toInvoiceListResponse(r application.ListInvoicesResult) []invoiceListItemResponse {
 	items := make([]invoiceListItemResponse, 0, len(r.Items))
 	for _, inv := range r.Items {
@@ -1320,36 +1347,52 @@ func toInvoiceListResponse(r application.ListInvoicesResult) []invoiceListItemRe
 			photoURL = &url
 		}
 
+		checkoutRetryAvailable := computeRetryAvailability(
+			inv.Status,
+			inv.InvoiceKind,
+			inv.CurrencyCode,
+			inv.TotalDue.Minor(),
+			inv.AmountPaid.Minor(),
+		)
+
+		var latestPaymentAttemptStatus *string
+		if inv.LatestPaymentAttemptStatus != "" {
+			latestPaymentAttemptStatus = &inv.LatestPaymentAttemptStatus
+		}
+
 		items = append(items, invoiceListItemResponse{
-			InvoiceID:                  inv.ID.String(),
-			InvoiceKind:                inv.InvoiceKind,
-			InvoiceNumber:              inv.InvoiceNumber,
-			InvoiceNumberDisplay:       invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
-			ChildID:                    inv.ChildID.String(),
-			ChildFirstName:             inv.ChildFirstName,
-			ChildMiddleName:            inv.ChildMiddleName,
-			ChildLastName:              inv.ChildLastName,
-			PhotoURL:                   photoURL,
-			BillingMonth:               formatBillingMonth(inv.BillingMonth),
-			Status:                     inv.Status,
-			DueStatus:                  dueStatus(inv.Status),
-			CurrencyCode:               inv.CurrencyCode,
-			SubtotalMinor:              inv.Subtotal.Minor(),
-			FundedDeductionMinor:       inv.FundedDeduction.Minor(),
-			TotalDueMinor:              inv.TotalDue.Minor(),
-			AmountPaidMinor:            inv.AmountPaid.Minor(),
-			DueAt:                      formatTimePtr(inv.DueAt),
-			IssuedAt:                   formatTimePtr(inv.IssuedAt),
-			PaidAt:                     formatTimePtr(inv.PaidAt),
-			PaymentFailedAt:            formatTimePtr(inv.PaymentFailedAt),
-			PaymentStatusUpdatedAt:     formatTimePtr(inv.PaymentStatusUpdatedAt),
-			GeneratedRunID:             formatUUIDPtr(inv.GeneratedRunID),
-			GeneratedRunStatus:         inv.GeneratedRunStatus,
-			GeneratedRunStartedAt:      formatTimePtr(inv.GeneratedRunStartedAt),
-			GeneratedRunCompletedAt:    formatTimePtr(inv.GeneratedRunCompletedAt),
-			GeneratedRunExceptionCount: exceptionCount,
-			CreatedAt:                  formatTime(inv.CreatedAt),
-			UpdatedAt:                  formatTime(inv.UpdatedAt),
+			InvoiceID:                     inv.ID.String(),
+			InvoiceKind:                   inv.InvoiceKind,
+			InvoiceNumber:                 inv.InvoiceNumber,
+			InvoiceNumberDisplay:          invoiceNumberDisplay(inv.Status, inv.InvoiceNumber),
+			ChildID:                       inv.ChildID.String(),
+			ChildFirstName:                inv.ChildFirstName,
+			ChildMiddleName:               inv.ChildMiddleName,
+			ChildLastName:                 inv.ChildLastName,
+			PhotoURL:                      photoURL,
+			BillingMonth:                  formatBillingMonth(inv.BillingMonth),
+			Status:                        inv.Status,
+			DueStatus:                     dueStatus(inv.Status),
+			CurrencyCode:                  inv.CurrencyCode,
+			SubtotalMinor:                 inv.Subtotal.Minor(),
+			FundedDeductionMinor:          inv.FundedDeduction.Minor(),
+			TotalDueMinor:                 inv.TotalDue.Minor(),
+			AmountPaidMinor:               inv.AmountPaid.Minor(),
+			DueAt:                         formatTimePtr(inv.DueAt),
+			IssuedAt:                      formatTimePtr(inv.IssuedAt),
+			PaidAt:                        formatTimePtr(inv.PaidAt),
+			PaymentFailedAt:               formatTimePtr(inv.PaymentFailedAt),
+			PaymentStatusUpdatedAt:        formatTimePtr(inv.PaymentStatusUpdatedAt),
+			GeneratedRunID:                formatUUIDPtr(inv.GeneratedRunID),
+			GeneratedRunStatus:            inv.GeneratedRunStatus,
+			GeneratedRunStartedAt:         formatTimePtr(inv.GeneratedRunStartedAt),
+			GeneratedRunCompletedAt:       formatTimePtr(inv.GeneratedRunCompletedAt),
+			GeneratedRunExceptionCount:    exceptionCount,
+			CreatedAt:                     formatTime(inv.CreatedAt),
+			UpdatedAt:                     formatTime(inv.UpdatedAt),
+			CheckoutRetryAvailable:        checkoutRetryAvailable,
+			LatestPaymentAttemptStatus:    latestPaymentAttemptStatus,
+			LatestPaymentAttemptCreatedAt: formatTimePtr(inv.LatestPaymentAttemptCreatedAt),
 		})
 		item := &items[len(items)-1]
 		item.Period.StartDate = formatDate(inv.PeriodStartDate)

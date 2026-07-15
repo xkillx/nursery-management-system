@@ -319,10 +319,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
@@ -367,10 +378,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
@@ -403,10 +425,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
@@ -439,10 +472,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
@@ -475,10 +519,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
@@ -511,10 +566,21 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     i.created_at, i.updated_at,
-    c.profile_photo_path AS child_profile_photo_path
+    c.profile_photo_path AS child_profile_photo_path,
+    COALESCE(pa.status, '') AS latest_payment_attempt_status,
+    pa.created_at AS latest_payment_attempt_created_at
 FROM invoices i
 JOIN children c ON c.tenant_id = i.tenant_id AND c.branch_id = i.branch_id AND c.id = i.child_id
 LEFT JOIN invoice_runs gr ON gr.tenant_id = i.tenant_id AND gr.branch_id = i.branch_id AND gr.id = i.generated_run_id
+LEFT JOIN LATERAL (
+    SELECT pa_inner.status, pa_inner.created_at
+    FROM payment_attempts pa_inner
+    WHERE pa_inner.invoice_id = i.id
+      AND pa_inner.tenant_id = i.tenant_id
+      AND pa_inner.branch_id = i.branch_id
+    ORDER BY pa_inner.created_at DESC
+    LIMIT 1
+) pa ON true
 WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND (sqlc.narg('billing_month')::date IS NULL OR i.billing_month = sqlc.narg('billing_month')::date)
   AND (sqlc.narg('billing_month_from')::date IS NULL OR i.billing_month >= sqlc.narg('billing_month_from')::date)
