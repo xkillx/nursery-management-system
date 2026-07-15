@@ -13,6 +13,7 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { InvoiceTimelineComponent, TimelineEntry } from '../../../../shared/components/invoice/invoice-timeline/invoice-timeline.component';
 import { ParentInvoicesApiService } from '../../data/parent-invoices-api.service';
 import { ParentInvoiceDetail, ParentInvoiceStatus } from '../../models/parent-invoices.models';
 import {
@@ -42,6 +43,7 @@ const POLL_MAX_DURATION_MS = 20000;
     AlertComponent,
     TableShellComponent,
     StatusBadgeComponent,
+    InvoiceTimelineComponent,
     NgIcon,
   ],
   providers: [
@@ -114,6 +116,68 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   get balanceDue(): number {
     if (!this.detail) return 0;
     return balanceDueMinor(this.detail);
+  }
+
+  get auditTrail(): TimelineEntry[] {
+    if (!this.detail) return [];
+    const entries: TimelineEntry[] = [];
+
+    if (this.detail.issuedAt) {
+      entries.push({
+        key: 'issued',
+        icon: 'heroCheckBadge',
+        tone: 'success',
+        title: 'Invoice issued',
+        description: 'Sent to you for payment',
+        timestamp: this.detail.issuedAt,
+      });
+    }
+
+    if (this.detail.paymentFailedAt) {
+      entries.push({
+        key: 'payment-failed',
+        icon: 'heroExclamationCircle',
+        tone: 'error',
+        title: 'Payment attempt failed',
+        description: 'Please try again when you are ready',
+        timestamp: this.detail.paymentFailedAt,
+      });
+    }
+
+    if (this.detail.paidAt) {
+      entries.push({
+        key: 'paid',
+        icon: 'heroCheckBadge',
+        tone: 'success',
+        title: 'Payment received',
+        description: `Settled for ${formatGbp(this.detail.amountPaidMinor)}`,
+        timestamp: this.detail.paidAt,
+      });
+    }
+
+    if (
+      this.detail.issuedAt &&
+      !this.detail.paidAt &&
+      !this.detail.paymentFailedAt &&
+      this.detail.dueAt
+    ) {
+      const dueDate = new Date(this.detail.dueAt);
+      const now = new Date();
+      if (dueDate > now) {
+        const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        entries.push({
+          key: 'due',
+          icon: 'heroClock',
+          tone: 'warning',
+          title: `Due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
+          description: `Payment due on ${formatInstant(this.detail.dueAt)}`,
+          timestamp: this.detail.dueAt,
+          isPending: true,
+        });
+      }
+    }
+
+    return entries;
   }
 
   get returnAlertMessage(): string {
