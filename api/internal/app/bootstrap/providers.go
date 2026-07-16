@@ -407,6 +407,9 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	parent := protected.Group("/parent")
 	parent.Use(httpserver.RequireRolesWithObservability(c.Logger, c.Recorder, "parent"))
 	c.BillingHandler.RegisterParentRoutes(parent)
+	c.BookingsHandler.RegisterParentRoutes(parent)
+	c.FundingHandler.RegisterParentRoutes(parent)
+	c.AttendanceHandler.RegisterParentRoutes(parent)
 
 	c.PaymentsHandler.RegisterParentRoutes(parent)
 	c.PaymentsHandler.RegisterStripeRoutes(api)

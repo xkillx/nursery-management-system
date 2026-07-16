@@ -256,6 +256,25 @@ func parseChildID(raw string) (uuid.UUID, error) {
 	return uuid.Parse(raw)
 }
 
+type parentAttendanceEntryResponse struct {
+	ChildID             string  `json:"child_id"`
+	ChildFirstName      string  `json:"child_first_name"`
+	ChildLastName       *string `json:"child_last_name,omitempty"`
+	SessionTemplateName string  `json:"session_template_name"`
+	BookingType         string  `json:"booking_type"`
+	AttendanceStatus    *string `json:"attendance_status,omitempty"`
+	CheckInAt           *string `json:"check_in_at,omitempty"`
+	CheckOutAt          *string `json:"check_out_at,omitempty"`
+}
+
+func formatTimePtr(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.UTC().Format(time.RFC3339)
+	return &s
+}
+
 func parseCorrectionRequest(req correctionRequest) (domain.CorrectionParams, error) {
 	var params domain.CorrectionParams
 

@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/funding/application"
 	"nursery-management-system/api/internal/modules/funding/domain"
@@ -23,6 +25,8 @@ type Handler struct {
 	enhancedOverview *application.GetEnhancedOverview
 	enhancedDetail   *application.GetEnhancedChildDetail
 	expiring         *application.ListExpiring
+	parentFunding    *application.GetParentFunding
+	parentBreakdown  *application.GetParentFundingBreakdown
 }
 
 func NewHandler(
@@ -32,6 +36,8 @@ func NewHandler(
 	enhancedOverview *application.GetEnhancedOverview,
 	enhancedDetail *application.GetEnhancedChildDetail,
 	expiring *application.ListExpiring,
+	parentFunding *application.GetParentFunding,
+	parentBreakdown *application.GetParentFundingBreakdown,
 	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
@@ -42,6 +48,8 @@ func NewHandler(
 		enhancedOverview: enhancedOverview,
 		enhancedDetail:   enhancedDetail,
 		expiring:         expiring,
+		parentFunding:    parentFunding,
+		parentBreakdown:  parentBreakdown,
 	}
 }
 
@@ -51,6 +59,93 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	g.GET("/children/:child_id", h.getProfileHandler)
 	g.PUT("/children/:child_id", h.upsertProfileHandler)
 	g.GET("/expiring", h.expiringHandler)
+}
+
+func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
+	parent.GET("/funding", h.parentFundingHandler)
+	parent.GET("/funding/:child_id/breakdown", h.parentFundingBreakdownHandler)
+}
+
+// parentFundingHandler returns funding entitlement and usage for the parent's children.
+//
+//	@Summary		Parent funding entitlement
+//	@Description	Get funding entitlement and usage for the authenticated parent's children.
+//	@Tags			parent-funding
+//	@Produce		json
+//	@Success		200	{object}	object{items=[]parentFundingEntitlementResponse}
+//	@Failure		401	{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/parent/funding [get]
+func (h *Handler) parentFundingHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	results, err := h.parentFunding.Execute(c.Request.Context(), actor)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	items := make([]parentFundingEntitlementResponse, 0, len(results))
+	for _, r := range results {
+		items = append(items, parentFundingEntitlementResponse{
+			ChildID:                r.ChildID.String(),
+			ChildFirstName:         r.ChildFirstName,
+			ChildMiddleName:        r.ChildMiddleName,
+			ChildLastName:          r.ChildLastName,
+			FundingType:            r.FundingType,
+			FundedHoursPerWeek:     r.FundedHoursPerWeek,
+			FundedAllowanceMinutes: r.FundedAllowanceMinutes,
+			BookedHoursThisWeek:    r.BookedHoursThisWeek,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+// parentFundingBreakdownHandler returns detailed funding breakdown for a child.
+//
+//	@Summary		Parent funding breakdown
+//	@Description	Get detailed funding breakdown for a specific child.
+//	@Tags			parent-funding
+//	@Produce		json
+//	@Param			child_id		path		string	true	"Child ID"		format(uuid)
+//	@Param			billing_month	query		string	true	"Billing month"	format(month)
+//	@Success		200				{object}	parentFundingBreakdownResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/parent/funding/{child_id}/breakdown [get]
+func (h *Handler) parentFundingBreakdownHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID, err := uuid.Parse(c.Param("child_id"))
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid child_id.", nil)
+		return
+	}
+
+	billingMonth := c.Query("billing_month")
+	if billingMonth == "" {
+		billingMonth = time.Now().Format("2006-01")
+	}
+
+	result, err := h.parentBreakdown.Execute(c.Request.Context(), actor, childID, billingMonth)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toParentFundingBreakdownResponse(result))
 }
 
 // overviewHandler returns the funding overview for a billing month.

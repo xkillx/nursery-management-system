@@ -1,6 +1,11 @@
 package httpfunding
 
-import "time"
+import (
+	"time"
+
+	"nursery-management-system/api/internal/modules/funding/application"
+	"nursery-management-system/api/internal/modules/funding/domain"
+)
 
 type fundingProfileRequest struct {
 	BillingMonth           string `json:"billing_month" binding:"required"`
@@ -89,4 +94,75 @@ type enhancedChildDetailResponse struct {
 	Profile    fundingProfileResponse    `json:"profile"`
 	Allocation []allocationEntryResponse `json:"allocation"`
 	History    []fundingHistoryResponse  `json:"history"`
+}
+
+type parentFundingEntitlementResponse struct {
+	ChildID                string   `json:"child_id"`
+	ChildFirstName         string   `json:"child_first_name"`
+	ChildMiddleName        *string  `json:"child_middle_name,omitempty"`
+	ChildLastName          *string  `json:"child_last_name,omitempty"`
+	FundingType            *string  `json:"funding_type,omitempty"`
+	FundedHoursPerWeek     *float64 `json:"funded_hours_per_week,omitempty"`
+	FundedAllowanceMinutes int      `json:"funded_allowance_minutes"`
+	BookedHoursThisWeek    float64  `json:"booked_hours_this_week"`
+}
+
+type parentFundingBreakdownResponse struct {
+	Profile    fundingProfileResponse    `json:"profile"`
+	Allocation []allocationEntryResponse `json:"allocation"`
+	History    []fundingHistoryResponse  `json:"history"`
+}
+
+func toParentFundingBreakdownResponse(d application.ParentFundingBreakdown) parentFundingBreakdownResponse {
+	return parentFundingBreakdownResponse{
+		Profile:    toResponse(d.Profile),
+		Allocation: toAllocationResponse(d.Allocation),
+		History:    toHistoryResponse(d.History),
+	}
+}
+
+func toAllocationResponse(allocation []domain.AllocationEntry) []allocationEntryResponse {
+	out := make([]allocationEntryResponse, 0, len(allocation))
+	for _, a := range allocation {
+		var endDate *string
+		if a.EffectiveEndDate != nil {
+			s := a.EffectiveEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		out = append(out, allocationEntryResponse{
+			BookingID:              a.BookingID.String(),
+			EffectiveStartDate:     a.EffectiveStartDate.Format("2006-01-02"),
+			EffectiveEndDate:       endDate,
+			DaysOfWeek:             a.DaysOfWeek,
+			SessionTypeName:        a.SessionTypeName,
+			SessionDurationMinutes: a.SessionDurationMinutes,
+		})
+	}
+	return out
+}
+
+func toHistoryResponse(history []domain.FundingHistory) []fundingHistoryResponse {
+	out := make([]fundingHistoryResponse, 0, len(history))
+	for _, h := range history {
+		var startDate *string
+		if h.FundingStartDate != nil {
+			s := h.FundingStartDate.Format("2006-01-02")
+			startDate = &s
+		}
+		var endDate *string
+		if h.FundingEndDate != nil {
+			s := h.FundingEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		out = append(out, fundingHistoryResponse{
+			ID:                 h.ID.String(),
+			FundingType:        h.FundingType,
+			FundingModel:       h.FundingModel,
+			FundedHoursPerWeek: h.FundedHoursPerWeek,
+			FundingStartDate:   startDate,
+			FundingEndDate:     endDate,
+			ChangedAt:          h.ChangedAt,
+		})
+	}
+	return out
 }

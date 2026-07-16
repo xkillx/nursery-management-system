@@ -17,6 +17,7 @@ import (
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
+	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
@@ -212,6 +213,66 @@ func (a *parentContactLookupAdapter) GetForInvoice(ctx context.Context, tenantID
 }
 
 var _ billingapp.ParentContactLookup = (*parentContactLookupAdapter)(nil)
+
+// ── Parent Child Lookup adapter ─────────────────────────────────────────
+
+// parentChildLookupAdapter satisfies bookingsapp.ParentChildLookup by
+// delegating to the parentchildmappings module's repository.
+type parentChildLookupAdapter struct {
+	repo *parentchildpostgres.ParentChildMappingRepository
+}
+
+func (a *parentChildLookupAdapter) ListChildIDsForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID) ([]uuid.UUID, error) {
+	mappings, err := a.repo.ListActiveByMembership(ctx, nil, tenantID, branchID, membershipID)
+	if err != nil {
+		return nil, fmt.Errorf("parent child lookup: %w", err)
+	}
+	ids := make([]uuid.UUID, 0, len(mappings))
+	for _, m := range mappings {
+		ids = append(ids, m.ChildID)
+	}
+	return ids, nil
+}
+
+var _ bookingsapp.ParentChildLookup = (*parentChildLookupAdapter)(nil)
+
+// parentChildLookupForFundingAdapter satisfies fundingapp.ParentChildLookupForFunding.
+type parentChildLookupForFundingAdapter struct {
+	repo *parentchildpostgres.ParentChildMappingRepository
+}
+
+func (a *parentChildLookupForFundingAdapter) ListChildIDsForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID) ([]uuid.UUID, error) {
+	mappings, err := a.repo.ListActiveByMembership(ctx, nil, tenantID, branchID, membershipID)
+	if err != nil {
+		return nil, fmt.Errorf("parent child lookup: %w", err)
+	}
+	ids := make([]uuid.UUID, 0, len(mappings))
+	for _, m := range mappings {
+		ids = append(ids, m.ChildID)
+	}
+	return ids, nil
+}
+
+var _ fundingapp.ParentChildLookupForFunding = (*parentChildLookupForFundingAdapter)(nil)
+
+// parentChildLookupForAttendanceAdapter satisfies attendanceapp.ParentChildLookupForAttendance.
+type parentChildLookupForAttendanceAdapter struct {
+	repo *parentchildpostgres.ParentChildMappingRepository
+}
+
+func (a *parentChildLookupForAttendanceAdapter) ListChildIDsForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID) ([]uuid.UUID, error) {
+	mappings, err := a.repo.ListActiveByMembership(ctx, nil, tenantID, branchID, membershipID)
+	if err != nil {
+		return nil, fmt.Errorf("parent child lookup: %w", err)
+	}
+	ids := make([]uuid.UUID, 0, len(mappings))
+	for _, m := range mappings {
+		ids = append(ids, m.ChildID)
+	}
+	return ids, nil
+}
+
+var _ attendanceapp.ParentChildLookupForAttendance = (*parentChildLookupForAttendanceAdapter)(nil)
 
 // ── Site Profile adapter ──────────────────────────────────────────────────
 

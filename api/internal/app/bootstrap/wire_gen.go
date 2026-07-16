@@ -32,6 +32,10 @@ import (
 	domain8 "nursery-management-system/api/internal/modules/billing/domain"
 	postgres11 "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/billing/interfaces/http"
+	application21 "nursery-management-system/api/internal/modules/bookings/application"
+	domain20 "nursery-management-system/api/internal/modules/bookings/domain"
+	postgres21 "nursery-management-system/api/internal/modules/bookings/infrastructure/postgres"
+	httpbookings "nursery-management-system/api/internal/modules/bookings/interfaces/http"
 	application19 "nursery-management-system/api/internal/modules/branch_closures/application"
 	domain19 "nursery-management-system/api/internal/modules/branch_closures/domain"
 	postgres14 "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
@@ -267,7 +271,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	listCorrectionHistory := application5.NewListCorrectionHistory(attendanceRepository)
 	getRegister := application5.NewGetRegister(attendanceRepository)
 	getRegisterSummary := application5.NewGetRegisterSummary(attendanceRepository)
-	httpattendanceHandler := httpattendance.NewHandler(checkInChild, checkOutChild, correctAttendance, listCorrectionSessions, listCorrectionHistory, getRegister, getRegisterSummary, logger)
+	bootstrapParentChildLookupForAttendanceAdapter := provideParentChildLookupForAttendanceAdapter(parentChildMappingRepository)
+	listParentAttendance := application5.NewListParentAttendance(attendanceRepository, bootstrapParentChildLookupForAttendanceAdapter)
+	httpattendanceHandler := httpattendance.NewHandler(checkInChild, checkOutChild, correctAttendance, listCorrectionSessions, listCorrectionHistory, getRegister, getRegisterSummary, listParentAttendance, logger)
 	markAbsent := provideMarkAbsent(absenceRepository, bootstrapChildEnrollmentCheckerAdapter, transactionManager, writer, attendanceClock)
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
@@ -280,7 +286,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	getEnhancedOverview := application6.NewGetEnhancedOverview(repository2)
 	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository2, historyRepository)
 	listExpiring := application6.NewListExpiring(repository2)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, logger)
+	bootstrapParentChildLookupForFundingAdapter := provideParentChildLookupForFundingAdapter(parentChildMappingRepository)
+	getParentFunding := application6.NewGetParentFunding(repository2, bootstrapParentChildLookupForFundingAdapter)
+	getParentFundingBreakdown := application6.NewGetParentFundingBreakdown(repository2, historyRepository, bootstrapParentChildLookupForFundingAdapter)
+	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
@@ -432,6 +441,21 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	listHourlyBookings := application18.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application18.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
+	bookingRepository := postgres21.NewRepository(pool)
+	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository)
+	createBooking := application21.NewCreateBooking(bookingRepository)
+	getBooking := application21.NewGetBooking(bookingRepository)
+	listBookings := application21.NewListBookings(bookingRepository)
+	updateBooking := application21.NewUpdateBooking(bookingRepository, transactionManager)
+	cancelBooking := application21.NewCancelBooking(bookingRepository, transactionManager)
+	pauseBooking := application21.NewPauseBooking(bookingRepository, transactionManager)
+	cloneBooking := application21.NewCloneBooking(bookingRepository)
+	listCapacity := application21.NewListCapacity(bookingRepository, bootstrapRoomCapacityLookupAdapter)
+	bootstrapParentChildLookupAdapter := provideParentChildLookupAdapter(parentChildMappingRepository)
+	listParentBookings := application21.NewListParentBookings(bookingRepository, bootstrapParentChildLookupAdapter)
+	createBookingRequest := application21.NewCreateBookingRequest(bookingRepository, bootstrapParentChildLookupAdapter, transactionManager)
+	cancelParentBooking := application21.NewCancelParentBooking(bookingRepository, bootstrapParentChildLookupAdapter, transactionManager)
+	httpbookingsHandler := httpbookings.NewHandler(createBooking, getBooking, listBookings, updateBooking, cancelBooking, pauseBooking, cloneBooking, listCapacity, listParentBookings, createBookingRequest, cancelParentBooking, logger)
 	createClosureDay := application19.NewCreateClosureDay(repository4)
 	listClosureDays := application19.NewListClosureDays(repository4)
 	deleteClosureDay := application19.NewDeleteClosureDay(repository4)
@@ -462,6 +486,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		TermCalendarHandler:     httptermcalendarHandler,
 		AdHocBookingsHandler:    httpadhocbookingsHandler,
 		HourlyBookingsHandler:   httphourlybookingsHandler,
+		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
 		SiteProfileHandler:      httpHandler,
 	}
@@ -634,7 +659,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	listCorrectionHistory := application5.NewListCorrectionHistory(attendanceRepository)
 	getRegister := application5.NewGetRegister(attendanceRepository)
 	getRegisterSummary := application5.NewGetRegisterSummary(attendanceRepository)
-	httpattendanceHandler := httpattendance.NewHandler(checkInChild, checkOutChild, correctAttendance, listCorrectionSessions, listCorrectionHistory, getRegister, getRegisterSummary, logger)
+	bootstrapParentChildLookupForAttendanceAdapter := provideParentChildLookupForAttendanceAdapter(parentChildMappingRepository)
+	listParentAttendance := application5.NewListParentAttendance(attendanceRepository, bootstrapParentChildLookupForAttendanceAdapter)
+	httpattendanceHandler := httpattendance.NewHandler(checkInChild, checkOutChild, correctAttendance, listCorrectionSessions, listCorrectionHistory, getRegister, getRegisterSummary, listParentAttendance, logger)
 	markAbsent := provideMarkAbsent(absenceRepository, bootstrapChildEnrollmentCheckerAdapter, transactionManager, writer, attendanceClock)
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
@@ -647,7 +674,10 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	getEnhancedOverview := application6.NewGetEnhancedOverview(repository2)
 	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository2, historyRepository)
 	listExpiring := application6.NewListExpiring(repository2)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, logger)
+	bootstrapParentChildLookupForFundingAdapter := provideParentChildLookupForFundingAdapter(parentChildMappingRepository)
+	getParentFunding := application6.NewGetParentFunding(repository2, bootstrapParentChildLookupForFundingAdapter)
+	getParentFundingBreakdown := application6.NewGetParentFundingBreakdown(repository2, historyRepository, bootstrapParentChildLookupForFundingAdapter)
+	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
@@ -799,6 +829,21 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	listHourlyBookings := application18.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application18.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
+	bookingRepository := postgres21.NewRepository(pool)
+	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository)
+	createBooking := application21.NewCreateBooking(bookingRepository)
+	getBooking := application21.NewGetBooking(bookingRepository)
+	listBookings := application21.NewListBookings(bookingRepository)
+	updateBooking := application21.NewUpdateBooking(bookingRepository, transactionManager)
+	cancelBooking := application21.NewCancelBooking(bookingRepository, transactionManager)
+	pauseBooking := application21.NewPauseBooking(bookingRepository, transactionManager)
+	cloneBooking := application21.NewCloneBooking(bookingRepository)
+	listCapacity := application21.NewListCapacity(bookingRepository, bootstrapRoomCapacityLookupAdapter)
+	bootstrapParentChildLookupAdapter := provideParentChildLookupAdapter(parentChildMappingRepository)
+	listParentBookings := application21.NewListParentBookings(bookingRepository, bootstrapParentChildLookupAdapter)
+	createBookingRequest := application21.NewCreateBookingRequest(bookingRepository, bootstrapParentChildLookupAdapter, transactionManager)
+	cancelParentBooking := application21.NewCancelParentBooking(bookingRepository, bootstrapParentChildLookupAdapter, transactionManager)
+	httpbookingsHandler := httpbookings.NewHandler(createBooking, getBooking, listBookings, updateBooking, cancelBooking, pauseBooking, cloneBooking, listCapacity, listParentBookings, createBookingRequest, cancelParentBooking, logger)
 	createClosureDay := application19.NewCreateClosureDay(repository4)
 	listClosureDays := application19.NewListClosureDays(repository4)
 	deleteClosureDay := application19.NewDeleteClosureDay(repository4)
@@ -829,6 +874,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		TermCalendarHandler:     httptermcalendarHandler,
 		AdHocBookingsHandler:    httpadhocbookingsHandler,
 		HourlyBookingsHandler:   httphourlybookingsHandler,
+		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
 		SiteProfileHandler:      httpHandler,
 	}
@@ -908,13 +954,13 @@ var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain
 
 var parentChildMappingsSet = wire.NewSet(postgres7.NewParentChildMappingRepository, wire.Bind(new(domain6.Repository), new(*postgres7.ParentChildMappingRepository)), provideMembershipCheckerAdapter, wire.Bind(new(domain6.MembershipChecker), new(*membershipCheckerAdapter)), provideChildScopeCheckerAdapter, wire.Bind(new(application4.ChildChecker), new(*childScopeCheckerAdapter)), application4.NewCreateMappingUseCase, application4.NewEndMappingUseCase, httpmapping.NewHandler)
 
-var attendanceSet = wire.NewSet(postgres8.NewAttendanceRepository, wire.Bind(new(domain7.Repository), new(*postgres8.AttendanceRepository)), provideChildEnrollmentCheckerAdapter, wire.Bind(new(domain7.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)), provideChildCorrectionCheckerAdapter, wire.Bind(new(domain7.ChildCorrectionChecker), new(*childCorrectionCheckerAdapter)), application5.NewCheckInChild, application5.NewCheckOutChild, application5.NewCorrectAttendance, application5.NewListCorrectionSessions, application5.NewListCorrectionHistory, httpattendance.NewHandler)
+var attendanceSet = wire.NewSet(postgres8.NewAttendanceRepository, wire.Bind(new(domain7.Repository), new(*postgres8.AttendanceRepository)), provideChildEnrollmentCheckerAdapter, wire.Bind(new(domain7.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)), provideChildCorrectionCheckerAdapter, wire.Bind(new(domain7.ChildCorrectionChecker), new(*childCorrectionCheckerAdapter)), application5.NewCheckInChild, application5.NewCheckOutChild, application5.NewCorrectAttendance, application5.NewListCorrectionSessions, application5.NewListCorrectionHistory, application5.NewGetRegister, application5.NewGetRegisterSummary, provideParentChildLookupForAttendanceAdapter, wire.Bind(new(application5.ParentChildLookupForAttendance), new(*parentChildLookupForAttendanceAdapter)), application5.NewListParentAttendance, httpattendance.NewHandler)
 
 var absenceSet = wire.NewSet(postgres9.NewAbsenceRepository, wire.Bind(new(domain2.Repository), new(*postgres9.AbsenceRepository)), provideAbsenceMarkerCheckerAdapter, wire.Bind(new(domain7.AbsenceMarkerChecker), new(*absenceMarkerCheckerAdapter)), provideMarkAbsent,
 	provideClearMarker, httpabsence.NewHandler,
 )
 
-var fundingSet = wire.NewSet(postgres10.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres10.Repository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, application6.NewGetEnhancedOverview, provideGetEnhancedChildDetail, application6.NewListExpiring, httpfunding.NewHandler)
+var fundingSet = wire.NewSet(postgres10.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres10.Repository)), postgres10.NewHistoryRepository, wire.Bind(new(domain3.HistoryRepository), new(*postgres10.HistoryRepository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, application6.NewGetEnhancedOverview, provideGetEnhancedChildDetail, application6.NewListExpiring, provideParentChildLookupForFundingAdapter, wire.Bind(new(application6.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)), application6.NewGetParentFunding, application6.NewGetParentFundingBreakdown, httpfunding.NewHandler)
 
 var billingSet = wire.NewSet(postgres11.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres11.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application7.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application7.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain8.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain8.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), provideHourlyBookingLookupAdapter, wire.Bind(new(domain8.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, provideInvoicePDFRenderer, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 
@@ -1024,3 +1070,29 @@ var adHocBookingsSet = wire.NewSet(postgres20.NewRepository, wire.Bind(new(domai
 var hourlyBookingsSet = wire.NewSet(postgres13.NewRepository, wire.Bind(new(domain18.Repository), new(*postgres13.HourlyBookingRepository)), application18.NewCreateHourlyBooking, application18.NewListHourlyBookings, application18.NewCancelHourlyBooking, httphourlybookings.NewHandler)
 
 var branchClosuresSet = wire.NewSet(postgres14.NewRepository, wire.Bind(new(domain19.Repository), new(*postgres14.Repository)), application19.NewCreateClosureDay, application19.NewListClosureDays, application19.NewDeleteClosureDay, httpclosure.NewHandler, provideClosureDateLookupAdapter, wire.Bind(new(domain8.ClosureDateLookup), new(*closureDateLookupAdapter)))
+
+func provideRoomCapacityLookupAdapter(
+	roomsRepo *postgres18.RoomRepository,
+) *roomCapacityLookupAdapter {
+	return &roomCapacityLookupAdapter{repo: roomsRepo}
+}
+
+func provideParentChildLookupAdapter(
+	parentChildRepo *postgres7.ParentChildMappingRepository,
+) *parentChildLookupAdapter {
+	return &parentChildLookupAdapter{repo: parentChildRepo}
+}
+
+func provideParentChildLookupForFundingAdapter(
+	parentChildRepo *postgres7.ParentChildMappingRepository,
+) *parentChildLookupForFundingAdapter {
+	return &parentChildLookupForFundingAdapter{repo: parentChildRepo}
+}
+
+func provideParentChildLookupForAttendanceAdapter(
+	parentChildRepo *postgres7.ParentChildMappingRepository,
+) *parentChildLookupForAttendanceAdapter {
+	return &parentChildLookupForAttendanceAdapter{repo: parentChildRepo}
+}
+
+var bookingsSet = wire.NewSet(postgres21.NewRepository, wire.Bind(new(domain20.Repository), new(*postgres21.BookingRepository)), application21.NewCreateBooking, application21.NewGetBooking, application21.NewListBookings, application21.NewUpdateBooking, application21.NewCancelBooking, application21.NewPauseBooking, application21.NewCloneBooking, application21.NewListCapacity, provideRoomCapacityLookupAdapter, wire.Bind(new(application21.RoomCapacityLookup), new(*roomCapacityLookupAdapter)), provideParentChildLookupAdapter, wire.Bind(new(application21.ParentChildLookup), new(*parentChildLookupAdapter)), application21.NewListParentBookings, application21.NewCreateBookingRequest, application21.NewCancelParentBooking, httpbookings.NewHandler)

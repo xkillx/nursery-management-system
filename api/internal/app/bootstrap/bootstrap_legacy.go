@@ -279,6 +279,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		attendanceapp.NewListCorrectionHistory(attendanceRepo),
 		attendanceapp.NewGetRegister(attendanceRepo),
 		attendanceapp.NewGetRegisterSummary(attendanceRepo),
+		attendanceapp.NewListParentAttendance(attendanceRepo, &parentChildLookupForAttendanceAdapter{repo: mappingRepo}),
 		logger,
 	)
 
@@ -303,6 +304,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		fundingapp.NewGetEnhancedOverview(fundingRepo),
 		fundingapp.NewGetEnhancedChildDetail(fundingRepo, fundingHistoryRepo),
 		fundingapp.NewListExpiring(fundingRepo),
+		fundingapp.NewGetParentFunding(fundingRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}),
+		fundingapp.NewGetParentFundingBreakdown(fundingRepo, fundingHistoryRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}),
 		logger,
 	)
 	fundingHandler.RegisterRoutes(manager)
@@ -354,6 +357,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	parent := protected.Group("/parent")
 	parent.Use(httpserver.RequireRolesWithObservability(logger, recorder, "parent"))
 	billingHandler.RegisterParentRoutes(parent)
+	fundingHandler.RegisterParentRoutes(parent)
+	attendanceHandler.RegisterParentRoutes(parent)
 
 	paymentsRepo := paymentspostgres.NewRepository(pool)
 	var checkoutProvider paymentsdomain.CheckoutProvider

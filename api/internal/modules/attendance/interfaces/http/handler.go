@@ -24,6 +24,7 @@ type Handler struct {
 	listHistory   *application.ListCorrectionHistory
 	getRegister   *application.GetRegister
 	getRegSummary *application.GetRegisterSummary
+	listParentAtt *application.ListParentAttendance
 }
 
 func NewHandler(
@@ -34,9 +35,10 @@ func NewHandler(
 	listHistory *application.ListCorrectionHistory,
 	getRegister *application.GetRegister,
 	getRegSummary *application.GetRegisterSummary,
+	listParentAtt *application.ListParentAttendance,
 	logger *slog.Logger,
 ) *Handler {
-	return &Handler{logger: logger, checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory, getRegister: getRegister, getRegSummary: getRegSummary}
+	return &Handler{logger: logger, checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory, getRegister: getRegister, getRegSummary: getRegSummary, listParentAtt: listParentAtt}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -52,6 +54,63 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	managerOnly.GET("/attendance/sessions/:session_id/history", h.listHistoryHandler)
 	managerOnly.GET("/register", h.getRegisterHandler)
 	managerOnly.GET("/register/summary", h.getRegisterSummaryHandler)
+}
+
+func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
+	parent.GET("/attendance", h.parentAttendanceHandler)
+}
+
+// parentAttendanceHandler returns attendance records for the parent's children.
+//
+//	@Summary		Parent attendance
+//	@Description	Get attendance records for the authenticated parent's children.
+//	@Tags			parent-attendance
+//	@Produce		json
+//	@Param			date	query		string	true	"Register date"	format(date)
+//	@Success		200		{object}	object{items=[]parentAttendanceEntryResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["parent"]
+//	@Router			/parent/attendance [get]
+func (h *Handler) parentAttendanceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		dateStr = time.Now().Format("2006-01-02")
+	}
+	registerDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid date format.", nil)
+		return
+	}
+
+	entries, err := h.listParentAtt.Execute(c.Request.Context(), actor, registerDate)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	items := make([]parentAttendanceEntryResponse, 0, len(entries))
+	for _, e := range entries {
+		items = append(items, parentAttendanceEntryResponse{
+			ChildID:             e.ChildID.String(),
+			ChildFirstName:      e.ChildFirstName,
+			ChildLastName:       e.ChildLastName,
+			SessionTemplateName: e.SessionTemplateName,
+			BookingType:         e.BookingType,
+			AttendanceStatus:    e.AttendanceStatus,
+			CheckInAt:           formatTimePtr(e.CheckInAt),
+			CheckOutAt:          formatTimePtr(e.CheckOutAt),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 // checkInHandler checks in a child.

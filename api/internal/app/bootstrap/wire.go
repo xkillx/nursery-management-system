@@ -276,6 +276,12 @@ var parentChildMappingsSet = wire.NewSet(
 
 // ── Attendance module ──────────────────────────────────────────────────
 
+func provideParentChildLookupForAttendanceAdapter(
+	parentChildRepo *parentchildpostgres.ParentChildMappingRepository,
+) *parentChildLookupForAttendanceAdapter {
+	return &parentChildLookupForAttendanceAdapter{repo: parentChildRepo}
+}
+
 var attendanceSet = wire.NewSet(
 	attendancepostgres.NewAttendanceRepository,
 	wire.Bind(new(attendancedomain.Repository), new(*attendancepostgres.AttendanceRepository)),
@@ -290,6 +296,9 @@ var attendanceSet = wire.NewSet(
 	attendanceapp.NewListCorrectionHistory,
 	attendanceapp.NewGetRegister,
 	attendanceapp.NewGetRegisterSummary,
+	provideParentChildLookupForAttendanceAdapter,
+	wire.Bind(new(attendanceapp.ParentChildLookupForAttendance), new(*parentChildLookupForAttendanceAdapter)),
+	attendanceapp.NewListParentAttendance,
 	attendancehandler.NewHandler,
 )
 
@@ -307,15 +316,27 @@ var absenceSet = wire.NewSet(
 
 // ── Funding module ─────────────────────────────────────────────────────
 
+func provideParentChildLookupForFundingAdapter(
+	parentChildRepo *parentchildpostgres.ParentChildMappingRepository,
+) *parentChildLookupForFundingAdapter {
+	return &parentChildLookupForFundingAdapter{repo: parentChildRepo}
+}
+
 var fundingSet = wire.NewSet(
 	fundingpostgres.NewRepository,
 	wire.Bind(new(fundingdomain.Repository), new(*fundingpostgres.Repository)),
+	fundingpostgres.NewHistoryRepository,
+	wire.Bind(new(fundingdomain.HistoryRepository), new(*fundingpostgres.HistoryRepository)),
 	fundingapp.NewGetProfile,
 	provideUpsertProfile,
 	fundingapp.NewListOverview,
 	fundingapp.NewGetEnhancedOverview,
 	provideGetEnhancedChildDetail,
 	fundingapp.NewListExpiring,
+	provideParentChildLookupForFundingAdapter,
+	wire.Bind(new(fundingapp.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)),
+	fundingapp.NewGetParentFunding,
+	fundingapp.NewGetParentFundingBreakdown,
 	fundinghandler.NewHandler,
 )
 
@@ -613,6 +634,12 @@ func provideRoomCapacityLookupAdapter(
 	return &roomCapacityLookupAdapter{repo: roomsRepo}
 }
 
+func provideParentChildLookupAdapter(
+	parentChildRepo *parentchildpostgres.ParentChildMappingRepository,
+) *parentChildLookupAdapter {
+	return &parentChildLookupAdapter{repo: parentChildRepo}
+}
+
 var bookingsSet = wire.NewSet(
 	bookingspostgres.NewRepository,
 	wire.Bind(new(bookingsdomain.Repository), new(*bookingspostgres.BookingRepository)),
@@ -626,6 +653,11 @@ var bookingsSet = wire.NewSet(
 	bookingsapp.NewListCapacity,
 	provideRoomCapacityLookupAdapter,
 	wire.Bind(new(bookingsapp.RoomCapacityLookup), new(*roomCapacityLookupAdapter)),
+	provideParentChildLookupAdapter,
+	wire.Bind(new(bookingsapp.ParentChildLookup), new(*parentChildLookupAdapter)),
+	bookingsapp.NewListParentBookings,
+	bookingsapp.NewCreateBookingRequest,
+	bookingsapp.NewCancelParentBooking,
 	bookingshttphandler.NewHandler,
 )
 
