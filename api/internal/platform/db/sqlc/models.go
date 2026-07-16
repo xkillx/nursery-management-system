@@ -384,6 +384,20 @@ type ChildContact struct {
 	UpdatedAt                 pgtype.Timestamptz
 }
 
+type ChildFundingHistory struct {
+	ID                 pgtype.UUID
+	TenantID           pgtype.UUID
+	BranchID           pgtype.UUID
+	ChildID            pgtype.UUID
+	FundingType        pgtype.Text
+	FundingModel       pgtype.Text
+	FundedHoursPerWeek pgtype.Numeric
+	FundingStartDate   pgtype.Date
+	FundingEndDate     pgtype.Date
+	ChangedAt          pgtype.Timestamptz
+	ChangedByUserID    pgtype.UUID
+}
+
 type ChildFundingRecord struct {
 	ID                         pgtype.UUID
 	TenantID                   pgtype.UUID
@@ -523,6 +537,9 @@ type FundingProfile struct {
 	FundedAllowanceMinutes int32
 	CreatedAt              pgtype.Timestamptz
 	UpdatedAt              pgtype.Timestamptz
+	FundingType            pgtype.Text
+	FundingModel           pgtype.Text
+	FundedHoursPerWeek     pgtype.Numeric
 }
 
 type HourlyBooking struct {

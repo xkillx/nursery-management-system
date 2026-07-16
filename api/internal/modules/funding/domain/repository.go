@@ -19,3 +19,8 @@ type Repository interface {
 	ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]OverviewRow, error)
 	CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error)
 }
+
+type HistoryRepository interface {
+	Create(ctx context.Context, history FundingHistory) error
+	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]FundingHistory, error)
+}

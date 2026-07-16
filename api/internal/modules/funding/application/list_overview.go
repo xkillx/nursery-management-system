@@ -2,18 +2,26 @@ package application
 
 import (
 	"context"
+	"time"
+
+	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/funding/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
 
-type ListOverview struct {
-	repo domain.Repository
+type ConsumedMinutesProvider interface {
+	GetConsumedMinutes(ctx context.Context, tenantID, branchID uuid.UUID, childIDs []uuid.UUID, billingMonth time.Time) (map[uuid.UUID]int, error)
 }
 
-func NewListOverview(repo domain.Repository) *ListOverview {
-	return &ListOverview{repo: repo}
+type ListOverview struct {
+	repo         domain.Repository
+	consumedProv ConsumedMinutesProvider
+}
+
+func NewListOverview(repo domain.Repository, consumedProv ConsumedMinutesProvider) *ListOverview {
+	return &ListOverview{repo: repo, consumedProv: consumedProv}
 }
 
 func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string) (domain.OverviewResult, error) {
@@ -27,6 +35,18 @@ func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, 
 		return domain.OverviewResult{}, domainerrors.Internal(err)
 	}
 
+	// Collect child IDs for consumed minutes lookup
+	childIDs := make([]uuid.UUID, 0, len(rows))
+	for _, row := range rows {
+		childIDs = append(childIDs, row.ChildID)
+	}
+
+	// Get consumed minutes for all children
+	consumedMap, err := uc.consumedProv.GetConsumedMinutes(ctx, actor.TenantID, actor.BranchID, childIDs, billingMonth)
+	if err != nil {
+		return domain.OverviewResult{}, domainerrors.Internal(err)
+	}
+
 	var summary domain.OverviewSummary
 	var items []domain.OverviewItem
 
@@ -34,8 +54,17 @@ func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, 
 
 	for _, row := range rows {
 		flags := computeFlags(row)
+
+		// Compute remaining minutes
+		var remaining *int
+		if row.FundedAllowanceMinutes != nil {
+			consumed := consumedMap[row.ChildID]
+			r := max(0, *row.FundedAllowanceMinutes-consumed)
+			remaining = &r
+		}
+
 		if len(flags) > 0 {
-			items = append(items, domain.OverviewItem{Row: row, Flags: flags})
+			items = append(items, domain.OverviewItem{Row: row, Flags: flags, RemainingMinutes: remaining})
 			summary.FlaggedChildCount++
 			for _, f := range flags {
 				switch f {
@@ -79,6 +108,18 @@ func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.Actor
 		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
 	}
 
+	// Collect child IDs for consumed minutes lookup
+	childIDs := make([]uuid.UUID, 0, len(rows))
+	for _, row := range rows {
+		childIDs = append(childIDs, row.ChildID)
+	}
+
+	// Get consumed minutes for all children
+	consumedMap, err := uc.consumedProv.GetConsumedMinutes(ctx, actor.TenantID, actor.BranchID, childIDs, billingMonth)
+	if err != nil {
+		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
+	}
+
 	var summary domain.OverviewSummary
 	var items []domain.OverviewItem
 
@@ -86,8 +127,17 @@ func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.Actor
 
 	for _, row := range rows {
 		flags := computeFlags(row)
+
+		// Compute remaining minutes
+		var remaining *int
+		if row.FundedAllowanceMinutes != nil {
+			consumed := consumedMap[row.ChildID]
+			r := max(0, *row.FundedAllowanceMinutes-consumed)
+			remaining = &r
+		}
+
 		if len(flags) > 0 {
-			items = append(items, domain.OverviewItem{Row: row, Flags: flags})
+			items = append(items, domain.OverviewItem{Row: row, Flags: flags, RemainingMinutes: remaining})
 			summary.FlaggedChildCount++
 			for _, f := range flags {
 				switch f {

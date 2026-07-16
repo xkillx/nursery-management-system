@@ -161,6 +161,7 @@ interface FundingOverviewItemApiModel {
   funding_updated_at?: string | null;
   child_photo_url?: string | null;
   flags: string[];
+  remaining_minutes?: number | null;
 }
 
 interface InviteApiModel {
@@ -735,6 +736,7 @@ export class StaffApiService {
       fundingUpdatedAt: item.funding_updated_at ?? null,
       photoUrl: item.child_photo_url ?? null,
       flags: item.flags as FundingOverviewFlag[],
+      remainingMinutes: item.remaining_minutes ?? null,
     };
   }
 

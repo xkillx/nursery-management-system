@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
@@ -24,6 +25,9 @@ import (
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
+	fundingapp "nursery-management-system/api/internal/modules/funding/application"
+	fundingdomain "nursery-management-system/api/internal/modules/funding/domain"
+	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
@@ -39,6 +43,7 @@ import (
 	termapp "nursery-management-system/api/internal/modules/term/application"
 	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/audit"
+	"nursery-management-system/api/internal/platform/db/sqlc"
 	"nursery-management-system/api/internal/platform/email"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
@@ -991,3 +996,127 @@ func (a *billingNotificationAdapter) writeAudit(ctx context.Context, tx pgx.Tx, 
 }
 
 var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
+
+type childFundingRecordReaderAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *childFundingRecordReaderAdapter) GetByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*fundingapp.ChildFundingRecordData, error) {
+	record, found, err := a.repo.GetFundingByChild(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return nil, fmt.Errorf("get child funding record: %w", err)
+	}
+	if !found {
+		return nil, nil
+	}
+
+	var fundingType *string
+	if string(record.FundingType) != "" {
+		s := string(record.FundingType)
+		fundingType = &s
+	}
+
+	var fundingModel *string
+	if string(record.FundingModel) != "" {
+		s := string(record.FundingModel)
+		fundingModel = &s
+	}
+
+	var fundingStartDate *string
+	if record.FundingStartDate != nil {
+		s := record.FundingStartDate.Format("2006-01-02")
+		fundingStartDate = &s
+	}
+
+	var fundingEndDate *string
+	if record.FundingEndDate != nil {
+		s := record.FundingEndDate.Format("2006-01-02")
+		fundingEndDate = &s
+	}
+
+	return &fundingapp.ChildFundingRecordData{
+		FundingType:        fundingType,
+		FundingModel:       fundingModel,
+		FundedHoursPerWeek: record.FundedHoursPerWeek,
+		FundingStartDate:   fundingStartDate,
+		FundingEndDate:     fundingEndDate,
+	}, nil
+}
+
+type consumedMinutesProviderAdapter struct {
+	pool *pgxpool.Pool
+}
+
+func (a *consumedMinutesProviderAdapter) GetConsumedMinutes(ctx context.Context, tenantID, branchID uuid.UUID, childIDs []uuid.UUID, billingMonth time.Time) (map[uuid.UUID]int, error) {
+	if len(childIDs) == 0 {
+		return map[uuid.UUID]int{}, nil
+	}
+
+	q := sqlc.New(a.pool)
+	pgChildIDs := make([]pgtype.UUID, len(childIDs))
+	for i, id := range childIDs {
+		pgChildIDs[i] = pgtype.UUID{Bytes: [16]byte(id), Valid: true}
+	}
+
+	rows, err := q.GetConsumedMinutesByChildren(ctx, sqlc.GetConsumedMinutesByChildrenParams{
+		TenantID:     pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
+		BranchID:     pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
+		BillingMonth: pgtype.Date{Time: billingMonth, Valid: true},
+		Column4:      pgChildIDs,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get consumed minutes: %w", err)
+	}
+
+	result := make(map[uuid.UUID]int, len(rows))
+	for _, row := range rows {
+		childID := uuid.UUID(row.ChildID.Bytes)
+		consumed := 0
+		if v, ok := row.ConsumedMinutes.(int64); ok {
+			consumed = int(v)
+		} else if v, ok := row.ConsumedMinutes.(int32); ok {
+			consumed = int(v)
+		}
+		result[childID] = consumed
+	}
+	return result, nil
+}
+
+type fundingHistoryWriterAdapter struct {
+	repo *fundingpostgres.HistoryRepository
+}
+
+func (a *fundingHistoryWriterAdapter) Write(ctx context.Context, tenantID, branchID, childID uuid.UUID, record *childdomain.ChildFundingRecord, changedByUserID uuid.UUID) error {
+	history := fundingdomain.FundingHistory{
+		ID:              uid.NewUUID(),
+		TenantID:        tenantID,
+		BranchID:        branchID,
+		ChildID:         childID,
+		ChangedAt:       time.Now(),
+		ChangedByUserID: changedByUserID,
+	}
+
+	if string(record.FundingType) != "" {
+		s := string(record.FundingType)
+		history.FundingType = &s
+	}
+
+	if string(record.FundingModel) != "" {
+		s := string(record.FundingModel)
+		history.FundingModel = &s
+	}
+
+	if record.FundedHoursPerWeek != nil {
+		history.FundedHoursPerWeek = record.FundedHoursPerWeek
+	}
+
+	if record.FundingStartDate != nil {
+		history.FundingStartDate = record.FundingStartDate
+	}
+
+	if record.FundingEndDate != nil {
+		history.FundingEndDate = record.FundingEndDate
+	}
+
+	return a.repo.Create(ctx, history)
+}

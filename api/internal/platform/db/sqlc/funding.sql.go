@@ -11,6 +11,95 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const childFundingHistoryInsert = `-- name: ChildFundingHistoryInsert :exec
+INSERT INTO child_funding_history (
+    id, tenant_id, branch_id, child_id,
+    funding_type, funding_model, funded_hours_per_week,
+    funding_start_date, funding_end_date,
+    changed_at, changed_by_user_id
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+`
+
+type ChildFundingHistoryInsertParams struct {
+	ID                 pgtype.UUID
+	TenantID           pgtype.UUID
+	BranchID           pgtype.UUID
+	ChildID            pgtype.UUID
+	FundingType        pgtype.Text
+	FundingModel       pgtype.Text
+	FundedHoursPerWeek pgtype.Numeric
+	FundingStartDate   pgtype.Date
+	FundingEndDate     pgtype.Date
+	ChangedAt          pgtype.Timestamptz
+	ChangedByUserID    pgtype.UUID
+}
+
+func (q *Queries) ChildFundingHistoryInsert(ctx context.Context, arg ChildFundingHistoryInsertParams) error {
+	_, err := q.db.Exec(ctx, childFundingHistoryInsert,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.FundingType,
+		arg.FundingModel,
+		arg.FundedHoursPerWeek,
+		arg.FundingStartDate,
+		arg.FundingEndDate,
+		arg.ChangedAt,
+		arg.ChangedByUserID,
+	)
+	return err
+}
+
+const childFundingHistoryListByChild = `-- name: ChildFundingHistoryListByChild :many
+SELECT id, tenant_id, branch_id, child_id,
+       funding_type, funding_model, funded_hours_per_week,
+       funding_start_date, funding_end_date,
+       changed_at, changed_by_user_id
+FROM child_funding_history
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY changed_at DESC
+`
+
+type ChildFundingHistoryListByChildParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ChildID  pgtype.UUID
+}
+
+func (q *Queries) ChildFundingHistoryListByChild(ctx context.Context, arg ChildFundingHistoryListByChildParams) ([]ChildFundingHistory, error) {
+	rows, err := q.db.Query(ctx, childFundingHistoryListByChild, arg.TenantID, arg.BranchID, arg.ChildID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChildFundingHistory
+	for rows.Next() {
+		var i ChildFundingHistory
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.ChildID,
+			&i.FundingType,
+			&i.FundingModel,
+			&i.FundedHoursPerWeek,
+			&i.FundingStartDate,
+			&i.FundingEndDate,
+			&i.ChangedAt,
+			&i.ChangedByUserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fundingChildEnrollmentGetForUpdate = `-- name: FundingChildEnrollmentGetForUpdate :one
 SELECT id, start_date, end_date
 FROM children
@@ -225,9 +314,10 @@ func (q *Queries) FundingOverviewListPaginated(ctx context.Context, arg FundingO
 }
 
 const fundingProfileCreate = `-- name: FundingProfileCreate :one
-INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+                              funding_type, funding_model, funded_hours_per_week)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 `
 
 type FundingProfileCreateParams struct {
@@ -237,6 +327,9 @@ type FundingProfileCreateParams struct {
 	ChildID                pgtype.UUID
 	BillingMonth           pgtype.Date
 	FundedAllowanceMinutes int32
+	FundingType            pgtype.Text
+	FundingModel           pgtype.Text
+	FundedHoursPerWeek     pgtype.Numeric
 }
 
 func (q *Queries) FundingProfileCreate(ctx context.Context, arg FundingProfileCreateParams) (FundingProfile, error) {
@@ -247,6 +340,9 @@ func (q *Queries) FundingProfileCreate(ctx context.Context, arg FundingProfileCr
 		arg.ChildID,
 		arg.BillingMonth,
 		arg.FundedAllowanceMinutes,
+		arg.FundingType,
+		arg.FundingModel,
+		arg.FundedHoursPerWeek,
 	)
 	var i FundingProfile
 	err := row.Scan(
@@ -258,12 +354,16 @@ func (q *Queries) FundingProfileCreate(ctx context.Context, arg FundingProfileCr
 		&i.FundedAllowanceMinutes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
 	)
 	return i, err
 }
 
 const fundingProfileGet = `-- name: FundingProfileGet :one
-SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+       created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 FROM funding_profiles
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND billing_month = $4
 `
@@ -292,12 +392,16 @@ func (q *Queries) FundingProfileGet(ctx context.Context, arg FundingProfileGetPa
 		&i.FundedAllowanceMinutes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
 	)
 	return i, err
 }
 
 const fundingProfileGetForUpdate = `-- name: FundingProfileGetForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+       created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 FROM funding_profiles
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND billing_month = $4
 FOR UPDATE
@@ -327,6 +431,9 @@ func (q *Queries) FundingProfileGetForUpdate(ctx context.Context, arg FundingPro
 		&i.FundedAllowanceMinutes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
 	)
 	return i, err
 }
@@ -335,7 +442,7 @@ const fundingProfileUpdateAllowance = `-- name: FundingProfileUpdateAllowance :o
 UPDATE funding_profiles
 SET funded_allowance_minutes = $1, updated_at = now()
 WHERE tenant_id = $2 AND branch_id = $3 AND child_id = $4 AND billing_month = $5
-RETURNING id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+RETURNING id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 `
 
 type FundingProfileUpdateAllowanceParams struct {
@@ -364,6 +471,9 @@ func (q *Queries) FundingProfileUpdateAllowance(ctx context.Context, arg Funding
 		&i.FundedAllowanceMinutes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FundingType,
+		&i.FundingModel,
+		&i.FundedHoursPerWeek,
 	)
 	return i, err
 }

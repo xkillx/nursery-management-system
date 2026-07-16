@@ -1,17 +1,20 @@
 -- name: FundingProfileGet :one
-SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+       created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 FROM funding_profiles
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND billing_month = $4;
 
 -- name: FundingProfileGetForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+       created_at, updated_at, funding_type, funding_model, funded_hours_per_week
 FROM funding_profiles
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND billing_month = $4
 FOR UPDATE;
 
 -- name: FundingProfileCreate :one
-INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes,
+                              funding_type, funding_model, funded_hours_per_week)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: FundingProfileUpdateAllowance :one
@@ -84,3 +87,21 @@ WHERE c.tenant_id = $1
   AND c.branch_id = $2
   AND c.start_date < ($3 + INTERVAL '1 month')::date
   AND (c.end_date IS NULL OR c.end_date >= $3);
+
+-- name: ChildFundingHistoryInsert :exec
+INSERT INTO child_funding_history (
+    id, tenant_id, branch_id, child_id,
+    funding_type, funding_model, funded_hours_per_week,
+    funding_start_date, funding_end_date,
+    changed_at, changed_by_user_id
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+
+-- name: ChildFundingHistoryListByChild :many
+SELECT id, tenant_id, branch_id, child_id,
+       funding_type, funding_model, funded_hours_per_week,
+       funding_start_date, funding_end_date,
+       changed_at, changed_by_user_id
+FROM child_funding_history
+WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3
+ORDER BY changed_at DESC;

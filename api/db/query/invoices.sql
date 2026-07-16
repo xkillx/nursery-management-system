@@ -828,8 +828,8 @@ SELECT
     fp.id AS funding_profile_id,
     fp.funded_allowance_minutes,
     bp.term_time_only,
-    COALESCE(fr.funding_model, 'unknown') AS funding_model,
-    fr.funded_hours_per_week,
+    COALESCE(fp.funding_model, 'unknown') AS funding_model,
+    fp.funded_hours_per_week,
     b.ad_hoc_rate_multiplier
 FROM term t
 JOIN children c
@@ -845,10 +845,6 @@ LEFT JOIN funding_profiles fp
  AND fp.branch_id = t.branch_id
  AND fp.child_id = t.child_id
  AND fp.billing_month = $3
-LEFT JOIN child_funding_records fr
-  ON fr.tenant_id = t.tenant_id
- AND fr.branch_id = t.branch_id
- AND fr.child_id = t.child_id
 JOIN branches b
   ON b.tenant_id = t.tenant_id
  AND b.id = t.branch_id
@@ -1097,3 +1093,15 @@ WHERE i.tenant_id = $1 AND i.branch_id = $2
   AND i.status = 'overdue'
 ORDER BY i.due_at ASC
 LIMIT 5;
+
+-- name: GetConsumedMinutesByChildren :many
+SELECT
+    i.child_id,
+    COALESCE(SUM((i.calculation_details->>'booked_core_minutes')::int), 0) AS consumed_minutes
+FROM invoices i
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.billing_month = $3
+  AND i.child_id = ANY($4::uuid[])
+  AND i.status IN ('issued', 'paid', 'overdue', 'payment_failed')
+GROUP BY i.child_id;

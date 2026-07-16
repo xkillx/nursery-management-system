@@ -13,6 +13,9 @@ type FundingProfile struct {
 	ChildID                uuid.UUID
 	BillingMonth           time.Time
 	FundedAllowanceMinutes int
+	FundingType            *string
+	FundingModel           *string
+	FundedHoursPerWeek     *float64
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 }
@@ -62,6 +65,7 @@ type OverviewResult struct {
 }
 
 type OverviewItem struct {
-	Row   OverviewRow
-	Flags []OverviewFlag
+	Row              OverviewRow
+	Flags            []OverviewFlag
+	RemainingMinutes *int
 }

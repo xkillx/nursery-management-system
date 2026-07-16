@@ -66,6 +66,9 @@ func (r *Repository) Create(ctx context.Context, tx domain.Tx, profile domain.Fu
 		ChildID:                uuidToPgtype(profile.ChildID),
 		BillingMonth:           timeToPgtypeDate(profile.BillingMonth),
 		FundedAllowanceMinutes: int32(profile.FundedAllowanceMinutes),
+		FundingType:            pgtype.Text{String: ptrStr(profile.FundingType), Valid: profile.FundingType != nil},
+		FundingModel:           pgtype.Text{String: ptrStr(profile.FundingModel), Valid: profile.FundingModel != nil},
+		FundedHoursPerWeek:     ptrToNumeric(profile.FundedHoursPerWeek),
 	})
 	if err != nil {
 		return domain.FundingProfile{}, fmt.Errorf("create funding profile: %w", err)
@@ -109,6 +112,22 @@ func (r *Repository) GetChildEnrollmentForUpdate(ctx context.Context, tx domain.
 }
 
 func mapProfile(row sqlc.FundingProfile) domain.FundingProfile {
+	var fundingType *string
+	if row.FundingType.Valid {
+		fundingType = &row.FundingType.String
+	}
+
+	var fundingModel *string
+	if row.FundingModel.Valid {
+		fundingModel = &row.FundingModel.String
+	}
+
+	var fundedHoursPerWeek *float64
+	if row.FundedHoursPerWeek.Valid {
+		f, _ := row.FundedHoursPerWeek.Float64Value()
+		fundedHoursPerWeek = &f.Float64
+	}
+
 	return domain.FundingProfile{
 		ID:                     pgtypeUUIDToUUID(row.ID),
 		TenantID:               pgtypeUUIDToUUID(row.TenantID),
@@ -116,6 +135,9 @@ func mapProfile(row sqlc.FundingProfile) domain.FundingProfile {
 		ChildID:                pgtypeUUIDToUUID(row.ChildID),
 		BillingMonth:           pgtypeDateToTime(row.BillingMonth),
 		FundedAllowanceMinutes: int(row.FundedAllowanceMinutes),
+		FundingType:            fundingType,
+		FundingModel:           fundingModel,
+		FundedHoursPerWeek:     fundedHoursPerWeek,
 		CreatedAt:              pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:              pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
@@ -272,4 +294,115 @@ func mapOverviewRow(row sqlc.FundingOverviewListRow) domain.OverviewRow {
 		FundingUpdatedAt:       updatedAt,
 		ChildPhotoPath:         pgtypeTextToStringPtr(row.ProfilePhotoPath),
 	}
+}
+
+type HistoryRepository struct {
+	pool *pgxpool.Pool
+}
+
+func NewHistoryRepository(pool *pgxpool.Pool) *HistoryRepository {
+	return &HistoryRepository{pool: pool}
+}
+
+func (r *HistoryRepository) Create(ctx context.Context, history domain.FundingHistory) error {
+	q := sqlc.New(r.pool)
+	return q.ChildFundingHistoryInsert(ctx, sqlc.ChildFundingHistoryInsertParams{
+		ID:                 uuidToPgtype(history.ID),
+		TenantID:           uuidToPgtype(history.TenantID),
+		BranchID:           uuidToPgtype(history.BranchID),
+		ChildID:            uuidToPgtype(history.ChildID),
+		FundingType:        pgtype.Text{String: ptrStr(history.FundingType), Valid: history.FundingType != nil},
+		FundingModel:       pgtype.Text{String: ptrStr(history.FundingModel), Valid: history.FundingModel != nil},
+		FundedHoursPerWeek: ptrToNumeric(history.FundedHoursPerWeek),
+		FundingStartDate:   ptrToPgtypeDate(history.FundingStartDate),
+		FundingEndDate:     ptrToPgtypeDate(history.FundingEndDate),
+		ChangedAt:          pgtype.Timestamptz{Time: history.ChangedAt, Valid: true},
+		ChangedByUserID:    uuidToPgtype(history.ChangedByUserID),
+	})
+}
+
+func (r *HistoryRepository) ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]domain.FundingHistory, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.ChildFundingHistoryListByChild(ctx, sqlc.ChildFundingHistoryListByChildParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ChildID:  uuidToPgtype(childID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list funding history: %w", err)
+	}
+
+	result := make([]domain.FundingHistory, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapHistoryRow(row))
+	}
+	return result, nil
+}
+
+func mapHistoryRow(row sqlc.ChildFundingHistory) domain.FundingHistory {
+	var fundingType *string
+	if row.FundingType.Valid {
+		fundingType = &row.FundingType.String
+	}
+
+	var fundingModel *string
+	if row.FundingModel.Valid {
+		fundingModel = &row.FundingModel.String
+	}
+
+	var fundedHoursPerWeek *float64
+	if row.FundedHoursPerWeek.Valid {
+		f, _ := row.FundedHoursPerWeek.Float64Value()
+		fundedHoursPerWeek = &f.Float64
+	}
+
+	var fundingStartDate *time.Time
+	if row.FundingStartDate.Valid {
+		t := row.FundingStartDate.Time
+		fundingStartDate = &t
+	}
+
+	var fundingEndDate *time.Time
+	if row.FundingEndDate.Valid {
+		t := row.FundingEndDate.Time
+		fundingEndDate = &t
+	}
+
+	return domain.FundingHistory{
+		ID:                 pgtypeUUIDToUUID(row.ID),
+		TenantID:           pgtypeUUIDToUUID(row.TenantID),
+		BranchID:           pgtypeUUIDToUUID(row.BranchID),
+		ChildID:            pgtypeUUIDToUUID(row.ChildID),
+		FundingType:        fundingType,
+		FundingModel:       fundingModel,
+		FundedHoursPerWeek: fundedHoursPerWeek,
+		FundingStartDate:   fundingStartDate,
+		FundingEndDate:     fundingEndDate,
+		ChangedAt:          pgtypeTimestamptzToTime(row.ChangedAt),
+		ChangedByUserID:    pgtypeUUIDToUUID(row.ChangedByUserID),
+	}
+}
+
+func ptrStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func ptrToNumeric(f *float64) pgtype.Numeric {
+	if f == nil {
+		return pgtype.Numeric{}
+	}
+	// Convert float64 to string then scan to avoid precision issues
+	n := pgtype.Numeric{}
+	_ = n.Scan(fmt.Sprintf("%g", *f))
+	return n
+}
+
+func ptrToPgtypeDate(t *time.Time) pgtype.Date {
+	if t == nil {
+		return pgtype.Date{}
+	}
+	return pgtype.Date{Time: *t, Valid: true}
 }

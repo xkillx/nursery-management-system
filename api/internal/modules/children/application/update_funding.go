@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/children/domain"
@@ -12,6 +13,10 @@ import (
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/transaction"
 )
+
+type FundingHistoryWriter interface {
+	Write(ctx context.Context, tenantID, branchID, childID uuid.UUID, record *domain.ChildFundingRecord, changedByUserID uuid.UUID) error
+}
 
 type GetFunding struct {
 	repo domain.Repository
@@ -44,13 +49,14 @@ func (uc *GetFunding) Execute(ctx context.Context, actor tenant.ActorContext, ch
 }
 
 type UpdateFunding struct {
-	repo  domain.Repository
-	audit *audit.Writer
-	txm   *transaction.Manager
+	repo     domain.Repository
+	audit    *audit.Writer
+	txm      *transaction.Manager
+	historyW FundingHistoryWriter
 }
 
-func NewUpdateFunding(repo domain.Repository, auditWriter *audit.Writer, txm *transaction.Manager) *UpdateFunding {
-	return &UpdateFunding{repo: repo, audit: auditWriter, txm: txm}
+func NewUpdateFunding(repo domain.Repository, auditWriter *audit.Writer, txm *transaction.Manager, historyWriter FundingHistoryWriter) *UpdateFunding {
+	return &UpdateFunding{repo: repo, audit: auditWriter, txm: txm, historyW: historyWriter}
 }
 
 func (uc *UpdateFunding) Execute(ctx context.Context, actor tenant.ActorContext, childID string, in *ChildFundingRecordInput) (*domain.ChildFundingRecord, error) {
@@ -82,6 +88,12 @@ func (uc *UpdateFunding) Execute(ctx context.Context, actor tenant.ActorContext,
 		if eerr != nil {
 			return domainerrors.Internal(fmt.Errorf("upsert child funding: %w", eerr))
 		}
+
+		// Write funding history
+		if herr := uc.historyW.Write(ctx, actor.TenantID, actor.BranchID, id, saved, actor.UserID); herr != nil {
+			return domainerrors.Internal(fmt.Errorf("write funding history: %w", herr))
+		}
+
 		if aerr := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
 			ActionType: "child_funding_updated",
 			EntityType: "child",

@@ -184,8 +184,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Get:    getConsent,
 		Update: updateConsent,
 	}
+	historyRepository := postgres10.NewHistoryRepository(pool)
 	getFunding := application3.NewGetFunding(childRepository)
-	updateFunding := application3.NewUpdateFunding(childRepository, writer, transactionManager)
+	fundingHistoryWriter := provideFundingHistoryWriterAdapter(historyRepository)
+	updateFunding := application3.NewUpdateFunding(childRepository, writer, transactionManager, fundingHistoryWriter)
 	fundingUseCases := httpchild.FundingUseCases{
 		Get:    getFunding,
 		Update: updateFunding,
@@ -268,9 +270,11 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
 	repository2 := postgres10.NewRepository(pool)
+	bootstrapChildFundingRecordReaderAdapter := provideChildFundingRecordReaderAdapter(childRepository)
+	consumedMinutesProvider := provideConsumedMinutesProviderAdapter(pool)
 	applicationGetProfile := application6.NewGetProfile(repository2)
-	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer)
-	listOverview := application6.NewListOverview(repository2)
+	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
+	listOverview := application6.NewListOverview(repository2, consumedMinutesProvider)
 	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
@@ -542,8 +546,10 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Get:    getConsent,
 		Update: updateConsent,
 	}
+	historyRepository := postgres10.NewHistoryRepository(pool)
 	getFunding := application3.NewGetFunding(childRepository)
-	updateFunding := application3.NewUpdateFunding(childRepository, writer, transactionManager)
+	fundingHistoryWriter := provideFundingHistoryWriterAdapter(historyRepository)
+	updateFunding := application3.NewUpdateFunding(childRepository, writer, transactionManager, fundingHistoryWriter)
 	fundingUseCases := httpchild.FundingUseCases{
 		Get:    getFunding,
 		Update: updateFunding,
@@ -626,9 +632,11 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
 	repository2 := postgres10.NewRepository(pool)
+	bootstrapChildFundingRecordReaderAdapter := provideChildFundingRecordReaderAdapter(childRepository)
+	consumedMinutesProvider := provideConsumedMinutesProviderAdapter(pool)
 	applicationGetProfile := application6.NewGetProfile(repository2)
-	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer)
-	listOverview := application6.NewListOverview(repository2)
+	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
+	listOverview := application6.NewListOverview(repository2, consumedMinutesProvider)
 	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
@@ -844,8 +852,28 @@ func provideClearMarker(
 func provideUpsertProfile(
 	repo domain3.Repository,
 	txMgr *transaction.Manager, audit2 *audit.Writer,
+	fundingReader application6.ChildFundingRecordReader,
+	historyRepo domain3.HistoryRepository,
 ) *application6.UpsertProfile {
-	return application6.NewUpsertProfile(repo, txMgr, audit2)
+	return application6.NewUpsertProfile(repo, txMgr, audit2, fundingReader, historyRepo)
+}
+
+func provideChildFundingRecordReaderAdapter(
+	childRepo *postgres3.ChildRepository,
+) *childFundingRecordReaderAdapter {
+	return &childFundingRecordReaderAdapter{repo: childRepo}
+}
+
+func provideConsumedMinutesProviderAdapter(
+	pool *pgxpool.Pool,
+) *consumedMinutesProviderAdapter {
+	return &consumedMinutesProviderAdapter{pool: pool}
+}
+
+func provideFundingHistoryWriterAdapter(
+	repo *postgres10.HistoryRepository,
+) *fundingHistoryWriterAdapter {
+	return &fundingHistoryWriterAdapter{repo: repo}
 }
 
 var passwordResetSet = wire.NewSet(

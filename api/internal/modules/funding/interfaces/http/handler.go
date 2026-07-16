@@ -194,13 +194,14 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 	}
 
 	resp := overviewItemResponse{
-		ChildID:         row.ChildID.String(),
-		ChildFirstName:  row.ChildFirstName,
-		ChildMiddleName: row.ChildMiddleName,
-		ChildLastName:   row.ChildLastName,
-		IsActive:        row.IsActive,
-		StartDate:       row.StartDate,
-		Flags:           flags,
+		ChildID:          row.ChildID.String(),
+		ChildFirstName:   row.ChildFirstName,
+		ChildMiddleName:  row.ChildMiddleName,
+		ChildLastName:    row.ChildLastName,
+		IsActive:         row.IsActive,
+		StartDate:        row.StartDate,
+		Flags:            flags,
+		RemainingMinutes: item.RemainingMinutes,
 	}
 	if row.EndDate != nil {
 		resp.EndDate = row.EndDate

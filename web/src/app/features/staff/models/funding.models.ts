@@ -24,6 +24,7 @@ export interface FundingOverviewItem {
   fundingUpdatedAt: string | null;
   photoUrl: string | null;
   flags: FundingOverviewFlag[];
+  remainingMinutes: number | null;
 }
 
 export interface FundingOverviewRecord {

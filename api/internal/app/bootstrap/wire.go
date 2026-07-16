@@ -162,8 +162,10 @@ func provideUpsertProfile(
 	repo fundingdomain.Repository,
 	txMgr *transaction.Manager,
 	audit *audit.Writer,
+	fundingReader fundingapp.ChildFundingRecordReader,
+	historyRepo fundingdomain.HistoryRepository,
 ) *fundingapp.UpsertProfile {
-	return fundingapp.NewUpsertProfile(repo, txMgr, audit)
+	return fundingapp.NewUpsertProfile(repo, txMgr, audit, fundingReader, historyRepo)
 }
 
 // ── Password reset module ───────────────────────────────────────────────
