@@ -239,6 +239,25 @@ type AuditLog struct {
 	ReasonNote        pgtype.Text
 }
 
+type Booking struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	ChildID              pgtype.UUID
+	SessionTemplateID    pgtype.UUID
+	RoomID               pgtype.UUID
+	DaysOfWeek           []int32
+	EffectiveStartDate   pgtype.Date
+	EffectiveEndDate     pgtype.Date
+	FundingType          pgtype.Text
+	FundingHoursPerWeek  pgtype.Numeric
+	LaReference          pgtype.Text
+	Status               string
+	BookedByMembershipID pgtype.UUID
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
 type Branch struct {
 	ID                  pgtype.UUID
 	TenantID            pgtype.UUID
