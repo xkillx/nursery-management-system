@@ -29,6 +29,8 @@ type Repository interface {
 	ListIncompleteSessionsForPeriod(ctx context.Context, tenantID, branchID uuid.UUID, periodStartLocalDate, periodEndExclusiveLocalDate time.Time) ([]IncompleteSessionBlocker, error)
 	ListSessionsForCorrection(ctx context.Context, tenantID, branchID, childID uuid.UUID, localDate time.Time) (CorrectionSessionContext, error)
 	ListCorrectionHistory(ctx context.Context, tenantID, branchID, sessionID uuid.UUID) (Session, []CorrectionHistoryEvent, error)
+	GetRegister(ctx context.Context, tenantID, branchID uuid.UUID, registerDate time.Time, registerDateDow []int32) ([]RegisterEntry, error)
+	GetRegisterSummary(ctx context.Context, tenantID, branchID uuid.UUID, fromDate, toDate time.Time) ([]RegisterSummaryEntry, error)
 }
 
 type ChildCorrectionChecker interface {

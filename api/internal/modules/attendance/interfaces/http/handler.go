@@ -16,12 +16,14 @@ import (
 )
 
 type Handler struct {
-	logger       *slog.Logger
-	checkIn      *application.CheckInChild
-	checkOut     *application.CheckOutChild
-	correct      *application.CorrectAttendance
-	listSessions *application.ListCorrectionSessions
-	listHistory  *application.ListCorrectionHistory
+	logger        *slog.Logger
+	checkIn       *application.CheckInChild
+	checkOut      *application.CheckOutChild
+	correct       *application.CorrectAttendance
+	listSessions  *application.ListCorrectionSessions
+	listHistory   *application.ListCorrectionHistory
+	getRegister   *application.GetRegister
+	getRegSummary *application.GetRegisterSummary
 }
 
 func NewHandler(
@@ -30,9 +32,11 @@ func NewHandler(
 	correct *application.CorrectAttendance,
 	listSessions *application.ListCorrectionSessions,
 	listHistory *application.ListCorrectionHistory,
+	getRegister *application.GetRegister,
+	getRegSummary *application.GetRegisterSummary,
 	logger *slog.Logger,
 ) *Handler {
-	return &Handler{logger: logger, checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory}
+	return &Handler{logger: logger, checkIn: checkIn, checkOut: checkOut, correct: correct, listSessions: listSessions, listHistory: listHistory, getRegister: getRegister, getRegSummary: getRegSummary}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
@@ -46,6 +50,8 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	managerOnly.POST("/attendance/corrections", h.correctionHandler)
 	managerOnly.GET("/attendance/sessions", h.listSessionsHandler)
 	managerOnly.GET("/attendance/sessions/:session_id/history", h.listHistoryHandler)
+	managerOnly.GET("/register", h.getRegisterHandler)
+	managerOnly.GET("/register/summary", h.getRegisterSummaryHandler)
 }
 
 // checkInHandler checks in a child.
@@ -269,6 +275,93 @@ func (h *Handler) listHistoryHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toCorrectionHistoryResponse(result))
+}
+
+// getRegisterHandler returns the daily attendance register.
+//
+//	@Summary		Get daily register
+//	@Description	Get the attendance register for a date, showing expected children and their attendance status.
+//	@Tags			attendance
+//	@Produce		json
+//	@Param			date	query		string	true	"Register date"	format(date)
+//	@Success		200		{object}	registerResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/register [get]
+func (h *Handler) getRegisterHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+	registerDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	entries, err := h.getRegister.Execute(c.Request.Context(), actor, registerDate)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toRegisterResponse(dateStr, entries))
+}
+
+// getRegisterSummaryHandler returns per-room booking counts for a date range.
+//
+//	@Summary		Get register summary
+//	@Description	Get per-room booking counts for a date range (used for date picker badges).
+//	@Tags			attendance
+//	@Produce		json
+//	@Param			from	query		string	true	"From date"	format(date)
+//	@Param			to		query		string	true	"To date"	format(date)
+//	@Success		200		{object}	registerSummaryResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/register/summary [get]
+func (h *Handler) getRegisterSummaryHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	fromStr := c.Query("from")
+	toStr := c.Query("to")
+	if fromStr == "" || toStr == "" {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+	fromDate, err := time.Parse("2006-01-02", fromStr)
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+	toDate, err := time.Parse("2006-01-02", toStr)
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	entries, err := h.getRegSummary.Execute(c.Request.Context(), actor, fromDate, toDate)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toRegisterSummaryResponse(entries))
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

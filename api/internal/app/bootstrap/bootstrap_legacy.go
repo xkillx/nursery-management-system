@@ -277,6 +277,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		attendanceapp.NewCorrectAttendance(attendanceRepo, childCorrectionChecker, txManager, auditWriter, attendanceClock),
 		attendanceapp.NewListCorrectionSessions(attendanceRepo),
 		attendanceapp.NewListCorrectionHistory(attendanceRepo),
+		attendanceapp.NewGetRegister(attendanceRepo),
+		attendanceapp.NewGetRegisterSummary(attendanceRepo),
 		logger,
 	)
 

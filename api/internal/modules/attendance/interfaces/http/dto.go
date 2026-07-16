@@ -168,6 +168,90 @@ func toHistoryEventResponse(evt domain.CorrectionHistoryEvent) correctionHistory
 	return resp
 }
 
+type registerEntryResponse struct {
+	ChildID             string  `json:"child_id"`
+	ChildFirstName      string  `json:"child_first_name"`
+	ChildLastName       *string `json:"child_last_name"`
+	RoomID              *string `json:"room_id"`
+	RoomName            *string `json:"room_name"`
+	SessionTemplateID   string  `json:"session_template_id"`
+	SessionTemplateName string  `json:"session_template_name"`
+	BookingType         string  `json:"booking_type"`
+	AttendanceID        *string `json:"attendance_id"`
+	AttendanceStatus    *string `json:"attendance_status"`
+	CheckInAt           *string `json:"check_in_at"`
+	CheckOutAt          *string `json:"check_out_at"`
+}
+
+type registerResponse struct {
+	Date    string                  `json:"date"`
+	Entries []registerEntryResponse `json:"entries"`
+}
+
+type registerSummaryEntryResponse struct {
+	BookingType  string  `json:"booking_type"`
+	RoomID       *string `json:"room_id"`
+	RoomName     *string `json:"room_name"`
+	RegisterDate string  `json:"register_date"`
+	BookingCount int64   `json:"booking_count"`
+}
+
+type registerSummaryResponse struct {
+	Items []registerSummaryEntryResponse `json:"items"`
+}
+
+func toRegisterResponse(date string, entries []domain.RegisterEntry) registerResponse {
+	items := make([]registerEntryResponse, 0, len(entries))
+	for _, e := range entries {
+		entry := registerEntryResponse{
+			ChildID:             e.ChildID.String(),
+			ChildFirstName:      e.ChildFirstName,
+			ChildLastName:       e.ChildLastName,
+			SessionTemplateID:   e.SessionTemplateID.String(),
+			SessionTemplateName: e.SessionTemplateName,
+			BookingType:         e.BookingType,
+		}
+		if e.RoomID != nil {
+			id := e.RoomID.String()
+			entry.RoomID = &id
+			entry.RoomName = e.RoomName
+		}
+		if e.AttendanceID != nil {
+			id := e.AttendanceID.String()
+			entry.AttendanceID = &id
+		}
+		entry.AttendanceStatus = e.AttendanceStatus
+		if e.CheckInAt != nil {
+			v := e.CheckInAt.UTC().Format(time.RFC3339)
+			entry.CheckInAt = &v
+		}
+		if e.CheckOutAt != nil {
+			v := e.CheckOutAt.UTC().Format(time.RFC3339)
+			entry.CheckOutAt = &v
+		}
+		items = append(items, entry)
+	}
+	return registerResponse{Date: date, Entries: items}
+}
+
+func toRegisterSummaryResponse(entries []domain.RegisterSummaryEntry) registerSummaryResponse {
+	items := make([]registerSummaryEntryResponse, 0, len(entries))
+	for _, e := range entries {
+		entry := registerSummaryEntryResponse{
+			BookingType:  e.BookingType,
+			RegisterDate: e.RegisterDate.Format("2006-01-02"),
+			BookingCount: e.BookingCount,
+		}
+		if e.RoomID != nil {
+			id := e.RoomID.String()
+			entry.RoomID = &id
+			entry.RoomName = e.RoomName
+		}
+		items = append(items, entry)
+	}
+	return registerSummaryResponse{Items: items}
+}
+
 func parseChildID(raw string) (uuid.UUID, error) {
 	return uuid.Parse(raw)
 }

@@ -403,6 +403,85 @@ func (r *AttendanceRepository) CreateCorrectedSessionWithEvent(
 	}, nil
 }
 
+func (r *AttendanceRepository) GetRegister(
+	ctx context.Context,
+	tenantID, branchID uuid.UUID,
+	registerDate time.Time,
+	registerDateDow []int32,
+) ([]domain.RegisterEntry, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.BookingsRegisterForDate(ctx, sqlc.BookingsRegisterForDateParams{
+		TenantID:        uuidToPgtype(tenantID),
+		BranchID:        uuidToPgtype(branchID),
+		RegisterDate:    timeToPgtypeDate(registerDate),
+		RegisterDateDow: registerDateDow,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get register: %w", err)
+	}
+	entries := make([]domain.RegisterEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := domain.RegisterEntry{
+			ChildID:             pgtypeUUIDToUUID(row.ChildID),
+			ChildFirstName:      row.ChildFirstName,
+			ChildLastName:       pgtypeTextToStringPtr(row.ChildLastName),
+			SessionTemplateID:   pgtypeUUIDToUUID(row.SessionTemplateID),
+			SessionTemplateName: row.SessionTemplateName,
+			AttendanceID:        pgtypeUUIDToUUIDPtr(row.AttendanceID),
+			AttendanceStatus:    pgtypeTextToStringPtr(row.AttendanceStatus),
+			CheckInAt:           pgtypeTimestamptzToTimePtr(row.CheckInAt),
+			CheckOutAt:          pgtypeTimestamptzToTimePtr(row.CheckOutAt),
+		}
+		if row.RoomID.Valid {
+			id := pgtypeUUIDToUUID(row.RoomID)
+			entry.RoomID = &id
+			entry.RoomName = &row.RoomName
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
+}
+
+func (r *AttendanceRepository) GetRegisterSummary(
+	ctx context.Context,
+	tenantID, branchID uuid.UUID,
+	fromDate, toDate time.Time,
+) ([]domain.RegisterSummaryEntry, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.AttendanceRegisterSummary(ctx, sqlc.AttendanceRegisterSummaryParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		FromDate: timeToPgtypeDate(fromDate),
+		ToDate:   timeToPgtypeDate(toDate),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get register summary: %w", err)
+	}
+	entries := make([]domain.RegisterSummaryEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := domain.RegisterSummaryEntry{
+			BookingType:  row.BookingType,
+			RegisterDate: pgtypeDateToTime(row.RegisterDate),
+			BookingCount: row.BookingCount,
+		}
+		if row.RoomID.Valid {
+			id := pgtypeUUIDToUUID(row.RoomID)
+			entry.RoomID = &id
+			entry.RoomName = &row.RoomName
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
+}
+
+func pgtypeUUIDToUUIDPtr(u pgtype.UUID) *uuid.UUID {
+	if !u.Valid {
+		return nil
+	}
+	id := uuid.UUID(u.Bytes)
+	return &id
+}
+
 func uuidToPgtype(u uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: [16]byte(u), Valid: true}
 }

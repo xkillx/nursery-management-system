@@ -115,3 +115,11 @@ func (s *stubListSessionsRepo) HasOverlappingSession(_ context.Context, _ domain
 func (s *stubListSessionsRepo) ListIncompleteSessionsForPeriod(_ context.Context, _, _ uuid.UUID, _, _ time.Time) ([]domain.IncompleteSessionBlocker, error) {
 	return nil, nil
 }
+
+func (s *stubListSessionsRepo) GetRegister(_ context.Context, _, _ uuid.UUID, _ time.Time, _ []int32) ([]domain.RegisterEntry, error) {
+	return nil, nil
+}
+
+func (s *stubListSessionsRepo) GetRegisterSummary(_ context.Context, _, _ uuid.UUID, _, _ time.Time) ([]domain.RegisterSummaryEntry, error) {
+	return nil, nil
+}

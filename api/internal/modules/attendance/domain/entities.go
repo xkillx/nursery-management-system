@@ -75,3 +75,26 @@ type Session struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
+
+type RegisterEntry struct {
+	ChildID             uuid.UUID
+	ChildFirstName      string
+	ChildLastName       *string
+	RoomID              *uuid.UUID
+	RoomName            *string
+	SessionTemplateID   uuid.UUID
+	SessionTemplateName string
+	BookingType         string
+	AttendanceID        *uuid.UUID
+	AttendanceStatus    *string
+	CheckInAt           *time.Time
+	CheckOutAt          *time.Time
+}
+
+type RegisterSummaryEntry struct {
+	BookingType  string
+	RoomID       *uuid.UUID
+	RoomName     *string
+	RegisterDate time.Time
+	BookingCount int64
+}

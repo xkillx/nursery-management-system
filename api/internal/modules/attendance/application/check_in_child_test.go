@@ -70,6 +70,14 @@ func (f *fakeRepository) ListCorrectionHistory(ctx context.Context, tenantID, br
 	return domain.Session{}, nil, nil
 }
 
+func (f *fakeRepository) GetRegister(ctx context.Context, tenantID, branchID uuid.UUID, registerDate time.Time, registerDateDow []int32) ([]domain.RegisterEntry, error) {
+	return nil, nil
+}
+
+func (f *fakeRepository) GetRegisterSummary(ctx context.Context, tenantID, branchID uuid.UUID, fromDate, toDate time.Time) ([]domain.RegisterSummaryEntry, error) {
+	return nil, nil
+}
+
 type captureRepo struct {
 	createOpenSession struct {
 		called     bool
@@ -165,6 +173,14 @@ func (c *captureRepo) ListSessionsForCorrection(ctx context.Context, tenantID, b
 
 func (c *captureRepo) ListCorrectionHistory(ctx context.Context, tenantID, branchID, sessionID uuid.UUID) (domain.Session, []domain.CorrectionHistoryEvent, error) {
 	return domain.Session{}, nil, nil
+}
+
+func (c *captureRepo) GetRegister(ctx context.Context, tenantID, branchID uuid.UUID, registerDate time.Time, registerDateDow []int32) ([]domain.RegisterEntry, error) {
+	return nil, nil
+}
+
+func (c *captureRepo) GetRegisterSummary(ctx context.Context, tenantID, branchID uuid.UUID, fromDate, toDate time.Time) ([]domain.RegisterSummaryEntry, error) {
+	return nil, nil
 }
 
 type fakeChildChecker struct {

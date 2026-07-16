@@ -281,6 +281,8 @@ var attendanceSet = wire.NewSet(
 	attendanceapp.NewCorrectAttendance,
 	attendanceapp.NewListCorrectionSessions,
 	attendanceapp.NewListCorrectionHistory,
+	attendanceapp.NewGetRegister,
+	attendanceapp.NewGetRegisterSummary,
 	attendancehandler.NewHandler,
 )
 
