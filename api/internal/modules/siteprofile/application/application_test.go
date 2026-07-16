@@ -145,8 +145,8 @@ func TestUpdateSiteProfile_AllEmptyFields(t *testing.T) {
 	if !ok {
 		t.Fatal("expected field_errors in details")
 	}
-	if len(fields) != 7 {
-		t.Errorf("expected 7 field errors (all required except description), got %d", len(fields))
+	if len(fields) != 8 {
+		t.Errorf("expected 8 field errors (all required fields), got %d", len(fields))
 	}
 }
 
@@ -201,7 +201,7 @@ func TestUpdateSiteProfile_NameMaxLength(t *testing.T) {
 
 	in := application.UpdateSiteProfileInput{
 		NurseryName:     string(make([]byte, 120)),
-		Description:     "",
+		Description:     "A valid description",
 		Phone:           "+44 161 555 0100",
 		Email:           "hello@littlestars.example",
 		Website:         "https://littlestars.example",

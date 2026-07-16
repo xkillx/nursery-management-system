@@ -185,7 +185,7 @@ func TestCreateTermUseCase_CompilesAndBuilds(t *testing.T) {
 func TestCreateTermDomainValidation_NoManagerRequired(t *testing.T) {
 	// Direct domain test: the NewTerm constructor doesn't need a manager.
 	t1 := uuid.New()
-	start := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
+	start := time.Date(2027, 7, 1, 0, 0, 0, 0, time.UTC)
 	term, err := domain.NewTerm(t1, uuid.New(), uuid.New(), uuid.New(), start, uuid.New(), 750, uuid.New())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
