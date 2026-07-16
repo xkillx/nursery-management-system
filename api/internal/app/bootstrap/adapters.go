@@ -21,6 +21,7 @@ import (
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
+	bookingsapp "nursery-management-system/api/internal/modules/bookings/application"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
@@ -36,6 +37,7 @@ import (
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
 	parentchilddomain "nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
+	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
@@ -618,6 +620,34 @@ func (a *hourlyBookingLookupAdapter) ListActiveByChildAndMonth(ctx context.Conte
 }
 
 var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
+
+// ── Room Capacity Lookup adapter ───────────────────────────────────────────
+
+// roomCapacityLookupAdapter satisfies bookingsapp.RoomCapacityLookup by
+// delegating to the rooms module's repository.
+type roomCapacityLookupAdapter struct {
+	repo *roomspostgres.RoomRepository
+}
+
+func (a *roomCapacityLookupAdapter) ListActiveRooms(ctx context.Context, tenantID, branchID uuid.UUID) ([]bookingsapp.RoomInfo, error) {
+	rooms, err := a.repo.ListByBranch(ctx, tenantID, branchID, false)
+	if err != nil {
+		return nil, fmt.Errorf("room capacity lookup: %w", err)
+	}
+	out := make([]bookingsapp.RoomInfo, 0, len(rooms))
+	for _, r := range rooms {
+		if r.IsActive {
+			out = append(out, bookingsapp.RoomInfo{
+				RoomID:   r.ID,
+				RoomName: r.Name,
+				Capacity: r.Capacity,
+			})
+		}
+	}
+	return out, nil
+}
+
+var _ bookingsapp.RoomCapacityLookup = (*roomCapacityLookupAdapter)(nil)
 
 // ── Billing Notification adapter ──────────────────────────────────────────
 

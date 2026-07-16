@@ -111,6 +111,11 @@ import (
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
 
+	bookingsapp "nursery-management-system/api/internal/modules/bookings/application"
+	bookingsdomain "nursery-management-system/api/internal/modules/bookings/domain"
+	bookingspostgres "nursery-management-system/api/internal/modules/bookings/infrastructure/postgres"
+	bookingshttphandler "nursery-management-system/api/internal/modules/bookings/interfaces/http"
+
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
@@ -588,6 +593,30 @@ var hourlyBookingsSet = wire.NewSet(
 	hourlyhttphandler.NewHandler,
 )
 
+// ── Bookings module ────────────────────────────────────────────────────
+
+func provideRoomCapacityLookupAdapter(
+	roomsRepo *roomspostgres.RoomRepository,
+) *roomCapacityLookupAdapter {
+	return &roomCapacityLookupAdapter{repo: roomsRepo}
+}
+
+var bookingsSet = wire.NewSet(
+	bookingspostgres.NewRepository,
+	wire.Bind(new(bookingsdomain.Repository), new(*bookingspostgres.BookingRepository)),
+	bookingsapp.NewCreateBooking,
+	bookingsapp.NewGetBooking,
+	bookingsapp.NewListBookings,
+	bookingsapp.NewUpdateBooking,
+	bookingsapp.NewCancelBooking,
+	bookingsapp.NewPauseBooking,
+	bookingsapp.NewCloneBooking,
+	bookingsapp.NewListCapacity,
+	provideRoomCapacityLookupAdapter,
+	wire.Bind(new(bookingsapp.RoomCapacityLookup), new(*roomCapacityLookupAdapter)),
+	bookingshttphandler.NewHandler,
+)
+
 // ── Branch Closures module ──────────────────────────────────────────
 
 var branchClosuresSet = wire.NewSet(
@@ -622,6 +651,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		wire.Bind(new(termcalendarapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(adhocapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(hourlyapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(bookingsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
@@ -659,6 +689,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		termCalendarSet,
 		adHocBookingsSet,
 		hourlyBookingsSet,
+		bookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
 		notificationsSet,
@@ -678,6 +709,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		wire.Bind(new(termcalendarapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(adhocapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(hourlyapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(bookingsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
@@ -715,6 +747,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		termCalendarSet,
 		adHocBookingsSet,
 		hourlyBookingsSet,
+		bookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
 		notificationsSet,

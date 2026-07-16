@@ -32,6 +32,7 @@ import (
 	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
+	bookingshttphandler "nursery-management-system/api/internal/modules/bookings/interfaces/http"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	branchclosurehandler "nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 	childapp "nursery-management-system/api/internal/modules/children/application"
@@ -349,6 +350,7 @@ type appComponents struct {
 	TermCalendarHandler     *termcalendarhttphandler.Handler
 	AdHocBookingsHandler    *adhochttphandler.Handler
 	HourlyBookingsHandler   *hourlyhttphandler.Handler
+	BookingsHandler         *bookingshttphandler.Handler
 	BranchClosureHandler    *branchclosurehandler.Handler
 	SiteProfileHandler      *siteprofilehandler.Handler
 }
@@ -425,6 +427,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.TermCalendarHandler.RegisterManagerRoutes(manager)
 	c.AdHocBookingsHandler.RegisterManagerRoutes(manager)
 	c.HourlyBookingsHandler.RegisterManagerRoutes(manager)
+	c.BookingsHandler.RegisterManagerRoutes(manager)
 	c.BranchClosureHandler.RegisterRoutes(protected)
 
 	return router

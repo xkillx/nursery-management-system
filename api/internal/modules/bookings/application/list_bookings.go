@@ -51,3 +51,16 @@ func (uc *ListBookings) ExecutePaginated(ctx context.Context, actor BookingActor
 
 	return bookings, total, nil
 }
+
+func (uc *ListBookings) ExecuteUnified(ctx context.Context, actor BookingActor, siteID uuid.UUID, filters domain.ListFilters, limit, offset int) ([]domain.UnifiedBookingRow, error) {
+	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
+		return nil, err
+	}
+
+	rows, err := uc.repo.ListUnifiedByBranchPaginated(ctx, actor.TenantID(), siteID, filters, limit, offset)
+	if err != nil {
+		return nil, internalError(err)
+	}
+
+	return rows, nil
+}
