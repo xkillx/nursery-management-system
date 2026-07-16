@@ -247,11 +247,11 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 //	@Description	Get a paginated list of children for the current branch.
 //	@Tags			children
 //	@Produce		json
-//	@Param			status	query		string	false	"Filter by status"	Enums(active, inactive, all)
-//	@Param			page	query		int		false	"Page number"		default(1)	minimum(1)
+//	@Param			status		query		string	false	"Filter by status"	Enums(active, inactive, all)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
-//	@Success		200		{object}	object{items=[]childResponse,total=int,page=int,page_size=int}
-//	@Failure		401		{object}	object{code=string,message=string}
+//	@Success		200			{object}	object{items=[]childResponse,total=int,page=int,page_size=int}
+//	@Failure		401			{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager"]
 //	@Router			/children [get]
@@ -748,8 +748,8 @@ func (h *Handler) setCollectionSettingHandler(c *gin.Context) {
 //	@Description	Get a paginated list of room assignments for a child.
 //	@Tags			children
 //	@Produce		json
-//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			child_id	path		string	true	"Child ID"			format(uuid)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]roomAssignmentResponse,total=int,page=int,page_size=int}
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -883,8 +883,8 @@ func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 //	@Description	Get a paginated list of booking patterns for a child.
 //	@Tags			children
 //	@Produce		json
-//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			child_id	path		string	true	"Child ID"			format(uuid)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]bookingPatternResponse,total=int,page=int,page_size=int}
 //	@Failure		401			{object}	object{code=string,message=string}

@@ -70,7 +70,7 @@ func (h *Handler) resolveActor(c *gin.Context) (application.TermCalendarActor, b
 //	@Produce		json
 //	@Param			site_id				path		string	true	"Site ID"	format(uuid)
 //	@Param			include_archived	query		bool	false	"Include archived terms"
-//	@Param			page				query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page				query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size			query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200					{object}	object{items=[]academicTermResponse,total=int,page=int,page_size=int}
 //	@Failure		401					{object}	object{code=string,message=string}
@@ -111,7 +111,7 @@ func (h *Handler) listTerms(c *gin.Context) {
 //	@Tags			academic-terms
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string				true	"Site ID"	format(uuid)
 //	@Param			body	body		createTermRequest	true	"Term data"
 //	@Success		201		{object}	object{academic_term=academicTermResponse}
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -174,8 +174,8 @@ func (h *Handler) createTerm(c *gin.Context) {
 //	@Tags			academic-terms
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
-//	@Param			term_id	path		string			true	"Term ID"	format(uuid)
+//	@Param			site_id	path		string				true	"Site ID"	format(uuid)
+//	@Param			term_id	path		string				true	"Term ID"	format(uuid)
 //	@Param			body	body		updateTermRequest	true	"Term data"
 //	@Success		200		{object}	object{academic_term=academicTermResponse}
 //	@Failure		400		{object}	object{code=string,message=string}

@@ -112,12 +112,12 @@ func (h *Handler) resolveActor(c *gin.Context) (application.HourlyBookingActor, 
 //	@Description	Get a paginated list of hourly bookings for a site.
 //	@Tags			hourly-bookings
 //	@Produce		json
-//	@Param			site_id		path		string	true	"Site ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"				format(uuid)
 //	@Param			child_id	query		string	false	"Filter by child ID"	format(uuid)
 //	@Param			from		query		string	false	"Filter from date"		format(date)
 //	@Param			to			query		string	false	"Filter to date"		format(date)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
-//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Param			page		query		int		false	"Page number"			default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"		default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]hourlyBookingResponse,total=int,page=int,page_size=int}
 //	@Failure		401			{object}	object{code=string,message=string}
 //	@Security		BearerAuth
@@ -183,7 +183,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 //	@Tags			hourly-bookings
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string						true	"Site ID"	format(uuid)
 //	@Param			body	body		createHourlyBookingRequest	true	"Booking data"
 //	@Success		201		{object}	object{hourly_booking=hourlyBookingResponse}
 //	@Failure		400		{object}	object{code=string,message=string}

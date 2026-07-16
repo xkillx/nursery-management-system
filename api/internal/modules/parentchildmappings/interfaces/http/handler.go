@@ -95,7 +95,7 @@ func (h *Handler) createMappingHandler(c *gin.Context) {
 //	@Tags			parent-child-mappings
 //	@Accept			json
 //	@Produce		json
-//	@Param			mapping_id	path		string	true	"Mapping ID"	format(uuid)
+//	@Param			mapping_id	path		string											true	"Mapping ID"	format(uuid)
 //	@Param			body		body		object{reason_code=string,reason_note=string}	true	"End reason"
 //	@Success		200			{object}	parentChildMappingResponse
 //	@Failure		400			{object}	object{code=string,message=string}

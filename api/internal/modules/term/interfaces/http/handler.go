@@ -90,7 +90,7 @@ func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 //	@Tags			terms
 //	@Accept			json
 //	@Produce		json
-//	@Param			child_id	path		string			true	"Child ID"	format(uuid)
+//	@Param			child_id	path		string				true	"Child ID"	format(uuid)
 //	@Param			body		body		createTermRequest	true	"Term data"
 //	@Success		201			{object}	termResponse
 //	@Failure		400			{object}	object{code=string,message=string}
@@ -140,8 +140,8 @@ func (h *Handler) createTermHandler(c *gin.Context) {
 //	@Description	Get a paginated list of terms for a child.
 //	@Tags			terms
 //	@Produce		json
-//	@Param			child_id	path		string	true	"Child ID"	format(uuid)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			child_id	path		string	true	"Child ID"			format(uuid)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]termResponse,total=int,page=int,page_size=int}
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -234,9 +234,9 @@ func (h *Handler) getTermHandler(c *gin.Context) {
 //	@Description	Get a paginated list of terms expiring within a number of days.
 //	@Tags			terms
 //	@Produce		json
-//	@Param			expiring_within_days	query		int		false	"Days until expiry"	default(30)	minimum(1)	maximum(365)
-//	@Param			page					query		int		false	"Page number"		default(1)	minimum(1)
-//	@Param			page_size				query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Param			expiring_within_days	query		int	false	"Days until expiry"	default(30)	minimum(1)	maximum(365)
+//	@Param			page					query		int	false	"Page number"		default(1)	minimum(1)
+//	@Param			page_size				query		int	false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200						{object}	object{items=[]termResponse,total=int,page=int,page_size=int}
 //	@Failure		401						{object}	object{code=string,message=string}
 //	@Security		BearerAuth
@@ -271,8 +271,8 @@ func (h *Handler) listExpiringHandler(c *gin.Context) {
 //	@Tags			terms
 //	@Accept			json
 //	@Produce		json
-//	@Param			term_id	path		string						true	"Term ID"	format(uuid)
-//	@Param			body		body		requestScheduleChangeRequest	true	"Schedule change data"
+//	@Param			term_id	path		string							true	"Term ID"	format(uuid)
+//	@Param			body	body		requestScheduleChangeRequest	true	"Schedule change data"
 //	@Success		201		{object}	scheduleChangeResponse
 //	@Failure		400		{object}	object{code=string,message=string}
 //	@Failure		401		{object}	object{code=string,message=string}
@@ -315,7 +315,7 @@ func (h *Handler) requestScheduleChangeHandler(c *gin.Context) {
 //	@Description	Approve a schedule change for a term.
 //	@Tags			terms
 //	@Produce		json
-//	@Param			term_id		path		string	true	"Term ID"		format(uuid)
+//	@Param			term_id		path		string	true	"Term ID"	format(uuid)
 //	@Param			change_id	path		string	true	"Change ID"	format(uuid)
 //	@Success		200			{object}	scheduleChangeResponse
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -343,7 +343,7 @@ func (h *Handler) approveScheduleChangeHandler(c *gin.Context) {
 //	@Description	Reject a schedule change for a term.
 //	@Tags			terms
 //	@Produce		json
-//	@Param			term_id		path		string	true	"Term ID"		format(uuid)
+//	@Param			term_id		path		string	true	"Term ID"	format(uuid)
 //	@Param			change_id	path		string	true	"Change ID"	format(uuid)
 //	@Success		200			{object}	scheduleChangeResponse
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -372,8 +372,8 @@ func (h *Handler) rejectScheduleChangeHandler(c *gin.Context) {
 //	@Tags			terms
 //	@Accept			json
 //	@Produce		json
-//	@Param			term_id	path		string				true	"Term ID"	format(uuid)
-//	@Param			body		body		terminateTermRequest	true	"Termination data"
+//	@Param			term_id	path		string					true	"Term ID"	format(uuid)
+//	@Param			body	body		terminateTermRequest	true	"Termination data"
 //	@Success		200		{object}	termResponse
 //	@Failure		400		{object}	object{code=string,message=string}
 //	@Failure		401		{object}	object{code=string,message=string}

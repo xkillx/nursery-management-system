@@ -102,9 +102,9 @@ func (h *Handler) requestResetHandler(c *gin.Context) {
 //	@Tags			password-reset
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		resetPasswordPayload	true	"Reset data"
+//	@Param			body	body	resetPasswordPayload	true	"Reset data"
 //	@Success		204
-//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		400	{object}	object{code=string,message=string}
 //	@Router			/auth/password-resets [post]
 func (h *Handler) resetPasswordHandler(c *gin.Context) {
 	var req resetPasswordPayload

@@ -98,13 +98,13 @@ func (h *Handler) resolveActor(c *gin.Context) (application.RoomActor, bool) {
 //	@Description	Get a paginated list of rooms for a site.
 //	@Tags			rooms
 //	@Produce		json
-//	@Param			site_id			path		string	true	"Site ID"	format(uuid)
+//	@Param			site_id				path		string	true	"Site ID"	format(uuid)
 //	@Param			include_archived	query		bool	false	"Include archived rooms"
-//	@Param			include			query		string	false	"Include additional data"	Enums(occupancy)
-//	@Param			page			query		int		false	"Page number"	default(1)	minimum(1)
-//	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
-//	@Success		200				{object}	object{items=[]roomResponse,total=int,page=int,page_size=int}
-//	@Failure		401				{object}	object{code=string,message=string}
+//	@Param			include				query		string	false	"Include additional data"	Enums(occupancy)
+//	@Param			page				query		int		false	"Page number"				default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"			default(50)	minimum(1)	maximum(200)
+//	@Success		200					{object}	object{items=[]roomResponse,total=int,page=int,page_size=int}
+//	@Failure		401					{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner","practitioner"]
 //	@Router			/sites/{site_id}/rooms [get]
@@ -153,7 +153,7 @@ func (h *Handler) listRooms(c *gin.Context) {
 //	@Tags			rooms
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string				true	"Site ID"	format(uuid)
 //	@Param			body	body		createRoomRequest	true	"Room data"
 //	@Success		201		{object}	roomResponse
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -247,8 +247,8 @@ func (h *Handler) getRoom(c *gin.Context) {
 //	@Tags			rooms
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string			true	"Site ID"	format(uuid)
-//	@Param			room_id	path		string			true	"Room ID"	format(uuid)
+//	@Param			site_id	path		string				true	"Site ID"	format(uuid)
+//	@Param			room_id	path		string				true	"Room ID"	format(uuid)
 //	@Param			body	body		updateRoomRequest	true	"Room data"
 //	@Success		200		{object}	roomResponse
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -304,8 +304,8 @@ func (h *Handler) updateRoom(c *gin.Context) {
 //	@Description	Archive a room. Children must be reassigned first.
 //	@Tags			rooms
 //	@Produce		json
-//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
-//	@Param			room_id	path	string	true	"Room ID"	format(uuid)
+//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			room_id	path		string	true	"Room ID"	format(uuid)
 //	@Success		200		{object}	object
 //	@Failure		401		{object}	object{code=string,message=string}
 //	@Failure		404		{object}	object{code=string,message=string}
@@ -345,8 +345,8 @@ func (h *Handler) archiveRoom(c *gin.Context) {
 //	@Description	Reactivate an archived room.
 //	@Tags			rooms
 //	@Produce		json
-//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
-//	@Param			room_id	path	string	true	"Room ID"	format(uuid)
+//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			room_id	path		string	true	"Room ID"	format(uuid)
 //	@Success		200		{object}	roomResponse
 //	@Failure		401		{object}	object{code=string,message=string}
 //	@Failure		404		{object}	object{code=string,message=string}

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
+
+	"github.com/google/uuid"
 )
 
 // TermStatus is the lifecycle state of a Term. Derived from dates and lifecycle actions.

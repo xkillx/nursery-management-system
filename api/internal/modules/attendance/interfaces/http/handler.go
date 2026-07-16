@@ -254,7 +254,7 @@ func (h *Handler) correctionHandler(c *gin.Context) {
 //	@Description	Get a list of attendance sessions for a child on a date.
 //	@Tags			attendance
 //	@Produce		json
-//	@Param			child_id	query		string	true	"Child ID"	format(uuid)
+//	@Param			child_id	query		string	true	"Child ID"		format(uuid)
 //	@Param			local_date	query		string	true	"Local date"	format(date)
 //	@Success		200			{object}	object{sessions=[]sessionResponse}
 //	@Failure		400			{object}	object{code=string,message=string}

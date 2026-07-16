@@ -74,7 +74,7 @@ func (h *Handler) RegisterRoutes(ownerGroup *gin.RouterGroup) {
 //	@Description	Get site summaries with billing and attendance data.
 //	@Tags			owner
 //	@Produce		json
-//	@Param			billing_month	query		string	false	"Billing month"	format(month)
+//	@Param			billing_month	query		string	false	"Billing month"		format(month)
 //	@Param			site_id			query		string	false	"Filter by site ID"	format(uuid)
 //	@Success		200				{object}	siteSummariesResponse
 //	@Failure		400				{object}	object{code=string,message=string}
@@ -122,10 +122,10 @@ func (h *Handler) getSiteSummaries(c *gin.Context) {
 //	@Description	Get a paginated list of manager access records for a site.
 //	@Tags			owner
 //	@Produce		json
-//	@Param			site_id		query		string	true	"Site ID"	format(uuid)
+//	@Param			site_id		query		string	true	"Site ID"			format(uuid)
 //	@Param			status		query		string	false	"Filter by status"	Enums(active, inactive, all)	default(active)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
-//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Param			page		query		int		false	"Page number"		default(1)						minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"	default(50)						minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]managerAccessResponse,total=int,page=int,page_size=int}
 //	@Failure		400			{object}	object{code=string,message=string}
 //	@Failure		403			{object}	object{code=string,message=string}
@@ -186,7 +186,7 @@ func (h *Handler) listManagerAccess(c *gin.Context) {
 //	@Tags			owner
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
 //	@Param			body	body		object{email=string}	true	"Email address"
 //	@Success		200		{object}	grantManagerAccessResponse
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -237,8 +237,8 @@ func (h *Handler) grantManagerAccess(c *gin.Context) {
 //	@Description	Deactivate manager access for a membership.
 //	@Tags			owner
 //	@Produce		json
-//	@Param			site_id			path	string	true	"Site ID"			format(uuid)
-//	@Param			membership_id	path	string	true	"Membership ID"		format(uuid)
+//	@Param			site_id			path	string	true	"Site ID"		format(uuid)
+//	@Param			membership_id	path	string	true	"Membership ID"	format(uuid)
 //	@Success		204
 //	@Failure		400	{object}	object{code=string,message=string}
 //	@Failure		403	{object}	object{code=string,message=string}
@@ -285,8 +285,8 @@ func (h *Handler) deactivateManagerAccess(c *gin.Context) {
 //	@Description	Reactivate manager access for a membership.
 //	@Tags			owner
 //	@Produce		json
-//	@Param			site_id			path	string	true	"Site ID"			format(uuid)
-//	@Param			membership_id	path	string	true	"Membership ID"		format(uuid)
+//	@Param			site_id			path	string	true	"Site ID"		format(uuid)
+//	@Param			membership_id	path	string	true	"Membership ID"	format(uuid)
 //	@Success		204
 //	@Failure		400	{object}	object{code=string,message=string}
 //	@Failure		403	{object}	object{code=string,message=string}
@@ -334,7 +334,7 @@ func (h *Handler) reactivateManagerAccess(c *gin.Context) {
 //	@Tags			owner
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string	true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string								true	"Site ID"	format(uuid)
 //	@Param			body	body		object{core_hourly_rate_minor=int}	true	"Billing setup data"
 //	@Success		200		{object}	updateSiteBillingSetupResponse
 //	@Failure		400		{object}	object{code=string,message=string}

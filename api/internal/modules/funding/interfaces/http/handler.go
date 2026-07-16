@@ -154,8 +154,8 @@ func (h *Handler) parentFundingBreakdownHandler(c *gin.Context) {
 //	@Description	Get the funding overview for a billing month, including enhanced metrics.
 //	@Tags			funding
 //	@Produce		json
-//	@Param			billing_month	query		string	true	"Billing month"	format(month)
-//	@Param			page			query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			billing_month	query		string	true	"Billing month"		format(month)
+//	@Param			page			query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200				{object}	object{items=[]overviewItemResponse,total=int,page=int,page_size=int,metrics=enhancedOverviewMetricsResponse}
 //	@Failure		400				{object}	object{code=string,message=string}

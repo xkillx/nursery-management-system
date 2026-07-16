@@ -26,15 +26,15 @@ import (
 	"nursery-management-system/api/internal/platform/transaction"
 )
 
-// @title           Nursery Management System API
-// @version         0.3.0
-// @description     Multi-tenant nursery management API for UK childcare providers.
-// @host            localhost:8080
-// @BasePath        /api
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Enter "Bearer {token}" to authenticate.
+//	@title						Nursery Management System API
+//	@version					0.3.0
+//	@description				Multi-tenant nursery management API for UK childcare providers.
+//	@host						localhost:8080
+//	@BasePath					/api
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Enter "Bearer {token}" to authenticate.
 
 func main() {
 	logger := logging.NewJSONLogger(os.Stdout, slog.LevelInfo)

@@ -118,7 +118,7 @@ func (h *Handler) createHandler(c *gin.Context) {
 //	@Tags			invites
 //	@Produce		json
 //	@Param			status		query		string	false	"Filter by status"	Enums(pending, accepted, revoked, all)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]inviteResponse,total=int,page=int,page_size=int}
 //	@Failure		400			{object}	object{code=string,message=string}
@@ -254,10 +254,10 @@ type acceptInviteRequest struct {
 //	@Tags			invites
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		acceptInviteRequest	true	"Invite token and new password"
+//	@Param			body	body	acceptInviteRequest	true	"Invite token and new password"
 //	@Success		204
-//	@Failure		400		{object}	object{code=string,message=string}
-//	@Failure		429		{object}	object{code=string,message=string}
+//	@Failure		400	{object}	object{code=string,message=string}
+//	@Failure		429	{object}	object{code=string,message=string}
 //	@Router			/invites/accept [post]
 func (h *Handler) acceptHandler(c *gin.Context) {
 	clientIP := c.ClientIP()

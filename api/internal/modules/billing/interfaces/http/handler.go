@@ -380,13 +380,13 @@ func (h *Handler) generateDraftsHandler(c *gin.Context) {
 //	@Description	Get a paginated list of invoices with optional filters.
 //	@Tags			invoices
 //	@Produce		json
-//	@Param			billing_month		query		string	false	"Filter by billing month"		format(month)
-//	@Param			billing_month_from	query		string	false	"Filter from billing month"		format(month)
-//	@Param			billing_month_to		query		string	false	"Filter to billing month"		format(month)
-//	@Param			status				query		string	false	"Filter by status"				Enums(draft, issued, paid, overdue, payment_failed)
-//	@Param			child_id			query		string	false	"Filter by child ID"			format(uuid)
-//	@Param			page				query		int		false	"Page number"					default(1)	minimum(1)
-//	@Param			page_size			query		int		false	"Items per page"				default(50)	minimum(1)	maximum(200)
+//	@Param			billing_month		query		string	false	"Filter by billing month"	format(month)
+//	@Param			billing_month_from	query		string	false	"Filter from billing month"	format(month)
+//	@Param			billing_month_to	query		string	false	"Filter to billing month"	format(month)
+//	@Param			status				query		string	false	"Filter by status"			Enums(draft, issued, paid, overdue, payment_failed)
+//	@Param			child_id			query		string	false	"Filter by child ID"		format(uuid)
+//	@Param			page				query		int		false	"Page number"				default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"			default(50)	minimum(1)	maximum(200)
 //	@Success		200					{object}	object{items=[]invoiceListItemResponse,total=int,page=int,page_size=int}
 //	@Failure		401					{object}	object{code=string,message=string}
 //	@Security		BearerAuth
@@ -750,10 +750,10 @@ func (h *Handler) getSiteRateHandler(c *gin.Context) {
 //	@Tags			billing-setup
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		object{core_hourly_rate_minor=int}	true	"Rate data"
+//	@Param			body	body	object{core_hourly_rate_minor=int}	true	"Rate data"
 //	@Success		204
-//	@Failure		400		{object}	object{code=string,message=string}
-//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		400	{object}	object{code=string,message=string}
+//	@Failure		401	{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager"]
 //	@Router			/billing-setup [put]
@@ -826,10 +826,10 @@ func (h *Handler) getBranchSettingsHandler(c *gin.Context) {
 //	@Tags			branch-settings
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		object{overdue_grace_days=int,reminder_days_before=int}	true	"Settings data"
+//	@Param			body	body	object{overdue_grace_days=int,reminder_days_before=int}	true	"Settings data"
 //	@Success		204
-//	@Failure		400		{object}	object{code=string,message=string}
-//	@Failure		401		{object}	object{code=string,message=string}
+//	@Failure		400	{object}	object{code=string,message=string}
+//	@Failure		401	{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager"]
 //	@Router			/branch-settings [put]
@@ -873,13 +873,13 @@ func (h *Handler) updateBranchSettingsHandler(c *gin.Context) {
 //	@Description	Get a paginated list of invoices for the authenticated parent.
 //	@Tags			parent-invoices
 //	@Produce		json
-//	@Param			billing_month		query		string	false	"Filter by billing month"		format(month)
-//	@Param			billing_month_from	query		string	false	"Filter from billing month"		format(month)
-//	@Param			billing_month_to		query		string	false	"Filter to billing month"		format(month)
-//	@Param			status				query		string	false	"Filter by status"				Enums(draft, issued, paid, overdue, payment_failed)
-//	@Param			child_id			query		string	false	"Filter by child ID"			format(uuid)
-//	@Param			page				query		int		false	"Page number"					default(1)	minimum(1)
-//	@Param			page_size			query		int		false	"Items per page"				default(50)	minimum(1)	maximum(200)
+//	@Param			billing_month		query		string	false	"Filter by billing month"	format(month)
+//	@Param			billing_month_from	query		string	false	"Filter from billing month"	format(month)
+//	@Param			billing_month_to	query		string	false	"Filter to billing month"	format(month)
+//	@Param			status				query		string	false	"Filter by status"			Enums(draft, issued, paid, overdue, payment_failed)
+//	@Param			child_id			query		string	false	"Filter by child ID"		format(uuid)
+//	@Param			page				query		int		false	"Page number"				default(1)	minimum(1)
+//	@Param			page_size			query		int		false	"Items per page"			default(50)	minimum(1)	maximum(200)
 //	@Success		200					{object}	object{items=[]parentInvoiceListItemResponse,total=int,page=int,page_size=int}
 //	@Failure		401					{object}	object{code=string,message=string}
 //	@Security		BearerAuth

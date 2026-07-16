@@ -100,12 +100,12 @@ func (h *Handler) resolveActor(c *gin.Context) (application.AdHocBookingActor, b
 //	@Description	Get a paginated list of ad hoc bookings for a site.
 //	@Tags			ad-hoc-bookings
 //	@Produce		json
-//	@Param			site_id		path		string	true	"Site ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"				format(uuid)
 //	@Param			child_id	query		string	false	"Filter by child ID"	format(uuid)
 //	@Param			from		query		string	false	"Filter from date"		format(date)
 //	@Param			to			query		string	false	"Filter to date"		format(date)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
-//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
+//	@Param			page		query		int		false	"Page number"			default(1)	minimum(1)
+//	@Param			page_size	query		int		false	"Items per page"		default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]adHocBookingResponse,total=int,page=int,page_size=int}
 //	@Failure		401			{object}	object{code=string,message=string}
 //	@Security		BearerAuth
@@ -171,7 +171,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 //	@Tags			ad-hoc-bookings
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string						true	"Site ID"	format(uuid)
 //	@Param			body	body		createAdHocBookingRequest	true	"Booking data"
 //	@Success		201		{object}	object{ad_hoc_booking=adHocBookingResponse}
 //	@Failure		400		{object}	object{code=string,message=string}

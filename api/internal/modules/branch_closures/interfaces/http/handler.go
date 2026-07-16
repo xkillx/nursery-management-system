@@ -105,10 +105,10 @@ func (h *Handler) createClosureDay(c *gin.Context) {
 //	@Description	Get a paginated list of closure days for a site within a date range.
 //	@Tags			closure-days
 //	@Produce		json
-//	@Param			site_id		path		string	true	"Site ID"	format(uuid)
-//	@Param			from		query		string	true	"From date"	format(date)
-//	@Param			to			query		string	true	"To date"	format(date)
-//	@Param			page		query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			site_id		path		string	true	"Site ID"			format(uuid)
+//	@Param			from		query		string	true	"From date"			format(date)
+//	@Param			to			query		string	true	"To date"			format(date)
+//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200			{object}	object{items=[]closureDayResponse,total=int,page=int,page_size=int}
 //	@Failure		400			{object}	object{code=string,message=string}
@@ -160,7 +160,7 @@ func (h *Handler) listClosureDays(c *gin.Context) {
 //	@Description	Delete a closure day.
 //	@Tags			closure-days
 //	@Produce		json
-//	@Param			site_id	path	string	true	"Site ID"	format(uuid)
+//	@Param			site_id	path	string	true	"Site ID"			format(uuid)
 //	@Param			id		path	string	true	"Closure Day ID"	format(uuid)
 //	@Success		204
 //	@Failure		401	{object}	object{code=string,message=string}

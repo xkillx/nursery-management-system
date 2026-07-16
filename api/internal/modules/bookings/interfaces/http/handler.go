@@ -287,18 +287,18 @@ func (h *Handler) resolveActor(c *gin.Context) (application.BookingActor, bool) 
 //	@Description	Get a paginated list of bookings for a site. Supports unified view (recurring + ad-hoc + hourly) or recurring-only.
 //	@Tags			bookings
 //	@Produce		json
-//	@Param			site_id			path		string	true	"Site ID"			format(uuid)
-//	@Param			child_id		query		string	false	"Filter by child ID"	format(uuid)
-//	@Param			room_id			query		string	false	"Filter by room ID"		format(uuid)
+//	@Param			site_id			path		string	true	"Site ID"					format(uuid)
+//	@Param			child_id		query		string	false	"Filter by child ID"		format(uuid)
+//	@Param			room_id			query		string	false	"Filter by room ID"			format(uuid)
 //	@Param			session_type_id	query		string	false	"Filter by session type"	format(uuid)
-//	@Param			status			query		string	false	"Filter by status"	Enums(active, paused, cancelled)
+//	@Param			status			query		string	false	"Filter by status"			Enums(active, paused, cancelled)
 //	@Param			funding_type	query		string	false	"Filter by funding type"
 //	@Param			search			query		string	false	"Search by child name"
-//	@Param			from			query		string	false	"Filter from date"		format(date)
-//	@Param			to				query		string	false	"Filter to date"		format(date)
-//	@Param			view			query		string	false	"View mode"				Enums(list, calendar)	default(list)
-//	@Param			page			query		int		false	"Page number"			default(1)	minimum(1)
-//	@Param			page_size		query		int		false	"Items per page"		default(50)	minimum(1)	maximum(200)
+//	@Param			from			query		string	false	"Filter from date"	format(date)
+//	@Param			to				query		string	false	"Filter to date"	format(date)
+//	@Param			view			query		string	false	"View mode"			Enums(list, calendar)	default(list)
+//	@Param			page			query		int		false	"Page number"		default(1)				minimum(1)
+//	@Param			page_size		query		int		false	"Items per page"	default(50)				minimum(1)	maximum(200)
 //	@Success		200				{object}	object{items=[]unifiedBookingResponse,total=int,page=int,page_size=int}
 //	@Failure		400				{object}	object{code=string,message=string}
 //	@Failure		401				{object}	object{code=string,message=string}
@@ -343,8 +343,8 @@ func (h *Handler) listBookings(c *gin.Context) {
 //	@Description	Get a single booking by ID.
 //	@Tags			bookings
 //	@Produce		json
-//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
-//	@Param			booking_id	path	string	true	"Booking ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"		format(uuid)
+//	@Param			booking_id	path		string	true	"Booking ID"	format(uuid)
 //	@Success		200			{object}	object{booking=bookingResponse}
 //	@Failure		400			{object}	object{code=string,message=string}
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -387,7 +387,7 @@ func (h *Handler) getBooking(c *gin.Context) {
 //	@Tags			bookings
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string				true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
 //	@Param			body	body		createBookingRequest	true	"Booking data"
 //	@Success		201		{object}	object{booking=bookingResponse}
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -439,9 +439,9 @@ func (h *Handler) createBooking(c *gin.Context) {
 //	@Tags			bookings
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id		path	string				true	"Site ID"		format(uuid)
-//	@Param			booking_id	path	string				true	"Booking ID"	format(uuid)
-//	@Param			body		body	updateBookingRequest	true	"Fields to update"
+//	@Param			site_id		path		string					true	"Site ID"		format(uuid)
+//	@Param			booking_id	path		string					true	"Booking ID"	format(uuid)
+//	@Param			body		body		updateBookingRequest	true	"Fields to update"
 //	@Success		200			{object}	object{booking=bookingResponse}
 //	@Failure		400			{object}	object{code=string,message=string}
 //	@Failure		401			{object}	object{code=string,message=string}
@@ -600,12 +600,12 @@ func (h *Handler) cancelBooking(c *gin.Context) {
 //	@Description	Pause a recurring booking (temporarily inactive).
 //	@Tags			bookings
 //	@Produce		json
-//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
-//	@Param			booking_id	path	string	true	"Booking ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"		format(uuid)
+//	@Param			booking_id	path		string	true	"Booking ID"	format(uuid)
 //	@Success		200			{object}	object{booking=bookingResponse}
-//	@Failure		401	{object}	object{code=string,message=string}
-//	@Failure		404	{object}	object{code=string,message=string}
-//	@Failure		409	{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner"]
 //	@Router			/sites/{site_id}/bookings/{booking_id}/pause [post]

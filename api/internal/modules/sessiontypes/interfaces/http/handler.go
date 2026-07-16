@@ -98,7 +98,7 @@ func (h *Handler) resolveActor(c *gin.Context) (application.SessionTypeActor, bo
 //	@Produce		json
 //	@Param			site_id				path		string	true	"Site ID"	format(uuid)
 //	@Param			include_archived	query		bool	false	"Include archived session types"
-//	@Param			page				query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page				query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size			query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200					{object}	object{items=[]sessionTypeResponse,total=int,page=int,page_size=int}
 //	@Failure		401					{object}	object{code=string,message=string}
@@ -149,7 +149,7 @@ func (h *Handler) listSessionTypes(c *gin.Context) {
 //	@Tags			session-types
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string					true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string						true	"Site ID"	format(uuid)
 //	@Param			body	body		createSessionTypeRequest	true	"Session type data"
 //	@Success		201		{object}	sessionTypeResponse
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -201,11 +201,11 @@ func (h *Handler) createSessionType(c *gin.Context) {
 //	@Description	Get a single session type by ID.
 //	@Tags			session-types
 //	@Produce		json
-//	@Param			site_id				path		string	true	"Site ID"			format(uuid)
-//	@Param			session_type_id		path		string	true	"Session Type ID"	format(uuid)
-//	@Success		200					{object}	sessionTypeResponse
-//	@Failure		401					{object}	object{code=string,message=string}
-//	@Failure		404					{object}	object{code=string,message=string}
+//	@Param			site_id			path		string	true	"Site ID"			format(uuid)
+//	@Param			session_type_id	path		string	true	"Session Type ID"	format(uuid)
+//	@Success		200				{object}	sessionTypeResponse
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Failure		404				{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner","practitioner"]
 //	@Router			/sites/{site_id}/session-types/{session_type_id} [get]
@@ -244,13 +244,13 @@ func (h *Handler) getSessionType(c *gin.Context) {
 //	@Tags			session-types
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id				path		string						true	"Site ID"			format(uuid)
-//	@Param			session_type_id		path		string						true	"Session Type ID"	format(uuid)
-//	@Param			body				body		updateSessionTypeRequest	true	"Session type data"
-//	@Success		200					{object}	sessionTypeResponse
-//	@Failure		400					{object}	object{code=string,message=string}
-//	@Failure		401					{object}	object{code=string,message=string}
-//	@Failure		404					{object}	object{code=string,message=string}
+//	@Param			site_id			path		string						true	"Site ID"			format(uuid)
+//	@Param			session_type_id	path		string						true	"Session Type ID"	format(uuid)
+//	@Param			body			body		updateSessionTypeRequest	true	"Session type data"
+//	@Success		200				{object}	sessionTypeResponse
+//	@Failure		400				{object}	object{code=string,message=string}
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Failure		404				{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner"]
 //	@Router			/sites/{site_id}/session-types/{session_type_id} [patch]
@@ -302,11 +302,11 @@ func (h *Handler) updateSessionType(c *gin.Context) {
 //	@Description	Archive a session type.
 //	@Tags			session-types
 //	@Produce		json
-//	@Param			site_id				path	string	true	"Site ID"			format(uuid)
-//	@Param			session_type_id		path	string	true	"Session Type ID"	format(uuid)
-//	@Success		200					{object}	object
-//	@Failure		401					{object}	object{code=string,message=string}
-//	@Failure		404					{object}	object{code=string,message=string}
+//	@Param			site_id			path		string	true	"Site ID"			format(uuid)
+//	@Param			session_type_id	path		string	true	"Session Type ID"	format(uuid)
+//	@Success		200				{object}	object
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Failure		404				{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner"]
 //	@Router			/sites/{site_id}/session-types/{session_type_id}/actions/archive [post]
@@ -343,11 +343,11 @@ func (h *Handler) archiveSessionType(c *gin.Context) {
 //	@Description	Reactivate an archived session type.
 //	@Tags			session-types
 //	@Produce		json
-//	@Param			site_id				path	string	true	"Site ID"			format(uuid)
-//	@Param			session_type_id		path	string	true	"Session Type ID"	format(uuid)
-//	@Success		200					{object}	sessionTypeResponse
-//	@Failure		401					{object}	object{code=string,message=string}
-//	@Failure		404					{object}	object{code=string,message=string}
+//	@Param			site_id			path		string	true	"Site ID"			format(uuid)
+//	@Param			session_type_id	path		string	true	"Session Type ID"	format(uuid)
+//	@Success		200				{object}	sessionTypeResponse
+//	@Failure		401				{object}	object{code=string,message=string}
+//	@Failure		404				{object}	object{code=string,message=string}
 //	@Security		BearerAuth
 //	@x-roles		["manager","owner"]
 //	@Router			/sites/{site_id}/session-types/{session_type_id}/actions/activate [post]

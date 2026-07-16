@@ -97,7 +97,7 @@ func (h *Handler) resolveActor(c *gin.Context) (application.SessionTemplateActor
 //	@Produce		json
 //	@Param			site_id				path		string	true	"Site ID"	format(uuid)
 //	@Param			include_archived	query		bool	false	"Include archived templates"
-//	@Param			page				query		int		false	"Page number"	default(1)	minimum(1)
+//	@Param			page				query		int		false	"Page number"		default(1)	minimum(1)
 //	@Param			page_size			query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
 //	@Success		200					{object}	object{items=[]sessionTemplateResponse,total=int,page=int,page_size=int}
 //	@Failure		401					{object}	object{code=string,message=string}
@@ -180,7 +180,7 @@ func (h *Handler) getTemplate(c *gin.Context) {
 //	@Tags			session-templates
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id	path		string						true	"Site ID"	format(uuid)
+//	@Param			site_id	path		string							true	"Site ID"	format(uuid)
 //	@Param			body	body		createSessionTemplateRequest	true	"Template data"
 //	@Success		201		{object}	sessionTemplateResponse
 //	@Failure		400		{object}	object{code=string,message=string}
@@ -244,8 +244,8 @@ func (h *Handler) createTemplate(c *gin.Context) {
 //	@Tags			session-templates
 //	@Accept			json
 //	@Produce		json
-//	@Param			site_id		path		string						true	"Site ID"		format(uuid)
-//	@Param			template_id	path		string						true	"Template ID"	format(uuid)
+//	@Param			site_id		path		string							true	"Site ID"		format(uuid)
+//	@Param			template_id	path		string							true	"Template ID"	format(uuid)
 //	@Param			body		body		updateSessionTemplateRequest	true	"Template data"
 //	@Success		200			{object}	sessionTemplateResponse
 //	@Failure		400			{object}	object{code=string,message=string}
@@ -314,8 +314,8 @@ func (h *Handler) updateTemplate(c *gin.Context) {
 //	@Description	Archive a session template.
 //	@Tags			session-templates
 //	@Produce		json
-//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
-//	@Param			template_id	path	string	true	"Template ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"		format(uuid)
+//	@Param			template_id	path		string	true	"Template ID"	format(uuid)
 //	@Success		200			{object}	object
 //	@Failure		401			{object}	object{code=string,message=string}
 //	@Failure		404			{object}	object{code=string,message=string}
@@ -355,8 +355,8 @@ func (h *Handler) archiveTemplate(c *gin.Context) {
 //	@Description	Reactivate an archived session template.
 //	@Tags			session-templates
 //	@Produce		json
-//	@Param			site_id		path	string	true	"Site ID"		format(uuid)
-//	@Param			template_id	path	string	true	"Template ID"	format(uuid)
+//	@Param			site_id		path		string	true	"Site ID"		format(uuid)
+//	@Param			template_id	path		string	true	"Template ID"	format(uuid)
 //	@Success		200			{object}	sessionTemplateResponse
 //	@Failure		401			{object}	object{code=string,message=string}
 //	@Failure		404			{object}	object{code=string,message=string}
