@@ -19,6 +19,25 @@ type Repository interface {
 	Cancel(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
 	Pause(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
 	ListByChildAndDateRange(ctx context.Context, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]Booking, error)
+	ListUnifiedByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, filters ListFilters, limit, offset int) ([]UnifiedBookingRow, error)
+}
+
+type UnifiedBookingRow struct {
+	BookingType       string
+	ID                uuid.UUID
+	TenantID          uuid.UUID
+	BranchID          uuid.UUID
+	ChildID           uuid.UUID
+	StartDate         time.Time
+	EndDate           *time.Time
+	RoomID            *uuid.UUID
+	SessionTemplateID uuid.UUID
+	Status            string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	ChildFirstName    string
+	ChildLastName     string
+	RoomName          *string
 }
 
 type ListFilters struct {
