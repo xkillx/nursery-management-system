@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,14 +16,33 @@ import (
 )
 
 type Handler struct {
-	logger   *slog.Logger
-	get      *application.GetProfile
-	upsert   *application.UpsertProfile
-	overview *application.ListOverview
+	logger           *slog.Logger
+	get              *application.GetProfile
+	upsert           *application.UpsertProfile
+	overview         *application.ListOverview
+	enhancedOverview *application.GetEnhancedOverview
+	enhancedDetail   *application.GetEnhancedChildDetail
+	expiring         *application.ListExpiring
 }
 
-func NewHandler(get *application.GetProfile, upsert *application.UpsertProfile, overview *application.ListOverview, logger *slog.Logger) *Handler {
-	return &Handler{logger: logger, get: get, upsert: upsert, overview: overview}
+func NewHandler(
+	get *application.GetProfile,
+	upsert *application.UpsertProfile,
+	overview *application.ListOverview,
+	enhancedOverview *application.GetEnhancedOverview,
+	enhancedDetail *application.GetEnhancedChildDetail,
+	expiring *application.ListExpiring,
+	logger *slog.Logger,
+) *Handler {
+	return &Handler{
+		logger:           logger,
+		get:              get,
+		upsert:           upsert,
+		overview:         overview,
+		enhancedOverview: enhancedOverview,
+		enhancedDetail:   enhancedDetail,
+		expiring:         expiring,
+	}
 }
 
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
@@ -30,18 +50,19 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	g.GET("/overview", h.overviewHandler)
 	g.GET("/children/:child_id", h.getProfileHandler)
 	g.PUT("/children/:child_id", h.upsertProfileHandler)
+	g.GET("/expiring", h.expiringHandler)
 }
 
 // overviewHandler returns the funding overview for a billing month.
 //
 //	@Summary		Funding overview
-//	@Description	Get the funding overview for a billing month.
+//	@Description	Get the funding overview for a billing month, including enhanced metrics.
 //	@Tags			funding
 //	@Produce		json
 //	@Param			billing_month	query		string	true	"Billing month"	format(month)
 //	@Param			page			query		int		false	"Page number"	default(1)	minimum(1)
 //	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
-//	@Success		200				{object}	object{items=[]overviewItemResponse,total=int,page=int,page_size=int}
+//	@Success		200				{object}	object{items=[]overviewItemResponse,total=int,page=int,page_size=int,metrics=enhancedOverviewMetricsResponse}
 //	@Failure		400				{object}	object{code=string,message=string}
 //	@Failure		401				{object}	object{code=string,message=string}
 //	@Security		BearerAuth
@@ -69,18 +90,36 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pagination.PaginatedResponse(toOverviewResponse(result), total, page, pageSize))
+	metrics, err := h.enhancedOverview.Execute(c.Request.Context(), actor, billingMonth, 30)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"items":     toOverviewResponse(result).Items,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+		"metrics": enhancedOverviewMetricsResponse{
+			TotalFundedChildren: metrics.TotalFundedChildren,
+			FifteenHourCount:    metrics.FifteenHourCount,
+			ThirtyHourCount:     metrics.ThirtyHourCount,
+			BookedHoursThisWeek: metrics.BookedHoursThisWeek,
+			ExpiringSoonCount:   metrics.ExpiringSoonCount,
+		},
+	})
 }
 
-// getProfileHandler returns the funding profile for a child.
+// getProfileHandler returns the funding profile for a child with allocation and history.
 //
 //	@Summary		Get funding profile
-//	@Description	Get the funding profile for a child for a billing month.
+//	@Description	Get the funding profile for a child for a billing month, including allocation table and history.
 //	@Tags			funding
 //	@Produce		json
 //	@Param			child_id		path		string	true	"Child ID"		format(uuid)
 //	@Param			billing_month	query		string	true	"Billing month"	format(month)
-//	@Success		200				{object}	fundingProfileResponse
+//	@Success		200				{object}	enhancedChildDetailResponse
 //	@Failure		400				{object}	object{code=string,message=string}
 //	@Failure		401				{object}	object{code=string,message=string}
 //	@Failure		404				{object}	object{code=string,message=string}
@@ -100,13 +139,13 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.get.Execute(c.Request.Context(), actor, c.Param("child_id"), billingMonth)
+	detail, err := h.enhancedDetail.Execute(c.Request.Context(), actor, c.Param("child_id"), billingMonth)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toResponse(profile))
+	c.JSON(http.StatusOK, toEnhancedChildDetailResponse(detail))
 }
 
 // upsertProfileHandler creates or updates the funding profile for a child.
@@ -154,6 +193,56 @@ func (h *Handler) upsertProfileHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, toResponse(result.Profile))
 	}
+}
+
+// expiringHandler returns children with funding expiring within N days.
+//
+//	@Summary		Funding expiring soon
+//	@Description	Get children with funding expiring within N days.
+//	@Tags			funding
+//	@Produce		json
+//	@Param			within	query		int	true	"Number of days"	default(30)	minimum(1)
+//	@Success		200		{object}	object{items=[]expiringFundingResponse}
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/funding/expiring [get]
+func (h *Handler) expiringHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	withinStr := c.DefaultQuery("within", "30")
+	within, err := strconv.Atoi(withinStr)
+	if err != nil || within < 0 {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "within must be a non-negative integer.", nil)
+		return
+	}
+
+	records, err := h.expiring.Execute(c.Request.Context(), actor, within)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	items := make([]expiringFundingResponse, 0, len(records))
+	for _, r := range records {
+		items = append(items, expiringFundingResponse{
+			FundingRecordID:    r.FundingRecordID.String(),
+			ChildID:            r.ChildID.String(),
+			ChildFirstName:     r.ChildFirstName,
+			ChildMiddleName:    r.ChildMiddleName,
+			ChildLastName:      r.ChildLastName,
+			FundingType:        r.FundingType,
+			FundedHoursPerWeek: r.FundedHoursPerWeek,
+			FundingEndDate:     r.FundingEndDate.Format("2006-01-02"),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 func toResponse(p domain.FundingProfile) fundingProfileResponse {
@@ -220,6 +309,54 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 		resp.ChildPhotoURL = &url
 	}
 	return resp
+}
+
+func toEnhancedChildDetailResponse(d domain.EnhancedChildDetail) enhancedChildDetailResponse {
+	allocation := make([]allocationEntryResponse, 0, len(d.Allocation))
+	for _, a := range d.Allocation {
+		var endDate *string
+		if a.EffectiveEndDate != nil {
+			s := a.EffectiveEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		allocation = append(allocation, allocationEntryResponse{
+			BookingID:              a.BookingID.String(),
+			EffectiveStartDate:     a.EffectiveStartDate.Format("2006-01-02"),
+			EffectiveEndDate:       endDate,
+			DaysOfWeek:             a.DaysOfWeek,
+			SessionTypeName:        a.SessionTypeName,
+			SessionDurationMinutes: a.SessionDurationMinutes,
+		})
+	}
+
+	history := make([]fundingHistoryResponse, 0, len(d.History))
+	for _, h := range d.History {
+		var startDate *string
+		if h.FundingStartDate != nil {
+			s := h.FundingStartDate.Format("2006-01-02")
+			startDate = &s
+		}
+		var endDate *string
+		if h.FundingEndDate != nil {
+			s := h.FundingEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		history = append(history, fundingHistoryResponse{
+			ID:                 h.ID.String(),
+			FundingType:        h.FundingType,
+			FundingModel:       h.FundingModel,
+			FundedHoursPerWeek: h.FundedHoursPerWeek,
+			FundingStartDate:   startDate,
+			FundingEndDate:     endDate,
+			ChangedAt:          h.ChangedAt,
+		})
+	}
+
+	return enhancedChildDetailResponse{
+		Profile:    toResponse(d.Profile),
+		Allocation: allocation,
+		History:    history,
+	}
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

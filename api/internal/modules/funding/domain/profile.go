@@ -69,3 +69,37 @@ type OverviewItem struct {
 	Flags            []OverviewFlag
 	RemainingMinutes *int
 }
+
+type ExpiringFundingRecord struct {
+	FundingRecordID    uuid.UUID
+	ChildID            uuid.UUID
+	ChildFirstName     string
+	ChildMiddleName    *string
+	ChildLastName      *string
+	FundingType        *string
+	FundedHoursPerWeek *float64
+	FundingEndDate     time.Time
+}
+
+type EnhancedOverviewMetrics struct {
+	TotalFundedChildren int
+	FifteenHourCount    int
+	ThirtyHourCount     int
+	BookedHoursThisWeek float64
+	ExpiringSoonCount   int
+}
+
+type AllocationEntry struct {
+	BookingID              uuid.UUID
+	EffectiveStartDate     time.Time
+	EffectiveEndDate       *time.Time
+	DaysOfWeek             []int32
+	SessionTypeName        string
+	SessionDurationMinutes int
+}
+
+type EnhancedChildDetail struct {
+	Profile    FundingProfile
+	Allocation []AllocationEntry
+	History    []FundingHistory
+}

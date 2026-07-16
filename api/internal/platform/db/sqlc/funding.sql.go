@@ -100,6 +100,102 @@ func (q *Queries) ChildFundingHistoryListByChild(ctx context.Context, arg ChildF
 	return items, nil
 }
 
+const fundingBookedHoursThisWeek = `-- name: FundingBookedHoursThisWeek :one
+SELECT COALESCE(SUM(b.funding_hours_per_week), 0)::numeric AS total_booked_hours
+FROM bookings b
+WHERE b.tenant_id = $1
+  AND b.branch_id = $2
+  AND b.status = 'active'
+  AND b.funding_type IS NOT NULL
+  AND b.funding_type != 'none'
+  AND b.effective_start_date <= CURRENT_DATE
+  AND (b.effective_end_date IS NULL OR b.effective_end_date >= CURRENT_DATE)
+`
+
+type FundingBookedHoursThisWeekParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+func (q *Queries) FundingBookedHoursThisWeek(ctx context.Context, arg FundingBookedHoursThisWeekParams) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, fundingBookedHoursThisWeek, arg.TenantID, arg.BranchID)
+	var total_booked_hours pgtype.Numeric
+	err := row.Scan(&total_booked_hours)
+	return total_booked_hours, err
+}
+
+const fundingChildAllocation = `-- name: FundingChildAllocation :many
+SELECT
+  b.id AS booking_id,
+  b.effective_start_date,
+  b.effective_end_date,
+  b.days_of_week,
+  st.name AS session_type_name,
+  EXTRACT(EPOCH FROM (st.end_time - st.start_time))::int / 60 AS session_duration_minutes
+FROM bookings b
+JOIN session_template_entries ste ON ste.template_id = b.session_template_id
+    AND ste.tenant_id = b.tenant_id AND ste.branch_id = b.branch_id
+JOIN session_types st ON st.id = ste.session_type_id
+    AND st.tenant_id = b.tenant_id AND st.branch_id = b.branch_id
+WHERE b.tenant_id = $1
+  AND b.branch_id = $2
+  AND b.child_id = $3
+  AND b.status = 'active'
+  AND b.effective_start_date <= $4
+  AND (b.effective_end_date IS NULL OR b.effective_end_date >= $5)
+ORDER BY b.effective_start_date, ste.day_of_week
+`
+
+type FundingChildAllocationParams struct {
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	ChildID           pgtype.UUID
+	BillingMonthEnd   pgtype.Date
+	BillingMonthStart pgtype.Date
+}
+
+type FundingChildAllocationRow struct {
+	BookingID              pgtype.UUID
+	EffectiveStartDate     pgtype.Date
+	EffectiveEndDate       pgtype.Date
+	DaysOfWeek             []int32
+	SessionTypeName        string
+	SessionDurationMinutes int32
+}
+
+func (q *Queries) FundingChildAllocation(ctx context.Context, arg FundingChildAllocationParams) ([]FundingChildAllocationRow, error) {
+	rows, err := q.db.Query(ctx, fundingChildAllocation,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ChildID,
+		arg.BillingMonthEnd,
+		arg.BillingMonthStart,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FundingChildAllocationRow
+	for rows.Next() {
+		var i FundingChildAllocationRow
+		if err := rows.Scan(
+			&i.BookingID,
+			&i.EffectiveStartDate,
+			&i.EffectiveEndDate,
+			&i.DaysOfWeek,
+			&i.SessionTypeName,
+			&i.SessionDurationMinutes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fundingChildEnrollmentGetForUpdate = `-- name: FundingChildEnrollmentGetForUpdate :one
 SELECT id, start_date, end_date
 FROM children
@@ -123,6 +219,128 @@ func (q *Queries) FundingChildEnrollmentGetForUpdate(ctx context.Context, arg Fu
 	row := q.db.QueryRow(ctx, fundingChildEnrollmentGetForUpdate, arg.TenantID, arg.BranchID, arg.ID)
 	var i FundingChildEnrollmentGetForUpdateRow
 	err := row.Scan(&i.ID, &i.StartDate, &i.EndDate)
+	return i, err
+}
+
+const fundingExpiringSoon = `-- name: FundingExpiringSoon :many
+SELECT
+  fr.id AS funding_record_id,
+  fr.child_id,
+  c.first_name AS child_first_name,
+  c.middle_name AS child_middle_name,
+  c.last_name AS child_last_name,
+  fr.funding_type,
+  fr.funded_hours_per_week,
+  fr.funding_end_date
+FROM child_funding_records fr
+JOIN children c ON c.tenant_id = fr.tenant_id AND c.branch_id = fr.branch_id AND c.id = fr.child_id
+WHERE fr.tenant_id = $1
+  AND fr.branch_id = $2
+  AND fr.funding_enabled = true
+  AND fr.funding_end_date IS NOT NULL
+  AND fr.funding_end_date >= CURRENT_DATE
+  AND fr.funding_end_date <= CURRENT_DATE + make_interval(days => $3::int)
+ORDER BY fr.funding_end_date ASC
+`
+
+type FundingExpiringSoonParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  int32
+}
+
+type FundingExpiringSoonRow struct {
+	FundingRecordID    pgtype.UUID
+	ChildID            pgtype.UUID
+	ChildFirstName     string
+	ChildMiddleName    pgtype.Text
+	ChildLastName      pgtype.Text
+	FundingType        string
+	FundedHoursPerWeek pgtype.Numeric
+	FundingEndDate     pgtype.Date
+}
+
+func (q *Queries) FundingExpiringSoon(ctx context.Context, arg FundingExpiringSoonParams) ([]FundingExpiringSoonRow, error) {
+	rows, err := q.db.Query(ctx, fundingExpiringSoon, arg.TenantID, arg.BranchID, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FundingExpiringSoonRow
+	for rows.Next() {
+		var i FundingExpiringSoonRow
+		if err := rows.Scan(
+			&i.FundingRecordID,
+			&i.ChildID,
+			&i.ChildFirstName,
+			&i.ChildMiddleName,
+			&i.ChildLastName,
+			&i.FundingType,
+			&i.FundedHoursPerWeek,
+			&i.FundingEndDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fundingExpiringSoonCount = `-- name: FundingExpiringSoonCount :one
+SELECT COUNT(*) AS expiring_soon_count
+FROM child_funding_records fr
+WHERE fr.tenant_id = $1
+  AND fr.branch_id = $2
+  AND fr.funding_enabled = true
+  AND fr.funding_end_date IS NOT NULL
+  AND fr.funding_end_date >= CURRENT_DATE
+  AND fr.funding_end_date <= CURRENT_DATE + make_interval(days => $3::int)
+`
+
+type FundingExpiringSoonCountParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	Column3  int32
+}
+
+func (q *Queries) FundingExpiringSoonCount(ctx context.Context, arg FundingExpiringSoonCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, fundingExpiringSoonCount, arg.TenantID, arg.BranchID, arg.Column3)
+	var expiring_soon_count int64
+	err := row.Scan(&expiring_soon_count)
+	return expiring_soon_count, err
+}
+
+const fundingFundedChildrenCount = `-- name: FundingFundedChildrenCount :one
+SELECT
+  COUNT(*) FILTER (WHERE fr.funding_type = 'fifteen_hours') AS fifteen_hour_count,
+  COUNT(*) FILTER (WHERE fr.funding_type = 'thirty_hours') AS thirty_hour_count,
+  COUNT(*) AS total_funded_count
+FROM child_funding_records fr
+WHERE fr.tenant_id = $1
+  AND fr.branch_id = $2
+  AND fr.funding_enabled = true
+  AND fr.funding_type IS NOT NULL
+  AND fr.funding_type != 'none'
+`
+
+type FundingFundedChildrenCountParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+type FundingFundedChildrenCountRow struct {
+	FifteenHourCount int64
+	ThirtyHourCount  int64
+	TotalFundedCount int64
+}
+
+func (q *Queries) FundingFundedChildrenCount(ctx context.Context, arg FundingFundedChildrenCountParams) (FundingFundedChildrenCountRow, error) {
+	row := q.db.QueryRow(ctx, fundingFundedChildrenCount, arg.TenantID, arg.BranchID)
+	var i FundingFundedChildrenCountRow
+	err := row.Scan(&i.FifteenHourCount, &i.ThirtyHourCount, &i.TotalFundedCount)
 	return i, err
 }
 

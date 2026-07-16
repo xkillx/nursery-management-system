@@ -406,3 +406,117 @@ func ptrToPgtypeDate(t *time.Time) pgtype.Date {
 	}
 	return pgtype.Date{Time: *t, Valid: true}
 }
+
+func numericToFloat64(n pgtype.Numeric) float64 {
+	f, _ := n.Float64Value()
+	return f.Float64
+}
+
+func (r *Repository) ListExpiringSoon(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) ([]domain.ExpiringFundingRecord, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.FundingExpiringSoon(ctx, sqlc.FundingExpiringSoonParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  int32(withinDays),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list expiring funding: %w", err)
+	}
+
+	result := make([]domain.ExpiringFundingRecord, 0, len(rows))
+	for _, row := range rows {
+		var fundingType *string
+		if row.FundingType != "" {
+			fundingType = &row.FundingType
+		}
+		var fundedHours *float64
+		if row.FundedHoursPerWeek.Valid {
+			f := numericToFloat64(row.FundedHoursPerWeek)
+			fundedHours = &f
+		}
+		result = append(result, domain.ExpiringFundingRecord{
+			FundingRecordID:    pgtypeUUIDToUUID(row.FundingRecordID),
+			ChildID:            pgtypeUUIDToUUID(row.ChildID),
+			ChildFirstName:     row.ChildFirstName,
+			ChildMiddleName:    pgtypeTextToStringPtr(row.ChildMiddleName),
+			ChildLastName:      pgtypeTextToStringPtr(row.ChildLastName),
+			FundingType:        fundingType,
+			FundedHoursPerWeek: fundedHours,
+			FundingEndDate:     pgtypeDateToTime(row.FundingEndDate),
+		})
+	}
+	return result, nil
+}
+
+func (r *Repository) GetFundedChildrenCount(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (domain.EnhancedOverviewMetrics, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.FundingFundedChildrenCount(ctx, sqlc.FundingFundedChildrenCountParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return domain.EnhancedOverviewMetrics{}, fmt.Errorf("count funded children: %w", err)
+	}
+	return domain.EnhancedOverviewMetrics{
+		TotalFundedChildren: int(row.TotalFundedCount),
+		FifteenHourCount:    int(row.FifteenHourCount),
+		ThirtyHourCount:     int(row.ThirtyHourCount),
+	}, nil
+}
+
+func (r *Repository) GetBookedHoursThisWeek(ctx context.Context, tenantID, branchID uuid.UUID) (float64, error) {
+	q := sqlc.New(r.pool)
+	val, err := q.FundingBookedHoursThisWeek(ctx, sqlc.FundingBookedHoursThisWeekParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("get booked hours this week: %w", err)
+	}
+	return numericToFloat64(val), nil
+}
+
+func (r *Repository) GetExpiringSoonCount(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) (int, error) {
+	q := sqlc.New(r.pool)
+	count, err := q.FundingExpiringSoonCount(ctx, sqlc.FundingExpiringSoonCountParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		Column3:  int32(withinDays),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("count expiring soon: %w", err)
+	}
+	return int(count), nil
+}
+
+func (r *Repository) GetChildAllocation(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonthStart, billingMonthEnd time.Time) ([]domain.AllocationEntry, error) {
+	q := sqlc.New(r.pool)
+	rows, err := q.FundingChildAllocation(ctx, sqlc.FundingChildAllocationParams{
+		TenantID:          uuidToPgtype(tenantID),
+		BranchID:          uuidToPgtype(branchID),
+		ChildID:           uuidToPgtype(childID),
+		BillingMonthEnd:   timeToPgtypeDate(billingMonthEnd),
+		BillingMonthStart: timeToPgtypeDate(billingMonthStart),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get child allocation: %w", err)
+	}
+
+	result := make([]domain.AllocationEntry, 0, len(rows))
+	for _, row := range rows {
+		var endDate *time.Time
+		if row.EffectiveEndDate.Valid {
+			t := row.EffectiveEndDate.Time
+			endDate = &t
+		}
+		result = append(result, domain.AllocationEntry{
+			BookingID:              pgtypeUUIDToUUID(row.BookingID),
+			EffectiveStartDate:     pgtypeDateToTime(row.EffectiveStartDate),
+			EffectiveEndDate:       endDate,
+			DaysOfWeek:             row.DaysOfWeek,
+			SessionTypeName:        row.SessionTypeName,
+			SessionDurationMinutes: int(row.SessionDurationMinutes),
+		})
+	}
+	return result, nil
+}

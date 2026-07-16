@@ -51,6 +51,26 @@ func (m *mockRepo) CountOverview(ctx context.Context, tenantID, branchID uuid.UU
 	return 0, nil
 }
 
+func (m *mockRepo) ListExpiringSoon(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) ([]domain.ExpiringFundingRecord, error) {
+	return nil, nil
+}
+
+func (m *mockRepo) GetFundedChildrenCount(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (domain.EnhancedOverviewMetrics, error) {
+	return domain.EnhancedOverviewMetrics{}, nil
+}
+
+func (m *mockRepo) GetBookedHoursThisWeek(ctx context.Context, tenantID, branchID uuid.UUID) (float64, error) {
+	return 0, nil
+}
+
+func (m *mockRepo) GetExpiringSoonCount(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) (int, error) {
+	return 0, nil
+}
+
+func (m *mockRepo) GetChildAllocation(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonthStart, billingMonthEnd time.Time) ([]domain.AllocationEntry, error) {
+	return nil, nil
+}
+
 func TestParseBillingMonth(t *testing.T) {
 	tests := []struct {
 		input   string

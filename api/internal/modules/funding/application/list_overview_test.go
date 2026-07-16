@@ -61,6 +61,26 @@ func (m *mockOverviewRepo) CountOverview(_ context.Context, _, _ uuid.UUID, _ ti
 	return len(m.rows), m.err
 }
 
+func (m *mockOverviewRepo) ListExpiringSoon(_ context.Context, _, _ uuid.UUID, _ int) ([]domain.ExpiringFundingRecord, error) {
+	return nil, nil
+}
+
+func (m *mockOverviewRepo) GetFundedChildrenCount(_ context.Context, _, _ uuid.UUID, _ time.Time) (domain.EnhancedOverviewMetrics, error) {
+	return domain.EnhancedOverviewMetrics{}, nil
+}
+
+func (m *mockOverviewRepo) GetBookedHoursThisWeek(_ context.Context, _, _ uuid.UUID) (float64, error) {
+	return 0, nil
+}
+
+func (m *mockOverviewRepo) GetExpiringSoonCount(_ context.Context, _, _ uuid.UUID, _ int) (int, error) {
+	return 0, nil
+}
+
+func (m *mockOverviewRepo) GetChildAllocation(_ context.Context, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AllocationEntry, error) {
+	return nil, nil
+}
+
 func testActor() tenant.ActorContext {
 	return tenant.ActorContext{
 		TenantID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),

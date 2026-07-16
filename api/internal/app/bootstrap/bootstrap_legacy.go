@@ -300,6 +300,9 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		fundingapp.NewGetProfile(fundingRepo),
 		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter, childFundingReader, fundingHistoryRepo),
 		fundingapp.NewListOverview(fundingRepo, consumedMinutesProvider),
+		fundingapp.NewGetEnhancedOverview(fundingRepo),
+		fundingapp.NewGetEnhancedChildDetail(fundingRepo, fundingHistoryRepo),
+		fundingapp.NewListExpiring(fundingRepo),
 		logger,
 	)
 	fundingHandler.RegisterRoutes(manager)

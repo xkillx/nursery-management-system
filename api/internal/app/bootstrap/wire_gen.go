@@ -277,7 +277,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	applicationGetProfile := application6.NewGetProfile(repository2)
 	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
 	listOverview := application6.NewListOverview(repository2, consumedMinutesProvider)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
+	getEnhancedOverview := application6.NewGetEnhancedOverview(repository2)
+	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository2, historyRepository)
+	listExpiring := application6.NewListExpiring(repository2)
+	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
@@ -641,7 +644,10 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	applicationGetProfile := application6.NewGetProfile(repository2)
 	upsertProfile := provideUpsertProfile(repository2, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
 	listOverview := application6.NewListOverview(repository2, consumedMinutesProvider)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, logger)
+	getEnhancedOverview := application6.NewGetEnhancedOverview(repository2)
+	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository2, historyRepository)
+	listExpiring := application6.NewListExpiring(repository2)
+	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, logger)
 	preflightDraftInvoices := application7.NewPreflightDraftInvoices(repository3)
 	academicTermRepository := postgres12.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
@@ -862,6 +868,13 @@ func provideUpsertProfile(
 	return application6.NewUpsertProfile(repo, txMgr, audit2, fundingReader, historyRepo)
 }
 
+func provideGetEnhancedChildDetail(
+	repo domain3.Repository,
+	historyRepo domain3.HistoryRepository,
+) *application6.GetEnhancedChildDetail {
+	return application6.NewGetEnhancedChildDetail(repo, historyRepo)
+}
+
 func provideChildFundingRecordReaderAdapter(
 	childRepo *postgres3.ChildRepository,
 ) *childFundingRecordReaderAdapter {
@@ -901,7 +914,7 @@ var absenceSet = wire.NewSet(postgres9.NewAbsenceRepository, wire.Bind(new(domai
 	provideClearMarker, httpabsence.NewHandler,
 )
 
-var fundingSet = wire.NewSet(postgres10.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres10.Repository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, httpfunding.NewHandler)
+var fundingSet = wire.NewSet(postgres10.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres10.Repository)), application6.NewGetProfile, provideUpsertProfile, application6.NewListOverview, application6.NewGetEnhancedOverview, provideGetEnhancedChildDetail, application6.NewListExpiring, httpfunding.NewHandler)
 
 var billingSet = wire.NewSet(postgres11.NewRepository, wire.Bind(new(domain8.BillingRepository), new(*postgres11.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application7.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application7.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain8.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain8.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain8.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), provideHourlyBookingLookupAdapter, wire.Bind(new(domain8.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)), application7.NewPreflightDraftInvoices, application7.NewComputeInvoicePrefill, application7.NewCreateDraftInvoice, application7.NewCreateAndIssueInvoiceFromForm, application7.NewGenerateDraftInvoices, application7.NewListInvoices, application7.NewGetInvoice, application7.NewIssueInvoice, application7.NewBulkIssueInvoices, application7.NewOverrideAttendanceBlockUseCase, application7.NewListParentInvoices, application7.NewGetParentInvoice, application7.NewUpdateSiteRateUseCase, provideInvoicePDFRenderer, wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 

@@ -173,6 +173,13 @@ func provideUpsertProfile(
 	return fundingapp.NewUpsertProfile(repo, txMgr, audit, fundingReader, historyRepo)
 }
 
+func provideGetEnhancedChildDetail(
+	repo fundingdomain.Repository,
+	historyRepo fundingdomain.HistoryRepository,
+) *fundingapp.GetEnhancedChildDetail {
+	return fundingapp.NewGetEnhancedChildDetail(repo, historyRepo)
+}
+
 // ── Password reset module ───────────────────────────────────────────────
 
 var passwordResetSet = wire.NewSet(
@@ -306,6 +313,9 @@ var fundingSet = wire.NewSet(
 	fundingapp.NewGetProfile,
 	provideUpsertProfile,
 	fundingapp.NewListOverview,
+	fundingapp.NewGetEnhancedOverview,
+	provideGetEnhancedChildDetail,
+	fundingapp.NewListExpiring,
 	fundinghandler.NewHandler,
 )
 

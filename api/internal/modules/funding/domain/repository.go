@@ -18,6 +18,11 @@ type Repository interface {
 	ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]OverviewRow, error)
 	ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]OverviewRow, error)
 	CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error)
+	ListExpiringSoon(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) ([]ExpiringFundingRecord, error)
+	GetFundedChildrenCount(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (EnhancedOverviewMetrics, error)
+	GetBookedHoursThisWeek(ctx context.Context, tenantID, branchID uuid.UUID) (float64, error)
+	GetExpiringSoonCount(ctx context.Context, tenantID, branchID uuid.UUID, withinDays int) (int, error)
+	GetChildAllocation(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonthStart, billingMonthEnd time.Time) ([]AllocationEntry, error)
 }
 
 type HistoryRepository interface {
