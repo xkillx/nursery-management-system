@@ -51,6 +51,7 @@ import (
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	billinghandler "nursery-management-system/api/internal/modules/billing/interfaces/http"
 
@@ -62,6 +63,7 @@ import (
 	inviteapp "nursery-management-system/api/internal/modules/invites/application"
 	invitedomain "nursery-management-system/api/internal/modules/invites/domain"
 	invitepostgres "nursery-management-system/api/internal/modules/invites/infrastructure/postgres"
+	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
 
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
@@ -211,6 +213,8 @@ var childrenSet = wire.NewSet(
 	wire.Bind(new(childapp.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)),
 	provideClock,
 	provideTodayFunc,
+	provideFundingHistoryWriterAdapter,
+	wire.Bind(new(childapp.FundingHistoryWriter), new(*fundingHistoryWriterAdapter)),
 	childapp.NewListChildren,
 	childapp.NewGetChild,
 	childapp.NewCreateChildWithFullProfile,
@@ -327,6 +331,10 @@ var fundingSet = wire.NewSet(
 	wire.Bind(new(fundingdomain.Repository), new(*fundingpostgres.Repository)),
 	fundingpostgres.NewHistoryRepository,
 	wire.Bind(new(fundingdomain.HistoryRepository), new(*fundingpostgres.HistoryRepository)),
+	provideChildFundingRecordReaderAdapter,
+	wire.Bind(new(fundingapp.ChildFundingRecordReader), new(*childFundingRecordReaderAdapter)),
+	provideConsumedMinutesProviderAdapter,
+	wire.Bind(new(fundingapp.ConsumedMinutesProvider), new(*consumedMinutesProviderAdapter)),
 	fundingapp.NewGetProfile,
 	provideUpsertProfile,
 	fundingapp.NewListOverview,
@@ -345,6 +353,7 @@ var fundingSet = wire.NewSet(
 var billingSet = wire.NewSet(
 	billingpostgres.NewRepository,
 	wire.Bind(new(billingdomain.BillingRepository), new(*billingpostgres.Repository)),
+	wire.Bind(new(billingdomain.BranchSettingsRepository), new(*billingpostgres.Repository)),
 	provideSiteProfileLookupAdapter,
 	wire.Bind(new(billingapp.SiteProfileLookup), new(*siteProfileLookupAdapter)),
 	provideParentContactLookupAdapter,
@@ -372,11 +381,17 @@ var billingSet = wire.NewSet(
 	billingapp.NewListParentInvoices,
 	billingapp.NewGetParentInvoice,
 	billingapp.NewUpdateSiteRateUseCase,
+	billingapp.NewUpdateBranchSettingsUseCase,
+	billingapp.NewExportInvoices,
+	billingapp.NewInvoiceSummary,
+	billingapp.NewOverdueSummary,
 	provideInvoicePDFRenderer,
+	wire.Bind(new(billinghandler.InvoicePDFRenderer), new(*billingpdf.Renderer)),
 	wire.Struct(new(billinghandler.DraftUseCases), "*"),
 	wire.Struct(new(billinghandler.LifecycleUseCases), "*"),
 	wire.Struct(new(billinghandler.ParentInvoiceUseCases), "*"),
 	wire.Struct(new(billinghandler.AdminUseCases), "*"),
+	wire.Struct(new(billinghandler.ExportUseCases), "*"),
 	wire.Struct(new(billinghandler.BillingHandlerConfig), "*"),
 	billinghandler.NewHandler,
 )
@@ -450,6 +465,7 @@ var invitesSet = wire.NewSet(
 	wire.Bind(new(inviteapp.TokenGenerator), new(*inviteapp.TokenGeneratorAdapter)),
 	inviteapp.NewInviteEmailAdapter,
 	wire.Bind(new(inviteapp.EmailSender), new(*inviteapp.InviteEmailAdapter)),
+	wire.Bind(new(inviteapp.TokenValidator), new(*invitetokens.Manager)),
 	inviteapp.NewCreateInviteUseCase,
 	inviteapp.NewListInvitesUseCase,
 	inviteapp.NewResendInviteUseCase,

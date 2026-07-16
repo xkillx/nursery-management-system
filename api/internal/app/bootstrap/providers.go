@@ -40,6 +40,7 @@ import (
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
+	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
@@ -320,6 +321,24 @@ func provideInviteTokenGeneratorAdapter(gen *invitetokens.Manager) *inviteTokenG
 
 func provideEmailSenderAdapter(sender email.Sender, cfg config.Config) *emailSenderAdapter {
 	return &emailSenderAdapter{sender: sender, baseURL: cfg.WebBaseURL}
+}
+
+func provideChildFundingRecordReaderAdapter(
+	childRepo *childpostgres.ChildRepository,
+) *childFundingRecordReaderAdapter {
+	return &childFundingRecordReaderAdapter{repo: childRepo}
+}
+
+func provideConsumedMinutesProviderAdapter(
+	pool *pgxpool.Pool,
+) *consumedMinutesProviderAdapter {
+	return &consumedMinutesProviderAdapter{pool: pool}
+}
+
+func provideFundingHistoryWriterAdapter(
+	repo *fundingpostgres.HistoryRepository,
+) *fundingHistoryWriterAdapter {
+	return &fundingHistoryWriterAdapter{repo: repo}
 }
 
 // ── App assembly ───────────────────────────────────────────────────────
