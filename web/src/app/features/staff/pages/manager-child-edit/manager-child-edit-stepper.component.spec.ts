@@ -1317,5 +1317,82 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(uploadSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('developmental concerns gate', () => {
+    it('developmentalConcernsGate returns no by default', () => {
+      expect(component.developmentalConcernsGate).toBe('no');
+    });
+
+    it('setDevelopmentalConcernsGate(yes) sets gate to yes', () => {
+      (component as unknown as { setDevelopmentalConcernsGate: (v: 'yes' | 'no') => void }).setDevelopmentalConcernsGate('yes');
+      expect(component.developmentalConcernsGate).toBe('yes');
+    });
+
+    it('setDevelopmentalConcernsGate(no) clears all concern booleans', () => {
+      component.step2.concern_walking = true;
+      component.step2.concern_speech_language = true;
+      component.step2.concern_hearing = true;
+      component.step2.concern_sight = true;
+      component.step2.concern_emotional_wellbeing = true;
+      component.step2.concern_behaviour = true;
+
+      (component as unknown as { setDevelopmentalConcernsGate: (v: 'yes' | 'no') => void }).setDevelopmentalConcernsGate('no');
+
+      expect(component.step2.concern_walking).toBeFalse();
+      expect(component.step2.concern_speech_language).toBeFalse();
+      expect(component.step2.concern_hearing).toBeFalse();
+      expect(component.step2.concern_sight).toBeFalse();
+      expect(component.step2.concern_emotional_wellbeing).toBeFalse();
+      expect(component.step2.concern_behaviour).toBeFalse();
+    });
+
+    it('setDevelopmentalConcernsGate(yes) does not modify existing concern values', () => {
+      component.step2.concern_walking = true;
+      component.step2.concern_speech_language = false;
+
+      (component as unknown as { setDevelopmentalConcernsGate: (v: 'yes' | 'no') => void }).setDevelopmentalConcernsGate('yes');
+
+      expect(component.step2.concern_walking).toBeTrue();
+      expect(component.step2.concern_speech_language).toBeFalse();
+    });
+
+    it('step2FieldError returns error when gate is yes and no concerns checked', () => {
+      (component as unknown as { setDevelopmentalConcernsGate: (v: 'yes' | 'no') => void }).setDevelopmentalConcernsGate('yes');
+      expect(component.developmentalConcernsGate).toBe('yes');
+
+      const error = (component as unknown as { step2FieldError: (f: string) => string | null }).step2FieldError('developmental_concerns_gate');
+      expect(error).toContain('Select at least one developmental concern');
+    });
+
+    it('step2FieldError returns null when gate is no', () => {
+      const error = (component as unknown as { step2FieldError: (f: string) => string | null }).step2FieldError('developmental_concerns_gate');
+      expect(error).toBeNull();
+    });
+
+    it('step2FieldError returns null when gate is yes and at least one concern checked', () => {
+      (component as unknown as { setDevelopmentalConcernsGate: (v: 'yes' | 'no') => void }).setDevelopmentalConcernsGate('yes');
+      component.step2.concern_speech_language = true;
+
+      const error = (component as unknown as { step2FieldError: (f: string) => string | null }).step2FieldError('developmental_concerns_gate');
+      expect(error).toBeNull();
+    });
+
+    it('collectMedicalSafetyIssues returns no gate issue when gate is no', () => {
+      fillRequiredForCompletion();
+
+      const issues = (component as unknown as { collectFinalCompletionIssues: () => { field: string; message: string }[] }).collectFinalCompletionIssues();
+      const gateIssue = issues.find((i) => i.field === 'developmental_concerns_gate');
+      expect(gateIssue).toBeUndefined();
+    });
+
+    it('collectMedicalSafetyIssues returns no gate issue when gate is yes and at least one concern checked', () => {
+      fillRequiredForCompletion();
+      component.step2.concern_speech_language = true;
+
+      const issues = (component as unknown as { collectFinalCompletionIssues: () => { field: string; message: string }[] }).collectFinalCompletionIssues();
+      const gateIssue = issues.find((i) => i.field === 'developmental_concerns_gate');
+      expect(gateIssue).toBeUndefined();
+    });
+  });
 });
 

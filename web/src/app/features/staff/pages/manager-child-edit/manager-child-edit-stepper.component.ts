@@ -1185,6 +1185,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (field === 'social_services_status' && !this.step2.social_services_status) {
       return 'Confirm social services involvement.';
     }
+    if (field === 'developmental_concerns_gate' && this.developmentalConcernsGate === 'yes' &&
+      !this.step2.concern_walking && !this.step2.concern_speech_language &&
+      !this.step2.concern_hearing && !this.step2.concern_sight &&
+      !this.step2.concern_emotional_wellbeing && !this.step2.concern_behaviour) {
+      return 'Select at least one developmental concern or change the answer to No.';
+    }
     return null;
   }
 
@@ -2207,6 +2213,40 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.notifyDraftChanged();
   }
 
+  protected developmentalConcernsGateValue: 'yes' | 'no' = 'no';
+
+  get developmentalConcernsGate(): 'yes' | 'no' {
+    return this.developmentalConcernsGateValue;
+  }
+
+  protected setDevelopmentalConcernsGate(value: 'yes' | 'no'): void {
+    this.developmentalConcernsGateValue = value;
+    if (value === 'no') {
+      this.clearConcernsForGate();
+    }
+  }
+
+  private clearConcernsForGate(): void {
+    this.step2.concern_walking = false;
+    this.step2.concern_speech_language = false;
+    this.step2.concern_hearing = false;
+    this.step2.concern_sight = false;
+    this.step2.concern_emotional_wellbeing = false;
+    this.step2.concern_behaviour = false;
+  }
+
+  private syncDevelopmentalConcernsGate(): void {
+    this.developmentalConcernsGateValue =
+      this.step2.concern_walking ||
+      this.step2.concern_speech_language ||
+      this.step2.concern_hearing ||
+      this.step2.concern_sight ||
+      this.step2.concern_emotional_wellbeing ||
+      this.step2.concern_behaviour
+        ? 'yes'
+        : 'no';
+  }
+
   protected trackByIndex(index: number): number {
     return index;
   }
@@ -2638,6 +2678,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.social_services_details.trim(),
       'Record social services details, or set involvement to No.',
     );
+
+    if (this.developmentalConcernsGate === 'yes' &&
+      !this.step2.concern_walking && !this.step2.concern_speech_language &&
+      !this.step2.concern_hearing && !this.step2.concern_sight &&
+      !this.step2.concern_emotional_wellbeing && !this.step2.concern_behaviour) {
+      issues.push({ stepKey: 'medical-health', field: 'developmental_concerns_gate', message: 'Select at least one developmental concern or change the answer to No.' });
+    }
   }
 
   private collectNoneDetailsIssue(
@@ -3144,6 +3191,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.concern_sight = s.concern_sight === 'yes';
       this.step2.concern_emotional_wellbeing = s.concern_emotional_wellbeing === 'yes';
       this.step2.concern_behaviour = s.concern_behaviour === 'yes';
+      this.syncDevelopmentalConcernsGate();
       this.referralsDraft = s.professional_referrals?.length
         ? s.professional_referrals.map((r) => ({
             type: r.type,
@@ -3558,6 +3606,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       concern_behaviour: false,
       routine_care_notes: '',
     };
+    this.developmentalConcernsGateValue = 'no';
     this.step3 = {
       collection_password: '',
       collection_password_hint: '',

@@ -1350,34 +1350,107 @@
                   <h4 id="medical-developmental-heading" class="text-lg font-bold">Developmental Concerns</h4>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Please indicate any concerns you have about the child's development in the following areas.</p>
-                <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                  @for (item of concernItems; track item.key) {
+                <fieldset
+                  [attr.data-focus-target]="'developmental-concerns-gate-group'"
+                  role="radiogroup"
+                  [attr.aria-invalid]="shouldShowStep2Error('developmental_concerns_gate')"
+                  [attr.aria-describedby]="shouldShowStep2Error('developmental_concerns_gate') ? 'developmental-concerns-gate-error' : null"
+                >
+                  <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
+                    Are there any developmental concerns about this child?
+                    <span class="text-error-500" aria-hidden="true"> *</span>
+                  </legend>
+                  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label
-                      [for]="'concern-' + item.key"
-                      class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
-                      [class.border-brand-500]="getConcernValue(item.key)"
-                      [class.bg-brand-50]="getConcernValue(item.key)"
-                      [class.text-brand-700]="getConcernValue(item.key)"
-                      [class.border-gray-200]="!getConcernValue(item.key)"
-                      [class.text-gray-800]="!getConcernValue(item.key)"
-                      [class.dark:border-brand-500]="getConcernValue(item.key)"
-                      [class.dark:bg-brand-500/10]="getConcernValue(item.key)"
-                      [class.dark:text-brand-300]="getConcernValue(item.key)"
-                      [class.dark:border-gray-700]="!getConcernValue(item.key)"
-                      [class.dark:text-gray-200]="!getConcernValue(item.key)"
+                      for="developmental-concerns-yes"
+                      class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 focus-within:ring-3 focus-within:ring-brand-500/15"
+                      [class.border-brand-500]="developmentalConcernsGate === 'yes'"
+                      [class.bg-brand-50/15]="developmentalConcernsGate === 'yes'"
+                      [class.text-brand-700]="developmentalConcernsGate === 'yes'"
+                      [class.dark:border-brand-400]="developmentalConcernsGate === 'yes'"
+                      [class.dark:bg-brand-500/10]="developmentalConcernsGate === 'yes'"
+                      [class.dark:text-brand-300]="developmentalConcernsGate === 'yes'"
+                      [class.border-gray-200]="developmentalConcernsGate !== 'yes'"
+                      [class.bg-white]="developmentalConcernsGate !== 'yes'"
+                      [class.text-gray-655]="developmentalConcernsGate !== 'yes'"
+                      [class.dark:border-gray-800]="developmentalConcernsGate !== 'yes'"
+                      [class.dark:bg-gray-900/60]="developmentalConcernsGate !== 'yes'"
+                      [class.dark:text-gray-400]="developmentalConcernsGate !== 'yes'"
                     >
                       <input
-                        [id]="'concern-' + item.key"
-                        type="checkbox"
-                        [name]="item.key"
-                        class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
-                        [checked]="getConcernValue(item.key)"
-                        (change)="setConcernValue(item.key, $any($event.target).checked)"
+                        id="developmental-concerns-yes"
+                        type="radio"
+                        name="developmental_concerns_gate"
+                        value="yes"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="developmentalConcernsGate === 'yes'"
+                        (change)="setDevelopmentalConcernsGate('yes'); markStep2Touched('developmental_concerns_gate')"
                       />
-                      <span>{{ item.label }}</span>
+                      <span>Yes</span>
                     </label>
+                    <label
+                      for="developmental-concerns-no"
+                      class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 focus-within:ring-3 focus-within:ring-brand-500/15"
+                      [class.border-brand-500]="developmentalConcernsGate === 'no'"
+                      [class.bg-brand-50/15]="developmentalConcernsGate === 'no'"
+                      [class.text-brand-700]="developmentalConcernsGate === 'no'"
+                      [class.dark:border-brand-400]="developmentalConcernsGate === 'no'"
+                      [class.dark:bg-brand-500/10]="developmentalConcernsGate === 'no'"
+                      [class.dark:text-brand-300]="developmentalConcernsGate === 'no'"
+                      [class.border-gray-200]="developmentalConcernsGate !== 'no'"
+                      [class.bg-white]="developmentalConcernsGate !== 'no'"
+                      [class.text-gray-655]="developmentalConcernsGate !== 'no'"
+                      [class.dark:border-gray-800]="developmentalConcernsGate !== 'no'"
+                      [class.dark:bg-gray-900/60]="developmentalConcernsGate !== 'no'"
+                      [class.dark:text-gray-400]="developmentalConcernsGate !== 'no'"
+                    >
+                      <input
+                        id="developmental-concerns-no"
+                        type="radio"
+                        name="developmental_concerns_gate"
+                        value="no"
+                        class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                        [checked]="developmentalConcernsGate === 'no'"
+                        (change)="setDevelopmentalConcernsGate('no'); markStep2Touched('developmental_concerns_gate')"
+                      />
+                      <span>No</span>
+                    </label>
+                  </div>
+                  @if (shouldShowStep2Error('developmental_concerns_gate')) {
+                    <p id="developmental-concerns-gate-error" class="mt-2 text-sm text-error-500" role="alert">{{ step2VisibleError('developmental_concerns_gate') }}</p>
                   }
-                </div>
+                </fieldset>
+
+                @if (developmentalConcernsGate === 'yes') {
+                  <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                    @for (item of concernItems; track item.key) {
+                      <label
+                        [for]="'concern-' + item.key"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:ring-brand-500/30"
+                        [class.border-brand-500]="getConcernValue(item.key)"
+                        [class.bg-brand-50]="getConcernValue(item.key)"
+                        [class.text-brand-700]="getConcernValue(item.key)"
+                        [class.border-gray-200]="!getConcernValue(item.key)"
+                        [class.text-gray-800]="!getConcernValue(item.key)"
+                        [class.dark:border-brand-500]="getConcernValue(item.key)"
+                        [class.dark:bg-brand-500/10]="getConcernValue(item.key)"
+                        [class.dark:text-brand-300]="getConcernValue(item.key)"
+                        [class.dark:border-gray-700]="!getConcernValue(item.key)"
+                        [class.dark:text-gray-200]="!getConcernValue(item.key)"
+                      >
+                        <input
+                          [id]="'concern-' + item.key"
+                          type="checkbox"
+                          [name]="item.key"
+                          class="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
+                          [checked]="getConcernValue(item.key)"
+                          (change)="setConcernValue(item.key, $any($event.target).checked)"
+                        />
+                        <span>{{ item.label }}</span>
+                      </label>
+                    }
+                  </div>
+                }
               </section>
 
               <section class="space-y-6 border-t border-gray-200 pt-8 dark:border-gray-800" aria-labelledby="medical-referrals-heading">
