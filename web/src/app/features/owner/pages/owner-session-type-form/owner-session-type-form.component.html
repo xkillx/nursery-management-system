@@ -115,26 +115,6 @@
               <p class="mt-1 text-xs text-red-600">{{ fieldErrors.kind }}</p>
             }
           </div>
-          <div>
-            <label for="session-type-flat-fee" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Flat fee (pence)
-            </label>
-            <input
-              id="session-type-flat-fee"
-              type="number"
-              name="flatFeeMinor"
-              [(ngModel)]="form.flatFeeMinor"
-              min="0"
-              placeholder="Leave blank for hourly billing"
-              class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              [class.border-red-500]="fieldErrors.flatFeeMinor"
-              [disabled]="saving"
-            />
-            @if (fieldErrors.flatFeeMinor) {
-              <p class="mt-1 text-xs text-red-600">{{ fieldErrors.flatFeeMinor }}</p>
-            }
-            <p class="mt-1 text-xs text-gray-400">Optional. When set, the session is billed at this fixed amount instead of hourly rate &times; minutes.</p>
-          </div>
         </div>
 
         <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end dark:border-gray-800">

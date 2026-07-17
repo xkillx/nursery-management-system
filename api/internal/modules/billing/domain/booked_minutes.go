@@ -19,7 +19,6 @@ type BookedSessionType struct {
 	EndMinutes      int
 	DurationMinutes int // EndMinutes - StartMinutes
 	Kind            string
-	FlatFeeMinor    *int
 }
 
 // BookedPatternEntry is one row in a Booking Pattern (day-of-week + session type).
@@ -56,7 +55,6 @@ type BookedEntryBreakdown struct {
 	OccurrencesInMonth int
 	TotalMinutes       int
 	Kind               string
-	FlatFeeMinor       *int
 }
 
 type TermDateRange struct {
@@ -76,7 +74,6 @@ type AdHocBookingRow struct {
 	SessionTypeName string
 	StartMinutes    int
 	EndMinutes      int
-	FlatFeeMinor    *int
 }
 
 type AdHocBookingLookup interface {
@@ -244,7 +241,6 @@ func CalculateBookedCoreMinutesInMonth(
 			OccurrencesInMonth: occurrences,
 			TotalMinutes:       totalMinutes,
 			Kind:               e.SessionType.Kind,
-			FlatFeeMinor:       e.SessionType.FlatFeeMinor,
 		})
 		calc.TotalMinutes += totalMinutes
 

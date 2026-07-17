@@ -103,7 +103,6 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 					EndMinutes:      e.EndMinutes,
 					DurationMinutes: e.EndMinutes - e.StartMinutes,
 					Kind:            e.SessionTypeKind,
-					FlatFeeMinor:    e.SessionTypeFlatFeeMinor,
 				},
 			})
 		}
@@ -210,22 +209,17 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				var lineDesc string
 				sortOrder := 3
 				_ = sortOrder
-				if ab.FlatFeeMinor != nil {
-					lineMinor = *ab.FlatFeeMinor
-					lineDesc = fmt.Sprintf("Ad-hoc session: %s on %s (flat fee)", ab.SessionTypeName, ab.CalendarDate.Format("02 Jan"))
-				} else {
-					multiplier := termRow.AdHocRateMultiplier
-					if multiplier <= 0 {
-						multiplier = 1.50
-					}
-					chargedMinutes := domain.CalculateAdHocChargeMinutes(duration, multiplier)
-					minor, hrErr := domain.CalculateHourlyAmountMinor(chargedMinutes, termRow.SiteHourlyRateMinor)
-					if hrErr != nil {
-						return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate ad-hoc charge: %w", hrErr)
-					}
-					lineMinor = minor
-					lineDesc = fmt.Sprintf("Ad-hoc session: %s on %s (×%.2f)", ab.SessionTypeName, ab.CalendarDate.Format("02 Jan"), multiplier)
+				multiplier := termRow.AdHocRateMultiplier
+				if multiplier <= 0 {
+					multiplier = 1.50
 				}
+				chargedMinutes := domain.CalculateAdHocChargeMinutes(duration, multiplier)
+				minor, hrErr := domain.CalculateHourlyAmountMinor(chargedMinutes, termRow.SiteHourlyRateMinor)
+				if hrErr != nil {
+					return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate ad-hoc charge: %w", hrErr)
+				}
+				lineMinor = minor
+				lineDesc = fmt.Sprintf("Ad-hoc session: %s on %s (×%.2f)", ab.SessionTypeName, ab.CalendarDate.Format("02 Jan"), multiplier)
 				adHocLines = append(adHocLines, struct {
 					description string
 					minutes     int

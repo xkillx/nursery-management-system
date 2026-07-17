@@ -8,10 +8,10 @@ Shared domain vocabulary for this project — entities, named processes, and sta
 A child's planned weekly attendance schedule, defining which session types the child attends on which days of the week. A child has at most one current (open) booking pattern at a time; when a new pattern is created, the previous one is closed. Patterns cannot be backdated or edited once their effective date has passed. A pattern may carry an optional `term_time_only` flag; when true, billing calculations exclude dates outside the branch's academic term calendar.
 
 ### Ad-Hoc Booking
-A one-off session booking for a specific child on a specific calendar date, independent from the recurring booking pattern. Used for backup childcare, inset-day extras, or casual sessions. Billed at the ad-hoc rate (branch hourly rate × ad-hoc multiplier, or flat fee if the session type has one configured). Status: `active` or `cancelled`. Does not affect funding allowance calculations.
+A one-off session booking for a specific child on a specific calendar date, independent from the recurring booking pattern. Used for backup childcare, inset-day extras, or casual sessions. Billed at the ad-hoc rate (branch hourly rate × ad-hoc multiplier). Status: `active` or `cancelled`. Does not affect funding allowance calculations.
 
 ### Session Type
-A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children. Each session type has a `kind` classification (`standard`, `wraparound_before`, `wraparound_after`, `core`, `extended`) and an optional `flat_fee_minor` that, when set, overrides hourly-rate-based billing for that session type.
+A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children. Each session type has a `kind` classification (`standard`, `wraparound_before`, `wraparound_after`, `core`, `extended`).
 
 ### Funding Record
 A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 30 Hours), funding model (term-time or stretched), eligibility status, and benefit information. Separate from billing — funding records capture entitlement, not invoices.

@@ -861,17 +861,16 @@ type SessionTemplateEntry struct {
 }
 
 type SessionType struct {
-	ID           pgtype.UUID
-	TenantID     pgtype.UUID
-	BranchID     pgtype.UUID
-	Name         string
-	StartTime    pgtype.Time
-	EndTime      pgtype.Time
-	IsActive     bool
-	Kind         string
-	FlatFeeMinor pgtype.Int4
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	Name      string
+	StartTime pgtype.Time
+	EndTime   pgtype.Time
+	IsActive  bool
+	Kind      string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }
 
 type SiteProfile struct {

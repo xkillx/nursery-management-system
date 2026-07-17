@@ -21,7 +21,7 @@ This core cleanly handles **Full-Time, Part-Time, Sessional (AM/PM), Ad-Hoc, Ble
 | D | Ad-Hoc / Flexible | ✅ Supported | `ad_hoc_bookings` module; billing integrated via `CalculateAdHocChargeMinutes` |
 | E | Funded Hours (15/30) | ✅ Supported | `CalculateTermTimeFundedAllowanceMinutes` uses academic term date ranges; stretched math also works |
 | F | Holiday / Term-Time Only | ✅ Supported | `academic_terms` table + `term_time_only` on booking pattern + `branch_closure_days` for inset/bank holidays |
-| G | Wraparound Care | ✅ Supported | `session_types.kind` enum + `flat_fee_minor` column; no `schools` table yet |
+| G | Wraparound Care | ✅ Supported | `session_types.kind` enum; no `schools` table yet |
 
 **Session structures**
 
@@ -148,7 +148,7 @@ Two session types per branch (e.g. `AM 08:00–12:00`, `PM 12:00–16:00`). Book
 - `ad_hoc_bookings` table keyed by `(child_id, calendar_date, session_type_id)` with `status ∈ {active, cancelled}`.
 - Manager API: create, list (with child/date/status filters), cancel.
 - Billing integration: `ListActiveAdHocBookingsForChildInMonth` feeds into `booked_core_minutes`. `CalculateAdHocChargeMinutes(duration, multiplier)` applies the branch's `ad_hoc_rate_multiplier` (default 1.50, column on `branches`).
-- Flat-fee session types (`flat_fee_minor`) are used as-is for ad-hoc bookings, bypassing hourly calculation.
+- Flat-fee session types are no longer supported; all ad-hoc bookings use hourly calculation.
 - Angular frontend: `AdHocBookingsApiService` + `manager-ad-hoc-booking` component.
 
 **Remaining refinements:**
@@ -193,7 +193,6 @@ Two session types per branch (e.g. `AM 08:00–12:00`, `PM 12:00–16:00`). Book
 **What works:** Full wraparound support via session type extensions:
 
 - `session_types.kind` enum includes `wraparound_before` and `wraparound_after` values (migration 000005).
-- `session_types.flat_fee_minor` (nullable) overrides hourly × minutes billing — used for per-session flat pricing (£X per morning, £Y per afternoon).
 - Two session types (`07:00–09:00` kind=wraparound_before, `15:00–18:00` kind=wraparound_after) can be created and attached to booking patterns. The arithmetic treats them like any other session.
 
 **Remaining gap:** No first-class school integration. Specifically:
@@ -243,7 +242,7 @@ The 52/12 monthly average means a "30h stretched" child gets ~129.2 funded minut
 |---|---|---|---|
 | P0 | ~~Term calendar + term-time-only enforcement (E + F)~~ | ~~Large~~ | ✅ Done — `term_calendar` module + `CalculateTermTimeFundedAllowanceMinutes` + booking pattern `term_time_only` |
 | P1 | ~~Ad-hoc booking entity (D)~~ | ~~Medium~~ | ✅ Done — `ad_hoc_bookings` module with billing integration |
-| P1 | ~~Session type `kind` + flat fee (G + Wraparound)~~ | ~~Medium~~ | ✅ Done — `session_types.kind` + `flat_fee_minor` columns |
+| P1 | ~~Session type `kind` (G + Wraparound)~~ | ~~Medium~~ | ✅ Done — `session_types.kind` columns |
 | P1 | ~~`branch_closure_days` table~~ | ~~Small~~ | ✅ Done — `branch_closures` module + billing integration via `ClosureDateLookup` |
 | P2 | **Hourly booking surface** | Medium | Niche for EYFS settings; defer until P1 shipped |
 | P2 | **Funding-model display on invoice lines** | Small | Cheap transparency win; helps parent disputes |

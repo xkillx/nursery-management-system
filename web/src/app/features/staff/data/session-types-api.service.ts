@@ -13,7 +13,6 @@ export interface StaffSessionType {
   endTime: string;
   isActive: boolean;
   kind: SessionTypeKind;
-  flatFeeMinor: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,7 +22,6 @@ export interface StaffSessionTypeInput {
   start_time: string;
   end_time: string;
   kind?: SessionTypeKind;
-  flat_fee_minor?: number | null;
 }
 
 interface ApiSessionType {
@@ -33,7 +31,6 @@ interface ApiSessionType {
   end_time: string;
   is_active: boolean;
   kind?: string;
-  flat_fee_minor?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,7 +96,6 @@ export class StaffSessionTypesApiService {
       endTime: s.end_time,
       isActive: s.is_active,
       kind: (s.kind ?? 'standard') as SessionTypeKind,
-      flatFeeMinor: s.flat_fee_minor ?? null,
       createdAt: s.created_at,
       updatedAt: s.updated_at,
     };

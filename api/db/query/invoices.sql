@@ -783,8 +783,7 @@ SELECT
     ab.session_type_id,
     st.name AS session_type_name,
     st.start_time AS session_type_start_time,
-    st.end_time AS session_type_end_time,
-    st.flat_fee_minor AS session_type_flat_fee_minor
+    st.end_time AS session_type_end_time
 FROM ad_hoc_bookings ab
 JOIN session_types st
   ON st.tenant_id = ab.tenant_id

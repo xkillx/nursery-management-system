@@ -64,7 +64,7 @@ export class OwnerSessionTypeFormComponent implements OnInit {
   loading = false;
   saving = false;
   pageError: string | null = null;
-  fieldErrors: { name?: string; startTime?: string; endTime?: string; kind?: string; flatFeeMinor?: string } = {};
+  fieldErrors: { name?: string; startTime?: string; endTime?: string; kind?: string } = {};
 
   readonly kindOptions: { value: SessionTypeKind; label: string }[] = [
     { value: 'standard', label: 'Standard' },
@@ -79,7 +79,6 @@ export class OwnerSessionTypeFormComponent implements OnInit {
     startTime: '08:00',
     endTime: '13:00',
     kind: 'standard' as SessionTypeKind,
-    flatFeeMinor: null as number | null,
   };
 
   ngOnInit(): void {
@@ -115,7 +114,6 @@ export class OwnerSessionTypeFormComponent implements OnInit {
           this.form.startTime = t.startTime;
           this.form.endTime = t.endTime;
           this.form.kind = t.kind;
-          this.form.flatFeeMinor = t.flatFeeMinor;
         }
         this.loading = false;
       },
@@ -158,7 +156,6 @@ export class OwnerSessionTypeFormComponent implements OnInit {
       start_time: this.form.startTime,
       end_time: this.form.endTime,
       kind: this.form.kind,
-      flat_fee_minor: this.form.flatFeeMinor,
     };
     const op =
       this.mode === 'create'

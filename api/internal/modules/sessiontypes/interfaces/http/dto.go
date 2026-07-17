@@ -14,44 +14,40 @@ func minutesToHHMM(m int) string {
 }
 
 type sessionTypeResponse struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	StartTime    string `json:"start_time"`
-	EndTime      string `json:"end_time"`
-	IsActive     bool   `json:"is_active"`
-	Kind         string `json:"kind"`
-	FlatFeeMinor *int   `json:"flat_fee_minor"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+	IsActive  bool   `json:"is_active"`
+	Kind      string `json:"kind"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 type createSessionTypeRequest struct {
-	Name         string `json:"name" binding:"required"`
-	StartTime    string `json:"start_time" binding:"required"`
-	EndTime      string `json:"end_time" binding:"required"`
-	Kind         string `json:"kind"`
-	FlatFeeMinor *int   `json:"flat_fee_minor"`
+	Name      string `json:"name" binding:"required"`
+	StartTime string `json:"start_time" binding:"required"`
+	EndTime   string `json:"end_time" binding:"required"`
+	Kind      string `json:"kind"`
 }
 
 type updateSessionTypeRequest struct {
-	Name         *string `json:"name"`
-	StartTime    *string `json:"start_time"`
-	EndTime      *string `json:"end_time"`
-	Kind         *string `json:"kind"`
-	FlatFeeMinor **int   `json:"flat_fee_minor"`
+	Name      *string `json:"name"`
+	StartTime *string `json:"start_time"`
+	EndTime   *string `json:"end_time"`
+	Kind      *string `json:"kind"`
 }
 
 func toSessionTypeResponse(st domain.SessionType) sessionTypeResponse {
 	return sessionTypeResponse{
-		ID:           st.ID.String(),
-		Name:         st.Name,
-		StartTime:    minutesToHHMM(st.StartMinutes),
-		EndTime:      minutesToHHMM(st.EndMinutes),
-		IsActive:     st.IsActive,
-		Kind:         st.Kind,
-		FlatFeeMinor: st.FlatFeeMinor,
-		CreatedAt:    st.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt:    st.UpdatedAt.UTC().Format(time.RFC3339),
+		ID:        st.ID.String(),
+		Name:      st.Name,
+		StartTime: minutesToHHMM(st.StartMinutes),
+		EndTime:   minutesToHHMM(st.EndMinutes),
+		IsActive:  st.IsActive,
+		Kind:      st.Kind,
+		CreatedAt: st.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt: st.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
 

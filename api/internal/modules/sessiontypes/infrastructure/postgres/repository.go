@@ -141,19 +141,14 @@ func (r *SessionTypeRepository) GetByID(ctx context.Context, tenantID, branchID,
 
 func (r *SessionTypeRepository) Create(ctx context.Context, st domain.SessionType) error {
 	q := sqlc.New(r.pool)
-	ffMinor := pgtype.Int4{Valid: false}
-	if st.FlatFeeMinor != nil {
-		ffMinor = pgtype.Int4{Int32: int32(*st.FlatFeeMinor), Valid: true}
-	}
 	return q.SessionTypesCreate(ctx, sqlc.SessionTypesCreateParams{
-		ID:           uuidToPgtype(st.ID),
-		TenantID:     uuidToPgtype(st.TenantID),
-		BranchID:     uuidToPgtype(st.BranchID),
-		Name:         st.Name,
-		StartTime:    minutesToPgtypeTime(st.StartMinutes),
-		EndTime:      minutesToPgtypeTime(st.EndMinutes),
-		Kind:         st.Kind,
-		FlatFeeMinor: ffMinor,
+		ID:        uuidToPgtype(st.ID),
+		TenantID:  uuidToPgtype(st.TenantID),
+		BranchID:  uuidToPgtype(st.BranchID),
+		Name:      st.Name,
+		StartTime: minutesToPgtypeTime(st.StartMinutes),
+		EndTime:   minutesToPgtypeTime(st.EndMinutes),
+		Kind:      st.Kind,
 	})
 }
 
@@ -183,23 +178,6 @@ func (r *SessionTypeRepository) Update(ctx context.Context, tenantID, branchID, 
 	if v, ok := fields["kind"]; ok {
 		params.SetKind = int32(1)
 		params.NewKind = pgtype.Text{String: v.(string), Valid: true}
-	}
-	if v, ok := fields["flat_fee_minor"]; ok {
-		params.SetFlatFeeMinor = true
-		if v == nil {
-			params.NewFlatFeeMinor = pgtype.Int4{Valid: false}
-		} else {
-			switch ff := v.(type) {
-			case *int:
-				if ff != nil {
-					params.NewFlatFeeMinor = pgtype.Int4{Int32: int32(*ff), Valid: true}
-				} else {
-					params.NewFlatFeeMinor = pgtype.Int4{Valid: false}
-				}
-			case int:
-				params.NewFlatFeeMinor = pgtype.Int4{Int32: int32(ff), Valid: true}
-			}
-		}
 	}
 
 	q := sqlc.New(r.pool)
@@ -276,10 +254,6 @@ func mapSessionTypeFromListRow(row sqlc.SessionTypesListByBranchRow) domain.Sess
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
-	if row.FlatFeeMinor.Valid {
-		v := int(row.FlatFeeMinor.Int32)
-		st.FlatFeeMinor = &v
-	}
 	return st
 }
 
@@ -295,10 +269,6 @@ func mapSessionTypeFromGetRow(row sqlc.SessionTypesGetByIDRow) domain.SessionTyp
 		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
-	}
-	if row.FlatFeeMinor.Valid {
-		v := int(row.FlatFeeMinor.Int32)
-		st.FlatFeeMinor = &v
 	}
 	return st
 }
@@ -316,10 +286,6 @@ func mapSessionTypeFromGetForUpdateRow(row sqlc.SessionTypesGetByIDForUpdateRow)
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
-	if row.FlatFeeMinor.Valid {
-		v := int(row.FlatFeeMinor.Int32)
-		st.FlatFeeMinor = &v
-	}
 	return st
 }
 
@@ -335,10 +301,6 @@ func mapSessionTypeFromListPaginatedRow(row sqlc.SessionTypesListByBranchPaginat
 		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
-	}
-	if row.FlatFeeMinor.Valid {
-		v := int(row.FlatFeeMinor.Int32)
-		st.FlatFeeMinor = &v
 	}
 	return st
 }
@@ -377,26 +339,25 @@ func pgtypeTimeToMinutes(t pgtype.Time) int {
 
 func mapSessionTypeSortRow(row interface{}) domain.SessionType {
 	type fields struct {
-		ID           pgtype.UUID
-		TenantID     pgtype.UUID
-		BranchID     pgtype.UUID
-		Name         string
-		StartTime    pgtype.Time
-		EndTime      pgtype.Time
-		IsActive     bool
-		CreatedAt    pgtype.Timestamptz
-		UpdatedAt    pgtype.Timestamptz
-		Kind         string
-		FlatFeeMinor pgtype.Int4
+		ID        pgtype.UUID
+		TenantID  pgtype.UUID
+		BranchID  pgtype.UUID
+		Name      string
+		StartTime pgtype.Time
+		EndTime   pgtype.Time
+		IsActive  bool
+		CreatedAt pgtype.Timestamptz
+		UpdatedAt pgtype.Timestamptz
+		Kind      string
 	}
 	var f fields
 	switch v := row.(type) {
 	case sqlc.SessionTypesListByBranchPaginatedSortByNameDescRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
 	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtAscRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
 	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtDescRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind, v.FlatFeeMinor}
+		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
 	default:
 		return domain.SessionType{}
 	}
@@ -411,10 +372,6 @@ func mapSessionTypeSortRow(row interface{}) domain.SessionType {
 		Kind:         f.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(f.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(f.UpdatedAt),
-	}
-	if f.FlatFeeMinor.Valid {
-		v := int(f.FlatFeeMinor.Int32)
-		st.FlatFeeMinor = &v
 	}
 	return st
 }

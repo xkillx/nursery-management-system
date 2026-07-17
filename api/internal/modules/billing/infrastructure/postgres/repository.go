@@ -162,13 +162,12 @@ func (r *Repository) ListBookingPatternEntries(ctx context.Context, tx domain.Tx
 			continue
 		}
 		out = append(out, domain.BookingPatternEntryRow{
-			DayOfWeek:               int(row.DayOfWeek),
-			SessionTypeID:           pgtypeUUIDToUUID(row.SessionTypeID),
-			SessionTypeName:         row.SessionTypeName,
-			StartMinutes:            startMin,
-			EndMinutes:              endMin,
-			SessionTypeKind:         row.SessionTypeKind,
-			SessionTypeFlatFeeMinor: pgtypeInt4ToIntPtr(row.SessionTypeFlatFeeMinor),
+			DayOfWeek:       int(row.DayOfWeek),
+			SessionTypeID:   pgtypeUUIDToUUID(row.SessionTypeID),
+			SessionTypeName: row.SessionTypeName,
+			StartMinutes:    startMin,
+			EndMinutes:      endMin,
+			SessionTypeKind: row.SessionTypeKind,
 		})
 	}
 	return out, nil
@@ -206,7 +205,6 @@ func (r *Repository) ListActiveAdHocBookingsForChildInMonth(ctx context.Context,
 			SessionTypeName: row.SessionTypeName,
 			StartMinutes:    startMin,
 			EndMinutes:      endMin,
-			FlatFeeMinor:    pgtypeInt4ToIntPtr(row.SessionTypeFlatFeeMinor),
 		})
 	}
 	return out, nil

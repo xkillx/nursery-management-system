@@ -15,7 +15,6 @@ type SessionType struct {
 	EndMinutes   int
 	IsActive     bool
 	Kind         string
-	FlatFeeMinor *int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

@@ -14,11 +14,10 @@ import (
 )
 
 type CreateSessionTypeParams struct {
-	Name         string
-	StartTime    string
-	EndTime      string
-	Kind         string
-	FlatFeeMinor *int
+	Name      string
+	StartTime string
+	EndTime   string
+	Kind      string
 }
 
 type CreateSessionType struct {
@@ -83,10 +82,6 @@ func (uc *CreateSessionType) Execute(ctx context.Context, actor SessionTypeActor
 		return domain.SessionType{}, domainerrors.Validation("Kind must be standard, wraparound_before, wraparound_after, core, or extended.", "kind")
 	}
 
-	if params.FlatFeeMinor != nil && *params.FlatFeeMinor < 0 {
-		return domain.SessionType{}, domainerrors.Validation("Flat fee must not be negative.", "flat_fee_minor")
-	}
-
 	st := domain.SessionType{
 		ID:           uid.NewUUID(),
 		TenantID:     actor.TenantID(),
@@ -96,7 +91,6 @@ func (uc *CreateSessionType) Execute(ctx context.Context, actor SessionTypeActor
 		EndMinutes:   endMinutes,
 		IsActive:     true,
 		Kind:         kind,
-		FlatFeeMinor: params.FlatFeeMinor,
 	}
 
 	if err := uc.repo.Create(ctx, st); err != nil {

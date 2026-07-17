@@ -67,8 +67,7 @@ SELECT
     st.start_time AS session_type_start_time,
     st.end_time AS session_type_end_time,
     st.is_active AS session_type_is_active,
-    st.kind AS session_type_kind,
-    st.flat_fee_minor AS session_type_flat_fee_minor
+    st.kind AS session_type_kind
 FROM child_booking_pattern_entries e
 JOIN session_types st
   ON st.tenant_id = e.tenant_id
@@ -85,20 +84,19 @@ type ChildBookingPatternEntriesListByPatternParams struct {
 }
 
 type ChildBookingPatternEntriesListByPatternRow struct {
-	ID                      pgtype.UUID
-	TenantID                pgtype.UUID
-	BranchID                pgtype.UUID
-	PatternID               pgtype.UUID
-	DayOfWeek               int32
-	SessionTypeID           pgtype.UUID
-	CreatedAt               pgtype.Timestamptz
-	UpdatedAt               pgtype.Timestamptz
-	SessionTypeName         string
-	SessionTypeStartTime    pgtype.Time
-	SessionTypeEndTime      pgtype.Time
-	SessionTypeIsActive     bool
-	SessionTypeKind         string
-	SessionTypeFlatFeeMinor pgtype.Int4
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	PatternID            pgtype.UUID
+	DayOfWeek            int32
+	SessionTypeID        pgtype.UUID
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+	SessionTypeName      string
+	SessionTypeStartTime pgtype.Time
+	SessionTypeEndTime   pgtype.Time
+	SessionTypeIsActive  bool
+	SessionTypeKind      string
 }
 
 func (q *Queries) ChildBookingPatternEntriesListByPattern(ctx context.Context, arg ChildBookingPatternEntriesListByPatternParams) ([]ChildBookingPatternEntriesListByPatternRow, error) {
@@ -124,7 +122,6 @@ func (q *Queries) ChildBookingPatternEntriesListByPattern(ctx context.Context, a
 			&i.SessionTypeEndTime,
 			&i.SessionTypeIsActive,
 			&i.SessionTypeKind,
-			&i.SessionTypeFlatFeeMinor,
 		); err != nil {
 			return nil, err
 		}

@@ -147,13 +147,12 @@ type AdvancePayTermRow struct {
 
 // BookingPatternEntryRow is the per-entry row from ListBookingPatternEntries.
 type BookingPatternEntryRow struct {
-	DayOfWeek               int
-	SessionTypeID           uuid.UUID
-	SessionTypeName         string
-	StartMinutes            int
-	EndMinutes              int
-	SessionTypeKind         string
-	SessionTypeFlatFeeMinor *int
+	DayOfWeek       int
+	SessionTypeID   uuid.UUID
+	SessionTypeName string
+	StartMinutes    int
+	EndMinutes      int
+	SessionTypeKind string
 }
 
 // ExtraLineRow maps an extra invoice line row.

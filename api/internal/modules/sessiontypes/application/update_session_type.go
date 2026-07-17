@@ -13,11 +13,10 @@ import (
 )
 
 type UpdateSessionTypeParams struct {
-	Name         *string
-	StartTime    *string
-	EndTime      *string
-	Kind         *string
-	FlatFeeMinor **int
+	Name      *string
+	StartTime *string
+	EndTime   *string
+	Kind      *string
 }
 
 type UpdateSessionType struct {
@@ -108,12 +107,6 @@ func (uc *UpdateSessionType) Execute(ctx context.Context, actor SessionTypeActor
 			return domain.SessionType{}, domainerrors.Validation("Kind must be standard, wraparound_before, wraparound_after, core, or extended.", "kind")
 		}
 		fields["kind"] = *params.Kind
-	}
-	if params.FlatFeeMinor != nil {
-		if *params.FlatFeeMinor != nil && **params.FlatFeeMinor < 0 {
-			return domain.SessionType{}, domainerrors.Validation("Flat fee must not be negative.", "flat_fee_minor")
-		}
-		fields["flat_fee_minor"] = *params.FlatFeeMinor
 	}
 
 	if len(fields) == 0 {
