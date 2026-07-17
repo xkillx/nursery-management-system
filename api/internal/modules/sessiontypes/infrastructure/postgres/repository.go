@@ -148,7 +148,6 @@ func (r *SessionTypeRepository) Create(ctx context.Context, st domain.SessionTyp
 		Name:      st.Name,
 		StartTime: minutesToPgtypeTime(st.StartMinutes),
 		EndTime:   minutesToPgtypeTime(st.EndMinutes),
-		Kind:      st.Kind,
 	})
 }
 
@@ -174,10 +173,6 @@ func (r *SessionTypeRepository) Update(ctx context.Context, tenantID, branchID, 
 	if v, ok := fields["end_time"]; ok {
 		params.SetEndTime = int32(1)
 		params.EndTime = minutesToPgtypeTime(v.(int))
-	}
-	if v, ok := fields["kind"]; ok {
-		params.SetKind = int32(1)
-		params.NewKind = pgtype.Text{String: v.(string), Valid: true}
 	}
 
 	q := sqlc.New(r.pool)
@@ -241,7 +236,7 @@ func (r *SessionTypeRepository) GetByIDForUpdate(ctx context.Context, tx domain.
 	return mapSessionTypeFromGetForUpdateRow(row), nil
 }
 
-func mapSessionTypeFromListRow(row sqlc.SessionTypesListByBranchRow) domain.SessionType {
+func mapSessionTypeFromListRow(row sqlc.SessionType) domain.SessionType {
 	st := domain.SessionType{
 		ID:           pgtypeUUIDToUUID(row.ID),
 		TenantID:     pgtypeUUIDToUUID(row.TenantID),
@@ -250,14 +245,13 @@ func mapSessionTypeFromListRow(row sqlc.SessionTypesListByBranchRow) domain.Sess
 		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
 		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
 		IsActive:     row.IsActive,
-		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 	return st
 }
 
-func mapSessionTypeFromGetRow(row sqlc.SessionTypesGetByIDRow) domain.SessionType {
+func mapSessionTypeFromGetRow(row sqlc.SessionType) domain.SessionType {
 	st := domain.SessionType{
 		ID:           pgtypeUUIDToUUID(row.ID),
 		TenantID:     pgtypeUUIDToUUID(row.TenantID),
@@ -266,14 +260,13 @@ func mapSessionTypeFromGetRow(row sqlc.SessionTypesGetByIDRow) domain.SessionTyp
 		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
 		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
 		IsActive:     row.IsActive,
-		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 	return st
 }
 
-func mapSessionTypeFromGetForUpdateRow(row sqlc.SessionTypesGetByIDForUpdateRow) domain.SessionType {
+func mapSessionTypeFromGetForUpdateRow(row sqlc.SessionType) domain.SessionType {
 	st := domain.SessionType{
 		ID:           pgtypeUUIDToUUID(row.ID),
 		TenantID:     pgtypeUUIDToUUID(row.TenantID),
@@ -282,14 +275,13 @@ func mapSessionTypeFromGetForUpdateRow(row sqlc.SessionTypesGetByIDForUpdateRow)
 		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
 		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
 		IsActive:     row.IsActive,
-		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 	return st
 }
 
-func mapSessionTypeFromListPaginatedRow(row sqlc.SessionTypesListByBranchPaginatedRow) domain.SessionType {
+func mapSessionTypeFromListPaginatedRow(row sqlc.SessionType) domain.SessionType {
 	st := domain.SessionType{
 		ID:           pgtypeUUIDToUUID(row.ID),
 		TenantID:     pgtypeUUIDToUUID(row.TenantID),
@@ -298,7 +290,6 @@ func mapSessionTypeFromListPaginatedRow(row sqlc.SessionTypesListByBranchPaginat
 		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
 		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
 		IsActive:     row.IsActive,
-		Kind:         row.Kind,
 		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
@@ -337,41 +328,17 @@ func pgtypeTimeToMinutes(t pgtype.Time) int {
 	return int(t.Microseconds / 60 / 1_000_000)
 }
 
-func mapSessionTypeSortRow(row interface{}) domain.SessionType {
-	type fields struct {
-		ID        pgtype.UUID
-		TenantID  pgtype.UUID
-		BranchID  pgtype.UUID
-		Name      string
-		StartTime pgtype.Time
-		EndTime   pgtype.Time
-		IsActive  bool
-		CreatedAt pgtype.Timestamptz
-		UpdatedAt pgtype.Timestamptz
-		Kind      string
-	}
-	var f fields
-	switch v := row.(type) {
-	case sqlc.SessionTypesListByBranchPaginatedSortByNameDescRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
-	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtAscRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
-	case sqlc.SessionTypesListByBranchPaginatedSortByCreatedAtDescRow:
-		f = fields{v.ID, v.TenantID, v.BranchID, v.Name, v.StartTime, v.EndTime, v.IsActive, v.CreatedAt, v.UpdatedAt, v.Kind}
-	default:
-		return domain.SessionType{}
-	}
+func mapSessionTypeSortRow(row sqlc.SessionType) domain.SessionType {
 	st := domain.SessionType{
-		ID:           pgtypeUUIDToUUID(f.ID),
-		TenantID:     pgtypeUUIDToUUID(f.TenantID),
-		BranchID:     pgtypeUUIDToUUID(f.BranchID),
-		Name:         f.Name,
-		StartMinutes: pgtypeTimeToMinutes(f.StartTime),
-		EndMinutes:   pgtypeTimeToMinutes(f.EndTime),
-		IsActive:     f.IsActive,
-		Kind:         f.Kind,
-		CreatedAt:    pgtypeTimestamptzToTime(f.CreatedAt),
-		UpdatedAt:    pgtypeTimestamptzToTime(f.UpdatedAt),
+		ID:           pgtypeUUIDToUUID(row.ID),
+		TenantID:     pgtypeUUIDToUUID(row.TenantID),
+		BranchID:     pgtypeUUIDToUUID(row.BranchID),
+		Name:         row.Name,
+		StartMinutes: pgtypeTimeToMinutes(row.StartTime),
+		EndMinutes:   pgtypeTimeToMinutes(row.EndTime),
+		IsActive:     row.IsActive,
+		CreatedAt:    pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
 	return st
 }

@@ -868,7 +868,6 @@ type SessionType struct {
 	StartTime pgtype.Time
 	EndTime   pgtype.Time
 	IsActive  bool
-	Kind      string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
 }

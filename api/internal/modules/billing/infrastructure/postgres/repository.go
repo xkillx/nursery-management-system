@@ -167,7 +167,6 @@ func (r *Repository) ListBookingPatternEntries(ctx context.Context, tx domain.Tx
 			SessionTypeName: row.SessionTypeName,
 			StartMinutes:    startMin,
 			EndMinutes:      endMin,
-			SessionTypeKind: row.SessionTypeKind,
 		})
 	}
 	return out, nil

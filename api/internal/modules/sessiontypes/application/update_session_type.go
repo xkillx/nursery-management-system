@@ -16,7 +16,6 @@ type UpdateSessionTypeParams struct {
 	Name      *string
 	StartTime *string
 	EndTime   *string
-	Kind      *string
 }
 
 type UpdateSessionType struct {
@@ -100,13 +99,6 @@ func (uc *UpdateSessionType) Execute(ctx context.Context, actor SessionTypeActor
 		if newStart >= newEnd {
 			return domain.SessionType{}, domainerrors.New("session_type_invalid_time_order", "Invalid request payload.", "start_time")
 		}
-	}
-
-	if params.Kind != nil {
-		if !validSessionTypeKind(*params.Kind) {
-			return domain.SessionType{}, domainerrors.Validation("Kind must be standard, wraparound_before, wraparound_after, core, or extended.", "kind")
-		}
-		fields["kind"] = *params.Kind
 	}
 
 	if len(fields) == 0 {

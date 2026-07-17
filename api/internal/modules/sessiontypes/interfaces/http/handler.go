@@ -180,7 +180,6 @@ func (h *Handler) createSessionType(c *gin.Context) {
 		Name:      req.Name,
 		StartTime: req.StartTime,
 		EndTime:   req.EndTime,
-		Kind:      req.Kind,
 	}
 
 	st, err := h.create.Execute(c.Request.Context(), actor, siteID, params)
@@ -282,7 +281,6 @@ func (h *Handler) updateSessionType(c *gin.Context) {
 		Name:      req.Name,
 		StartTime: req.StartTime,
 		EndTime:   req.EndTime,
-		Kind:      req.Kind,
 	}
 
 	st, err := h.update.Execute(c.Request.Context(), actor, siteID, stID, params)

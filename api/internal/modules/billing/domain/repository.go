@@ -152,7 +152,6 @@ type BookingPatternEntryRow struct {
 	SessionTypeName string
 	StartMinutes    int
 	EndMinutes      int
-	SessionTypeKind string
 }
 
 // ExtraLineRow maps an extra invoice line row.

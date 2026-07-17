@@ -102,7 +102,6 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 					StartMinutes:    e.StartMinutes,
 					EndMinutes:      e.EndMinutes,
 					DurationMinutes: e.EndMinutes - e.StartMinutes,
-					Kind:            e.SessionTypeKind,
 				},
 			})
 		}

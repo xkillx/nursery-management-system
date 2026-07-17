@@ -14,7 +14,6 @@ type SessionType struct {
 	StartMinutes int
 	EndMinutes   int
 	IsActive     bool
-	Kind         string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

@@ -77,8 +77,8 @@ func (q *Queries) SessionTypesCountByBranch(ctx context.Context, arg SessionType
 }
 
 const sessionTypesCreate = `-- name: SessionTypesCreate :exec
-INSERT INTO session_types (id, tenant_id, branch_id, name, start_time, end_time, kind)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO session_types (id, tenant_id, branch_id, name, start_time, end_time)
+VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type SessionTypesCreateParams struct {
@@ -88,7 +88,6 @@ type SessionTypesCreateParams struct {
 	Name      string
 	StartTime pgtype.Time
 	EndTime   pgtype.Time
-	Kind      string
 }
 
 func (q *Queries) SessionTypesCreate(ctx context.Context, arg SessionTypesCreateParams) error {
@@ -99,7 +98,6 @@ func (q *Queries) SessionTypesCreate(ctx context.Context, arg SessionTypesCreate
 		arg.Name,
 		arg.StartTime,
 		arg.EndTime,
-		arg.Kind,
 	)
 	return err
 }
@@ -125,7 +123,7 @@ func (q *Queries) SessionTypesExists(ctx context.Context, arg SessionTypesExists
 }
 
 const sessionTypesGetByID = `-- name: SessionTypesGetByID :one
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -138,22 +136,9 @@ type SessionTypesGetByIDParams struct {
 	ID       pgtype.UUID
 }
 
-type SessionTypesGetByIDRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesGetByID(ctx context.Context, arg SessionTypesGetByIDParams) (SessionTypesGetByIDRow, error) {
+func (q *Queries) SessionTypesGetByID(ctx context.Context, arg SessionTypesGetByIDParams) (SessionType, error) {
 	row := q.db.QueryRow(ctx, sessionTypesGetByID, arg.TenantID, arg.BranchID, arg.ID)
-	var i SessionTypesGetByIDRow
+	var i SessionType
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -164,13 +149,12 @@ func (q *Queries) SessionTypesGetByID(ctx context.Context, arg SessionTypesGetBy
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Kind,
 	)
 	return i, err
 }
 
 const sessionTypesGetByIDForUpdate = `-- name: SessionTypesGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -184,22 +168,9 @@ type SessionTypesGetByIDForUpdateParams struct {
 	ID       pgtype.UUID
 }
 
-type SessionTypesGetByIDForUpdateRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesGetByIDForUpdate(ctx context.Context, arg SessionTypesGetByIDForUpdateParams) (SessionTypesGetByIDForUpdateRow, error) {
+func (q *Queries) SessionTypesGetByIDForUpdate(ctx context.Context, arg SessionTypesGetByIDForUpdateParams) (SessionType, error) {
 	row := q.db.QueryRow(ctx, sessionTypesGetByIDForUpdate, arg.TenantID, arg.BranchID, arg.ID)
-	var i SessionTypesGetByIDForUpdateRow
+	var i SessionType
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -210,13 +181,12 @@ func (q *Queries) SessionTypesGetByIDForUpdate(ctx context.Context, arg SessionT
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Kind,
 	)
 	return i, err
 }
 
 const sessionTypesListByBranch = `-- name: SessionTypesListByBranch :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -230,28 +200,15 @@ type SessionTypesListByBranchParams struct {
 	Column3  bool
 }
 
-type SessionTypesListByBranchRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesListByBranch(ctx context.Context, arg SessionTypesListByBranchParams) ([]SessionTypesListByBranchRow, error) {
+func (q *Queries) SessionTypesListByBranch(ctx context.Context, arg SessionTypesListByBranchParams) ([]SessionType, error) {
 	rows, err := q.db.Query(ctx, sessionTypesListByBranch, arg.TenantID, arg.BranchID, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SessionTypesListByBranchRow
+	var items []SessionType
 	for rows.Next() {
-		var i SessionTypesListByBranchRow
+		var i SessionType
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -262,7 +219,6 @@ func (q *Queries) SessionTypesListByBranch(ctx context.Context, arg SessionTypes
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -275,7 +231,7 @@ func (q *Queries) SessionTypesListByBranch(ctx context.Context, arg SessionTypes
 }
 
 const sessionTypesListByBranchPaginated = `-- name: SessionTypesListByBranchPaginated :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -292,20 +248,7 @@ type SessionTypesListByBranchPaginatedParams struct {
 	Limit    pgtype.Int4
 }
 
-type SessionTypesListByBranchPaginatedRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg SessionTypesListByBranchPaginatedParams) ([]SessionTypesListByBranchPaginatedRow, error) {
+func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg SessionTypesListByBranchPaginatedParams) ([]SessionType, error) {
 	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginated,
 		arg.TenantID,
 		arg.BranchID,
@@ -317,9 +260,9 @@ func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg Ses
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SessionTypesListByBranchPaginatedRow
+	var items []SessionType
 	for rows.Next() {
-		var i SessionTypesListByBranchPaginatedRow
+		var i SessionType
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -330,7 +273,6 @@ func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg Ses
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -343,7 +285,7 @@ func (q *Queries) SessionTypesListByBranchPaginated(ctx context.Context, arg Ses
 }
 
 const sessionTypesListByBranchPaginatedSortByCreatedAtAsc = `-- name: SessionTypesListByBranchPaginatedSortByCreatedAtAsc :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -360,20 +302,7 @@ type SessionTypesListByBranchPaginatedSortByCreatedAtAscParams struct {
 	Limit    pgtype.Int4
 }
 
-type SessionTypesListByBranchPaginatedSortByCreatedAtAscRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtAscParams) ([]SessionTypesListByBranchPaginatedSortByCreatedAtAscRow, error) {
+func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtAscParams) ([]SessionType, error) {
 	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByCreatedAtAsc,
 		arg.TenantID,
 		arg.BranchID,
@@ -385,9 +314,9 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx contex
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SessionTypesListByBranchPaginatedSortByCreatedAtAscRow
+	var items []SessionType
 	for rows.Next() {
-		var i SessionTypesListByBranchPaginatedSortByCreatedAtAscRow
+		var i SessionType
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -398,7 +327,6 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx contex
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -411,7 +339,7 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtAsc(ctx contex
 }
 
 const sessionTypesListByBranchPaginatedSortByCreatedAtDesc = `-- name: SessionTypesListByBranchPaginatedSortByCreatedAtDesc :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -428,20 +356,7 @@ type SessionTypesListByBranchPaginatedSortByCreatedAtDescParams struct {
 	Limit    pgtype.Int4
 }
 
-type SessionTypesListByBranchPaginatedSortByCreatedAtDescRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtDescParams) ([]SessionTypesListByBranchPaginatedSortByCreatedAtDescRow, error) {
+func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByCreatedAtDescParams) ([]SessionType, error) {
 	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByCreatedAtDesc,
 		arg.TenantID,
 		arg.BranchID,
@@ -453,9 +368,9 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx conte
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SessionTypesListByBranchPaginatedSortByCreatedAtDescRow
+	var items []SessionType
 	for rows.Next() {
-		var i SessionTypesListByBranchPaginatedSortByCreatedAtDescRow
+		var i SessionType
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -466,7 +381,6 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx conte
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -479,7 +393,7 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByCreatedAtDesc(ctx conte
 }
 
 const sessionTypesListByBranchPaginatedSortByNameDesc = `-- name: SessionTypesListByBranchPaginatedSortByNameDesc :many
-SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at, kind
+SELECT id, tenant_id, branch_id, name, start_time, end_time, is_active, created_at, updated_at
 FROM session_types
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -496,20 +410,7 @@ type SessionTypesListByBranchPaginatedSortByNameDescParams struct {
 	Limit    pgtype.Int4
 }
 
-type SessionTypesListByBranchPaginatedSortByNameDescRow struct {
-	ID        pgtype.UUID
-	TenantID  pgtype.UUID
-	BranchID  pgtype.UUID
-	Name      string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	IsActive  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Kind      string
-}
-
-func (q *Queries) SessionTypesListByBranchPaginatedSortByNameDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByNameDescParams) ([]SessionTypesListByBranchPaginatedSortByNameDescRow, error) {
+func (q *Queries) SessionTypesListByBranchPaginatedSortByNameDesc(ctx context.Context, arg SessionTypesListByBranchPaginatedSortByNameDescParams) ([]SessionType, error) {
 	rows, err := q.db.Query(ctx, sessionTypesListByBranchPaginatedSortByNameDesc,
 		arg.TenantID,
 		arg.BranchID,
@@ -521,9 +422,9 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByNameDesc(ctx context.Co
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SessionTypesListByBranchPaginatedSortByNameDescRow
+	var items []SessionType
 	for rows.Next() {
-		var i SessionTypesListByBranchPaginatedSortByNameDescRow
+		var i SessionType
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -534,7 +435,6 @@ func (q *Queries) SessionTypesListByBranchPaginatedSortByNameDesc(ctx context.Co
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -569,9 +469,8 @@ SET
     name = CASE WHEN $1 = 1 THEN $2 ELSE name END,
     start_time = CASE WHEN $3 = 1 THEN $4 ELSE start_time END,
     end_time = CASE WHEN $5 = 1 THEN $6 ELSE end_time END,
-    kind = CASE WHEN $7 = 1 THEN $8 ELSE kind END,
     updated_at = now()
-WHERE tenant_id = $9 AND branch_id = $10 AND id = $11
+WHERE tenant_id = $7 AND branch_id = $8 AND id = $9
 `
 
 type SessionTypesUpdateParams struct {
@@ -581,8 +480,6 @@ type SessionTypesUpdateParams struct {
 	StartTime    pgtype.Time
 	SetEndTime   interface{}
 	EndTime      pgtype.Time
-	SetKind      interface{}
-	NewKind      pgtype.Text
 	TenantID     pgtype.UUID
 	BranchID     pgtype.UUID
 	ID           pgtype.UUID
@@ -596,8 +493,6 @@ func (q *Queries) SessionTypesUpdate(ctx context.Context, arg SessionTypesUpdate
 		arg.StartTime,
 		arg.SetEndTime,
 		arg.EndTime,
-		arg.SetKind,
-		arg.NewKind,
 		arg.TenantID,
 		arg.BranchID,
 		arg.ID,
