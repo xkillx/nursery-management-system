@@ -128,7 +128,8 @@ export class BookingDetailDrawerComponent implements OnChanges {
     return `${this.booking.childFirstName} ${this.booking.childLastName}`.trim();
   }
 
-  sessionName(id: string): string {
+  sessionName(id: string | undefined): string {
+    if (!id) return '—';
     return this.sessionLookup[id] ?? id ?? '—';
   }
 

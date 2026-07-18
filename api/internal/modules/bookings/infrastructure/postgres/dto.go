@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -82,24 +83,105 @@ func float64ToPgtypeNumeric(f *float64) pgtype.Numeric {
 	return n
 }
 
-func mapBooking(row sqlc.Booking) domain.Booking {
+type bookingRow struct {
+	ID                   pgtype.UUID
+	TenantID             pgtype.UUID
+	BranchID             pgtype.UUID
+	ChildID              pgtype.UUID
+	SessionTemplateID    pgtype.UUID
+	RoomID               pgtype.UUID
+	DaysOfWeek           []int32
+	EffectiveStartDate   pgtype.Date
+	EffectiveEndDate     pgtype.Date
+	FundingType          pgtype.Text
+	FundingHoursPerWeek  pgtype.Numeric
+	LaReference          pgtype.Text
+	SessionEntries       []byte
+	Status               string
+	BookedByMembershipID pgtype.UUID
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+func mapBooking(row bookingRow) domain.Booking {
+	var sessionEntries []domain.SessionEntry
+	if len(row.SessionEntries) > 0 {
+		_ = json.Unmarshal(row.SessionEntries, &sessionEntries)
+	}
+
+	var fundingHours *float64
+	if row.FundingHoursPerWeek.Valid {
+		f, _ := row.FundingHoursPerWeek.Float64Value()
+		v := f.Float64
+		fundingHours = &v
+	}
+
 	return domain.Booking{
 		ID:                   pgtypeUUIDToUUID(row.ID),
 		TenantID:             pgtypeUUIDToUUID(row.TenantID),
 		BranchID:             pgtypeUUIDToUUID(row.BranchID),
 		ChildID:              pgtypeUUIDToUUID(row.ChildID),
-		SessionTemplateID:    pgtypeUUIDToUUID(row.SessionTemplateID),
+		SessionTemplateID:    pgtypeUUIDPtr(row.SessionTemplateID),
 		RoomID:               pgtypeUUIDToUUID(row.RoomID),
 		DaysOfWeek:           row.DaysOfWeek,
 		EffectiveStartDate:   pgtypeDateToTime(row.EffectiveStartDate),
 		EffectiveEndDate:     pgtypeDatePtr(row.EffectiveEndDate),
 		FundingType:          pgtypeTextPtr(row.FundingType),
-		FundingHoursPerWeek:  nil,
+		FundingHoursPerWeek:  fundingHours,
 		LaReference:          pgtypeTextPtr(row.LaReference),
+		SessionEntries:       sessionEntries,
 		Status:               row.Status,
 		BookedByMembershipID: pgtypeUUIDToUUID(row.BookedByMembershipID),
 		CreatedAt:            pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:            pgtypeTimestamptzToTime(row.UpdatedAt),
+	}
+}
+
+func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
+	return bookingRow{
+		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
+		SessionTemplateID: r.SessionTemplateID, RoomID: r.RoomID, DaysOfWeek: r.DaysOfWeek,
+		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
+		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
+		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+	}
+}
+
+func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow) bookingRow {
+	return bookingRow{
+		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
+		SessionTemplateID: r.SessionTemplateID, RoomID: r.RoomID, DaysOfWeek: r.DaysOfWeek,
+		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
+		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
+		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+	}
+}
+
+func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPaginatedRow) bookingRow {
+	return bookingRow{
+		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
+		SessionTemplateID: r.SessionTemplateID, RoomID: r.RoomID, DaysOfWeek: r.DaysOfWeek,
+		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
+		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
+		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+	}
+}
+
+func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAndDateRangeRow) bookingRow {
+	return bookingRow{
+		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
+		SessionTemplateID: r.SessionTemplateID, RoomID: r.RoomID, DaysOfWeek: r.DaysOfWeek,
+		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
+		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
+		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -113,7 +195,7 @@ func mapUnifiedBookingRow(row sqlc.BookingsUnifiedListByBranchRow) domain.Unifie
 		StartDate:         pgtypeDateToTime(row.StartDate),
 		EndDate:           pgtypeDatePtr(row.EndDate),
 		RoomID:            pgtypeUUIDPtr(row.RoomID),
-		SessionTemplateID: pgtypeUUIDToUUID(row.SessionTemplateID),
+		SessionTemplateID: pgtypeUUIDPtr(row.SessionTemplateID),
 		Status:            row.Status,
 		CreatedAt:         pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:         pgtypeTimestamptzToTime(row.UpdatedAt),

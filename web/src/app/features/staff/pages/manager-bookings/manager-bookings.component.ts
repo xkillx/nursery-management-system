@@ -363,7 +363,8 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     this.toast.success('Booking updated successfully.');
   }
 
-  sessionName(id: string): string {
+  sessionName(id: string | undefined): string {
+    if (!id) return '—';
     return this.sessionLookup[id] ?? '—';
   }
 

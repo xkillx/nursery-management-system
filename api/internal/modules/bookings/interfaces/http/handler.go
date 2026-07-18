@@ -207,7 +207,7 @@ func (h *Handler) createBookingRequestHandler(c *gin.Context) {
 
 	booking, err := h.createBookingReq.Execute(c.Request.Context(), parentActor, siteID, application.CreateBookingRequestParams{
 		ChildID:             params.ChildID,
-		SessionTemplateID:   params.SessionTemplateID,
+		SessionTemplateID:   *params.SessionTemplateID,
 		RoomID:              params.RoomID,
 		DaysOfWeek:          params.DaysOfWeek,
 		EffectiveStartDate:  params.EffectiveStartDate,

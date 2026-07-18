@@ -25,7 +25,7 @@ interface UnifiedBookingApi {
   end_date: string | null;
   room_id: string | null;
   room_name: string | null;
-  session_template_id: string;
+  session_template_id?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -119,7 +119,7 @@ export class BookingsApiService {
       endDate: b.end_date ?? null,
       roomId: b.room_id ?? null,
       roomName: b.room_name ?? null,
-      sessionTemplateId: b.session_template_id,
+      sessionTemplateId: b.session_template_id ?? undefined,
       status: b.status as BookingStatus,
       createdAt: b.created_at,
       updatedAt: b.updated_at,

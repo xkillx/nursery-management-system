@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -24,12 +25,23 @@ func NewRepository(pool *pgxpool.Pool) *BookingRepository {
 
 func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) error {
 	q := sqlc.New(r.pool)
+
+	var sessionTemplateID pgtype.UUID
+	if booking.SessionTemplateID != nil {
+		sessionTemplateID = uuidToPgtype(*booking.SessionTemplateID)
+	}
+
+	var sessionEntriesJSON []byte
+	if len(booking.SessionEntries) > 0 {
+		sessionEntriesJSON, _ = json.Marshal(booking.SessionEntries)
+	}
+
 	return q.BookingsCreate(ctx, sqlc.BookingsCreateParams{
 		ID:                   uuidToPgtype(booking.ID),
 		TenantID:             uuidToPgtype(booking.TenantID),
 		BranchID:             uuidToPgtype(booking.BranchID),
 		ChildID:              uuidToPgtype(booking.ChildID),
-		SessionTemplateID:    uuidToPgtype(booking.SessionTemplateID),
+		SessionTemplateID:    sessionTemplateID,
 		RoomID:               uuidToPgtype(booking.RoomID),
 		DaysOfWeek:           booking.DaysOfWeek,
 		EffectiveStartDate:   timeToPgtypeDate(booking.EffectiveStartDate),
@@ -37,6 +49,7 @@ func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) 
 		FundingType:          stringToPgtypeText(booking.FundingType),
 		FundingHoursPerWeek:  float64ToPgtypeNumeric(booking.FundingHoursPerWeek),
 		LaReference:          stringToPgtypeText(booking.LaReference),
+		SessionEntries:       sessionEntriesJSON,
 		BookedByMembershipID: uuidToPgtype(booking.BookedByMembershipID),
 	})
 }
@@ -54,7 +67,7 @@ func (r *BookingRepository) GetByID(ctx context.Context, tenantID, branchID, id 
 	if err != nil {
 		return domain.Booking{}, fmt.Errorf("query booking by id: %w", err)
 	}
-	return mapBooking(row), nil
+	return mapBooking(bookingsGetByIDRowToBookingRow(row)), nil
 }
 
 func (r *BookingRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.Booking, error) {
@@ -70,7 +83,7 @@ func (r *BookingRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, 
 	if err != nil {
 		return domain.Booking{}, fmt.Errorf("query booking for update: %w", err)
 	}
-	return mapBooking(row), nil
+	return mapBooking(bookingsGetByIDForUpdateRowToBookingRow(row)), nil
 }
 
 func (r *BookingRepository) ListByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, filters domain.ListFilters, limit, offset int) ([]domain.Booking, error) {
@@ -112,7 +125,7 @@ func (r *BookingRepository) ListByBranchPaginated(ctx context.Context, tenantID,
 	}
 	out := make([]domain.Booking, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapBooking(row))
+		out = append(out, mapBooking(bookingsListByBranchPaginatedRowToBookingRow(row)))
 	}
 	return out, nil
 }
@@ -203,7 +216,7 @@ func (r *BookingRepository) ListByChildAndDateRange(ctx context.Context, tenantI
 	}
 	out := make([]domain.Booking, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapBooking(row))
+		out = append(out, mapBooking(bookingsListByChildAndDateRangeRowToBookingRow(row)))
 	}
 	return out, nil
 }

@@ -31,7 +31,7 @@ type UnifiedBookingRow struct {
 	StartDate         time.Time
 	EndDate           *time.Time
 	RoomID            *uuid.UUID
-	SessionTemplateID uuid.UUID
+	SessionTemplateID *uuid.UUID
 	Status            string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time

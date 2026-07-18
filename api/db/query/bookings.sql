@@ -1,16 +1,16 @@
 -- name: BookingsCreate :exec
-INSERT INTO bookings (id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'active', $13);
+INSERT INTO bookings (id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'active', $14);
 
 -- name: BookingsGetByID :one
-SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
   AND id = $3;
 
 -- name: BookingsGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -18,7 +18,7 @@ WHERE tenant_id = $1
 FOR UPDATE;
 
 -- name: BookingsListByBranchPaginated :many
-SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -70,7 +70,7 @@ SET status = 'paused', updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status = 'active';
 
 -- name: BookingsListByChildAndDateRange :many
-SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, session_template_id, room_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2

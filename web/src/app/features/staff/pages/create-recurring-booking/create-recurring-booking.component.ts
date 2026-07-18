@@ -6,13 +6,15 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCalendarDays, heroArrowLeft } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { DaySelectorComponent } from '../../../../shared/components/form/day-selector/day-selector.component';
+import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
+import { SessionGridComponent } from '../../../../shared/components/form/session-grid/session-grid.component';
+import { BookingSummarySidebarComponent } from './booking-summary-sidebar/booking-summary-sidebar.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
-import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
-import { SessionTemplateListItem } from '../../models/session-template.models';
+import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
+import { SessionEntry } from '../../models/booking.models';
 import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
@@ -22,7 +24,9 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormsModule,
     RouterLink,
     AlertComponent,
-    DaySelectorComponent,
+    SearchAutocompleteComponent,
+    SessionGridComponent,
+    BookingSummarySidebarComponent,
     NgIcon,
   ],
   templateUrl: './create-recurring-booking.component.html',
@@ -36,7 +40,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 export class CreateRecurringBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
-  private readonly sessionTemplatesApi = inject(StaffSessionTemplatesApiService);
+  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -44,26 +48,37 @@ export class CreateRecurringBookingComponent implements OnInit {
   siteId: string | null = null;
 
   rooms: StaffRoom[] = [];
-  sessionTemplates: SessionTemplateListItem[] = [];
+  sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
 
+  selectedChild: ChildRecord | null = null;
   childId = '';
-  sessionTemplateId = '';
   roomId = '';
-  daysOfWeek: number[] = [];
+  sessionEntries: SessionEntry[] = [];
   startDate = '';
   endDate = '';
   fundingType = '';
   fundingHours: number | null = null;
   laReference = '';
+  hourlyRateMinor: number | null = null;
 
   isSaving = false;
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
 
+  readonly fundingOptions = [
+    { value: 'fifteen_hours', label: 'Universal 15h', description: '15 hours funded per week' },
+    { value: 'thirty_hours', label: 'Extended 30h', description: '30 hours funded per week' },
+    { value: 'none', label: 'None / Private', description: 'No government funding' },
+  ];
+
   get canSubmit(): boolean {
-    return !!this.childId && !!this.sessionTemplateId && !!this.roomId &&
-      this.daysOfWeek.length > 0 && !!this.startDate;
+    return !!this.childId && !!this.roomId && this.sessionEntries.length > 0 && !!this.startDate;
+  }
+
+  get childDisplayName(): string {
+    if (!this.selectedChild) return '';
+    return `${this.selectedChild.firstName} ${this.selectedChild.lastName}`;
   }
 
   ngOnInit(): void {
@@ -76,6 +91,15 @@ export class CreateRecurringBookingComponent implements OnInit {
     this.loadData();
   }
 
+  onChildSelected(child: ChildRecord | null): void {
+    this.selectedChild = child;
+    this.childId = child?.id ?? '';
+  }
+
+  childLabelFn(child: ChildRecord): string {
+    return `${child.firstName} ${child.lastName}`;
+  }
+
   submit(): void {
     if (!this.siteId || !this.canSubmit) return;
     this.isSaving = true;
@@ -84,9 +108,8 @@ export class CreateRecurringBookingComponent implements OnInit {
 
     this.bookingsApi.createRecurringBooking(this.siteId, {
       child_id: this.childId,
-      session_template_id: this.sessionTemplateId,
       room_id: this.roomId,
-      days_of_week: this.daysOfWeek,
+      session_entries: this.sessionEntries,
       effective_start_date: this.startDate,
       effective_end_date: this.endDate || undefined,
       funding_type: this.fundingType || undefined,
@@ -118,14 +141,19 @@ export class CreateRecurringBookingComponent implements OnInit {
       error: () => { /* Room load failure handled by template defaults */ },
     });
 
-    this.sessionTemplatesApi.listSessionTemplates(this.siteId, { includeArchived: false }).subscribe({
-      next: (templates) => this.sessionTemplates = templates.filter((t) => t.isActive),
-      error: () => { /* Session templates load failure handled by template defaults */ },
+    this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
+      next: (types) => this.sessionTypes = types.filter((t) => t.isActive),
+      error: () => { /* Session types load failure handled by template defaults */ },
     });
 
     this.staffApi.listChildren({ status: 'active', limit: 200, offset: 0 }).subscribe({
       next: (result) => this.children = result.items,
       error: () => { /* Children load failure handled by template defaults */ },
+    });
+
+    this.staffApi.getSiteRate().subscribe({
+      next: (res) => this.hourlyRateMinor = res.core_hourly_rate_minor,
+      error: () => { /* Rate load failure — sidebar shows setup prompt */ },
     });
   }
 }

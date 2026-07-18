@@ -256,6 +256,7 @@ type Booking struct {
 	BookedByMembershipID pgtype.UUID
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
+	SessionEntries       []byte
 }
 
 type Branch struct {

@@ -12,12 +12,17 @@ const (
 	StatusCancelled = "cancelled"
 )
 
+type SessionEntry struct {
+	DayOfWeek     int32     `json:"day_of_week"`
+	SessionTypeID uuid.UUID `json:"session_type_id"`
+}
+
 type Booking struct {
 	ID                   uuid.UUID
 	TenantID             uuid.UUID
 	BranchID             uuid.UUID
 	ChildID              uuid.UUID
-	SessionTemplateID    uuid.UUID
+	SessionTemplateID    *uuid.UUID
 	RoomID               uuid.UUID
 	DaysOfWeek           []int32
 	EffectiveStartDate   time.Time
@@ -25,6 +30,7 @@ type Booking struct {
 	FundingType          *string
 	FundingHoursPerWeek  *float64
 	LaReference          *string
+	SessionEntries       []SessionEntry
 	Status               string
 	BookedByMembershipID uuid.UUID
 	CreatedAt            time.Time

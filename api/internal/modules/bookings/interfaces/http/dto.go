@@ -11,21 +11,27 @@ import (
 
 // ── Response DTOs ──────────────────────────────────────────────────────────
 
+type sessionEntryResponse struct {
+	DayOfWeek     int32  `json:"day_of_week"`
+	SessionTypeID string `json:"session_type_id"`
+}
+
 type bookingResponse struct {
-	ID                   string   `json:"id"`
-	ChildID              string   `json:"child_id"`
-	SessionTemplateID    string   `json:"session_template_id"`
-	RoomID               string   `json:"room_id"`
-	DaysOfWeek           []int32  `json:"days_of_week"`
-	EffectiveStartDate   string   `json:"effective_start_date"`
-	EffectiveEndDate     *string  `json:"effective_end_date,omitempty"`
-	FundingType          *string  `json:"funding_type,omitempty"`
-	FundingHoursPerWeek  *float64 `json:"funding_hours_per_week,omitempty"`
-	LaReference          *string  `json:"la_reference,omitempty"`
-	Status               string   `json:"status"`
-	BookedByMembershipID string   `json:"booked_by_membership_id"`
-	CreatedAt            string   `json:"created_at"`
-	UpdatedAt            string   `json:"updated_at"`
+	ID                   string                 `json:"id"`
+	ChildID              string                 `json:"child_id"`
+	SessionTemplateID    *string                `json:"session_template_id,omitempty"`
+	RoomID               string                 `json:"room_id"`
+	DaysOfWeek           []int32                `json:"days_of_week"`
+	EffectiveStartDate   string                 `json:"effective_start_date"`
+	EffectiveEndDate     *string                `json:"effective_end_date,omitempty"`
+	FundingType          *string                `json:"funding_type,omitempty"`
+	FundingHoursPerWeek  *float64               `json:"funding_hours_per_week,omitempty"`
+	LaReference          *string                `json:"la_reference,omitempty"`
+	SessionEntries       []sessionEntryResponse `json:"session_entries,omitempty"`
+	Status               string                 `json:"status"`
+	BookedByMembershipID string                 `json:"booked_by_membership_id"`
+	CreatedAt            string                 `json:"created_at"`
+	UpdatedAt            string                 `json:"updated_at"`
 }
 
 type unifiedBookingResponse struct {
@@ -35,7 +41,7 @@ type unifiedBookingResponse struct {
 	StartDate         string  `json:"start_date"`
 	EndDate           *string `json:"end_date,omitempty"`
 	RoomID            *string `json:"room_id,omitempty"`
-	SessionTemplateID string  `json:"session_template_id"`
+	SessionTemplateID *string `json:"session_template_id,omitempty"`
 	Status            string  `json:"status"`
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
@@ -54,16 +60,22 @@ type roomCapacityEntryResponse struct {
 
 // ── Request DTOs ───────────────────────────────────────────────────────────
 
+type sessionEntryRequest struct {
+	DayOfWeek     int32  `json:"day_of_week" binding:"required"`
+	SessionTypeID string `json:"session_type_id" binding:"required"`
+}
+
 type createBookingRequest struct {
-	ChildID             string   `json:"child_id" binding:"required"`
-	SessionTemplateID   string   `json:"session_template_id" binding:"required"`
-	RoomID              string   `json:"room_id" binding:"required"`
-	DaysOfWeek          []int32  `json:"days_of_week" binding:"required"`
-	EffectiveStartDate  string   `json:"effective_start_date" binding:"required"`
-	EffectiveEndDate    *string  `json:"effective_end_date"`
-	FundingType         *string  `json:"funding_type"`
-	FundingHoursPerWeek *float64 `json:"funding_hours_per_week"`
-	LaReference         *string  `json:"la_reference"`
+	ChildID             string                `json:"child_id" binding:"required"`
+	SessionTemplateID   string                `json:"session_template_id"`
+	RoomID              string                `json:"room_id" binding:"required"`
+	DaysOfWeek          []int32               `json:"days_of_week"`
+	EffectiveStartDate  string                `json:"effective_start_date" binding:"required"`
+	EffectiveEndDate    *string               `json:"effective_end_date"`
+	FundingType         *string               `json:"funding_type"`
+	FundingHoursPerWeek *float64              `json:"funding_hours_per_week"`
+	LaReference         *string               `json:"la_reference"`
+	SessionEntries      []sessionEntryRequest `json:"session_entries"`
 }
 
 type updateBookingRequest struct {
@@ -89,10 +101,27 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 		endDate = &s
 	}
 
+	var sessionTemplateID *string
+	if b.SessionTemplateID != nil {
+		s := b.SessionTemplateID.String()
+		sessionTemplateID = &s
+	}
+
+	var sessionEntries []sessionEntryResponse
+	if len(b.SessionEntries) > 0 {
+		sessionEntries = make([]sessionEntryResponse, 0, len(b.SessionEntries))
+		for _, e := range b.SessionEntries {
+			sessionEntries = append(sessionEntries, sessionEntryResponse{
+				DayOfWeek:     e.DayOfWeek,
+				SessionTypeID: e.SessionTypeID.String(),
+			})
+		}
+	}
+
 	return bookingResponse{
 		ID:                   b.ID.String(),
 		ChildID:              b.ChildID.String(),
-		SessionTemplateID:    b.SessionTemplateID.String(),
+		SessionTemplateID:    sessionTemplateID,
 		RoomID:               b.RoomID.String(),
 		DaysOfWeek:           b.DaysOfWeek,
 		EffectiveStartDate:   b.EffectiveStartDate.UTC().Format("2006-01-02"),
@@ -100,6 +129,7 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 		FundingType:          b.FundingType,
 		FundingHoursPerWeek:  b.FundingHoursPerWeek,
 		LaReference:          b.LaReference,
+		SessionEntries:       sessionEntries,
 		Status:               b.Status,
 		BookedByMembershipID: b.BookedByMembershipID.String(),
 		CreatedAt:            b.CreatedAt.UTC().Format(time.RFC3339),
@@ -120,6 +150,11 @@ func toUnifiedBookingListResponse(items []domain.UnifiedBookingRow) []unifiedBoo
 			s := b.RoomID.String()
 			roomID = &s
 		}
+		var sessionTemplateID *string
+		if b.SessionTemplateID != nil {
+			s := b.SessionTemplateID.String()
+			sessionTemplateID = &s
+		}
 
 		out = append(out, unifiedBookingResponse{
 			BookingType:       b.BookingType,
@@ -128,7 +163,7 @@ func toUnifiedBookingListResponse(items []domain.UnifiedBookingRow) []unifiedBoo
 			StartDate:         b.StartDate.UTC().Format("2006-01-02"),
 			EndDate:           endDate,
 			RoomID:            roomID,
-			SessionTemplateID: b.SessionTemplateID.String(),
+			SessionTemplateID: sessionTemplateID,
 			Status:            b.Status,
 			CreatedAt:         b.CreatedAt.UTC().Format(time.RFC3339),
 			UpdatedAt:         b.UpdatedAt.UTC().Format(time.RFC3339),
@@ -159,10 +194,16 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 	if err != nil {
 		return application.CreateBookingParams{}, err
 	}
-	sessionTemplateID, err := uuid.Parse(req.SessionTemplateID)
-	if err != nil {
-		return application.CreateBookingParams{}, err
+
+	var sessionTemplateID *uuid.UUID
+	if req.SessionTemplateID != "" {
+		id, err := uuid.Parse(req.SessionTemplateID)
+		if err != nil {
+			return application.CreateBookingParams{}, err
+		}
+		sessionTemplateID = &id
 	}
+
 	roomID, err := uuid.Parse(req.RoomID)
 	if err != nil {
 		return application.CreateBookingParams{}, err
@@ -180,6 +221,21 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 		endDate = &t
 	}
 
+	var sessionEntries []domain.SessionEntry
+	if len(req.SessionEntries) > 0 {
+		sessionEntries = make([]domain.SessionEntry, 0, len(req.SessionEntries))
+		for _, e := range req.SessionEntries {
+			typeID, err := uuid.Parse(e.SessionTypeID)
+			if err != nil {
+				return application.CreateBookingParams{}, err
+			}
+			sessionEntries = append(sessionEntries, domain.SessionEntry{
+				DayOfWeek:     e.DayOfWeek,
+				SessionTypeID: typeID,
+			})
+		}
+	}
+
 	return application.CreateBookingParams{
 		ChildID:             childID,
 		SessionTemplateID:   sessionTemplateID,
@@ -190,6 +246,7 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 		FundingType:         req.FundingType,
 		FundingHoursPerWeek: req.FundingHoursPerWeek,
 		LaReference:         req.LaReference,
+		SessionEntries:      sessionEntries,
 	}, nil
 }
 
