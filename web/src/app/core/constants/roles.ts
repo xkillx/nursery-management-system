@@ -17,7 +17,7 @@ export const ROLE_ROUTES = {
   managerInvites: '/manager/invites',
   managerRooms: '/manager/site-settings/rooms',
   managerSessionTypes: '/manager/site-settings/session-types',
-  managerSessionTemplates: '/manager/session-templates',
+  managerSessionTemplates: '/manager/site-settings/session-templates',
   managerSessionTemplatesSetup: '/manager/site-settings/session-templates',
   managerTermCalendar: '/manager/site-settings/term-calendar',
   managerClosureDays: '/manager/site-settings/closure-days',

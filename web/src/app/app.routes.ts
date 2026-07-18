@@ -246,17 +246,13 @@ export const routes: Routes = [
                 data: { breadcrumb: { label: 'Closure days' } },
                 title: 'Closure Days | Nursery Management',
               },
+              {
+                path: 'session-templates',
+                component: ManagerSessionTemplatesComponent,
+                data: { breadcrumb: { label: 'Session templates' } },
+                title: 'Session templates | Nursery Management',
+              },
             ],
-          },
-          {
-            path: 'manager/session-templates',
-            component: ManagerSessionTemplatesComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Session templates' },
-            },
-            title: 'Session templates | Nursery Management',
           },
           {
             path: 'manager/bookings/new/recurring',
