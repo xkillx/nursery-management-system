@@ -259,16 +259,6 @@ export const routes: Routes = [
             title: 'Session templates | Nursery Management',
           },
           {
-            path: 'manager/bookings',
-            component: ManagerBookingsComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Bookings' },
-            },
-            title: 'Bookings | Nursery Management',
-          },
-          {
             path: 'manager/bookings/new/recurring',
             component: CreateRecurringBookingComponent,
             canActivate: [authGuard, roleGuard],
@@ -297,6 +287,16 @@ export const routes: Routes = [
               breadcrumb: { label: 'New Hourly Booking', parent: '/manager/bookings' },
             },
             title: 'New Hourly Booking | Nursery Management',
+          },
+          {
+            path: 'manager/bookings',
+            component: ManagerBookingsComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Bookings' },
+            },
+            title: 'Bookings | Nursery Management',
           },
           {
             path: 'manager/ad-hoc-bookings',
