@@ -1,0 +1,300 @@
+<app-drawer
+  [isOpen]="isOpen"
+  title="New Booking"
+  position="right"
+  size="lg"
+  ariaLabel="Booking wizard"
+  (closed)="onClose()"
+>
+  <div class="flex flex-col h-full">
+    <!-- Step Indicator -->
+    <nav class="mb-6" aria-label="Booking wizard progress">
+      <ol class="flex items-center">
+        @for (step of steps; track step.key; let i = $index) {
+          <li class="flex items-center" [class.flex-1]="i < steps.length - 1">
+            <button
+              type="button"
+              class="flex items-center gap-2"
+              [attr.aria-current]="stepIsActive(step.key) ? 'step' : null"
+              (click)="i < currentStepIndex ? currentStepIndex = i : null"
+              [disabled]="i > currentStepIndex"
+            >
+              <span
+                class="flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all"
+                [class.border-brand-500]="stepIsActive(step.key)"
+                [class.bg-brand-500]="stepIsActive(step.key)"
+                [class.text-white]="stepIsActive(step.key)"
+                [class.ring-4]="stepIsActive(step.key)"
+                [class.ring-brand-500/15]="stepIsActive(step.key)"
+                [class.border-success-500]="stepIsComplete(i)"
+                [class.bg-success-500]="stepIsComplete(i)"
+                [class.border-gray-200]="!stepIsActive(step.key) && !stepIsComplete(i)"
+                [class.bg-white]="!stepIsActive(step.key) && !stepIsComplete(i)"
+                [class.text-gray-500]="!stepIsActive(step.key) && !stepIsComplete(i)"
+              >
+                @if (stepIsComplete(i)) {
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                } @else {
+                  {{ i + 1 }}
+                }
+              </span>
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400" [class.text-brand-600]="stepIsActive(step.key)">
+                {{ step.label }}
+              </span>
+            </button>
+            @if (i < steps.length - 1) {
+              <div class="mx-3 h-0.5 flex-1 bg-gray-200 dark:bg-gray-700">
+                <div
+                  class="h-full bg-brand-500 transition-all duration-300"
+                  [style.width.%]="stepIsComplete(i) ? 100 : 0"
+                ></div>
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    </nav>
+
+    <!-- Step Content -->
+    <div class="flex-1 overflow-y-auto">
+      @if (currentStepIndex === 0) {
+        <!-- Step 1: Booking Type -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Select Booking Type</h3>
+          <div class="grid gap-3">
+            @for (type of [
+              { value: 'recurring', label: 'Regular Recurring', desc: 'Weekly sessions on selected days' },
+              { value: 'adhoc', label: 'Ad-Hoc', desc: 'One-off session on a specific date' },
+              { value: 'funded', label: 'Funded', desc: 'Funded session with allocation' }
+            ]; track type.value) {
+              <label
+                class="flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition-all"
+                [class.border-brand-500]="bookingType === type.value"
+                [class.bg-brand-50/15]="bookingType === type.value"
+                [class.dark:border-brand-400]="bookingType === type.value"
+                [class.dark:bg-brand-500/10]="bookingType === type.value"
+                [class.border-gray-200]="bookingType !== type.value"
+                [class.dark:border-gray-700]="bookingType !== type.value"
+              >
+                <input
+                  type="radio"
+                  name="bookingType"
+                  [value]="type.value"
+                  [checked]="bookingType === type.value"
+                  (change)="bookingType = type.value"
+                  class="mt-1 h-4 w-4 border-gray-300 text-brand-500 focus:ring-brand-500/20"
+                />
+                <div>
+                  <span class="text-sm font-semibold text-gray-800 dark:text-white/90">{{ type.label }}</span>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ type.desc }}</p>
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+      }
+
+      @if (currentStepIndex === 1) {
+        <!-- Step 2: Schedule -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Configure Schedule</h3>
+
+          @if (bookingType === 'recurring') {
+            <div>
+              <span class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Days of Week</span>
+              <app-day-selector
+                [idPrefix]="'booking-day'"
+                [namePrefix]="'booking-day'"
+                [(ngModel)]="daysOfWeek"
+              />
+            </div>
+          }
+
+          @if (bookingType === 'adhoc') {
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="specific-date">Specific Date</label>
+              <input
+                id="specific-date"
+                type="date"
+                [(ngModel)]="specificDate"
+                class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+          }
+
+          @if (bookingType === 'funded') {
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="funding-allocation">Funding Allocation</label>
+              <select
+                id="funding-allocation"
+                [(ngModel)]="fundingAllocation"
+                class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="">Select funding...</option>
+                @for (opt of fundingOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (bookingType !== 'adhoc') {
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="start-date">Start Date</label>
+                <input
+                  id="start-date"
+                  type="date"
+                  [(ngModel)]="startDate"
+                  class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="end-date">End Date</label>
+                <input
+                  id="end-date"
+                  type="date"
+                  [(ngModel)]="endDate"
+                  class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+              </div>
+            </div>
+          }
+
+          <div>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="session-template">Session Template</label>
+            <select
+              id="session-template"
+              [(ngModel)]="sessionTemplate"
+              class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            >
+              <option value="">Select session...</option>
+              @for (opt of sessionTemplateOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" for="room">Room</label>
+            <select
+              id="room"
+              [(ngModel)]="room"
+              class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            >
+              <option value="">Select room...</option>
+              @for (opt of roomOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+
+      @if (currentStepIndex === 2) {
+        <!-- Step 3: Review -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Review Booking</h3>
+          <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+            <dl class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <dt class="font-medium text-gray-600 dark:text-gray-400">Type</dt>
+                <dd class="text-gray-800 dark:text-white/90">{{ bookingType | titlecase }}</dd>
+              </div>
+              @if (bookingType === 'recurring' && daysOfWeek.length) {
+                <div class="flex justify-between">
+                  <dt class="font-medium text-gray-600 dark:text-gray-400">Days</dt>
+                  <dd class="text-gray-800 dark:text-white/90">
+                    {{ daysOfWeek.length }} day{{ daysOfWeek.length > 1 ? 's' : '' }}/week
+                  </dd>
+                </div>
+              }
+              @if (bookingType === 'adhoc' && specificDate) {
+                <div class="flex justify-between">
+                  <dt class="font-medium text-gray-600 dark:text-gray-400">Date</dt>
+                  <dd class="text-gray-800 dark:text-white/90">{{ specificDate }}</dd>
+                </div>
+              }
+              @if (startDate) {
+                <div class="flex justify-between">
+                  <dt class="font-medium text-gray-600 dark:text-gray-400">Period</dt>
+                  <dd class="text-gray-800 dark:text-white/90">{{ startDate }} — {{ endDate || 'Ongoing' }}</dd>
+                </div>
+              }
+              @if (sessionTemplate) {
+                <div class="flex justify-between">
+                  <dt class="font-medium text-gray-600 dark:text-gray-400">Session</dt>
+                  <dd class="text-gray-800 dark:text-white/90">{{ sessionTemplate }}</dd>
+                </div>
+              }
+              @if (room) {
+                <div class="flex justify-between">
+                  <dt class="font-medium text-gray-600 dark:text-gray-400">Room</dt>
+                  <dd class="text-gray-800 dark:text-white/90">{{ room }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+
+          <!-- Capacity Indicator -->
+          <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+            <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Room Capacity</p>
+            <app-capacity-indicator
+              [current]="currentCapacity"
+              [max]="maxCapacity"
+              ariaLabel="Room capacity"
+            />
+          </div>
+
+          @if (isManager) {
+            <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+              <input
+                type="checkbox"
+                [(ngModel)]="managerOverride"
+                class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/20"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">Manager override (bypass capacity)</span>
+            </label>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
+      <div>
+        @if (!isFirstStep) {
+          <button
+            type="button"
+            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            (click)="prevStep()"
+          >
+            Back
+          </button>
+        }
+      </div>
+      <div>
+        @if (!isLastStep) {
+          <button
+            type="button"
+            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="!canProceed"
+            (click)="nextStep()"
+          >
+            Next
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            (click)="submit()"
+          >
+            Create Booking
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</app-drawer>

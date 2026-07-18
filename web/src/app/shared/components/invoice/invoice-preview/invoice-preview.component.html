@@ -1,0 +1,124 @@
+@if (invoice) {
+  <div class="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 sm:p-8">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white/90">{{ invoice.nurseryName }}</h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ invoice.nurseryAddress }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-sm font-semibold text-gray-800 dark:text-white/90">Invoice</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">#{{ invoice.invoiceNumber }}</p>
+      </div>
+    </div>
+
+    <!-- Invoice Metadata -->
+    <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Invoice Date</p>
+        <p class="mt-0.5 text-sm text-gray-800 dark:text-white/90">{{ invoice.date }}</p>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Due Date</p>
+        <p class="mt-0.5 text-sm text-gray-800 dark:text-white/90">{{ invoice.dueDate }}</p>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Child</p>
+        <p class="mt-0.5 text-sm text-gray-800 dark:text-white/90">{{ invoice.childName }}</p>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Parent/Carer</p>
+        <p class="mt-0.5 text-sm text-gray-800 dark:text-white/90">{{ invoice.parentName }}</p>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="mt-8 space-y-6">
+      @if (sessionFees.length) {
+        <div>
+          <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Session Fees</h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Description</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Qty</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Unit Price</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of sessionFees; track item.description) {
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="py-2 text-gray-800 dark:text-white/90">{{ item.description }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ item.quantity }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ formatCurrency(item.unitPrice) }}</td>
+                  <td class="py-2 text-right font-medium text-gray-800 dark:text-white/90">{{ formatCurrency(item.total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (meals.length) {
+        <div>
+          <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Meals</h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Description</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Qty</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Unit Price</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of meals; track item.description) {
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="py-2 text-gray-800 dark:text-white/90">{{ item.description }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ item.quantity }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ formatCurrency(item.unitPrice) }}</td>
+                  <td class="py-2 text-right font-medium text-gray-800 dark:text-white/90">{{ formatCurrency(item.total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (fundingDeductions.length) {
+        <div>
+          <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Funding Deductions</h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="pb-2 text-left font-medium text-gray-500 dark:text-gray-400">Description</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Qty</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Unit Price</th>
+                <th class="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of fundingDeductions; track item.description) {
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="py-2 text-gray-800 dark:text-white/90">{{ item.description }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ item.quantity }}</td>
+                  <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{ formatCurrency(item.unitPrice) }}</td>
+                  <td class="py-2 text-right font-medium text-gray-800 dark:text-white/90">{{ formatCurrency(item.total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- Total -->
+    <div class="mt-6 flex justify-end border-t border-gray-200 pt-4 dark:border-gray-700">
+      <div class="text-right">
+        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Payable</p>
+        <p class="text-2xl font-bold text-gray-900 dark:text-white/90">{{ formatCurrency(invoice.totalPayable) }}</p>
+      </div>
+    </div>
+  </div>
+}
