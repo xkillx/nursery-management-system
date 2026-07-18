@@ -9,6 +9,7 @@ import {
   heroChatBubbleLeftRight,
   heroCheckCircle,
   heroChevronRight,
+  heroClipboardDocumentList,
   heroClock,
   heroCog6Tooth,
   heroReceiptPercent,
@@ -25,6 +26,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoom, StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
+import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
 import { StaffSiteProfileApiService } from '../../data/staff-site-profile-api.service';
 import { SiteProfile } from '../../models/site-profile.models';
 
@@ -70,6 +72,7 @@ interface SettingCard {
       heroChatBubbleLeftRight,
       heroCheckCircle,
       heroChevronRight,
+      heroClipboardDocumentList,
       heroClock,
       heroCog6Tooth,
       heroReceiptPercent,
@@ -86,6 +89,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
+  private readonly sessionTemplatesApi = inject(StaffSessionTemplatesApiService);
   private readonly siteProfileApi = inject(StaffSiteProfileApiService);
 
   readonly routes = ROLE_ROUTES;
@@ -94,6 +98,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   readonly pageError = signal<string | null>(null);
   readonly rooms = signal<StaffRoom[]>([]);
   readonly sessionTypes = signal<StaffSessionType[]>([]);
+  readonly sessionTemplates = signal<{ id: string; isActive: boolean }[]>([]);
   readonly billing = signal<{ rateMinor: number | null; hasRate: boolean }>({ rateMinor: null, hasRate: false });
   readonly siteProfile = signal<{ hasProfile: boolean; profile: SiteProfile | null } | null>(null);
   readonly attendanceRules = signal({
@@ -127,6 +132,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
   });
 
   readonly activeSessionTypes = computed(() => this.sessionTypes().filter((st) => st.isActive));
+  readonly activeSessionTemplates = computed(() => this.sessionTemplates().filter((t) => t.isActive));
 
   readonly activeRooms = computed(() => this.rooms().filter((room) => room.isActive));
   readonly ageGroupLabels = computed(() => {
@@ -157,6 +163,7 @@ export class ManagerSiteSettingsComponent implements OnInit {
     const activeCount = this.activeRooms().length;
     const hasBilling = this.billing().hasRate;
     const sessionActiveCount = this.activeSessionTypes().length;
+    const templateActiveCount = this.activeSessionTemplates().length;
 
     const spState = this.siteProfile();
 
@@ -239,6 +246,21 @@ export class ManagerSiteSettingsComponent implements OnInit {
         pillTone: sessionActiveCount === 0 ? 'warning' : 'success',
         statusLabel: `${sessionActiveCount} active`,
         statusTone: sessionActiveCount === 0 ? 'warning' : 'success',
+      },
+      {
+        id: 'session-templates',
+        title: 'Session templates',
+        headline: templateActiveCount === 0 ? 'No templates' : `${templateActiveCount} active template${templateActiveCount === 1 ? '' : 's'}`,
+        detail: 'Named weekly patterns that speed up booking creation.',
+        icon: 'heroClipboardDocumentList',
+        tone: 'brand',
+        kind: 'simple',
+        state: 'ready',
+        link: ROLE_ROUTES.managerSessionTemplates,
+        pillLabel: templateActiveCount === 0 ? 'Setup needed' : 'Configured',
+        pillTone: templateActiveCount === 0 ? 'warning' : 'success',
+        statusLabel: `${templateActiveCount} active`,
+        statusTone: templateActiveCount === 0 ? 'warning' : 'success',
       },
       {
         id: 'hours',
@@ -476,6 +498,10 @@ export class ManagerSiteSettingsComponent implements OnInit {
 
     this.sessionTypesApi.listSessionTypes(branchId, { includeArchived: true }).subscribe({
       next: (types) => this.sessionTypes.set(types),
+    });
+
+    this.sessionTemplatesApi.listSessionTemplates(branchId, { includeArchived: true }).subscribe({
+      next: (templates) => this.sessionTemplates.set(templates),
     });
 
     this.siteProfileApi.getSiteProfile().pipe(
