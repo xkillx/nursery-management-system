@@ -12,6 +12,7 @@ import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/ma
 import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
 import { ManagerSessionTypesComponent } from './features/staff/pages/manager-session-types/manager-session-types.component';
 import { ManagerSessionTemplatesComponent } from './features/staff/pages/manager-session-templates/manager-session-templates.component';
+import { ManagerSessionTemplateFormComponent } from './features/staff/pages/manager-session-template-form/manager-session-template-form.component';
 import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceCreateComponent } from './features/staff/pages/manager-invoice-create/manager-invoice-create.component';
@@ -248,9 +249,26 @@ export const routes: Routes = [
               },
               {
                 path: 'session-templates',
-                component: ManagerSessionTemplatesComponent,
                 data: { breadcrumb: { label: 'Session templates' } },
-                title: 'Session templates | Nursery Management',
+                children: [
+                  {
+                    path: '',
+                    component: ManagerSessionTemplatesComponent,
+                    title: 'Session templates | Nursery Management',
+                  },
+                  {
+                    path: 'new',
+                    component: ManagerSessionTemplateFormComponent,
+                    data: { breadcrumb: { label: 'New template' } },
+                    title: 'New template | Nursery Management',
+                  },
+                  {
+                    path: ':templateId/edit',
+                    component: ManagerSessionTemplateFormComponent,
+                    data: { breadcrumb: { label: 'Edit template' } },
+                    title: 'Edit template | Nursery Management',
+                  },
+                ],
               },
             ],
           },
