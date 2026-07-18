@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -17,7 +17,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
-import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { PageBreadcrumbComponent } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
@@ -49,12 +49,15 @@ const STATUS_OPTIONS: { value: BookingStatus; label: string }[] = [
 const LIMIT = 50;
 const LS_KEY = 'nursery.booking_filters';
 
+type DatePreset = 'this_month' | 'next_month' | 'custom' | '';
+
 interface FilterState {
   types: BookingType[];
   statuses: BookingStatus[];
   roomId: string;
   dateFrom: string;
   dateTo: string;
+  datePreset: DatePreset;
   q: string;
 }
 
@@ -69,7 +72,7 @@ interface SessionLookup {
     CommonModule,
     FormsModule,
     EmptyStateComponent,
-    LoadingStateComponent,
+    PageBreadcrumbComponent,
     AlertComponent,
     StatusBadgeComponent,
     NgIcon,
@@ -104,18 +107,26 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
   readonly bookingTypeOptions = BOOKING_TYPE_OPTIONS;
   readonly statusOptions = STATUS_OPTIONS;
+  readonly datePresetOptions: { value: DatePreset; label: string }[] = [
+    { value: 'this_month', label: 'This Month' },
+    { value: 'next_month', label: 'Next Month' },
+    { value: 'custom', label: 'Custom' },
+    { value: '', label: 'All Time' },
+  ];
 
   siteId: string | null = null;
 
   selectedTypes: BookingType[] = [];
   selectedStatuses: BookingStatus[] = [];
   selectedRoomId = '';
+  datePreset: DatePreset = 'this_month';
   dateFrom = '';
   dateTo = '';
   searchQuery = '';
   offset = 0;
 
   items: UnifiedBooking[] = [];
+  total = 0;
   rooms: StaffRoom[] = [];
   sessionLookup: SessionLookup = {};
   isLoading = false;
@@ -129,11 +140,23 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   }
 
   get hasNext(): boolean {
-    return this.items.length === LIMIT;
+    return this.offset + LIMIT < this.total;
   }
 
   get currentPage(): number {
     return Math.floor(this.offset / LIMIT) + 1;
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.total / LIMIT));
+  }
+
+  get showingFrom(): number {
+    return this.total === 0 ? 0 : this.offset + 1;
+  }
+
+  get showingTo(): number {
+    return Math.min(this.offset + this.items.length, this.total);
   }
 
   get hasActiveFilters(): boolean {
@@ -141,8 +164,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       this.selectedTypes.length > 0 ||
       this.selectedStatuses.length > 0 ||
       this.selectedRoomId !== '' ||
-      this.dateFrom !== '' ||
-      this.dateTo !== '' ||
+      this.datePreset !== '' ||
       this.searchQuery.trim() !== ''
     );
   }
@@ -166,6 +188,11 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
         this.applyQueryParams(params);
       } else {
         this.restoreFromLocalStorage();
+        // Apply default date preset on first visit
+        if (this.datePreset && !this.dateFrom && !this.dateTo) {
+          this.setDatePreset(this.datePreset);
+          return;
+        }
       }
       this.loadList();
     });
@@ -239,6 +266,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     this.selectedTypes = [];
     this.selectedStatuses = [];
     this.selectedRoomId = '';
+    this.datePreset = '';
     this.dateFrom = '';
     this.dateTo = '';
     this.searchQuery = '';
@@ -246,6 +274,48 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     localStorage.removeItem(LS_KEY);
     this.router.navigate([], { queryParams: {} });
     this.loadList();
+  }
+
+  setDatePreset(preset: DatePreset): void {
+    if (this.datePreset === preset) return;
+    this.datePreset = preset;
+    const now = new Date();
+    switch (preset) {
+      case 'this_month': {
+        const first = new Date(now.getFullYear(), now.getMonth(), 1);
+        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        this.dateFrom = this.toIsoDate(first);
+        this.dateTo = this.toIsoDate(last);
+        break;
+      }
+      case 'next_month': {
+        const first = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const last = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+        this.dateFrom = this.toIsoDate(first);
+        this.dateTo = this.toIsoDate(last);
+        break;
+      }
+      case 'custom':
+        break;
+      default:
+        this.dateFrom = '';
+        this.dateTo = '';
+        break;
+    }
+    this.offset = 0;
+    this.onFilterChange();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardShortcut(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+    if (isInput) return;
+
+    if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.openCreateDrawer();
+    }
   }
 
   previousPage(): void {
@@ -361,6 +431,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     }
 
     if (params['room_id']) this.selectedRoomId = params['room_id'];
+    if (params['preset']) this.datePreset = params['preset'] as DatePreset;
     if (params['from']) this.dateFrom = params['from'];
     if (params['to']) this.dateTo = params['to'];
     if (params['q']) this.searchQuery = params['q'];
@@ -378,6 +449,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       if (state.types) this.selectedTypes = state.types;
       if (state.statuses) this.selectedStatuses = state.statuses;
       if (state.roomId) this.selectedRoomId = state.roomId;
+      if (state.datePreset) this.datePreset = state.datePreset;
       if (state.dateFrom) this.dateFrom = state.dateFrom;
       if (state.dateTo) this.dateTo = state.dateTo;
       if (state.q) this.searchQuery = state.q;
@@ -391,6 +463,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       types: this.selectedTypes,
       statuses: this.selectedStatuses,
       roomId: this.selectedRoomId,
+      datePreset: this.datePreset,
       dateFrom: this.dateFrom,
       dateTo: this.dateTo,
       q: this.searchQuery,
@@ -407,11 +480,19 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     if (this.selectedTypes.length > 0) queryParams['type'] = this.selectedTypes.join(',');
     if (this.selectedStatuses.length > 0) queryParams['status'] = this.selectedStatuses.join(',');
     if (this.selectedRoomId) queryParams['room_id'] = this.selectedRoomId;
+    if (this.datePreset) queryParams['preset'] = this.datePreset;
     if (this.dateFrom) queryParams['from'] = this.dateFrom;
     if (this.dateTo) queryParams['to'] = this.dateTo;
     if (this.searchQuery.trim()) queryParams['q'] = this.searchQuery.trim();
     if (this.offset > 0) queryParams['offset'] = String(this.offset);
     this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   private loadList(): void {
@@ -437,6 +518,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
           filtered = filtered.filter((b) => this.selectedStatuses.includes(b.status));
         }
         this.items = filtered;
+        this.total = result.total;
         this.isLoading = false;
       },
       error: (err) => {

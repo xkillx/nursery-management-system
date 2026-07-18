@@ -39,6 +39,7 @@ export class BookingDetailDrawerComponent implements OnChanges {
   @Input() isOpen = false;
   @Input() booking: UnifiedBooking | null = null;
   @Input() siteId: string | null = null;
+  @Input() sessionLookup: Record<string, string> = {};
   @Output() closed = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
   @Output() updated = new EventEmitter<void>();
@@ -51,6 +52,7 @@ export class BookingDetailDrawerComponent implements OnChanges {
   isConfirmCancelOpen = false;
   isCancelling = false;
   isSaving = false;
+  isLoadingDetail = false;
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
 
@@ -126,11 +128,36 @@ export class BookingDetailDrawerComponent implements OnChanges {
     return `${this.booking.childFirstName} ${this.booking.childLastName}`.trim();
   }
 
+  sessionName(id: string): string {
+    return this.sessionLookup[id] ?? id ?? '—';
+  }
+
   openEdit(): void {
-    this.isEditMode = true;
+    if (!this.siteId || !this.booking) return;
+    this.isLoadingDetail = true;
     this.formError = null;
     this.formFieldErrors = {};
-    this.populateEditForm();
+
+    this.bookingsApi.getBooking(this.siteId, this.booking.id).subscribe({
+      next: (full) => {
+        this.isEditMode = true;
+        this.isLoadingDetail = false;
+        this.editRoomId = full.roomId ?? '';
+        this.editStartDate = full.startDate;
+        this.editEndDate = full.endDate ?? '';
+        // The full booking detail may include additional fields not in the list response
+        // For now, use what's available; fields not in UnifiedBooking default to empty
+        this.editDaysOfWeek = [];
+        this.editFundingType = '';
+        this.editFundingHours = null;
+        this.editLaReference = '';
+      },
+      error: () => {
+        this.isLoadingDetail = false;
+        this.isEditMode = true;
+        this.populateEditForm();
+      },
+    });
   }
 
   cancelEdit(): void {
