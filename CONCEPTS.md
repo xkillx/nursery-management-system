@@ -10,6 +10,9 @@ A child's planned weekly attendance schedule, defining which session types the c
 ### Ad-Hoc Booking
 A one-off session booking for a specific child on a specific calendar date, independent from the recurring booking pattern. Used for backup childcare, inset-day extras, or casual sessions. Billed at the ad-hoc rate (branch hourly rate × ad-hoc multiplier). Status: `active` or `cancelled`. Does not affect funding allowance calculations.
 
+### Hourly Booking
+A flexible-duration session booking for a specific child on a specific calendar date, with explicit start time and duration in minutes. Unlike ad-hoc bookings (which use predefined session types), hourly bookings allow arbitrary time blocks. Used for irregular schedules, extra hours, or custom arrangements. Status: `active` or `cancelled`.
+
 ### Session Type
 A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children. Each session type has a `kind` classification (`standard`, `wraparound_before`, `wraparound_after`, `core`, `extended`).
 
