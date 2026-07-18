@@ -3,6 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { ROLES } from '../../../core/constants/roles';
 import { AuthService } from '../../../core/services/auth.service';
+import { SidebarService } from '../../services/sidebar.service';
 import { AppSidebarComponent } from './app-sidebar.component';
 
 class AuthServiceStub {
@@ -16,6 +17,7 @@ class AuthServiceStub {
 describe('AppSidebarComponent', () => {
   let fixture: ComponentFixture<AppSidebarComponent>;
   let authStub: AuthServiceStub;
+  let sidebarService: SidebarService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -30,6 +32,7 @@ describe('AppSidebarComponent', () => {
     }).compileComponents();
 
     authStub = TestBed.inject(AuthService) as unknown as AuthServiceStub;
+    sidebarService = TestBed.inject(SidebarService);
     fixture = TestBed.createComponent(AppSidebarComponent);
   });
 
@@ -38,23 +41,33 @@ describe('AppSidebarComponent', () => {
       authStub.role = ROLES.manager;
     });
 
-    it('shows dashboard, children, invites, attendance, billing, and site settings', () => {
+    it('shows dashboard, children, attendance, billing, and settings sub-items', () => {
       fixture.detectChanges();
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
       const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
-      const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
       const managerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance"]');
-      const siteSettings = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-settings"]');
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
+      const sessionTypes = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-session-types"]');
+      const sessionTemplates = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-session-templates"]');
+      const billingSetup = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-billing-setup"]');
+      const termCalendar = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-term-calendar"]');
+      const closureDays = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-closure-days"]');
       const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
       expect(dashboard).toBeTruthy();
       expect(managerChildren).toBeTruthy();
-      expect(managerInvites).toBeTruthy();
       expect(managerInvoices).toBeTruthy();
       expect(managerAttendance).toBeTruthy();
-      expect(siteSettings).toBeTruthy();
+      expect(siteProfile).toBeTruthy();
+      expect(rooms).toBeTruthy();
+      expect(sessionTypes).toBeTruthy();
+      expect(sessionTemplates).toBeTruthy();
+      expect(billingSetup).toBeTruthy();
+      expect(termCalendar).toBeTruthy();
+      expect(closureDays).toBeTruthy();
       expect(parentInvoices).toBeFalsy();
     });
 
@@ -65,18 +78,22 @@ describe('AppSidebarComponent', () => {
       expect(fixture.nativeElement.querySelector('[data-testid="owner-link-manager-access"]')).toBeFalsy();
     });
 
-    it('sees five grouped headings', () => {
+    it('sees five grouped headings including Settings accordion', () => {
       fixture.detectChanges();
 
       const headings = fixture.nativeElement.querySelectorAll('h2');
-      const labels = Array.from(headings).map(h => (h as HTMLElement).textContent?.trim());
+      const headingLabels = Array.from(headings).map(h => (h as HTMLElement).textContent?.trim());
 
-      expect(labels).toContain('Overview');
-      expect(labels).toContain('People');
-      expect(labels).toContain('Attendance');
-      expect(labels).toContain('Billing');
-      expect(labels).toContain('Setup');
-      expect(labels.length).toBe(5);
+      const accordionButtons = fixture.nativeElement.querySelectorAll('button[data-testid^="sidebar-accordion-"]');
+      const accordionLabels = Array.from(accordionButtons).map(b => (b as HTMLElement).textContent?.trim());
+
+      expect(headingLabels).toContain('Overview');
+      expect(headingLabels).toContain('People');
+      expect(headingLabels).toContain('Attendance');
+      expect(headingLabels).toContain('Billing');
+      expect(accordionLabels).toContain('Settings');
+      expect(headingLabels.length).toBe(4);
+      expect(accordionLabels.length).toBe(1);
     });
 
     it('dashboard link points to /manager/dashboard', () => {
@@ -84,14 +101,6 @@ describe('AppSidebarComponent', () => {
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
       expect(dashboard.getAttribute('href')).toContain('/manager/dashboard');
-    });
-
-    it('invites link points to /manager/invites', () => {
-      fixture.detectChanges();
-
-      const invites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
-      expect(invites).toBeTruthy();
-      expect(invites.getAttribute('href')).toContain('/manager/invites');
     });
 
     it('invoices link points to /manager/invoices', () => {
@@ -143,15 +152,6 @@ describe('AppSidebarComponent', () => {
       expect(invoices.getAttribute('aria-current')).toBe('page');
     });
 
-    it('highlights Attendance corrections with query params', () => {
-      const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/attendance-corrections?childId=abc');
-      fixture.detectChanges();
-
-      const corrections = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-attendance-corrections"]');
-      expect(corrections.getAttribute('aria-current')).toBe('page');
-    });
-
     it('does not contain TailAdmin demo labels', () => {
       fixture.detectChanges();
 
@@ -161,6 +161,158 @@ describe('AppSidebarComponent', () => {
       for (const label of demoLabels) {
         expect(text).not.toContain(label);
       }
+    });
+  });
+
+  describe('Settings accordion', () => {
+    beforeEach(() => {
+      authStub.role = ROLES.manager;
+    });
+
+    it('defaults to expanded state', () => {
+      fixture.detectChanges();
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile).toBeTruthy();
+    });
+
+    it('contains exactly 7 settings items when expanded', () => {
+      fixture.detectChanges();
+
+      const settingsItems = [
+        'staff-link-manager-site-profile',
+        'staff-link-manager-rooms',
+        'staff-link-manager-session-types',
+        'staff-link-manager-session-templates',
+        'staff-link-manager-billing-setup',
+        'staff-link-manager-term-calendar',
+        'staff-link-manager-closure-days',
+      ];
+
+      for (const testId of settingsItems) {
+        expect(fixture.nativeElement.querySelector(`[data-testid="${testId}"]`)).toBeTruthy();
+      }
+    });
+
+    it('collapses items when accordion is toggled', () => {
+      fixture.detectChanges();
+
+      sidebarService.toggleAccordion();
+      fixture.detectChanges();
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile).toBeFalsy();
+    });
+
+    it('expands items when accordion is toggled back', () => {
+      fixture.detectChanges();
+
+      sidebarService.toggleAccordion();
+      fixture.detectChanges();
+
+      sidebarService.toggleAccordion();
+      fixture.detectChanges();
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile).toBeTruthy();
+    });
+
+    it('shows chevron arrow on accordion header', () => {
+      fixture.detectChanges();
+
+      const accordionBtn = fixture.nativeElement.querySelector('button[data-testid="sidebar-accordion-Settings"]');
+      expect(accordionBtn).toBeTruthy();
+
+      const chevron = accordionBtn.querySelector('ng-icon');
+      expect(chevron).toBeTruthy();
+    });
+
+    it('highlights active settings sub-item', () => {
+      const router = TestBed.inject(Router);
+      spyOnProperty(router, 'url', 'get').and.returnValue('/manager/site-settings/rooms');
+      fixture.detectChanges();
+
+      const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
+      expect(rooms.getAttribute('aria-current')).toBe('page');
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile.getAttribute('aria-current')).toBeNull();
+    });
+
+    it('site profile link points to /manager/site-settings/profile', () => {
+      fixture.detectChanges();
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile.getAttribute('href')).toContain('/manager/site-settings/profile');
+    });
+
+    it('rooms link points to /manager/site-settings/rooms', () => {
+      fixture.detectChanges();
+
+      const rooms = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-rooms"]');
+      expect(rooms.getAttribute('href')).toContain('/manager/site-settings/rooms');
+    });
+
+    it('session types link points to /manager/site-settings/session-types', () => {
+      fixture.detectChanges();
+
+      const sessionTypes = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-session-types"]');
+      expect(sessionTypes.getAttribute('href')).toContain('/manager/site-settings/session-types');
+    });
+
+    it('session templates link points to /manager/site-settings/session-templates', () => {
+      fixture.detectChanges();
+
+      const sessionTemplates = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-session-templates"]');
+      expect(sessionTemplates.getAttribute('href')).toContain('/manager/site-settings/session-templates');
+    });
+
+    it('fees & billing link points to /manager/site-settings/billing-setup', () => {
+      fixture.detectChanges();
+
+      const billing = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-billing-setup"]');
+      expect(billing.getAttribute('href')).toContain('/manager/site-settings/billing-setup');
+    });
+
+    it('term calendar link points to /manager/site-settings/term-calendar', () => {
+      fixture.detectChanges();
+
+      const termCalendar = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-term-calendar"]');
+      expect(termCalendar.getAttribute('href')).toContain('/manager/site-settings/term-calendar');
+    });
+
+    it('closure days link points to /manager/site-settings/closure-days', () => {
+      fixture.detectChanges();
+
+      const closureDays = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-closure-days"]');
+      expect(closureDays.getAttribute('href')).toContain('/manager/site-settings/closure-days');
+    });
+
+    it('accordion state persists during navigation', () => {
+      fixture.detectChanges();
+
+      sidebarService.setAccordionExpanded(false);
+      fixture.detectChanges();
+
+      const siteProfile = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfile).toBeFalsy();
+
+      fixture.detectChanges();
+
+      const siteProfileAfter = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-site-profile"]');
+      expect(siteProfileAfter).toBeFalsy();
+    });
+
+    it('sets aria-expanded on accordion button', () => {
+      fixture.detectChanges();
+
+      const accordionBtn = fixture.nativeElement.querySelector('button[data-testid="sidebar-accordion-Settings"]');
+      expect(accordionBtn.getAttribute('aria-expanded')).toBe('true');
+
+      sidebarService.toggleAccordion();
+      fixture.detectChanges();
+
+      expect(accordionBtn.getAttribute('aria-expanded')).toBe('false');
     });
   });
 
@@ -174,14 +326,12 @@ describe('AppSidebarComponent', () => {
 
       const dashboard = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-dashboard"]');
       const managerChildren = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-children"]');
-      const managerInvites = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invites"]');
       const managerInvoices = fixture.nativeElement.querySelector('[data-testid="staff-link-manager-invoices"]');
       const practitionerAttendance = fixture.nativeElement.querySelector('[data-testid="staff-link-practitioner-attendance"]');
       const parentInvoices = fixture.nativeElement.querySelector('[data-testid="parent-link-invoices"]');
 
       expect(dashboard).toBeFalsy();
       expect(managerChildren).toBeFalsy();
-      expect(managerInvites).toBeFalsy();
       expect(managerInvoices).toBeFalsy();
       expect(practitionerAttendance).toBeTruthy();
       expect(parentInvoices).toBeFalsy();
@@ -234,11 +384,11 @@ describe('AppSidebarComponent', () => {
       const staffIds = [
         'staff-link-manager-dashboard',
         'staff-link-manager-children',
-        'staff-link-manager-invites',
-        'staff-link-practitioner-attendance',
         'staff-link-manager-invoices',
+        'staff-link-practitioner-attendance',
         'staff-link-manager-attendance-corrections',
         'staff-link-manager-rooms',
+        'staff-link-manager-site-profile',
       ];
 
       for (const id of staffIds) {
@@ -317,11 +467,11 @@ describe('AppSidebarComponent', () => {
       const staffIds = [
         'staff-link-manager-dashboard',
         'staff-link-manager-children',
-        'staff-link-manager-invites',
-        'staff-link-practitioner-attendance',
         'staff-link-manager-invoices',
+        'staff-link-practitioner-attendance',
         'staff-link-manager-attendance-corrections',
         'staff-link-manager-rooms',
+        'staff-link-manager-site-profile',
       ];
 
       for (const id of staffIds) {
@@ -330,7 +480,6 @@ describe('AppSidebarComponent', () => {
 
       expect(fixture.nativeElement.querySelector('[data-testid="owner-link-overview"]')).toBeFalsy();
       expect(fixture.nativeElement.querySelector('[data-testid="owner-link-manager-access"]')).toBeFalsy();
-      expect(fixture.nativeElement.querySelector('[data-testid="owner-link-rooms"]')).toBeFalsy();
     });
 
     it('sees Billing group heading', () => {

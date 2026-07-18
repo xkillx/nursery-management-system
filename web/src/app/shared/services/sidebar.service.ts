@@ -8,10 +8,12 @@ export class SidebarService {
   private isExpandedSubject = new BehaviorSubject<boolean>(true);
   private isMobileOpenSubject = new BehaviorSubject<boolean>(false);
   private isHoveredSubject = new BehaviorSubject<boolean>(false);
+  private accordionExpandedSubject = new BehaviorSubject<boolean>(true);
 
   isExpanded$ = this.isExpandedSubject.asObservable();
   isMobileOpen$ = this.isMobileOpenSubject.asObservable();
   isHovered$ = this.isHoveredSubject.asObservable();
+  accordionExpanded$ = this.accordionExpandedSubject.asObservable();
 
   setExpanded(val: boolean) {
     this.isExpandedSubject.next(val);
@@ -31,5 +33,13 @@ export class SidebarService {
 
   setHovered(val: boolean) {
     this.isHoveredSubject.next(val);
+  }
+
+  toggleAccordion() {
+    this.accordionExpandedSubject.next(!this.accordionExpandedSubject.value);
+  }
+
+  setAccordionExpanded(val: boolean) {
+    this.accordionExpandedSubject.next(val);
   }
 }
