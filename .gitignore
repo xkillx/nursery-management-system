@@ -65,3 +65,4 @@ testem.log
 # =====================
 *.env
 !api/.env.example
+.worktrees/

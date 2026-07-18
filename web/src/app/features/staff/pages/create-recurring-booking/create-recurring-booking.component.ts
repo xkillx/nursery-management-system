@@ -3,7 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroArrowLeft } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroShieldCheck, heroEllipsisHorizontal } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
@@ -34,6 +34,10 @@ import { AuthService } from '../../../../core/services/auth.service';
     provideIcons({
       heroCalendarDays,
       heroArrowLeft,
+      heroUser,
+      heroCreditCard,
+      heroShieldCheck,
+      heroEllipsisHorizontal,
     }),
   ],
 })
@@ -67,9 +71,9 @@ export class CreateRecurringBookingComponent implements OnInit {
   formFieldErrors: Record<string, string> = {};
 
   readonly fundingOptions = [
-    { value: 'fifteen_hours', label: 'Universal 15h', description: '15 hours funded per week' },
-    { value: 'thirty_hours', label: 'Extended 30h', description: '30 hours funded per week' },
-    { value: 'none', label: 'None / Private', description: 'No government funding' },
+    { value: 'fifteen_hours', label: 'Universal (15h)', description: 'Available for 3-4 year olds' },
+    { value: 'thirty_hours', label: 'Extended (30h)', description: 'Working families grant' },
+    { value: 'none', label: 'None / Private', description: 'Fully chargeable rate' },
   ];
 
   get canSubmit(): boolean {
@@ -79,6 +83,16 @@ export class CreateRecurringBookingComponent implements OnInit {
   get childDisplayName(): string {
     if (!this.selectedChild) return '';
     return `${this.selectedChild.firstName} ${this.selectedChild.lastName}`;
+  }
+
+  get selectedRoom(): StaffRoom | undefined {
+    return this.rooms.find((r) => r.id === this.roomId);
+  }
+
+  get occupancyPercentage(): number {
+    const room = this.selectedRoom;
+    if (!room || !room.capacity) return 0;
+    return Math.round(((room.assignedCount || 0) / room.capacity) * 100);
   }
 
   ngOnInit(): void {
@@ -136,7 +150,7 @@ export class CreateRecurringBookingComponent implements OnInit {
   private loadData(): void {
     if (!this.siteId) return;
 
-    this.roomsApi.listRooms(this.siteId, { includeArchived: false }).subscribe({
+    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: true }).subscribe({
       next: (rooms) => this.rooms = rooms.filter((r) => r.isActive),
       error: () => { /* Room load failure handled by template defaults */ },
     });

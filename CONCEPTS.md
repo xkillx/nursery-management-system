@@ -7,6 +7,9 @@ Shared domain vocabulary for this project — entities, named processes, and sta
 ### Booking Pattern
 A child's planned weekly attendance schedule, defining which session types the child attends on which days of the week. A child has at most one current (open) booking pattern at a time; when a new pattern is created, the previous one is closed. Patterns cannot be backdated or edited once their effective date has passed. A pattern may carry an optional `term_time_only` flag; when true, billing calculations exclude dates outside the branch's academic term calendar.
 
+### Session Entries
+Per-day session type and room selections stored on a recurring booking as a JSONB array of `{day_of_week, session_type_id, room_id}` objects. Each entry specifies which session type and which room the child attends on that day. Replaces the session template abstraction for new bookings — managers pick session types directly on a day × session-type grid instead of selecting a pre-configured template. Stored in the `bookings.session_entries` column. Existing bookings that reference a `session_template_id` remain valid.
+
 ### Ad-Hoc Booking
 A one-off session booking for a specific child on a specific calendar date, independent from the recurring booking pattern. Used for backup childcare, inset-day extras, or casual sessions. Billed at the ad-hoc rate (branch hourly rate × ad-hoc multiplier). Status: `active` or `cancelled`. Does not affect funding allowance calculations.
 
@@ -23,7 +26,10 @@ A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 
 Tracks whether a child receives benefits that contribute towards nursery fees. Values: `yes`, `no`, `unknown`. Separate from the specific benefit types or amounts.
 
 ### Room
-A physical room in the nursery where a child is assigned. Each child has at most one current room assignment (`child_room_assignments` with `is_current = true`) at a time. Rooms have a name (e.g., "Toddler Room") and an `age_group`. Used on invoices and registration forms as a child group label.
+A physical room in the nursery. Rooms have a name (e.g., "Toddler Room") and an `age_group`. Room assignment lives on session entries (`session_entries[*].room_id`), not on the child or booking. Each session entry specifies its own room, allowing a child to attend different rooms on different days. An optional `home_room_id` on the children table provides an administrative label for registration and child list filtering.
+
+### Home Room
+An optional administrative room label on the children table (`children.home_room_id`). Assigned during registration (can be skipped). Used by child list filtering and as a display label on the child profile. Not used by operational features — capacity, attendance, billing, and registers all read room from session entries.
 
 ### Parent Carer
 A child's parent or legal guardian recorded in `child_contacts` with `contact_type = 'parent_carer'`. A child may have multiple parent carers. The primary parent carer (lowest `sort_order`) is used as the billing contact on invoices, providing full name and address.

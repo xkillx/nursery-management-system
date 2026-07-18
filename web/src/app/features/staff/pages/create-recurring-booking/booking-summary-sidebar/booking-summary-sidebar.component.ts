@@ -22,26 +22,27 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
   ],
   template: `
     <div class="sticky top-24 space-y-4">
-      <div class="rounded-xl border border-gray-100 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
-        <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
-            <ng-icon name="heroCalendarDays" size="20" aria-hidden="true" />
-          </span>
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+      <div class="rounded-xl border border-gray-100 bg-white shadow-theme-sm overflow-hidden dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="bg-brand-500 px-5 py-4 text-white">
+          <div class="flex items-center gap-2">
+            <ng-icon name="heroCalendarDays" size="18" aria-hidden="true" />
+            <h3 class="text-sm font-bold tracking-wide">
               {{ childName || 'New Recurring Booking' }}
             </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Booking Summary</p>
           </div>
+          <p class="text-xs mt-1 opacity-80 font-medium">Booking Summary</p>
         </div>
 
         <div class="p-5 space-y-4">
           @if (sessions.length > 0) {
             <div class="space-y-2">
               @for (s of sessions; track $index) {
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-gray-700 dark:text-gray-300">{{ s.dayName }} · {{ s.sessionName }}</span>
-                  <span class="text-gray-500 dark:text-gray-400">{{ s.durationHours | number:'1.1-1' }}h</span>
+                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-sm dark:bg-gray-800/30 dark:border-gray-800">
+                  <div class="flex items-center gap-2">
+                    <ng-icon name="heroCheck" size="14" class="text-brand-500 font-bold" />
+                    <span class="text-gray-700 font-medium dark:text-gray-300">{{ s.dayName }}: {{ s.sessionName }}</span>
+                  </div>
+                  <span class="text-xs text-gray-400">{{ s.durationHours | number:'1.1-1' }}h</span>
                 </div>
               }
             </div>
@@ -66,7 +67,7 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
                     <ng-icon name="heroAcademicCap" size="14" />
                     Funded Hours
                   </span>
-                  <span class="text-green-600 dark:text-green-400">-{{ fundingHours | number:'1.1-1' }}h</span>
+                  <span class="text-green-600 dark:text-green-400 font-semibold">-{{ fundingHours | number:'1.1-1' }}h</span>
                 </div>
               </div>
             }
@@ -74,18 +75,18 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
             <div class="border-t border-gray-100 pt-3 dark:border-gray-800">
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-600 dark:text-gray-400">Chargeable Hours</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ chargeableHours | number:'1.1-1' }}h</span>
+                <span class="font-semibold text-gray-950 dark:text-white">{{ chargeableHours | number:'1.1-1' }}h</span>
               </div>
             </div>
 
             <div class="border-t border-gray-100 pt-3 dark:border-gray-800">
               @if (hourlyRateMinor !== null && hourlyRateMinor > 0) {
                 <div class="flex items-center justify-between">
-                  <span class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="flex items-center gap-1.5 text-sm font-bold text-gray-900 dark:text-white">
                     <ng-icon name="heroCurrencyPound" size="16" />
                     Estimated Weekly Total
                   </span>
-                  <span class="text-lg font-bold text-brand-600 dark:text-brand-400">{{ formatGbp(weeklyCostMinor) }}</span>
+                  <span class="text-lg font-black text-brand-600 dark:text-brand-400">{{ formatGbp(weeklyCostMinor) }}</span>
                 </div>
               } @else {
                 <div class="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">

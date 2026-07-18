@@ -22,49 +22,49 @@ const WEEKDAY_INDICES = [0, 1, 2, 3, 4];
     provideIcons({ heroPlus, heroCheck }),
   ],
   template: `
-    <div class="space-y-3">
-      <div class="flex gap-2">
+    <div class="space-y-4">
+      <div class="flex gap-2.5">
         <button
           type="button"
-          class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
           (click)="selectAllWeekdays()"
         >
           Select All Weekdays
         </button>
         <button
           type="button"
-          class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
           (click)="clearAll()"
         >
           Clear All
         </button>
       </div>
 
-      <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-        <table class="w-full text-sm">
+      <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+        <table class="w-full text-sm border-collapse">
           <thead>
-            <tr class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-              <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Day</th>
+            <tr class="border-b border-gray-100 bg-gray-50/55 dark:border-gray-800 dark:bg-gray-800/30">
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-32">Day</th>
               @for (st of sessionTypes; track st.id) {
-                <th class="px-3 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <div>{{ st.name }}</div>
-                  <div class="font-normal text-gray-400">{{ formatTime(st.startTime) }}–{{ formatTime(st.endTime) }}</div>
+                <th class="px-3 py-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  <div class="text-gray-700 dark:text-gray-300 font-semibold">{{ st.name }}</div>
+                  <div class="mt-0.5 font-normal text-gray-400 dark:text-gray-500 lowercase tracking-normal">({{ formatTime(st.startTime) }}–{{ formatTime(st.endTime) }})</div>
                 </th>
               }
             </tr>
           </thead>
           <tbody>
             @for (day of days; track day.index; let i = $index) {
-              <tr class="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                <td class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ day.label }}</td>
+              <tr class="border-b border-gray-100 dark:border-gray-800/50 last:border-b-0 hover:bg-gray-50/40 dark:hover:bg-gray-800/10 transition-colors">
+                <td class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white">{{ day.label }}</td>
                 @for (st of sessionTypes; track st.id) {
-                  <td class="px-2 py-2 text-center">
+                  <td class="px-3 py-2 text-center">
                     <button
                       type="button"
-                      class="mx-auto flex h-8 w-8 items-center justify-center rounded-lg border transition-colors"
+                      class="mx-auto flex h-12 w-full min-w-[72px] max-w-[120px] items-center justify-center rounded-xl border-2 transition-all duration-200 cursor-pointer"
                       [ngClass]="isSelected(day.index, st.id)
-                        ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10'
-                        : 'border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500 dark:border-gray-600 dark:hover:border-gray-500'"
+                        ? 'border-brand-500 bg-brand-500 text-white shadow-theme-xs'
+                        : 'border-dashed border-gray-200 text-gray-300 hover:border-brand-500 hover:text-brand-500 dark:border-gray-800 dark:text-gray-700 dark:hover:border-brand-500 dark:hover:text-brand-500'"
                       (click)="toggleCell(day.index, st.id)"
                     >
                       @if (isSelected(day.index, st.id)) {
