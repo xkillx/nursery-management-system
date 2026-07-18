@@ -269,7 +269,7 @@ export const routes: Routes = [
             title: 'New Recurring Booking | Nursery Management',
           },
           {
-            path: 'manager/bookings/new/ad-hoc',
+            path: 'manager/bookings/new/ad_hoc',
             component: CreateAdHocBookingComponent,
             canActivate: [authGuard, roleGuard],
             data: {
