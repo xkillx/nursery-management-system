@@ -5,8 +5,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCalendarDays,
+  heroChevronDown,
   heroChevronLeft,
   heroChevronRight,
+  heroClock,
   heroFunnel,
   heroMagnifyingGlass,
   heroPlus,
@@ -31,7 +33,6 @@ import {
   BookingStatus,
   BookingListFilters,
 } from '../../models/booking.models';
-import { CreateBookingDrawerComponent } from './create-booking-drawer/create-booking-drawer.component';
 import { BookingDetailDrawerComponent } from './booking-detail-drawer/booking-detail-drawer.component';
 
 const BOOKING_TYPE_OPTIONS: { value: BookingType; label: string }[] = [
@@ -76,15 +77,16 @@ interface SessionLookup {
     AlertComponent,
     StatusBadgeComponent,
     NgIcon,
-    CreateBookingDrawerComponent,
     BookingDetailDrawerComponent,
   ],
   templateUrl: './manager-bookings.component.html',
   providers: [
     provideIcons({
       heroCalendarDays,
+      heroChevronDown,
       heroChevronLeft,
       heroChevronRight,
+      heroClock,
       heroFunnel,
       heroMagnifyingGlass,
       heroPlus,
@@ -132,7 +134,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   isLoading = false;
   errorMessage: string | null = null;
 
-  isCreateDrawerOpen = false;
+  isCreateDropdownOpen = false;
   selectedBooking: UnifiedBooking | null = null;
 
   get hasPrevious(): boolean {
@@ -314,7 +316,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
     if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault();
-      this.openCreateDrawer();
+      this.openCreateDropdown();
     }
   }
 
@@ -328,18 +330,17 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     this.loadList();
   }
 
-  openCreateDrawer(): void {
-    this.isCreateDrawerOpen = true;
+  openCreateDropdown(): void {
+    this.isCreateDropdownOpen = !this.isCreateDropdownOpen;
   }
 
-  closeCreateDrawer(): void {
-    this.isCreateDrawerOpen = false;
+  closeCreateDropdown(): void {
+    this.isCreateDropdownOpen = false;
   }
 
-  onBookingCreated(): void {
-    this.closeCreateDrawer();
-    this.loadList();
-    this.toast.success('Booking created successfully.');
+  navigateToCreate(type: BookingType): void {
+    this.isCreateDropdownOpen = false;
+    this.router.navigate(['/manager/bookings/new', type]);
   }
 
   openBookingDetail(booking: UnifiedBooking, event: Event): void {

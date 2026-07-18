@@ -14,14 +14,61 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
-        (click)="openCreateDrawer()"
-      >
-        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
-        Add Booking
-      </button>
+      <div class="relative">
+        <button
+          type="button"
+          class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+          (click)="openCreateDropdown()"
+          (blur)="closeCreateDropdown()"
+        >
+          <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+          Add Booking
+          <ng-icon name="heroChevronDown" size="14" aria-hidden="true" />
+        </button>
+        @if (isCreateDropdownOpen) {
+          <div
+            class="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white py-1.5 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900 z-50"
+            role="menu"
+          >
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/[0.05] cursor-pointer"
+              role="menuitem"
+              (mousedown)="navigateToCreate('recurring')"
+            >
+              <ng-icon name="heroCalendarDays" size="18" class="text-brand-500" />
+              <div class="text-left">
+                <p class="font-semibold">Recurring</p>
+                <p class="text-xs text-gray-400">Weekly recurring booking</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/[0.05] cursor-pointer"
+              role="menuitem"
+              (mousedown)="navigateToCreate('ad_hoc')"
+            >
+              <ng-icon name="heroCalendarDays" size="18" class="text-warning-500" />
+              <div class="text-left">
+                <p class="font-semibold">Ad-hoc</p>
+                <p class="text-xs text-gray-400">One-off booking for a date</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/[0.05] cursor-pointer"
+              role="menuitem"
+              (mousedown)="navigateToCreate('hourly')"
+            >
+              <ng-icon name="heroClock" size="18" class="text-success-500" />
+              <div class="text-left">
+                <p class="font-semibold">Hourly</p>
+                <p class="text-xs text-gray-400">Flexible-duration booking</p>
+              </div>
+            </button>
+          </div>
+        }
+      </div>
     </div>
   </section>
 
@@ -351,7 +398,7 @@
           <button
             type="button"
             class="mt-3 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 cursor-pointer"
-            (click)="openCreateDrawer()"
+            (click)="navigateToCreate('recurring')"
           >
             <ng-icon name="heroPlus" size="16" aria-hidden="true" />
             Create your first booking
@@ -398,14 +445,6 @@
       </div>
     }
   </section>
-
-  <!-- Create Booking Drawer -->
-  <app-create-booking-drawer
-    [isOpen]="isCreateDrawerOpen"
-    [siteId]="siteId"
-    (closed)="closeCreateDrawer()"
-    (created)="onBookingCreated()"
-  />
 
   <!-- Detail Booking Drawer -->
   @if (selectedBooking) {
