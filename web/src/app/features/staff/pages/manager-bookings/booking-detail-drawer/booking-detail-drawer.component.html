@@ -1,0 +1,230 @@
+<app-drawer
+  [isOpen]="isOpen"
+  [title]="isEditMode ? 'Edit Booking' : 'Booking Details'"
+  size="lg"
+  (closed)="onClose()"
+>
+  @if (booking) {
+    @if (formError) {
+      <app-alert variant="error" title="Error" [message]="formError" class="mb-4"></app-alert>
+    }
+
+    @if (!isEditMode) {
+      <!-- Detail view -->
+      <div class="space-y-6">
+        <!-- Type badge and status -->
+        <div class="flex items-center gap-3">
+          <span
+            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide"
+            [ngClass]="bookingTypeClasses(booking.bookingType)"
+          >
+            {{ bookingTypeLabel(booking.bookingType) }}
+          </span>
+          <app-status-badge [status]="booking.status" variant="light" size="sm" />
+        </div>
+
+        <!-- Booking fields -->
+        <dl class="space-y-4">
+          <div class="flex items-start justify-between gap-4">
+            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Child</dt>
+            <dd class="text-sm font-semibold text-gray-900 dark:text-white text-right">{{ childFullName() }}</dd>
+          </div>
+
+          <div class="flex items-start justify-between gap-4">
+            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Session / Template</dt>
+            <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">{{ booking.sessionTemplateId }}</dd>
+          </div>
+
+          @if (booking.roomName) {
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">{{ booking.roomName }}</dd>
+            </div>
+          }
+
+          <div class="flex items-start justify-between gap-4">
+            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dates</dt>
+            <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right flex items-center gap-1.5">
+              <ng-icon name="heroCalendarDays" size="14" class="text-gray-400" />
+              {{ formatDate(booking.startDate) }}
+              @if (booking.endDate && booking.endDate !== booking.startDate) {
+                &ndash; {{ formatDate(booking.endDate) }}
+              }
+            </dd>
+          </div>
+
+          <div class="flex items-start justify-between gap-4">
+            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</dt>
+            <dd class="text-xs font-medium text-gray-500 dark:text-gray-400 text-right">{{ formatDateTime(booking.createdAt) }}</dd>
+          </div>
+
+          <div class="flex items-start justify-between gap-4">
+            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Updated</dt>
+            <dd class="text-xs font-medium text-gray-500 dark:text-gray-400 text-right">{{ formatDateTime(booking.updatedAt) }}</dd>
+          </div>
+        </dl>
+
+        <!-- Action buttons -->
+        <div class="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+          @if (canEdit) {
+            <button
+              type="button"
+              class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-theme-xs transition-all hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
+              (click)="openEdit()"
+            >
+              <ng-icon name="heroPencilSquare" size="18" />
+              Edit Booking
+            </button>
+          }
+
+          <button
+            type="button"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-error-200 bg-white px-4 py-3 text-sm font-semibold text-error-600 shadow-theme-xs transition-all hover:bg-error-50 focus:outline-hidden focus:ring-3 focus:ring-error-500/10 dark:border-error-800 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-500/10 cursor-pointer"
+            (click)="openCancelConfirm()"
+          >
+            <ng-icon name="heroXCircle" size="18" />
+            Cancel Booking
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- Edit form (recurring only) -->
+      <div class="space-y-5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
+          (click)="cancelEdit()"
+        >
+          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to details
+        </button>
+
+        <!-- Room -->
+        <div>
+          <label for="edit-room" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Room</label>
+          <select
+            id="edit-room"
+            [(ngModel)]="editRoomId"
+            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+          >
+            <option value="">Select a room</option>
+            @for (room of rooms; track room.id) {
+              <option [value]="room.id">{{ room.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Days of week -->
+        <div>
+          <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Days of Week</span>
+          <app-day-selector
+            [(ngModel)]="editDaysOfWeek"
+            idPrefix="edit-day"
+            namePrefix="edit-day"
+          />
+        </div>
+
+        <!-- Start date -->
+        <div>
+          <label for="edit-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Date</label>
+          <input
+            id="edit-start"
+            type="date"
+            [(ngModel)]="editStartDate"
+            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+          />
+        </div>
+
+        <!-- End date -->
+        <div>
+          <label for="edit-end" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">End Date</label>
+          <input
+            id="edit-end"
+            type="date"
+            [(ngModel)]="editEndDate"
+            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+          />
+        </div>
+
+        <!-- Funding type -->
+        <div>
+          <label for="edit-funding" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Type</label>
+          <select
+            id="edit-funding"
+            [(ngModel)]="editFundingType"
+            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+          >
+            <option value="">None</option>
+            <option value="universal">Universal</option>
+            <option value="extended">Extended</option>
+            <option value="two_year_old">Two-year-old</option>
+          </select>
+        </div>
+
+        <!-- Funding hours -->
+        @if (editFundingType) {
+          <div>
+            <label for="edit-funding-hours" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Hours per Week</label>
+            <input
+              id="edit-funding-hours"
+              type="number"
+              [(ngModel)]="editFundingHours"
+              min="0"
+              max="30"
+              step="0.5"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+          </div>
+        }
+
+        <!-- LA reference -->
+        @if (editFundingType) {
+          <div>
+            <label for="edit-la-ref" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">LA Reference</label>
+            <input
+              id="edit-la-ref"
+              type="text"
+              [(ngModel)]="editLaReference"
+              placeholder="Local authority reference"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+          </div>
+        }
+
+        <!-- Submit -->
+        <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+          <button
+            type="button"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="isSaving"
+            (click)="submitEdit()"
+          >
+            @if (isSaving) {
+              <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Saving...
+            } @else {
+              Save Changes
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Cancel confirmation dialog -->
+    <app-confirmation-dialog
+      [isOpen]="isConfirmCancelOpen"
+      title="Cancel Booking"
+      [message]="'Are you sure you want to cancel this ' + bookingTypeLabel(booking.bookingType).toLowerCase() + ' booking for ' + childFullName() + '?'"
+      confirmText="Cancel Booking"
+      variant="danger"
+      [loading]="isCancelling"
+      (confirmed)="confirmCancel()"
+      (cancelled)="closeCancelConfirm()"
+    />
+  }
+</app-drawer>

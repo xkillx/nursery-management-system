@@ -24,8 +24,7 @@ import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-in
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
 import { ManagerClosureDaysComponent } from './features/staff/pages/manager-closure-days/manager-closure-days.component';
-import { ManagerAdHocBookingComponent } from './features/staff/pages/manager-ad-hoc-booking/manager-ad-hoc-booking.component';
-import { ManagerHourlyBookingsComponent } from './features/staff/pages/manager-hourly-bookings/manager-hourly-bookings.component';
+import { ManagerBookingsComponent } from './features/staff/pages/manager-bookings/manager-bookings.component';
 import { ParentInvoicesComponent } from './features/parent-portal/pages/parent-invoices/parent-invoices.component';
 import { ParentInvoiceDetailComponent } from './features/parent-portal/pages/parent-invoice-detail/parent-invoice-detail.component';
 import { OwnerOverviewComponent } from './features/owner/pages/owner-overview/owner-overview.component';
@@ -257,24 +256,24 @@ export const routes: Routes = [
             title: 'Session templates | Nursery Management',
           },
           {
-            path: 'manager/ad-hoc-bookings',
-            component: ManagerAdHocBookingComponent,
+            path: 'manager/bookings',
+            component: ManagerBookingsComponent,
             canActivate: [authGuard, roleGuard],
             data: {
               roles: ['manager'],
-              breadcrumb: { label: 'Ad-hoc bookings' },
+              breadcrumb: { label: 'Bookings' },
             },
-            title: 'Ad-Hoc Bookings | Nursery Management',
+            title: 'Bookings | Nursery Management',
+          },
+          {
+            path: 'manager/ad-hoc-bookings',
+            redirectTo: '/manager/bookings',
+            pathMatch: 'full',
           },
           {
             path: 'manager/hourly-bookings',
-            component: ManagerHourlyBookingsComponent,
-            canActivate: [authGuard, roleGuard],
-            data: {
-              roles: ['manager'],
-              breadcrumb: { label: 'Hourly bookings' },
-            },
-            title: 'Hourly Bookings | Nursery Management',
+            redirectTo: '/manager/bookings',
+            pathMatch: 'full',
           },
           {
             path: 'manager/funding',

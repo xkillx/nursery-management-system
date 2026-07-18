@@ -16,6 +16,7 @@ import {
   heroClipboardDocumentList,
   heroCog6Tooth,
   heroDocumentText,
+  heroCalendarDays,
 } from '@ng-icons/heroicons/outline';
 
 export type SidebarIcon =
@@ -24,6 +25,7 @@ export type SidebarIcon =
   | 'invites'
   | 'attendance'
   | 'attendance-corrections'
+  | 'bookings'
   | 'invoices'
   | 'site-settings';
 
@@ -57,6 +59,7 @@ export interface SidebarNavGroup {
       heroClipboardDocumentList,
       heroCog6Tooth,
       heroDocumentText,
+      heroCalendarDays,
     }),
   ],
   templateUrl: './app-sidebar.component.html',
@@ -69,6 +72,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     invites: 'heroEnvelope',
     attendance: 'heroClipboardDocumentCheck',
     'attendance-corrections': 'heroClipboardDocumentList',
+    bookings: 'heroCalendarDays',
     invoices: 'heroDocumentText',
     'site-settings': 'heroCog6Tooth',
   };
@@ -153,6 +157,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
         {
           label: 'Billing',
           items: [
+            { label: 'Bookings', path: ROLE_ROUTES.managerBookings, testId: 'staff-link-manager-bookings', icon: 'bookings', matchPaths: ['/manager/bookings'] },
             { label: 'Invoices', path: ROLE_ROUTES.managerInvoices, testId: 'staff-link-manager-invoices', icon: 'invoices', matchPaths: ['/manager/invoices/'] },
           ],
         },

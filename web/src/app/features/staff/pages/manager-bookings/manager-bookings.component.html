@@ -1,0 +1,335 @@
+<div class="space-y-6">
+  <!-- Header section -->
+  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="bookings-title">
+    <div class="max-w-3xl">
+      <h1 id="bookings-title" class="text-title-sm font-bold text-gray-900 dark:text-white md:text-title-md tracking-tight">
+        Bookings
+      </h1>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        View and manage all bookings across your site — recurring, ad-hoc, and hourly.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+        (click)="openCreateDrawer()"
+      >
+        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+        Add Booking
+      </button>
+    </div>
+  </section>
+
+  @if (errorMessage) {
+    <app-alert variant="error" title="Error" [message]="errorMessage"></app-alert>
+  }
+
+  <!-- Filters section -->
+  <section
+    class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/20 shadow-theme-xs"
+    aria-label="Booking filters"
+  >
+    <div class="px-4 py-5 lg:px-6 space-y-4">
+      <!-- Row 1: Search and Type Filters -->
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <!-- Search bar -->
+        <div class="relative flex-1 min-w-[280px] max-w-md">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+            <ng-icon name="heroMagnifyingGlass" size="18" />
+          </span>
+          <input
+            type="text"
+            [ngModel]="searchQuery"
+            (ngModelChange)="onSearchInput($event)"
+            placeholder="Search by child name..."
+            class="w-full h-10 pl-10 pr-9 rounded-xl border border-gray-200 bg-gray-50/50 dark:bg-gray-900/50 dark:border-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 transition-all duration-200"
+          />
+          @if (searchQuery) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              title="Clear search"
+            >
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Type Filter Chips -->
+        <div class="flex items-center flex-wrap gap-2 self-start lg:self-auto">
+          @for (option of bookingTypeOptions; track option.value) {
+            <label
+              class="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200"
+              [ngClass]="{
+                'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-500/15 dark:text-brand-300': isTypeSelected(option.value),
+                'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600': !isTypeSelected(option.value)
+              }"
+            >
+              <input
+                type="checkbox"
+                class="size-3.5 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                [checked]="isTypeSelected(option.value)"
+                (change)="onTypeToggle(option.value)"
+              />
+              {{ option.label }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <!-- Row 2: Status Filters, Room, Date Range, Clear All -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-gray-100 dark:border-gray-800/50 pt-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Status chips -->
+          @for (option of statusOptions; track option.value) {
+            <label
+              class="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200"
+              [ngClass]="{
+                'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-500/15 dark:text-brand-300': isStatusSelected(option.value),
+                'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600': !isStatusSelected(option.value)
+              }"
+            >
+              <input
+                type="checkbox"
+                class="size-3.5 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                [checked]="isStatusSelected(option.value)"
+                (change)="onStatusToggle(option.value)"
+              />
+              {{ option.label }}
+            </label>
+          }
+
+          <!-- Room dropdown -->
+          <select
+            [ngModel]="selectedRoomId"
+            (ngModelChange)="selectedRoomId = $event; onRoomChange()"
+            class="h-8 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-xs text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+          >
+            <option value="">All rooms</option>
+            @for (room of rooms; track room.id) {
+              <option [value]="room.id">{{ room.name }}</option>
+            }
+          </select>
+
+          @if (hasActiveFilters) {
+            <button
+              type="button"
+              (click)="clearAllFilters()"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-error-600 hover:bg-error-50 dark:text-gray-400 dark:hover:text-error-400 dark:hover:bg-error-500/10 transition-all duration-200 cursor-pointer"
+              title="Clear all filters"
+            >
+              <ng-icon name="heroXMark" size="14" />
+              Clear all
+            </button>
+          }
+        </div>
+
+        <!-- Date range -->
+        <div class="flex items-center gap-x-3 gap-y-2 rounded-xl bg-gray-50/50 border border-gray-100 p-2 dark:bg-white/[0.01] dark:border-gray-800/80">
+          <div class="flex items-center gap-2">
+            <label for="bookings-date-from" class="whitespace-nowrap text-xs font-semibold text-gray-500 dark:text-gray-400">From</label>
+            <div class="relative">
+              <ng-icon
+                name="heroCalendarDays"
+                size="14"
+                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                aria-hidden="true"
+              />
+              <input
+                id="bookings-date-from"
+                type="date"
+                [ngModel]="dateFrom"
+                (ngModelChange)="dateFrom = $event; onDateFromChange()"
+                class="h-8 rounded-lg border border-gray-200 bg-white pl-8 pr-2.5 text-xs text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              />
+            </div>
+          </div>
+          <span class="text-gray-300 dark:text-gray-600">&rarr;</span>
+          <div class="flex items-center gap-2">
+            <label for="bookings-date-to" class="whitespace-nowrap text-xs font-semibold text-gray-500 dark:text-gray-400">To</label>
+            <div class="relative">
+              <ng-icon
+                name="heroCalendarDays"
+                size="14"
+                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                aria-hidden="true"
+              />
+              <input
+                id="bookings-date-to"
+                type="date"
+                [ngModel]="dateTo"
+                (ngModelChange)="dateTo = $event; onDateToChange()"
+                class="h-8 rounded-lg border border-gray-200 bg-white pl-8 pr-2.5 text-xs text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-b border-gray-100 dark:border-gray-800/80"></div>
+
+    @if (isLoading) {
+      <app-loading-state label="Loading bookings..."></app-loading-state>
+    } @else if (items.length > 0) {
+      <!-- Desktop table -->
+      <div class="overflow-x-auto hidden lg:block">
+        <table class="w-full min-w-[900px] border-collapse text-left text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-500">
+              <th class="pl-4 pr-6 py-3.5">Type</th>
+              <th class="px-6 py-3.5">Child</th>
+              <th class="px-6 py-3.5">Session / Template</th>
+              <th class="px-6 py-3.5">Room</th>
+              <th class="px-6 py-3.5">Dates</th>
+              <th class="px-6 py-3.5">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100/80 dark:divide-gray-800/50">
+            @for (booking of items; track booking.id) {
+              <tr
+                class="group transition-all duration-200 hover:bg-gray-50/40 dark:hover:bg-white/[0.01] cursor-pointer"
+                (click)="openBookingDetail(booking, $event)"
+              >
+                <td class="pl-4 pr-6 py-4">
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide"
+                    [ngClass]="bookingTypeClasses(booking.bookingType)"
+                  >
+                    {{ bookingTypeLabel(booking.bookingType) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white/95 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                    {{ childFullName(booking) }}
+                  </p>
+                </td>
+                <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                  {{ sessionName(booking.sessionTemplateId) }}
+                </td>
+                <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                  {{ booking.roomName ?? '—' }}
+                </td>
+                <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <div class="flex items-center gap-1.5">
+                    <ng-icon name="heroCalendarDays" class="text-gray-400" size="14" />
+                    <span>{{ formatDateRange(booking) }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <app-status-badge [status]="booking.status" variant="light" size="sm" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards view -->
+      <div class="divide-y divide-gray-100/80 lg:hidden dark:divide-gray-800/60">
+        @for (booking of items; track booking.id) {
+          <article
+            class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer"
+            (click)="openBookingDetail(booking, $event)"
+            (keydown.enter)="openBookingDetail(booking, $event)"
+            (keydown.space)="openBookingDetail(booking, $event)"
+            tabindex="0"
+            role="link"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    [ngClass]="bookingTypeClasses(booking.bookingType)"
+                  >
+                    {{ bookingTypeLabel(booking.bookingType) }}
+                  </span>
+                  <app-status-badge [status]="booking.status" variant="light" size="sm" />
+                </div>
+                <p class="font-semibold text-gray-900 dark:text-white/95">{{ childFullName(booking) }}</p>
+              </div>
+            </div>
+
+            <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Session</p>
+                <p class="font-medium text-gray-700 dark:text-gray-200">{{ sessionName(booking.sessionTemplateId) }}</p>
+              </div>
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Room</p>
+                <p class="font-medium text-gray-700 dark:text-gray-200">{{ booking.roomName ?? '—' }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Dates</p>
+                <p class="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                  <ng-icon name="heroCalendarDays" size="12" class="text-gray-400" />
+                  {{ formatDateRange(booking) }}
+                </p>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <app-empty-state
+        title="No bookings found"
+        [message]="'No bookings match your current filters.'"
+      ></app-empty-state>
+    }
+
+    @if (items.length > 0) {
+      <div class="flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800/80 p-4 text-sm sm:flex-row sm:items-center sm:justify-between lg:p-6">
+        <span class="text-gray-500 dark:text-gray-400 font-medium">
+          Page {{ currentPage }} &middot; {{ items.length }} booking{{ items.length === 1 ? '' : 's' }}
+        </span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!hasPrevious"
+            (click)="previousPage()"
+          >
+            <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
+            Previous
+          </button>
+          <span class="text-xs text-gray-400 font-semibold px-2 py-1 bg-gray-50 dark:bg-white/[0.02] rounded-md border border-gray-100 dark:border-gray-800/50">Page {{ currentPage }}</span>
+          <button
+            type="button"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!hasNext"
+            (click)="nextPage()"
+          >
+            Next
+            <ng-icon name="heroChevronRight" size="16" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Create Booking Drawer -->
+  <app-create-booking-drawer
+    [isOpen]="isCreateDrawerOpen"
+    [siteId]="siteId"
+    (closed)="closeCreateDrawer()"
+    (created)="onBookingCreated()"
+  />
+
+  <!-- Detail Booking Drawer -->
+  @if (selectedBooking) {
+    <app-booking-detail-drawer
+      [isOpen]="!!selectedBooking"
+      [booking]="selectedBooking"
+      [siteId]="siteId"
+      (closed)="closeDetailDrawer()"
+      (cancelled)="onBookingCancelled()"
+      (updated)="onBookingUpdated()"
+    />
+  }
+</div>
