@@ -85,6 +85,7 @@ describe('ManagerInvoicesComponent', () => {
   let toastService: jasmine.SpyObj<ToastService>;
 
   beforeEach(async () => {
+    localStorage.removeItem('nursery.invoice_filters');
     const spy = jasmine.createSpyObj('ManagerInvoicesApiService', ['listInvoices', 'bulkIssueInvoices']);
     spy.listInvoices.and.returnValue(of({ items: mockItems, total: 2, page: 1, page_size: 50 }));
     const toastSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'warning', 'info']);

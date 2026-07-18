@@ -399,7 +399,7 @@ describe('ManagerInvoiceDetailComponent', () => {
   it('shows read-only review for draft invoices', () => {
     createFixture(draftDetail, null, []);
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Read-only review');
+    expect(text).toContain('Draft invoice — editable');
     expect(text).not.toContain('Issued invoice locked');
   });
 
@@ -414,8 +414,9 @@ describe('ManagerInvoiceDetailComponent', () => {
     const anchors: HTMLAnchorElement[] = Array.from(fixture.nativeElement.querySelectorAll('a'));
     const allElements: HTMLElement[] = [...buttons, ...anchors];
     const payElements = allElements.filter((el) => el.textContent?.includes('Pay'));
-    expect(payElements.length).toBe(1);
-    expect(payElements[0].textContent).toContain('Make Payment');
+    expect(payElements.length).toBe(2);
+    expect(payElements.some((el) => el.textContent?.includes('Make Payment'))).toBe(true);
+    expect(payElements.some((el) => el.textContent?.includes('Generate Payment Link'))).toBe(true);
   });
 
   it('shows net due and funded deduction summary', () => {

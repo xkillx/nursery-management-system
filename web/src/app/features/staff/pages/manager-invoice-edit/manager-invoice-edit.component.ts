@@ -110,7 +110,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
   readonly fundedDeductionMinor = computed(() =>
     this.lines()
       .filter((l) => l.lineKind === 'funded_deduction')
-      .reduce((sum, l) => sum + l.lineAmountMinor, 0),
+      .reduce((sum, l) => sum + Math.abs(l.lineAmountMinor), 0),
   );
 
   readonly totalDueMinor = computed(() =>

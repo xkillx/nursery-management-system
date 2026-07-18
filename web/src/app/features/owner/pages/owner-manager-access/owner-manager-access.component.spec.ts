@@ -40,10 +40,12 @@ const summariesResponse = {
   ],
 };
 
-const managerAccessResponse = [
-  { membership_id: 'mem-1', user_id: 'user-1', email: 'alice@example.com', is_active: true },
-  { membership_id: 'mem-2', user_id: 'user-2', email: 'bob@example.com', is_active: false },
-];
+const managerAccessResponse = {
+  items: [
+    { membership_id: 'mem-1', user_id: 'user-1', email: 'alice@example.com', is_active: true },
+    { membership_id: 'mem-2', user_id: 'user-2', email: 'bob@example.com', is_active: false },
+  ],
+};
 
 describe('OwnerManagerAccessComponent', () => {
   let fixture: ComponentFixture<OwnerManagerAccessComponent>;
@@ -140,7 +142,7 @@ describe('OwnerManagerAccessComponent', () => {
     const component = fixture.componentInstance;
     component.selectedSiteId = 'site-1';
     component.onSiteSelect();
-    httpMock.expectOne((r) => r.url === '/api/v1/owner/manager-access').flush([]);
+    httpMock.expectOne((r) => r.url === '/api/v1/owner/manager-access').flush({ items: [] });
     fixture.detectChanges();
 
     component.grantEmail = 'new@example.com';

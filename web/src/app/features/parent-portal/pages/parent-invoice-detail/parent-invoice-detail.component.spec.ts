@@ -142,8 +142,9 @@ describe('ParentInvoiceDetailComponent', () => {
     apiMock.getInvoice.and.returnValue(of(detail));
     fixture.detectChanges();
 
-    const payBtn = fixture.debugElement.query(By.css('button'));
-    expect(payBtn).toBeTruthy();
+    const buttons = fixture.debugElement.queryAll(By.css('button'));
+    expect(buttons.length).toBe(2);
+    const payBtn = buttons[1];
     expect(payBtn.nativeElement.textContent.trim()).toContain('Pay now');
   });
 
@@ -153,8 +154,9 @@ describe('ParentInvoiceDetailComponent', () => {
     apiMock.getInvoice.and.returnValue(of(detail));
     fixture.detectChanges();
 
-    const payBtn = fixture.debugElement.query(By.css('button'));
-    expect(payBtn).toBeNull();
+    const buttons = fixture.debugElement.queryAll(By.css('button'));
+    const payBtn = buttons.find(b => b.nativeElement.textContent.trim().includes('Pay now'));
+    expect(payBtn).toBeUndefined();
   });
 
   it('hides pay action for zero-balance invoice', () => {
@@ -163,8 +165,9 @@ describe('ParentInvoiceDetailComponent', () => {
     apiMock.getInvoice.and.returnValue(of(detail));
     fixture.detectChanges();
 
-    const payBtn = fixture.debugElement.query(By.css('button'));
-    expect(payBtn).toBeNull();
+    const buttons = fixture.debugElement.queryAll(By.css('button'));
+    const payBtn = buttons.find(b => b.nativeElement.textContent.trim().includes('Pay now'));
+    expect(payBtn).toBeUndefined();
   });
 
   it('renders lines as received from service (already sorted)', () => {
@@ -334,8 +337,9 @@ describe('ParentInvoiceDetailComponent', () => {
       apiMock.getInvoice.and.returnValue(of(detail));
       fixture.detectChanges();
 
-      const payBtn = fixture.debugElement.query(By.css('button'));
-      expect(payBtn).toBeTruthy();
+      const buttons = fixture.debugElement.queryAll(By.css('button'));
+      expect(buttons.length).toBe(2);
+      const payBtn = buttons[1];
       expect(payBtn.nativeElement.textContent.trim()).toContain('Pay now');
     });
 

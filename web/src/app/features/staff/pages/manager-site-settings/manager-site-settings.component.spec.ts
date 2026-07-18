@@ -79,7 +79,7 @@ describe('ManagerSiteSettingsComponent', () => {
     fixture.detectChanges();
     const roomsReq = httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/rooms'));
     roomsReq.flush({
-      rooms: [
+      items: [
         {
           id: 'room-1',
           name: 'Baby Room',
@@ -117,21 +117,33 @@ describe('ManagerSiteSettingsComponent', () => {
           updated_at: '2026-06-01T00:00:00Z',
         },
       ],
+      total: 3,
+      page: 1,
+      page_size: 25,
     });
     const billingReq = httpMock.expectOne(apiUrl('/billing-setup'));
     billingReq.flush({ core_hourly_rate_minor: 700, has_rate: true });
 
     const sessionTypesReq = httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-types'));
     sessionTypesReq.flush({
-      session_types: [
+      items: [
         { id: 'st-1', name: 'Morning', start_time: '08:00', end_time: '12:00', is_active: true, created_at: '', updated_at: '' },
         { id: 'st-2', name: 'Afternoon', start_time: '13:00', end_time: '17:00', is_active: true, created_at: '', updated_at: '' },
       ],
+      total: 2,
+      page: 1,
+      page_size: 25,
     });
+
+    const sessionTemplatesReq = httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-templates'));
+    sessionTemplatesReq.flush({ items: [], total: 0, page: 1, page_size: 25 });
+
+    const siteProfileReq = httpMock.expectOne(apiUrl('/site-profile'));
+    siteProfileReq.flush({ site_profile: null });
 
     fixture.detectChanges();
 
-    expect(component.cards().length).toBe(10);
+    expect(component.cards().length).toBe(13);
     const roomCard = component.cards().find((c) => c.id === 'rooms') as { detail: string; statusLabel: string };
     expect(roomCard.detail).toContain('Baby');
     expect(roomCard.statusLabel).toBe('3 active');
@@ -144,7 +156,9 @@ describe('ManagerSiteSettingsComponent', () => {
     fixture.detectChanges();
     httpMock.expectOne(apiUrl('/billing-setup')).flush({ core_hourly_rate_minor: 0, has_rate: false });
     httpMock.expectOne(apiUrl('/sites/site-1/rooms')).error(new ProgressEvent('error'));
-    httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-types')).flush({ items: [] });
+    httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-types')).flush({ items: [], total: 0, page: 1, page_size: 25 });
+    httpMock.expectOne((req) => req.url === apiUrl('/sites/site-1/session-templates')).flush({ items: [], total: 0, page: 1, page_size: 25 });
+    httpMock.expectOne(apiUrl('/site-profile')).flush({ site_profile: null });
     fixture.detectChanges();
 
     expect(component.pageError()).toContain('Failed to load');

@@ -128,7 +128,7 @@ describe('OwnerApiService', () => {
       expect(req.request.method).toBe('GET');
       expect(req.request.params.get('site_id')).toBe('site-1');
       expect(req.request.params.get('status')).toBe('active');
-      req.flush(managerAccessApiResponse);
+      req.flush({ items: managerAccessApiResponse, total: 2, page: 1, page_size: 25 });
     });
 
     it('defaults status to active', () => {
@@ -136,7 +136,7 @@ describe('OwnerApiService', () => {
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/owner/manager-access');
       expect(req.request.params.get('status')).toBe('active');
-      req.flush([]);
+      req.flush({ items: [], total: 0, page: 1, page_size: 25 });
     });
   });
 
@@ -277,7 +277,7 @@ describe('OwnerApiService', () => {
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms');
       expect(req.request.method).toBe('GET');
-      req.flush({ rooms: [roomApiResponse] });
+      req.flush({ items: [roomApiResponse], total: 1, page: 1, page_size: 25 });
     });
 
     it('listRooms with include_archived sends query param', () => {
@@ -285,7 +285,7 @@ describe('OwnerApiService', () => {
 
       const req = httpMock.expectOne((r) => r.url === '/api/v1/sites/site-1/rooms');
       expect(req.request.params.get('include_archived')).toBe('true');
-      req.flush({ rooms: [] });
+      req.flush({ items: [], total: 0, page: 1, page_size: 25 });
     });
 
     it('getRoom calls GET with site and room IDs', () => {

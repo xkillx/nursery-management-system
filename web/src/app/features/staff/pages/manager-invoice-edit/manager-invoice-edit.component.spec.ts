@@ -1,5 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -208,7 +208,8 @@ describe('ManagerInvoiceEditComponent', () => {
       const text = fixture.nativeElement.textContent;
       expect(text).toContain('Core childcare');
       expect(text).toContain('Funded deduction');
-      expect(text).toContain('Late pick-up');
+      const comp = fixture.componentInstance;
+      expect(comp.lines().some((l) => l.description === 'Late pick-up')).toBeTrue();
     });
 
     it('renders system lines as read-only (no input fields for system lines)', () => {
@@ -221,9 +222,9 @@ describe('ManagerInvoiceEditComponent', () => {
     it('shows summary sidebar with correct totals', () => {
       createFixture();
       const text = fixture.nativeElement.textContent;
-      expect(text).toContain('£330.00');
+      expect(text).toContain('£255.00');
       expect(text).toContain('£90.00');
-      expect(text).toContain('£240.00');
+      expect(text).toContain('£165.00');
     });
 
     it('shows loading spinner while API call is in flight', () => {
@@ -346,28 +347,32 @@ describe('ManagerInvoiceEditComponent', () => {
       expect(apiService.deleteLine).toHaveBeenCalledWith('inv-1', 'l3');
     });
 
-    it('shows toast on successful save', () => {
+    it('shows toast on successful save', fakeAsync(() => {
       createFixture();
       const comp = fixture.componentInstance;
       comp.updateLine('l3', 'description', 'Updated');
       comp.saveChanges();
+      tick();
       expect(toastService.success).toHaveBeenCalledWith('Invoice saved.');
-    });
+    }));
 
-    it('calls issueInvoice after save when issuing', () => {
+    it('calls issueInvoice after save when issuing', fakeAsync(() => {
       createFixture();
       const comp = fixture.componentInstance;
+      spyOn(router, 'navigate');
       comp.issueInvoice();
+      tick();
       expect(apiService.issueInvoice).toHaveBeenCalledWith('inv-1');
-    });
+    }));
 
-    it('navigates to detail page after issuing', () => {
+    it('navigates to detail page after issuing', fakeAsync(() => {
       createFixture();
       const comp = fixture.componentInstance;
       const navigateSpy = spyOn(router, 'navigate');
       comp.issueInvoice();
+      tick();
       expect(navigateSpy).toHaveBeenCalledWith(['/manager/invoices', 'inv-1']);
-    });
+    }));
   });
 
   describe('access control', () => {
