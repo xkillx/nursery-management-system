@@ -57,7 +57,6 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
-import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ChildPhotoService } from '../../../../shared/services/child-photo.service';
@@ -69,7 +68,6 @@ import {
   CompleteRegistrationPayload,
   StepperCompletionStatus,
 } from '../../models/child-legacy-compat.models';
-import { BookingPattern, BookingPatternInput } from '../../models/booking-pattern.models';
 import {
   ChildProfile,
   ChildHealthProfile,
@@ -82,21 +80,15 @@ import {
   ChildHealthProfileInput,
   ChildSafeguardingProfileInput,
   ChildCollectionSettingsInput,
-  ChildFundingRecordInput,
   CreateChildPayload,
   ProfessionalReferral,
-  FundingType,
-  FundingModel,
-  BenefitsStatus,
 } from '../../models/child-profile.models';
 
 type StepperStep =
   | 'child-basics'
   | 'medical-health'
   | 'contacts-collection'
-  | 'consents-evidence'
-  | 'session-pattern'
-  | 'funding-benefits';
+  | 'consents-evidence';
 
 type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
 type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
@@ -279,25 +271,6 @@ interface RegistrationDraft {
     second_parent_has_responsibility: boolean | null;
   };
   step4: ConsentWritePayload;
-  step5?: {
-    patternEffectiveFrom: string;
-    patternEffectiveTo?: string;
-    patternEntries?: { dayOfWeek: number; sessionTypeId: string }[];
-    patternSelectedTypeByDay?: Record<number, string | null>;
-  };
-  step6?: {
-    no_funding: boolean;
-    funding_type: string;
-    funding_model: string;
-    funded_hours_per_week: number | null;
-    funding_start_date: string;
-    funding_end_date: string;
-    benefits_status: string;
-    benefits: string[];
-    other_benefit_name: string;
-    benefit_notes: string;
-    manager_notes: string;
-  };
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
@@ -366,7 +339,6 @@ interface RegistrationDraft {
 export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
   private readonly roomsApi = inject(StaffRoomsApiService);
-  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly auth = inject(AuthService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
@@ -405,18 +377,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       label: 'Permissions & Consents',
       shortLabel: 'Consents',
       description: 'Terms and decisions',
-    },
-    {
-      key: 'session-pattern',
-      label: 'Session Pattern',
-      shortLabel: 'Pattern',
-      description: 'Planned weekly attendance',
-    },
-    {
-      key: 'funding-benefits',
-      label: 'Funding & Benefits',
-      shortLabel: 'Funding',
-      description: 'Funding eligibility and benefits',
     },
   ];
 
@@ -609,12 +569,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (step === 'consents-evidence' && this.parentCarersDraft[0]?.fullName && !this.step4.signer_name) {
       this.step4.signer_name = this.parentCarersDraft[0].fullName;
     }
-    if (step === 'session-pattern' || step === 'funding-benefits') {
-      this.loadSessionPatternSupportData();
-    }
-    if (step === 'session-pattern' && !this.isNewRegistration && !this.loadedSections.has('booking-pattern')) {
-      this.loadBookingPattern();
-    }
   }
   childId: string | null = null;
   child: ChildRecord | null = null;
@@ -757,136 +711,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   };
 
   step4NoReasons: Partial<Record<keyof ConsentWritePayload, string>> = {};
-
-  patternEffectiveFrom = '';
-  patternEffectiveTo = '';
-  patternSelectedTypeByDay: Record<number, string | null> = {};
-  patternError: string | null = null;
-  availableSessionTypes: StaffSessionType[] = [];
-  editablePattern: BookingPattern | null = null;
-  bookingPatternLoading = false;
-  bookingPatternLoadError: string | null = null;
-
-  step6 = {
-    no_funding: true,
-    funding_type: 'none',
-    funding_model: 'term_time_only',
-    funded_hours_per_week: null as number | null,
-    funding_start_date: '',
-    funding_end_date: '',
-    benefits_status: 'unknown',
-    benefits: [] as string[],
-    other_benefit_name: '',
-    benefit_notes: '',
-    manager_notes: '',
-  };
-
-  readonly fundingTypeOptions = [
-    { value: 'none', label: 'No funding' },
-    { value: 'fifteen_hours', label: '15 Hours' },
-    { value: 'thirty_hours', label: '30 Hours' },
-    { value: 'two_year_old', label: 'Two-Year-Old Funding' },
-    { value: 'custom', label: 'Custom' },
-  ];
-
-  readonly fundingModelOptions = [
-    { value: 'term_time_only', label: 'Term-time only (38 weeks)' },
-    { value: 'stretched', label: 'Stretched (51 weeks)' },
-  ];
-
-  readonly benefitOptions = [
-    { value: 'universal_credit', label: 'Universal Credit' },
-    { value: 'income_support', label: 'Income Support' },
-    { value: 'jobseekers_allowance', label: "Jobseeker's Allowance" },
-    { value: 'esa_income_related', label: 'ESA (Income Related)' },
-    { value: 'child_tax_credit', label: 'Child Tax Credit' },
-    { value: 'other_support', label: 'Other Support' },
-  ];
-
-  fundedHoursTouched = false;
-
-  defaultFundedHoursForType(type: string): number {
-    if (type === 'fifteen_hours') return 15;
-    if (type === 'thirty_hours') return 30;
-    return 0;
-  }
-
-  get totalBookedHoursPerWeek(): number {
-    if (!this.hasPatternEntries || !this.availableSessionTypes.length) return 0;
-    const typeMap = new Map(this.availableSessionTypes.map(st => [st.id, st]));
-    let total = 0;
-    for (const stId of Object.values(this.patternSelectedTypeByDay)) {
-      if (stId) {
-        const st = typeMap.get(stId);
-        if (st) {
-          const [sh, sm] = st.startTime.split(':').map(Number);
-          const [eh, em] = st.endTime.split(':').map(Number);
-          total += (eh + em / 60) - (sh + sm / 60);
-        }
-      }
-    }
-    return Math.round(total * 10) / 10;
-  }
-
-  get parentPaidHoursPerWeek(): number {
-    const funded = this.step6.funded_hours_per_week ?? 0;
-    return Math.max(0, this.totalBookedHoursPerWeek - funded);
-  }
-
-  get calculationGridWarning(): string | null {
-    const funded = this.step6.funded_hours_per_week ?? 0;
-    if (funded > this.totalBookedHoursPerWeek) {
-      return 'Funded hours exceed total booked hours. Parent-paid hours will be negative.';
-    }
-    return null;
-  }
-
-  protected toggleBenefit(value: string): void {
-    const idx = this.step6.benefits.indexOf(value);
-    if (idx >= 0) {
-      this.step6.benefits.splice(idx, 1);
-    } else {
-      this.step6.benefits.push(value);
-    }
-  }
-
-  protected onFundingTypeChange(type: string): void {
-    this.step6.funding_type = type;
-    if (!this.fundedHoursTouched) {
-      this.step6.funded_hours_per_week = this.defaultFundedHoursForType(type);
-    }
-  }
-
-  protected onFundedHoursEdited(): void {
-    this.fundedHoursTouched = true;
-  }
-
-  get step6Errors(): Record<string, string> {
-    const errors: Record<string, string> = {};
-    if (this.step6.no_funding) return errors;
-    if (!this.step6.funding_type || this.step6.funding_type === 'unknown' || this.step6.funding_type === 'none') {
-      errors['funding_type'] = 'Select a funding type.';
-    }
-    if (this.step6.funded_hours_per_week !== null && this.step6.funded_hours_per_week !== undefined) {
-      if (this.step6.funded_hours_per_week <= 0) {
-        errors['funded_hours_per_week'] = 'Must be greater than 0.';
-      } else if (this.step6.funded_hours_per_week > 30 && this.step6.funding_type !== 'custom') {
-        errors['funded_hours_per_week'] = 'Must not exceed 30 hours unless funding type is Custom.';
-      }
-    }
-    if (this.step6.funding_start_date && this.step6.funding_end_date) {
-      if (new Date(this.step6.funding_end_date) <= new Date(this.step6.funding_start_date)) {
-        errors['funding_end_date'] = 'Must be after start date.';
-      }
-    }
-    if (this.step6.benefits_status === 'yes' && (!this.step6.benefits || this.step6.benefits.length === 0)) {
-      errors['benefits'] = 'Select at least one benefit type when benefits status is Yes.';
-    }
-    return errors;
-  }
-
-  sessionPatternLoading = false;
-  sessionPatternLoadError: string | null = null;
 
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
   consentAdvisories: ConsentAdvisory[] = [];
@@ -1070,10 +894,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }
     }
     return true;
-  }
-
-  isSessionPatternStep(): boolean {
-    return this.currentStep === 'session-pattern';
   }
 
   step1FieldError(field: Step1Field): string | null {
@@ -1618,110 +1438,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveSessionPattern(advance = true): void {
-    this.fieldErrors = {};
-    this.patternError = null;
-
-    if (this.patternEntriesCount === 0) {
-      this.fieldErrors['pattern_entries'] = 'Add at least one booked session.';
-      this.focusIssueField('pattern_entries');
-      return;
-    }
-
-    if (this.patternEffectiveFrom && !/^\d{4}-\d{2}-\d{2}$/.test(this.patternEffectiveFrom)) {
-      this.fieldErrors['pattern_effective_from'] = 'Effective date must be in YYYY-MM-DD format.';
-      this.focusIssueField('pattern_effective_from');
-      return;
-    }
-
-    if (this.patternEffectiveFrom && this.patternEffectiveFrom < this.todayIso) {
-      this.fieldErrors['pattern_effective_from'] = 'Effective date must be today or later.';
-      this.focusIssueField('pattern_effective_from');
-      return;
-    }
-
-    if (this.isNewRegistration) {
-      if (advance) this.nextStep();
-      return;
-    }
-
-    this.isSaving = true;
-    this.patternError = null;
-    this.errorMessage = null;
-
-    const payload: BookingPatternInput = {
-      effective_from: this.patternEffectiveFrom,
-      entries: this.patternEntriesToPayload(),
-    };
-
-    const isEditable = !!(this.editablePattern?.is_current && this.editablePattern.effective_from >= this.todayIso);
-
-    const op = isEditable
-      ? this.staffApi.updateChildBookingPattern(this.childId!, this.editablePattern!.id, payload)
-      : this.staffApi.createChildBookingPattern(this.childId!, payload);
-
-    op.subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.successMessage = 'Session pattern saved.';
-        this.toast.success(this.successMessage);
-        if (advance) this.nextStep();
-        this.loadBookingPattern();
-      },
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
-        this.toast.error(this.errorMessage);
-      },
-    });
-  }
-
-  saveFundingBenefits(advance = true): void {
-    if (this.isNewRegistration) {
-      if (advance) this.nextStep();
-      return;
-    }
-
-    this.isSaving = true;
-    this.errorMessage = null;
-    this.fieldErrors = {};
-
-    const payload: ChildFundingRecordInput = {
-      funding_enabled: !this.step6.no_funding,
-      funding_type: this.step6.funding_type as ChildFundingRecordInput['funding_type'],
-      funding_model: this.step6.funding_model as ChildFundingRecordInput['funding_model'],
-      funded_hours_per_week: this.step6.funded_hours_per_week,
-      funding_start_date: this.step6.funding_start_date || null,
-      funding_end_date: this.step6.funding_end_date || null,
-      eligibility_code: null,
-      eligibility_code_validated: false,
-      evidence_received: false,
-      benefits_status: this.step6.benefits_status as ChildFundingRecordInput['benefits_status'],
-      benefits: this.step6.benefits,
-      other_benefit_name: this.step6.other_benefit_name || null,
-      benefit_notes: this.step6.benefit_notes || null,
-      manager_notes: this.step6.manager_notes || null,
-    };
-
-    this.staffApi.patchChildFunding(this.childId!, payload).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.successMessage = 'Funding & benefits saved.';
-        this.toast.success(this.successMessage);
-        if (advance) this.nextStep();
-      },
-      error: (error) => {
-        this.isSaving = false;
-        const mapped = this.errorMapper.mapAndHandle(error);
-        this.fieldErrors = mapped.fieldErrors;
-        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
-        this.toast.error(this.errorMessage);
-      },
-    });
-  }
-
   submitRegistration(): void {
     const issues = this.collectFinalCompletionIssues();
     this.finalCompletionIssues = issues;
@@ -1757,51 +1473,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.nextStep();
-    this.initialisePatternDefaultEffectiveDate();
+    this.createChildFromConsents();
   }
 
-  advanceFromSessionPattern(): void {
-    this.patternError = null;
-
-    if (!this.hasPatternEntries) {
-      this.patternError = 'Add at least one booked session.';
-      return;
-    }
-
-    this.nextStep();
-  }
-
-  createChildFromSessionPatternStep(): void {
-    this.patternError = null;
-
-    if (!this.hasPatternEntries) {
-      this.patternError = 'Add at least one booked session.';
-      return;
-    }
-
-    if (this.patternEffectiveFrom && !/^\d{4}-\d{2}-\d{2}$/.test(this.patternEffectiveFrom)) {
-      this.patternError = 'Effective date must be in YYYY-MM-DD format.';
-      return;
-    }
-
-    if (this.patternEffectiveTo && !/^\d{4}-\d{2}-\d{2}$/.test(this.patternEffectiveTo)) {
-      this.patternError = 'Effective to date must be in YYYY-MM-DD format.';
-      return;
-    }
-
-    if (this.patternEffectiveFrom && this.patternEffectiveTo && this.patternEffectiveTo < this.patternEffectiveFrom) {
-      this.patternError = 'Effective to date must be on or after the effective from date.';
-      return;
-    }
-
-    const stepErrors = this.step6Errors;
-    if (Object.keys(stepErrors).length > 0) {
-      const firstErrorKey = Object.keys(stepErrors)[0];
-      this.errorMessage = stepErrors[firstErrorKey];
-      return;
-    }
-
+  createChildFromConsents(): void {
     const payload = this.buildCompleteRegistrationPayload();
 
     this.isSaving = true;
@@ -1852,85 +1527,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadSessionPatternSupportData(): void {
-    const branchId = this.auth.activeMembership()?.branch_id;
-    if (!branchId) return;
-    if (this.sessionPatternLoading) return;
-    this.sessionPatternLoading = true;
-    this.sessionPatternLoadError = null;
-
-    this.sessionTypesApi.listSessionTypes(branchId, { includeArchived: false }).subscribe({
-      next: (types) => {
-        this.availableSessionTypes = types;
-        this.sessionPatternLoading = false;
-      },
-      error: () => {
-        this.sessionPatternLoadError = 'Failed to load session types.';
-        this.sessionPatternLoading = false;
-        this.toast.error('Failed to load session types.');
-      },
-    });
-  }
-
-  initialisePatternDefaultEffectiveDate(): void {
-    if (!this.patternEffectiveFrom && this.step1.start_date) {
-      this.patternEffectiveFrom = this.step1.start_date;
-    }
-  }
-
-  goToSessionTypes(): void {
-    this.router.navigate(['/manager/session-types']);
-  }
-
-  togglePatternEntry(day: number, sessionTypeId: string): void {
-    if (this.patternSelectedTypeByDay[day] === sessionTypeId) {
-      this.patternSelectedTypeByDay[day] = null;
-    } else {
-      this.patternSelectedTypeByDay[day] = sessionTypeId;
-    }
-  }
-
-  isPatternEntrySelected(day: number, sessionTypeId: string): boolean {
-    return this.patternSelectedTypeByDay[day] === sessionTypeId;
-  }
-
-  get patternEntries(): { dayOfWeek: number; sessionTypeId: string }[] {
-    const entries: { dayOfWeek: number; sessionTypeId: string }[] = [];
-    for (const [day, stId] of Object.entries(this.patternSelectedTypeByDay)) {
-      if (stId !== null) {
-        entries.push({ dayOfWeek: Number(day), sessionTypeId: stId });
-      }
-    }
-    return entries;
-  }
-
-  set patternEntries(val: { dayOfWeek: number; sessionTypeId: string }[]) {
-    this.patternSelectedTypeByDay = {};
-    if (val) {
-      for (const e of val) {
-        this.patternSelectedTypeByDay[e.dayOfWeek] = e.sessionTypeId;
-      }
-    }
-  }
-
-  get hasPatternEntries(): boolean {
-    return Object.values(this.patternSelectedTypeByDay).some((v) => v !== null);
-  }
-
-  get patternEntriesCount(): number {
-    return Object.values(this.patternSelectedTypeByDay).filter((v) => v !== null).length;
-  }
-
-  private patternEntriesToPayload(): { day_of_week: number; session_type_id: string }[] {
-    const entries: { day_of_week: number; session_type_id: string }[] = [];
-    for (const [day, stId] of Object.entries(this.patternSelectedTypeByDay)) {
-      if (stId !== null) {
-        entries.push({ day_of_week: Number(day), session_type_id: stId });
-      }
-    }
-    return entries;
-  }
-
   protected toggleDebugPanel(): void {
     this.showDebugPanel = !this.showDebugPanel;
   }
@@ -1947,11 +1543,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step2: this.step2,
       step3: this.step3,
       step4: this.step4,
-      step5: {
-        patternEffectiveFrom: this.patternEffectiveFrom,
-        patternEntries: this.patternEntriesToPayload(),
-      },
-      step6: this.step6,
       consentsReviewed: this.consentsReviewed,
       parentCarersDraft: this.parentCarersDraft,
       emergencyContactsDraft: this.emergencyContactsDraft,
@@ -2028,12 +1619,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       registration_date: 'child-registration-date',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
-      funding_type: 'funding_type',
-      funded_hours_per_week: 'funded_hours_per_week',
-      funding_end_date: 'funding_end_date',
-      benefits: 'benefits-yes',
-      pattern_effective_from: 'pattern-effective-from',
-      pattern_entries: 'pattern-entries-grid',
     };
     return map[field] ?? field;
   }
@@ -2311,28 +1896,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     return this.workflowStatus?.currentConsent ? 'Complete' : 'Incomplete';
   }
 
-  private buildFundingPayload(): ChildFundingRecordInput | undefined {
-    if (!this.step6) {
-      return undefined;
-    }
-    return {
-      funding_enabled: !this.step6.no_funding,
-      funding_type: (this.step6?.funding_type ?? 'none') as FundingType,
-      funding_model: (this.step6?.funding_model ?? 'term_time_only') as FundingModel,
-      funded_hours_per_week: this.step6?.funded_hours_per_week ?? null,
-      funding_start_date: this.step6?.funding_start_date || null,
-      funding_end_date: this.step6?.funding_end_date || null,
-      eligibility_code: null,
-      eligibility_code_validated: false,
-      evidence_received: false,
-      benefits_status: (this.step6?.benefits_status ?? 'unknown') as BenefitsStatus,
-      benefits: this.step6.benefits,
-      other_benefit_name: this.step6.other_benefit_name || null,
-      benefit_notes: this.step6.benefit_notes || null,
-      manager_notes: this.step6?.manager_notes || null,
-    };
-  }
-
   private buildCompleteRegistrationPayload(): CompleteRegistrationPayload {
     const medicationNotes = [
       this.step2.medication_name && `Medication: ${this.step2.medication_name}`,
@@ -2469,8 +2032,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       professional_referrals: referrals,
     };
 
-    const funding = this.buildFundingPayload();
-
     const consent: ChildConsentInput = {
       urgent_medical_treatment: this.step4.urgent_medical_treatment,
       urgent_medical_treatment_exceptions: this.step4.urgent_medical_treatment_exceptions?.trim() || null,
@@ -2518,24 +2079,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         authorised_collectors: authorisedCollectors.map(c => this.toContactWire(c)),
       },
       consent,
-      funding,
       collection_settings: collectionSettings,
       room: {
         room_id: this.step1.primary_room_id,
         start_date: this.step1.start_date,
       },
     };
-
-    if (this.patternEntriesCount > 0) {
-      const bp: { effective_from: string; effective_to?: string; entries: { day_of_week: number; session_type_id: string }[] } = {
-        effective_from: this.patternEffectiveFrom || this.step1.start_date,
-        entries: this.patternEntriesToPayload(),
-      };
-      if (this.patternEffectiveTo) {
-        bp.effective_to = this.patternEffectiveTo;
-      }
-      payload.booking_pattern = bp;
-    }
 
     return payload;
   }
@@ -2605,8 +2154,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.collectMedicalSafetyIssues(issues);
     this.collectContactsIssues(issues);
     this.collectConsentsIssues(issues);
-    this.collectSessionPatternIssues(issues);
-    this.collectFundingBenefitsIssues(issues);
 
     return issues;
   }
@@ -2797,26 +2344,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
   }
 
-  private collectSessionPatternIssues(issues: FinalCompletionIssue[]): void {
-    if (this.isNewRegistration && this.currentStep === 'session-pattern' && !this.hasPatternEntries) {
-      issues.push({
-        stepKey: 'session-pattern',
-        field: 'pattern_entries',
-        message: 'Add at least one booked session.',
-      });
-    }
-  }
-
-  private collectFundingBenefitsIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.isNewRegistration || this.currentStep !== 'funding-benefits') {
-      return;
-    }
-    const stepErrors = this.step6Errors;
-    for (const [field, message] of Object.entries(stepErrors)) {
-      issues.push({ stepKey: 'funding-benefits', field, message });
-    }
-  }
-
   private requiredConsentMessage(key: keyof ConsentWritePayload): string {
     if (key === 'gdpr_data_processing_consent') {
       return 'Confirm GDPR data processing consent.';
@@ -2975,41 +2502,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.populateDraftsFromView(view);
         this.applyConsent(view.consent);
         this.loadStatus(StaffApiService.isLoadError(view.consent) ? undefined : view.consent);
-        this.loadBookingPattern();
       },
       error: () => {
         this.loadStatus(undefined);
-      },
-    });
-  }
-
-  private loadBookingPattern(): void {
-    if (!this.childId || this.bookingPatternLoading) return;
-    this.bookingPatternLoading = true;
-    this.bookingPatternLoadError = null;
-
-    this.staffApi.listChildBookingPatterns(this.childId).subscribe({
-      next: (patterns) => {
-        const current = patterns.find((p) => p.is_current) ?? null;
-        this.editablePattern = current;
-        this.loadedSections.add('booking-pattern');
-        if (current) {
-          this.patternEffectiveTo = current.effective_to ?? '';
-          this.patternSelectedTypeByDay = {};
-          for (const e of current.entries) {
-            this.patternSelectedTypeByDay[e.day_of_week] = e.session_type.id;
-          }
-          if (current.effective_from >= this.todayIso) {
-            this.patternEffectiveFrom = current.effective_from;
-          } else {
-            this.patternEffectiveFrom = this.todayIso;
-          }
-        }
-        this.bookingPatternLoading = false;
-      },
-      error: () => {
-        this.bookingPatternLoadError = 'Failed to load booking pattern.';
-        this.bookingPatternLoading = false;
       },
     });
   }
@@ -3260,23 +2755,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step3.collection_password = view.collection.collection_password ?? '';
       this.step3.collection_password_hint = view.collection.collection_password_hint ?? '';
     }
-
-    if (view.funding && !StaffApiService.isLoadError(view.funding)) {
-      const f = view.funding;
-      this.step6 = {
-        no_funding: !f.funding_enabled,
-        funding_type: f.funding_type === 'unknown' ? 'none' : f.funding_type,
-        funding_model: f.funding_model === 'unknown' ? 'term_time_only' : f.funding_model,
-        funded_hours_per_week: f.funded_hours_per_week,
-        funding_start_date: f.funding_start_date ?? '',
-        funding_end_date: f.funding_end_date ?? '',
-        benefits_status: f.benefits_status,
-        benefits: f.benefits ?? [],
-        other_benefit_name: f.other_benefit_name ?? '',
-        benefit_notes: f.benefit_notes ?? '',
-        manager_notes: f.manager_notes ?? '',
-      };
-    }
   }
 
   private emptyContact(relationshipToChild: string): RegistrationContactEntry {
@@ -3424,12 +2902,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step2: { ...this.step2 },
       step3: { ...this.step3 },
       step4: { ...this.step4 },
-      step5: {
-        patternEffectiveFrom: this.patternEffectiveFrom,
-        patternEffectiveTo: this.patternEffectiveTo,
-        patternSelectedTypeByDay: { ...this.patternSelectedTypeByDay },
-      },
-      step6: { ...this.step6 },
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -3493,21 +2965,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           this.consentsReviewed[key] = true;
         }
       }
-    }
-    if (draft.step5) {
-      this.patternEffectiveFrom = draft.step5.patternEffectiveFrom ?? '';
-      this.patternEffectiveTo = draft.step5.patternEffectiveTo ?? '';
-      if (draft.step5.patternSelectedTypeByDay) {
-        this.patternSelectedTypeByDay = { ...draft.step5.patternSelectedTypeByDay };
-      } else if (draft.step5.patternEntries) {
-        this.patternSelectedTypeByDay = {};
-        for (const e of draft.step5.patternEntries) {
-          this.patternSelectedTypeByDay[e.dayOfWeek] = e.sessionTypeId;
-        }
-      }
-    }
-    if (draft.step6) {
-      this.step6 = { ...this.step6, ...draft.step6 };
     }
     if (draft.consentsReviewed) this.consentsReviewed = { ...this.consentsReviewed, ...draft.consentsReviewed };
     if (draft.parentCarersDraft?.length) {
@@ -3656,13 +3113,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       consent_change_reason: null,
     };
     this.step4NoReasons = {};
-    this.patternEffectiveFrom = '';
-    this.patternEffectiveTo = '';
-    this.patternSelectedTypeByDay = {};
-    this.patternError = null;
-    this.availableSessionTypes = [];
-    this.sessionPatternLoading = false;
-    this.sessionPatternLoadError = null;
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = [true];
@@ -3674,20 +3124,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step2Submitted = false;
     this.step3Touched = {};
     this.step3Submitted = false;
-    this.step6 = {
-      no_funding: true,
-      funding_type: 'none',
-      funding_model: 'term_time_only',
-      funded_hours_per_week: null as number | null,
-      funding_start_date: '',
-      funding_end_date: '',
-      benefits_status: 'unknown',
-      benefits: [],
-      other_benefit_name: '',
-      benefit_notes: '',
-      manager_notes: '',
-    };
-    this.fundedHoursTouched = false;
     this.consentsReviewed = {};
     this.consentAdvisories = [];
     this.originalStep4Snapshot = null;

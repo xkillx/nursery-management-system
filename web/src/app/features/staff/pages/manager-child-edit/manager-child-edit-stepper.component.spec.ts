@@ -1,20 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { ManagerChildEditStepperComponent } from './manager-child-edit-stepper.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
-import { ConsentRecord, ConsentWritePayload, CompleteRegistrationPayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
+import { ConsentRecord, ConsentWritePayload, RegistrationContactEntry } from '../../models/child-legacy-compat.models';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { BookingPattern } from '../../models/booking-pattern.models';
 import { ChildRecord } from '../../models/children.models';
-import { CreateChildResponse } from '../../models/child-profile.models';
-import { ChildFundingRecord } from '../../models/child-profile.models';
 
 describe('ManagerChildEditStepperComponent', () => {
   let fixture: ComponentFixture<ManagerChildEditStepperComponent>;
@@ -752,217 +748,37 @@ describe('ManagerChildEditStepperComponent', () => {
     });
   });
 
-  describe('wizard step list (expanded to six steps)', () => {
-    it('new-registration step list has six entries with the expected keys', () => {
+  describe('wizard step list', () => {
+    it('new-registration step list has four entries with the expected keys', () => {
       component.isNewRegistration = true;
       const keys = component.steps.map(s => s.key);
-      expect(component.steps.length).toBe(6);
+      expect(component.steps.length).toBe(4);
       expect(keys).toEqual([
         'child-basics',
         'medical-health',
         'contacts-collection',
         'consents-evidence',
-        'session-pattern',
-        'funding-benefits',
       ]);
     });
 
-    it('edit-registration step list has six entries with the expected keys', () => {
+    it('edit-registration step list has four entries with the expected keys', () => {
       component.isNewRegistration = false;
       const keys = component.steps.map(s => s.key);
-      expect(component.steps.length).toBe(6);
+      expect(component.steps.length).toBe(4);
       expect(keys).toEqual([
         'child-basics',
         'medical-health',
         'contacts-collection',
         'consents-evidence',
-        'session-pattern',
-        'funding-benefits',
       ]);
     });
   });
 
-  describe('createChildFromSessionPatternStep', () => {
-    it('creates the child with booking pattern and navigates to the child detail page on success', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-      const bookingPatternSpy = spyOn(staffApi, 'createChildBookingPattern').and.callThrough();
-      const router = TestBed.inject(Router);
-      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
 
-      component.createChildFromSessionPatternStep();
 
-      expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
-      expect(payload.booking_pattern).toBeDefined();
-      expect(payload.booking_pattern!.effective_from).toBe('2026-09-01');
-      expect(payload.booking_pattern!.entries).toEqual([{ day_of_week: 1, session_type_id: 'st-1' }]);
-      expect(bookingPatternSpy).not.toHaveBeenCalled();
-      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
-      expect(localStorage.getItem('nursery.registration_intake.draft')).toBeNull();
-    });
 
-    it('rejects invalid effective_to format with patternError', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.patternEffectiveTo = 'invalid-date';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.callThrough();
 
-      component.createChildFromSessionPatternStep();
 
-      expect(createSpy).not.toHaveBeenCalled();
-      expect(component.patternError).toContain('YYYY-MM-DD');
-    });
-
-    it('does not call the API and sets patternError when patternEntries is empty', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.patternEntries = [];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.callThrough();
-
-      component.createChildFromSessionPatternStep();
-
-      expect(createSpy).not.toHaveBeenCalled();
-      expect(component.patternError).toContain('Add at least one booked session');
-    });
-  });
-
-  it('includes effective_to in payload when set', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEffectiveTo = '2026-12-31';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-
-      component.createChildFromSessionPatternStep();
-
-      expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
-      expect(payload.booking_pattern!.effective_to).toBe('2026-12-31');
-    });
-
-    it('omits effective_to from payload when not set', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEffectiveTo = '';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-
-      component.createChildFromSessionPatternStep();
-
-      expect(createSpy).toHaveBeenCalledTimes(1);
-      const payload = createSpy.calls.mostRecent().args[0] as unknown as CompleteRegistrationPayload;
-      expect(payload.booking_pattern!.effective_to).toBeUndefined();
-    });
-
-    it('rejects effective_to before effective_from with patternError', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEffectiveTo = '2026-08-01';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildWithFullProfile').and.callThrough();
-
-      component.createChildFromSessionPatternStep();
-
-      expect(createSpy).not.toHaveBeenCalled();
-      expect(component.patternError).toContain('on or after');
-    });
-
-  describe('draft restore — session-pattern step', () => {
-    it('draft restore onto session-pattern step', () => {
-      const draft = {
-        currentStep: 'session-pattern',
-        step1: { first_name: 'James', last_name: 'Smith' },
-        step5: {
-          patternEffectiveFrom: '2026-09-01',
-          patternEffectiveTo: '2026-12-31',
-          patternEntries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }],
-        },
-      };
-      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
-      component.restoreDraftIfPresentPublic();
-      expect(component.currentStep).toBe('session-pattern');
-      expect(component.patternEntries).toEqual([{ dayOfWeek: 1, sessionTypeId: 'st-1' }]);
-      expect(component.patternEffectiveFrom).toBe('2026-09-01');
-      expect(component.patternEffectiveTo).toBe('2026-12-31');
-    });
-
-    it('stale four-step draft (no step5) restores onto consents-evidence with empty step 5', () => {
-      const draft = {
-        currentStep: 'consents-evidence',
-        step1: { first_name: 'James' },
-      };
-      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
-      component.restoreDraftIfPresentPublic();
-      expect(component.currentStep).toBe('consents-evidence');
-      expect(component.patternEntries).toEqual([]);
-      expect(component.patternEffectiveFrom).toBe('');
-    });
-
-    it('restores a draft with currentStep "review-complete" onto the consents step', () => {
-      const draft = {
-        currentStep: 'review-complete',
-        step1: { first_name: 'James', last_name: 'Smith' },
-      };
-      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
-      component.restoreDraftIfPresentPublic();
-      expect(component.currentStep).toBe('consents-evidence');
-    });
-
-    it('restores a draft with currentStep "session-pattern" onto the session-pattern step', () => {
-      const draft = {
-        currentStep: 'session-pattern',
-        step1: { first_name: 'James', last_name: 'Smith' },
-      };
-      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
-      component.restoreDraftIfPresentPublic();
-      expect(component.currentStep).toBe('session-pattern');
-    });
-
-    it('restores step5 data from a draft', () => {
-      const draft = {
-        currentStep: 'consents-evidence',
-        step1: { first_name: 'James' },
-        step5: { patternEffectiveFrom: '2026-09-01', patternEffectiveTo: '2026-12-31', patternEntries: [{ dayOfWeek: 1, sessionTypeId: 'st-1' }] },
-      };
-      localStorage.setItem('nursery.registration_intake.draft', JSON.stringify(draft));
-      expect(() => component.restoreDraftIfPresentPublic()).not.toThrow();
-      expect(component.currentStep).toBe('consents-evidence');
-      expect(component.patternEntries).toEqual([{ dayOfWeek: 1, sessionTypeId: 'st-1' }]);
-      expect(component.patternEffectiveFrom).toBe('2026-09-01');
-      expect(component.patternEffectiveTo).toBe('2026-12-31');
-    });
-  });
-
-  it('goToSessionTypes navigates to session types page', () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = spyOn(router, 'navigate').and.callThrough();
-    component.goToSessionTypes();
-    expect(navigateSpy).toHaveBeenCalledWith(['/manager/session-types']);
-  });
 
   describe('page heading — edit vs new registration', () => {
     it('renders "Child registration" heading in edit mode', () => {
@@ -988,140 +804,7 @@ describe('ManagerChildEditStepperComponent', () => {
     });
   });
 
-  describe('edit mode — steps 5-6', () => {
-    function mockBookingPattern(overrides: Partial<BookingPattern> = {}): BookingPattern {
-      return {
-        id: 'pattern-1',
-        child_id: 'child-1',
-        effective_from: '2026-09-01',
-        effective_to: null,
-        is_current: true,
-        term_time_only: false,
-        created_at: '2026-06-01T00:00:00Z',
-        entries: [
-          { day_of_week: 1, session_type: { id: 'st-1', name: 'Morning', start_time: '08:00', end_time: '13:00', is_active: true } },
-          { day_of_week: 3, session_type: { id: 'st-2', name: 'Afternoon', start_time: '13:00', end_time: '18:00', is_active: true } },
-        ],
-        ...overrides,
-      };
-    }
 
-    it('returns all 6 steps when isNewRegistration is false', () => {
-      component.isNewRegistration = false;
-      expect(component.steps.length).toBe(6);
-      expect(component.steps[4].key).toBe('session-pattern');
-      expect(component.steps[5].key).toBe('funding-benefits');
-    });
-
-    it('returns all 6 steps when isNewRegistration is true', () => {
-      component.isNewRegistration = true;
-      expect(component.steps.length).toBe(6);
-    });
-
-    it('saveSessionPattern with existing editable pattern calls updateChildBookingPattern', () => {
-      component.isNewRegistration = false;
-      component.childId = 'child-1';
-      component.editablePattern = mockBookingPattern();
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      component.patternEffectiveFrom = '2026-09-01';
-
-      const staffApi = TestBed.inject(StaffApiService);
-      const updateSpy = spyOn(staffApi, 'updateChildBookingPattern').and.returnValue(of(mockBookingPattern()));
-
-      component.saveSessionPattern(false);
-
-      expect(updateSpy).toHaveBeenCalledWith('child-1', 'pattern-1', jasmine.objectContaining({
-        effective_from: '2026-09-01',
-        entries: [{ day_of_week: 1, session_type_id: 'st-1' }],
-      }));
-    });
-
-    it('saveSessionPattern without editable pattern calls createChildBookingPattern', () => {
-      component.isNewRegistration = false;
-      component.childId = 'child-1';
-      component.editablePattern = null;
-      component.patternEntries = [{ dayOfWeek: 2, sessionTypeId: 'st-2' }];
-      component.patternEffectiveFrom = '2026-10-01';
-
-      const staffApi = TestBed.inject(StaffApiService);
-      const createSpy = spyOn(staffApi, 'createChildBookingPattern').and.returnValue(of(mockBookingPattern()));
-
-      component.saveSessionPattern(false);
-
-      expect(createSpy).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-        effective_from: '2026-10-01',
-      }));
-    });
-
-    it('saveSessionPattern with empty entries shows validation error and does not call API', () => {
-      component.isNewRegistration = false;
-      component.childId = 'child-1';
-      component.patternEntries = [];
-
-      const staffApi = TestBed.inject(StaffApiService);
-      const updateSpy = spyOn(staffApi, 'updateChildBookingPattern').and.stub();
-
-      component.saveSessionPattern(false);
-
-      expect(component.fieldErrors['pattern_entries']).toBe('Add at least one booked session.');
-      expect(updateSpy).not.toHaveBeenCalled();
-    });
-
-    it('saveFundingBenefits calls patchChildFunding with correct payload', () => {
-      component.isNewRegistration = false;
-      component.childId = 'child-1';
-      component.step6 = {
-        no_funding: false,
-        funding_type: 'fifteen_hours',
-        funding_model: 'term_time_only',
-        funded_hours_per_week: 15,
-        funding_start_date: '2026-09-01',
-        funding_end_date: '',
-        benefits_status: 'no',
-        benefits: [],
-        other_benefit_name: '',
-        benefit_notes: '',
-        manager_notes: 'Test note',
-      };
-
-      const staffApi = TestBed.inject(StaffApiService);
-      const fundingSpy = spyOn(staffApi, 'patchChildFunding').and.returnValue(of({} as unknown as ChildFundingRecord));
-
-      component.saveFundingBenefits(false);
-
-      expect(fundingSpy).toHaveBeenCalledWith('child-1', jasmine.objectContaining({
-        funding_enabled: true,
-        funding_type: 'fifteen_hours',
-      }));
-    });
-
-    it('saveFundingBenefits handles API error', () => {
-      component.isNewRegistration = false;
-      component.childId = 'child-1';
-      component.step6 = {
-        no_funding: true,
-        funding_type: 'none',
-        funding_model: 'term_time_only',
-        funded_hours_per_week: null,
-        funding_start_date: '',
-        funding_end_date: '',
-        benefits_status: 'unknown',
-        benefits: [],
-        other_benefit_name: '',
-        benefit_notes: '',
-        manager_notes: '',
-      };
-
-      const staffApi = TestBed.inject(StaffApiService);
-      spyOn(staffApi, 'patchChildFunding').and.returnValue(
-        throwError(() => new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: { code: 'validation_error', message: 'Invalid funding type' } })),
-      );
-
-      component.saveFundingBenefits(false);
-
-      expect(toastErrorSpy).toHaveBeenCalled();
-    });
-  });
 
   describe('photo picker', () => {
     it('onPhotoSelected stores file and creates preview URL for valid JPEG under 5 MB', () => {
@@ -1246,76 +929,7 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(component.child!.photoUrl).toBeNull();
     });
 
-    it('createChildFromSessionPatternStep uploads staged photo after child creation', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
 
-      const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
-      component.selectedPhotoFile = file;
-
-      const staffApi = TestBed.inject(StaffApiService);
-      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-      const uploadSpy = spyOn(staffApi, 'uploadPhoto').and.returnValue(of({ photo_url: 'https://example.com/photo.jpg' }));
-      const router = TestBed.inject(Router);
-      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
-
-      component.createChildFromSessionPatternStep();
-
-      expect(uploadSpy).toHaveBeenCalledWith('new-child-1', file);
-      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
-      expect(component.selectedPhotoFile).toBeNull();
-    });
-
-    it('createChildFromSessionPatternStep navigates even when photo upload fails', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-
-      component.selectedPhotoFile = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
-
-      const staffApi = TestBed.inject(StaffApiService);
-      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-      spyOn(staffApi, 'uploadPhoto').and.returnValue(
-        throwError(() => new HttpErrorResponse({ status: 500 })),
-      );
-      const router = TestBed.inject(Router);
-      const navigateSpy = spyOn(router, 'navigate').and.callThrough();
-
-      component.createChildFromSessionPatternStep();
-
-      expect(navigateSpy).toHaveBeenCalledWith(['/manager/children', 'new-child-1']);
-      expect(component.photoErrorMessage).toContain('Photo upload failed');
-    });
-
-    it('createChildFromSessionPatternStep skips upload when no photo selected', () => {
-      fillRequiredForCompletion();
-      component.currentStep = 'session-pattern';
-      component.isNewRegistration = true;
-      component.patternEffectiveFrom = '2026-09-01';
-      component.patternEntries = [{ dayOfWeek: 1, sessionTypeId: 'st-1' }];
-      component.selectedPhotoFile = null;
-
-      const staffApi = TestBed.inject(StaffApiService);
-      spyOn(staffApi, 'createChildWithFullProfile').and.returnValue(
-        of({ id: 'new-child-1', first_name: 'James', start_date: '2026-09-01', created_sub_records: [] } as unknown as CreateChildResponse),
-      );
-      const uploadSpy = spyOn(staffApi, 'uploadPhoto');
-      const router = TestBed.inject(Router);
-      spyOn(router, 'navigate').and.callThrough();
-
-      component.createChildFromSessionPatternStep();
-
-      expect(uploadSpy).not.toHaveBeenCalled();
-    });
   });
 
   describe('developmental concerns gate', () => {
