@@ -6,7 +6,6 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCalendarDays, heroArrowLeft } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { PageBreadcrumbComponent } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
@@ -20,7 +19,6 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormsModule,
     RouterLink,
     AlertComponent,
-    PageBreadcrumbComponent,
     NgIcon,
   ],
   templateUrl: './create-ad-hoc-booking.component.html',

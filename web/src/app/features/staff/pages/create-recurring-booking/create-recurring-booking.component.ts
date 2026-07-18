@@ -6,7 +6,6 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCalendarDays, heroArrowLeft } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { PageBreadcrumbComponent } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DaySelectorComponent } from '../../../../shared/components/form/day-selector/day-selector.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
@@ -23,7 +22,6 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormsModule,
     RouterLink,
     AlertComponent,
-    PageBreadcrumbComponent,
     DaySelectorComponent,
     NgIcon,
   ],

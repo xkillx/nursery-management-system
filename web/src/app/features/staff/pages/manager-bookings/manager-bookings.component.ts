@@ -19,7 +19,6 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
-import { PageBreadcrumbComponent } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
@@ -73,7 +72,6 @@ interface SessionLookup {
     CommonModule,
     FormsModule,
     EmptyStateComponent,
-    PageBreadcrumbComponent,
     AlertComponent,
     StatusBadgeComponent,
     NgIcon,
