@@ -36,8 +36,12 @@
         </div>
 
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div>
-            <label for="rec-child" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Child *</label>
+          <app-form-field
+            label="Child"
+            labelFor="rec-child"
+            [required]="true"
+            [error]="formFieldErrors['child_id'] || ''"
+          >
             <app-search-autocomplete
               [items]="children"
               [labelFn]="childLabelFn"
@@ -45,41 +49,38 @@
               [error]="!!formFieldErrors['child_id']"
               (valueChange)="onChildSelected($event)"
             />
-            @if (formFieldErrors['child_id']) {
-              <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['child_id'] }}</p>
-            }
 
             @if (selectedChild) {
               <div class="mt-2.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <span class="flex items-center gap-1">
+                  <ng-icon name="heroCake" size="14" class="text-gray-400" aria-hidden="true" />
                   <span class="text-gray-400">DOB:</span> {{ selectedChild.dateOfBirth }}
                 </span>
                 @if (selectedChild.primaryRoomId) {
                   <span class="flex items-center gap-1">
-                    <span class="text-gray-400">Current Room:</span> {{ selectedChild.primaryRoomId }}
+                    <ng-icon name="heroHomeModern" size="14" class="text-gray-400" aria-hidden="true" />
+                    <span class="text-gray-400">Room:</span> {{ selectedChild.primaryRoomId }}
                   </span>
                 }
               </div>
             }
-          </div>
+          </app-form-field>
 
-          <div>
-            <label for="rec-room" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Room *</label>
-            <select
+          <app-form-field
+            label="Room"
+            labelFor="rec-room"
+            [required]="true"
+            [error]="formFieldErrors['room_id'] || ''"
+          >
+            <app-select
               id="rec-room"
+              name="rec-room"
               [(ngModel)]="roomId"
-              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-              [ngClass]="{ 'border-error-500': formFieldErrors['room_id'] }"
-            >
-              <option value="">Select a room</option>
-              @for (room of rooms; track room.id) {
-                <option [value]="room.id">{{ room.name }}</option>
-              }
-            </select>
-            @if (formFieldErrors['room_id']) {
-              <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['room_id'] }}</p>
-            }
-          </div>
+              [options]="roomOptions"
+              placeholder="Select a room"
+              [error]="!!formFieldErrors['room_id']"
+            />
+          </app-form-field>
         </div>
       </div>
 
@@ -94,29 +95,32 @@
 
         <div class="space-y-5">
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <div>
-              <label for="rec-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Date *</label>
-              <input
-                id="rec-start"
-                type="date"
-                [(ngModel)]="startDate"
-                class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-                [ngClass]="{ 'border-error-500': formFieldErrors['effective_start_date'] }"
-              />
-              @if (formFieldErrors['effective_start_date']) {
-                <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['effective_start_date'] }}</p>
-              }
-            </div>
+          <app-form-field
+            label="Start Date"
+            labelFor="rec-start"
+            [required]="true"
+            [error]="formFieldErrors['effective_start_date'] || ''"
+          >
+            <app-date-picker
+              id="rec-start"
+              name="rec-start"
+              [(ngModel)]="startDate"
+              placeholder="Select start date"
+              [error]="!!formFieldErrors['effective_start_date']"
+            />
+          </app-form-field>
 
-            <div>
-              <label for="rec-end" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">End Date</label>
-              <input
-                id="rec-end"
-                type="date"
-                [(ngModel)]="endDate"
-                class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-              />
-            </div>
+          <app-form-field
+            label="End Date"
+            labelFor="rec-end"
+          >
+            <app-date-picker
+              id="rec-end"
+              name="rec-end"
+              [(ngModel)]="endDate"
+              placeholder="Select end date"
+            />
+          </app-form-field>
           </div>
 
           <div>
@@ -145,29 +149,33 @@
 
           @if (fundingType && fundingType !== 'none') {
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 pt-2">
-              <div>
-                <label for="rec-funding-hours" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Hours per Week</label>
-                <input
+              <app-form-field
+                label="Funding Hours per Week"
+                labelFor="rec-funding-hours"
+              >
+                <app-input-field
                   id="rec-funding-hours"
+                  name="rec-funding-hours"
                   type="number"
                   [(ngModel)]="fundingHours"
                   min="0"
                   max="30"
-                  step="0.5"
-                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+                  [step]="0.5"
                 />
-              </div>
+              </app-form-field>
 
-              <div>
-                <label for="rec-la-ref" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">LA Reference</label>
-                <input
+              <app-form-field
+                label="LA Reference"
+                labelFor="rec-la-ref"
+              >
+                <app-input-field
                   id="rec-la-ref"
+                  name="rec-la-ref"
                   type="text"
                   [(ngModel)]="laReference"
                   placeholder="Local authority reference"
-                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
                 />
-              </div>
+              </app-form-field>
             </div>
           }
         </div>
@@ -220,7 +228,7 @@
     </section>
 
     <!-- Right Column: Summary & Widgets (30%) -->
-    <aside class="lg:col-span-3 space-y-6">
+    <aside class="lg:col-span-3 sticky top-6 space-y-6 self-start">
       <app-booking-summary-sidebar
         [childName]="childDisplayName"
         [sessionEntries]="sessionEntries"

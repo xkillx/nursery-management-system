@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap, heroCheck } from '@ng-icons/heroicons/outline';
 
 import { SessionEntry } from '../../../models/booking.models';
 import { StaffSessionType } from '../../../data/session-types-api.service';
@@ -17,12 +17,12 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 @Component({
   selector: 'app-booking-summary-sidebar',
   imports: [CommonModule, NgIcon],
+  host: { class: 'block' },
   providers: [
-    provideIcons({ heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap }),
+    provideIcons({ heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap, heroCheck }),
   ],
   template: `
-    <div class="sticky top-24 space-y-4">
-      <div class="rounded-xl border border-gray-100 bg-white shadow-theme-sm overflow-hidden dark:border-gray-800 dark:bg-gray-900/20">
+    <div class="rounded-xl border border-gray-100 bg-white shadow-theme-sm overflow-hidden dark:border-gray-800 dark:bg-gray-900/20">
         <div class="bg-brand-500 px-5 py-4 text-white">
           <div class="flex items-center gap-2">
             <ng-icon name="heroCalendarDays" size="18" aria-hidden="true" />
@@ -101,7 +101,6 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
           }
         </div>
       </div>
-    </div>
   `,
 })
 export class BookingSummarySidebarComponent implements OnChanges {
