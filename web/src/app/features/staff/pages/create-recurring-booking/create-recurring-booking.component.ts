@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
+import { RadioCardGroupComponent, RadioCardOption } from '../../../../shared/components/form/radio-card-group/radio-card-group.component';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroShieldCheck, heroEllipsisHorizontal, heroCake, heroHomeModern } from '@ng-icons/heroicons/outline';
 
@@ -37,6 +38,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     SelectComponent,
     DatePickerComponent,
     ChildAvatarComponent,
+    RadioCardGroupComponent,
     NgIcon,
   ],
   templateUrl: './create-recurring-booking.component.html',
@@ -82,7 +84,7 @@ export class CreateRecurringBookingComponent implements OnInit {
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
 
-  readonly fundingOptions = [
+  readonly fundingOptions: RadioCardOption[] = [
     { value: 'fifteen_hours', label: 'Universal (15h)', description: 'Available for 3-4 year olds' },
     { value: 'thirty_hours', label: 'Extended (30h)', description: 'Working families grant' },
     { value: 'none', label: 'None / Private', description: 'Fully chargeable rate' },
