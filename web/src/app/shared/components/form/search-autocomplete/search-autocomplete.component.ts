@@ -21,7 +21,7 @@ import { Subject, Subscription, debounceTime } from 'rxjs';
         [placeholder]="placeholder"
         [value]="displayText"
         [disabled]="disabled"
-        class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+        class="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:focus:border-brand-800"
         [ngClass]="{ 'border-error-500': error }"
         (input)="onInput($event)"
         (focus)="onFocus()"
