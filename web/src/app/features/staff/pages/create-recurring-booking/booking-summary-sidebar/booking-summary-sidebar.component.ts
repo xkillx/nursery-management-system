@@ -26,7 +26,6 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
         <!-- Header -->
         <div class="bg-brand-600 px-5 py-4.5 text-white dark:bg-brand-700">
           <h3 class="text-lg font-bold tracking-tight">Booking Summary</h3>
-          <p class="text-xs mt-0.5 opacity-80 font-medium">Ref: {{ bookingRef }}</p>
         </div>
 
         <div class="p-5 space-y-4">
@@ -159,7 +158,6 @@ export class BookingSummarySidebarComponent implements OnChanges {
   @Output() save = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 
-  bookingRef = 'REC-8834-2024';
   sessions: SessionDisplay[] = [];
   totalWeeklyHours = 0;
   chargeableHours = 0;
