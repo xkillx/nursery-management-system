@@ -165,6 +165,10 @@ export class CreateRecurringBookingComponent implements OnInit {
     });
   }
 
+  cancel(): void {
+    this.router.navigate(['/manager/bookings']);
+  }
+
   private loadData(): void {
     if (!this.siteId) return;
 

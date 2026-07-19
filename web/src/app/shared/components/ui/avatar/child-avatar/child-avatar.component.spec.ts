@@ -151,6 +151,20 @@ describe('ChildAvatarComponent', () => {
       const div = fixture.nativeElement.querySelector('div');
       expect(div.classList.contains('size-12')).toBeTrue();
     });
+
+    it('applies full size class and sets host classes', () => {
+      fixture.componentRef.setInput('name', 'John Smith');
+      fixture.componentRef.setInput('size', 'full');
+      fixture.detectChanges();
+
+      const div = fixture.nativeElement.querySelector('div');
+      expect(div.classList.contains('w-full')).toBeTrue();
+      expect(div.classList.contains('aspect-square')).toBeTrue();
+
+      const host = fixture.nativeElement;
+      expect(host.classList.contains('w-full')).toBeTrue();
+      expect(host.classList.contains('block')).toBeTrue();
+    });
   });
 
   describe('shape', () => {

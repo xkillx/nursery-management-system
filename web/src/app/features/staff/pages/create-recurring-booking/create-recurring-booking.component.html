@@ -184,32 +184,6 @@
           <p class="mt-2 text-xs text-error-600">{{ formFieldErrors['session_entries'] }}</p>
         }
       </div>
-
-      <!-- Actions -->
-      <div class="flex items-center justify-end gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
-        <a
-          routerLink="/manager/bookings"
-          class="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-        >
-          Cancel
-        </a>
-        <button
-          type="button"
-          class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-          [disabled]="!canSubmit || isSaving"
-          (click)="submit()"
-        >
-          @if (isSaving) {
-            <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            Creating...
-          } @else {
-            Create Recurring Booking
-          }
-        </button>
-      </div>
     </section>
 
     <!-- Right Column: Summary & Widgets (30%) -->
@@ -221,6 +195,10 @@
         [fundingType]="fundingType"
         [fundingHours]="fundingHours"
         [hourlyRateMinor]="hourlyRateMinor"
+        [canSubmit]="canSubmit"
+        [isSaving]="isSaving"
+        (save)="submit()"
+        (cancel)="cancel()"
       />
 
       <!-- Room Capacity Status -->
@@ -260,11 +238,11 @@
       @if (selectedChild) {
         <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
           <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Child Photo</h4>
-          <div class="flex justify-center mb-3">
+          <div class="mb-3">
             <app-child-avatar
               [photoUrl]="selectedChild.photoUrl"
               [name]="selectedChild.fullName"
-              size="xl"
+              size="full"
               shape="rounded"
             />
           </div>

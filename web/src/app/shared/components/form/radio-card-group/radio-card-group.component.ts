@@ -19,13 +19,13 @@ export interface RadioCardOption {
     },
   ],
   template: `
-    <div class="flex flex-col gap-3">
+    <div class="flex flex-col sm:flex-row gap-4">
       @for (opt of options(); track opt.value) {
         <label
-          class="relative flex cursor-pointer select-none items-start gap-3 text-sm font-medium"
+          class="relative flex flex-1 cursor-pointer select-none items-center gap-4 rounded-xl border p-4 transition-all shadow-theme-xs"
           [ngClass]="value === opt.value
-            ? 'text-gray-900 dark:text-white'
-            : 'text-gray-700 dark:text-gray-400'"
+            ? 'border-brand-500 bg-white dark:bg-gray-900/10 text-gray-900 dark:text-white'
+            : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/10 text-gray-700 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'"
         >
           <input
             type="radio"
@@ -36,10 +36,10 @@ export interface RadioCardOption {
             class="sr-only"
           />
           <span
-            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.25px]"
+            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.25px] transition-all"
             [ngClass]="value === opt.value
               ? 'border-brand-500 bg-brand-500'
-              : 'bg-transparent border-gray-300 dark:border-gray-700'"
+              : 'bg-transparent border-gray-400 dark:border-gray-600'"
           >
             <span
               class="h-2 w-2 rounded-full bg-white"
@@ -47,9 +47,9 @@ export interface RadioCardOption {
             ></span>
           </span>
           <span class="flex flex-col">
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ opt.label }}</span>
+            <span class="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{{ opt.label }}</span>
             @if (opt.description) {
-              <span class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 leading-normal">{{ opt.description }}</span>
+              <span class="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-normal">{{ opt.description }}</span>
             }
           </span>
         </label>

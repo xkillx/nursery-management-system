@@ -5,6 +5,11 @@ import { ChildPhotoService } from '../../../../services/child-photo.service';
 @Component({
   selector: 'app-child-avatar',
   imports: [CommonModule],
+  host: {
+    '[class.w-full]': 'size() === "full"',
+    '[class.block]': 'size() === "full"',
+    '[class.inline-block]': 'size() !== "full"'
+  },
   template: `<div
     class="flex items-center justify-center overflow-hidden"
     [ngClass]="[sizeClass, shapeClass, bgClass]"
@@ -26,9 +31,9 @@ export class ChildAvatarComponent {
 
   photoUrl = input<string | null>(null);
   name = input('');
-  size = input<'sm' | 'md' | 'lg' | 'xl'>('md');
-  shape = input<'circle' | 'rounded'>('circle');
+  size = input<'sm' | 'md' | 'lg' | 'xl' | 'full'>('md');
   statusColor = input<string | null>(null);
+  shape = input<'circle' | 'rounded'>('circle');
 
   imageError = false;
   resolvedUrl = signal<string | null>(null);
@@ -62,6 +67,7 @@ export class ChildAvatarComponent {
       md: 'size-10',
       lg: 'size-12',
       xl: 'size-24',
+      full: 'w-full aspect-square',
     };
     return sizes[this.size()] || sizes['md'];
   }
@@ -72,6 +78,7 @@ export class ChildAvatarComponent {
       md: 'text-sm',
       lg: 'text-base',
       xl: 'text-2xl',
+      full: 'text-4xl font-bold',
     };
     return sizes[this.size()] || sizes['md'];
   }
