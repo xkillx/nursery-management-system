@@ -2,13 +2,18 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroShieldCheck, heroEllipsisHorizontal } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroShieldCheck, heroEllipsisHorizontal, heroCake, heroHomeModern } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { SessionGridComponent } from '../../../../shared/components/form/session-grid/session-grid.component';
 import { BookingSummarySidebarComponent } from './booking-summary-sidebar/booking-summary-sidebar.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
@@ -27,6 +32,11 @@ import { AuthService } from '../../../../core/services/auth.service';
     SearchAutocompleteComponent,
     SessionGridComponent,
     BookingSummarySidebarComponent,
+    FormFieldComponent,
+    InputFieldComponent,
+    SelectComponent,
+    DatePickerComponent,
+    ChildAvatarComponent,
     NgIcon,
   ],
   templateUrl: './create-recurring-booking.component.html',
@@ -38,6 +48,8 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroCreditCard,
       heroShieldCheck,
       heroEllipsisHorizontal,
+      heroCake,
+      heroHomeModern,
     }),
   ],
 })
@@ -93,6 +105,10 @@ export class CreateRecurringBookingComponent implements OnInit {
     const room = this.selectedRoom;
     if (!room || !room.capacity) return 0;
     return Math.round(((room.assignedCount || 0) / room.capacity) * 100);
+  }
+
+  get roomOptions(): Option[] {
+    return this.rooms.map((r) => ({ value: r.id, label: r.name }));
   }
 
   ngOnInit(): void {

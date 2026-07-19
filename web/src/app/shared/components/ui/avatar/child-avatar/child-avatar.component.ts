@@ -26,7 +26,7 @@ export class ChildAvatarComponent {
 
   photoUrl = input<string | null>(null);
   name = input('');
-  size = input<'sm' | 'md' | 'lg'>('md');
+  size = input<'sm' | 'md' | 'lg' | 'xl'>('md');
   shape = input<'circle' | 'rounded'>('circle');
   statusColor = input<string | null>(null);
 
@@ -61,6 +61,7 @@ export class ChildAvatarComponent {
       sm: 'size-8',
       md: 'size-10',
       lg: 'size-12',
+      xl: 'size-24',
     };
     return sizes[this.size()] || sizes['md'];
   }
@@ -70,6 +71,7 @@ export class ChildAvatarComponent {
       sm: 'text-xs',
       md: 'text-sm',
       lg: 'text-base',
+      xl: 'text-2xl',
     };
     return sizes[this.size()] || sizes['md'];
   }
