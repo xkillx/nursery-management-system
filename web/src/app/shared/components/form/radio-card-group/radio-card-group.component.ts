@@ -19,13 +19,13 @@ export interface RadioCardOption {
     },
   ],
   template: `
-    <div class="grid gap-3" [ngClass]="gridClass()">
+    <div class="flex flex-col gap-3">
       @for (opt of options(); track opt.value) {
         <label
-          class="relative flex cursor-pointer flex-col rounded-xl border p-4 transition-all duration-200"
+          class="relative flex cursor-pointer select-none items-start gap-3 text-sm font-medium"
           [ngClass]="value === opt.value
-            ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 ring-1 ring-brand-500'
-            : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'"
+            ? 'text-gray-900 dark:text-white'
+            : 'text-gray-700 dark:text-gray-400'"
         >
           <input
             type="radio"
@@ -35,10 +35,23 @@ export interface RadioCardOption {
             (change)="select(opt.value)"
             class="sr-only"
           />
-          <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ opt.label }}</span>
-          @if (opt.description) {
-            <span class="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-normal">{{ opt.description }}</span>
-          }
+          <span
+            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.25px]"
+            [ngClass]="value === opt.value
+              ? 'border-brand-500 bg-brand-500'
+              : 'bg-transparent border-gray-300 dark:border-gray-700'"
+          >
+            <span
+              class="h-2 w-2 rounded-full bg-white"
+              [ngClass]="value === opt.value ? 'block' : 'hidden'"
+            ></span>
+          </span>
+          <span class="flex flex-col">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ opt.label }}</span>
+            @if (opt.description) {
+              <span class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 leading-normal">{{ opt.description }}</span>
+            }
+          </span>
         </label>
       }
     </div>
@@ -47,7 +60,6 @@ export interface RadioCardOption {
 export class RadioCardGroupComponent implements ControlValueAccessor {
   options = input.required<RadioCardOption[]>();
   name = input('radio-card');
-  gridClass = input('sm:grid-cols-3');
 
   value = '';
 
