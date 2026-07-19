@@ -343,7 +343,7 @@ export class OwnerRoomsComponent implements OnInit {
 
     this.loadingRooms = true;
     this.pageError = null;
-    this.api.listRooms(this.selectedSiteId, true, true).subscribe({
+    this.api.listRooms(this.selectedSiteId, true, true, 200).subscribe({
       next: (rooms) => {
         this.rooms = rooms;
         this.loadingRooms = false;

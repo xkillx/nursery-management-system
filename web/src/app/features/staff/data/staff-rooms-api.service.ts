@@ -20,6 +20,7 @@ export interface StaffRoom {
 export interface StaffListRoomsOptions {
   includeArchived?: boolean;
   includeOccupancy?: boolean;
+  pageSize?: number;
 }
 
 interface ApiRoom {
@@ -53,6 +54,9 @@ export class StaffRoomsApiService {
     }
     if (options.includeOccupancy) {
       params = params.set('include', 'occupancy');
+    }
+    if (options.pageSize) {
+      params = params.set('page_size', String(options.pageSize));
     }
     return this.http
       .get<ApiRoomListResponse>(apiUrl(`/sites/${siteId}/rooms`), { params })

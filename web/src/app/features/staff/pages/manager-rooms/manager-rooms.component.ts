@@ -258,7 +258,7 @@ export class ManagerRoomsComponent implements OnInit {
     this.loadingRooms = true;
     this.pageError = null;
     this.roomsApi
-      .listRooms(this.selectedSiteId, { includeArchived: true, includeOccupancy: true })
+      .listRooms(this.selectedSiteId, { includeArchived: true, includeOccupancy: true, pageSize: 200 })
       .subscribe({
         next: (rooms) => {
           this.rooms = rooms;
