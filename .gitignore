@@ -48,6 +48,8 @@ web/bazel-out/
 web/.angular/cache/
 web/coverage/
 web/.sass-cache/
+web/test-results/
+web/playwright-report/
 npm-debug.log
 yarn-error.log
 testem.log

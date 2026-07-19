@@ -1,0 +1,262 @@
+import { Page, Locator, expect } from '@playwright/test';
+
+export class ChildRegistrationPage {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  // Step navigation
+  async goToStep(stepNumber: number): Promise<void> {
+    const stepButtons = this.page.locator('nav[aria-label="Registration progress"] ol li button');
+    await stepButtons.nth(stepNumber - 1).click();
+  }
+
+  async expectStepActive(stepNumber: number): Promise<void> {
+    const stepButtons = this.page.locator('nav[aria-label="Registration progress"] ol li button');
+    await expect(stepButtons.nth(stepNumber - 1)).toHaveAttribute('aria-current', 'step');
+  }
+
+  async clickContinue(): Promise<void> {
+    await this.page.getByRole('button', { name: /Continue/ }).click();
+  }
+
+  async clickSaveChanges(): Promise<void> {
+    await this.page.getByRole('button', { name: /Save changes/ }).click();
+  }
+
+  async clickBack(): Promise<void> {
+    await this.page.getByRole('button', { name: /Back/ }).click();
+  }
+
+  // Step 1: Child Basics
+  async fillChildBasics(data: {
+    firstName: string;
+    lastName?: string;
+    dateOfBirth: string;
+    startDate: string;
+    homeAddress: string;
+    language?: string;
+    sex?: string;
+  }): Promise<void> {
+    await this.input('child-first-name').fill(data.firstName);
+    if (data.lastName) {
+      await this.input('child-last-name').fill(data.lastName);
+    }
+    await this.fillDatePicker('child-date-of-birth', data.dateOfBirth);
+    await this.fillDatePicker('child-start-date', data.startDate);
+    await this.input('child-home-address').fill(data.homeAddress);
+
+    if (data.language) {
+      await this.selectDropdown('child-first-language', data.language);
+    }
+
+    if (data.sex) {
+      await this.clickRadio('child-sex', data.sex);
+    }
+  }
+
+  async selectFirstAvailableRoom(): Promise<void> {
+    // Wait for the room select to appear (loaded via API)
+    const select = this.page.locator('select#child-primary-room, #child-primary-room select').first();
+    try {
+      await select.waitFor({ state: 'visible', timeout: 5000 });
+      const options = select.locator('option:not([value=""])');
+      const count = await options.count();
+      if (count > 0) {
+        const value = await options.first().getAttribute('value');
+        if (value) await select.selectOption(value);
+      }
+    } catch {
+      // Room select may not appear if API returns no rooms
+      // Log for debugging but don't fail - the form validation will catch this
+      console.log('Warning: No room select found - rooms may not be configured');
+    }
+  }
+
+  async hasRoomSelect(): Promise<boolean> {
+    const select = this.page.locator('select#child-primary-room, #child-primary-room select').first();
+    return select.isVisible({ timeout: 2000 }).catch(() => false);
+  }
+
+  async selectDisabilityStatus(status: 'yes' | 'no'): Promise<void> {
+    await this.clickRadio('child-disability', status);
+  }
+
+  // Step 2: Medical & Health
+  async selectAllergyStatus(status: 'yes' | 'no'): Promise<void> {
+    await this.clickRadio('allergy-status', status);
+  }
+
+  async fillAllergyDetails(details: string): Promise<void> {
+    await this.page.locator('app-text-area#allergy-details textarea, #allergy-details').first().fill(details);
+  }
+
+  async selectMedicationStatus(status: 'yes' | 'no'): Promise<void> {
+    await this.clickRadio('medication-status', status);
+  }
+
+  async fillMedicationDetails(name: string, dosage: string): Promise<void> {
+    await this.input('medication-name').fill(name);
+    await this.input('medication-dosage').fill(dosage);
+  }
+
+  async selectDietaryStatus(status: 'none' | 'details'): Promise<void> {
+    await this.clickRadio('dietary', status);
+  }
+
+  async selectMedicalHistoryStatus(status: 'none' | 'details'): Promise<void> {
+    await this.clickRadio('med-history', status);
+  }
+
+  async selectSocialServicesStatus(status: 'yes' | 'no'): Promise<void> {
+    await this.clickRadio('social-services', status);
+  }
+
+  async selectImmunisationStatus(status: 'up_to_date' | 'partial' | 'refused'): Promise<void> {
+    const id = status === 'up_to_date' ? 'imm-up-to-date' : `imm-${status}`;
+    await this.clickRadioByFor(id);
+  }
+
+  async selectDevelopmentalConcerns(value: 'yes' | 'no'): Promise<void> {
+    await this.clickRadio('developmental-concerns', value);
+  }
+
+  // Step 3: Contacts & Collection
+  async fillParentCarer(data: {
+    fullName: string;
+    relationship: string;
+    telephone: string;
+    email?: string;
+    hasResponsibility?: boolean;
+    addressStreet?: string;
+    addressCity?: string;
+    addressPostcode?: string;
+  }): Promise<void> {
+    await this.input('primary-full-name').fill(data.fullName);
+    await this.selectDropdown('primary-relationship', data.relationship);
+    await this.input('primary-telephone').fill(data.telephone);
+    if (data.email) {
+      await this.input('primary-email').fill(data.email);
+    }
+    if (data.addressStreet) {
+      await this.input('parent1-address-street').fill(data.addressStreet);
+    }
+    if (data.addressCity) {
+      await this.input('parent1-address-city').fill(data.addressCity);
+    }
+    if (data.addressPostcode) {
+      await this.input('parent1-address-postcode').fill(data.addressPostcode);
+    }
+    if (data.hasResponsibility !== undefined) {
+      await this.clickRadio('parent1-responsibility', data.hasResponsibility ? 'yes' : 'no');
+    }
+  }
+
+  async fillEmergencyContact(data: {
+    fullName: string;
+    relationship: string;
+    telephone: string;
+  }): Promise<void> {
+    const contactSection = this.page.locator('[data-focus-target="emergency-contacts-group"]');
+    await contactSection.locator('input[type="text"]').first().fill(data.fullName);
+    await contactSection.locator('select').first().selectOption({ label: data.relationship });
+    await contactSection.locator('input[type="tel"]').fill(data.telephone);
+  }
+
+  // Step 4: Consents
+  async toggleConsent(key: string): Promise<void> {
+    await this.page.locator(`[data-focus-target="${key}"]`).click();
+  }
+
+  async markAllRequiredConsents(): Promise<void> {
+    const requiredKeys = [
+      'gdpr_data_processing_consent',
+      'information_truthfulness_declaration',
+      'safeguarding_reporting_acknowledgement',
+      'information_sharing_consent',
+      'urgent_medical_treatment',
+      'plasters',
+    ];
+    for (const key of requiredKeys) {
+      await this.page.locator(`[data-focus-target="${key}"]`).click();
+    }
+  }
+
+  async fillSignerName(name: string): Promise<void> {
+    await this.input('signer-name').fill(name);
+  }
+
+  async clickSubmit(): Promise<void> {
+    await this.page.getByRole('button', { name: /Submit registration|Mark Reviewed|Complete/i }).click();
+  }
+
+  // Validation helpers
+  async expectFieldError(message: string): Promise<void> {
+    await expect(this.page.getByText(message)).toBeVisible();
+  }
+
+  async expectNoFieldError(message: string): Promise<void> {
+    await expect(this.page.getByText(message)).not.toBeVisible();
+  }
+
+  async expectStepLocked(stepNumber: number): Promise<void> {
+    const stepButtons = this.page.locator('nav[aria-label="Registration progress"] ol li button');
+    await expect(stepButtons.nth(stepNumber - 1)).toHaveAttribute('aria-disabled', 'true');
+  }
+
+  async expectToastVisible(): Promise<void> {
+    await expect(this.page.locator('.toast, [role="status"]').first()).toBeVisible({ timeout: 5000 });
+  }
+
+  // --- Private helpers ---
+
+  private input(id: string): Locator {
+    return this.page.locator(`input#${id}`);
+  }
+
+  private async clickRadio(name: string, value: string): Promise<void> {
+    await this.page.locator(`label[for="${name}-${value}"]`).click();
+  }
+
+  private async clickRadioByFor(forValue: string): Promise<void> {
+    await this.page.locator(`label[for="${forValue}"]`).click();
+  }
+
+  private async fillDatePicker(id: string, dateStr: string): Promise<void> {
+    // id is duplicated on host <app-date-picker> and inner <input>.
+    // Query the actual <input> element which holds the flatpickr instance.
+    const result = await this.page.evaluate(
+      ({ id, dateStr }) => {
+        const inputs = document.querySelectorAll(`input#${id}`);
+        for (const input of Array.from(inputs)) {
+          const fp = (input as any)._flatpickr;
+          if (fp) {
+            fp.setDate(dateStr, true);
+            return true;
+          }
+        }
+        return false;
+      },
+      { id, dateStr }
+    );
+    if (!result) {
+      // Fallback: type into the input directly
+      const input = this.page.locator(`input#${id}`).last();
+      await input.click();
+      await input.fill(dateStr);
+      await input.press('Escape');
+    }
+  }
+
+  private async selectDropdown(id: string, optionText: string): Promise<void> {
+    const select = this.page.locator(`#${id} select`).first();
+    if (await select.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await select.selectOption({ label: optionText });
+    } else {
+      await this.page.locator(`#${id}`).click();
+      await this.page.getByRole('option', { name: optionText }).click();
+    }
+  }
+}
