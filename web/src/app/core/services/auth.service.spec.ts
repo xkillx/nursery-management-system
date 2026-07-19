@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TimeoutError } from 'rxjs';
 
 import { AuthResponse } from '../models/auth.models';
 import { AuthService } from './auth.service';
@@ -281,4 +282,44 @@ describe('AuthService', () => {
     expect(service.activeMembership()?.tenant_name).toBe('Little Sprouts Nursery');
     expect(service.activeMembership()?.role).toBe('owner');
   });
+
+  it('login times out after 15 seconds', fakeAsync(() => {
+    let error: unknown;
+    service.login('manager@example.com', 'password123').subscribe({
+      error: (e) => { error = e; },
+    });
+
+    httpMock.expectOne('/api/v1/auth/login');
+
+    tick(15_000);
+
+    expect(error).toBeInstanceOf(TimeoutError);
+    expect(service.isAuthenticated()).toBeFalse();
+  }));
+
+  it('refresh times out after 10 seconds', fakeAsync(() => {
+    let error: unknown;
+    service.refresh().subscribe({
+      error: (e) => { error = e; },
+    });
+
+    httpMock.expectOne('/api/v1/auth/refresh');
+
+    tick(10_000);
+
+    expect(error).toBeInstanceOf(TimeoutError);
+    expect(service.isAuthenticated()).toBeFalse();
+  }));
+
+  it('bootstrapSession resolves even when refresh times out', fakeAsync(() => {
+    let resolved = false;
+    service.bootstrapSession().then(() => { resolved = true; });
+
+    httpMock.expectOne('/api/v1/auth/refresh');
+
+    tick(10_000);
+
+    expect(resolved).toBeTrue();
+    expect(service.isAuthenticated()).toBeFalse();
+  }));
 });

@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, map, of, tap, timeout } from 'rxjs';
 
 import { apiUrl } from '../config/api.config';
 import { AppRole } from '../constants/roles';
@@ -30,6 +30,7 @@ export class AuthService {
     }
 
     return this.http.post<AuthResponse>(apiUrl('/auth/login'), payload, { withCredentials: true }).pipe(
+      timeout(15_000),
       tap((response) => this.applySession(response)),
     );
   }
@@ -40,7 +41,10 @@ export class AuthService {
         withCredentials: true,
         headers: this.csrfHeaders(),
       })
-      .pipe(tap((response) => this.applySession(response)));
+      .pipe(
+        timeout(10_000),
+        tap((response) => this.applySession(response)),
+      );
   }
 
   logout(): Observable<void> {
