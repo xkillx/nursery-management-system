@@ -47,7 +47,7 @@ BEGIN
 
         CASE OLD.status
             WHEN 'draft' THEN
-                IF NEW.status NOT IN ('issued') THEN
+                IF NEW.status NOT IN ('issued', 'void') THEN
                     RAISE EXCEPTION 'invoice % cannot transition from draft to %', OLD.id, NEW.status;
                 END IF;
             WHEN 'issued' THEN
@@ -235,7 +235,11 @@ CREATE TABLE branches (
     is_active boolean DEFAULT true NOT NULL,
     core_hourly_rate_minor integer,
     ad_hoc_rate_multiplier numeric(4,2) NOT NULL DEFAULT 1.50,
-    CONSTRAINT branches_core_hourly_rate_positive_check CHECK (((core_hourly_rate_minor IS NULL) OR (core_hourly_rate_minor > 0)))
+    overdue_grace_days integer NOT NULL DEFAULT 3,
+    reminder_days_before integer NOT NULL DEFAULT 3,
+    CONSTRAINT branches_core_hourly_rate_positive_check CHECK (((core_hourly_rate_minor IS NULL) OR (core_hourly_rate_minor > 0))),
+    CONSTRAINT branches_overdue_grace_days_range CHECK (overdue_grace_days >= 0 AND overdue_grace_days <= 30),
+    CONSTRAINT branches_reminder_days_before_range CHECK (reminder_days_before >= 1 AND reminder_days_before <= 30)
 );
 
 CREATE TABLE site_profiles (
@@ -322,6 +326,7 @@ CREATE TABLE children (
     middle_name text,
     last_name text,
     current_term_id uuid,
+    profile_photo_path text,
     CONSTRAINT children_enrollment_dates_check CHECK (((end_date IS NULL) OR (start_date <= end_date))),
     CONSTRAINT children_first_name_not_blank_check CHECK ((btrim(first_name) <> ''::text))
 );
@@ -620,8 +625,27 @@ CREATE TABLE funding_profiles (
     funded_allowance_minutes integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    funding_type text,
+    funding_model text,
+    funded_hours_per_week numeric(5,2),
     CONSTRAINT funding_profiles_allowance_bounds_check CHECK (((funded_allowance_minutes >= 0) AND (funded_allowance_minutes <= 44640))),
     CONSTRAINT funding_profiles_billing_month_first_day_check CHECK ((billing_month = (date_trunc('month'::text, (billing_month)::timestamp with time zone))::date))
+);
+
+CREATE TABLE child_funding_history (
+    id uuid PRIMARY KEY,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    funding_type text,
+    funding_model text,
+    funded_hours_per_week numeric(5,2),
+    funding_start_date date,
+    funding_end_date date,
+    changed_at timestamptz NOT NULL DEFAULT now(),
+    changed_by_user_id uuid NOT NULL,
+    CONSTRAINT chk_funding_type CHECK (funding_type IS NULL OR funding_type IN ('fifteen_hours', 'thirty_hours')),
+    CONSTRAINT chk_funding_model CHECK (funding_model IS NULL OR funding_model IN ('term_time', 'stretched'))
 );
 
 CREATE TABLE session_types (
@@ -632,13 +656,9 @@ CREATE TABLE session_types (
     start_time time NOT NULL,
     end_time time NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
-    kind text NOT NULL DEFAULT 'standard',
-    flat_fee_minor integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT session_types_time_check CHECK ((start_time < end_time)),
-    CONSTRAINT session_types_kind_check CHECK (kind IN ('standard', 'wraparound_before', 'wraparound_after', 'core', 'extended')),
-    CONSTRAINT session_types_flat_fee_nonneg CHECK (flat_fee_minor IS NULL OR flat_fee_minor >= 0)
+    CONSTRAINT session_types_time_check CHECK ((start_time < end_time))
 );
 
 CREATE TABLE child_booking_patterns (
@@ -688,6 +708,31 @@ CREATE TABLE session_template_entries (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT session_template_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 5)))
+);
+
+CREATE TABLE bookings (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    session_template_id uuid,
+    room_id uuid NOT NULL,
+    days_of_week integer[] NOT NULL,
+    effective_start_date date NOT NULL,
+    effective_end_date date,
+    funding_type text,
+    funding_hours_per_week numeric(5,2),
+    la_reference text,
+    status text NOT NULL DEFAULT 'active',
+    booked_by_membership_id uuid NOT NULL,
+    session_entries jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT bookings_status_check CHECK (status IN ('active', 'paused', 'cancelled')),
+    CONSTRAINT bookings_funding_type_check CHECK (funding_type IS NULL OR funding_type IN ('none', 'fifteen_hours', 'thirty_hours', 'two_year_old', 'custom')),
+    CONSTRAINT bookings_days_of_week_check CHECK (array_length(days_of_week, 1) > 0),
+    CONSTRAINT bookings_effective_dates_check CHECK (effective_end_date IS NULL OR effective_end_date >= effective_start_date),
+    CONSTRAINT bookings_session_source_check CHECK (session_template_id IS NOT NULL OR session_entries IS NOT NULL)
 );
 
 CREATE TABLE term (
@@ -872,6 +917,8 @@ CREATE TABLE invoices (
     calculation_details jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    voided_at timestamp with time zone,
+    void_reason text,
     CONSTRAINT invoices_adjustment_shape CHECK (((invoice_kind <> 'adjustment'::text) OR ((adjusts_invoice_id IS NOT NULL) AND (adjustment_reason_code IS NOT NULL) AND (btrim(adjustment_reason_code) <> ''::text) AND (adjustment_reason_note IS NOT NULL) AND (btrim(adjustment_reason_note) <> ''::text)))),
     CONSTRAINT invoices_amount_paid_lte_total CHECK ((amount_paid_minor <= total_due_minor)),
     CONSTRAINT invoices_amount_paid_nonneg CHECK ((amount_paid_minor >= 0)),
@@ -886,9 +933,10 @@ CREATE TABLE invoices (
     CONSTRAINT invoices_paid_shape CHECK (((status <> 'paid'::text) OR ((paid_at IS NOT NULL) AND (amount_paid_minor = total_due_minor)))),
     CONSTRAINT invoices_payment_failed_shape CHECK (((status <> 'payment_failed'::text) OR (payment_failed_at IS NOT NULL))),
     CONSTRAINT invoices_period_range CHECK ((period_start_date <= period_end_date)),
-    CONSTRAINT invoices_status_valid CHECK ((status = ANY (ARRAY['draft'::text, 'issued'::text, 'payment_failed'::text, 'paid'::text, 'overdue'::text]))),
+    CONSTRAINT invoices_status_valid CHECK ((status = ANY (ARRAY['draft'::text, 'issued'::text, 'payment_failed'::text, 'paid'::text, 'overdue'::text, 'void'::text]))),
     CONSTRAINT invoices_subtotal_nonneg CHECK ((subtotal_minor >= 0)),
-    CONSTRAINT invoices_total_due_nonneg CHECK ((total_due_minor >= 0))
+    CONSTRAINT invoices_total_due_nonneg CHECK ((total_due_minor >= 0)),
+    CONSTRAINT invoices_void_shape CHECK (((status <> 'void'::text) OR ((voided_at IS NOT NULL) AND (void_reason IS NOT NULL) AND (btrim(void_reason) <> ''::text))))
 );
 
 CREATE TABLE invoice_lines (
@@ -1097,6 +1145,33 @@ CREATE TABLE password_reset_tokens (
     CONSTRAINT password_reset_tokens_consumed_shape_check CHECK (((used_at IS NULL) OR (superseded_at IS NULL)))
 );
 
+CREATE TABLE invoice_reminder_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    invoice_id uuid NOT NULL,
+    reminder_type text NOT NULL CHECK (reminder_type IN ('due_soon', 'due_today')),
+    sent_at_date date NOT NULL DEFAULT CURRENT_DATE,
+    sent_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (invoice_id, reminder_type, sent_at_date)
+);
+
+CREATE TABLE payment_links (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    invoice_id uuid NOT NULL,
+    stripe_payment_link_id text NOT NULL,
+    stripe_payment_link_url text NOT NULL,
+    amount_minor integer NOT NULL,
+    currency_code text NOT NULL,
+    created_by_user_id uuid NOT NULL,
+    created_by_membership_id uuid NOT NULL,
+    status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deactivated')),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 -- Primary keys
 
 ALTER TABLE ONLY tenants
@@ -1245,6 +1320,9 @@ ALTER TABLE ONLY session_template_entries
 
 ALTER TABLE ONLY session_template_entries
     ADD CONSTRAINT session_template_entries_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY term
     ADD CONSTRAINT term_pkey PRIMARY KEY (id);
@@ -1504,6 +1582,10 @@ CREATE UNIQUE INDEX session_template_entries_unique_day_session
 CREATE INDEX session_template_entries_by_template
     ON session_template_entries USING btree (tenant_id, branch_id, template_id, day_of_week);
 
+CREATE INDEX idx_bookings_tenant_branch_child ON bookings USING btree (tenant_id, branch_id, child_id);
+CREATE INDEX idx_bookings_tenant_branch_room_dates ON bookings USING btree (tenant_id, branch_id, room_id, effective_start_date);
+CREATE INDEX idx_bookings_tenant_branch_status ON bookings USING btree (tenant_id, branch_id, status);
+
 CREATE UNIQUE INDEX term_one_active_per_child ON term USING btree (tenant_id, branch_id, child_id)
     WHERE (status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text]));
 
@@ -1553,6 +1635,16 @@ CREATE UNIQUE INDEX branch_closure_days_tenant_branch_date_idx
 
 CREATE INDEX branch_closure_days_tenant_branch_month_idx
     ON branch_closure_days (tenant_id, branch_id, date);
+
+CREATE INDEX idx_funding_history_lookup
+    ON child_funding_history (tenant_id, branch_id, child_id, changed_at DESC);
+
+CREATE UNIQUE INDEX idx_payment_links_active_per_invoice
+    ON payment_links (tenant_id, branch_id, invoice_id)
+    WHERE status = 'active';
+
+CREATE INDEX idx_payment_links_invoice_id
+    ON payment_links (tenant_id, branch_id, invoice_id);
 
 -- Triggers
 
@@ -1767,6 +1859,21 @@ ALTER TABLE ONLY session_template_entries
 ALTER TABLE ONLY session_template_entries
     ADD CONSTRAINT session_template_entries_session_type_fkey FOREIGN KEY (tenant_id, branch_id, session_type_id) REFERENCES session_types(tenant_id, branch_id, id);
 
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
+
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_child_id_fkey FOREIGN KEY (child_id) REFERENCES children(id);
+
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_session_template_id_fkey FOREIGN KEY (session_template_id) REFERENCES session_templates(id);
+
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_room_id_fkey FOREIGN KEY (room_id) REFERENCES rooms(id);
+
 ALTER TABLE ONLY term
     ADD CONSTRAINT term_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
@@ -1904,6 +2011,12 @@ ALTER TABLE ONLY payment_reconciliation_records
 
 ALTER TABLE ONLY payment_reconciliation_records
     ADD CONSTRAINT fk_reconciliation_webhook_event FOREIGN KEY (stripe_webhook_event_id) REFERENCES stripe_webhook_events(id);
+
+ALTER TABLE ONLY invoice_reminder_log
+    ADD CONSTRAINT invoice_reminder_log_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES invoices(id);
+
+ALTER TABLE ONLY payment_links
+    ADD CONSTRAINT payment_links_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES invoices(id);
 
 ALTER TABLE ONLY manager_invites
     ADD CONSTRAINT manager_invites_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
