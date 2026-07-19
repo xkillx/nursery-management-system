@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsManager, navigateToNewRegistration, ensureTestRoomExists } from './helpers/auth';
+import { loginAsManager, navigateToNewRegistration, ensureTestRoomsExist } from './helpers/auth';
 import { ChildRegistrationPage } from './page-objects/child-registration.page';
 
 test.describe('Child Registration - Consents & Edge Cases', () => {
@@ -7,7 +7,7 @@ test.describe('Child Registration - Consents & Edge Cases', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAsManager(page);
-    await ensureTestRoomExists(page);
+    await ensureTestRoomsExist(page);
     await navigateToNewRegistration(page);
     regPage = new ChildRegistrationPage(page);
   });
