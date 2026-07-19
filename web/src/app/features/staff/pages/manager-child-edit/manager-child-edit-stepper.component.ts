@@ -41,11 +41,11 @@ import {
   heroXCircle,
 } from '@ng-icons/heroicons/outline';
 
-import { environment } from '../../../../../environments/environment';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { DebugPanelComponent } from '../../../../shared/components/common/debug-panel/debug-panel.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { SwitchComponent } from '../../../../shared/components/form/input/switch.component';
@@ -295,6 +295,7 @@ interface RegistrationDraft {
     SelectComponent,
     TextAreaComponent,
     DatePickerComponent,
+    DebugPanelComponent,
   ],
   providers: [
     provideIcons({
@@ -598,10 +599,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   draftRestoredAt: string | null = null;
   draftSavedAt: string | null = null;
   isDraftRestoredBannerVisible = false;
-
-  protected showDebugPanel = false;
-  protected copiedDebug = false;
-  protected readonly isProduction = environment.production;
 
   step1 = {
     first_name: '',
@@ -1527,18 +1524,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected toggleDebugPanel(): void {
-    this.showDebugPanel = !this.showDebugPanel;
-  }
-
-  protected copyDebugModels(): void {
-    navigator.clipboard.writeText(this.debugModels);
-    this.copiedDebug = true;
-    setTimeout(() => (this.copiedDebug = false), 2000);
-  }
-
-  protected get debugModels(): string {
-    return JSON.stringify({
+  protected get debugModelsObject(): Record<string, unknown> {
+    return {
       step1: this.step1,
       step2: this.step2,
       step3: this.step3,
@@ -1549,7 +1536,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       referralsDraft: this.referralsDraft,
       child: this.child,
       workflowStatus: this.workflowStatus,
-    }, null, 2);
+    };
   }
 
   protected issuesForStep(step: StepperStep): FinalCompletionIssue[] {
