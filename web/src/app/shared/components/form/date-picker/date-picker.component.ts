@@ -32,6 +32,7 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
   @Input() max?: string;
   @Input() disabled = false;
   @Input() describedBy?: string;
+  @Input() static = false;
   @Output() dateChange = new EventEmitter<{ selectedDates: Date[]; dateStr: string; instance: flatpickr.Instance }>();
   @Output() blurred = new EventEmitter<void>();
 
@@ -58,7 +59,7 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
   ngAfterViewInit() {
     this.flatpickrInstance = flatpickr(this.dateInput.nativeElement, {
       mode: this.mode,
-      static: true,
+      static: this.static,
       monthSelectorType: 'static',
       dateFormat: 'Y-m-d',
       defaultDate: this.defaultDate,
