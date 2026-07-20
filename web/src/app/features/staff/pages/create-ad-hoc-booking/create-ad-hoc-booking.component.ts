@@ -15,14 +15,18 @@ import {
   heroHomeModern,
   heroCalendar,
   heroCheck,
+  heroShieldCheck,
 } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { RadioCardGroupComponent, RadioCardOption } from '../../../../shared/components/form/radio-card-group/radio-card-group.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
+import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -36,9 +40,11 @@ import { AuthService } from '../../../../core/services/auth.service';
     RouterLink,
     AlertComponent,
     BadgeComponent,
+    ChildAvatarComponent,
     FormFieldComponent,
     SearchAutocompleteComponent,
     DatePickerComponent,
+    RadioCardGroupComponent,
     NgIcon,
   ],
   templateUrl: './create-ad-hoc-booking.component.html',
@@ -55,11 +61,13 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroHomeModern,
       heroCalendar,
       heroCheck,
+      heroShieldCheck,
     }),
   ],
 })
 export class CreateAdHocBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
   private readonly auth = inject(AuthService);
@@ -67,6 +75,7 @@ export class CreateAdHocBookingComponent implements OnInit {
 
   siteId: string | null = null;
 
+  rooms: StaffRoom[] = [];
   sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
 
@@ -74,6 +83,7 @@ export class CreateAdHocBookingComponent implements OnInit {
   selectedChild: ChildRecord | null = null;
   date = '';
   sessionTypeId = '';
+  hourlyRateMinor: number | null = null;
 
   isSaving = false;
   formError: string | null = null;
@@ -87,6 +97,44 @@ export class CreateAdHocBookingComponent implements OnInit {
 
   get selectedSessionType(): StaffSessionType | undefined {
     return this.sessionTypes.find((s) => s.id === this.sessionTypeId);
+  }
+
+  get sessionTypeOptions(): RadioCardOption[] {
+    return this.sessionTypes.map((st) => ({
+      value: st.id,
+      label: st.name,
+      description: `${st.startTime} - ${st.endTime}`,
+    }));
+  }
+
+  get childRoomName(): string {
+    if (!this.selectedChild?.primaryRoomId) return '';
+    const room = this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
+    return room?.name ?? '';
+  }
+
+  get selectedRoom(): StaffRoom | undefined {
+    if (!this.selectedChild?.primaryRoomId) return undefined;
+    return this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
+  }
+
+  get occupancyPercentage(): number {
+    const room = this.selectedRoom;
+    if (!room || !room.capacity) return 0;
+    return Math.round(((room.assignedCount || 0) / room.capacity) * 100);
+  }
+
+  get computedDurationHours(): number {
+    const st = this.selectedSessionType;
+    if (!st || !st.startTime || !st.endTime) return 0;
+    const [sh, sm] = st.startTime.split(':').map(Number);
+    const [eh, em] = st.endTime.split(':').map(Number);
+    return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+  }
+
+  get estimatedCostMinor(): number {
+    if (this.hourlyRateMinor === null || this.hourlyRateMinor <= 0) return 0;
+    return Math.round(this.computedDurationHours * this.hourlyRateMinor);
   }
 
   get canSubmit(): boolean {
@@ -168,6 +216,10 @@ export class CreateAdHocBookingComponent implements OnInit {
     });
   }
 
+  formatGbp(minor: number): string {
+    return `£${(minor / 100).toFixed(2)}`;
+  }
+
   submit(): void {
     if (!this.siteId || !this.canSubmit) return;
     this.isSaving = true;
@@ -198,8 +250,19 @@ export class CreateAdHocBookingComponent implements OnInit {
       });
   }
 
+  cancel(): void {
+    this.router.navigate(['/manager/bookings']);
+  }
+
   private loadData(): void {
     if (!this.siteId) return;
+
+    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: true }).subscribe({
+      next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
+      error: () => {
+        /* Room load failure handled by template defaults */
+      },
+    });
 
     this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
       next: (types) => (this.sessionTypes = types.filter((t) => t.isActive)),
@@ -214,6 +277,12 @@ export class CreateAdHocBookingComponent implements OnInit {
         /* Children load failure handled by template defaults */
       },
     });
+
+    this.staffApi.getSiteRate().subscribe({
+      next: (res) => (this.hourlyRateMinor = res.core_hourly_rate_minor),
+      error: () => {
+        /* Rate load failure */
+      },
+    });
   }
 }
-

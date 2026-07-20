@@ -17,6 +17,8 @@ import {
   heroCurrencyPound,
   heroUsers,
   heroXMark,
+  heroHomeModern,
+  heroShieldCheck,
 } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -24,6 +26,7 @@ import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.com
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -41,6 +44,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormFieldComponent,
     SearchAutocompleteComponent,
     DatePickerComponent,
+    ChildAvatarComponent,
     NgIcon,
   ],
   templateUrl: './create-hourly-booking.component.html',
@@ -59,6 +63,8 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroCurrencyPound,
       heroUsers,
       heroXMark,
+      heroHomeModern,
+      heroShieldCheck,
     }),
   ],
 })
@@ -215,6 +221,10 @@ export class CreateHourlyBookingComponent implements OnInit {
           }
         },
       });
+  }
+
+  cancel(): void {
+    this.router.navigate(['/manager/bookings']);
   }
 
   private parseTimeToMinutes(time: string): number {

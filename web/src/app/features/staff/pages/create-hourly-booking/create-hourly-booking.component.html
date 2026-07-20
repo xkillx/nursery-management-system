@@ -2,21 +2,16 @@
   <!-- Page Header -->
   <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="create-hourly-title">
     <div class="max-w-3xl">
-      <div class="flex items-center gap-2 mb-1">
-        <app-badge variant="light" color="primary" size="sm">
-          <ng-icon name="heroClock" class="mr-1" /> Hourly Booking
-        </app-badge>
-      </div>
       <h1 id="create-hourly-title" class="text-title-sm font-bold text-gray-900 dark:text-white md:text-title-md tracking-tight">
         New Hourly Booking
       </h1>
-        <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-        Create a booking for a specific date with start and end times.
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Create an hourly booking for a child on a specific date.
       </p>
     </div>
     <a
       routerLink="/manager/bookings"
-      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
     >
       <ng-icon name="heroArrowLeft" size="16" />
       Back to Bookings
@@ -27,73 +22,79 @@
     <app-alert variant="error" title="Error" [message]="formError"></app-alert>
   }
 
-  <!-- 12-Column Main Layout Grid -->
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-    <!-- Left Column: Form Cards & Financial Impact (8 cols) -->
-    <section class="lg:col-span-8 space-y-6">
+  <!-- 70/30 Split Layout -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
+    <!-- Left Column: Form Sections (70%) -->
+    <section class="lg:col-span-7 space-y-6">
       
-      <!-- Card 1: Booking Details Form -->
+      <!-- Card 1: Child Selection -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroUser" size="20" aria-hidden="true" />
+          </span>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Child Selection</h3>
+        </div>
+
+        <app-form-field
+          label="Child"
+          labelFor="hourly-child-search"
+          [required]="true"
+          [error]="formFieldErrors['child_id'] || ''"
+        >
+          <app-search-autocomplete
+            [items]="children"
+            [labelFn]="childLabelFn"
+            placeholder="Search for a child..."
+            [error]="!!formFieldErrors['child_id']"
+            (valueChange)="onChildSelected($event)"
+          />
+
+          @if (selectedChild) {
+            <div class="mt-4 rounded-xl border border-gray-100 bg-brand-50/30 p-4 dark:border-gray-800 dark:bg-brand-500/10">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-base dark:bg-brand-500/20 dark:text-brand-300 shadow-xs">
+                    {{ (selectedChild.firstName?.charAt(0) || '') + (selectedChild.lastName?.charAt(0) || '') }}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                        {{ selectedChild.firstName }} {{ selectedChild.lastName }}
+                      </h3>
+                      @if (selectedChild.primaryRoomId) {
+                        <app-badge variant="light" color="primary" size="sm">Room ID: {{ selectedChild.primaryRoomId }}</app-badge>
+                      }
+                    </div>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      DOB: {{ selectedChild.dateOfBirth }} ({{ calculateAge(selectedChild.dateOfBirth) }}) • ID: #{{ selectedChild.id ? selectedChild.id.substring(0, 8).toUpperCase() : '' }}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="onChildSelected(null)"
+                  class="p-1.5 rounded-full hover:bg-gray-200/50 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Change child"
+                >
+                  <ng-icon name="heroXMark" size="18" />
+                </button>
+              </div>
+            </div>
+          }
+        </app-form-field>
+      </div>
+
+      <!-- Card 2: Date & Time Details -->
       <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
         <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
             <ng-icon name="heroClock" size="20" aria-hidden="true" />
           </span>
-          <div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white">Booking Details</h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Specify child, date, and time slot</p>
-          </div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Date &amp; Time</h3>
         </div>
 
-        <div class="space-y-6">
-          <!-- Child Selection -->
-          <div>
-            <app-form-field
-              label="Child Selection"
-              labelFor="hourly-child-search"
-              [required]="true"
-              [error]="formFieldErrors['child_id'] || ''"
-            >
-              <app-search-autocomplete
-                [items]="children"
-                [labelFn]="childLabelFn"
-                placeholder="Search child by name..."
-                [error]="!!formFieldErrors['child_id']"
-                (valueChange)="onChildSelected($event)"
-              />
-            </app-form-field>
-
-            @if (selectedChild) {
-              <div class="mt-4 rounded-xl border border-gray-100 bg-brand-50/30 p-4 dark:border-gray-800 dark:bg-brand-500/10">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-base dark:bg-brand-500/20 dark:text-brand-300 shadow-xs">
-                      {{ (selectedChild.firstName?.charAt(0) || '') + (selectedChild.lastName?.charAt(0) || '') }}
-                    </div>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">
-                          {{ selectedChild.firstName }} {{ selectedChild.lastName }}
-                        </h3>
-                        <app-badge variant="light" color="primary" size="sm">Butterfly Room</app-badge>
-                      </div>
-                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        Age: {{ calculateAge(selectedChild.dateOfBirth) || '3 yrs, 4 mos' }} • ID: #{{ selectedChild.id ? selectedChild.id.substring(0, 8).toUpperCase() : 'ED-4429' }}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    (click)="onChildSelected(null)"
-                    class="p-1.5 rounded-full hover:bg-gray-200/50 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Change child"
-                  >
-                    <ng-icon name="heroXMark" size="18" />
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-
+        <div class="space-y-5">
           <!-- Date Selection -->
           <div>
             <app-form-field
@@ -179,138 +180,121 @@
             </div>
           </div>
         </div>
-
-        <!-- Form Actions -->
-        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3">
-          <a
-            routerLink="/manager/bookings"
-            class="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4.5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-          >
-            Cancel
-          </a>
-          <button
-            type="button"
-            class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            [disabled]="!canSubmit || isSaving"
-            (click)="submit()"
-          >
-            @if (isSaving) {
-              <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-              Creating...
-            } @else {
-              Create Hourly Booking
-            }
-          </button>
-        </div>
-      </div>
-
-      <!-- Card 2: Financial Impact Component -->
-      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
-          <div class="flex items-center gap-2">
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10">
-              <ng-icon name="heroCurrencyPound" size="18" />
-            </span>
-            <h3 class="text-base font-bold text-gray-900 dark:text-white">Financial Impact</h3>
-          </div>
-          <span class="text-xs text-gray-400 font-medium">Estimated breakdown</span>
-        </div>
-
-        <div class="space-y-3 text-sm">
-          <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
-            <span>Standard Rate (£{{ hourlyRate | number:'1.2-2' }} / hour)</span>
-            <span class="font-semibold text-gray-900 dark:text-white">£{{ standardRateAmount | number:'1.2-2' }}</span>
-          </div>
-
-          <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
-            <span>Universal Funding Applied (15h/week)</span>
-            <span class="font-semibold text-emerald-600">-£0.00</span>
-          </div>
-
-          <div class="pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <div>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Total Charge</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Scheduled for upcoming invoice</p>
-            </div>
-            <span class="text-2xl font-black text-brand-500">
-              £{{ totalChargeAmount | number:'1.2-2' }}
-            </span>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- Right Column: Sidebar Context Column (4 cols) -->
-    <aside class="lg:col-span-4 space-y-6">
+    <!-- Right Column: Summary & Widgets (30%) -->
+    <aside class="lg:col-span-3 sticky top-6 space-y-6 self-start">
+      <!-- Booking Summary Sidebar -->
+      <div class="rounded-xl border border-gray-100 bg-white shadow-theme-sm overflow-hidden dark:border-gray-800 dark:bg-gray-900/20">
+        <!-- Header -->
+        <div class="bg-brand-600 px-5 py-4.5 text-white dark:bg-brand-700">
+          <h3 class="text-lg font-bold tracking-tight">Booking Summary</h3>
+        </div>
 
-      <!-- Card 3: Recent Booking Activity -->
-      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
-        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-4">Child's Recent Bookings</h3>
-
-        @if (selectedChild) {
-          @if (recentBookings.length > 0) {
-            <div class="space-y-4 relative">
-              <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100 dark:bg-gray-800"></div>
-              @for (b of recentBookings; track b.id) {
-                <div class="flex gap-3 relative items-start">
-                  <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-500 border-2 border-white dark:border-gray-900 dark:bg-brand-500/20">
-                    <ng-icon name="heroClock" size="12" />
-                  </div>
-                  <div>
-                    <p class="text-xs font-bold text-gray-900 dark:text-white capitalize">
-                      {{ b.bookingType.replace('_', ' ') }} Booking
-                    </p>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                      {{ b.startDate }} • Status: {{ b.status }}
-                    </p>
-                  </div>
-                </div>
-              }
+        <div class="p-5 space-y-4">
+          <!-- Selected Slot -->
+          <div>
+            <div class="text-[11px] font-bold text-gray-400 dark:text-gray-500 tracking-wider uppercase mb-3">
+              Selected Slot
             </div>
-          } @else {
-            <div class="space-y-3 relative">
-              <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100 dark:bg-gray-800"></div>
-              <div class="flex gap-3 relative items-start">
-                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-500 border-2 border-white dark:border-gray-900 dark:bg-brand-500/20">
-                  <ng-icon name="heroClock" size="12" />
-                </div>
-                <div>
-                  <p class="text-xs font-bold text-gray-900 dark:text-white">Extra Hour (Late Pick-up)</p>
-                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 24, 2023 • 17:00 - 18:00</p>
-                </div>
-              </div>
-              <div class="flex gap-3 relative items-start">
-                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 border-2 border-white dark:border-gray-900 dark:bg-gray-800">
-                  <ng-icon name="heroClock" size="12" />
-                </div>
-                <div>
-                  <p class="text-xs font-bold text-gray-600 dark:text-gray-300">Early Drop-off</p>
-                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 20, 2023 • 07:30 - 08:00</p>
+
+            @if (date && startTime && endTime && computedDuration > 0) {
+              <div class="flex items-center justify-between p-3.5 bg-brand-50/20 border border-brand-100/50 rounded-xl text-sm dark:bg-brand-500/5 dark:border-brand-500/10">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-brand-500 text-brand-500 bg-white dark:bg-gray-800 dark:border-brand-400 dark:text-brand-400">
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  <span class="text-gray-700 font-semibold dark:text-gray-300">
+                    {{ formatDateDisplay(date) }}: {{ startTime }} - {{ endTime }}
+                  </span>
                 </div>
               </div>
-              <div class="flex gap-3 relative items-start">
-                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 border-2 border-white dark:border-gray-900 dark:bg-gray-800">
-                  <ng-icon name="heroClock" size="12" />
-                </div>
-                <div>
-                  <p class="text-xs font-bold text-gray-600 dark:text-gray-300">Emergency Cover</p>
-                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 15, 2023 • 09:00 - 12:00</p>
+            } @else {
+              <div class="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
+                Select date and time slot to view summary.
+              </div>
+            }
+          </div>
+
+          @if (date && startTime && endTime && computedDuration > 0) {
+            <!-- Divider -->
+            <div class="border-t border-gray-100 dark:border-gray-800 my-4"></div>
+
+            <!-- Two Cards -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-xl bg-brand-50/20 p-4 text-center border border-brand-100/20 dark:bg-brand-500/5 dark:border-brand-500/10">
+                <div class="text-xs font-bold text-gray-400 dark:text-gray-500 tracking-wide uppercase">Duration</div>
+                <div class="text-3xl font-black text-brand-600 dark:text-brand-400 mt-1.5">
+                  {{ (computedDuration / 60) | number:'1.0-2' }} <span class="text-xs font-normal">hrs</span>
                 </div>
               </div>
+              <div class="rounded-xl bg-brand-50/20 p-4 text-center border border-brand-100/20 dark:bg-brand-500/5 dark:border-brand-500/10">
+                <div class="text-xs font-bold text-gray-400 dark:text-gray-500 tracking-wide uppercase">Hourly Rate</div>
+                <div class="text-3xl font-black text-brand-600 dark:text-brand-400 mt-1.5">
+                  £{{ hourlyRate | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Charge Breakdown -->
+            <div class="space-y-3 pt-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400 font-semibold">Standard Rate</span>
+                <span class="font-bold text-gray-900 dark:text-white">£{{ standardRateAmount | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <!-- Dashed Divider -->
+            <div class="border-t border-dashed border-gray-200 dark:border-gray-800 my-4"></div>
+
+            <!-- Total Charge -->
+            <div class="flex items-center justify-between my-4">
+              <span class="text-base font-bold text-gray-900 dark:text-white">Total Charge</span>
+              <span class="text-2xl font-black text-brand-600 dark:text-brand-400">
+                £{{ totalChargeAmount | number:'1.2-2' }}
+              </span>
+            </div>
+
+            <!-- Solid Divider -->
+            <div class="border-t border-gray-100 dark:border-gray-800 my-4"></div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3 pt-1">
+              <button
+                type="button"
+                class="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 text-white font-bold text-sm shadow-xs transition-all hover:bg-brand-700 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-brand-500 dark:hover:bg-brand-600"
+                [disabled]="!canSubmit || isSaving"
+                (click)="submit()"
+              >
+                @if (isSaving) {
+                  <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Saving...
+                } @else {
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  Save Booking
+                }
+              </button>
+
+              <button
+                type="button"
+                class="flex w-full min-h-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 font-bold text-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                (click)="cancel()"
+              >
+                Cancel
+              </button>
             </div>
           }
-          <a
-            [routerLink]="['/manager/children', selectedChild.id]"
-            class="block w-full mt-4 text-center text-xs font-bold text-brand-500 hover:underline transition-all"
-          >
-            View full history
-          </a>
-        } @else {
-          <p class="text-xs text-gray-400 italic">Select a child to view their recent booking history.</p>
-        }
+        </div>
       </div>
     </aside>
   </div>
