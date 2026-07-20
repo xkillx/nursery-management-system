@@ -1,17 +1,22 @@
 <div class="space-y-6">
-  <!-- Header -->
+  <!-- Page Header -->
   <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="create-adhoc-title">
     <div class="max-w-3xl">
+      <div class="flex items-center gap-2 mb-1">
+        <app-badge variant="light" color="primary" size="sm">
+          <ng-icon name="heroSparkles" class="mr-1" /> Ad-Hoc Booking
+        </app-badge>
+      </div>
       <h1 id="create-adhoc-title" class="text-title-sm font-bold text-gray-900 dark:text-white md:text-title-md tracking-tight">
         New Ad-Hoc Booking
       </h1>
       <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-        Create a one-off booking for a specific date.
+        Create a one-off booking for a child on a specific date.
       </p>
     </div>
     <a
       routerLink="/manager/bookings"
-      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
     >
       <ng-icon name="heroArrowLeft" size="16" />
       Back to Bookings
@@ -22,90 +27,259 @@
     <app-alert variant="error" title="Error" [message]="formError"></app-alert>
   }
 
-  <!-- Form -->
-  <section
-    class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/20 shadow-theme-xs"
-    aria-label="Ad-hoc booking form"
-  >
-    <div class="p-4 lg:p-6 space-y-5">
-      <!-- Child -->
-      <div>
-        <label for="adhoc-child" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Child *</label>
-        <select
-          id="adhoc-child"
-          [(ngModel)]="childId"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['child_id'] }"
+  <!-- 70/30 Split Layout -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
+    <!-- Left Column: Form Cards (70% - 7 cols) -->
+    <section class="lg:col-span-7 space-y-6">
+      
+      <!-- Card 1: Child Selection -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroUser" size="20" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Child Selection</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Select the child receiving the ad-hoc booking</p>
+          </div>
+        </div>
+
+        <app-form-field
+          label="Child"
+          labelFor="adhoc-child-search"
+          [required]="true"
+          [error]="formFieldErrors['child_id'] || ''"
         >
-          <option value="">Select a child</option>
-          @for (child of children; track child.id) {
-            <option [value]="child.id">{{ child.firstName }} {{ child.lastName }}</option>
-          }
-        </select>
-        @if (formFieldErrors['child_id']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['child_id'] }}</p>
+          <app-search-autocomplete
+            [items]="children"
+            [labelFn]="childLabelFn"
+            placeholder="Search child by name..."
+            [error]="!!formFieldErrors['child_id']"
+            (valueChange)="onChildSelected($event)"
+          />
+        </app-form-field>
+
+        @if (selectedChild) {
+          <div class="mt-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-sm dark:bg-brand-500/20 dark:text-brand-300">
+                  {{ (selectedChild.firstName?.charAt(0) || '') + (selectedChild.lastName?.charAt(0) || '') }}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                      {{ selectedChild.firstName }} {{ selectedChild.lastName }}
+                    </h3>
+                    <app-badge variant="light" color="success" size="sm">Enrolled</app-badge>
+                  </div>
+                  <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="flex items-center gap-1">
+                      <ng-icon name="heroCake" size="14" class="text-gray-400" />
+                      DOB: {{ selectedChild.dateOfBirth }} ({{ calculateAge(selectedChild.dateOfBirth) }})
+                    </span>
+                    @if (selectedChild.primaryRoomId) {
+                      <span class="flex items-center gap-1">
+                        <ng-icon name="heroHomeModern" size="14" class="text-gray-400" />
+                        Room ID: {{ selectedChild.primaryRoomId }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <ng-icon name="heroCheckCircle" size="20" class="text-emerald-500" />
+            </div>
+          </div>
         }
       </div>
 
-      <!-- Calendar date -->
-      <div>
-        <label for="adhoc-date" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Date *</label>
-        <input
-          id="adhoc-date"
-          type="date"
-          [(ngModel)]="date"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['calendar_date'] }"
-        />
-        @if (formFieldErrors['calendar_date']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['calendar_date'] }}</p>
-        }
+      <!-- Card 2: Date & Session Details -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroCalendarDays" size="20" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Booking Details</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Choose date and session slot for the ad-hoc session</p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Calendar Date -->
+          <div>
+            <app-form-field
+              label="Booking Date"
+              labelFor="adhoc-date"
+              [required]="true"
+              [error]="formFieldErrors['calendar_date'] || ''"
+            >
+              <app-date-picker
+                id="adhoc-date"
+                name="adhoc-date"
+                [(ngModel)]="date"
+                placeholder="Select date"
+                [error]="!!formFieldErrors['calendar_date']"
+              />
+            </app-form-field>
+
+            <!-- Quick Date Presets -->
+            <div class="mt-2.5 flex flex-wrap items-center gap-2">
+              <span class="text-xs font-medium text-gray-400">Quick select:</span>
+              <button
+                type="button"
+                (click)="setQuickDate('today')"
+                class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                (click)="setQuickDate('tomorrow')"
+                class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Tomorrow
+              </button>
+              <button
+                type="button"
+                (click)="setQuickDate('next_monday')"
+                class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Next Monday
+              </button>
+            </div>
+          </div>
+
+          <!-- Session Type Selection (Visual Cards) -->
+          <div>
+            <span class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Session Type <span class="text-error-500">*</span>
+            </span>
+
+            @if (sessionTypes.length > 0) {
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                @for (st of sessionTypes; track st.id) {
+                  <button
+                    type="button"
+                    (click)="selectSessionType(st.id)"
+                    class="relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all cursor-pointer"
+                    [ngClass]="{
+                      'border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-500/10': sessionTypeId === st.id,
+                      'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700': sessionTypeId !== st.id
+                    }"
+                  >
+                    <div class="flex items-start justify-between">
+                      <h4 class="text-sm font-bold text-gray-900 dark:text-white">{{ st.name }}</h4>
+                      @if (sessionTypeId === st.id) {
+                        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-white">
+                          <ng-icon name="heroCheck" size="12" />
+                        </span>
+                      }
+                    </div>
+                    <div class="mt-3 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      <ng-icon name="heroClock" size="14" class="text-brand-500" />
+                      <span>{{ st.startTime }} - {{ st.endTime }}</span>
+                    </div>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="text-xs text-gray-500 italic">No session types available.</p>
+            }
+
+            @if (formFieldErrors['session_type_id']) {
+              <p class="mt-1.5 text-xs text-error-500">{{ formFieldErrors['session_type_id'] }}</p>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Sticky Sidebar Summary & Actions (30% - 3 cols) -->
+    <aside class="lg:col-span-3 space-y-6 sticky top-6 self-start">
+      <!-- Live Summary Card -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <ng-icon name="heroCalendar" size="18" class="text-brand-500" />
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Booking Summary</h3>
+        </div>
+
+        <div class="py-4 space-y-4 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Child</span>
+            <span class="font-semibold text-gray-900 dark:text-white">
+              {{ selectedChild ? (selectedChild.firstName + ' ' + selectedChild.lastName) : 'Not selected' }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Date</span>
+            <span class="font-semibold text-gray-900 dark:text-white">
+              {{ date ? formatDateDisplay(date) : 'Not selected' }}
+            </span>
+          </div>
+
+          <div class="flex items-start justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Session</span>
+            <div class="text-right">
+              <span class="block font-semibold text-gray-900 dark:text-white">
+                {{ selectedSessionType?.name || 'Not selected' }}
+              </span>
+              @if (selectedSessionType) {
+                <span class="text-[11px] text-gray-500">
+                  {{ selectedSessionType.startTime }} - {{ selectedSessionType.endTime }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+            <span class="text-gray-500 dark:text-gray-400">Type</span>
+            <app-badge variant="light" color="info" size="sm">Ad-Hoc (One-Off)</app-badge>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2.5">
+          <button
+            type="button"
+            class="w-full inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="!canSubmit || isSaving"
+            (click)="submit()"
+          >
+            @if (isSaving) {
+              <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Creating...
+            } @else {
+              Create Ad-Hoc Booking
+            }
+          </button>
+
+          <a
+            routerLink="/manager/bookings"
+            class="w-full inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          >
+            Cancel
+          </a>
+        </div>
       </div>
 
-      <!-- Session type -->
-      <div>
-        <label for="adhoc-session" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Session Type *</label>
-        <select
-          id="adhoc-session"
-          [(ngModel)]="sessionTypeId"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['session_type_id'] }"
-        >
-          <option value="">Select a session type</option>
-          @for (st of sessionTypes; track st.id) {
-            <option [value]="st.id">{{ st.name }}</option>
-          }
-        </select>
-        @if (formFieldErrors['session_type_id']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['session_type_id'] }}</p>
-        }
+      <!-- Operational Tip Box -->
+      <div class="rounded-xl border border-brand-100 bg-brand-50/40 p-4 text-xs text-brand-900 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-200">
+        <div class="flex items-start gap-2">
+          <ng-icon name="heroInformationCircle" size="18" class="text-brand-500 shrink-0 mt-0.5" />
+          <div>
+            <p class="font-bold mb-1">Manager Note</p>
+            <p class="leading-relaxed text-brand-800 dark:text-brand-300">
+              Ad-hoc bookings are single-day sessions added outside of regular recurring patterns. They will be included on the child's next monthly invoice.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-4 py-4 lg:px-6">
-      <a
-        routerLink="/manager/bookings"
-        class="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4.5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-      >
-        Cancel
-      </a>
-      <button
-        type="button"
-        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-        [disabled]="!canSubmit || isSaving"
-        (click)="submit()"
-      >
-        @if (isSaving) {
-          <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-          </svg>
-          Creating...
-        } @else {
-          Create Ad-Hoc Booking
-        }
-      </button>
-    </div>
-  </section>
+    </aside>
+  </div>
 </div>
+

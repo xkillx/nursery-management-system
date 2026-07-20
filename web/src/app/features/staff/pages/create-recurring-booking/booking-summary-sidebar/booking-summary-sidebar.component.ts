@@ -1,7 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap, heroCheck } from '@ng-icons/heroicons/outline';
 
 import { SessionEntry } from '../../../models/booking.models';
 import { StaffSessionType } from '../../../data/session-types-api.service';
@@ -16,11 +14,8 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 @Component({
   selector: 'app-booking-summary-sidebar',
-  imports: [CommonModule, NgIcon],
+  imports: [CommonModule],
   host: { class: 'block' },
-  providers: [
-    provideIcons({ heroCalendarDays, heroClock, heroCurrencyPound, heroAcademicCap, heroCheck }),
-  ],
   template: `
     <div class="rounded-xl border border-gray-100 bg-white shadow-theme-sm overflow-hidden dark:border-gray-800 dark:bg-gray-900/20">
         <!-- Header -->
@@ -156,6 +151,7 @@ export class BookingSummarySidebarComponent implements OnChanges {
   @Input() isSaving = false;
 
   @Output() save = new EventEmitter<void>();
+  // eslint-disable-next-line @angular-eslint/no-output-native
   @Output() cancel = new EventEmitter<void>();
 
   sessions: SessionDisplay[] = [];
