@@ -293,9 +293,11 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
         this.applyQueryParams(params);
       } else {
         this.restoreFromLocalStorage();
-        // Apply default date preset on first visit
+        // Apply default date preset on first visit (force past the same-value guard)
         if (this.datePreset && !this.dateFrom && !this.dateTo) {
-          this.setDatePreset(this.datePreset);
+          const preset = this.datePreset;
+          this.datePreset = '' as DatePreset;
+          this.setDatePreset(preset);
           return;
         }
       }
@@ -371,14 +373,14 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     this.selectedTypes = [];
     this.selectedStatuses = [];
     this.selectedRoomId = '';
-    this.datePreset = '';
     this.dateFrom = '';
     this.dateTo = '';
     this.searchQuery = '';
     this.offset = 0;
     localStorage.removeItem(LS_KEY);
     this.router.navigate([], { queryParams: {} });
-    this.loadList();
+    this.datePreset = '' as DatePreset;
+    this.setDatePreset('this_month');
   }
 
   setDatePreset(preset: DatePreset): void {
