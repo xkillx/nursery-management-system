@@ -16,6 +16,7 @@ import { ROLES, ROLE_ROUTES } from '../../../../core/constants/roles';
 import { AuthService } from '../../../../core/services/auth.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { TimePickerComponent } from '../../../../shared/components/form/time-picker/time-picker.component';
 import {
   StaffSessionTypeInput,
   StaffSessionTypesApiService,
@@ -30,6 +31,7 @@ import {
     NgIcon,
     LoadingStateComponent,
     AlertComponent,
+    TimePickerComponent,
   ],
   templateUrl: './owner-session-type-form.component.html',
   providers: [

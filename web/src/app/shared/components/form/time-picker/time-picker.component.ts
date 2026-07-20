@@ -26,7 +26,7 @@ export class TimePickerComponent implements AfterViewInit, OnDestroy {
       enableTime: true,
       noCalendar: true,
       dateFormat: 'H:i',   // time format HH:mm
-      time_24hr: false,    // set true for 24hr clock
+      time_24hr: true,
       minuteIncrement: 1,
       defaultDate: this.defaultTime,
       onChange: (selectedDates, dateStr) => {

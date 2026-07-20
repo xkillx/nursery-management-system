@@ -57,36 +57,24 @@
 
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label for="session-type-start" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Start Time <span class="text-red-500">*</span>
-            </label>
-            <input
+            <app-time-picker
               id="session-type-start"
-              type="time"
-              name="startTime"
-              [(ngModel)]="form.startTime"
-              required
-              class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              [class.border-red-500]="fieldErrors.startTime"
-              [disabled]="saving"
+              label="Start Time"
+              placeholder="Select start time"
+              [defaultTime]="form.startTime"
+              (timeChange)="form.startTime = $event"
             />
             @if (fieldErrors.startTime) {
               <p class="mt-1 text-xs text-red-600">{{ fieldErrors.startTime }}</p>
             }
           </div>
           <div>
-            <label for="session-type-end" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              End Time <span class="text-red-500">*</span>
-            </label>
-            <input
+            <app-time-picker
               id="session-type-end"
-              type="time"
-              name="endTime"
-              [(ngModel)]="form.endTime"
-              required
-              class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              [class.border-red-500]="fieldErrors.endTime"
-              [disabled]="saving"
+              label="End Time"
+              placeholder="Select end time"
+              [defaultTime]="form.endTime"
+              (timeChange)="form.endTime = $event"
             />
             @if (fieldErrors.endTime) {
               <p class="mt-1 text-xs text-red-600">{{ fieldErrors.endTime }}</p>
@@ -130,7 +118,7 @@
           </li>
           <li class="flex items-start gap-2">
             <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
-            <span>Times must be entered in 24-hour format (HH:MM). End time must be after start time.</span>
+            <span>Select start and end times using the time pickers. End time must be after start time.</span>
           </li>
           <li class="flex items-start gap-2">
             <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
