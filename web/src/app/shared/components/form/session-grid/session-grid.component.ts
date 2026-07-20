@@ -110,13 +110,9 @@ export class SessionGridComponent implements ControlValueAccessor {
   }
 
   selectAllWeekdays(): void {
+    const monday = this.selected[0] ?? new Set<string>();
     for (const idx of WEEKDAY_INDICES) {
-      if (!this.selected[idx]) {
-        this.selected[idx] = new Set();
-      }
-      for (const st of this.sessionTypes) {
-        this.selected[idx].add(st.id);
-      }
+      this.selected[idx] = new Set(monday);
     }
     this.emit();
   }
