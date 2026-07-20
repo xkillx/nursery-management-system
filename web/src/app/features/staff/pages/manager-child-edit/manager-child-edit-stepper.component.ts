@@ -2113,6 +2113,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     if (!this.step1.date_of_birth) {
       issues.push({ stepKey: 'child-basics', field: 'date_of_birth', message: 'Enter the child\'s date of birth.' });
+    } else if (this.step1.date_of_birth > this.todayIso) {
+      issues.push({ stepKey: 'child-basics', field: 'date_of_birth', message: 'Date of birth cannot be in the future.' });
     }
     if (!this.step1.start_date) {
       issues.push({ stepKey: 'child-basics', field: 'start_date', message: 'Enter the proposed start date.' });
@@ -2152,13 +2154,14 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       label: string,
       detailsValue: string,
       detailsMissingMsg: string,
+      detailsField: string = field,
     ): void => {
       if (status === '') {
         issues.push({ stepKey: 'medical-health', field, message: `Confirm ${label}.` });
       } else if (status === 'unknown') {
         issues.push({ stepKey: 'medical-health', field, message: `${label[0].toUpperCase()}${label.slice(1)} cannot be marked Unknown for final completion — follow up before completing.` });
       } else if (status === 'yes' && !detailsValue && detailsMissingMsg) {
-        issues.push({ stepKey: 'medical-health', field, message: detailsMissingMsg });
+        issues.push({ stepKey: 'medical-health', field: detailsField, message: detailsMissingMsg });
       }
     };
 
@@ -2168,6 +2171,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       'whether the child has any known allergies',
       this.step2.allergy_details.trim(),
       'Record allergy details, or set allergies to No known allergies.',
+      'allergy_details',
     );
 
     pushSafetyIssue(

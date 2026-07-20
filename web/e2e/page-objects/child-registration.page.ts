@@ -1,5 +1,15 @@
 import { Page, Locator, expect } from '@playwright/test';
 
+// Required consent model keys whose DOM toggle uses a different data-focus-target id.
+const CONSENT_FOCUS_TARGET_OVERRIDES: Record<string, string> = {
+  information_truthfulness_declaration: 'truthfulness-declaration',
+  gdpr_data_processing_consent: 'gdpr-consent',
+};
+
+function consentFocusTarget(key: string): string {
+  return CONSENT_FOCUS_TARGET_OVERRIDES[key] ?? key;
+}
+
 export class ChildRegistrationPage {
   readonly page: Page;
 
@@ -90,7 +100,8 @@ export class ChildRegistrationPage {
   }
 
   async fillAllergyDetails(details: string): Promise<void> {
-    await this.page.locator('app-text-area#allergy-details textarea, #allergy-details').first().fill(details);
+    // id is duplicated on host <app-text-area> and inner <textarea>; target the textarea tag.
+    await this.page.locator('textarea#allergy-details').fill(details);
   }
 
   async selectMedicationStatus(status: 'yes' | 'no'): Promise<void> {
@@ -165,9 +176,14 @@ export class ChildRegistrationPage {
     await contactSection.locator('input[type="tel"]').fill(data.telephone);
   }
 
+  async fillCollectionPassword(password: string): Promise<void> {
+    // id duplicated on host <app-input-field> and inner <input>; target the input tag.
+    await this.page.locator('input#collection-password').fill(password);
+  }
+
   // Step 4: Consents
   async toggleConsent(key: string): Promise<void> {
-    await this.page.locator(`[data-focus-target="${key}"]`).click();
+    await this.page.locator(`[data-focus-target="${consentFocusTarget(key)}"]`).click();
   }
 
   async markAllRequiredConsents(): Promise<void> {
@@ -180,7 +196,7 @@ export class ChildRegistrationPage {
       'plasters',
     ];
     for (const key of requiredKeys) {
-      await this.page.locator(`[data-focus-target="${key}"]`).click();
+      await this.page.locator(`[data-focus-target="${consentFocusTarget(key)}"]`).click();
     }
   }
 
@@ -188,17 +204,39 @@ export class ChildRegistrationPage {
     await this.input('signer-name').fill(name);
   }
 
+  async fillSignedDate(dateIso: string): Promise<void> {
+    // date-picker host + inner input share id; drive flatpickr directly.
+    const ok = await this.page.evaluate(({ id, dateIso }) => {
+      const inputs = document.querySelectorAll(`input#${id}`);
+      for (const input of Array.from(inputs)) {
+        const fp = (input as any)._flatpickr;
+        if (fp) {
+          fp.setDate(dateIso, true);
+          return true;
+        }
+      }
+      return false;
+    }, { id: 'signed-date', dateIso });
+    if (!ok) {
+      await this.page.locator('input#signed-date').last().fill(dateIso);
+    }
+  }
+
   async clickSubmit(): Promise<void> {
-    await this.page.getByRole('button', { name: /Submit registration|Mark Reviewed|Complete/i }).click();
+    await this.page.getByRole('button', { name: /Submit registration|Mark Reviewed|Complete|Create child/i }).click();
   }
 
   // Validation helpers
   async expectFieldError(message: string): Promise<void> {
-    await expect(this.page.getByText(message)).toBeVisible();
+    // Scope to inline field-error <p> (id ends in -error). The toast surfaces the
+    // same message via role=status, which would otherwise trigger strict-mode.
+    const errorP = this.page.locator('p[id$="-error"]').filter({ hasText: message });
+    await expect(errorP).toBeVisible();
   }
 
   async expectNoFieldError(message: string): Promise<void> {
-    await expect(this.page.getByText(message)).not.toBeVisible();
+    const errorP = this.page.locator('p[id$="-error"]').filter({ hasText: message });
+    await expect(errorP).toHaveCount(0);
   }
 
   async expectStepLocked(stepNumber: number): Promise<void> {

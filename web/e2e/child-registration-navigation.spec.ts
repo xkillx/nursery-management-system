@@ -48,7 +48,7 @@ test.describe('Child Registration - Step Navigation', () => {
     await regPage.clickBack();
     await regPage.expectStepActive(1);
 
-    const firstName = regPage.page.locator('#child-first-name');
+    const firstName = regPage.page.locator('input#child-first-name');
     await expect(firstName).toHaveValue('James');
   });
 
@@ -111,5 +111,6 @@ async function fillStep3AndAdvance(regPage: ChildRegistrationPage): Promise<void
     relationship: 'Grandparent',
     telephone: '07700 900002',
   });
+  await regPage.fillCollectionPassword('nursery-pass-1');
   await regPage.clickContinue();
 }

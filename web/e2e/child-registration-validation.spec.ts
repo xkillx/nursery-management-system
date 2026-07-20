@@ -137,7 +137,7 @@ test.describe('Child Registration - Validation', () => {
       await regPage.selectSocialServicesStatus('no');
       await regPage.selectDevelopmentalConcerns('no');
       await regPage.clickContinue();
-      await regPage.expectFieldError('Provide allergy details');
+      await regPage.expectFieldError('Record allergy details, or set allergies to No known allergies');
     });
 
     test('allows proceeding with allergy yes and details filled', async () => {

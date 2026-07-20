@@ -25,7 +25,7 @@ test.describe('Child Registration - Consents & Edge Cases', () => {
       await regPage.toggleConsent('plasters');
       await regPage.fillSignerName('Sarah Johnson');
       await regPage.clickSubmit();
-      await regPage.expectFieldError('Grant GDPR data processing consent');
+      await regPage.expectFieldError('Confirm GDPR data processing consent');
     });
 
     test('blocks submission when truthfulness declaration is not granted', async () => {
@@ -36,13 +36,16 @@ test.describe('Child Registration - Consents & Edge Cases', () => {
       await regPage.toggleConsent('plasters');
       await regPage.fillSignerName('Sarah Johnson');
       await regPage.clickSubmit();
-      await regPage.expectFieldError('Sign the truthfulness declaration');
+      await regPage.expectFieldError('Confirm the truthfulness declaration');
     });
 
     test('blocks submission when signer name is empty', async () => {
       await regPage.markAllRequiredConsents();
+      // Signer name is auto-filled from the primary parent/carer; clear it to
+      // exercise the required-field check.
+      await regPage.fillSignerName('');
       await regPage.clickSubmit();
-      await regPage.expectFieldError('Enter the signer name');
+      await regPage.expectFieldError('Record the parent or carer full name who signed the consent');
     });
 
     test('allows optional consents to remain unchecked', async () => {
@@ -190,6 +193,7 @@ async function advanceToStep4(regPage: ChildRegistrationPage): Promise<void> {
     relationship: 'Grandparent',
     telephone: '07700 900002',
   });
+  await regPage.fillCollectionPassword('nursery-pass-1');
   await regPage.clickContinue();
   await regPage.expectStepActive(4);
 }

@@ -64,6 +64,7 @@ test.describe('Child Registration - Happy Path', () => {
         relationship: 'Grandparent',
         telephone: '07700 900002',
       });
+      await regPage.fillCollectionPassword('nursery-pass-1');
       await regPage.clickContinue();
       await regPage.expectStepActive(4);
     });
@@ -71,6 +72,7 @@ test.describe('Child Registration - Happy Path', () => {
     await test.step('Step 4: Fill consents and submit', async () => {
       await regPage.markAllRequiredConsents();
       await regPage.fillSignerName('Sarah Johnson');
+      await regPage.fillSignedDate('2026-07-20');
 
       await regPage.clickSubmit();
 

@@ -5,10 +5,11 @@ export async function loginAsManager(page: Page): Promise<void> {
   const password = process.env.E2E_MANAGER_PASSWORD || 'Pass1234';
 
   await page.goto('/signin');
+  await clearAuthState(page);
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL(/\/manager/);
+  await page.waitForURL(/\/manager/, { timeout: 20000 });
 }
 
 export async function loginAsOwner(page: Page): Promise<void> {
@@ -16,13 +17,27 @@ export async function loginAsOwner(page: Page): Promise<void> {
   const password = process.env.E2E_OWNER_PASSWORD || 'Pass1234';
 
   await page.goto('/signin');
+  await clearAuthState(page);
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL(/\/owner/);
+  await page.waitForURL(/\/owner/, { timeout: 20000 });
+}
+
+// Clear any stale tokens / registration draft left over from a prior test so the
+// app doesn't try a 10s refresh against an expired session before login.
+async function clearAuthState(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
 }
 
 export async function navigateToNewRegistration(page: Page): Promise<void> {
+  // Clear any in-progress registration draft so the wizard always opens on step 1
+  // (otherwise a restored draft from a prior test lands on a later step and the
+  // "Child Profile" heading is not present).
+  await page.evaluate(() => localStorage.removeItem('nursery.registration_intake.draft'));
   await page.goto('/manager/children/new');
   await expect(page.getByText('Child Profile')).toBeVisible();
 }

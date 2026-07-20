@@ -277,7 +277,6 @@
                       name="date_of_birth"
                       [(ngModel)]="step1.date_of_birth"
                       (blurred)="markStep1Touched('date_of_birth')"
-                      [max]="todayIso"
                       [error]="shouldShowStep1Error('date_of_birth')"
                       [describedBy]="shouldShowStep1Error('date_of_birth') ? 'child-date-of-birth-error' : undefined"
                     />
@@ -728,7 +727,13 @@
                   </fieldset>
 
                   @if (step2.allergy_status === 'yes') {
-                    <app-form-field className="mt-4" label="Allergy details" [required]="true">
+                    <app-form-field
+                      className="mt-4"
+                      label="Allergy details"
+                      [required]="true"
+                      errorId="allergy-details-error"
+                      [error]="hasFieldIssue('allergy_details') ? fieldIssueMessage('allergy_details') : ''"
+                    >
                       <app-text-area
                         id="allergy-details"
                         name="allergy_details"
@@ -2479,6 +2484,7 @@
                     label="Signed by (parent or carer full name)"
                     htmlFor="signer-name"
                     [required]="true"
+                    errorId="signer-name-error"
                     [error]="hasFieldIssue('signer_name') ? fieldIssueMessage('signer_name') : ''"
                   >
                     <app-input-field
@@ -2493,6 +2499,7 @@
                     label="Date signed"
                     htmlFor="signed-date"
                     [required]="true"
+                    errorId="signed-date-error"
                     [error]="hasFieldIssue('signed_date') ? fieldIssueMessage('signed_date') : ''"
                   >
                     <app-date-picker

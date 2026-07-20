@@ -403,7 +403,14 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	router.Use(httpserver.SecurityHeadersMiddleware())
 
 	api := registerHealthRoutes(router, c.Config.APIBasePath, c.Pool)
-	globalRateLimiter := ratelimit.NewFixedWindowLimiter(100, 1*time.Minute)
+	// Global per-IP request limiter. Bumped for local dev so the Playwright suite
+	// (which fires ~200 calls/min from 127.0.0.1) does not trip 429s; prod-grade
+	// limits are enforced at the edge (ingress/WAF) in deployed environments.
+	rateLimitPerMinute := 100
+	if c.Config.AppEnv == "local" {
+		rateLimitPerMinute = 1000
+	}
+	globalRateLimiter := ratelimit.NewFixedWindowLimiter(rateLimitPerMinute, 1*time.Minute)
 	api.Use(httpserver.RateLimitMiddleware(globalRateLimiter))
 
 	c.AuthHandler.RegisterRoutes(api)
