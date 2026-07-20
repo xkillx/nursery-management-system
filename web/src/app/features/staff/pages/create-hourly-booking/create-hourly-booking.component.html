@@ -51,34 +51,34 @@
           />
 
           @if (selectedChild) {
-            <div class="mt-4 rounded-xl border border-gray-100 bg-brand-50/30 p-4 dark:border-gray-800 dark:bg-brand-500/10">
+            <div class="mt-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-base dark:bg-brand-500/20 dark:text-brand-300 shadow-xs">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-sm dark:bg-brand-500/20 dark:text-brand-300">
                     {{ (selectedChild.firstName?.charAt(0) || '') + (selectedChild.lastName?.charAt(0) || '') }}
                   </div>
                   <div>
                     <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                      <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
                         {{ selectedChild.firstName }} {{ selectedChild.lastName }}
                       </h3>
+                      <app-badge variant="light" color="success" size="sm">Enrolled</app-badge>
+                    </div>
+                    <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                      <span class="flex items-center gap-1">
+                        <ng-icon name="heroCake" size="14" class="text-gray-400" />
+                        DOB: {{ selectedChild.dateOfBirth }} ({{ calculateAge(selectedChild.dateOfBirth) }})
+                      </span>
                       @if (selectedChild.primaryRoomId) {
-                        <app-badge variant="light" color="primary" size="sm">Room ID: {{ selectedChild.primaryRoomId }}</app-badge>
+                        <span class="flex items-center gap-1">
+                          <ng-icon name="heroHomeModern" size="14" class="text-gray-400" />
+                          Room: {{ selectedChild.primaryRoomId }}
+                        </span>
                       }
                     </div>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      DOB: {{ selectedChild.dateOfBirth }} ({{ calculateAge(selectedChild.dateOfBirth) }}) • ID: #{{ selectedChild.id ? selectedChild.id.substring(0, 8).toUpperCase() : '' }}
-                    </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  (click)="onChildSelected(null)"
-                  class="p-1.5 rounded-full hover:bg-gray-200/50 text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Change child"
-                >
-                  <ng-icon name="heroXMark" size="18" />
-                </button>
+                <ng-icon name="heroCheckCircle" size="20" class="text-emerald-500" />
               </div>
             </div>
           }
