@@ -1903,6 +1903,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         ),
         telephone: this.parentCarersDraft[0].telephone || null,
         email: this.parentCarersDraft[0].email || null,
+        workAddress: this.step3.parent1_work_address?.trim()
+          ? { text: this.step3.parent1_work_address.trim() }
+          : null,
         hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
       });
     }
@@ -1918,26 +1921,37 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         ),
         telephone: this.step3.second_parent_telephone.trim() || null,
         email: this.step3.second_parent_email.trim() || null,
+        workAddress: this.step3.second_parent_work_address?.trim()
+          ? { text: this.step3.second_parent_work_address.trim() }
+          : null,
         hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
       });
     }
 
     const emergencyContacts: ChildContact[] = this.emergencyContactsDraft
       .filter(c => c.fullName.trim())
-      .map(c => ({
+      .map((c, index) => ({
         fullName: c.fullName.trim(),
         relationshipToChild: c.relationshipToChild?.trim() || null,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() }
+          : c.address ?? null,
         telephone: c.telephone?.trim() || null,
         email: c.email?.trim() || null,
+        workAddress: c.workAddress ?? null,
       }));
 
     const authorisedCollectors: ChildContact[] = this.emergencyContactsDraft
       .filter((c, i) => this.emergencyAuthorisedFlags[i] && c.fullName.trim())
-      .map(c => ({
+      .map((c, index) => ({
         fullName: c.fullName.trim(),
         relationshipToChild: c.relationshipToChild?.trim() || null,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() }
+          : c.address ?? null,
         telephone: c.telephone?.trim() || null,
         email: c.email?.trim() || null,
+        workAddress: c.workAddress ?? null,
         hasParentalResponsibility: null,
       }));
 
