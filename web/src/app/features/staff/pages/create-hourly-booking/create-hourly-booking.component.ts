@@ -12,12 +12,10 @@ import {
   heroCheckCircle,
   heroInformationCircle,
   heroCake,
-  heroHomeModern,
   heroCalendar,
   heroCheck,
   heroCurrencyPound,
   heroUsers,
-  heroTag,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
 
@@ -27,9 +25,7 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
-import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
-import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { ChildRecord } from '../../models/children.models';
 import { UnifiedBooking } from '../../models/booking.models';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -58,37 +54,30 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroCheckCircle,
       heroInformationCircle,
       heroCake,
-      heroHomeModern,
       heroCalendar,
       heroCheck,
       heroCurrencyPound,
       heroUsers,
-      heroTag,
       heroXMark,
     }),
   ],
 })
 export class CreateHourlyBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
-  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
-  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   siteId: string | null = null;
 
-  sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
-  rooms: StaffRoom[] = [];
   recentBookings: UnifiedBooking[] = [];
 
   childId = '';
   selectedChild: ChildRecord | null = null;
   date = '';
   startTime = '08:00';
-  duration = 60;
-  sessionTypeId = '';
+  endTime = '09:00';
   readonly hourlyRate = 12.5;
   readonly fundingApplied = 0;
 
@@ -102,30 +91,26 @@ export class CreateHourlyBookingComponent implements OnInit {
     return name || child.fullName;
   };
 
-  get selectedSessionType(): StaffSessionType | undefined {
-    return this.sessionTypes.find((s) => s.id === this.sessionTypeId);
+  get canSubmit(): boolean {
+    return !!this.childId && !!this.date && !!this.startTime && !!this.endTime && this.computedDuration > 0;
   }
 
-  get canSubmit(): boolean {
-    return !!this.childId && !!this.date && !!this.startTime && this.duration > 0;
+  get computedDuration(): number {
+    return this.parseTimeToMinutes(this.endTime) - this.parseTimeToMinutes(this.startTime);
+  }
+
+  get endTimeError(): string | null {
+    if (!this.endTime || !this.startTime) return null;
+    if (this.computedDuration <= 0) return 'End time must be after start time.';
+    return null;
   }
 
   get standardRateAmount(): number {
-    return (this.duration / 60) * this.hourlyRate;
-  }
-
-  get isEmergencyOrLate(): boolean {
-    if (!this.selectedSessionType) return false;
-    const name = this.selectedSessionType.name.toLowerCase();
-    return name.includes('emergency') || name.includes('late');
-  }
-
-  get lateNoticePremium(): number {
-    return this.isEmergencyOrLate ? this.standardRateAmount * 0.1 : 0;
+    return (this.computedDuration / 60) * this.hourlyRate;
   }
 
   get totalChargeAmount(): number {
-    return this.standardRateAmount + this.lateNoticePremium - this.fundingApplied;
+    return this.standardRateAmount - this.fundingApplied;
   }
 
   ngOnInit(): void {
@@ -151,13 +136,6 @@ export class CreateHourlyBookingComponent implements OnInit {
     }
   }
 
-  selectSessionType(typeId: string): void {
-    this.sessionTypeId = typeId;
-    if (this.formFieldErrors['session_type_id']) {
-      delete this.formFieldErrors['session_type_id'];
-    }
-  }
-
   setQuickDate(preset: 'today' | 'tomorrow' | 'next_monday'): void {
     const d = new Date();
     if (preset === 'tomorrow') {
@@ -174,13 +152,6 @@ export class CreateHourlyBookingComponent implements OnInit {
 
     if (this.formFieldErrors['calendar_date']) {
       delete this.formFieldErrors['calendar_date'];
-    }
-  }
-
-  setQuickDuration(mins: number): void {
-    this.duration = mins;
-    if (this.formFieldErrors['duration_minutes']) {
-      delete this.formFieldErrors['duration_minutes'];
     }
   }
 
@@ -226,8 +197,7 @@ export class CreateHourlyBookingComponent implements OnInit {
         child_id: this.childId,
         calendar_date: this.date,
         start_time_minutes: this.parseTimeToMinutes(this.startTime),
-        duration_minutes: this.duration,
-        session_type_id: this.sessionTypeId || undefined,
+        duration_minutes: this.computedDuration,
       })
       .subscribe({
         next: () => {
@@ -256,22 +226,8 @@ export class CreateHourlyBookingComponent implements OnInit {
   private loadData(): void {
     if (!this.siteId) return;
 
-    this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
-      next: (types) => (this.sessionTypes = types.filter((t) => t.isActive)),
-      error: () => {
-        /* Handled gracefully */
-      },
-    });
-
     this.staffApi.listChildren({ status: 'active', limit: 200, offset: 0 }).subscribe({
       next: (result) => (this.children = result.items),
-      error: () => {
-        /* Handled gracefully */
-      },
-    });
-
-    this.roomsApi.listRooms(this.siteId, { includeOccupancy: true }).subscribe({
-      next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
       error: () => {
         /* Handled gracefully */
       },

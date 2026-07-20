@@ -248,6 +248,28 @@ export class ChildRegistrationPage {
     await expect(this.page.locator('.toast, [role="status"]').first()).toBeVisible({ timeout: 5000 });
   }
 
+  // Edit mode helpers
+  async navigateToEditChild(childId: string): Promise<void> {
+    await this.page.goto(`/manager/children/${childId}/edit`);
+    const stepButtons = this.page.locator('nav[aria-label="Registration progress"] ol li button');
+    await expect(stepButtons.first()).toBeVisible({ timeout: 10000 });
+  }
+
+  async expectFieldValue(fieldId: string, expectedValue: string): Promise<void> {
+    const input = this.page.locator(`input#${fieldId}, select#${fieldId}`).first();
+    await expect(input).toHaveValue(expectedValue);
+  }
+
+  async expectRadioSelected(name: string, value: string): Promise<void> {
+    const radio = this.page.locator(`input[name="${name}"][value="${value}"]`);
+    await expect(radio).toBeChecked();
+  }
+
+  async expectCheckboxChecked(fieldId: string): Promise<void> {
+    const checkbox = this.page.locator(`input#${fieldId}`);
+    await expect(checkbox).toBeChecked();
+  }
+
   // --- Private helpers ---
 
   private input(id: string): Locator {
