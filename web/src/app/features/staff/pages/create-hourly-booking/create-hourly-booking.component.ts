@@ -3,13 +3,35 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroClock, heroArrowLeft } from '@ng-icons/heroicons/outline';
+import {
+  heroClock,
+  heroArrowLeft,
+  heroUser,
+  heroCalendarDays,
+  heroSparkles,
+  heroCheckCircle,
+  heroInformationCircle,
+  heroCake,
+  heroHomeModern,
+  heroCalendar,
+  heroCheck,
+  heroCurrencyPound,
+  heroUsers,
+  heroTag,
+  heroXMark,
+} from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { ChildRecord } from '../../models/children.models';
+import { UnifiedBooking } from '../../models/booking.models';
 import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
@@ -19,6 +41,10 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormsModule,
     RouterLink,
     AlertComponent,
+    BadgeComponent,
+    FormFieldComponent,
+    SearchAutocompleteComponent,
+    DatePickerComponent,
     NgIcon,
   ],
   templateUrl: './create-hourly-booking.component.html',
@@ -26,6 +52,19 @@ import { AuthService } from '../../../../core/services/auth.service';
     provideIcons({
       heroClock,
       heroArrowLeft,
+      heroUser,
+      heroCalendarDays,
+      heroSparkles,
+      heroCheckCircle,
+      heroInformationCircle,
+      heroCake,
+      heroHomeModern,
+      heroCalendar,
+      heroCheck,
+      heroCurrencyPound,
+      heroUsers,
+      heroTag,
+      heroXMark,
     }),
   ],
 })
@@ -33,6 +72,7 @@ export class CreateHourlyBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -40,19 +80,52 @@ export class CreateHourlyBookingComponent implements OnInit {
 
   sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
+  rooms: StaffRoom[] = [];
+  recentBookings: UnifiedBooking[] = [];
 
   childId = '';
+  selectedChild: ChildRecord | null = null;
   date = '';
-  startTime = '';
+  startTime = '08:00';
   duration = 60;
   sessionTypeId = '';
+  readonly hourlyRate = 12.5;
+  readonly fundingApplied = 0;
 
   isSaving = false;
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
 
+  readonly childLabelFn = (child: ChildRecord): string => {
+    if (!child) return '';
+    const name = `${child.firstName || ''} ${child.lastName || ''}`.trim();
+    return name || child.fullName;
+  };
+
+  get selectedSessionType(): StaffSessionType | undefined {
+    return this.sessionTypes.find((s) => s.id === this.sessionTypeId);
+  }
+
   get canSubmit(): boolean {
     return !!this.childId && !!this.date && !!this.startTime && this.duration > 0;
+  }
+
+  get standardRateAmount(): number {
+    return (this.duration / 60) * this.hourlyRate;
+  }
+
+  get isEmergencyOrLate(): boolean {
+    if (!this.selectedSessionType) return false;
+    const name = this.selectedSessionType.name.toLowerCase();
+    return name.includes('emergency') || name.includes('late');
+  }
+
+  get lateNoticePremium(): number {
+    return this.isEmergencyOrLate ? this.standardRateAmount * 0.1 : 0;
+  }
+
+  get totalChargeAmount(): number {
+    return this.standardRateAmount + this.lateNoticePremium - this.fundingApplied;
   }
 
   ngOnInit(): void {
@@ -65,52 +138,152 @@ export class CreateHourlyBookingComponent implements OnInit {
     this.loadData();
   }
 
+  onChildSelected(child: ChildRecord | null): void {
+    this.selectedChild = child;
+    this.childId = child?.id ?? '';
+    if (this.formFieldErrors['child_id']) {
+      delete this.formFieldErrors['child_id'];
+    }
+    if (child && this.siteId) {
+      this.loadChildRecentBookings(child.id);
+    } else {
+      this.recentBookings = [];
+    }
+  }
+
+  selectSessionType(typeId: string): void {
+    this.sessionTypeId = typeId;
+    if (this.formFieldErrors['session_type_id']) {
+      delete this.formFieldErrors['session_type_id'];
+    }
+  }
+
+  setQuickDate(preset: 'today' | 'tomorrow' | 'next_monday'): void {
+    const d = new Date();
+    if (preset === 'tomorrow') {
+      d.setDate(d.getDate() + 1);
+    } else if (preset === 'next_monday') {
+      const day = d.getDay();
+      const diff = day === 0 ? 1 : 8 - day;
+      d.setDate(d.getDate() + diff);
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const dateStr = String(d.getDate()).padStart(2, '0');
+    this.date = `${year}-${month}-${dateStr}`;
+
+    if (this.formFieldErrors['calendar_date']) {
+      delete this.formFieldErrors['calendar_date'];
+    }
+  }
+
+  setQuickDuration(mins: number): void {
+    this.duration = mins;
+    if (this.formFieldErrors['duration_minutes']) {
+      delete this.formFieldErrors['duration_minutes'];
+    }
+  }
+
+  calculateAge(dobStr?: string): string {
+    if (!dobStr) return '';
+    const dob = new Date(dobStr);
+    if (isNaN(dob.getTime())) return '';
+    const now = new Date();
+    let years = now.getFullYear() - dob.getFullYear();
+    let months = now.getMonth() - dob.getMonth();
+    if (months < 0 || (months === 0 && now.getDate() < dob.getDate())) {
+      years--;
+      months += 12;
+    }
+    if (years > 0) {
+      return `${years} yr${years > 1 ? 's' : ''}${months > 0 ? ` ${months} mo${months > 1 ? 's' : ''}` : ''}`;
+    }
+    return `${months} mo${months > 1 ? 's' : ''}`;
+  }
+
+  formatDateDisplay(dateStr: string): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
   submit(): void {
     if (!this.siteId || !this.canSubmit) return;
     this.isSaving = true;
     this.formError = null;
     this.formFieldErrors = {};
 
-    this.bookingsApi.createHourlyBooking(this.siteId, {
-      child_id: this.childId,
-      calendar_date: this.date,
-      start_time_minutes: this.parseTimeToMinutes(this.startTime),
-      duration_minutes: this.duration,
-      session_type_id: this.sessionTypeId || undefined,
-    }).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.router.navigate(['/manager/bookings']);
-      },
-      error: (err) => {
-        this.isSaving = false;
-        const body = err?.error;
-        if (body?.code === 'validation_error' && body?.fields) {
-          this.formFieldErrors = body.fields as Record<string, string>;
-          this.formError = 'Please correct the highlighted fields.';
-        } else {
-          this.formError = body?.message ?? 'Failed to create booking.';
-        }
-      },
-    });
+    this.bookingsApi
+      .createHourlyBooking(this.siteId, {
+        child_id: this.childId,
+        calendar_date: this.date,
+        start_time_minutes: this.parseTimeToMinutes(this.startTime),
+        duration_minutes: this.duration,
+        session_type_id: this.sessionTypeId || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.router.navigate(['/manager/bookings']);
+        },
+        error: (err) => {
+          this.isSaving = false;
+          const body = err?.error;
+          if (body?.code === 'validation_error' && body?.fields) {
+            this.formFieldErrors = body.fields as Record<string, string>;
+            this.formError = 'Please correct the highlighted fields.';
+          } else {
+            this.formError = body?.message ?? 'Failed to create booking.';
+          }
+        },
+      });
   }
 
   private parseTimeToMinutes(time: string): number {
+    if (!time) return 0;
     const [h, m] = time.split(':').map(Number);
-    return h * 60 + m;
+    return (h || 0) * 60 + (m || 0);
   }
 
   private loadData(): void {
     if (!this.siteId) return;
 
     this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
-      next: (types) => this.sessionTypes = types.filter((t) => t.isActive),
-      error: () => { /* Session types load failure handled by template defaults */ },
+      next: (types) => (this.sessionTypes = types.filter((t) => t.isActive)),
+      error: () => {
+        /* Handled gracefully */
+      },
     });
 
     this.staffApi.listChildren({ status: 'active', limit: 200, offset: 0 }).subscribe({
-      next: (result) => this.children = result.items,
-      error: () => { /* Children load failure handled by template defaults */ },
+      next: (result) => (this.children = result.items),
+      error: () => {
+        /* Handled gracefully */
+      },
+    });
+
+    this.roomsApi.listRooms(this.siteId, { includeOccupancy: true }).subscribe({
+      next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
+      error: () => {
+        /* Handled gracefully */
+      },
+    });
+  }
+
+  private loadChildRecentBookings(childId: string): void {
+    if (!this.siteId) return;
+    this.bookingsApi.listBookings(this.siteId, { childId }, 1, 5).subscribe({
+      next: (res) => (this.recentBookings = res.items),
+      error: () => (this.recentBookings = []),
     });
   }
 }
+

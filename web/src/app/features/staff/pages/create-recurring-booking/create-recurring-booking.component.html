@@ -56,10 +56,10 @@
                   <ng-icon name="heroCake" size="14" class="text-gray-400" aria-hidden="true" />
                   <span class="text-gray-400">DOB:</span> {{ selectedChild.dateOfBirth }}
                 </span>
-                @if (selectedChild.primaryRoomId) {
+                @if (selectedChild.primaryRoomId && childRoomName) {
                   <span class="flex items-center gap-1">
                     <ng-icon name="heroHomeModern" size="14" class="text-gray-400" aria-hidden="true" />
-                    <span class="text-gray-400">Room:</span> {{ selectedChild.primaryRoomId }}
+                    <span class="text-gray-400">Room:</span> {{ childRoomName }}
                   </span>
                 }
               </div>
@@ -128,7 +128,8 @@
             <app-radio-card-group
               [options]="fundingOptions"
               name="fundingType"
-              [(ngModel)]="fundingType"
+              [ngModel]="fundingType"
+              (ngModelChange)="fundingType = $event; onFundingTypeChange()"
             />
           </div>
 

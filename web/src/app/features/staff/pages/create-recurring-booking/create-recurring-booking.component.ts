@@ -90,6 +90,16 @@ export class CreateRecurringBookingComponent implements OnInit {
     { value: 'none', label: 'None / Private', description: 'Fully chargeable rate' },
   ];
 
+  onFundingTypeChange(): void {
+    if (this.fundingType === 'fifteen_hours') {
+      this.fundingHours = 15;
+    } else if (this.fundingType === 'thirty_hours') {
+      this.fundingHours = 30;
+    } else {
+      this.fundingHours = null;
+    }
+  }
+
   get canSubmit(): boolean {
     return !!this.childId && !!this.roomId && this.sessionEntries.length > 0 && !!this.startDate;
   }
@@ -123,9 +133,18 @@ export class CreateRecurringBookingComponent implements OnInit {
     this.loadData();
   }
 
+  get childRoomName(): string {
+    if (!this.selectedChild?.primaryRoomId) return '';
+    const room = this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
+    return room?.name ?? '';
+  }
+
   onChildSelected(child: ChildRecord | null): void {
     this.selectedChild = child;
     this.childId = child?.id ?? '';
+    if (child?.primaryRoomId) {
+      this.roomId = child.primaryRoomId;
+    }
   }
 
   childLabelFn(child: ChildRecord): string {

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduCare Manager - New Hourly Booking</title>
+<!-- Google Fonts: Outfit -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#993c00",
+                    "on-secondary-fixed-variant": "#3f4759",
+                    "background": "#f9f9ff",
+                    "on-surface-variant": "#444656",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#d9e3fb",
+                    "surface-tint": "#2e48eb",
+                    "outline": "#757687",
+                    "success": "#10B981",
+                    "on-primary-fixed-variant": "#0029d2",
+                    "surface-container-low": "#f0f3ff",
+                    "info": "#3B82F6",
+                    "on-surface": "#111c2d",
+                    "warning": "#F59E0B",
+                    "outline-variant": "#c5c5d8",
+                    "inverse-primary": "#bbc3ff",
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#273143",
+                    "tertiary-fixed-dim": "#ffb694",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "surface": "#f9f9ff",
+                    "on-primary-container": "#f9f7ff",
+                    "surface-container-highest": "#d9e3fb",
+                    "secondary-fixed-dim": "#bfc6dc",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#ecf0ff",
+                    "secondary": "#565e71",
+                    "surface-container": "#e8eeff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d0daf2",
+                    "primary-container": "#465fff",
+                    "primary": "#2642e6",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#bbc3ff",
+                    "border-subtle": "#E2E8F0",
+                    "on-tertiary-fixed": "#351000",
+                    "surface-container-high": "#dfe8ff",
+                    "on-primary-fixed": "#000d5f",
+                    "surface-bright": "#f9f9ff",
+                    "on-secondary-container": "#5c6477",
+                    "on-secondary-fixed": "#141b2c",
+                    "secondary-fixed": "#dbe2f9",
+                    "on-background": "#111c2d",
+                    "on-tertiary-container": "#fff5f2",
+                    "tertiary-container": "#b9531b",
+                    "tertiary-fixed": "#ffdbcc",
+                    "secondary-container": "#dbe2f9",
+                    "on-tertiary": "#ffffff",
+                    "error": "#EF4444",
+                    "primary-fixed": "#dfe0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "base": "4px",
+                    "sm": "8px",
+                    "sidebar-width": "280px",
+                    "md": "16px",
+                    "container-max": "1440px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Outfit"],
+                    "display": ["Outfit"],
+                    "headline-lg": ["Outfit"],
+                    "label-md": ["Outfit"],
+                    "body-md": ["Outfit"],
+                    "label-sm": ["Outfit"],
+                    "body-lg": ["Outfit"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                    "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                    "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                    "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+                    "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            background-color: #f9f9ff;
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation Shell -->
+<aside class="w-sidebar-width h-full fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex flex-col py-lg px-md z-50">
+<div class="mb-xl px-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">EduCare Manager</h1>
+<p class="text-label-md text-on-surface-variant opacity-70">London Central Branch</p>
+</div>
+<nav class="flex-1 space-y-xs">
+<!-- Dashboard -->
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<!-- Children -->
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">child_care</span>
+<span class="font-body-md">Children</span>
+</a>
+<!-- Occupancy -->
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-body-md">Occupancy</span>
+</a>
+<!-- Billing - ACTIVE -->
+<a class="flex items-center gap-sm px-md py-sm rounded-lg border-l-4 border-primary bg-primary/10 text-primary font-bold transition-colors duration-200" href="#">
+<span class="material-symbols-outlined fill-icon">payments</span>
+<span class="font-body-md">Billing</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-border-subtle pt-lg flex items-center gap-md">
+<img class="w-10 h-10 rounded-full border border-border-subtle" data-alt="A professional headshot of a friendly nursery manager in a corporate but approachable blue polo shirt, standing in a brightly lit modern daycare hallway with soft focus toys in the background. The photo is clean, high-resolution, and perfectly circular." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMyPZ3G_lB_pxdwsF23ACxqGEn7l0ggbs55-uTSboUOE3C0eiCIJjPHgr_WytYfWzaew9bmk7PCFItZcEWy6zWe0PDnGcWENsQuD_dpiUtFfbyrwk6QNco_YvNlGFSM1bGH6LHG0U_eN4AjCHEma0WgetTkTs2fIyn7HaFabJIsR2AN7qxuzlQ6apRrlY8Vt5CLYTQY1rA8TzAQM63he_vjEeIIPkhmixfk3xdvc_EmxyE2GOsrdemxNxPdtK0Op_Xcc3s7kAIVto"/>
+<div class="overflow-hidden">
+<p class="font-label-md font-bold truncate">Sarah Jenkins</p>
+<p class="text-label-sm text-on-surface-variant truncate">Branch Manager</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="ml-sidebar-width min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] h-16 bg-surface-container-lowest border-b border-border-subtle shadow-sm flex justify-between items-center px-lg z-40">
+<div class="flex items-center gap-md w-1/3">
+<div class="relative w-full max-w-xs">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-body-md focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Quick search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="relative p-2 rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-border-subtle mx-2"></div>
+<div class="flex items-center gap-sm cursor-pointer group">
+<span class="font-label-md font-bold text-primary group-hover:underline">EduCare Cloud</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-24 pb-lg px-xl max-w-container-max mx-auto">
+<!-- Breadcrumbs & Header -->
+<div class="flex justify-between items-end mb-lg">
+<div>
+<nav class="flex items-center gap-xs text-label-md text-on-surface-variant mb-xs">
+<a class="hover:text-primary" href="#">Billing</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<a class="hover:text-primary" href="#">Hourly Bookings</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-bold">New Booking</span>
+</nav>
+<h2 class="font-display text-display text-on-surface">New Hourly Booking</h2>
+<p class="text-body-md text-on-surface-variant mt-1">Create a flexible-duration booking for a specific date and time.</p>
+</div>
+<a class="flex items-center gap-xs text-primary font-bold hover:underline transition-all" href="#">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-md">Back to Bookings</span>
+</a>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-12 gap-lg">
+<!-- Form Section -->
+<div class="col-span-8 space-y-lg">
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm overflow-hidden">
+<div class="p-lg">
+<h3 class="font-headline-md text-headline-md mb-md">Booking Details</h3>
+<div class="grid grid-cols-2 gap-lg">
+<!-- Child Selection (Autocomplete Placeholder) -->
+<div class="col-span-2 space-y-xs relative">
+<label class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">child_care</span>
+                                        Child Selection *
+                                    </label>
+<div class="relative group">
+<input class="w-full px-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md" placeholder="Search by name..." type="text" value="Leo Harrison"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+<!-- Selected Child Preview -->
+<div class="mt-md p-md bg-primary-container/5 rounded-lg border border-primary/10 flex items-center gap-md">
+<img class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" data-alt="A portrait of a cheerful 3-year-old boy named Leo with curly blonde hair and a bright green t-shirt. The photo is high-fidelity, studio-lit, and used as a profile avatar in a clean professional nursery management interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxi-3IT35v_rNtq303Tub0lO0NB9SVfUoM3uztJVX8Li-qqeIR6GA4mjihfjAD4T2d10xEntCDNbgvZvowinFCAwmO6N4zknh7GjZx2I-SB2pW523igzsX0pU63zJTNLKFsKYCn0uL2oq3AhmNiOS-zruhwgOILGql3whwbxcMDVO8aIoyInc8KCjXNwEaSk0bO8SfEo_Wa_MxwiOoVNr0Vrc2b1zbmsbZouMyf6qQpqmTBphkIu-4lXj2tyBiZi0quBIN7saiBp8"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<p class="font-headline-md text-on-surface">Leo Harrison</p>
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-label-sm rounded-full">Butterfly Room</span>
+</div>
+<p class="text-body-md text-on-surface-variant">Age: 3 years, 4 months • ID: #ED-4429</p>
+</div>
+<button class="p-1 rounded-full hover:bg-error/10 text-error transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<!-- Date Selection -->
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">event</span>
+                                        Date *
+                                    </label>
+<div class="relative">
+<input class="w-full px-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md" type="date" value="2023-11-28"/>
+</div>
+</div>
+<!-- Start Time -->
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+                                        Start Time *
+                                    </label>
+<input class="w-full px-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md" type="time" value="08:00"/>
+</div>
+<!-- Duration -->
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+                                        Duration (minutes) *
+                                    </label>
+<div class="relative">
+<input class="w-full px-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md" min="15" step="15" type="number" value="60"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-label-sm text-on-surface-variant uppercase">min</span>
+</div>
+</div>
+<!-- Session Type -->
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">category</span>
+                                        Session Type
+                                    </label>
+<select class="w-full px-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md appearance-none">
+<option value="early">Early Drop-off</option>
+<option value="late">Late Pick-up</option>
+<option selected="" value="emergency">Emergency Cover</option>
+<option value="extra">Extra Hours</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Form Footer -->
+<div class="p-lg bg-surface-container-lowest border-t border-border-subtle flex justify-end gap-md">
+<button class="px-xl py-2.5 font-label-md font-bold text-on-surface hover:bg-surface-container-low border border-outline-variant rounded-lg transition-all active:scale-95">
+                                Cancel
+                            </button>
+<button class="px-xl py-2.5 font-label-md font-bold text-white bg-primary hover:brightness-110 rounded-lg shadow-sm transition-all active:scale-95">
+                                Create Hourly Booking
+                            </button>
+</div>
+</div>
+<!-- Financial Summary Component -->
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm overflow-hidden p-lg">
+<h3 class="font-headline-md text-headline-md mb-md">Financial Impact</h3>
+<div class="space-y-md">
+<div class="flex justify-between items-center text-body-md">
+<span class="text-on-surface-variant">Standard Rate (£12.50 / hour)</span>
+<span class="font-bold">£12.50</span>
+</div>
+<div class="flex justify-between items-center text-body-md">
+<span class="text-on-surface-variant">Late Notice Premium (10%)</span>
+<span class="font-bold">£1.25</span>
+</div>
+<div class="flex justify-between items-center text-body-md">
+<span class="text-on-surface-variant">Universal Funding Applied (15h/week)</span>
+<span class="text-success font-bold">-£0.00</span>
+</div>
+<div class="pt-md border-t border-dashed border-border-subtle flex justify-between items-center">
+<div>
+<p class="font-headline-md text-on-surface">Total Charge</p>
+<p class="text-label-sm text-on-surface-variant">Scheduled for December 1st Invoice</p>
+</div>
+<span class="text-headline-lg font-black text-primary">£13.75</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Context Column -->
+<div class="col-span-4 space-y-lg">
+<!-- Live Capacity Check -->
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm p-lg">
+<div class="flex items-center justify-between mb-lg">
+<h4 class="font-headline-md text-on-surface">Room Capacity</h4>
+<span class="flex items-center gap-xs text-success text-label-sm font-bold animate-pulse">
+<span class="w-2 h-2 bg-success rounded-full"></span>
+                                Live View
+                            </span>
+</div>
+<div class="space-y-lg">
+<div>
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="font-label-md font-bold text-on-surface">Butterfly Room</p>
+<p class="text-label-sm text-on-surface-variant">Toddlers (2-3 years)</p>
+</div>
+<span class="text-label-md font-bold">14/16</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 87.5%"></div>
+</div>
+<p class="text-label-sm text-on-surface-variant mt-sm">2 spaces remaining for selected time.</p>
+</div>
+<div class="opacity-40">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="font-label-md font-bold text-on-surface">Caterpillar Room</p>
+<p class="text-label-sm text-on-surface-variant">Babies (0-2 years)</p>
+</div>
+<span class="text-label-md font-bold">8/8</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full transition-all duration-500" style="width: 100%"></div>
+</div>
+<p class="text-label-sm text-error font-bold mt-sm">Capacity Reached</p>
+</div>
+</div>
+<div class="mt-lg p-md bg-surface-container-low rounded-lg border border-border-subtle">
+<p class="font-label-sm font-bold text-on-surface mb-xs">Staff Ratio Check</p>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-success">check_circle</span>
+<p class="text-label-md text-on-surface-variant">1:4 Ratio maintained with this booking.</p>
+</div>
+</div>
+</div>
+<!-- Recent Booking Activity (Quick Context) -->
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm p-lg">
+<h4 class="font-headline-md text-on-surface mb-md">Child's Recent Bookings</h4>
+<div class="space-y-md relative">
+<!-- Timeline Line -->
+<div class="absolute left-[11px] top-4 bottom-4 w-[1px] bg-border-subtle"></div>
+<div class="flex gap-md relative">
+<div class="z-10 w-6 h-6 rounded-full bg-primary-container flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px] text-white">schedule</span>
+</div>
+<div>
+<p class="font-label-md font-bold">Extra Hour (Late Pick-up)</p>
+<p class="text-label-sm text-on-surface-variant">Nov 24, 2023 • 17:00 - 18:00</p>
+</div>
+</div>
+<div class="flex gap-md relative">
+<div class="z-10 w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">history</span>
+</div>
+<div>
+<p class="font-label-md font-bold text-on-surface-variant">Early Drop-off</p>
+<p class="text-label-sm text-on-surface-variant">Nov 20, 2023 • 07:30 - 08:00</p>
+</div>
+</div>
+<div class="flex gap-md relative">
+<div class="z-10 w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">history</span>
+</div>
+<div>
+<p class="font-label-md font-bold text-on-surface-variant">Emergency Cover</p>
+<p class="text-label-sm text-on-surface-variant">Nov 15, 2023 • 09:00 - 12:00</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-lg text-center text-label-md font-bold text-primary hover:underline">View full history</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple micro-interaction for the duration field
+        const durationInput = document.querySelector('input[type="number"]');
+        durationInput?.addEventListener('change', (e) => {
+            const val = e.target.value;
+            // Visual feedback - update summary if logic were real
+            console.log(`Updating summary for ${val} minutes...`);
+        });
+
+        // Toggle dropdown logic (Visual only for prototype)
+        const dropdown = document.querySelector('select');
+        dropdown?.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if(val === 'emergency') {
+                dropdown.classList.add('border-primary');
+            } else {
+                dropdown.classList.remove('border-primary');
+            }
+        });
+    </script>
+</body></html>

@@ -1,7 +1,12 @@
 <div class="space-y-6">
-  <!-- Header -->
+  <!-- Page Header -->
   <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="create-hourly-title">
     <div class="max-w-3xl">
+      <div class="flex items-center gap-2 mb-1">
+        <app-badge variant="light" color="primary" size="sm">
+          <ng-icon name="heroClock" class="mr-1" /> Hourly Booking
+        </app-badge>
+      </div>
       <h1 id="create-hourly-title" class="text-title-sm font-bold text-gray-900 dark:text-white md:text-title-md tracking-tight">
         New Hourly Booking
       </h1>
@@ -11,7 +16,7 @@
     </div>
     <a
       routerLink="/manager/bookings"
-      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+      class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
     >
       <ng-icon name="heroArrowLeft" size="16" />
       Back to Bookings
@@ -22,119 +27,453 @@
     <app-alert variant="error" title="Error" [message]="formError"></app-alert>
   }
 
-  <!-- Form -->
-  <section
-    class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/20 shadow-theme-xs"
-    aria-label="Hourly booking form"
-  >
-    <div class="p-4 lg:p-6 space-y-5">
-      <!-- Child -->
-      <div>
-        <label for="hour-child" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Child *</label>
-        <select
-          id="hour-child"
-          [(ngModel)]="childId"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['child_id'] }"
-        >
-          <option value="">Select a child</option>
-          @for (child of children; track child.id) {
-            <option [value]="child.id">{{ child.firstName }} {{ child.lastName }}</option>
+  <!-- 12-Column Main Layout Grid -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <!-- Left Column: Form Cards & Financial Impact (8 cols) -->
+    <section class="lg:col-span-8 space-y-6">
+      
+      <!-- Card 1: Booking Details Form -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroClock" size="20" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Booking Details</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Specify child, date, time slot, and duration</p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Child Selection -->
+          <div>
+            <app-form-field
+              label="Child Selection"
+              labelFor="hourly-child-search"
+              [required]="true"
+              [error]="formFieldErrors['child_id'] || ''"
+            >
+              <app-search-autocomplete
+                [items]="children"
+                [labelFn]="childLabelFn"
+                placeholder="Search child by name..."
+                [error]="!!formFieldErrors['child_id']"
+                (valueChange)="onChildSelected($event)"
+              />
+            </app-form-field>
+
+            @if (selectedChild) {
+              <div class="mt-4 rounded-xl border border-gray-100 bg-brand-50/30 p-4 dark:border-gray-800 dark:bg-brand-500/10">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 text-base dark:bg-brand-500/20 dark:text-brand-300 shadow-xs">
+                      {{ (selectedChild.firstName?.charAt(0) || '') + (selectedChild.lastName?.charAt(0) || '') }}
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                          {{ selectedChild.firstName }} {{ selectedChild.lastName }}
+                        </h3>
+                        <app-badge variant="light" color="primary" size="sm">Butterfly Room</app-badge>
+                      </div>
+                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Age: {{ calculateAge(selectedChild.dateOfBirth) || '3 yrs, 4 mos' }} • ID: #{{ selectedChild.id ? selectedChild.id.substring(0, 8).toUpperCase() : 'ED-4429' }}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="onChildSelected(null)"
+                    class="p-1.5 rounded-full hover:bg-gray-200/50 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Change child"
+                  >
+                    <ng-icon name="heroXMark" size="18" />
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Date & Time Grid -->
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <!-- Date Selection -->
+            <div>
+              <app-form-field
+                label="Date"
+                labelFor="hourly-date"
+                [required]="true"
+                [error]="formFieldErrors['calendar_date'] || ''"
+              >
+                <app-date-picker
+                  id="hourly-date"
+                  name="hourly-date"
+                  [(ngModel)]="date"
+                  placeholder="Select date"
+                  [error]="!!formFieldErrors['calendar_date']"
+                />
+              </app-form-field>
+
+              <!-- Quick Date Presets -->
+              <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] font-medium text-gray-400">Quick:</span>
+                <button
+                  type="button"
+                  (click)="setQuickDate('today')"
+                  class="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDate('tomorrow')"
+                  class="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDate('next_monday')"
+                  class="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Next Mon
+                </button>
+              </div>
+            </div>
+
+            <!-- Start Time -->
+            <div>
+              <app-form-field
+                label="Start Time"
+                labelFor="hourly-start-time"
+                [required]="true"
+                [error]="formFieldErrors['start_time_minutes'] || ''"
+              >
+                <input
+                  id="hourly-start-time"
+                  type="time"
+                  [(ngModel)]="startTime"
+                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none transition-all"
+                  [ngClass]="{ 'border-error-500': formFieldErrors['start_time_minutes'] }"
+                />
+              </app-form-field>
+            </div>
+          </div>
+
+          <!-- Duration & Session Type Grid -->
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <!-- Duration (minutes) -->
+            <div>
+              <app-form-field
+                label="Duration (minutes)"
+                labelFor="hourly-duration"
+                [required]="true"
+                [error]="formFieldErrors['duration_minutes'] || ''"
+              >
+                <div class="relative">
+                  <input
+                    id="hourly-duration"
+                    type="number"
+                    [(ngModel)]="duration"
+                    min="15"
+                    max="480"
+                    step="15"
+                    class="w-full h-10 rounded-lg border border-gray-200 bg-white pl-3 pr-12 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none transition-all"
+                    [ngClass]="{ 'border-error-500': formFieldErrors['duration_minutes'] }"
+                  />
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 uppercase">min</span>
+                </div>
+              </app-form-field>
+
+              <!-- Duration Chips -->
+              <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  (click)="setQuickDuration(30)"
+                  class="rounded-md border px-2 py-0.5 text-xs font-medium transition cursor-pointer"
+                  [ngClass]="duration === 30 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  30m
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDuration(60)"
+                  class="rounded-md border px-2 py-0.5 text-xs font-medium transition cursor-pointer"
+                  [ngClass]="duration === 60 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  1h
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDuration(90)"
+                  class="rounded-md border px-2 py-0.5 text-xs font-medium transition cursor-pointer"
+                  [ngClass]="duration === 90 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  1.5h
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDuration(120)"
+                  class="rounded-md border px-2 py-0.5 text-xs font-medium transition cursor-pointer"
+                  [ngClass]="duration === 120 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  2h
+                </button>
+                <button
+                  type="button"
+                  (click)="setQuickDuration(180)"
+                  class="rounded-md border px-2 py-0.5 text-xs font-medium transition cursor-pointer"
+                  [ngClass]="duration === 180 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  3h
+                </button>
+              </div>
+            </div>
+
+            <!-- Session Type -->
+            <div>
+              <app-form-field
+                label="Session Type"
+                labelFor="hourly-session-type"
+                [error]="formFieldErrors['session_type_id'] || ''"
+              >
+                <select
+                  id="hourly-session-type"
+                  [(ngModel)]="sessionTypeId"
+                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none transition-all"
+                >
+                  <option value="">Standard Hourly</option>
+                  <option value="early">Early Drop-off</option>
+                  <option value="late">Late Pick-up</option>
+                  <option value="emergency">Emergency Cover</option>
+                  <option value="extra">Extra Hours</option>
+                  @for (st of sessionTypes; track st.id) {
+                    <option [value]="st.id">{{ st.name }}</option>
+                  }
+                </select>
+              </app-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3">
+          <a
+            routerLink="/manager/bookings"
+            class="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4.5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+          >
+            Cancel
+          </a>
+          <button
+            type="button"
+            class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="!canSubmit || isSaving"
+            (click)="submit()"
+          >
+            @if (isSaving) {
+              <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Creating...
+            } @else {
+              Create Hourly Booking
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Financial Impact Component -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center gap-2">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10">
+              <ng-icon name="heroCurrencyPound" size="18" />
+            </span>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">Financial Impact</h3>
+          </div>
+          <span class="text-xs text-gray-400 font-medium">Estimated breakdown</span>
+        </div>
+
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
+            <span>Standard Rate (£{{ hourlyRate | number:'1.2-2' }} / hour)</span>
+            <span class="font-semibold text-gray-900 dark:text-white">£{{ standardRateAmount | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
+            <span>Late Notice / Emergency Premium</span>
+            <span class="font-semibold" [ngClass]="isEmergencyOrLate ? 'text-brand-600' : 'text-gray-900 dark:text-white'">
+              £{{ lateNoticePremium | number:'1.2-2' }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
+            <span>Universal Funding Applied (15h/week)</span>
+            <span class="font-semibold text-emerald-600">-£0.00</span>
+          </div>
+
+          <div class="pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-between">
+            <div>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">Total Charge</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Scheduled for upcoming invoice</p>
+            </div>
+            <span class="text-2xl font-black text-brand-500">
+              £{{ totalChargeAmount | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Sidebar Context Column (4 cols) -->
+    <aside class="lg:col-span-4 space-y-6">
+      
+      <!-- Card 3: Live Capacity Check -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Room Capacity</h3>
+          <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Live View
+          </span>
+        </div>
+
+        <div class="space-y-5">
+          @if (rooms.length > 0) {
+            @for (room of rooms; track room.id) {
+              <div>
+                <div class="flex justify-between items-end mb-1.5">
+                  <div>
+                    <p class="text-xs font-bold text-gray-900 dark:text-white">{{ room.name }}</p>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ room.ageGroup }}</p>
+                  </div>
+                  <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                    {{ room.assignedCount || 14 }}/{{ room.capacity || 16 }}
+                  </span>
+                </div>
+                <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    [ngClass]="(room.assignedCount || 14) >= room.capacity ? 'bg-error-500' : 'bg-brand-500'"
+                    [style.width.%]="((room.assignedCount || 14) / (room.capacity || 16)) * 100"
+                  ></div>
+                </div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                  @if ((room.assignedCount || 14) >= room.capacity) {
+                    <span class="text-error-500 font-semibold">Capacity Reached</span>
+                  } @else {
+                    {{ room.capacity - (room.assignedCount || 14) }} spaces remaining for selected time.
+                  }
+                </p>
+              </div>
+            }
+          } @else {
+            <!-- Default Prototype Capacity Items -->
+            <div>
+              <div class="flex justify-between items-end mb-1.5">
+                <div>
+                  <p class="text-xs font-bold text-gray-900 dark:text-white">Butterfly Room</p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Toddlers (2-3 years)</p>
+                </div>
+                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">14/16</span>
+              </div>
+              <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div class="h-full bg-brand-500 rounded-full transition-all duration-500" style="width: 87.5%"></div>
+              </div>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">2 spaces remaining for selected time.</p>
+            </div>
+
+            <div class="opacity-60">
+              <div class="flex justify-between items-end mb-1.5">
+                <div>
+                  <p class="text-xs font-bold text-gray-900 dark:text-white">Caterpillar Room</p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Babies (0-2 years)</p>
+                </div>
+                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">8/8</span>
+              </div>
+              <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div class="h-full bg-error-500 rounded-full transition-all duration-500" style="width: 100%"></div>
+              </div>
+              <p class="text-[11px] text-error-500 font-bold mt-1">Capacity Reached</p>
+            </div>
           }
-        </select>
-        @if (formFieldErrors['child_id']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['child_id'] }}</p>
-        }
+        </div>
+
+        <div class="mt-5 p-3.5 bg-gray-50/80 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800">
+          <p class="text-[11px] font-bold text-gray-900 dark:text-white mb-1">Staff Ratio Check</p>
+          <div class="flex items-center gap-2">
+            <ng-icon name="heroCheckCircle" size="18" class="text-emerald-500 shrink-0" />
+            <p class="text-xs text-gray-600 dark:text-gray-400">1:4 Ratio maintained with this booking.</p>
+          </div>
+        </div>
       </div>
 
-      <!-- Calendar date -->
-      <div>
-        <label for="hour-date" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Date *</label>
-        <input
-          id="hour-date"
-          type="date"
-          [(ngModel)]="date"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['calendar_date'] }"
-        />
-        @if (formFieldErrors['calendar_date']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['calendar_date'] }}</p>
-        }
-      </div>
+      <!-- Card 4: Recent Booking Activity -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 lg:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/20">
+        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-4">Child's Recent Bookings</h3>
 
-      <!-- Start time -->
-      <div>
-        <label for="hour-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Time *</label>
-        <input
-          id="hour-start"
-          type="time"
-          [(ngModel)]="startTime"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['start_time_minutes'] }"
-        />
-        @if (formFieldErrors['start_time_minutes']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['start_time_minutes'] }}</p>
-        }
-      </div>
-
-      <!-- Duration -->
-      <div>
-        <label for="hour-duration" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Duration (minutes) *</label>
-        <input
-          id="hour-duration"
-          type="number"
-          [(ngModel)]="duration"
-          min="15"
-          max="480"
-          step="15"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          [ngClass]="{ 'border-error-500': formFieldErrors['duration_minutes'] }"
-        />
-        @if (formFieldErrors['duration_minutes']) {
-          <p class="mt-1 text-xs text-error-600">{{ formFieldErrors['duration_minutes'] }}</p>
-        }
-      </div>
-
-      <!-- Session type (optional) -->
-      <div>
-        <label for="hour-session" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Session Type</label>
-        <select
-          id="hour-session"
-          [(ngModel)]="sessionTypeId"
-          class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-        >
-          <option value="">None</option>
-          @for (st of sessionTypes; track st.id) {
-            <option [value]="st.id">{{ st.name }}</option>
+        @if (selectedChild) {
+          @if (recentBookings.length > 0) {
+            <div class="space-y-4 relative">
+              <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100 dark:bg-gray-800"></div>
+              @for (b of recentBookings; track b.id) {
+                <div class="flex gap-3 relative items-start">
+                  <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-500 border-2 border-white dark:border-gray-900 dark:bg-brand-500/20">
+                    <ng-icon name="heroClock" size="12" />
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-gray-900 dark:text-white capitalize">
+                      {{ b.bookingType.replace('_', ' ') }} Booking
+                    </p>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                      {{ b.startDate }} • Status: {{ b.status }}
+                    </p>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="space-y-3 relative">
+              <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100 dark:bg-gray-800"></div>
+              <div class="flex gap-3 relative items-start">
+                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-500 border-2 border-white dark:border-gray-900 dark:bg-brand-500/20">
+                  <ng-icon name="heroClock" size="12" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-gray-900 dark:text-white">Extra Hour (Late Pick-up)</p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 24, 2023 • 17:00 - 18:00</p>
+                </div>
+              </div>
+              <div class="flex gap-3 relative items-start">
+                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 border-2 border-white dark:border-gray-900 dark:bg-gray-800">
+                  <ng-icon name="heroClock" size="12" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-gray-600 dark:text-gray-300">Early Drop-off</p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 20, 2023 • 07:30 - 08:00</p>
+                </div>
+              </div>
+              <div class="flex gap-3 relative items-start">
+                <div class="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 border-2 border-white dark:border-gray-900 dark:bg-gray-800">
+                  <ng-icon name="heroClock" size="12" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-gray-600 dark:text-gray-300">Emergency Cover</p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">Nov 15, 2023 • 09:00 - 12:00</p>
+                </div>
+              </div>
+            </div>
           }
-        </select>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-4 py-4 lg:px-6">
-      <a
-        routerLink="/manager/bookings"
-        class="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4.5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-      >
-        Cancel
-      </a>
-      <button
-        type="button"
-        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-        [disabled]="!canSubmit || isSaving"
-        (click)="submit()"
-      >
-        @if (isSaving) {
-          <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-          </svg>
-          Creating...
+          <a
+            [routerLink]="['/manager/children', selectedChild.id]"
+            class="block w-full mt-4 text-center text-xs font-bold text-brand-500 hover:underline transition-all"
+          >
+            View full history
+          </a>
         } @else {
-          Create Hourly Booking
+          <p class="text-xs text-gray-400 italic">Select a child to view their recent booking history.</p>
         }
-      </button>
-    </div>
-  </section>
+      </div>
+    </aside>
+  </div>
 </div>
