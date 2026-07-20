@@ -73,10 +73,47 @@
     <app-alert variant="error" title="Error" [message]="errorMessage"></app-alert>
   }
 
-  <!-- Filters section -->
+  <!-- Metric summary cards -->
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Booking summary">
+    @for (metric of metricCards; track metric.key) {
+      <article class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/40 p-5 shadow-theme-xs hover:shadow-md hover:border-brand-200 dark:hover:border-brand-900/50 hover:-translate-y-1 transition-all duration-300 ease-in-out group">
+        <div class="flex items-start justify-between gap-4">
+          <div
+            class="flex size-12 items-center justify-center rounded-xl transition-transform group-hover:scale-105 duration-300"
+            [ngClass]="metricIconToneClasses(metric.tone)"
+          >
+            @switch (metric.key) {
+              @case ('total') { <ng-icon name="heroCalendarDays" size="22" aria-hidden="true" /> }
+              @case ('recurring') { <ng-icon name="heroClock" size="22" aria-hidden="true" /> }
+              @case ('ad_hoc') { <ng-icon name="heroCalendarDays" size="22" aria-hidden="true" /> }
+              @case ('hourly') { <ng-icon name="heroClock" size="22" aria-hidden="true" /> }
+            }
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-50 dark:bg-white/[0.03]" [ngClass]="metricPillToneClasses(metric.tone)">
+            {{ metric.pill }}
+          </span>
+        </div>
+        <p class="mt-5 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          {{ metric.label }}
+        </p>
+        <p class="mt-1 text-title-sm font-extrabold text-gray-900 dark:text-white font-mono tracking-tight">
+          {{ metricDisplayValue(metric) }}
+        </p>
+        <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            [ngClass]="metricProgressToneClasses(metric.tone)"
+            [style.width.%]="metricProgressWidth(metric.count)"
+          ></div>
+        </div>
+      </article>
+    }
+  </section>
+
+  <!-- Filters and Table section -->
   <section
     class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/20 shadow-theme-xs"
-    aria-label="Booking filters"
+    aria-label="Booking records"
   >
     <div class="px-4 py-5 lg:px-6 space-y-4">
       <!-- Row 1: Search and Type Filters -->
@@ -231,53 +268,11 @@
     <div class="border-b border-gray-100 dark:border-gray-800/80"></div>
 
     @if (isLoading) {
-      <!-- Skeleton loading -->
-      <div class="overflow-x-auto hidden lg:block">
-        <table class="w-full min-w-[900px] border-collapse text-left text-sm">
-          <thead>
-            <tr class="border-b border-gray-100 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-500 sticky top-0 z-10">
-              <th class="pl-4 pr-6 py-3.5">Type</th>
-              <th class="px-6 py-3.5">Child</th>
-              <th class="px-6 py-3.5">Session / Template</th>
-              <th class="px-6 py-3.5">Room</th>
-              <th class="px-6 py-3.5">Dates</th>
-              <th class="px-6 py-3.5">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100/80 dark:divide-gray-800/50">
-            @for (i of [1,2,3,4,5]; track i) {
-              <tr class="animate-pulse">
-                <td class="pl-4 pr-6 py-4"><div class="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-800"></div></td>
-                <td class="px-6 py-4"><div class="h-4 w-28 rounded bg-gray-200 dark:bg-gray-800"></div></td>
-                <td class="px-6 py-4"><div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-800"></div></td>
-                <td class="px-6 py-4"><div class="h-4 w-20 rounded bg-gray-200 dark:bg-gray-800"></div></td>
-                <td class="px-6 py-4"><div class="h-4 w-36 rounded bg-gray-200 dark:bg-gray-800"></div></td>
-                <td class="px-6 py-4"><div class="h-5 w-14 rounded-full bg-gray-200 dark:bg-gray-800"></div></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <!-- Mobile skeleton -->
-      <div class="divide-y divide-gray-100/80 lg:hidden dark:divide-gray-800/60">
-        @for (i of [1,2,3]; track i) {
-          <div class="p-4 animate-pulse space-y-3">
-            <div class="flex gap-2">
-              <div class="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-800"></div>
-              <div class="h-5 w-14 rounded-full bg-gray-200 dark:bg-gray-800"></div>
-            </div>
-            <div class="h-4 w-28 rounded bg-gray-200 dark:bg-gray-800"></div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="h-3 w-20 rounded bg-gray-200 dark:bg-gray-800"></div>
-              <div class="h-3 w-16 rounded bg-gray-200 dark:bg-gray-800"></div>
-            </div>
-          </div>
-        }
-      </div>
+      <app-loading-state label="Loading bookings..."></app-loading-state>
     } @else if (items.length > 0) {
       <!-- Desktop table -->
       <div class="overflow-x-auto hidden lg:block">
-        <table class="w-full min-w-[900px] border-collapse text-left text-sm">
+        <table class="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr class="border-b border-gray-100 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-500 sticky top-0 z-10">
               <th class="pl-4 pr-6 py-3.5">Type</th>
@@ -286,12 +281,14 @@
               <th class="px-6 py-3.5">Room</th>
               <th class="px-6 py-3.5">Dates</th>
               <th class="px-6 py-3.5">Status</th>
+              <th class="px-6 py-3.5 text-right pr-8">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100/80 dark:divide-gray-800/50">
             @for (booking of items; track booking.id) {
               <tr
-                class="group transition-all duration-200 hover:bg-gray-50/40 dark:hover:bg-white/[0.01] cursor-pointer"
+                class="group transition-all duration-200 hover:bg-gray-50/40 dark:hover:bg-white/[0.01] cursor-pointer border-l-4"
+                [ngClass]="getStatusBorderClass(booking.status, booking.bookingType)"
                 (click)="openBookingDetail(booking, $event)"
               >
                 <td class="pl-4 pr-6 py-4">
@@ -303,9 +300,14 @@
                   </span>
                 </td>
                 <td class="px-6 py-4">
-                  <p class="font-semibold text-gray-900 dark:text-white/95 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                    {{ childFullName(booking) }}
-                  </p>
+                  <div class="flex items-center gap-3">
+                    <app-child-avatar [name]="childFullName(booking)" shape="rounded" size="md" />
+                    <div class="min-w-0">
+                      <p class="font-semibold text-gray-900 dark:text-white/95 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {{ childFullName(booking) }}
+                      </p>
+                    </div>
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                   {{ sessionName(booking.sessionTemplateId) }}
@@ -322,6 +324,16 @@
                 <td class="px-6 py-4">
                   <app-status-badge [status]="booking.status" variant="light" size="sm" />
                 </td>
+                <td class="px-6 py-4 text-right pr-8">
+                  <button
+                    type="button"
+                    class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
+                    (click)="selectedBooking = booking"
+                  >
+                    <ng-icon name="heroEye" size="14" aria-hidden="true" />
+                    <span>View</span>
+                  </button>
+                </td>
               </tr>
             }
           </tbody>
@@ -332,7 +344,8 @@
       <div class="divide-y divide-gray-100/80 lg:hidden dark:divide-gray-800/60">
         @for (booking of items; track booking.id) {
           <article
-            class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer"
+            class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer border-l-4"
+            [ngClass]="getStatusBorderClass(booking.status, booking.bookingType)"
             (click)="openBookingDetail(booking, $event)"
             (keydown.enter)="openBookingDetail(booking, $event)"
             (keydown.space)="openBookingDetail(booking, $event)"
@@ -340,21 +353,24 @@
             role="link"
           >
             <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <span
-                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                    [ngClass]="bookingTypeClasses(booking.bookingType)"
-                  >
-                    {{ bookingTypeLabel(booking.bookingType) }}
-                  </span>
-                  <app-status-badge [status]="booking.status" variant="light" size="sm" />
+              <div class="flex min-w-0 items-center gap-3">
+                <app-child-avatar [name]="childFullName(booking)" shape="rounded" size="md" />
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900 dark:text-white/95">{{ childFullName(booking) }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                      [ngClass]="bookingTypeClasses(booking.bookingType)"
+                    >
+                      {{ bookingTypeLabel(booking.bookingType) }}
+                    </span>
+                  </div>
                 </div>
-                <p class="font-semibold text-gray-900 dark:text-white/95">{{ childFullName(booking) }}</p>
               </div>
+              <app-status-badge [status]="booking.status" variant="light" size="sm" />
             </div>
 
-            <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
               <div>
                 <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Session</p>
                 <p class="font-medium text-gray-700 dark:text-gray-200">{{ sessionName(booking.sessionTemplateId) }}</p>
@@ -371,16 +387,15 @@
                 </p>
               </div>
             </div>
-            <div class="mt-3">
+
+            <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100/80 dark:border-gray-800/40 pt-3">
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 cursor-pointer"
+                class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
                 (click)="selectedBooking = booking"
               >
-                View Details
-                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
+                <ng-icon name="heroEye" size="14" aria-hidden="true" />
+                <span>View</span>
               </button>
             </div>
           </article>
@@ -416,7 +431,7 @@
     @if (items.length > 0 || total > 0) {
       <div class="flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800/80 p-4 text-sm sm:flex-row sm:items-center sm:justify-between lg:p-6">
         <span class="text-gray-500 dark:text-gray-400 font-medium">
-          Showing {{ showingFrom }}-{{ showingTo }} of {{ total }} booking{{ total === 1 ? '' : 's' }}
+          Page {{ currentPage }} &middot; {{ items.length }} booking{{ items.length === 1 ? '' : 's' }} of {{ total }}
         </span>
         <div class="flex items-center gap-2">
           <button

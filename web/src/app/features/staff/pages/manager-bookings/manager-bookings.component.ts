@@ -9,9 +9,11 @@ import {
   heroChevronLeft,
   heroChevronRight,
   heroClock,
+  heroEye,
   heroFunnel,
   heroMagnifyingGlass,
   heroPlus,
+  heroUserGroup,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
@@ -19,8 +21,10 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService } from '../../data/session-types-api.service';
@@ -51,6 +55,15 @@ const LS_KEY = 'nursery.booking_filters';
 
 type DatePreset = 'this_month' | 'next_month' | 'custom' | '';
 
+interface BookingMetric {
+  key: string;
+  label: string;
+  count: number;
+  totalCount: number | null;
+  tone: 'brand' | 'success' | 'warning' | 'error' | 'neutral';
+  pill: string;
+}
+
 interface FilterState {
   types: BookingType[];
   statuses: BookingStatus[];
@@ -72,8 +85,10 @@ interface SessionLookup {
     CommonModule,
     FormsModule,
     EmptyStateComponent,
+    LoadingStateComponent,
     AlertComponent,
     StatusBadgeComponent,
+    ChildAvatarComponent,
     NgIcon,
     BookingDetailDrawerComponent,
   ],
@@ -85,9 +100,11 @@ interface SessionLookup {
       heroChevronLeft,
       heroChevronRight,
       heroClock,
+      heroEye,
       heroFunnel,
       heroMagnifyingGlass,
       heroPlus,
+      heroUserGroup,
       heroXMark,
     }),
   ],
@@ -134,6 +151,94 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
   isCreateDropdownOpen = false;
   selectedBooking: UnifiedBooking | null = null;
+
+  get metricCards(): BookingMetric[] {
+    const recurring = this.items.filter((b) => b.bookingType === 'recurring');
+    const adHoc = this.items.filter((b) => b.bookingType === 'ad_hoc');
+    const hourly = this.items.filter((b) => b.bookingType === 'hourly');
+    const active = this.items.filter((b) => b.status === 'active');
+
+    return [
+      {
+        key: 'total',
+        label: 'Active bookings',
+        count: active.length,
+        totalCount: this.total,
+        tone: 'brand',
+        pill: 'Current',
+      },
+      {
+        key: 'recurring',
+        label: 'Recurring',
+        count: recurring.length,
+        totalCount: null,
+        tone: 'success',
+        pill: 'Weekly',
+      },
+      {
+        key: 'ad_hoc',
+        label: 'Ad-hoc',
+        count: adHoc.length,
+        totalCount: null,
+        tone: 'warning',
+        pill: 'One-off',
+      },
+      {
+        key: 'hourly',
+        label: 'Hourly',
+        count: hourly.length,
+        totalCount: null,
+        tone: 'neutral',
+        pill: 'Flexible',
+      },
+    ];
+  }
+
+  metricIconToneClasses(tone: BookingMetric['tone']): string {
+    const map: Record<BookingMetric['tone'], string> = {
+      brand: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
+      success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300',
+      warning: 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-300',
+      error: 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300',
+      neutral: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  metricPillToneClasses(tone: BookingMetric['tone']): string {
+    const map: Record<BookingMetric['tone'], string> = {
+      brand: 'text-brand-600 dark:text-brand-300',
+      success: 'text-success-600 dark:text-success-300',
+      warning: 'text-warning-700 dark:text-warning-300',
+      error: 'text-error-600 dark:text-error-300',
+      neutral: 'text-gray-600 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  metricProgressToneClasses(tone: BookingMetric['tone']): string {
+    const map: Record<BookingMetric['tone'], string> = {
+      brand: 'bg-brand-500',
+      success: 'bg-success-500',
+      warning: 'bg-warning-500',
+      error: 'bg-error-500',
+      neutral: 'bg-gray-400',
+    };
+    return map[tone];
+  }
+
+  metricProgressWidth(count: number): number {
+    if (count === 0) return 0;
+    const maxCount = Math.max(...this.metricCards.map((m) => m.count), 1);
+    return Math.max(6, Math.min(100, Math.round((count / maxCount) * 100)));
+  }
+
+  metricDisplayValue(metric: BookingMetric): string {
+    if (metric.totalCount !== null) {
+      return `${metric.count} / ${metric.totalCount}`;
+    }
+    return String(metric.count);
+  }
 
   get hasPrevious(): boolean {
     return this.offset > 0;
@@ -407,6 +512,15 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     return `${booking.childFirstName} ${booking.childLastName}`.trim();
   }
 
+  getStatusBorderClass(status: BookingStatus, bookingType: BookingType): string {
+    if (status === 'cancelled') return 'border-l-gray-300 dark:border-l-gray-700';
+    if (status === 'paused') return 'border-l-warning-500';
+    if (bookingType === 'recurring') return 'border-l-brand-500';
+    if (bookingType === 'ad_hoc') return 'border-l-warning-500';
+    if (bookingType === 'hourly') return 'border-l-success-500';
+    return 'border-l-transparent';
+  }
+
   private onFilterChange(): void {
     this.saveToLocalStorage();
     this.syncUrlParams();
@@ -501,7 +615,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
 
     const filters: BookingListFilters = {};
-    if (this.selectedTypes.length === 1) filters.status = undefined;
     if (this.selectedStatuses.length === 1) filters.status = this.selectedStatuses[0];
     if (this.selectedRoomId) filters.roomId = this.selectedRoomId;
     if (this.searchQuery.trim()) filters.search = this.searchQuery.trim();
