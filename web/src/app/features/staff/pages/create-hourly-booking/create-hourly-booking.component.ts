@@ -26,6 +26,7 @@ import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.com
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { TimePickerComponent } from '../../../../shared/components/form/time-picker/time-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -43,6 +44,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormFieldComponent,
     SearchAutocompleteComponent,
     DatePickerComponent,
+    TimePickerComponent,
     NgIcon,
   ],
   templateUrl: './create-hourly-booking.component.html',
@@ -128,6 +130,20 @@ export class CreateHourlyBookingComponent implements OnInit {
     this.siteId = membership.branch_id;
     this.loadData();
     this.loadSiteRate();
+  }
+
+  onStartTimeChange(time: string): void {
+    this.startTime = time;
+    if (this.formFieldErrors['start_time_minutes']) {
+      delete this.formFieldErrors['start_time_minutes'];
+    }
+  }
+
+  onEndTimeChange(time: string): void {
+    this.endTime = time;
+    if (this.formFieldErrors['end_time']) {
+      delete this.formFieldErrors['end_time'];
+    }
   }
 
   onChildSelected(child: ChildRecord | null): void {

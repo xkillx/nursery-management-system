@@ -142,38 +142,28 @@
           <!-- Start & End Time -->
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <app-form-field
+              <app-time-picker
+                id="hourly-start-time"
                 label="Start Time"
-                labelFor="hourly-start-time"
-                [required]="true"
-                [error]="formFieldErrors['start_time_minutes'] || ''"
-              >
-                <input
-                  id="hourly-start-time"
-                  type="time"
-                  [(ngModel)]="startTime"
-                  [attr.step]="3600"
-                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none transition-all"
-                  [ngClass]="{ 'border-error-500': formFieldErrors['start_time_minutes'] }"
-                />
-              </app-form-field>
+                placeholder="Select start time"
+                [defaultTime]="startTime"
+                (timeChange)="onStartTimeChange($event)"
+              />
+              @if (formFieldErrors['start_time_minutes']) {
+                <p class="mt-1 text-xs text-error-500">{{ formFieldErrors['start_time_minutes'] }}</p>
+              }
             </div>
             <div>
-              <app-form-field
+              <app-time-picker
+                id="hourly-end-time"
                 label="End Time"
-                labelFor="hourly-end-time"
-                [required]="true"
-                [error]="formFieldErrors['end_time'] || ''"
-              >
-                <input
-                  id="hourly-end-time"
-                  type="time"
-                  [(ngModel)]="endTime"
-                  [attr.step]="3600"
-                  class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none transition-all"
-                  [ngClass]="{ 'border-error-500': formFieldErrors['end_time'] }"
-                />
-              </app-form-field>
+                placeholder="Select end time"
+                [defaultTime]="endTime"
+                (timeChange)="onEndTimeChange($event)"
+              />
+              @if (formFieldErrors['end_time']) {
+                <p class="mt-1 text-xs text-error-500">{{ formFieldErrors['end_time'] }}</p>
+              }
               @if (endTimeError) {
                 <p class="mt-1 text-xs text-error-500">{{ endTimeError }}</p>
               }
