@@ -1,6 +1,7 @@
 package httpbookings
 
 import (
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -236,11 +237,24 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 		}
 	}
 
+	daysOfWeek := req.DaysOfWeek
+	if len(daysOfWeek) == 0 && len(sessionEntries) > 0 {
+		daySet := make(map[int32]struct{})
+		for _, e := range sessionEntries {
+			daySet[e.DayOfWeek] = struct{}{}
+		}
+		daysOfWeek = make([]int32, 0, len(daySet))
+		for d := range daySet {
+			daysOfWeek = append(daysOfWeek, d)
+		}
+		sort.Slice(daysOfWeek, func(i, j int) bool { return daysOfWeek[i] < daysOfWeek[j] })
+	}
+
 	return application.CreateBookingParams{
 		ChildID:             childID,
 		SessionTemplateID:   sessionTemplateID,
 		RoomID:              roomID,
-		DaysOfWeek:          req.DaysOfWeek,
+		DaysOfWeek:          daysOfWeek,
 		EffectiveStartDate:  startDate,
 		EffectiveEndDate:    endDate,
 		FundingType:         req.FundingType,
