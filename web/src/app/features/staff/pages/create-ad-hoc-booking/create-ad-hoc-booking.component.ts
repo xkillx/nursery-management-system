@@ -20,7 +20,6 @@ import {
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
-import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
@@ -40,7 +39,6 @@ import { AuthService } from '../../../../core/services/auth.service';
     RouterLink,
     AlertComponent,
     BadgeComponent,
-    ChildAvatarComponent,
     FormFieldComponent,
     SearchAutocompleteComponent,
     DatePickerComponent,

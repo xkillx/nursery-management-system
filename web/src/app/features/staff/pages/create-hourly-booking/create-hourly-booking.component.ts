@@ -26,7 +26,6 @@ import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.com
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
-import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -44,7 +43,6 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormFieldComponent,
     SearchAutocompleteComponent,
     DatePickerComponent,
-    ChildAvatarComponent,
     NgIcon,
   ],
   templateUrl: './create-hourly-booking.component.html',
@@ -84,7 +82,9 @@ export class CreateHourlyBookingComponent implements OnInit {
   date = '';
   startTime = '08:00';
   endTime = '09:00';
-  readonly hourlyRate = 12.5;
+  hourlyRateMinor = 0;
+  rateLoaded = false;
+  rateError: string | null = null;
   readonly fundingApplied = 0;
 
   isSaving = false;
@@ -98,7 +98,7 @@ export class CreateHourlyBookingComponent implements OnInit {
   };
 
   get canSubmit(): boolean {
-    return !!this.childId && !!this.date && !!this.startTime && !!this.endTime && this.computedDuration > 0;
+    return !!this.childId && !!this.date && !!this.startTime && !!this.endTime && this.computedDuration > 0 && this.rateLoaded && !this.rateError && this.hourlyRateMinor > 0;
   }
 
   get computedDuration(): number {
@@ -112,7 +112,7 @@ export class CreateHourlyBookingComponent implements OnInit {
   }
 
   get standardRateAmount(): number {
-    return (this.computedDuration / 60) * this.hourlyRate;
+    return (this.computedDuration / 60) * (this.hourlyRateMinor / 100);
   }
 
   get totalChargeAmount(): number {
@@ -127,6 +127,7 @@ export class CreateHourlyBookingComponent implements OnInit {
     }
     this.siteId = membership.branch_id;
     this.loadData();
+    this.loadSiteRate();
   }
 
   onChildSelected(child: ChildRecord | null): void {
@@ -240,6 +241,22 @@ export class CreateHourlyBookingComponent implements OnInit {
       next: (result) => (this.children = result.items),
       error: () => {
         /* Handled gracefully */
+      },
+    });
+  }
+
+  private loadSiteRate(): void {
+    this.staffApi.getSiteRate().subscribe({
+      next: (res) => {
+        this.hourlyRateMinor = res.core_hourly_rate_minor;
+        this.rateLoaded = true;
+        if (!res.has_rate || res.core_hourly_rate_minor <= 0) {
+          this.rateError = 'No hourly rate configured. Please set up the rate in billing settings.';
+        }
+      },
+      error: () => {
+        this.rateLoaded = true;
+        this.rateError = 'Failed to load hourly rate. Please try again.';
       },
     });
   }

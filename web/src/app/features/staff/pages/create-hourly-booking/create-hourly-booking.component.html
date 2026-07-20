@@ -234,13 +234,26 @@
               <div class="rounded-xl bg-brand-50/20 p-4 text-center border border-brand-100/20 dark:bg-brand-500/5 dark:border-brand-500/10">
                 <div class="text-xs font-bold text-gray-400 dark:text-gray-500 tracking-wide uppercase">Hourly Rate</div>
                 <div class="text-3xl font-black text-brand-600 dark:text-brand-400 mt-1.5">
-                  £{{ hourlyRate | number:'1.2-2' }}
+                  @if (rateLoaded) {
+                    @if (rateError) {
+                      <span class="text-sm text-amber-600 dark:text-amber-400">Not configured</span>
+                    } @else {
+                      £{{ (hourlyRateMinor / 100) | number:'1.2-2' }}
+                    }
+                  } @else {
+                    <span class="inline-block h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></span>
+                  }
                 </div>
               </div>
             </div>
 
             <!-- Charge Breakdown -->
             <div class="space-y-3 pt-2">
+              @if (rateLoaded && rateError) {
+                <div class="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                  {{ rateError }}
+                </div>
+              }
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-600 dark:text-gray-400 font-semibold">Standard Rate</span>
                 <span class="font-bold text-gray-900 dark:text-white">£{{ standardRateAmount | number:'1.2-2' }}</span>
