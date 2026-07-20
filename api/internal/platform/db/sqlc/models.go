@@ -254,9 +254,9 @@ type Booking struct {
 	LaReference          pgtype.Text
 	Status               string
 	BookedByMembershipID pgtype.UUID
+	SessionEntries       []byte
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
-	SessionEntries       []byte
 }
 
 type Branch struct {

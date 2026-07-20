@@ -334,7 +334,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pagination.PaginatedResponse(toUnifiedBookingListResponse(bookings), 0, page, pageSize))
+	c.JSON(http.StatusOK, pagination.PaginatedResponse(toUnifiedBookingListResponse(bookings), len(bookings), page, pageSize))
 }
 
 // getBooking returns a single booking.

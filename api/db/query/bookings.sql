@@ -24,8 +24,8 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND ($3::uuid IS NULL OR child_id = $3)
   AND ($4::uuid IS NULL OR room_id = $4)
-  AND ($5::text IS NULL OR status = $5)
-  AND ($6::text IS NULL OR funding_type = $6)
+  AND ($5 = '' OR status = $5)
+  AND ($6 = '' OR funding_type = $6)
   AND ($7::date IS NULL OR effective_start_date >= $7)
   AND ($8::date IS NULL OR (effective_end_date IS NULL OR effective_end_date >= $8))
   AND (NOT $9::bool OR status = 'active')
@@ -39,8 +39,8 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND ($3::uuid IS NULL OR child_id = $3)
   AND ($4::uuid IS NULL OR room_id = $4)
-  AND ($5::text IS NULL OR status = $5)
-  AND ($6::text IS NULL OR funding_type = $6)
+  AND ($5 = '' OR status = $5)
+  AND ($6 = '' OR funding_type = $6)
   AND ($7::date IS NULL OR effective_start_date >= $7)
   AND ($8::date IS NULL OR (effective_end_date IS NULL OR effective_end_date >= $8))
   AND (NOT $9::bool OR status = 'active');
@@ -104,8 +104,8 @@ WHERE b.tenant_id = $1
   AND b.branch_id = $2
   AND ($3::uuid IS NULL OR b.child_id = $3)
   AND ($4::uuid IS NULL OR b.room_id = $4)
-  AND ($5::text IS NULL OR b.status = $5)
-  AND ($6::text IS NULL OR b.funding_type = $6)
+  AND ($5 = '' OR b.status = $5)
+  AND ($6 = '' OR b.funding_type = $6)
   AND ($7::date IS NULL OR (b.effective_end_date IS NULL OR b.effective_end_date >= $7))
   AND ($8::date IS NULL OR b.effective_start_date <= $8)
   AND (NOT $9::bool OR b.status = 'active')
