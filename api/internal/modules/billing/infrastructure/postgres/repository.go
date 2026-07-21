@@ -342,6 +342,7 @@ func (r *Repository) CreateDraftInvoice(ctx context.Context, tx domain.Tx, param
 		PeriodStartDate:      timeToPgtypeDate(params.PeriodStartDate),
 		PeriodEndDate:        timeToPgtypeDate(params.PeriodEndDate),
 		CalculationDetails:   params.CalculationDetails,
+		ParentNote:           pgtype.Text{String: params.ParentNote, Valid: params.ParentNote != ""},
 	})
 }
 

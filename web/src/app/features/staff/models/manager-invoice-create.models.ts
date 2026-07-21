@@ -56,6 +56,7 @@ export interface DraftInvoiceResult {
   totalDueMinor: number;
   paymentTerms: string;
   internalNotes: string;
+  parentNote: string;
   createdAt: string;
   updatedAt: string;
 }

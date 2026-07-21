@@ -327,6 +327,7 @@ type DraftInvoiceCreateParams struct {
 	PeriodStartDate    time.Time
 	PeriodEndDate      time.Time
 	CalculationDetails []byte
+	ParentNote         string
 }
 
 // DraftInvoiceUpdateParams holds fields needed to update a draft invoice header.

@@ -612,6 +612,7 @@ type Invoice struct {
 	UpdatedAt              pgtype.Timestamptz
 	VoidedAt               pgtype.Timestamptz
 	VoidReason             pgtype.Text
+	ParentNote             pgtype.Text
 }
 
 type InvoiceLine struct {

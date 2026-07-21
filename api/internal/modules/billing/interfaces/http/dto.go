@@ -270,6 +270,7 @@ type createAndIssueInvoiceRequest struct {
 	Lines         []draftInvoiceLineRequest `json:"lines"`
 	PaymentTerms  string                    `json:"payment_terms"`
 	InternalNotes string                    `json:"internal_notes"`
+	ParentNote    string                    `json:"parent_note"`
 }
 
 type issueInvoiceResponse struct {
@@ -488,6 +489,7 @@ type createDraftInvoiceRequest struct {
 	Lines         []draftInvoiceLineRequest `json:"lines"`
 	PaymentTerms  string                    `json:"payment_terms"`
 	InternalNotes string                    `json:"internal_notes"`
+	ParentNote    string                    `json:"parent_note"`
 }
 
 type draftInvoiceLineRequest struct {
@@ -509,6 +511,7 @@ type createDraftInvoiceResponse struct {
 	TotalDueMinor int                 `json:"total_due_minor"`
 	PaymentTerms  string              `json:"payment_terms"`
 	InternalNotes string              `json:"internal_notes"`
+	ParentNote    string              `json:"parent_note"`
 	CreatedAt     string              `json:"created_at"`
 	UpdatedAt     string              `json:"updated_at"`
 }

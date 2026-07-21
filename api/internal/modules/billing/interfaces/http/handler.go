@@ -275,6 +275,7 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 		Lines:         lines,
 		PaymentTerms:  strings.TrimSpace(req.PaymentTerms),
 		InternalNotes: strings.TrimSpace(req.InternalNotes),
+		ParentNote:    strings.TrimSpace(req.ParentNote),
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -337,6 +338,7 @@ func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 		Lines:         lines,
 		PaymentTerms:  strings.TrimSpace(req.PaymentTerms),
 		InternalNotes: strings.TrimSpace(req.InternalNotes),
+		ParentNote:    strings.TrimSpace(req.ParentNote),
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -1190,6 +1192,7 @@ func toCreateDraftResponse(r application.CreateDraftInvoiceResult) createDraftIn
 		TotalDueMinor: r.TotalDueMinor,
 		PaymentTerms:  r.PaymentTerms,
 		InternalNotes: r.InternalNotes,
+		ParentNote:    r.ParentNote,
 		CreatedAt:     formatTime(r.CreatedAt),
 		UpdatedAt:     formatTime(r.UpdatedAt),
 	}

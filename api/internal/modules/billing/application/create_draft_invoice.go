@@ -35,6 +35,7 @@ type CreateDraftInvoiceInput struct {
 	Lines         []DraftInvoiceLineInput
 	PaymentTerms  string
 	InternalNotes string
+	ParentNote    string
 }
 
 type DraftInvoiceLineInput struct {
@@ -56,6 +57,7 @@ type CreateDraftInvoiceResult struct {
 	TotalDueMinor int
 	PaymentTerms  string
 	InternalNotes string
+	ParentNote    string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -134,6 +136,7 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 			PeriodStartDate:    periodStart,
 			PeriodEndDate:      periodEnd,
 			CalculationDetails: nil,
+			ParentNote:         input.ParentNote,
 		}); createErr != nil {
 			return fmt.Errorf("create draft invoice: %w", createErr)
 		}
@@ -200,6 +203,7 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 			TotalDueMinor: totalDueMinor,
 			PaymentTerms:  input.PaymentTerms,
 			InternalNotes: input.InternalNotes,
+			ParentNote:    input.ParentNote,
 			CreatedAt:     now,
 			UpdatedAt:     now,
 		}

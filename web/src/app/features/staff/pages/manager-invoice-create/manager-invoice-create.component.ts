@@ -13,10 +13,8 @@ import {
   heroCheck,
   heroXMark,
   heroChevronRight,
-  heroChevronLeft,
   heroArrowRight,
   heroCalendar,
-  heroLockClosed,
 } from '@ng-icons/heroicons/outline';
 import { catchError, of } from 'rxjs';
 
@@ -33,22 +31,6 @@ import { formatGbp } from '../../../owner/utils/owner-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import { formatChildName } from '../../utils/manager-list-formatters';
 import { ChildRecord } from '../../models/children.models';
-
-type InvoiceWizardStep = 'child-month' | 'review-lines' | 'add-extras' | 'summary-confirm';
-
-interface InvoiceStepMeta {
-  key: InvoiceWizardStep;
-  label: string;
-  shortLabel: string;
-  description: string;
-}
-
-const WIZARD_STEPS: readonly InvoiceStepMeta[] = [
-  { key: 'child-month', label: 'Child & Month', shortLabel: 'Child', description: 'Select recipient' },
-  { key: 'review-lines', label: 'Review Lines', shortLabel: 'Lines', description: 'Auto-generated items' },
-  { key: 'add-extras', label: 'Add Extras', shortLabel: 'Extras', description: 'Manual additions' },
-  { key: 'summary-confirm', label: 'Summary & Confirm', shortLabel: 'Confirm', description: 'Review and submit' },
-];
 
 @Component({
   selector: 'app-manager-invoice-create',
@@ -73,10 +55,8 @@ const WIZARD_STEPS: readonly InvoiceStepMeta[] = [
       heroCheck,
       heroXMark,
       heroChevronRight,
-      heroChevronLeft,
       heroArrowRight,
       heroCalendar,
-      heroLockClosed,
     }),
   ],
 })
@@ -95,20 +75,6 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   readonly Number = Number;
 
   readonly DEFAULT_PAYMENT_TERMS = 'Payments are due within 7 days. Late fees may apply as per the parent agreement.';
-
-  readonly steps = WIZARD_STEPS;
-  readonly currentStep = signal<InvoiceWizardStep>('child-month');
-  readonly completedSteps = signal<Set<InvoiceWizardStep>>(new Set());
-  stepErrors: Record<InvoiceWizardStep, string | null> = {
-    'child-month': null,
-    'review-lines': null,
-    'add-extras': null,
-    'summary-confirm': null,
-  };
-
-  readonly activeStepIndex = computed(() =>
-    this.steps.findIndex((s) => s.key === this.currentStep())
-  );
 
   readonly mockInvoiceNumber = 'INV-2026-042';
   readonly issueDate = new Date().toISOString().split('T')[0];
@@ -136,18 +102,28 @@ export class ManagerInvoiceCreateComponent implements OnInit {
 
   internalNotes = '';
   paymentTerms = this.DEFAULT_PAYMENT_TERMS;
+  parentFacingNote = '';
+  useCustomDates = false;
+  overrideStartDate = '';
+  overrideEndDate = '';
 
   isSaving = false;
   isIssuing = false;
   submitError: string | null = null;
 
   readonly billingPeriodStart = computed(() => {
+    if (this.useCustomDates && this.overrideStartDate) {
+      return this.overrideStartDate;
+    }
     const month = this.billingMonth();
     if (!month) return '';
     return `${month}-01`;
   });
 
   readonly billingPeriodEnd = computed(() => {
+    if (this.useCustomDates && this.overrideEndDate) {
+      return this.overrideEndDate;
+    }
     const month = this.billingMonth();
     if (!month) return '';
     const [year, m] = month.split('-').map(Number);
@@ -191,69 +167,6 @@ export class ManagerInvoiceCreateComponent implements OnInit {
       this.editInvoiceId = invoiceId;
     }
     this.setDefaultBillingMonth();
-  }
-
-  stepIsActive(step: InvoiceWizardStep): boolean {
-    return step === this.currentStep();
-  }
-
-  stepIsComplete(step: InvoiceWizardStep): boolean {
-    return this.completedSteps().has(step);
-  }
-
-  canOpenStep(step: InvoiceWizardStep): boolean {
-    const requestedIdx = this.steps.findIndex((s) => s.key === step);
-    if (requestedIdx <= this.activeStepIndex()) return true;
-    for (let i = 0; i < requestedIdx; i++) {
-      if (!this.completedSteps().has(this.steps[i].key)) return false;
-    }
-    return true;
-  }
-
-  validateStep(step: InvoiceWizardStep): string | null {
-    switch (step) {
-      case 'child-month':
-        if (!this.selectedChild) return 'Select a child.';
-        if (!this.billingMonth()) return 'Select a billing month.';
-        if (this.isLoadingPrefill) return 'Wait for prefill to complete.';
-        return null;
-      case 'review-lines':
-        if (this.lines().length === 0) return 'At least one line item is required.';
-        return null;
-      case 'add-extras':
-        return null;
-      case 'summary-confirm':
-        return null;
-    }
-  }
-
-  markStepComplete(step: InvoiceWizardStep): void {
-    this.completedSteps.update((set) => new Set(set).add(step));
-  }
-
-  nextStep(): void {
-    const idx = this.activeStepIndex();
-    if (idx >= this.steps.length - 1) return;
-    const error = this.validateStep(this.currentStep());
-    if (error) {
-      this.stepErrors[this.currentStep()] = error;
-      return;
-    }
-    this.stepErrors[this.currentStep()] = null;
-    this.markStepComplete(this.currentStep());
-    this.currentStep.set(this.steps[idx + 1].key);
-  }
-
-  prevStep(): void {
-    const idx = this.activeStepIndex();
-    if (idx > 0) {
-      this.currentStep.set(this.steps[idx - 1].key);
-    }
-  }
-
-  goToStep(step: InvoiceWizardStep): void {
-    if (!this.canOpenStep(step)) return;
-    this.currentStep.set(step);
   }
 
   private setDefaultBillingMonth(): void {
@@ -351,6 +264,17 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         return 'Badgers Room';
       default:
         return 'Main Hall';
+    }
+  }
+
+  toggleCustomDates(): void {
+    this.useCustomDates = !this.useCustomDates;
+    if (this.useCustomDates) {
+      this.overrideStartDate = this.billingPeriodStart();
+      this.overrideEndDate = this.billingPeriodEnd();
+    } else {
+      this.overrideStartDate = '';
+      this.overrideEndDate = '';
     }
   }
 
@@ -484,6 +408,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         })),
         paymentTerms: this.paymentTerms,
         internalNotes: this.internalNotes,
+        parentNote: this.parentFacingNote,
       })
       .subscribe({
         next: () => {
@@ -518,6 +443,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         })),
         paymentTerms: this.paymentTerms,
         internalNotes: this.internalNotes,
+        parentNote: this.parentFacingNote,
       })
       .subscribe({
         next: (result) => {
@@ -538,8 +464,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   }
 
   canIssue(): boolean {
-    if (!this.canSaveDraft()) return false;
-    return this.currentStep() === 'summary-confirm';
+    return this.canSaveDraft();
   }
 
   canSubmit(): boolean {

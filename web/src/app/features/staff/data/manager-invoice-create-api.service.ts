@@ -58,6 +58,7 @@ interface CreateDraftRequestApi {
   lines: DraftLineRequestApi[];
   payment_terms: string;
   internal_notes: string;
+  parent_note: string;
 }
 
 interface DraftLineResponseApi {
@@ -80,6 +81,7 @@ interface DraftInvoiceResponseApi {
   total_due_minor: number;
   payment_terms: string;
   internal_notes: string;
+  parent_note: string;
   created_at: string;
   updated_at: string;
 }
@@ -113,6 +115,7 @@ export class ManagerInvoiceCreateApiService {
     lines: { lineKind: string; description: string; sortOrder: number; quantityMinutes: number; unitAmountMinor: number; lineAmountMinor: number }[];
     paymentTerms: string;
     internalNotes: string;
+    parentNote: string;
   }): Observable<DraftInvoiceResult> {
     const body: CreateDraftRequestApi = {
       child_id: input.childId,
@@ -127,6 +130,7 @@ export class ManagerInvoiceCreateApiService {
       })),
       payment_terms: input.paymentTerms,
       internal_notes: input.internalNotes,
+      parent_note: input.parentNote,
     };
     return this.http
       .post<DraftInvoiceResponseApi>(apiUrl('/invoices/drafts'), body)
@@ -139,6 +143,7 @@ export class ManagerInvoiceCreateApiService {
     lines: { lineKind: string; description: string; sortOrder: number; quantityMinutes: number; unitAmountMinor: number; lineAmountMinor: number }[];
     paymentTerms: string;
     internalNotes: string;
+    parentNote: string;
   }): Observable<{ invoiceId: string; invoiceNumber: string; status: string; totalDueMinor: number }> {
     const body: CreateDraftRequestApi = {
       child_id: input.childId,
@@ -153,6 +158,7 @@ export class ManagerInvoiceCreateApiService {
       })),
       payment_terms: input.paymentTerms,
       internal_notes: input.internalNotes,
+      parent_note: input.parentNote,
     };
     return this.http
       .post<IssueInvoiceResponseApi>(apiUrl('/invoices/drafts/issue'), body)
@@ -210,6 +216,7 @@ export class ManagerInvoiceCreateApiService {
       totalDueMinor: res.total_due_minor,
       paymentTerms: res.payment_terms,
       internalNotes: res.internal_notes,
+      parentNote: res.parent_note,
       createdAt: res.created_at,
       updatedAt: res.updated_at,
     };

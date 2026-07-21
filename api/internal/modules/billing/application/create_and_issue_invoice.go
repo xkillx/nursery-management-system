@@ -43,6 +43,7 @@ type CreateAndIssueInvoiceInput struct {
 	Lines         []DraftInvoiceLineInput
 	PaymentTerms  string
 	InternalNotes string
+	ParentNote    string
 }
 
 func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tenant.ActorContext, input CreateAndIssueInvoiceInput) (domain.IssueInvoiceResult, error) {
@@ -108,6 +109,7 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 			PeriodStartDate:    periodStart,
 			PeriodEndDate:      periodEnd,
 			CalculationDetails: nil,
+			ParentNote:         input.ParentNote,
 		}); createErr != nil {
 			return fmt.Errorf("create draft invoice: %w", createErr)
 		}

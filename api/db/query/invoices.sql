@@ -223,11 +223,11 @@ FOR UPDATE;
 INSERT INTO invoices (
     id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status,
     currency_code, generated_run_id, subtotal_minor, funded_deduction_minor, total_due_minor,
-    period_start_date, period_end_date, calculation_details
+    period_start_date, period_end_date, calculation_details, parent_note
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7,
     $8, $9, $10, $11, $12,
-    $13, $14, $15
+    $13, $14, $15, $16
 );
 
 -- name: UpdateDraftInvoice :exec
