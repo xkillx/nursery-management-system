@@ -191,14 +191,14 @@
         <div class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label for="billing-month" class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing Month</label>
-              <input
+              <app-month-picker
                 id="billing-month"
-                type="month"
-                class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 cursor-pointer"
+                mode="dropdown"
+                label="Billing Month"
+                placeholder="Select billing month..."
                 [ngModel]="billingMonth()"
-                (ngModelChange)="billingMonth.set($event); selectedChild ? loadPrefill() : null"
-              />
+                (valueChange)="onBillingMonthChange($event)"
+              ></app-month-picker>
             </div>
 
             <div class="space-y-1.5">

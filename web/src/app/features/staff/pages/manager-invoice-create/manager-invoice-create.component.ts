@@ -28,6 +28,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
+import { MonthPickerComponent, MonthYear } from '../../../../shared/components/form/month-picker/month-picker.component';
 import { formatGbp } from '../../../owner/utils/owner-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import { formatChildName } from '../../utils/manager-list-formatters';
@@ -43,6 +44,7 @@ import { ChildRecord } from '../../models/children.models';
     AlertComponent,
     LoadingStateComponent,
     ChildAvatarComponent,
+    MonthPickerComponent,
   ],
   templateUrl: './manager-invoice-create.component.html',
   providers: [
@@ -266,6 +268,14 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         return 'Badgers Room';
       default:
         return 'Main Hall';
+    }
+  }
+
+  onBillingMonthChange(val: MonthYear): void {
+    const mm = String(val.month + 1).padStart(2, '0');
+    this.billingMonth.set(`${val.year}-${mm}`);
+    if (this.selectedChild) {
+      this.loadPrefill();
     }
   }
 
