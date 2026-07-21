@@ -179,20 +179,20 @@ func (m *stubPrefillTxMgr) ExecTx(ctx context.Context, fn func(tx pgx.Tx) error)
 func makeTerm() domain.AdvancePayTermRow {
 	lastName := "Doe"
 	return domain.AdvancePayTermRow{
-		TermID:                 uuid.MustParse("11111111-1111-4111-8111-111111111001"),
-		TenantID:               uuid.MustParse("00000000-0000-4000-8000-000000000001"),
-		BranchID:               uuid.MustParse("00000000-0000-4000-8000-000000000002"),
-		ChildID:                uuid.MustParse("33333333-3333-4333-8333-333333333003"),
-		TermStartDate:          time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		TermEndDate:            time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
-		BookingPatternID:       uuid.MustParse("44444444-4444-4444-8444-444444444004"),
-		SiteHourlyRateMinor:    600,
-		Status:                 "active",
-		FirstName:              "Jane",
-		LastName:               &lastName,
-		DateOfBirth:            time.Date(2021, 5, 10, 0, 0, 0, 0, time.UTC),
-		StartDate:              time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
-		HasParentCarerContact:  true,
+		TermID:                uuid.MustParse("11111111-1111-4111-8111-111111111001"),
+		TenantID:              uuid.MustParse("00000000-0000-4000-8000-000000000001"),
+		BranchID:              uuid.MustParse("00000000-0000-4000-8000-000000000002"),
+		ChildID:               uuid.MustParse("33333333-3333-4333-8333-333333333003"),
+		TermStartDate:         time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		TermEndDate:           time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
+		BookingPatternID:      uuid.MustParse("44444444-4444-4444-8444-444444444004"),
+		SiteHourlyRateMinor:   600,
+		Status:                "active",
+		FirstName:             "Jane",
+		LastName:              &lastName,
+		DateOfBirth:           time.Date(2021, 5, 10, 0, 0, 0, 0, time.UTC),
+		StartDate:             time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+		HasParentCarerContact: true,
 	}
 }
 

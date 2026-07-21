@@ -44,12 +44,12 @@ func TestComputeInvoicePrefill(t *testing.T) {
 
 	t.Run("no funding profile", func(t *testing.T) {
 		params := InvoicePrefillParams{
-			BookingPatternID:      "pattern-1",
-			Entries:               entries,
-			BillingMonthStart:     july2026,
-			SiteHourlyRateMinor:   500,
+			BookingPatternID:       "pattern-1",
+			Entries:                entries,
+			BillingMonthStart:      july2026,
+			SiteHourlyRateMinor:    500,
 			FundedAllowanceMinutes: 0,
-			HasFunding:            false,
+			HasFunding:             false,
 		}
 
 		result, err := ComputeInvoicePrefill(params)
@@ -86,13 +86,13 @@ func TestComputeInvoicePrefill(t *testing.T) {
 
 	t.Run("with funded minutes deduction", func(t *testing.T) {
 		params := InvoicePrefillParams{
-			BookingPatternID:      "pattern-1",
-			Entries:               entries,
-			BillingMonthStart:     july2026,
-			SiteHourlyRateMinor:   500,
-			FundedHourlyRateMinor: 500,
+			BookingPatternID:       "pattern-1",
+			Entries:                entries,
+			BillingMonthStart:      july2026,
+			SiteHourlyRateMinor:    500,
+			FundedHourlyRateMinor:  500,
 			FundedAllowanceMinutes: 600, // 10 hours funded
-			HasFunding:            true,
+			HasFunding:             true,
 		}
 
 		result, err := ComputeInvoicePrefill(params)
@@ -116,13 +116,13 @@ func TestComputeInvoicePrefill(t *testing.T) {
 
 	t.Run("funded minutes exceed booked minutes", func(t *testing.T) {
 		params := InvoicePrefillParams{
-			BookingPatternID:      "pattern-1",
-			Entries:               entries,
-			BillingMonthStart:     july2026,
-			SiteHourlyRateMinor:   500,
-			FundedHourlyRateMinor: 500,
+			BookingPatternID:       "pattern-1",
+			Entries:                entries,
+			BillingMonthStart:      july2026,
+			SiteHourlyRateMinor:    500,
+			FundedHourlyRateMinor:  500,
 			FundedAllowanceMinutes: 99999, // way more than booked
-			HasFunding:            true,
+			HasFunding:             true,
 		}
 
 		result, err := ComputeInvoicePrefill(params)
@@ -137,12 +137,12 @@ func TestComputeInvoicePrefill(t *testing.T) {
 
 	t.Run("zero funded minutes", func(t *testing.T) {
 		params := InvoicePrefillParams{
-			BookingPatternID:      "pattern-1",
-			Entries:               entries,
-			BillingMonthStart:     july2026,
-			SiteHourlyRateMinor:   500,
+			BookingPatternID:       "pattern-1",
+			Entries:                entries,
+			BillingMonthStart:      july2026,
+			SiteHourlyRateMinor:    500,
 			FundedAllowanceMinutes: 0,
-			HasFunding:            true,
+			HasFunding:             true,
 		}
 
 		result, err := ComputeInvoicePrefill(params)
