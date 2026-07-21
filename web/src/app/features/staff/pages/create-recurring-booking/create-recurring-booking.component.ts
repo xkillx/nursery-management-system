@@ -15,6 +15,7 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
+import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -53,6 +54,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class CreateRecurringBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
   private readonly auth = inject(AuthService);
@@ -60,6 +62,7 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   siteId: string | null = null;
 
+  rooms: StaffRoom[] = [];
   sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
 
@@ -100,6 +103,12 @@ export class CreateRecurringBookingComponent implements OnInit {
   get childDisplayName(): string {
     if (!this.selectedChild) return '';
     return `${this.selectedChild.firstName} ${this.selectedChild.lastName}`;
+  }
+
+  get childRoomName(): string {
+    if (!this.selectedChild?.primaryRoomId) return '';
+    const room = this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
+    return room?.name ?? '';
   }
 
   ngOnInit(): void {
@@ -175,6 +184,11 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   private loadData(): void {
     if (!this.siteId) return;
+
+    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: false }).subscribe({
+      next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
+      error: () => { /* Room load failure handled by template defaults */ },
+    });
 
     this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
       next: (types) => this.sessionTypes = types.filter((t) => t.isActive),

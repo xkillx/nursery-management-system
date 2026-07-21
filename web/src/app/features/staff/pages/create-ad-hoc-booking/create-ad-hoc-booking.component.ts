@@ -111,17 +111,6 @@ export class CreateAdHocBookingComponent implements OnInit {
     return room?.name ?? '';
   }
 
-  get selectedRoom(): StaffRoom | undefined {
-    if (!this.selectedChild?.primaryRoomId) return undefined;
-    return this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
-  }
-
-  get occupancyPercentage(): number {
-    const room = this.selectedRoom;
-    if (!room || !room.capacity) return 0;
-    return Math.round(((room.assignedCount || 0) / room.capacity) * 100);
-  }
-
   get computedDurationHours(): number {
     const st = this.selectedSessionType;
     if (!st || !st.startTime || !st.endTime) return 0;
@@ -255,7 +244,7 @@ export class CreateAdHocBookingComponent implements OnInit {
   private loadData(): void {
     if (!this.siteId) return;
 
-    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: true }).subscribe({
+    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: false }).subscribe({
       next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
       error: () => {
         /* Room load failure handled by template defaults */

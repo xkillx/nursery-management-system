@@ -28,6 +28,7 @@ import { SearchAutocompleteComponent } from '../../../../shared/components/form/
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { TimePickerComponent } from '../../../../shared/components/form/time-picker/time-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
+import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
 import { UnifiedBooking } from '../../models/booking.models';
@@ -70,6 +71,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class CreateHourlyBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly staffApi = inject(StaffApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -77,6 +79,7 @@ export class CreateHourlyBookingComponent implements OnInit {
   siteId: string | null = null;
 
   children: ChildRecord[] = [];
+  rooms: StaffRoom[] = [];
   recentBookings: UnifiedBooking[] = [];
 
   childId = '';
@@ -98,6 +101,12 @@ export class CreateHourlyBookingComponent implements OnInit {
     const name = `${child.firstName || ''} ${child.lastName || ''}`.trim();
     return name || child.fullName;
   };
+
+  get childRoomName(): string {
+    if (!this.selectedChild?.primaryRoomId) return '';
+    const room = this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
+    return room?.name ?? '';
+  }
 
   get canSubmit(): boolean {
     return !!this.childId && !!this.date && !!this.startTime && !!this.endTime && this.computedDuration > 0 && this.rateLoaded && !this.rateError && this.hourlyRateMinor > 0;
@@ -252,6 +261,11 @@ export class CreateHourlyBookingComponent implements OnInit {
 
   private loadData(): void {
     if (!this.siteId) return;
+
+    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: false }).subscribe({
+      next: (rooms) => (this.rooms = rooms.filter((r) => r.isActive)),
+      error: () => { /* Room load failure handled by template defaults */ },
+    });
 
     this.staffApi.listChildren({ status: 'active', limit: 200, offset: 0 }).subscribe({
       next: (result) => (this.children = result.items),
