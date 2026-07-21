@@ -22,10 +22,11 @@ type GenerateTermInvoices struct {
 	adHocLookup       domain.AdHocBookingLookup
 	hourlyLookup      domain.HourlyBookingLookup
 	closureDateLookup domain.ClosureDateLookup
+	fundingLookup     domain.FundingLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, fundingLookup domain.FundingLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, fundingLookup: fundingLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -144,21 +145,28 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		subtotalMinor := calc.Subtotal.Minor()
 
+		// Look up funding via FundingLookup interface
 		fundedAllowance := 0
-		fundingModel := termRow.FundingModel
-		if fundingModel == "" {
-			fundingModel = "unknown"
-		}
-		if termRow.FundedAllowanceMinutes != nil {
-			fundedAllowance = *termRow.FundedAllowanceMinutes
-		} else if fundingModel == "term_time_only" && termRow.FundedHoursPerWeek != nil {
-			if len(termDates) > 0 {
-				fundedAllowance = domain.CalculateTermTimeFundedAllowanceMinutes(*termRow.FundedHoursPerWeek, termDates, in.BillingMonth, closureDates)
+		fundingModel := "unknown"
+		var fundedHourlyRateMinor int
+		var fundedHoursPerWeek float64
+		if uc.fundingLookup != nil {
+			fundingInfo, fundErr := uc.fundingLookup.GetChildFunding(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+			if fundErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup funding for child %s: %w", termRow.ChildID, fundErr)
+			}
+			if fundingInfo.HasFunding {
+				fundedAllowance = fundingInfo.FundedAllowanceMinutes
+				fundedHourlyRateMinor = fundingInfo.FundedHourlyRateMinor
+				fundedHoursPerWeek = fundingInfo.FundedHoursPerWeek
+				if fundingInfo.FundingType != "" {
+					fundingModel = fundingInfo.FundingType
+				}
 			}
 		}
 
 		_, billableMinutes, _, billableMinor, err := domain.ComputeFundedDeductionMinor(
-			calc.TotalMinutes, fundedAllowance, termRow.SiteHourlyRateMinor,
+			calc.TotalMinutes, fundedAllowance, fundedHourlyRateMinor,
 		)
 		if err != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("compute funded deduction for term %s: %w", termRow.TermID, err)
@@ -300,10 +308,10 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			BillingMonth:           in.BillingMonthRaw,
 			ChildID:                termRow.ChildID,
 			CoreHourlyRate:         domain.MustGBP(termRow.SiteHourlyRateMinor),
+			FundedHourlyRate:       domain.MustGBP(fundedHourlyRateMinor),
 			CoreSubtotal:           domain.MustGBP(subtotalMinor),
 			ExtrasTotal:            domain.MustGBP(extrasTotalMinor),
 			ManualExtrasSupported:  true,
-			FundingProfileID:       termRow.FundingProfileID,
 			FundedAllowanceMinutes: fundedAllowance,
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
@@ -393,15 +401,12 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		deductionLineAmount := -fundedDeductionMinor
 		var deductionLineDetailsJSON []byte
-		if termRow.FundingProfileID != nil || fundedAllowance > 0 {
+		if fundedAllowance > 0 {
 			deductionDetails := domain.FundedDeductionLineDetails{
 				FundedAllowanceMinutes: fundedAllowance,
 				FundedDeductionMinutes: fundedDeductionMinutes,
 				CoreBillableMinutes:    billableMinutes,
 				FundingModel:           fundingModel,
-			}
-			if termRow.FundingProfileID != nil {
-				deductionDetails.FundingProfileID = *termRow.FundingProfileID
 			}
 			deductionLineDetailsJSON, jsonErr = json.Marshal(deductionDetails)
 			if jsonErr != nil {
@@ -413,10 +418,10 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			deductionLineAmountAbs = -deductionLineAmountAbs
 		}
 		deductionDescription := "Funded hours deduction"
-		if fundingModel == "term_time_only" && termRow.FundedHoursPerWeek != nil {
-			deductionDescription = fmt.Sprintf("Term-time funding (%.0fh × 38 weeks)", *termRow.FundedHoursPerWeek)
-		} else if fundingModel == "stretched" && termRow.FundedHoursPerWeek != nil {
-			deductionDescription = fmt.Sprintf("Stretched funding (≈%.1fh/week)", *termRow.FundedHoursPerWeek)
+		if fundingModel == "term_time_only" && fundedHoursPerWeek > 0 {
+			deductionDescription = fmt.Sprintf("Term-time funding (%.0fh × 38 weeks)", fundedHoursPerWeek)
+		} else if fundingModel == "stretched" && fundedHoursPerWeek > 0 {
+			deductionDescription = fmt.Sprintf("Stretched funding (≈%.1fh/week)", fundedHoursPerWeek)
 		}
 		if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
 			ID:                     uid.NewUUID(),

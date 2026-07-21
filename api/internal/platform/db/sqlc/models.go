@@ -259,16 +259,17 @@ type Booking struct {
 }
 
 type Branch struct {
-	ID                  pgtype.UUID
-	TenantID            pgtype.UUID
-	Name                string
-	CreatedAt           pgtype.Timestamptz
-	UpdatedAt           pgtype.Timestamptz
-	IsActive            bool
-	CoreHourlyRateMinor pgtype.Int4
-	AdHocRateMultiplier pgtype.Numeric
-	OverdueGraceDays    int32
-	ReminderDaysBefore  int32
+	ID                    pgtype.UUID
+	TenantID              pgtype.UUID
+	Name                  string
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+	IsActive              bool
+	CoreHourlyRateMinor   pgtype.Int4
+	AdHocRateMultiplier   pgtype.Numeric
+	OverdueGraceDays      int32
+	ReminderDaysBefore    int32
+	FundedHourlyRateMinor int32
 }
 
 type BranchClosureDay struct {
@@ -443,6 +444,8 @@ type ChildFundingRecord struct {
 	BenefitChildTaxCredit      bool
 	BenefitOtherSupport        bool
 	OtherBenefitName           pgtype.Text
+	EyppEligible               bool
+	DafEligible                bool
 }
 
 type ChildHealthProfile struct {

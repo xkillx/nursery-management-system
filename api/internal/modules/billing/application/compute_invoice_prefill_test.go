@@ -177,8 +177,6 @@ func (m *stubPrefillTxMgr) ExecTx(ctx context.Context, fn func(tx pgx.Tx) error)
 }
 
 func makeTerm() domain.AdvancePayTermRow {
-	fpID := uuid.MustParse("22222222-2222-4222-8222-222222222002")
-	allowance := 570
 	lastName := "Doe"
 	return domain.AdvancePayTermRow{
 		TermID:                 uuid.MustParse("11111111-1111-4111-8111-111111111001"),
@@ -195,8 +193,6 @@ func makeTerm() domain.AdvancePayTermRow {
 		DateOfBirth:            time.Date(2021, 5, 10, 0, 0, 0, 0, time.UTC),
 		StartDate:              time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
 		HasParentCarerContact:  true,
-		FundingProfileID:       &fpID,
-		FundedAllowanceMinutes: &allowance,
 	}
 }
 
@@ -247,9 +243,6 @@ func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 	if result.Lines[1].LineKind != domain.LineKindFundedDeduction {
 		t.Fatalf("line[1] kind: got %q, want %q", result.Lines[1].LineKind, domain.LineKindFundedDeduction)
 	}
-	if result.FundingProfileID == nil {
-		t.Fatal("expected funding profile ID")
-	}
 	if len(result.Warnings) != 0 {
 		t.Fatalf("expected no warnings, got %v", result.Warnings)
 	}
@@ -258,8 +251,6 @@ func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
 	termRow := makeTerm()
-	termRow.FundingProfileID = nil
-	termRow.FundedAllowanceMinutes = nil
 
 	repo := &stubPrefillRepo{
 		terms:   []domain.AdvancePayTermRow{termRow},
@@ -276,9 +267,6 @@ func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.FundingProfileID != nil {
-		t.Fatal("expected nil funding profile ID")
-	}
 	if result.FundedDeductionMinor != 0 {
 		t.Fatalf("expected zero funded deduction, got %d", result.FundedDeductionMinor)
 	}

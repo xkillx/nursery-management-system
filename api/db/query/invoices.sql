@@ -824,11 +824,7 @@ SELECT
           AND cc.child_id = t.child_id
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
-    fp.id AS funding_profile_id,
-    fp.funded_allowance_minutes,
     bp.term_time_only,
-    COALESCE(fp.funding_model, 'unknown') AS funding_model,
-    fp.funded_hours_per_week,
     b.ad_hoc_rate_multiplier
 FROM term t
 JOIN children c
@@ -839,11 +835,6 @@ JOIN child_booking_patterns bp
   ON bp.tenant_id = t.tenant_id
  AND bp.branch_id = t.branch_id
  AND bp.id = t.booking_pattern_id
-LEFT JOIN funding_profiles fp
-  ON fp.tenant_id = t.tenant_id
- AND fp.branch_id = t.branch_id
- AND fp.child_id = t.child_id
- AND fp.billing_month = $3
 JOIN branches b
   ON b.tenant_id = t.tenant_id
  AND b.id = t.branch_id

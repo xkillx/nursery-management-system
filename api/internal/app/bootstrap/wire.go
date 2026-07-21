@@ -350,6 +350,13 @@ var fundingSet = wire.NewSet(
 
 // ── Billing module ─────────────────────────────────────────────────────
 
+func provideFundingLookupAdapter(
+	childRepo *childpostgres.ChildRepository,
+	ownerRepo *ownerpostgres.OwnerRepository,
+) *fundingLookupAdapter {
+	return &fundingLookupAdapter{childRepo: childRepo, ownerRepo: ownerRepo}
+}
+
 var billingSet = wire.NewSet(
 	billingpostgres.NewRepository,
 	wire.Bind(new(billingdomain.BillingRepository), new(*billingpostgres.Repository)),
@@ -366,6 +373,8 @@ var billingSet = wire.NewSet(
 	wire.Bind(new(billingdomain.AdHocBookingLookup), new(*adHocBookingLookupAdapter)),
 	provideHourlyBookingLookupAdapter,
 	wire.Bind(new(billingdomain.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)),
+	provideFundingLookupAdapter,
+	wire.Bind(new(billingdomain.FundingLookup), new(*fundingLookupAdapter)),
 	billingapp.NewPreflightDraftInvoices,
 	billingapp.NewComputeInvoicePrefill,
 	billingapp.NewCreateDraftInvoice,
@@ -646,7 +655,7 @@ var hourlyBookingsSet = wire.NewSet(
 
 func provideRoomCapacityLookupAdapter(
 	roomsRepo *roomspostgres.RoomRepository,
-	childRepo *postgreschild.ChildRepository,
+	childRepo *childpostgres.ChildRepository,
 ) *roomCapacityLookupAdapter {
 	return &roomCapacityLookupAdapter{repo: roomsRepo, childRepo: childRepo}
 }

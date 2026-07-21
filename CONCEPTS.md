@@ -20,7 +20,7 @@ A flexible-duration session booking for a specific child on a specific calendar 
 A predefined time slot offered by a nursery (e.g., "Morning 08:00–13:00" or "Afternoon 13:00–18:00"). Session types are configured at the branch level and shared across all children. Each session type has a `kind` classification (`standard`, `wraparound_before`, `wraparound_after`, `core`, `extended`).
 
 ### Funding Record
-A child's funding entitlement record, storing the funding type (e.g., 15 Hours, 30 Hours), funding model (term-time or stretched), eligibility status, and benefit information. Separate from billing — funding records capture entitlement, not invoices.
+A child's funding entitlement record (`child_funding_records`), the sole source of truth for funding. Stores funding type (e.g., Universal 15 Hours, Working Parent 30 Hours), funding model (term-time or stretched), funded hours per week, eligibility code, and benefit information. One active record per child. The invoice engine reads funding data via the `FundingLookup` interface — there is no per-month snapshot table.
 
 ### Benefits Status
 Tracks whether a child receives benefits that contribute towards nursery fees. Values: `yes`, `no`, `unknown`. Separate from the specific benefit types or amounts.
@@ -77,11 +77,14 @@ Invoices are generated for the next calendar month before service is delivered. 
 A child's planned weekly attendance schedule. The system counts day-of-week occurrences in the calendar month × session duration = `booked_core_minutes`. This is the billing basis under advance-pay.
 
 ### Funded Allowance Minutes
-Monthly funding entitlement expressed in minutes. Two computation paths:
-- **Stretched model:** `funded_hours_per_week × 52 × 60 / 12` (annualised hours spread evenly across 12 months).
+Monthly funding entitlement expressed in minutes. Computed on read from the child's `FundingRecord` plus term dates — not stored per-month. Two computation paths:
+- **Stretched model:** `funded_hours_per_week × 60 × 38 / 12` (fixed monthly allocation).
 - **Term-time-only model:** `funded_hours_per_week × 60 × term_weekdays_in_month / 5`. Term months only; zero during holidays. Derived from the branch's academic term calendar.
 
-Stored per (child, billing_month) in `funding_profiles`.
+Pro-rated when funding starts or ends mid-month. Computed by the `funding/domain` allowance service.
+
+### Funded Hourly Rate
+The hourly rate the Local Authority pays the nursery for funded hours. Stored on the `branches` table (`funded_hourly_rate_minor`). Separate from the private hourly rate (`core_hourly_rate_minor`). Used by the invoice engine to compute the funded deduction amount.
 
 ### Billable Minutes
 `max(0, booked_core_minutes - funded_allowance_minutes)`. The minutes that the parent actually pays for after funding deduction.

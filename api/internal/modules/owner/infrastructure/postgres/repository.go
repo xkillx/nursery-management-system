@@ -29,10 +29,12 @@ func (r *OwnerRepository) GetActiveSites(ctx context.Context, tenantID uuid.UUID
 	}
 	sites := make([]domain.Site, 0, len(rows))
 	for _, row := range rows {
+		fundedRate := int(row.FundedHourlyRateMinor)
 		sites = append(sites, domain.Site{
-			ID:                  pgtypeUUIDToUUID(row.ID),
-			Name:                row.Name,
-			CoreHourlyRateMinor: pgtypeInt4ToPtr(row.CoreHourlyRateMinor),
+			ID:                    pgtypeUUIDToUUID(row.ID),
+			Name:                  row.Name,
+			CoreHourlyRateMinor:   pgtypeInt4ToPtr(row.CoreHourlyRateMinor),
+			FundedHourlyRateMinor: &fundedRate,
 		})
 	}
 	return sites, nil
@@ -50,7 +52,13 @@ func (r *OwnerRepository) GetActiveSite(ctx context.Context, tenantID, siteID uu
 		}
 		return domain.Site{}, err
 	}
-	return domain.Site{ID: pgtypeUUIDToUUID(row.ID), Name: row.Name, CoreHourlyRateMinor: pgtypeInt4ToPtr(row.CoreHourlyRateMinor)}, nil
+	fundedRate := int(row.FundedHourlyRateMinor)
+	return domain.Site{
+		ID:                    pgtypeUUIDToUUID(row.ID),
+		Name:                  row.Name,
+		CoreHourlyRateMinor:   pgtypeInt4ToPtr(row.CoreHourlyRateMinor),
+		FundedHourlyRateMinor: &fundedRate,
+	}, nil
 }
 
 func (r *OwnerRepository) CountActiveManagers(ctx context.Context, tenantID uuid.UUID, branchIDs []uuid.UUID) (map[uuid.UUID]int, error) {

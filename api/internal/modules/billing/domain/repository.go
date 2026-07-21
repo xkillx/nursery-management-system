@@ -121,28 +121,24 @@ type InvoiceRow struct {
 // The application layer joins this with booking-pattern entries to compute the
 // per-term monthly invoice.
 type AdvancePayTermRow struct {
-	TermID                 uuid.UUID
-	TenantID               uuid.UUID
-	BranchID               uuid.UUID
-	ChildID                uuid.UUID
-	TermStartDate          time.Time
-	TermEndDate            time.Time
-	BookingPatternID       uuid.UUID
-	SiteHourlyRateMinor    int
-	Status                 string
-	FirstName              string
-	MiddleName             *string
-	LastName               *string
-	DateOfBirth            time.Time
-	StartDate              time.Time
-	EndDate                *time.Time
-	HasParentCarerContact  bool
-	FundingProfileID       *uuid.UUID
-	FundedAllowanceMinutes *int
-	TermTimeOnly           bool
-	FundingModel           string
-	FundedHoursPerWeek     *float64
-	AdHocRateMultiplier    float64
+	TermID                uuid.UUID
+	TenantID              uuid.UUID
+	BranchID              uuid.UUID
+	ChildID               uuid.UUID
+	TermStartDate         time.Time
+	TermEndDate           time.Time
+	BookingPatternID      uuid.UUID
+	SiteHourlyRateMinor   int
+	Status                string
+	FirstName             string
+	MiddleName            *string
+	LastName              *string
+	DateOfBirth           time.Time
+	StartDate             time.Time
+	EndDate               *time.Time
+	HasParentCarerContact bool
+	TermTimeOnly          bool
+	AdHocRateMultiplier   float64
 }
 
 // BookingPatternEntryRow is the per-entry row from ListBookingPatternEntries.

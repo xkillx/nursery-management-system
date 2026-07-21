@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create New Invoice | NurseryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e8eeff",
+                        "inverse-primary": "#bbc3ff",
+                        "inverse-surface": "#273143",
+                        "border-subtle": "#E2E8F0",
+                        "primary-fixed-dim": "#bbc3ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-background": "#111c2d",
+                        "secondary": "#565e71",
+                        "tertiary-container": "#b9531b",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed-variant": "#3f4759",
+                        "background": "#f9f9ff",
+                        "tertiary": "#993c00",
+                        "primary": "#2642e6",
+                        "secondary-container": "#dbe2f9",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#dfe8ff",
+                        "error": "#EF4444",
+                        "surface-container-highest": "#d9e3fb",
+                        "primary-fixed": "#dfe0ff",
+                        "surface": "#f9f9ff",
+                        "surface-container-low": "#F0F3FF",
+                        "on-secondary-container": "#5c6477",
+                        "warning": "#F59E0B",
+                        "primary-container": "#465fff",
+                        "on-primary-fixed": "#000d5f",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#141b2c",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-tertiary-container": "#fff5f2",
+                        "info": "#3B82F6",
+                        "outline-variant": "#c5c5d8",
+                        "on-surface-variant": "#444656",
+                        "surface-tint": "#2e48eb",
+                        "surface-dim": "#d0daf2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#351000",
+                        "on-primary-fixed-variant": "#0029d2",
+                        "inverse-on-surface": "#ecf0ff",
+                        "surface-variant": "#d9e3fb",
+                        "outline": "#757687",
+                        "on-primary-container": "#f9f7ff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f9f9ff",
+                        "success": "#10B981",
+                        "secondary-fixed": "#dbe2f9",
+                        "secondary-fixed-dim": "#bfc6dc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "base": "4px",
+                        "sidebar-width": "280px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "sm": "8px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "display": ["Outfit"],
+                        "body-md": ["Outfit"],
+                        "headline-md": ["Outfit"],
+                        "headline-lg": ["Outfit"],
+                        "body-lg": ["Outfit"],
+                        "label-sm": ["Outfit"],
+                        "label-md": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f9f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid #E2E8F0; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #2642e6 !important; ring: 1px solid #2642e6; }
+    </style>
+</head>
+<body class="text-on-background antialiased">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-white border-r border-border-subtle flex flex-col py-lg px-md z-50">
+<div class="mb-xl px-sm">
+<h1 class="text-headline-md font-display font-bold text-primary">Acme Nursery</h1>
+<p class="text-label-md text-secondary">London Central</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">child_care</span> Children
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">calendar_today</span> Attendance
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 border-l-4 border-primary bg-primary-fixed/10 text-primary font-bold font-body-md" href="#">
+<span class="material-symbols-outlined">receipt_long</span> Invoicing
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">groups</span> Staff
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+            </a>
+</nav>
+<div class="mt-auto pt-lg border-t border-border-subtle space-y-1">
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">help_outline</span> Help Center
+            </a>
+<a class="flex items-center gap-3 px-sm py-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">logout</span> Logout
+            </a>
+<div class="flex items-center gap-3 mt-4 p-2 rounded-lg bg-surface-container-low">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A professional headshot of a nursery manager with a warm, welcoming expression, set against a softly blurred childcare classroom background. High-quality corporate photography, natural lighting, wearing business casual attire, London-based education professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB3Rjc2DfZhMKSMc-LCYCtVRnyCC8W9sttWCXE_7lElf6v0G_yAYys-VRpCicEvBPVMBZit0r8wqcXDZsHTu6iq_PrIgGw5mFrKHyujOmom8KsbplEUh9kx05qpabhTsqVx1LnxvGQEHEdF9zroSq80r-kfJREWH2rnK2GiL7zjIG75us60kSEEYZo5qNmBe17T7Lgip_WpNJr7MjQ4iStesI6upV5Kegn5rShkWfHlzZusaPrGmTo4M7ohKKbXqE5Yy8pvsgUamg"/>
+<div class="overflow-hidden">
+<p class="text-label-md font-bold truncate">Sarah Jenkins</p>
+<p class="text-[10px] text-secondary">Nursery Manager</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-sidebar-width min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="flex justify-between items-center h-16 px-lg bg-surface border-b border-border-subtle shadow-sm sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md w-64 focus:w-80 transition-all" placeholder="Search nursery records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-secondary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-secondary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">history</span>
+</button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md active:scale-95 transition-transform">
+                    Finalize Invoice
+                </button>
+</div>
+</header>
+<div class="max-w-container-max mx-auto p-lg flex gap-lg">
+<!-- Left Column: Form Details (70%) -->
+<div class="w-[70%] space-y-lg pb-xl">
+<!-- Header & Breadcrumb -->
+<div class="space-y-2">
+<nav class="flex items-center gap-2 text-label-md text-secondary">
+<a class="hover:text-primary" href="#">Invoicing</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">Create New Invoice</span>
+</nav>
+<h2 class="text-headline-lg font-display font-bold text-on-background">Create New Invoice</h2>
+</div>
+<!-- Section 1: Invoice Metadata -->
+<section class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">info</span>
+<h3 class="font-headline-md">Invoice Metadata</h3>
+</div>
+<div class="grid grid-cols-3 gap-lg">
+<div class="space-y-1.5">
+<label class="text-label-md text-secondary px-1">Invoice Number</label>
+<input class="w-full bg-surface-container-lowest border border-border-subtle rounded-lg px-4 py-2.5 text-body-md font-bold text-primary cursor-not-allowed" disabled="" type="text" value="INV-2023-08-042"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-label-md text-secondary px-1">Issue Date</label>
+<input class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md" type="date" value="2023-08-01"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-label-md text-secondary px-1">Due Date</label>
+<input class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md" type="date" value="2023-08-15"/>
+</div>
+</div>
+</section>
+<!-- Section 2: Recipient Selection -->
+<section class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">person_search</span>
+<h3 class="font-headline-md">Recipient Selection</h3>
+</div>
+<div class="flex flex-col md:flex-row gap-lg">
+<div class="flex-1 space-y-1.5">
+<label class="text-label-md text-secondary px-1">Search Child / Parent</label>
+<div class="relative">
+<input class="w-full border border-border-subtle rounded-lg pl-10 pr-4 py-2.5 text-body-md" placeholder="Start typing name..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+</div>
+<div class="flex-[1.5]">
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 border border-primary/20">
+<img class="w-16 h-16 rounded-full border-2 border-white shadow-sm object-cover" data-alt="Close-up portrait of a cheerful 4-year-old boy named Leo with curly hair, wearing a colorful nursery uniform. The photography is bright, clean, and professional, using soft focus for the background which contains educational toys. The image evokes a sense of trust and high-quality childcare service." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPUJiQqEwh1-yo2RCzmgSrdBAt5rwrqr8E47niki48AktqYUdOcIDeS1_8Q-UHtPAqiXPKMdEr2ejqXBrYiIz7pEM8izNzfihdyD6HtHnJ7wBy7nGcKw-xz33aVK3WyIodPU9U8b0NtNVZsZOYUHAUuWtI4x6sTDA52EGQaZDwriUYQwuOBeZPgjoInehVjaa0MUzrD5Xyq-y0yJ18hEwrReERWMbCxAGRl6HFSvgHDG_yZrKzzbvnKospCmDc_HW8dertvZaoGs4"/>
+<div class="flex-1">
+<h4 class="font-headline-md text-primary">Leo Adams</h4>
+<div class="flex gap-4 mt-1">
+<div class="flex items-center gap-1 text-label-md text-secondary">
+<span class="material-symbols-outlined text-[16px]">meeting_room</span>
+                                            Bluebells Room
+                                        </div>
+<div class="flex items-center gap-1 text-label-md text-secondary">
+<span class="material-symbols-outlined text-[16px]">contact_phone</span>
+                                            Sarah Adams (Parent)
+                                        </div>
+</div>
+</div>
+<button class="text-primary hover:bg-white p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Billing Period -->
+<section class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">date_range</span>
+<h3 class="font-headline-md">Billing Period</h3>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex-1 space-y-1.5">
+<label class="text-label-md text-secondary px-1">Start Date</label>
+<input class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md" type="date" value="2023-08-01"/>
+</div>
+<div class="pt-6">
+<span class="material-symbols-outlined text-outline">arrow_forward</span>
+</div>
+<div class="flex-1 space-y-1.5">
+<label class="text-label-md text-secondary px-1">End Date</label>
+<input class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md" type="date" value="2023-08-31"/>
+</div>
+</div>
+</section>
+<!-- Section 4: Invoice Items -->
+<section class="bg-white rounded-xl border border-border-subtle shadow-sm overflow-hidden">
+<div class="p-lg flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">list_alt</span>
+<h3 class="font-headline-md">Invoice Items</h3>
+</div>
+<button class="flex items-center gap-2 text-primary font-label-md hover:bg-primary-fixed/20 px-3 py-1.5 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            Add Custom Line Item
+                        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-y border-border-subtle">
+<th class="px-lg py-3 text-label-sm text-secondary uppercase tracking-wider">Description</th>
+<th class="px-md py-3 text-label-sm text-secondary uppercase tracking-wider text-center">Qty / Sessions</th>
+<th class="px-md py-3 text-label-sm text-secondary uppercase tracking-wider text-right">Unit Price</th>
+<th class="px-md py-3 text-label-sm text-secondary uppercase tracking-wider text-center">Tax (%)</th>
+<th class="px-lg py-3 text-label-sm text-secondary uppercase tracking-wider text-right">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-4">
+<p class="text-body-md font-bold">Full Day Sessions (August Attendance)</p>
+<p class="text-label-md text-secondary">Auto-calculated from attendance records</p>
+</td>
+<td class="px-md py-4 text-center text-body-md">20</td>
+<td class="px-md py-4 text-right text-body-md">£70.00</td>
+<td class="px-md py-4 text-center text-body-md">0%</td>
+<td class="px-lg py-4 text-right text-body-md font-bold">£1,400.00</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-4">
+<p class="text-body-md font-bold">Breakfast Club Add-on</p>
+<p class="text-label-md text-secondary">Optional extra service</p>
+</td>
+<td class="px-md py-4 text-center text-body-md">5</td>
+<td class="px-md py-4 text-right text-body-md">£10.00</td>
+<td class="px-md py-4 text-center text-body-md">0%</td>
+<td class="px-lg py-4 text-right text-body-md font-bold">£50.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Section 5: Funding & Deductions -->
+<section class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">savings</span>
+<h3 class="font-headline-md">Funding &amp; Deductions</h3>
+</div>
+<div class="space-y-md">
+<div class="flex justify-between items-center p-4 bg-tertiary-fixed/20 rounded-lg border border-tertiary/20">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-tertiary">check_circle</span>
+<div>
+<p class="text-body-md font-bold text-on-tertiary-fixed">15-Hour Universal Funding Offset</p>
+<p class="text-label-md text-on-tertiary-fixed-variant">Applied automatically based on child's eligibility</p>
+</div>
+</div>
+<p class="text-headline-md font-bold text-tertiary">-£650.00</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar Panels (30%) -->
+<div class="w-[30%] space-y-lg sticky top-[80px] self-start">
+<!-- Financial Summary Card -->
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm overflow-hidden">
+<div class="bg-primary p-4">
+<h3 class="text-on-primary font-headline-md">Financial Summary</h3>
+</div>
+<div class="p-lg space-y-4">
+<div class="flex justify-between text-body-md">
+<span class="text-secondary">Subtotal</span>
+<span class="font-bold">£1,450.00</span>
+</div>
+<div class="flex justify-between text-body-md">
+<span class="text-secondary">Total Tax (0%)</span>
+<span class="font-bold">£0.00</span>
+</div>
+<div class="flex justify-between text-body-md">
+<span class="text-secondary">Funding Applied</span>
+<span class="text-tertiary font-bold">-£650.00</span>
+</div>
+<div class="pt-4 border-t border-border-subtle flex justify-between items-end">
+<span class="text-label-md font-bold uppercase tracking-wide text-secondary">Grand Total</span>
+<span class="text-display font-display text-primary leading-none">£800.00</span>
+</div>
+</div>
+</div>
+<!-- Invoice Status Card -->
+<div class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-warning">pending_actions</span>
+<h3 class="font-headline-md">Invoice Actions</h3>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary rounded-lg font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20">
+                        Finalize &amp; Send to Parent
+                    </button>
+<button class="w-full py-3 bg-surface-container-low text-primary border border-primary/20 rounded-lg font-bold hover:bg-surface-container-high active:scale-95 transition-all">
+                        Save as Draft
+                    </button>
+<div class="flex items-center gap-2 justify-center py-2 px-3 bg-secondary-container/30 rounded-lg">
+<span class="w-2 h-2 rounded-full bg-warning animate-pulse"></span>
+<span class="text-label-md text-on-secondary-container">Last autosaved: 2 mins ago</span>
+</div>
+</div>
+<!-- Notes Card -->
+<div class="bg-white p-lg rounded-xl border border-border-subtle shadow-sm space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">notes</span>
+<h3 class="font-headline-md">Notes</h3>
+</div>
+<div class="space-y-4">
+<div class="space-y-1.5">
+<label class="text-label-md text-secondary">Parent-facing Note</label>
+<textarea class="w-full border border-border-subtle rounded-lg p-3 text-body-md text-on-surface" placeholder="e.g. Hope Leo enjoyed his August sessions!" rows="3"></textarea>
+</div>
+<div class="space-y-1.5">
+<label class="text-label-md text-secondary">Internal Manager Note</label>
+<textarea class="w-full border border-border-subtle rounded-lg p-3 text-body-md bg-surface-container-lowest italic" placeholder="Private notes for staff..." rows="2"></textarea>
+</div>
+</div>
+</div>
+<!-- Live Assistance Tip -->
+<div class="relative overflow-hidden rounded-xl p-6 text-on-primary-container bg-primary-container">
+
+<div class="relative z-10 space-y-2">
+<p class="font-bold text-headline-md">Need Help?</p>
+<p class="text-body-md opacity-90">Auto-calculate funding using the 'Smart-Check' tool in the Invoice Items section.</p>
+<a class="inline-block text-label-md font-bold underline mt-2" href="#">Learn more about UK childcare funding</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for inputs
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('focus', () => {
+                el.parentElement.classList.add('scale-[1.01]');
+                el.parentElement.style.transition = 'transform 0.2s ease-in-out';
+            });
+            el.addEventListener('blur', () => {
+                el.parentElement.classList.remove('scale-[1.01]');
+            });
+        });
+
+        // Simple currency formatter for manual entries (mock logic)
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+        }
+    </script>
+</body></html>

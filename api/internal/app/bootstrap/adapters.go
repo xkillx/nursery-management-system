@@ -1228,3 +1228,52 @@ func (a *fundingHistoryWriterAdapter) Write(ctx context.Context, tenantID, branc
 
 	return a.repo.Create(ctx, history)
 }
+
+// fundingLookupAdapter satisfies billingdomain.FundingLookup by loading
+// FundingRecord from child_funding_records and computing allowance on the fly.
+type fundingLookupAdapter struct {
+	childRepo *postgreschild.ChildRepository
+	ownerRepo *ownerpostgres.OwnerRepository
+}
+
+func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (billingdomain.FundedChildInfo, error) {
+	record, found, err := a.childRepo.GetFundingByChild(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return billingdomain.FundedChildInfo{}, fmt.Errorf("get child funding record: %w", err)
+	}
+	if !found || !record.FundingEnabled {
+		return billingdomain.FundedChildInfo{HasFunding: false}, nil
+	}
+
+	site, err := a.ownerRepo.GetActiveSite(ctx, tenantID, branchID)
+	if err != nil {
+		return billingdomain.FundedChildInfo{}, fmt.Errorf("get site for funded rate: %w", err)
+	}
+	fundedRateMinor := 0
+	if site.FundedHourlyRateMinor != nil {
+		fundedRateMinor = *site.FundedHourlyRateMinor
+	}
+
+	hoursPerWeek := 0.0
+	if record.FundedHoursPerWeek != nil {
+		hoursPerWeek = *record.FundedHoursPerWeek
+	}
+
+	fundingModel := fundingdomain.FundingModel(record.FundingModel)
+	termDates, _ := a.getTermDates(ctx, tenantID, branchID, billingMonth)
+	allowance, _ := fundingdomain.ComputeAllowanceMinutes(hoursPerWeek, fundingModel, termDates, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+
+	return billingdomain.FundedChildInfo{
+		HasFunding:             true,
+		FundingType:            string(record.FundingType),
+		FundedAllowanceMinutes: allowance,
+		FundedHourlyRateMinor:  fundedRateMinor,
+		FundedHoursPerWeek:     hoursPerWeek,
+	}, nil
+}
+
+func (a *fundingLookupAdapter) getTermDates(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]fundingdomain.TermDateRange, error) {
+	// This is a simplified implementation; the real one would query the term_calendar module.
+	// For now, return nil to use the fallback computation.
+	return nil, nil
+}

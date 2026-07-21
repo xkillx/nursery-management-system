@@ -76,16 +76,12 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 		// Term's site_hourly_rate for display purposes. Per-child amounts are
 		// filled in by the generator.
 		fundedAllowance := 0
-		if t.FundedAllowanceMinutes != nil {
-			fundedAllowance = *t.FundedAllowanceMinutes
-		}
 		result.EligibleChildren = append(result.EligibleChildren, domain.EligibleChild{
 			ChildID:                t.ChildID,
 			ChildFirstName:         t.FirstName,
 			ChildMiddleName:        t.MiddleName,
 			ChildLastName:          t.LastName,
 			CoreHourlyRate:         domain.MustGBP(t.SiteHourlyRateMinor),
-			FundingProfileID:       t.FundingProfileID,
 			FundedAllowanceMinutes: fundedAllowance,
 		})
 
@@ -139,13 +135,6 @@ func preflightBlockers(t domain.AdvancePayTermRow) []domain.PreflightBlocker {
 	if t.SiteHourlyRateMinor <= 0 {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingBillingRate, Message: "Site billing rate is missing or invalid.",
-		})
-	}
-	if t.FundingProfileID == nil {
-		blockers = append(blockers, domain.PreflightBlocker{
-			Code:    domain.BlockerMissingFundingProfile,
-			Message: "Funding profile is missing for this billing month.",
-			Field:   strPtr("funding_profile"),
 		})
 	}
 	return blockers

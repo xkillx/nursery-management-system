@@ -29,3 +29,8 @@ type HistoryRepository interface {
 	Create(ctx context.Context, history FundingHistory) error
 	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]FundingHistory, error)
 }
+
+type FundingRecordRepository interface {
+	GetFundingRecord(ctx context.Context, tenantID, branchID, childID uuid.UUID) (FundingRecord, bool, error)
+	UpsertFundingRecord(ctx context.Context, tx Tx, record FundingRecord) (FundingRecord, error)
+}

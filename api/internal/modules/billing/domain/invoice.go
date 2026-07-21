@@ -119,20 +119,20 @@ type DraftGenerationSummary struct {
 // downstream consumers (parent invoice view, manager invoice review) able to
 // render the same high-level shape.
 type InvoiceCalculationDetails struct {
-	BillingMonth           string     `json:"billing_month"`
-	ChildID                uuid.UUID  `json:"child_id"`
-	CoreHourlyRate         Money      `json:"core_hourly_rate_minor"`
-	CoreSubtotal           Money      `json:"core_subtotal_minor"`
-	ExtrasTotal            Money      `json:"extras_total_minor"`
-	ManualExtrasSupported  bool       `json:"manual_extras_supported"`
-	FundingProfileID       *uuid.UUID `json:"funding_profile_id,omitempty"`
-	FundedAllowanceMinutes int        `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int        `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int        `json:"core_billable_minutes"`
-	TermTimeOnly           bool       `json:"term_time_only"`
-	FundingModel           string     `json:"funding_model,omitempty"`
-	TermDatesUsed          []string   `json:"term_dates_used,omitempty"`
-	ClosureDaysExcluded    []string   `json:"closure_days_excluded,omitempty"`
+	BillingMonth           string    `json:"billing_month"`
+	ChildID                uuid.UUID `json:"child_id"`
+	CoreHourlyRate         Money     `json:"core_hourly_rate_minor"`
+	FundedHourlyRate       Money     `json:"funded_hourly_rate_minor,omitempty"`
+	CoreSubtotal           Money     `json:"core_subtotal_minor"`
+	ExtrasTotal            Money     `json:"extras_total_minor"`
+	ManualExtrasSupported  bool      `json:"manual_extras_supported"`
+	FundedAllowanceMinutes int       `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int       `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int       `json:"core_billable_minutes"`
+	TermTimeOnly           bool      `json:"term_time_only"`
+	FundingModel           string    `json:"funding_model,omitempty"`
+	TermDatesUsed          []string  `json:"term_dates_used,omitempty"`
+	ClosureDaysExcluded    []string  `json:"closure_days_excluded,omitempty"`
 
 	// Advance-pay source.
 	TermID            uuid.UUID                 `json:"term_id"`
@@ -169,11 +169,10 @@ type CoreLineDetails struct {
 
 // FundedDeductionLineDetails is stored as JSON in the funded_deduction invoice line details.
 type FundedDeductionLineDetails struct {
-	FundingProfileID       uuid.UUID `json:"funding_profile_id"`
-	FundedAllowanceMinutes int       `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int       `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int       `json:"core_billable_minutes"`
-	FundingModel           string    `json:"funding_model,omitempty"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int    `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int    `json:"core_billable_minutes"`
+	FundingModel           string `json:"funding_model,omitempty"`
 }
 
 // HourlyBookingLineDetail is stored as JSON in the hourly invoice line details.

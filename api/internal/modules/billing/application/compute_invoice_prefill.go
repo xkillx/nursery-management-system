@@ -31,7 +31,6 @@ type ComputeInvoicePrefillResult struct {
 	ChildMiddleName        *string
 	ChildLastName          *string
 	BillingMonth           string
-	FundingProfileID       *uuid.UUID
 	FundedAllowanceMinutes int
 	Lines                  []PrefillLine
 	SubtotalMinor          int
@@ -105,17 +104,14 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 		}
 
 		fundedAllowance := 0
-		if termRow.FundedAllowanceMinutes != nil {
-			fundedAllowance = *termRow.FundedAllowanceMinutes
-		}
 
 		prefillResult, prefillErr := domain.ComputeInvoicePrefill(domain.InvoicePrefillParams{
-			BookingPatternID:    termRow.BookingPatternID.String(),
-			Entries:             domainEntries,
-			BillingMonthStart:   billingMonth,
-			SiteHourlyRateMinor: termRow.SiteHourlyRateMinor,
-			FundedAllowance:     fundedAllowance,
-			HasFundingProfile:   termRow.FundingProfileID != nil,
+			BookingPatternID:       termRow.BookingPatternID.String(),
+			Entries:                domainEntries,
+			BillingMonthStart:      billingMonth,
+			SiteHourlyRateMinor:    termRow.SiteHourlyRateMinor,
+			FundedAllowanceMinutes: fundedAllowance,
+			HasFunding:             false,
 		})
 		if prefillErr != nil {
 			return fmt.Errorf("compute invoice prefill: %w", prefillErr)
@@ -145,7 +141,6 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			ChildMiddleName:        termRow.MiddleName,
 			ChildLastName:          termRow.LastName,
 			BillingMonth:           billingMonthRaw,
-			FundingProfileID:       termRow.FundingProfileID,
 			FundedAllowanceMinutes: fundedAllowance,
 			Lines:                  lines,
 			SubtotalMinor:          prefillResult.SubtotalMinor,

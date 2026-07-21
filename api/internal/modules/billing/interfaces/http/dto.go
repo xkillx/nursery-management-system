@@ -29,7 +29,6 @@ type eligibleChildResponse struct {
 	ChildMiddleName        *string             `json:"child_middle_name"`
 	ChildLastName          *string             `json:"child_last_name"`
 	CoreHourlyRateMinor    int                 `json:"core_hourly_rate_minor"`
-	FundingProfileID       *string             `json:"funding_profile_id"`
 	FundedAllowanceMinutes int                 `json:"funded_allowance_minutes"`
 	ExistingInvoice        *existingInvoiceRef `json:"existing_invoice,omitempty"`
 }
@@ -463,9 +462,8 @@ type prefillResponse struct {
 }
 
 type entitlementResponse struct {
-	FundingProfileID       *string `json:"funding_profile_id,omitempty"`
-	FundedAllowanceMinutes int     `json:"funded_allowance_minutes"`
-	StatusLabel            string  `json:"status_label"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes"`
+	StatusLabel            string `json:"status_label"`
 }
 
 type prefillLineResponse struct {

@@ -88,7 +88,7 @@ func (r *Repository) ListActiveTermsForGeneration(ctx context.Context, tx domain
 	rows, err := r.queriesTx(tx).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
 		TenantID:      uuidToPgtype(tenantID),
 		BranchID:      uuidToPgtype(branchID),
-		BillingMonth:  timeToPgtypeDate(billingMonth),
+		TermEndDate:   timeToPgtypeDate(billingMonth),
 		TermStartDate: timeToPgtypeDate(monthEnd),
 	})
 	if err != nil {
@@ -102,7 +102,7 @@ func (r *Repository) ListActiveTerms(ctx context.Context, tenantID, branchID uui
 	rows, err := sqlc.New(r.pool).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
 		TenantID:      uuidToPgtype(tenantID),
 		BranchID:      uuidToPgtype(branchID),
-		BillingMonth:  timeToPgtypeDate(billingMonth),
+		TermEndDate:   timeToPgtypeDate(billingMonth),
 		TermStartDate: timeToPgtypeDate(monthEnd),
 	})
 	if err != nil {
@@ -115,28 +115,24 @@ func mapAdvancePayTermRows(rows []sqlc.BillingListActiveTermsForGenerationRow) [
 	out := make([]domain.AdvancePayTermRow, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, domain.AdvancePayTermRow{
-			TermID:                 pgtypeUUIDToUUID(row.TermID),
-			TenantID:               pgtypeUUIDToUUID(row.TenantID),
-			BranchID:               pgtypeUUIDToUUID(row.BranchID),
-			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			TermStartDate:          pgtypeDateToTime(row.TermStartDate),
-			TermEndDate:            pgtypeDateToTime(row.TermEndDate),
-			BookingPatternID:       pgtypeUUIDToUUID(row.BookingPatternID),
-			SiteHourlyRateMinor:    int(row.SiteHourlyRateMinor),
-			Status:                 row.Status,
-			FirstName:              row.FirstName,
-			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
-			LastName:               pgtypeTextToStrPtr(row.LastName),
-			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
-			StartDate:              pgtypeDateToTime(row.StartDate),
-			EndDate:                pgtypeDateToTimePtr(row.EndDate),
-			HasParentCarerContact:  row.HasParentCarerContact,
-			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
-			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
-			TermTimeOnly:           row.TermTimeOnly,
-			FundingModel:           row.FundingModel,
-			FundedHoursPerWeek:     pgtypeNumericToFloat64Ptr(row.FundedHoursPerWeek),
-			AdHocRateMultiplier:    pgtypeNumericToFloat64(row.AdHocRateMultiplier),
+			TermID:                pgtypeUUIDToUUID(row.TermID),
+			TenantID:              pgtypeUUIDToUUID(row.TenantID),
+			BranchID:              pgtypeUUIDToUUID(row.BranchID),
+			ChildID:               pgtypeUUIDToUUID(row.ChildID),
+			TermStartDate:         pgtypeDateToTime(row.TermStartDate),
+			TermEndDate:           pgtypeDateToTime(row.TermEndDate),
+			BookingPatternID:      pgtypeUUIDToUUID(row.BookingPatternID),
+			SiteHourlyRateMinor:   int(row.SiteHourlyRateMinor),
+			Status:                row.Status,
+			FirstName:             row.FirstName,
+			MiddleName:            pgtypeTextToStrPtr(row.MiddleName),
+			LastName:              pgtypeTextToStrPtr(row.LastName),
+			DateOfBirth:           pgtypeDateToTime(row.DateOfBirth),
+			StartDate:             pgtypeDateToTime(row.StartDate),
+			EndDate:               pgtypeDateToTimePtr(row.EndDate),
+			HasParentCarerContact: row.HasParentCarerContact,
+			TermTimeOnly:          row.TermTimeOnly,
+			AdHocRateMultiplier:   pgtypeNumericToFloat64(row.AdHocRateMultiplier),
 		})
 	}
 	return out

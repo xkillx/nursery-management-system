@@ -13,9 +13,10 @@ type OwnerActor struct {
 }
 
 type Site struct {
-	ID                  uuid.UUID
-	Name                string
-	CoreHourlyRateMinor *int
+	ID                    uuid.UUID
+	Name                  string
+	CoreHourlyRateMinor   *int
+	FundedHourlyRateMinor *int
 }
 
 type AttendanceSummary struct {

@@ -1046,18 +1046,12 @@ func toPreflightResponse(r domain.PreflightResult) preflightResponse {
 				Status: ec.ExistingInvoice.Status,
 			}
 		}
-		var fundingProfileID *string
-		if ec.FundingProfileID != nil {
-			s := ec.FundingProfileID.String()
-			fundingProfileID = &s
-		}
 		eligible = append(eligible, eligibleChildResponse{
 			ChildID:                ec.ChildID.String(),
 			ChildFirstName:         ec.ChildFirstName,
 			ChildMiddleName:        ec.ChildMiddleName,
 			ChildLastName:          ec.ChildLastName,
 			CoreHourlyRateMinor:    ec.CoreHourlyRate.Minor(),
-			FundingProfileID:       fundingProfileID,
 			FundedAllowanceMinutes: ec.FundedAllowanceMinutes,
 			ExistingInvoice:        existingInvoice,
 		})
@@ -1146,7 +1140,7 @@ func toPrefillResponse(r application.ComputeInvoicePrefillResult) prefillRespons
 	}
 
 	entitlementLabel := "No Funding Profile"
-	if r.FundingProfileID != nil {
+	if r.FundedAllowanceMinutes > 0 {
 		entitlementLabel = fmt.Sprintf("%d Hours Free Funding Active", r.FundedAllowanceMinutes/60)
 	}
 
@@ -1157,7 +1151,6 @@ func toPrefillResponse(r application.ComputeInvoicePrefillResult) prefillRespons
 		ChildLastName:   r.ChildLastName,
 		BillingMonth:    r.BillingMonth,
 		EntitlementStatus: entitlementResponse{
-			FundingProfileID:       formatUUIDPtr(r.FundingProfileID),
 			FundedAllowanceMinutes: r.FundedAllowanceMinutes,
 			StatusLabel:            entitlementLabel,
 		},

@@ -7,14 +7,15 @@ import (
 
 // InvoicePrefillParams holds the inputs for the billing prefill calculation.
 type InvoicePrefillParams struct {
-	BookingPatternID    string
-	Entries             []BookedPatternEntry
-	BillingMonthStart   time.Time
-	SiteHourlyRateMinor int
-	FundedAllowance     int
-	HasFundingProfile   bool
-	TermDates           []TermDateRange
-	ClosureDates        []time.Time
+	BookingPatternID       string
+	Entries                []BookedPatternEntry
+	BillingMonthStart      time.Time
+	SiteHourlyRateMinor    int
+	FundedHourlyRateMinor  int
+	FundedAllowanceMinutes int
+	HasFunding             bool
+	TermDates              []TermDateRange
+	ClosureDates           []time.Time
 }
 
 // InvoicePrefillLine is a computed line item from the prefill calculation.
@@ -66,10 +67,10 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 	fundedDeductionMinutes := 0
 	billableMinutes := calc.TotalMinutes
 
-	if params.HasFundingProfile {
+	if params.HasFunding {
 		var fundErr error
 		fundedDeductionMinutes, billableMinutes, fundedDeductionMinor, _, fundErr = ComputeFundedDeductionMinor(
-			calc.TotalMinutes, params.FundedAllowance, params.SiteHourlyRateMinor,
+			calc.TotalMinutes, params.FundedAllowanceMinutes, params.FundedHourlyRateMinor,
 		)
 		if fundErr != nil {
 			return InvoicePrefillResult{}, fmt.Errorf("compute funded deduction: %w", fundErr)
@@ -89,18 +90,18 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 		QuantityMinutes:        calc.TotalMinutes,
 		UnitAmountMinor:        params.SiteHourlyRateMinor,
 		LineAmountMinor:        subtotalMinor,
-		FundedAllowanceMinutes: params.FundedAllowance,
+		FundedAllowanceMinutes: params.FundedAllowanceMinutes,
 		FundedDeductionMinutes: fundedDeductionMinutes,
 		CoreBillableMinutes:    billableMinutes,
 		SessionCount:           len(calc.Sessions),
 	})
 
-	if params.HasFundingProfile && fundedDeductionMinor > 0 {
+	if params.HasFunding && fundedDeductionMinor > 0 {
 		lines = append(lines, InvoicePrefillLine{
 			LineKind:               LineKindFundedDeduction,
 			Description:            "Funded hours deduction",
 			SortOrder:              2,
-			FundedAllowanceMinutes: params.FundedAllowance,
+			FundedAllowanceMinutes: params.FundedAllowanceMinutes,
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
 			LineAmountMinor:        fundedDeductionMinor,
@@ -111,7 +112,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 	if params.SiteHourlyRateMinor <= 0 {
 		warnings = append(warnings, "site_rate_not_set")
 	}
-	if !params.HasFundingProfile {
+	if !params.HasFunding {
 		warnings = append(warnings, "missing_funding_profile")
 	}
 	if fundedDeductionMinor > 0 && subtotalMinor > 0 {
