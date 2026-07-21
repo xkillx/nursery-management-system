@@ -15,6 +15,7 @@ import {
   heroChevronRight,
   heroArrowRight,
   heroCalendar,
+  heroUser,
 } from '@ng-icons/heroicons/outline';
 import { catchError, of } from 'rxjs';
 
@@ -57,6 +58,7 @@ import { ChildRecord } from '../../models/children.models';
       heroChevronRight,
       heroArrowRight,
       heroCalendar,
+      heroUser,
     }),
   ],
 })

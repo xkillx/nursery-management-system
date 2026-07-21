@@ -167,8 +167,8 @@
           <!-- Empty state when no child selected -->
           @if (!selectedChild && !isSearching && searchResults.length === 0) {
             <div class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-850 p-8 text-center">
-              <div class="inline-flex items-center justify-center size-12 rounded-full bg-brand-50 dark:bg-brand-950/20 text-brand-500 mb-3 text-xl">
-                &#128221;
+              <div class="inline-flex items-center justify-center size-12 rounded-full bg-brand-50 dark:bg-brand-950/20 mb-3">
+                <ng-icon name="heroUser" size="24" class="text-brand-500" />
               </div>
               <h3 class="text-sm font-bold text-gray-900 dark:text-white/90">Select a Child</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
@@ -542,11 +542,11 @@
       </div>
 
       <!-- Help Card -->
-      <div class="relative overflow-hidden rounded-2xl p-5 text-on-primary-container bg-primary-container">
+      <div class="relative overflow-hidden rounded-2xl p-5 bg-brand-500 text-white shadow-theme-xs">
         <div class="relative z-10 space-y-2">
-          <p class="font-bold text-base">Need Help?</p>
-          <p class="text-sm opacity-90">Auto-calculate funding using the 'Smart-Check' tool in the Invoice Items section.</p>
-          <a class="inline-block text-xs font-bold underline mt-1" href="#">Learn more about UK childcare funding</a>
+          <p class="font-bold text-base text-white">Need Help?</p>
+          <p class="text-sm text-white/90">Auto-calculate funding using the 'Smart-Check' tool in the Invoice Items section.</p>
+          <a class="inline-block text-xs font-bold text-white underline decoration-white/60 underline-offset-2 hover:decoration-white transition-colors mt-1" href="#">Learn more about UK childcare funding</a>
         </div>
       </div>
     </aside>
