@@ -33,7 +33,8 @@ type Config struct {
 	InviteTokenSecret            string
 	InviteTokenTTLHours          int
 
-	SchedulerOwner bool
+	SchedulerOwner    bool
+	RateLimitDisabled bool
 
 	StripeSecretKey      string
 	StripeWebhookSecret  string
@@ -98,7 +99,8 @@ func Load() (Config, error) {
 		InviteTokenSecret:            strings.TrimSpace(os.Getenv("INVITE_TOKEN_SECRET")),
 		InviteTokenTTLHours:          inviteTTLMHours,
 
-		SchedulerOwner: strings.EqualFold(strings.TrimSpace(os.Getenv("SCHEDULER_OWNER")), "true"),
+		SchedulerOwner:    strings.EqualFold(strings.TrimSpace(os.Getenv("SCHEDULER_OWNER")), "true"),
+		RateLimitDisabled: strings.EqualFold(strings.TrimSpace(os.Getenv("RATE_LIMIT_DISABLED")), "true"),
 
 		StripeSecretKey:      strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
 		StripeWebhookSecret:  strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
