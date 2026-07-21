@@ -13,7 +13,6 @@ import (
 type CreateBookingRequestParams struct {
 	ChildID             uuid.UUID
 	SessionTemplateID   uuid.UUID
-	RoomID              uuid.UUID
 	DaysOfWeek          []int32
 	EffectiveStartDate  time.Time
 	EffectiveEndDate    *time.Time
@@ -59,7 +58,6 @@ func (uc *CreateBookingRequest) Execute(ctx context.Context, actor BookingActor,
 		BranchID:             siteID,
 		ChildID:              params.ChildID,
 		SessionTemplateID:    &params.SessionTemplateID,
-		RoomID:               params.RoomID,
 		DaysOfWeek:           params.DaysOfWeek,
 		EffectiveStartDate:   params.EffectiveStartDate,
 		EffectiveEndDate:     params.EffectiveEndDate,

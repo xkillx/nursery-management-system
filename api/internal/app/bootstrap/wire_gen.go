@@ -467,7 +467,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	cancelBooking := application19.NewCancelBooking(bookingRepository, transactionManager)
 	pauseBooking := application19.NewPauseBooking(bookingRepository, transactionManager)
 	cloneBooking := application19.NewCloneBooking(bookingRepository)
-	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository)
+	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository, childRepository)
 	listCapacity := application19.NewListCapacity(bookingRepository, bootstrapRoomCapacityLookupAdapter)
 	bootstrapParentChildLookupAdapter := provideParentChildLookupAdapter(parentChildMappingRepository)
 	listParentBookings := application19.NewListParentBookings(bookingRepository, bootstrapParentChildLookupAdapter)
@@ -870,7 +870,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	cancelBooking := application19.NewCancelBooking(bookingRepository, transactionManager)
 	pauseBooking := application19.NewPauseBooking(bookingRepository, transactionManager)
 	cloneBooking := application19.NewCloneBooking(bookingRepository)
-	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository)
+	bootstrapRoomCapacityLookupAdapter := provideRoomCapacityLookupAdapter(roomRepository, childRepository)
 	listCapacity := application19.NewListCapacity(bookingRepository, bootstrapRoomCapacityLookupAdapter)
 	bootstrapParentChildLookupAdapter := provideParentChildLookupAdapter(parentChildMappingRepository)
 	listParentBookings := application19.NewListParentBookings(bookingRepository, bootstrapParentChildLookupAdapter)
@@ -1099,8 +1099,9 @@ var hourlyBookingsSet = wire.NewSet(postgres14.NewRepository, wire.Bind(new(doma
 
 func provideRoomCapacityLookupAdapter(
 	roomsRepo *postgres18.RoomRepository,
+	childRepo *postgres3.ChildRepository,
 ) *roomCapacityLookupAdapter {
-	return &roomCapacityLookupAdapter{repo: roomsRepo}
+	return &roomCapacityLookupAdapter{repo: roomsRepo, childRepo: childRepo}
 }
 
 func provideParentChildLookupAdapter(

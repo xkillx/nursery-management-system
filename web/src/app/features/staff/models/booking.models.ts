@@ -10,8 +10,6 @@ export interface UnifiedBooking {
   childLastName: string;
   startDate: string;
   endDate: string | null;
-  roomId: string | null;
-  roomName: string | null;
   sessionTemplateId?: string;
   status: BookingStatus;
   createdAt: string;
@@ -27,7 +25,6 @@ export interface UnifiedBookingListResult {
 
 export interface BookingListFilters {
   childId?: string;
-  roomId?: string;
   sessionTypeId?: string;
   status?: string;
   fundingType?: string;
@@ -44,7 +41,6 @@ export interface SessionEntry {
 export interface CreateRecurringBookingRequest {
   child_id: string;
   session_template_id?: string;
-  room_id: string;
   days_of_week?: number[];
   effective_start_date: string;
   effective_end_date?: string;
@@ -69,7 +65,6 @@ export interface CreateHourlyBookingRequest {
 }
 
 export interface UpdateRecurringBookingRequest {
-  room_id?: string;
   days_of_week?: number[];
   effective_start_date?: string;
   effective_end_date?: string;

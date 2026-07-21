@@ -26,7 +26,6 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
-import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService } from '../../data/session-types-api.service';
 import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -67,7 +66,6 @@ interface BookingMetric {
 interface FilterState {
   types: BookingType[];
   statuses: BookingStatus[];
-  roomId: string;
   dateFrom: string;
   dateTo: string;
   datePreset: DatePreset;
@@ -111,7 +109,6 @@ interface SessionLookup {
 })
 export class ManagerBookingsComponent implements OnInit, OnDestroy {
   private readonly apiService = inject(BookingsApiService);
-  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly sessionTemplatesApi = inject(StaffSessionTemplatesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
@@ -135,7 +132,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
   selectedTypes: BookingType[] = [];
   selectedStatuses: BookingStatus[] = [];
-  selectedRoomId = '';
   datePreset: DatePreset = 'this_month';
   dateFrom = '';
   dateTo = '';
@@ -144,7 +140,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
   items: UnifiedBooking[] = [];
   total = 0;
-  rooms: StaffRoom[] = [];
   sessionLookup: SessionLookup = {};
   isLoading = false;
   errorMessage: string | null = null;
@@ -268,7 +263,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     return (
       this.selectedTypes.length > 0 ||
       this.selectedStatuses.length > 0 ||
-      this.selectedRoomId !== '' ||
       this.datePreset !== '' ||
       this.searchQuery.trim() !== ''
     );
@@ -304,7 +298,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       this.loadList();
     });
 
-    this.loadRooms();
     this.loadSessionLookups();
   }
 
@@ -343,11 +336,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     return this.selectedStatuses.includes(status);
   }
 
-  onRoomChange(): void {
-    this.offset = 0;
-    this.onFilterChange();
-  }
-
   onDateFromChange(): void {
     this.offset = 0;
     this.onFilterChange();
@@ -372,7 +360,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   clearAllFilters(): void {
     this.selectedTypes = [];
     this.selectedStatuses = [];
-    this.selectedRoomId = '';
     this.dateFrom = '';
     this.dateTo = '';
     this.searchQuery = '';
@@ -546,7 +533,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       this.selectedStatuses = [];
     }
 
-    if (params['room_id']) this.selectedRoomId = params['room_id'];
     if (params['preset']) this.datePreset = params['preset'] as DatePreset;
     if (params['from']) this.dateFrom = params['from'];
     if (params['to']) this.dateTo = params['to'];
@@ -564,7 +550,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
       const state: FilterState = JSON.parse(raw);
       if (state.types) this.selectedTypes = state.types;
       if (state.statuses) this.selectedStatuses = state.statuses;
-      if (state.roomId) this.selectedRoomId = state.roomId;
       if (state.datePreset) this.datePreset = state.datePreset;
       if (state.dateFrom) this.dateFrom = state.dateFrom;
       if (state.dateTo) this.dateTo = state.dateTo;
@@ -578,7 +563,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     const state: FilterState = {
       types: this.selectedTypes,
       statuses: this.selectedStatuses,
-      roomId: this.selectedRoomId,
       datePreset: this.datePreset,
       dateFrom: this.dateFrom,
       dateTo: this.dateTo,
@@ -595,7 +579,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     const queryParams: Record<string, string> = {};
     if (this.selectedTypes.length > 0) queryParams['type'] = this.selectedTypes.join(',');
     if (this.selectedStatuses.length > 0) queryParams['status'] = this.selectedStatuses.join(',');
-    if (this.selectedRoomId) queryParams['room_id'] = this.selectedRoomId;
     if (this.datePreset) queryParams['preset'] = this.datePreset;
     if (this.dateFrom) queryParams['from'] = this.dateFrom;
     if (this.dateTo) queryParams['to'] = this.dateTo;
@@ -618,7 +601,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
     const filters: BookingListFilters = {};
     if (this.selectedStatuses.length === 1) filters.status = this.selectedStatuses[0];
-    if (this.selectedRoomId) filters.roomId = this.selectedRoomId;
     if (this.searchQuery.trim()) filters.search = this.searchQuery.trim();
     if (this.dateFrom) filters.from = this.dateFrom;
     if (this.dateTo) filters.to = this.dateTo;
@@ -641,14 +623,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
         this.errorMessage = mapped.message ?? 'Failed to load bookings.';
         this.isLoading = false;
       },
-    });
-  }
-
-  private loadRooms(): void {
-    if (!this.siteId) return;
-    this.roomsApi.listRooms(this.siteId, { includeArchived: false }).subscribe({
-      next: (rooms) => this.rooms = rooms.filter((r) => r.isActive),
-      error: () => { /* Rooms load failure handled by template defaults */ },
     });
   }
 

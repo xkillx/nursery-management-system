@@ -245,7 +245,6 @@ type Booking struct {
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
 	SessionTemplateID    pgtype.UUID
-	RoomID               pgtype.UUID
 	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date

@@ -208,7 +208,6 @@ func (h *Handler) createBookingRequestHandler(c *gin.Context) {
 	booking, err := h.createBookingReq.Execute(c.Request.Context(), parentActor, siteID, application.CreateBookingRequestParams{
 		ChildID:             params.ChildID,
 		SessionTemplateID:   *params.SessionTemplateID,
-		RoomID:              params.RoomID,
 		DaysOfWeek:          params.DaysOfWeek,
 		EffectiveStartDate:  params.EffectiveStartDate,
 		EffectiveEndDate:    params.EffectiveEndDate,
@@ -289,7 +288,6 @@ func (h *Handler) resolveActor(c *gin.Context) (application.BookingActor, bool) 
 //	@Produce		json
 //	@Param			site_id			path		string	true	"Site ID"					format(uuid)
 //	@Param			child_id		query		string	false	"Filter by child ID"		format(uuid)
-//	@Param			room_id			query		string	false	"Filter by room ID"			format(uuid)
 //	@Param			session_type_id	query		string	false	"Filter by session type"	format(uuid)
 //	@Param			status			query		string	false	"Filter by status"			Enums(active, paused, cancelled)
 //	@Param			funding_type	query		string	false	"Filter by funding type"
@@ -705,13 +703,6 @@ func parseListFilters(c *gin.Context) (domain.ListFilters, error) {
 			return domain.ListFilters{}, fmt.Errorf("invalid child_id")
 		}
 		filters.ChildID = &id
-	}
-	if v := c.Query("room_id"); v != "" {
-		id, err := uuid.Parse(v)
-		if err != nil {
-			return domain.ListFilters{}, fmt.Errorf("invalid room_id")
-		}
-		filters.RoomID = &id
 	}
 	if v := c.Query("session_type_id"); v != "" {
 		id, err := uuid.Parse(v)

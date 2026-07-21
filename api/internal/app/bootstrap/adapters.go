@@ -687,7 +687,8 @@ var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
 // roomCapacityLookupAdapter satisfies bookingsapp.RoomCapacityLookup by
 // delegating to the rooms module's repository.
 type roomCapacityLookupAdapter struct {
-	repo *roomspostgres.RoomRepository
+	repo      *roomspostgres.RoomRepository
+	childRepo *postgreschild.ChildRepository
 }
 
 func (a *roomCapacityLookupAdapter) ListActiveRooms(ctx context.Context, tenantID, branchID uuid.UUID) ([]bookingsapp.RoomInfo, error) {
@@ -704,6 +705,22 @@ func (a *roomCapacityLookupAdapter) ListActiveRooms(ctx context.Context, tenantI
 				Capacity: r.Capacity,
 			})
 		}
+	}
+	return out, nil
+}
+
+func (a *roomCapacityLookupAdapter) ListRoomAssignmentsForChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]bookingsapp.ChildRoomAssignmentInfo, error) {
+	assignments, err := a.childRepo.ListRoomAssignmentsByChild(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return nil, fmt.Errorf("room assignments lookup: %w", err)
+	}
+	out := make([]bookingsapp.ChildRoomAssignmentInfo, 0, len(assignments))
+	for _, a := range assignments {
+		out = append(out, bookingsapp.ChildRoomAssignmentInfo{
+			RoomID:    a.RoomID,
+			StartDate: a.StartDate,
+			EndDate:   a.EndDate,
+		})
 	}
 	return out, nil
 }

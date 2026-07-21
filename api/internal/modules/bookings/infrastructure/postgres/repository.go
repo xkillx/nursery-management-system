@@ -42,7 +42,6 @@ func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) 
 		BranchID:             uuidToPgtype(booking.BranchID),
 		ChildID:              uuidToPgtype(booking.ChildID),
 		SessionTemplateID:    sessionTemplateID,
-		RoomID:               uuidToPgtype(booking.RoomID),
 		DaysOfWeek:           booking.DaysOfWeek,
 		EffectiveStartDate:   timeToPgtypeDate(booking.EffectiveStartDate),
 		EffectiveEndDate:     timeToPgtypeDatePtr(booking.EffectiveEndDate),
@@ -92,32 +91,28 @@ func (r *BookingRepository) ListByBranchPaginated(ctx context.Context, tenantID,
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
 		Column3:  pgtype.UUID{Valid: false},
-		Column4:  pgtype.UUID{Valid: false},
+		Column4:  "",
 		Column5:  "",
-		Column6:  "",
+		Column6:  pgtype.Date{Valid: false},
 		Column7:  pgtype.Date{Valid: false},
-		Column8:  pgtype.Date{Valid: false},
-		Column9:  filters.ActiveOnly,
+		Column8:  filters.ActiveOnly,
 		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
 		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
 	}
 	if filters.ChildID != nil {
 		params.Column3 = uuidToPgtype(*filters.ChildID)
 	}
-	if filters.RoomID != nil {
-		params.Column4 = uuidToPgtype(*filters.RoomID)
-	}
 	if filters.Status != nil {
-		params.Column5 = *filters.Status
+		params.Column4 = *filters.Status
 	}
 	if filters.FundingType != nil {
-		params.Column6 = *filters.FundingType
+		params.Column5 = *filters.FundingType
 	}
 	if filters.From != nil {
-		params.Column7 = timeToPgtypeDate(*filters.From)
+		params.Column6 = timeToPgtypeDate(*filters.From)
 	}
 	if filters.To != nil {
-		params.Column8 = timeToPgtypeDate(*filters.To)
+		params.Column7 = timeToPgtypeDate(*filters.To)
 	}
 	rows, err := q.BookingsListByBranchPaginated(ctx, params)
 	if err != nil {
@@ -136,30 +131,26 @@ func (r *BookingRepository) CountByBranch(ctx context.Context, tenantID, branchI
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
 		Column3:  pgtype.UUID{Valid: false},
-		Column4:  pgtype.UUID{Valid: false},
+		Column4:  "",
 		Column5:  "",
-		Column6:  "",
+		Column6:  pgtype.Date{Valid: false},
 		Column7:  pgtype.Date{Valid: false},
-		Column8:  pgtype.Date{Valid: false},
-		Column9:  filters.ActiveOnly,
+		Column8:  filters.ActiveOnly,
 	}
 	if filters.ChildID != nil {
 		params.Column3 = uuidToPgtype(*filters.ChildID)
 	}
-	if filters.RoomID != nil {
-		params.Column4 = uuidToPgtype(*filters.RoomID)
-	}
 	if filters.Status != nil {
-		params.Column5 = *filters.Status
+		params.Column4 = *filters.Status
 	}
 	if filters.FundingType != nil {
-		params.Column6 = *filters.FundingType
+		params.Column5 = *filters.FundingType
 	}
 	if filters.From != nil {
-		params.Column7 = timeToPgtypeDate(*filters.From)
+		params.Column6 = timeToPgtypeDate(*filters.From)
 	}
 	if filters.To != nil {
-		params.Column8 = timeToPgtypeDate(*filters.To)
+		params.Column7 = timeToPgtypeDate(*filters.To)
 	}
 	count, err := q.BookingsCountByBranch(ctx, params)
 	if err != nil {
@@ -174,7 +165,6 @@ func (r *BookingRepository) Update(ctx context.Context, tx domain.Tx, booking do
 		TenantID:            uuidToPgtype(booking.TenantID),
 		BranchID:            uuidToPgtype(booking.BranchID),
 		ID:                  uuidToPgtype(booking.ID),
-		RoomID:              uuidToPgtype(booking.RoomID),
 		DaysOfWeek:          booking.DaysOfWeek,
 		EffectiveStartDate:  timeToPgtypeDate(booking.EffectiveStartDate),
 		EffectiveEndDate:    timeToPgtypeDatePtr(booking.EffectiveEndDate),
@@ -227,32 +217,28 @@ func (r *BookingRepository) ListUnifiedByBranchPaginated(ctx context.Context, te
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
 		Column3:  pgtype.UUID{Valid: false},
-		Column4:  pgtype.UUID{Valid: false},
+		Column4:  "",
 		Column5:  "",
-		Column6:  "",
+		Column6:  pgtype.Date{Valid: false},
 		Column7:  pgtype.Date{Valid: false},
-		Column8:  pgtype.Date{Valid: false},
-		Column9:  filters.ActiveOnly,
+		Column8:  filters.ActiveOnly,
 		Limit:    pgtype.Int4{Int32: int32(limit), Valid: true},
 		Offset:   pgtype.Int4{Int32: int32(offset), Valid: true},
 	}
 	if filters.ChildID != nil {
 		params.Column3 = uuidToPgtype(*filters.ChildID)
 	}
-	if filters.RoomID != nil {
-		params.Column4 = uuidToPgtype(*filters.RoomID)
-	}
 	if filters.Status != nil {
-		params.Column5 = *filters.Status
+		params.Column4 = *filters.Status
 	}
 	if filters.FundingType != nil {
-		params.Column6 = *filters.FundingType
+		params.Column5 = *filters.FundingType
 	}
 	if filters.From != nil {
-		params.Column7 = timeToPgtypeDate(*filters.From)
+		params.Column6 = timeToPgtypeDate(*filters.From)
 	}
 	if filters.To != nil {
-		params.Column8 = timeToPgtypeDate(*filters.To)
+		params.Column7 = timeToPgtypeDate(*filters.To)
 	}
 	rows, err := q.BookingsUnifiedListByBranch(ctx, params)
 	if err != nil {

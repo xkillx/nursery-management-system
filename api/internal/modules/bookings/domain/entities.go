@@ -23,7 +23,6 @@ type Booking struct {
 	BranchID             uuid.UUID
 	ChildID              uuid.UUID
 	SessionTemplateID    *uuid.UUID
-	RoomID               uuid.UUID
 	DaysOfWeek           []int32
 	EffectiveStartDate   time.Time
 	EffectiveEndDate     *time.Time

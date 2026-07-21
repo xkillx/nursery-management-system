@@ -30,19 +30,16 @@ type UnifiedBookingRow struct {
 	ChildID           uuid.UUID
 	StartDate         time.Time
 	EndDate           *time.Time
-	RoomID            *uuid.UUID
 	SessionTemplateID *uuid.UUID
 	Status            string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 	ChildFirstName    string
 	ChildLastName     string
-	RoomName          *string
 }
 
 type ListFilters struct {
 	ChildID       *uuid.UUID
-	RoomID        *uuid.UUID
 	SessionTypeID *uuid.UUID
 	Status        *string
 	FundingType   *string

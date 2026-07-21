@@ -12,7 +12,6 @@ import (
 )
 
 type UpdateBookingParams struct {
-	RoomID              *uuid.UUID
 	DaysOfWeek          []int32
 	EffectiveStartDate  *time.Time
 	EffectiveEndDate    *time.Time
@@ -46,9 +45,6 @@ func (uc *UpdateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 			return domainerrors.Conflict("booking_cancelled", "Cannot update a cancelled booking.")
 		}
 
-		if params.RoomID != nil {
-			booking.RoomID = *params.RoomID
-		}
 		if params.DaysOfWeek != nil {
 			if !domain.ValidDaysOfWeek(params.DaysOfWeek) {
 				return domain.ErrInvalidDaysOfWeek

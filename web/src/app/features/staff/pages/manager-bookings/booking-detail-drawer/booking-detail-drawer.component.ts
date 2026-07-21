@@ -10,7 +10,6 @@ import { StatusBadgeComponent } from '../../../../../shared/components/ui/badge/
 import { ConfirmationDialogComponent } from '../../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { DaySelectorComponent } from '../../../../../shared/components/form/day-selector/day-selector.component';
 import { BookingsApiService } from '../../../data/bookings-api.service';
-import { StaffRoomsApiService, StaffRoom } from '../../../data/staff-rooms-api.service';
 import { UnifiedBooking, BookingType } from '../../../models/booking.models';
 
 @Component({
@@ -45,9 +44,7 @@ export class BookingDetailDrawerComponent implements OnChanges {
   @Output() updated = new EventEmitter<void>();
 
   private readonly bookingsApi = inject(BookingsApiService);
-  private readonly roomsApi = inject(StaffRoomsApiService);
 
-  rooms: StaffRoom[] = [];
   isEditMode = false;
   isConfirmCancelOpen = false;
   isCancelling = false;
@@ -57,7 +54,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
   formFieldErrors: Record<string, string> = {};
 
   // Edit form fields
-  editRoomId = '';
   editDaysOfWeek: number[] = [];
   editStartDate = '';
   editEndDate = '';
@@ -70,7 +66,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
       this.isEditMode = false;
       this.formError = null;
       this.formFieldErrors = {};
-      this.loadRooms();
     }
     if (changes['booking'] && this.booking) {
       this.populateEditForm();
@@ -143,7 +138,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
       next: (full) => {
         this.isEditMode = true;
         this.isLoadingDetail = false;
-        this.editRoomId = full.roomId ?? '';
         this.editStartDate = full.startDate;
         this.editEndDate = full.endDate ?? '';
         // The full booking detail may include additional fields not in the list response
@@ -199,7 +193,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
     this.formFieldErrors = {};
 
     this.bookingsApi.updateRecurringBooking(this.siteId, this.booking.id, {
-      room_id: this.editRoomId || undefined,
       days_of_week: this.editDaysOfWeek.length > 0 ? this.editDaysOfWeek : undefined,
       effective_start_date: this.editStartDate || undefined,
       effective_end_date: this.editEndDate || undefined,
@@ -232,7 +225,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
 
   private populateEditForm(): void {
     if (!this.booking) return;
-    this.editRoomId = this.booking.roomId ?? '';
     this.editStartDate = this.booking.startDate;
     this.editEndDate = this.booking.endDate ?? '';
     // days_of_week, funding_type, funding_hours, la_reference are not in the unified list response
@@ -241,13 +233,5 @@ export class BookingDetailDrawerComponent implements OnChanges {
     this.editFundingType = '';
     this.editFundingHours = null;
     this.editLaReference = '';
-  }
-
-  private loadRooms(): void {
-    if (!this.siteId) return;
-    this.roomsApi.listRooms(this.siteId, { includeArchived: false }).subscribe({
-      next: (rooms) => this.rooms = rooms.filter((r) => r.isActive),
-      error: () => { /* Room load failure handled by template defaults */ },
-    });
   }
 }

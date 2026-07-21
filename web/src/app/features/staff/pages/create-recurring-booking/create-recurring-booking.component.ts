@@ -2,21 +2,19 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { RadioCardGroupComponent, RadioCardOption } from '../../../../shared/components/form/radio-card-group/radio-card-group.component';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroShieldCheck, heroEllipsisHorizontal, heroCake, heroHomeModern } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroCake, heroHomeModern, heroCheckCircle } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { SearchAutocompleteComponent } from '../../../../shared/components/form/search-autocomplete/search-autocomplete.component';
 import { SessionGridComponent } from '../../../../shared/components/form/session-grid/session-grid.component';
 import { BookingSummarySidebarComponent } from './booking-summary-sidebar/booking-summary-sidebar.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { SelectComponent, type Option } from '../../../../shared/components/form/select/select.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
-import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
@@ -30,14 +28,13 @@ import { AuthService } from '../../../../core/services/auth.service';
     FormsModule,
     RouterLink,
     AlertComponent,
+    BadgeComponent,
     SearchAutocompleteComponent,
     SessionGridComponent,
     BookingSummarySidebarComponent,
     FormFieldComponent,
     InputFieldComponent,
-    SelectComponent,
     DatePickerComponent,
-    ChildAvatarComponent,
     RadioCardGroupComponent,
     NgIcon,
   ],
@@ -48,16 +45,14 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroArrowLeft,
       heroUser,
       heroCreditCard,
-      heroShieldCheck,
-      heroEllipsisHorizontal,
       heroCake,
       heroHomeModern,
+      heroCheckCircle,
     }),
   ],
 })
 export class CreateRecurringBookingComponent implements OnInit {
   private readonly bookingsApi = inject(BookingsApiService);
-  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly staffApi = inject(StaffApiService);
   private readonly auth = inject(AuthService);
@@ -65,13 +60,11 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   siteId: string | null = null;
 
-  rooms: StaffRoom[] = [];
   sessionTypes: StaffSessionType[] = [];
   children: ChildRecord[] = [];
 
   selectedChild: ChildRecord | null = null;
   childId = '';
-  roomId = '';
   sessionEntries: SessionEntry[] = [];
   startDate = '';
   endDate = '';
@@ -101,26 +94,12 @@ export class CreateRecurringBookingComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
-    return !!this.childId && !!this.roomId && this.sessionEntries.length > 0 && !!this.startDate;
+    return !!this.childId && this.sessionEntries.length > 0 && !!this.startDate;
   }
 
   get childDisplayName(): string {
     if (!this.selectedChild) return '';
     return `${this.selectedChild.firstName} ${this.selectedChild.lastName}`;
-  }
-
-  get selectedRoom(): StaffRoom | undefined {
-    return this.rooms.find((r) => r.id === this.roomId);
-  }
-
-  get occupancyPercentage(): number {
-    const room = this.selectedRoom;
-    if (!room || !room.capacity) return 0;
-    return Math.round(((room.assignedCount || 0) / room.capacity) * 100);
-  }
-
-  get roomOptions(): Option[] {
-    return this.rooms.map((r) => ({ value: r.id, label: r.name }));
   }
 
   ngOnInit(): void {
@@ -133,22 +112,29 @@ export class CreateRecurringBookingComponent implements OnInit {
     this.loadData();
   }
 
-  get childRoomName(): string {
-    if (!this.selectedChild?.primaryRoomId) return '';
-    const room = this.rooms.find((r) => r.id === this.selectedChild!.primaryRoomId);
-    return room?.name ?? '';
-  }
-
   onChildSelected(child: ChildRecord | null): void {
     this.selectedChild = child;
     this.childId = child?.id ?? '';
-    if (child?.primaryRoomId) {
-      this.roomId = child.primaryRoomId;
-    }
   }
 
   childLabelFn(child: ChildRecord): string {
     return `${child.firstName} ${child.lastName}`;
+  }
+
+  calculateAge(dob: string): string {
+    if (!dob) return '';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (years === 0) {
+      return `${months}mo`;
+    }
+    return `${years}y ${months}mo`;
   }
 
   submit(): void {
@@ -159,7 +145,6 @@ export class CreateRecurringBookingComponent implements OnInit {
 
     this.bookingsApi.createRecurringBooking(this.siteId, {
       child_id: this.childId,
-      room_id: this.roomId,
       session_entries: this.sessionEntries,
       effective_start_date: this.startDate,
       effective_end_date: this.endDate || undefined,
@@ -190,11 +175,6 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   private loadData(): void {
     if (!this.siteId) return;
-
-    this.roomsApi.listRooms(this.siteId, { includeArchived: false, includeOccupancy: true }).subscribe({
-      next: (rooms) => this.rooms = rooms.filter((r) => r.isActive),
-      error: () => { /* Room load failure handled by template defaults */ },
-    });
 
     this.sessionTypesApi.listSessionTypes(this.siteId, { includeArchived: false }).subscribe({
       next: (types) => this.sessionTypes = types.filter((t) => t.isActive),

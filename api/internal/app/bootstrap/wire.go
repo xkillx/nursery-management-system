@@ -646,8 +646,9 @@ var hourlyBookingsSet = wire.NewSet(
 
 func provideRoomCapacityLookupAdapter(
 	roomsRepo *roomspostgres.RoomRepository,
+	childRepo *postgreschild.ChildRepository,
 ) *roomCapacityLookupAdapter {
-	return &roomCapacityLookupAdapter{repo: roomsRepo}
+	return &roomCapacityLookupAdapter{repo: roomsRepo, childRepo: childRepo}
 }
 
 func provideParentChildLookupAdapter(

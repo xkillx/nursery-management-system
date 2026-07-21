@@ -16,14 +16,12 @@ type UnifiedBookingRow struct {
 	ChildID           uuid.UUID
 	StartDate         string
 	EndDate           string
-	RoomID            *uuid.UUID
 	SessionTemplateID *uuid.UUID
 	Status            string
 	CreatedAt         string
 	UpdatedAt         string
 	ChildFirstName    string
 	ChildLastName     string
-	RoomName          *string
 }
 
 type ListBookings struct {

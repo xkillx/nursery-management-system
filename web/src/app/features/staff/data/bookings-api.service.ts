@@ -23,8 +23,6 @@ interface UnifiedBookingApi {
   child_last_name: string;
   start_date: string;
   end_date: string | null;
-  room_id: string | null;
-  room_name: string | null;
   session_template_id?: string;
   status: string;
   created_at: string;
@@ -53,7 +51,6 @@ export class BookingsApiService {
       .set('page_size', String(pageSize));
 
     if (filters.childId) params = params.set('child_id', filters.childId);
-    if (filters.roomId) params = params.set('room_id', filters.roomId);
     if (filters.sessionTypeId) params = params.set('session_type_id', filters.sessionTypeId);
     if (filters.status) params = params.set('status', filters.status);
     if (filters.fundingType) params = params.set('funding_type', filters.fundingType);
@@ -117,8 +114,6 @@ export class BookingsApiService {
       childLastName: b.child_last_name,
       startDate: b.start_date,
       endDate: b.end_date ?? null,
-      roomId: b.room_id ?? null,
-      roomName: b.room_name ?? null,
       sessionTemplateId: b.session_template_id ?? undefined,
       status: b.status as BookingStatus,
       createdAt: b.created_at,

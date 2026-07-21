@@ -188,18 +188,6 @@
             </label>
           }
 
-          <!-- Room dropdown -->
-          <select
-            [ngModel]="selectedRoomId"
-            (ngModelChange)="selectedRoomId = $event; onRoomChange()"
-            class="h-8 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-xs text-gray-700 shadow-theme-xs transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-          >
-            <option value="">All rooms</option>
-            @for (room of rooms; track room.id) {
-              <option [value]="room.id">{{ room.name }}</option>
-            }
-          </select>
-
           @if (hasActiveFilters) {
             <button
               type="button"
@@ -278,7 +266,6 @@
               <th class="pl-4 pr-6 py-3.5">Type</th>
               <th class="px-6 py-3.5">Child</th>
               <th class="px-6 py-3.5">Session / Template</th>
-              <th class="px-6 py-3.5">Room</th>
               <th class="px-6 py-3.5">Dates</th>
               <th class="px-6 py-3.5">Status</th>
               <th class="px-6 py-3.5 text-right pr-8">Action</th>
@@ -311,9 +298,6 @@
                 </td>
                 <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                   {{ sessionName(booking.sessionTemplateId) }}
-                </td>
-                <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
-                  {{ booking.roomName ?? '—' }}
                 </td>
                 <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                   <div class="flex items-center gap-1.5">
@@ -374,10 +358,6 @@
               <div>
                 <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Session</p>
                 <p class="font-medium text-gray-700 dark:text-gray-200">{{ sessionName(booking.sessionTemplateId) }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Room</p>
-                <p class="font-medium text-gray-700 dark:text-gray-200">{{ booking.roomName ?? '—' }}</p>
               </div>
               <div class="col-span-2">
                 <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Dates</p>
