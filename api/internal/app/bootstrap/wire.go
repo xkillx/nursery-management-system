@@ -561,8 +561,6 @@ var termSet = wire.NewSet(
 	termpostgres.NewScheduleChangeRepository,
 	wire.Bind(new(termdomain.Repository), new(*termpostgres.TermRepository)),
 	wire.Bind(new(termdomain.ScheduleChangeRepository), new(*termpostgres.ScheduleChangeRepository)),
-	provideBookingPatternLookupAdapter,
-	wire.Bind(new(termapp.BookingPatternLookup), new(*bookingPatternLookupAdapter)),
 	provideSiteRateProviderAdapter,
 	wire.Bind(new(termapp.SiteRateProvider), new(*siteRateProviderAdapter)),
 	termapp.NewCreateTermUseCase,

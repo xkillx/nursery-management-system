@@ -458,22 +458,6 @@ func (a *sessionTemplateLookupTemplateAdapter) GetActiveInScope(ctx context.Cont
 
 // ── Term module adapters ──────────────────────────────────────────────────
 
-// bookingPatternLookupAdapter satisfies termapp.BookingPatternLookup by delegating
-// to the children module's child_booking_patterns lookup.
-type bookingPatternLookupAdapter struct {
-	repo *postgreschild.ChildRepository
-}
-
-func (a *bookingPatternLookupAdapter) ExistsInScope(ctx context.Context, tx pgx.Tx, tenantID, branchID, patternID uuid.UUID) (bool, error) {
-	_, found, err := a.repo.GetPatternByID(ctx, tenantID, branchID, patternID)
-	if err != nil {
-		return false, fmt.Errorf("booking pattern lookup: %w", err)
-	}
-	return found, nil
-}
-
-var _ termapp.BookingPatternLookup = (*bookingPatternLookupAdapter)(nil)
-
 // siteRateProviderAdapter returns the branch's core_hourly_rate_minor (snapshotted
 // at term creation).
 type siteRateProviderAdapter struct {

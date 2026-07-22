@@ -476,14 +476,13 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTemplatesHandler.RegisterRoutes(protected)
 
 	scheduleChangeRepo := termpostgres.NewScheduleChangeRepository(pool)
-	bookingPatternLookup := &bookingPatternLookupAdapter{repo: childRepo}
 
-	createTermUC := termapp.NewCreateTermUseCase(termRepo, txManager, auditWriter, bookingPatternLookup, siteRateProvider)
+	createTermUC := termapp.NewCreateTermUseCase(termRepo, txManager, auditWriter, siteRateProvider)
 	getTermUC := termapp.NewGetTermUseCase(termRepo)
 	getCurrentTermUC := termapp.NewGetCurrentTermForChildUseCase(termRepo)
 	listTermsUC := termapp.NewListTermsForChildUseCase(termRepo)
 	listExpiringUC := termapp.NewListExpiringTermsUseCase(termRepo)
-	requestChangeUC := termapp.NewRequestScheduleChangeUseCase(termRepo, scheduleChangeRepo, txManager, auditWriter, bookingPatternLookup)
+	requestChangeUC := termapp.NewRequestScheduleChangeUseCase(termRepo, scheduleChangeRepo, txManager, auditWriter)
 	approveChangeUC := termapp.NewApproveScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
 	rejectChangeUC := termapp.NewRejectScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
 	terminateUC := termapp.NewTerminateTermUseCase(termRepo, txManager, auditWriter)

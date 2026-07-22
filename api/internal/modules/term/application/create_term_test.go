@@ -153,12 +153,6 @@ func (m *mockTermRepo) ClearChildCurrentTermID(_ context.Context, _ domain.Tx, _
 	return nil
 }
 
-type mockPatternLookup struct{}
-
-func (m *mockPatternLookup) ExistsInScope(_ context.Context, _ pgx.Tx, _, _, _ uuid.UUID) (bool, error) {
-	return true, nil
-}
-
 type mockRateProvider struct {
 	rate int
 }
@@ -179,7 +173,7 @@ func newTestLogger() *slog.Logger {
 // against a real Postgres test database; see repository tests.
 func TestCreateTermUseCase_CompilesAndBuilds(t *testing.T) {
 	repo := newMockTermRepo()
-	_ = application.NewCreateTermUseCase(repo, nil, audit.NewWriter(), &mockPatternLookup{}, &mockRateProvider{rate: 750})
+	_ = application.NewCreateTermUseCase(repo, nil, audit.NewWriter(), &mockRateProvider{rate: 750})
 }
 
 func TestCreateTermDomainValidation_NoManagerRequired(t *testing.T) {

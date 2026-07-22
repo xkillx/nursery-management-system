@@ -25,12 +25,11 @@ type RequestScheduleChangeInput struct {
 }
 
 type RequestScheduleChangeUseCase struct {
-	termRepo      domain.Repository
-	scheduleRepo  domain.ScheduleChangeRepository
-	txMgr         *transaction.Manager
-	audit         *audit.Writer
-	patternLookup BookingPatternLookup
-	now           func() time.Time
+	termRepo     domain.Repository
+	scheduleRepo domain.ScheduleChangeRepository
+	txMgr        *transaction.Manager
+	audit        *audit.Writer
+	now          func() time.Time
 }
 
 func NewRequestScheduleChangeUseCase(
@@ -38,15 +37,13 @@ func NewRequestScheduleChangeUseCase(
 	scheduleRepo domain.ScheduleChangeRepository,
 	txMgr *transaction.Manager,
 	auditWriter *audit.Writer,
-	patternLookup BookingPatternLookup,
 ) *RequestScheduleChangeUseCase {
 	return &RequestScheduleChangeUseCase{
-		termRepo:      termRepo,
-		scheduleRepo:  scheduleRepo,
-		txMgr:         txMgr,
-		audit:         auditWriter,
-		patternLookup: patternLookup,
-		now:           func() time.Time { return time.Now().UTC() },
+		termRepo:     termRepo,
+		scheduleRepo: scheduleRepo,
+		txMgr:        txMgr,
+		audit:        auditWriter,
+		now:          func() time.Time { return time.Now().UTC() },
 	}
 }
 
@@ -93,15 +90,6 @@ func (uc *RequestScheduleChangeUseCase) Execute(ctx context.Context, actor tenan
 		cap := term.TermEndDate.AddDate(0, 1, 0)
 		if in.EffectiveFrom.After(cap) {
 			return domainerrors.New("schedule_change_after_term_end", "Invalid request payload.", "effective_from")
-		}
-
-		// Validate the new pattern exists in scope.
-		patternExists, err := uc.patternLookup.ExistsInScope(ctx, tx, actor.TenantID, actor.BranchID, in.NewBookingPatternID)
-		if err != nil {
-			return domainerrors.Internal(fmt.Errorf("lookup pattern: %w", err))
-		}
-		if !patternExists {
-			return domainerrors.NotFound("booking_pattern", "Resource not found.")
 		}
 
 		change := &domain.TermScheduleChange{

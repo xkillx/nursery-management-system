@@ -204,10 +204,6 @@ func provideSessionTemplateLookupTemplateAdapter(inner *sessionTypeLookupAdapter
 	return &sessionTemplateLookupTemplateAdapter{inner: inner}
 }
 
-func provideBookingPatternLookupAdapter(repo *childpostgres.ChildRepository) *bookingPatternLookupAdapter {
-	return &bookingPatternLookupAdapter{repo: repo}
-}
-
 func provideSiteRateProviderAdapter(repo *ownerpostgres.OwnerRepository) *siteRateProviderAdapter {
 	return &siteRateProviderAdapter{repo: repo}
 }

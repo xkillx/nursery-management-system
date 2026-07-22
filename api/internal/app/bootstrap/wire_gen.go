@@ -412,8 +412,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	archiveSessionTemplate := application14.NewArchiveSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	reactivateSessionTemplate := application14.NewReactivateSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	httpsessiontemplatesHandler := httpsessiontemplates.NewHandler(createSessionTemplate, updateSessionTemplate, listSessionTemplates, getSessionTemplate, archiveSessionTemplate, reactivateSessionTemplate, logger)
-	bootstrapBookingPatternLookupAdapter := provideBookingPatternLookupAdapter(childRepository)
-	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter, bootstrapSiteRateProviderAdapter)
+	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapSiteRateProviderAdapter)
 	getTermUseCase := application15.NewGetTermUseCase(termRepository)
 	getCurrentTermForChildUseCase := application15.NewGetCurrentTermForChildUseCase(termRepository)
 	listTermsForChildUseCase := application15.NewListTermsForChildUseCase(termRepository)
@@ -428,7 +427,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Terminate:    terminateTermUseCase,
 	}
 	scheduleChangeRepository := postgres5.NewScheduleChangeRepository(pool)
-	requestScheduleChangeUseCase := application15.NewRequestScheduleChangeUseCase(termRepository, scheduleChangeRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter)
+	requestScheduleChangeUseCase := application15.NewRequestScheduleChangeUseCase(termRepository, scheduleChangeRepository, transactionManager, writer)
 	approveScheduleChangeUseCase := application15.NewApproveScheduleChangeUseCase(scheduleChangeRepository, writer, transactionManager)
 	rejectScheduleChangeUseCase := application15.NewRejectScheduleChangeUseCase(scheduleChangeRepository, writer, transactionManager)
 	scheduleChangeUseCases := httpterm.ScheduleChangeUseCases{
@@ -811,8 +810,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	archiveSessionTemplate := application14.NewArchiveSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	reactivateSessionTemplate := application14.NewReactivateSessionTemplate(sessionTemplateRepository, transactionManager, writer)
 	httpsessiontemplatesHandler := httpsessiontemplates.NewHandler(createSessionTemplate, updateSessionTemplate, listSessionTemplates, getSessionTemplate, archiveSessionTemplate, reactivateSessionTemplate, logger)
-	bootstrapBookingPatternLookupAdapter := provideBookingPatternLookupAdapter(childRepository)
-	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter, bootstrapSiteRateProviderAdapter)
+	createTermUseCase := application15.NewCreateTermUseCase(termRepository, transactionManager, writer, bootstrapSiteRateProviderAdapter)
 	getTermUseCase := application15.NewGetTermUseCase(termRepository)
 	getCurrentTermForChildUseCase := application15.NewGetCurrentTermForChildUseCase(termRepository)
 	listTermsForChildUseCase := application15.NewListTermsForChildUseCase(termRepository)
@@ -827,7 +825,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Terminate:    terminateTermUseCase,
 	}
 	scheduleChangeRepository := postgres5.NewScheduleChangeRepository(pool)
-	requestScheduleChangeUseCase := application15.NewRequestScheduleChangeUseCase(termRepository, scheduleChangeRepository, transactionManager, writer, bootstrapBookingPatternLookupAdapter)
+	requestScheduleChangeUseCase := application15.NewRequestScheduleChangeUseCase(termRepository, scheduleChangeRepository, transactionManager, writer)
 	approveScheduleChangeUseCase := application15.NewApproveScheduleChangeUseCase(scheduleChangeRepository, writer, transactionManager)
 	rejectScheduleChangeUseCase := application15.NewRejectScheduleChangeUseCase(scheduleChangeRepository, writer, transactionManager)
 	scheduleChangeUseCases := httpterm.ScheduleChangeUseCases{
@@ -1059,7 +1057,7 @@ var sessionTypesSet = wire.NewSet(application13.NewCreateSessionType, applicatio
 
 var sessionTemplatesSet = wire.NewSet(postgres19.NewRepository, wire.Bind(new(domain13.Repository), new(*postgres19.SessionTemplateRepository)), provideSessionTemplateLookupTemplateAdapter, wire.Bind(new(application14.SessionTypeLookup), new(*sessionTemplateLookupTemplateAdapter)), application14.NewCreateSessionTemplate, application14.NewUpdateSessionTemplate, application14.NewListSessionTemplates, application14.NewGetSessionTemplate, application14.NewArchiveSessionTemplate, application14.NewReactivateSessionTemplate, httpsessiontemplates.NewHandler)
 
-var termSet = wire.NewSet(postgres5.NewTermRepository, postgres5.NewScheduleChangeRepository, wire.Bind(new(domain14.Repository), new(*postgres5.TermRepository)), wire.Bind(new(domain14.ScheduleChangeRepository), new(*postgres5.ScheduleChangeRepository)), provideBookingPatternLookupAdapter, wire.Bind(new(application15.BookingPatternLookup), new(*bookingPatternLookupAdapter)), provideSiteRateProviderAdapter, wire.Bind(new(application15.SiteRateProvider), new(*siteRateProviderAdapter)), application15.NewCreateTermUseCase, application15.NewGetTermUseCase, application15.NewGetCurrentTermForChildUseCase, application15.NewListTermsForChildUseCase, application15.NewListExpiringTermsUseCase, application15.NewRequestScheduleChangeUseCase, application15.NewApproveScheduleChangeUseCase, application15.NewRejectScheduleChangeUseCase, application15.NewTerminateTermUseCase, wire.Struct(new(httpterm.CoreTermUseCases), "*"), wire.Struct(new(httpterm.ScheduleChangeUseCases), "*"), wire.Struct(new(httpterm.TermHandlerConfig), "*"), httpterm.NewHandler)
+var termSet = wire.NewSet(postgres5.NewTermRepository, postgres5.NewScheduleChangeRepository, wire.Bind(new(domain14.Repository), new(*postgres5.TermRepository)), wire.Bind(new(domain14.ScheduleChangeRepository), new(*postgres5.ScheduleChangeRepository)), provideSiteRateProviderAdapter, wire.Bind(new(application15.SiteRateProvider), new(*siteRateProviderAdapter)), application15.NewCreateTermUseCase, application15.NewGetTermUseCase, application15.NewGetCurrentTermForChildUseCase, application15.NewListTermsForChildUseCase, application15.NewListExpiringTermsUseCase, application15.NewRequestScheduleChangeUseCase, application15.NewApproveScheduleChangeUseCase, application15.NewRejectScheduleChangeUseCase, application15.NewTerminateTermUseCase, wire.Struct(new(httpterm.CoreTermUseCases), "*"), wire.Struct(new(httpterm.ScheduleChangeUseCases), "*"), wire.Struct(new(httpterm.TermHandlerConfig), "*"), httpterm.NewHandler)
 
 func provideSiteProfileHandlerSet(
 	repo domain15.Repository,
