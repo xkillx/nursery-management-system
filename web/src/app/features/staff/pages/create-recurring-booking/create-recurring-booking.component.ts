@@ -102,7 +102,7 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   get childDisplayName(): string {
     if (!this.selectedChild) return '';
-    return `${this.selectedChild.firstName} ${this.selectedChild.lastName}`;
+    return `${this.selectedChild.firstName || ''} ${this.selectedChild.lastName || ''}`.trim();
   }
 
   get childRoomName(): string {
@@ -127,7 +127,7 @@ export class CreateRecurringBookingComponent implements OnInit {
   }
 
   childLabelFn(child: ChildRecord): string {
-    return `${child.firstName} ${child.lastName}`;
+    return `${child.firstName || ''} ${child.lastName || ''}`.trim();
   }
 
   calculateAge(dob: string): string {
