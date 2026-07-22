@@ -35,6 +35,7 @@ tail -f tmp/web.log
 - **Transactions:** always `txMgr.ExecTx(ctx, func(tx pgx.Tx) error{...})`. Never Begin/Commit/Rollback directly.
 - **Auth:** actor from `tenant.ActorFromGinContext(c)`. Never parse JWT manually.
 - **Error flow:** DomainError → MapDomainError() → HTTP. Auth: generic "Invalid credentials or session" only.
+- **Debug DB access:** Agent may query PostgreSQL directly for debugging and error tracing. Use `psql` or Go's `pgx` to inspect data, trace issues, and verify state. Always use read-only queries unless explicitly modifying data for fixes. Never expose credentials in logs or commits.
 
 ---
 
