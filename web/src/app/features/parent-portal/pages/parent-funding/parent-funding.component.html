@@ -1,0 +1,47 @@
+<app-page-header title="Funding" />
+
+@if (isLoading) {
+  <app-loading-state />
+} @else if (errorMessage) {
+  <app-alert type="danger" [message]="errorMessage" />
+} @else if (items.length === 0) {
+  <app-empty-state message="No children found." />
+} @else {
+  <div class="space-y-4">
+    @for (item of items; track item.childId) {
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-theme-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-gray-900">{{ childName(item) }}</h3>
+          @if (item.fundingType) {
+            <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[10px] font-bold uppercase tracking-wide border border-brand-100">
+              {{ item.fundingType.replace('_', ' ') }}
+            </span>
+          } @else {
+            <span class="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-500 text-[10px] font-bold uppercase tracking-wide border border-gray-100">
+              No funding
+            </span>
+          }
+        </div>
+
+        @if (item.fundingType) {
+          <dl class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <dt class="text-gray-400 font-medium">Hours/week</dt>
+              <dd class="font-bold text-gray-800 mt-0.5">{{ item.fundedHoursPerWeek ?? '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-gray-400 font-medium">Allowance</dt>
+              <dd class="font-bold text-gray-800 mt-0.5">{{ formatAllowance(item.fundedAllowanceMinutes) }}</dd>
+            </div>
+            <div>
+              <dt class="text-gray-400 font-medium">Booked this week</dt>
+              <dd class="font-bold text-gray-800 mt-0.5">{{ item.bookedHoursThisWeek }}h</dd>
+            </div>
+          </dl>
+        } @else {
+          <p class="text-xs text-gray-500">This child does not have a funding record. All sessions are billed at the private rate.</p>
+        }
+      </div>
+    }
+  </div>
+}

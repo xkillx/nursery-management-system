@@ -538,6 +538,16 @@ export const routes: Routes = [
               },
             ],
           },
+          {
+            path: 'parent/funding',
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['parent'],
+              breadcrumb: { label: 'Funding', link: ['/parent/funding'] },
+            },
+            loadComponent: () => import('./features/parent-portal/pages/parent-funding/parent-funding.component').then((m) => m.ParentFundingComponent),
+            title: 'Funding | Nursery Management',
+          },
     ],
   },
   {
