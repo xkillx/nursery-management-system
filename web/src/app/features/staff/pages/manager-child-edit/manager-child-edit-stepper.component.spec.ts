@@ -749,27 +749,29 @@ describe('ManagerChildEditStepperComponent', () => {
   });
 
   describe('wizard step list', () => {
-    it('new-registration step list has four entries with the expected keys', () => {
+    it('new-registration step list has five entries with the expected keys', () => {
       component.isNewRegistration = true;
       const keys = component.steps.map(s => s.key);
-      expect(component.steps.length).toBe(4);
+      expect(component.steps.length).toBe(5);
       expect(keys).toEqual([
         'child-basics',
         'medical-health',
         'contacts-collection',
         'consents-evidence',
+        'funding',
       ]);
     });
 
-    it('edit-registration step list has four entries with the expected keys', () => {
+    it('edit-registration step list has five entries with the expected keys', () => {
       component.isNewRegistration = false;
       const keys = component.steps.map(s => s.key);
-      expect(component.steps.length).toBe(4);
+      expect(component.steps.length).toBe(5);
       expect(keys).toEqual([
         'child-basics',
         'medical-health',
         'contacts-collection',
         'consents-evidence',
+        'funding',
       ]);
     });
   });

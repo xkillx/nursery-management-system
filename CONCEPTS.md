@@ -42,7 +42,7 @@ A value object representing a monetary amount in GBP. Wraps a non-negative integ
 ## Registration
 
 ### Stepper (Intake Wizard)
-A multi-step form wizard that guides staff through child registration or editing. Steps: Child Details, Medical & Health, Contacts & Security, Permissions & Consents, Session Pattern, Funding & Benefits. In registration mode, steps are sequential; in edit mode, steps are independently accessible.
+A multi-step form wizard that guides staff through child registration or editing. Steps: Child Details, Medical & Health, Contacts & Security, Permissions & Consents, Funding & Benefits. In registration mode, steps are sequential; in edit mode, steps are independently accessible.
 
 ## Settings
 

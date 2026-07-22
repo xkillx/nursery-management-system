@@ -164,9 +164,9 @@ export class BookingSummarySidebarComponent implements OnChanges {
   }
 
   getFundingTypeLabel(): string {
-    if (this.fundingType === 'fifteen_hours') {
+    if (this.fundingType === 'universal_15') {
       return ' (Universal)';
-    } else if (this.fundingType === 'thirty_hours') {
+    } else if (this.fundingType === 'working_parent' || this.fundingType === 'working_parent_under_3') {
       return ' (Extended)';
     }
     return '';

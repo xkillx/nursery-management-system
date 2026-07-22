@@ -1144,45 +1144,6 @@ func (a *consumedMinutesProviderAdapter) GetConsumedMinutes(ctx context.Context,
 	return result, nil
 }
 
-type fundingHistoryWriterAdapter struct {
-	repo *fundingpostgres.HistoryRepository
-}
-
-func (a *fundingHistoryWriterAdapter) Write(ctx context.Context, tenantID, branchID, childID uuid.UUID, record *childdomain.ChildFundingRecord, changedByUserID uuid.UUID) error {
-	history := fundingdomain.FundingHistory{
-		ID:              uid.NewUUID(),
-		TenantID:        tenantID,
-		BranchID:        branchID,
-		ChildID:         childID,
-		ChangedAt:       time.Now(),
-		ChangedByUserID: changedByUserID,
-	}
-
-	if string(record.FundingType) != "" {
-		s := string(record.FundingType)
-		history.FundingType = &s
-	}
-
-	if string(record.FundingModel) != "" {
-		s := string(record.FundingModel)
-		history.FundingModel = &s
-	}
-
-	if record.FundedHoursPerWeek != nil {
-		history.FundedHoursPerWeek = record.FundedHoursPerWeek
-	}
-
-	if record.FundingStartDate != nil {
-		history.FundingStartDate = record.FundingStartDate
-	}
-
-	if record.FundingEndDate != nil {
-		history.FundingEndDate = record.FundingEndDate
-	}
-
-	return a.repo.Create(ctx, history)
-}
-
 // termDateProviderAdapter satisfies fundingdomain.TermDateProvider by delegating
 // to the academic term repository.
 type termDateProviderAdapter struct {
@@ -1214,15 +1175,75 @@ func provideTermDateProviderAdapter(
 	return &termDateProviderAdapter{repo: repo}
 }
 
+// childFundingWriterAdapter satisfies childdomain.ChildFundingWriter by mapping
+// ChildFundingRecordInput to the funding module's FundingRecord and upserting
+// via the funding module's repository.
+type childFundingWriterAdapter struct {
+	repo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *childFundingWriterAdapter) SaveFunding(ctx context.Context, tx any, tenantID, branchID, childID uuid.UUID, input *childdomain.ChildFundingRecordInput) error {
+	ft := fundingdomain.FundingType(input.FundingType)
+	if !ft.Valid() {
+		ft = fundingdomain.FundingTypeUnknown
+	}
+	fm := fundingdomain.FundingModel(input.FundingModel)
+	if !fm.Valid() {
+		fm = fundingdomain.FundingModelUnknown
+	}
+
+	var startDate, endDate *time.Time
+	if input.FundingStartDate != nil && *input.FundingStartDate != "" {
+		if t, err := time.Parse("2006-01-02", *input.FundingStartDate); err == nil {
+			startDate = &t
+		}
+	}
+	if input.FundingEndDate != nil && *input.FundingEndDate != "" {
+		if t, err := time.Parse("2006-01-02", *input.FundingEndDate); err == nil {
+			endDate = &t
+		}
+	}
+
+	record := fundingdomain.FundingRecord{
+		ID:                       uid.NewUUID(),
+		TenantID:                 tenantID,
+		BranchID:                 branchID,
+		ChildID:                  childID,
+		FundingEnabled:           input.FundingEnabled,
+		FundingType:              ft,
+		FundingModel:             fm,
+		FundedHoursPerWeek:       input.FundedHoursPerWeek,
+		FundingStartDate:         startDate,
+		FundingEndDate:           endDate,
+		EligibilityCode:          input.EligibilityCode,
+		EligibilityCodeValidated: input.EligibilityCodeValidated,
+		EvidenceReceived:         input.EvidenceReceived,
+	}
+
+	_, err := a.repo.UpsertFundingRecord(ctx, tx, record)
+	if err != nil {
+		return fmt.Errorf("adapter upsert funding record: %w", err)
+	}
+	return nil
+}
+
+var _ childdomain.ChildFundingWriter = (*childFundingWriterAdapter)(nil)
+
+func provideChildFundingWriterAdapter(
+	repo *fundingpostgres.FundingRecordRepositoryImpl,
+) *childFundingWriterAdapter {
+	return &childFundingWriterAdapter{repo: repo}
+}
+
 // fundingLookupAdapter satisfies billingdomain.FundingLookup by loading
-// FundingRecord from child_funding_records and computing allowance on the fly.
+// FundingRecord from the funding module's repository and computing allowance on the fly.
 type fundingLookupAdapter struct {
-	childRepo *postgreschild.ChildRepository
-	ownerRepo *ownerpostgres.OwnerRepository
+	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl
+	ownerRepo   *ownerpostgres.OwnerRepository
 }
 
 func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (billingdomain.FundedChildInfo, error) {
-	record, found, err := a.childRepo.GetFundingByChild(ctx, tenantID, branchID, childID)
+	record, found, err := a.fundingRepo.GetFundingRecord(ctx, tenantID, branchID, childID)
 	if err != nil {
 		return billingdomain.FundedChildInfo{}, fmt.Errorf("get child funding record: %w", err)
 	}
@@ -1244,7 +1265,7 @@ func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, br
 		hoursPerWeek = *record.FundedHoursPerWeek
 	}
 
-	fundingModel := fundingdomain.FundingModel(record.FundingModel)
+	fundingModel := record.FundingModel
 	termDates, _ := a.getTermDates(ctx, tenantID, branchID, billingMonth)
 	allowance, _ := fundingdomain.ComputeAllowanceMinutes(hoursPerWeek, fundingModel, termDates, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
 

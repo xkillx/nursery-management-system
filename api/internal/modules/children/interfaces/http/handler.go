@@ -51,11 +51,6 @@ type (
 		Update *application.UpdateConsent
 	}
 
-	FundingUseCases struct {
-		Get    *application.GetFunding
-		Update *application.UpdateFunding
-	}
-
 	CollectionUseCases struct {
 		GetSetting  *application.GetCollectionSetting
 		SetPassword *application.SetCollectionPassword
@@ -87,7 +82,6 @@ type (
 		Health          HealthUseCases
 		Safeguarding    SafeguardingUseCases
 		Consent         ConsentUseCases
-		Funding         FundingUseCases
 		Collection      CollectionUseCases
 		RoomAssignments RoomAssignmentUseCases
 		BillingProfile  BillingProfileUseCases
@@ -120,9 +114,6 @@ type Handler struct {
 
 	getConsent    *application.GetConsent
 	updateConsent *application.UpdateConsent
-
-	getFunding    *application.GetFunding
-	updateFunding *application.UpdateFunding
 
 	getCollectionSetting  *application.GetCollectionSetting
 	setCollectionPassword *application.SetCollectionPassword
@@ -165,8 +156,6 @@ func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 		updateSafeguarding:       cfg.Safeguarding.Update,
 		getConsent:               cfg.Consent.Get,
 		updateConsent:            cfg.Consent.Update,
-		getFunding:               cfg.Funding.Get,
-		updateFunding:            cfg.Funding.Update,
 		getCollectionSetting:     cfg.Collection.GetSetting,
 		setCollectionPassword:    cfg.Collection.SetPassword,
 		listRoomAssignments:      cfg.RoomAssignments.List,
@@ -217,9 +206,6 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 
 	manager.GET("/children/:child_id/consent", h.getConsentHandler)
 	manager.PUT("/children/:child_id/consent", h.updateConsentHandler)
-
-	manager.GET("/children/:child_id/funding", h.getFundingHandler)
-	manager.PATCH("/children/:child_id/funding", h.updateFundingHandler)
 
 	manager.GET("/children/:child_id/collection-settings", h.getCollectionSettingHandler)
 	manager.PUT("/children/:child_id/collection-settings", h.setCollectionSettingHandler)
@@ -662,43 +648,6 @@ func (h *Handler) updateConsentHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, toChildConsentResponse(p))
-}
-
-func (h *Handler) getFundingHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	p, err := h.getFunding.Execute(c.Request.Context(), actor, c.Param("child_id"))
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	if p == nil {
-		c.JSON(http.StatusOK, gin.H{"funding": nil})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"funding": toChildFundingResponse(p)})
-}
-
-func (h *Handler) updateFundingHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	var req childFundingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
-		return
-	}
-	p, err := h.updateFunding.Execute(c.Request.Context(), actor, c.Param("child_id"), mapChildFundingRequest(req))
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, toChildFundingResponse(p))
 }
 
 func (h *Handler) getCollectionSettingHandler(c *gin.Context) {

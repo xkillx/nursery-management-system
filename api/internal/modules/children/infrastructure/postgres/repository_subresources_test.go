@@ -348,49 +348,6 @@ func TestChildConsent_InsertThenUpdate(t *testing.T) {
 }
 
 // ===========================================================================
-// child_funding_records
-// ===========================================================================
-
-func TestChildFunding_Upsert(t *testing.T) {
-	repo, pool := setupChildRepo(t)
-	ctx := context.Background()
-
-	childID := newChildID(t, pool, childTenantID, childBranchID, "Funding Kid")
-	notes := "low income family"
-	f := &childdomain.ChildFundingRecord{
-		ID:             uuid.New(),
-		TenantID:       childTenantID,
-		BranchID:       childBranchID,
-		ChildID:        childID,
-		FundingEnabled: true,
-		FundingType:    childdomain.FundingTypeThirtyHours,
-		FundingModel:   childdomain.FundingModelTermTimeOnly,
-		BenefitsStatus: childdomain.BenefitsStatusUnknown,
-		ManagerNotes:   &notes,
-	}
-
-	tx := dbtest.BeginTx(t, pool)
-	if _, err := repo.UpsertFunding(ctx, tx, f); err != nil {
-		t.Fatalf("UpsertFunding: %v", err)
-	}
-	dbtest.CommitTx(t, tx)
-
-	got, found, err := repo.GetFundingByChild(ctx, childTenantID, childBranchID, childID)
-	if err != nil {
-		t.Fatalf("GetFundingByChild: %v", err)
-	}
-	if !found {
-		t.Fatal("found = false")
-	}
-	if got.FundingType != childdomain.FundingTypeThirtyHours {
-		t.Errorf("FundingType = %s, want thirty_hours", got.FundingType)
-	}
-	if got.ManagerNotes == nil || *got.ManagerNotes != "low income family" {
-		t.Errorf("ManagerNotes = %v, want 'low income family'", got.ManagerNotes)
-	}
-}
-
-// ===========================================================================
 // child_collection_settings
 // ===========================================================================
 

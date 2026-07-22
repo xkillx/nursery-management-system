@@ -257,7 +257,7 @@ export interface ChildConsentInput {
   consent_change_reason?: string | null;
 }
 
-export type FundingType = 'none' | 'fifteen_hours' | 'thirty_hours' | 'two_year_old' | 'custom' | 'unknown';
+export type FundingType = 'none' | 'universal_15' | 'working_parent' | 'working_parent_under_3' | 'disadvantaged_2yo' | 'unknown';
 export type FundingModel = 'term_time_only' | 'stretched' | 'unknown';
 export type BenefitsStatus = 'no' | 'yes' | 'unknown';
 

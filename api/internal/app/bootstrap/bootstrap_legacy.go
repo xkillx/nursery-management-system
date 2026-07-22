@@ -188,6 +188,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	ownerRepo := ownerpostgres.NewRepository(pool)
 	termRepo := termpostgres.NewTermRepository(pool)
 	fundingHistoryRepo := fundingpostgres.NewHistoryRepository(pool)
+	fundingRecordRepo := fundingpostgres.NewFundingRecordRepository(pool)
 	siteRateProvider := &siteRateProviderAdapter{repo: ownerRepo}
 	termCreator := &enrollmentTermCreatorAdapter{
 		termRepo:     termRepo,
@@ -198,7 +199,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		Core: childhandler.CoreUseCases{
 			List:           childapp.NewListChildren(childRepo),
 			Get:            childapp.NewGetChild(childRepo),
-			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, termCreator, func() time.Time { return time.Now().UTC() }),
+			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, termCreator, &childFundingWriterAdapter{repo: fundingRecordRepo}, func() time.Time { return time.Now().UTC() }),
 			Update:         childapp.NewUpdateChild(childRepo, auditWriter, txManager),
 			MarkInactive:   childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
 			ListAttendance: childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
@@ -222,10 +223,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		Consent: childhandler.ConsentUseCases{
 			Get:    childapp.NewGetConsent(childRepo),
 			Update: childapp.NewUpdateConsent(childRepo, auditWriter, txManager),
-		},
-		Funding: childhandler.FundingUseCases{
-			Get:    childapp.NewGetFunding(childRepo),
-			Update: childapp.NewUpdateFunding(childRepo, auditWriter, txManager, &fundingHistoryWriterAdapter{repo: fundingHistoryRepo}),
 		},
 		Collection: childhandler.CollectionUseCases{
 			GetSetting:  childapp.NewGetCollectionSetting(childRepo),
@@ -295,7 +292,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	absenceHandler.RegisterRoutes(protected)
 
 	fundingRepo := fundingpostgres.NewRepository(pool)
-	fundingRecordRepo := fundingpostgres.NewFundingRecordRepository(pool)
 	consumedMinutesProvider := &consumedMinutesProviderAdapter{pool: pool}
 	termCalendarRepo := termcalendarpostgres.NewRepository(pool)
 	termDateProv := &termDateProviderAdapter{repo: termCalendarRepo}
@@ -321,7 +317,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	billingRepo := billingpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
-	fundingLookup := &fundingLookupAdapter{childRepo: childRepo, ownerRepo: ownerRepo}
+	fundingLookup := &fundingLookupAdapter{fundingRepo: fundingRecordRepo, ownerRepo: ownerRepo}
 
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{

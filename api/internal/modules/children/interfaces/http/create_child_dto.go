@@ -343,8 +343,8 @@ func mapChildConsentPayloadToInput(p *childConsentPayload) *application.ChildCon
 	}
 }
 
-func mapChildFundingPayloadToInput(p *childFundingPayload) *application.ChildFundingRecordInput {
-	return &application.ChildFundingRecordInput{
+func mapChildFundingPayloadToInput(p *childFundingPayload) *domain.ChildFundingRecordInput {
+	return &domain.ChildFundingRecordInput{
 		FundingEnabled:           p.FundingEnabled,
 		FundingType:              p.FundingType,
 		FundingModel:             p.FundingModel,

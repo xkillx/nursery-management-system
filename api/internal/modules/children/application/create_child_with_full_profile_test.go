@@ -144,7 +144,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -180,7 +180,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): false}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -215,7 +215,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -241,7 +241,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -281,7 +281,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -319,7 +319,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		repo := &fakeChildRepository{}
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, &fakeTermCreator{}, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -355,7 +355,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
 		termCreator := &fakeTermCreator{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -391,7 +391,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{stID.String(): true}}
 		txm := &fakeCreateTxm{}
 		termCreator := &fakeTermCreator{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, nil, func() time.Time {
 			return time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -425,7 +425,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 		lookup := &fakeCreateLookup{activeTypes: map[string]bool{}}
 		txm := &fakeCreateTxm{}
 		termCreator := &fakeTermCreator{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, lookup, termCreator, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 

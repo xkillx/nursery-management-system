@@ -151,70 +151,6 @@ func buildChildContactEntries(tenantID, branchID, childID uuid.UUID, inputs []Ch
 	return entries
 }
 
-func buildChildFundingFromInput(tenantID, branchID, childID uuid.UUID, in *ChildFundingRecordInput) *domain.ChildFundingRecord {
-	ft := domain.FundingType(in.FundingType)
-	if !ft.Valid() {
-		ft = domain.FundingTypeUnknown
-	}
-	fm := domain.FundingModel(in.FundingModel)
-	if !fm.Valid() {
-		fm = domain.FundingModelUnknown
-	}
-	bs := domain.BenefitsStatus(in.BenefitsStatus)
-	if !bs.Valid() {
-		bs = domain.BenefitsStatusUnknown
-	}
-
-	var startDate, endDate *time.Time
-	if in.FundingStartDate != nil && *in.FundingStartDate != "" {
-		if t, err := time.Parse("2006-01-02", *in.FundingStartDate); err == nil {
-			startDate = &t
-		}
-	}
-	if in.FundingEndDate != nil && *in.FundingEndDate != "" {
-		if t, err := time.Parse("2006-01-02", *in.FundingEndDate); err == nil {
-			endDate = &t
-		}
-	}
-
-	r := &domain.ChildFundingRecord{
-		ID:                       uuid.New(),
-		TenantID:                 tenantID,
-		BranchID:                 branchID,
-		ChildID:                  childID,
-		FundingEnabled:           in.FundingEnabled,
-		FundingType:              ft,
-		FundingModel:             fm,
-		FundedHoursPerWeek:       in.FundedHoursPerWeek,
-		FundingStartDate:         startDate,
-		FundingEndDate:           endDate,
-		EligibilityCode:          trimEmptyToNil(in.EligibilityCode),
-		EligibilityCodeValidated: in.EligibilityCodeValidated,
-		EvidenceReceived:         in.EvidenceReceived,
-		BenefitsStatus:           bs,
-		BenefitNotes:             trimEmptyToNil(in.BenefitNotes),
-		ManagerNotes:             trimEmptyToNil(in.ManagerNotes),
-		OtherBenefitName:         trimEmptyToNil(in.OtherBenefitName),
-	}
-	for _, b := range in.Benefits {
-		switch b {
-		case "universal_credit":
-			r.BenefitUniversalCredit = true
-		case "income_support":
-			r.BenefitIncomeSupport = true
-		case "jobseekers_allowance":
-			r.BenefitJobseekersAllowance = true
-		case "esa_income_related":
-			r.BenefitESAIncomeRelated = true
-		case "child_tax_credit":
-			r.BenefitChildTaxCredit = true
-		case "other_support":
-			r.BenefitOtherSupport = true
-		}
-	}
-	return r
-}
-
 func trimEmptyToNil(s *string) *string {
 	if s == nil {
 		return nil
@@ -245,19 +181,22 @@ func ValidateReasonCode(code, note string) error {
 	return nil
 }
 
-func validateFundingInput(in *ChildFundingRecordInput, prefix string) []domainerrors.FieldError {
+func validateFundingInput(in *domain.ChildFundingRecordInput, prefix string) []domainerrors.FieldError {
 	var errs []domainerrors.FieldError
 
-	ft := domain.FundingType(in.FundingType)
-	if !ft.Valid() || ft == domain.FundingTypeNone || ft == "" {
+	validFundingTypes := map[string]bool{
+		"universal_15": true, "working_parent": true,
+		"working_parent_under_3": true, "disadvantaged_2yo": true,
+	}
+	if !validFundingTypes[in.FundingType] {
 		errs = append(errs, domainerrors.FieldError{Field: prefix + "funding_type", Message: "Select a funding type."})
 	}
 
 	if in.FundedHoursPerWeek != nil {
 		if *in.FundedHoursPerWeek <= 0 {
 			errs = append(errs, domainerrors.FieldError{Field: prefix + "funded_hours_per_week", Message: "Must be greater than 0."})
-		} else if *in.FundedHoursPerWeek > 30 && ft != domain.FundingTypeCustom {
-			errs = append(errs, domainerrors.FieldError{Field: prefix + "funded_hours_per_week", Message: "Must not exceed 30 hours unless funding type is Custom."})
+		} else if *in.FundedHoursPerWeek > 30 {
+			errs = append(errs, domainerrors.FieldError{Field: prefix + "funded_hours_per_week", Message: "Must not exceed 30 hours."})
 		}
 	}
 
@@ -268,11 +207,6 @@ func validateFundingInput(in *ChildFundingRecordInput, prefix string) []domainer
 		if err1 == nil && err2 == nil && !end.After(start) {
 			errs = append(errs, domainerrors.FieldError{Field: prefix + "funding_end_date", Message: "Must be after start date."})
 		}
-	}
-
-	bs := domain.BenefitsStatus(in.BenefitsStatus)
-	if bs == domain.BenefitsStatusYes && (len(in.Benefits) == 0) {
-		errs = append(errs, domainerrors.FieldError{Field: prefix + "benefits", Message: "Select at least one benefit type."})
 	}
 
 	return errs

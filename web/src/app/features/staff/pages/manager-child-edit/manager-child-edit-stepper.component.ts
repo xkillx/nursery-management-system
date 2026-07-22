@@ -74,6 +74,7 @@ import {
   ChildSafeguardingProfile,
   ChildCollectionSettings,
   ChildFundingRecord,
+  ChildFundingRecordInput,
   ChildConsentInput,
   ChildContact,
   ChildProfileInput,
@@ -83,12 +84,14 @@ import {
   CreateChildPayload,
   ProfessionalReferral,
 } from '../../models/child-profile.models';
+import { FundingRecordWritePayload } from '../../models/funding.models';
 
 type StepperStep =
   | 'child-basics'
   | 'medical-health'
   | 'contacts-collection'
-  | 'consents-evidence';
+  | 'consents-evidence'
+  | 'funding';
 
 type YesNoUnknownStatus = '' | 'yes' | 'no' | 'unknown';
 type NoneDetailsUnknownStatus = '' | 'none' | 'details' | 'unknown';
@@ -271,6 +274,17 @@ interface RegistrationDraft {
     second_parent_has_responsibility: boolean | null;
   };
   step4: ConsentWritePayload;
+  step5: {
+    funding_enabled: boolean;
+    funding_type: string;
+    funding_model: string;
+    funded_hours_per_week: number | null;
+    funding_start_date: string;
+    funding_end_date: string;
+    eligibility_code: string;
+    eligibility_code_validated: boolean;
+    evidence_received: boolean;
+  };
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
@@ -378,6 +392,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       label: 'Permissions & Consents',
       shortLabel: 'Consents',
       description: 'Terms and decisions',
+    },
+    {
+      key: 'funding',
+      label: 'Funding & Benefits',
+      shortLabel: 'Funding',
+      description: 'Funding entitlement',
     },
   ];
 
@@ -595,6 +615,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   step2Touched: Record<string, boolean> = {};
   step3Submitted = false;
   step3Touched: Record<string, boolean> = {};
+  step5Submitted = false;
   hasStoredDraft = false;
   draftRestoredAt: string | null = null;
   draftSavedAt: string | null = null;
@@ -707,6 +728,18 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     consent_change_reason: null,
   };
 
+  step5 = {
+    funding_enabled: false,
+    funding_type: '' as string,
+    funding_model: '' as string,
+    funded_hours_per_week: null as number | null,
+    funding_start_date: '',
+    funding_end_date: '',
+    eligibility_code: '',
+    eligibility_code_validated: false,
+    evidence_received: false,
+  };
+
   step4NoReasons: Partial<Record<keyof ConsentWritePayload, string>> = {};
 
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>> = {};
@@ -730,6 +763,16 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     { value: 'on_waiting_list', label: 'On waiting list' },
     { value: 'seen_completed', label: 'Seen / Completed' },
     { value: 'not_applicable', label: 'Not applicable' },
+  ];
+  readonly fundingTypeOptions: Option[] = [
+    { value: 'universal_15', label: 'Universal 15h' },
+    { value: 'working_parent', label: 'Working Parent' },
+    { value: 'working_parent_under_3', label: 'Working Parent Under 3' },
+    { value: 'disadvantaged_2yo', label: 'Disadvantaged 2yo' },
+  ];
+  readonly fundingModelOptions: Option[] = [
+    { value: 'term_time_only', label: 'Term time only' },
+    { value: 'stretched', label: 'Stretched' },
   ];
 
   ngOnInit(): void {
@@ -1435,6 +1478,62 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
+  saveFunding(advance = true): void {
+    if (!this.childId && !this.isNewRegistration) {
+      this.errorMessage = 'Create the child record before saving funding.';
+      return;
+    }
+    this.step5Submitted = true;
+    const firstIssue = this.firstBlockingIssueForStep('funding');
+    if (firstIssue) {
+      this.handleValidationFailure(firstIssue);
+      return;
+    }
+    if (this.isNewRegistration) {
+      if (advance) this.nextStep();
+      return;
+    }
+
+    this.isSaving = true;
+    this.errorMessage = null;
+
+    if (!this.loadedSections.has('funding')) {
+      this.isSaving = false;
+      this.errorMessage = 'Funding data unavailable — could not save. Please reload the page.';
+      return;
+    }
+
+    const fundingPayload: FundingRecordWritePayload = {
+      funding_enabled: this.step5.funding_enabled,
+      funding_type: this.step5.funding_type || 'unknown',
+      funding_model: this.step5.funding_model || 'unknown',
+      funded_hours_per_week: this.step5.funded_hours_per_week,
+      funding_start_date: this.step5.funding_start_date || null,
+      funding_end_date: this.step5.funding_end_date || null,
+      eligibility_code: this.step5.eligibility_code || null,
+      eligibility_code_validated: this.step5.eligibility_code_validated,
+      evidence_received: this.step5.evidence_received,
+    };
+
+    this.staffApi.upsertFundingRecord(this.childId!, fundingPayload).subscribe({
+      next: () => {
+        this.isSaving = false;
+        if (advance) {
+          this.nextStep();
+        } else {
+          this.successMessage = 'Funding & benefits saved.';
+          this.toast.success(this.successMessage);
+        }
+      },
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
+      },
+    });
+  }
+
   submitRegistration(): void {
     const issues = this.collectFinalCompletionIssues();
     this.finalCompletionIssues = issues;
@@ -1464,7 +1563,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.consentAdvisories = this.collectConsentAdvisories();
 
     // Filter to only consents-evidence issues
-    const consentIssues = issues.filter(i => i.stepKey === 'consents-evidence' || i.stepKey === 'contacts-collection' || i.stepKey === 'child-basics' || i.stepKey === 'medical-health');
+    const consentIssues = issues.filter(i => i.stepKey === 'consents-evidence' || i.stepKey === 'contacts-collection' || i.stepKey === 'child-basics' || i.stepKey === 'medical-health' || i.stepKey === 'funding');
     if (consentIssues.length > 0) {
       this.handleValidationFailure(consentIssues[0]);
       return;
@@ -1530,6 +1629,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step2: this.step2,
       step3: this.step3,
       step4: this.step4,
+      step5: this.step5,
       consentsReviewed: this.consentsReviewed,
       parentCarersDraft: this.parentCarersDraft,
       emergencyContactsDraft: this.emergencyContactsDraft,
@@ -1606,6 +1706,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       registration_date: 'child-registration-date',
       gdpr_data_processing_consent: 'gdpr-consent',
       information_truthfulness_declaration: 'truthfulness-declaration',
+      funding_type: 'funding-type',
+      funding_model: 'funding-model',
+      funded_hours_per_week: 'funded-hours-per-week',
+      funding_start_date: 'funding-start-date',
     };
     return map[field] ?? field;
   }
@@ -2080,6 +2184,22 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         authorised_collectors: authorisedCollectors.map(c => this.toContactWire(c)),
       },
       consent,
+      funding: this.step5.funding_enabled ? {
+        funding_enabled: true,
+        funding_type: (this.step5.funding_type || 'unknown') as ChildFundingRecordInput['funding_type'],
+        funding_model: (this.step5.funding_model || 'unknown') as ChildFundingRecordInput['funding_model'],
+        funded_hours_per_week: this.step5.funded_hours_per_week,
+        funding_start_date: this.step5.funding_start_date || null,
+        funding_end_date: this.step5.funding_end_date || null,
+        eligibility_code: this.step5.eligibility_code || null,
+        eligibility_code_validated: this.step5.eligibility_code_validated,
+        evidence_received: this.step5.evidence_received,
+        benefits_status: 'unknown',
+        benefits: [],
+        other_benefit_name: null,
+        benefit_notes: null,
+        manager_notes: null,
+      } : undefined,
       collection_settings: collectionSettings,
       room: {
         room_id: this.step1.primary_room_id,
@@ -2157,6 +2277,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.collectMedicalSafetyIssues(issues);
     this.collectContactsIssues(issues);
     this.collectConsentsIssues(issues);
+    this.collectFundingIssues(issues);
 
     return issues;
   }
@@ -2346,6 +2467,23 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         field: 'signed_date',
         message: 'Record the date the consent was signed.',
       });
+    }
+  }
+
+  private collectFundingIssues(issues: FinalCompletionIssue[]): void {
+    if (!this.step5.funding_enabled) return;
+
+    if (!this.step5.funding_type) {
+      issues.push({ stepKey: 'funding', field: 'funding_type', message: 'Select a funding type.' });
+    }
+    if (!this.step5.funding_model) {
+      issues.push({ stepKey: 'funding', field: 'funding_model', message: 'Select a funding model.' });
+    }
+    if (this.step5.funded_hours_per_week === null || this.step5.funded_hours_per_week === undefined) {
+      issues.push({ stepKey: 'funding', field: 'funded_hours_per_week', message: 'Enter funded hours per week.' });
+    }
+    if (!this.step5.funding_start_date) {
+      issues.push({ stepKey: 'funding', field: 'funding_start_date', message: 'Enter the funding start date.' });
     }
   }
 
@@ -2760,6 +2898,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step3.collection_password = view.collection.collection_password ?? '';
       this.step3.collection_password_hint = view.collection.collection_password_hint ?? '';
     }
+
+    if (view.funding && !StaffApiService.isLoadError(view.funding)) {
+      const f = view.funding;
+      this.step5.funding_enabled = f.funding_enabled;
+      this.step5.funding_type = (f.funding_type === 'none' || f.funding_type === 'unknown') ? '' : (f.funding_type as typeof this.step5.funding_type);
+      this.step5.funding_model = (f.funding_model === 'unknown') ? '' : (f.funding_model as typeof this.step5.funding_model);
+      this.step5.funded_hours_per_week = f.funded_hours_per_week;
+      this.step5.funding_start_date = f.funding_start_date ?? '';
+      this.step5.funding_end_date = f.funding_end_date ?? '';
+      this.step5.eligibility_code = f.eligibility_code ?? '';
+      this.step5.eligibility_code_validated = f.eligibility_code_validated;
+      this.step5.evidence_received = f.evidence_received;
+    }
   }
 
   private emptyContact(relationshipToChild: string): RegistrationContactEntry {
@@ -2907,6 +3058,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step2: { ...this.step2 },
       step3: { ...this.step3 },
       step4: { ...this.step4 },
+      step5: { ...this.step5 },
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
@@ -2970,6 +3122,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
           this.consentsReviewed[key] = true;
         }
       }
+    }
+    if (draft.step5) {
+      this.step5 = { ...this.step5, ...draft.step5 };
     }
     if (draft.consentsReviewed) this.consentsReviewed = { ...this.consentsReviewed, ...draft.consentsReviewed };
     if (draft.parentCarersDraft?.length) {
@@ -3118,6 +3273,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       consent_change_reason: null,
     };
     this.step4NoReasons = {};
+    this.step5 = {
+      funding_enabled: false,
+      funding_type: '',
+      funding_model: '',
+      funded_hours_per_week: null,
+      funding_start_date: '',
+      funding_end_date: '',
+      eligibility_code: '',
+      eligibility_code_validated: false,
+      evidence_received: false,
+    };
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = [true];
@@ -3129,6 +3295,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.step2Submitted = false;
     this.step3Touched = {};
     this.step3Submitted = false;
+    this.step5Submitted = false;
     this.consentsReviewed = {};
     this.consentAdvisories = [];
     this.originalStep4Snapshot = null;

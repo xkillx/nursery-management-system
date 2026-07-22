@@ -288,12 +288,6 @@ func (f *fakeChildBPRepo) InsertConsent(ctx context.Context, tx domain.Tx, p *do
 func (f *fakeChildBPRepo) UpdateConsent(ctx context.Context, tx domain.Tx, p *domain.ChildConsent) (*domain.ChildConsent, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeChildBPRepo) GetFundingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*domain.ChildFundingRecord, bool, error) {
-	return nil, false, nil
-}
-func (f *fakeChildBPRepo) UpsertFunding(ctx context.Context, tx domain.Tx, p *domain.ChildFundingRecord) (*domain.ChildFundingRecord, error) {
-	return nil, errors.New("not implemented")
-}
 func (f *fakeChildBPRepo) GetCollectionSettingByChild(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID) (*domain.ChildCollectionSetting, error) {
 	return nil, errors.New("not implemented")
 }

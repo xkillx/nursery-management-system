@@ -126,23 +126,6 @@ type ChildConsentInput struct {
 	PaperFormOnFile                      bool
 }
 
-type ChildFundingRecordInput struct {
-	FundingEnabled           bool
-	FundingType              string
-	FundingModel             string
-	FundedHoursPerWeek       *float64
-	FundingStartDate         *string
-	FundingEndDate           *string
-	EligibilityCode          *string
-	EligibilityCodeValidated bool
-	EvidenceReceived         bool
-	BenefitsStatus           string
-	Benefits                 []string
-	OtherBenefitName         *string
-	BenefitNotes             *string
-	ManagerNotes             *string
-}
-
 type ChildCollectionSettingsInput struct {
 	Over18CollectionAcknowledged bool
 	Password                     string
@@ -161,7 +144,7 @@ type CreateChildFullInput struct {
 	Safeguarding       *ChildSafeguardingProfileInput
 	Contacts           []ChildContactInput
 	Consent            *ChildConsentInput
-	Funding            *ChildFundingRecordInput
+	Funding            *domain.ChildFundingRecordInput
 	CollectionSettings *ChildCollectionSettingsInput
 	Room               *ChildRoomAssignmentInput
 	BookingPattern     *BookingPatternInput
@@ -183,14 +166,15 @@ type CreateChildWithFullProfile struct {
 	txm           TxManager
 	sessionLookup SessionTypeLookup
 	termCreator   EnrollmentTermCreator
+	fundingWriter domain.ChildFundingWriter
 	clock         TodayFunc
 }
 
-func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, termCreator EnrollmentTermCreator, clock TodayFunc) *CreateChildWithFullProfile {
+func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, termCreator EnrollmentTermCreator, fundingWriter domain.ChildFundingWriter, clock TodayFunc) *CreateChildWithFullProfile {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
-	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, termCreator: termCreator, clock: clock}
+	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, termCreator: termCreator, fundingWriter: fundingWriter, clock: clock}
 }
 
 func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.ActorContext, input CreateChildFullInput) (*ChildCreationResult, error) {
@@ -384,8 +368,7 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 
 		// optional funding
 		if input.Funding != nil {
-			f := buildChildFundingFromInput(actor.TenantID, actor.BranchID, childID, input.Funding)
-			if _, err := uc.repo.UpsertFunding(ctx, tx, f); err != nil {
+			if err := uc.fundingWriter.SaveFunding(ctx, tx, actor.TenantID, actor.BranchID, childID, input.Funding); err != nil {
 				return fmt.Errorf("create child funding: %w", err)
 			}
 			if aerr := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{

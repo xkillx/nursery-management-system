@@ -63,10 +63,6 @@ type Repository interface {
 	InsertConsent(ctx context.Context, tx Tx, p *ChildConsent) (*ChildConsent, error)
 	UpdateConsent(ctx context.Context, tx Tx, p *ChildConsent) (*ChildConsent, error)
 
-	// Funding
-	GetFundingByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildFundingRecord, bool, error)
-	UpsertFunding(ctx context.Context, tx Tx, p *ChildFundingRecord) (*ChildFundingRecord, error)
-
 	// Collection Settings
 	GetCollectionSettingByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*ChildCollectionSetting, error)
 	UpsertCollectionSetting(ctx context.Context, tx Tx, p *ChildCollectionSetting) (*ChildCollectionSetting, error)

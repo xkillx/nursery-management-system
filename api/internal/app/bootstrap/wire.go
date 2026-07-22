@@ -196,8 +196,8 @@ var childrenSet = wire.NewSet(
 	wire.Bind(new(childapp.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)),
 	provideClock,
 	provideTodayFunc,
-	provideFundingHistoryWriterAdapter,
-	wire.Bind(new(childapp.FundingHistoryWriter), new(*fundingHistoryWriterAdapter)),
+	provideChildFundingWriterAdapter,
+	wire.Bind(new(childdomain.ChildFundingWriter), new(*childFundingWriterAdapter)),
 	childapp.NewListChildren,
 	childapp.NewGetChild,
 	childapp.NewCreateChildWithFullProfile,
@@ -214,8 +214,6 @@ var childrenSet = wire.NewSet(
 	childapp.NewUpdateSafeguarding,
 	childapp.NewGetConsent,
 	childapp.NewUpdateConsent,
-	childapp.NewGetFunding,
-	childapp.NewUpdateFunding,
 	childapp.NewGetCollectionSetting,
 	childapp.NewSetCollectionPassword,
 	childapp.NewListRoomAssignments,
@@ -237,7 +235,6 @@ var childrenSet = wire.NewSet(
 	wire.Struct(new(childhandler.HealthUseCases), "*"),
 	wire.Struct(new(childhandler.SafeguardingUseCases), "*"),
 	wire.Struct(new(childhandler.ConsentUseCases), "*"),
-	wire.Struct(new(childhandler.FundingUseCases), "*"),
 	wire.Struct(new(childhandler.CollectionUseCases), "*"),
 	wire.Struct(new(childhandler.RoomAssignmentUseCases), "*"),
 	wire.Struct(new(childhandler.BillingProfileUseCases), "*"),
@@ -336,10 +333,10 @@ var fundingSet = wire.NewSet(
 // ── Billing module ─────────────────────────────────────────────────────
 
 func provideFundingLookupAdapter(
-	childRepo *childpostgres.ChildRepository,
+	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl,
 	ownerRepo *ownerpostgres.OwnerRepository,
 ) *fundingLookupAdapter {
-	return &fundingLookupAdapter{childRepo: childRepo, ownerRepo: ownerRepo}
+	return &fundingLookupAdapter{fundingRepo: fundingRepo, ownerRepo: ownerRepo}
 }
 
 var billingSet = wire.NewSet(

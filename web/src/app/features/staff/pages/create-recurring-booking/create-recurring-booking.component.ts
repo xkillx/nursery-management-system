@@ -81,15 +81,15 @@ export class CreateRecurringBookingComponent implements OnInit {
   formFieldErrors: Record<string, string> = {};
 
   readonly fundingOptions: RadioCardOption[] = [
-    { value: 'fifteen_hours', label: 'Universal (15h)', description: 'Available for 3-4 year olds' },
-    { value: 'thirty_hours', label: 'Extended (30h)', description: 'Working families grant' },
+    { value: 'universal_15', label: 'Universal (15h)', description: 'Available for 3-4 year olds' },
+    { value: 'working_parent', label: 'Working Parent (30h)', description: 'Working families grant' },
     { value: 'none', label: 'None / Private', description: 'Fully chargeable rate' },
   ];
 
   onFundingTypeChange(): void {
-    if (this.fundingType === 'fifteen_hours') {
+    if (this.fundingType === 'universal_15') {
       this.fundingHours = 15;
-    } else if (this.fundingType === 'thirty_hours') {
+    } else if (this.fundingType === 'working_parent' || this.fundingType === 'working_parent_under_3') {
       this.fundingHours = 30;
     } else {
       this.fundingHours = null;

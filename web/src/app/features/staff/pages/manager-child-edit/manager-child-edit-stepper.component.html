@@ -2536,9 +2536,9 @@
                   Back
                 </app-button>
                 @if (isNewRegistration) {
-                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="continueFromConsents()">
-                    {{ isSaving ? 'Creating...' : 'Create child' }}
-                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  <app-button type="button" size="md" className="min-h-12 px-8 shadow-theme-md" (btnClick)="nextStep()">
+                    Continue
+                    <ng-icon name="heroArrowRight" size="20" aria-hidden="true" />
                   </app-button>
                 } @else {
                   <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveConsentsEvidence()">
@@ -2550,6 +2550,237 @@
             </div>
           </div>
 
+
+          <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <ng-icon name="heroLockClosed" size="16" class="text-success-500" aria-hidden="true" />
+            Secure Data Encryption Active • GDPR Compliant Nursery Records
+          </div>
+        </section>
+      }
+
+      @if (currentStep === 'funding') {
+        <section class="space-y-6">
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="border-b border-gray-200 bg-white px-5 py-5 md:px-6 dark:border-gray-700 dark:bg-gray-900/40">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div class="min-w-0">
+                  <h2 class="text-2xl font-bold text-gray-950 dark:text-white/90">Funding & Benefits</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">Step 5: Record funding entitlement details for this child.</p>
+                </div>
+                <ng-icon name="heroBanknotes" size="28" class="mt-1 shrink-0 text-brand-300" aria-hidden="true" />
+              </div>
+            </div>
+
+            <div class="space-y-8 p-5 md:p-6">
+
+              <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/60">
+                <div class="min-w-0">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white">Funding Enabled</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Toggle on if this child has a funding entitlement.</p>
+                </div>
+                <app-switch
+                  name="funding_enabled"
+                  ariaLabel="Enable funding"
+                  [(ngModel)]="step5.funding_enabled"
+                  (ngModelChange)="notifyDraftChanged()"
+                />
+              </div>
+
+              @if (step5.funding_enabled) {
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <app-form-field
+                    label="Funding Type"
+                    htmlFor="funding-type"
+                    [required]="true"
+                    errorId="funding-type-error"
+                    [error]="hasFieldIssue('funding_type') ? fieldIssueMessage('funding_type') : ''"
+                  >
+                    <app-select
+                      id="funding-type"
+                      name="funding_type"
+                      [options]="fundingTypeOptions"
+                      [(ngModel)]="step5.funding_type"
+                      placeholder="Select funding type"
+                    ></app-select>
+                  </app-form-field>
+
+                  <app-form-field
+                    label="Funded Hours Per Week"
+                    htmlFor="funded-hours-per-week"
+                    [required]="true"
+                    errorId="funded-hours-per-week-error"
+                    [error]="hasFieldIssue('funded_hours_per_week') ? fieldIssueMessage('funded_hours_per_week') : ''"
+                  >
+                    <app-input-field
+                      id="funded-hours-per-week"
+                      name="funded_hours_per_week"
+                      type="number"
+                      [(ngModel)]="step5.funded_hours_per_week"
+                      placeholder="e.g. 15"
+                    ></app-input-field>
+                  </app-form-field>
+                </div>
+
+                <div class="space-y-3">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white">Funding Model</p>
+                  @if (hasFieldIssue('funding_model')) {
+                    <p class="text-xs text-error-500" role="alert">{{ fieldIssueMessage('funding_model') }}</p>
+                  }
+                  @for (model of fundingModelOptions; track model.value) {
+                    <div
+                      role="radio"
+                      tabindex="0"
+                      [attr.aria-checked]="step5.funding_model === model.value"
+                      [attr.data-focus-target]="'funding-model'"
+                      class="flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all duration-250 focus:ring-3 focus:ring-brand-500/15"
+                      [class.border-brand-500]="step5.funding_model === model.value"
+                      [class.bg-brand-50/15]="step5.funding_model === model.value"
+                      [class.dark:border-brand-400]="step5.funding_model === model.value"
+                      [class.dark:bg-brand-500/10]="step5.funding_model === model.value"
+                      [class.border-gray-250]="step5.funding_model !== model.value"
+                      [class.bg-white]="step5.funding_model !== model.value"
+                      [class.dark:border-gray-800]="step5.funding_model !== model.value"
+                      [class.dark:bg-gray-900/60]="step5.funding_model !== model.value"
+                      (click)="step5.funding_model = model.value; notifyDraftChanged()"
+                      (keydown.enter)="step5.funding_model = model.value; notifyDraftChanged()"
+                      (keydown.space)="step5.funding_model = model.value; notifyDraftChanged(); $event.preventDefault()"
+                    >
+                      <div class="h-4 w-4 shrink-0 rounded-full border-2 transition-colors"
+                        [class.border-brand-500]="step5.funding_model === model.value"
+                        [class.dark:border-brand-400]="step5.funding_model === model.value"
+                        [class.border-gray-300]="step5.funding_model !== model.value"
+                        [class.dark:border-gray-600]="step5.funding_model !== model.value"
+                      >
+                        @if (step5.funding_model === model.value) {
+                          <div class="h-full w-full rounded-full bg-brand-500 dark:bg-brand-400 scale-50"></div>
+                        }
+                      </div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">{{ model.label }}</p>
+                    </div>
+                  }
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <app-form-field
+                    label="Funding Start Date"
+                    htmlFor="funding-start-date"
+                    [required]="true"
+                    errorId="funding-start-date-error"
+                    [error]="hasFieldIssue('funding_start_date') ? fieldIssueMessage('funding_start_date') : ''"
+                  >
+                    <app-date-picker
+                      id="funding-start-date"
+                      name="funding_start_date"
+                      [(ngModel)]="step5.funding_start_date"
+                    ></app-date-picker>
+                  </app-form-field>
+
+                  <app-form-field
+                    label="Funding End Date (optional)"
+                    htmlFor="funding-end-date"
+                  >
+                    <app-date-picker
+                      id="funding-end-date"
+                      name="funding_end_date"
+                      [(ngModel)]="step5.funding_end_date"
+                    ></app-date-picker>
+                  </app-form-field>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <app-form-field
+                    label="Eligibility Code"
+                    htmlFor="eligibility-code"
+                  >
+                    <app-input-field
+                      id="eligibility-code"
+                      name="eligibility_code"
+                      type="text"
+                      [(ngModel)]="step5.eligibility_code"
+                      placeholder="Enter eligibility code"
+                    ></app-input-field>
+                  </app-form-field>
+                </div>
+
+                <div class="space-y-3">
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all duration-250 focus-within:ring-3 focus-within:ring-brand-500/15"
+                    [class.border-brand-500]="step5.eligibility_code_validated"
+                    [class.bg-brand-50/15]="step5.eligibility_code_validated"
+                    [class.dark:border-brand-400]="step5.eligibility_code_validated"
+                    [class.dark:bg-brand-500/10]="step5.eligibility_code_validated"
+                    [class.border-gray-250]="!step5.eligibility_code_validated"
+                    [class.bg-white]="!step5.eligibility_code_validated"
+                    [class.dark:border-gray-800]="!step5.eligibility_code_validated"
+                    [class.dark:bg-gray-900/60]="!step5.eligibility_code_validated"
+                    (click)="step5.eligibility_code_validated = !step5.eligibility_code_validated; notifyDraftChanged()"
+                    (keydown.enter)="step5.eligibility_code_validated = !step5.eligibility_code_validated; notifyDraftChanged()"
+                    (keydown.space)="step5.eligibility_code_validated = !step5.eligibility_code_validated; notifyDraftChanged(); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="eligibility_code_validated"
+                        [ngModel]="step5.eligibility_code_validated"
+                        (ngModelChange)="step5.eligibility_code_validated = $event; notifyDraftChanged()"
+                        label="Eligibility code has been validated"
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all duration-250 focus-within:ring-3 focus-within:ring-brand-500/15"
+                    [class.border-brand-500]="step5.evidence_received"
+                    [class.bg-brand-50/15]="step5.evidence_received"
+                    [class.dark:border-brand-400]="step5.evidence_received"
+                    [class.dark:bg-brand-500/10]="step5.evidence_received"
+                    [class.border-gray-250]="!step5.evidence_received"
+                    [class.bg-white]="!step5.evidence_received"
+                    [class.dark:border-gray-800]="!step5.evidence_received"
+                    [class.dark:bg-gray-900/60]="!step5.evidence_received"
+                    (click)="step5.evidence_received = !step5.evidence_received; notifyDraftChanged()"
+                    (keydown.enter)="step5.evidence_received = !step5.evidence_received; notifyDraftChanged()"
+                    (keydown.space)="step5.evidence_received = !step5.evidence_received; notifyDraftChanged(); $event.preventDefault()"
+                  >
+                    <div class="pointer-events-none">
+                      <app-checkbox
+                        name="evidence_received"
+                        [ngModel]="step5.evidence_received"
+                        (ngModelChange)="step5.evidence_received = $event; notifyDraftChanged()"
+                        label="Evidence has been received"
+                      />
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/20 text-xs text-gray-500 dark:text-gray-400">
+                  <ng-icon name="heroInformationCircle" size="18" class="mt-0.5 shrink-0 text-gray-400" aria-hidden="true" />
+                  <p class="leading-relaxed">This step is optional. Toggle funding on if the child has a funded entitlement to record.</p>
+                </div>
+              }
+
+              <div class="flex flex-col gap-3 border-t border-gray-200 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                <app-button type="button" variant="outline" size="md" className="min-h-12 px-6" (btnClick)="prevStep()">
+                  <ng-icon name="heroArrowLeft" size="20" aria-hidden="true" />
+                  Back
+                </app-button>
+                @if (isNewRegistration) {
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="continueFromConsents()">
+                    {{ isSaving ? 'Creating...' : 'Create child' }}
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  </app-button>
+                } @else {
+                  <app-button type="button" size="md" [loading]="isSaving" [disabled]="isSaving" className="min-h-12 px-8 shadow-theme-md" (btnClick)="saveFunding(false)">
+                    {{ isSaving ? 'Saving...' : 'Save changes' }}
+                    <ng-icon name="heroCheck" size="20" aria-hidden="true" />
+                  </app-button>
+                }
+              </div>
+            </div>
+          </div>
 
           <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             <ng-icon name="heroLockClosed" size="16" class="text-success-500" aria-hidden="true" />

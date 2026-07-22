@@ -39,7 +39,6 @@ import (
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
-	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
@@ -327,12 +326,6 @@ func provideConsumedMinutesProviderAdapter(
 	pool *pgxpool.Pool,
 ) *consumedMinutesProviderAdapter {
 	return &consumedMinutesProviderAdapter{pool: pool}
-}
-
-func provideFundingHistoryWriterAdapter(
-	repo *fundingpostgres.HistoryRepository,
-) *fundingHistoryWriterAdapter {
-	return &fundingHistoryWriterAdapter{repo: repo}
 }
 
 // ── App assembly ───────────────────────────────────────────────────────
