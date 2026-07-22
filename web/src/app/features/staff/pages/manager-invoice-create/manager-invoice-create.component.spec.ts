@@ -14,6 +14,7 @@ const mockChild: ChildRecord = {
   id: 'child-1',
   fullName: 'Ben Smith',
   firstName: 'Ben',
+  middleName: null,
   lastName: 'Smith',
   dateOfBirth: '2022-03-15',
   startDate: '2024-01-10',
@@ -21,6 +22,9 @@ const mockChild: ChildRecord = {
   siteCoreHourlyRateMinor: null,
   notes: null,
   isActive: true,
+  primaryRoomId: null,
+  hasCurrentRoom: false,
+  hasBookingPattern: false,
   enrollmentComplete: true,
   missingRequirements: [],
   photoUrl: null,
@@ -115,122 +119,17 @@ describe('ManagerInvoiceCreateComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('step initialization', () => {
-    it('should start at step child-month', () => {
-      expect(component.currentStep()).toBe('child-month');
+  describe('initial state', () => {
+    it('should have no selected child', () => {
+      expect(component.selectedChild).toBeNull();
     });
 
-    it('should have empty completedSteps', () => {
-      expect(component.completedSteps().size).toBe(0);
+    it('should have empty lines', () => {
+      expect(component.lines()).toEqual([]);
     });
 
-    it('should have activeStepIndex 0', () => {
-      expect(component.activeStepIndex()).toBe(0);
-    });
-  });
-
-  describe('step queries', () => {
-    it('stepIsActive returns true for current step', () => {
-      expect(component.stepIsActive('child-month')).toBeTrue();
-      expect(component.stepIsActive('review-lines')).toBeFalse();
-    });
-
-    it('stepIsComplete returns false when no steps completed', () => {
-      expect(component.stepIsComplete('child-month')).toBeFalse();
-    });
-
-    it('canOpenStep returns true for current step', () => {
-      expect(component.canOpenStep('child-month')).toBeTrue();
-    });
-
-    it('canOpenStep returns false for forward steps when prior steps incomplete', () => {
-      expect(component.canOpenStep('review-lines')).toBeFalse();
-      expect(component.canOpenStep('add-extras')).toBeFalse();
-      expect(component.canOpenStep('summary-confirm')).toBeFalse();
-    });
-  });
-
-  describe('validation', () => {
-    it('validateStep child-month returns error when no child selected', () => {
-      expect(component.validateStep('child-month')).toBe('Select a child.');
-    });
-
-    it('validateStep child-month returns error when no billing month', () => {
-      component.selectedChild = mockChild;
-      expect(component.validateStep('child-month')).toBe('Select a billing month.');
-    });
-
-    it('validateStep child-month returns null when valid', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      expect(component.validateStep('child-month')).toBeNull();
-    });
-
-    it('validateStep review-lines returns error when no lines', () => {
-      expect(component.validateStep('review-lines')).toBe('At least one line item is required.');
-    });
-
-    it('validateStep review-lines returns null when lines exist', () => {
-      component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
-      expect(component.validateStep('review-lines')).toBeNull();
-    });
-
-    it('validateStep add-extras always returns null', () => {
-      expect(component.validateStep('add-extras')).toBeNull();
-    });
-
-    it('validateStep summary-confirm always returns null', () => {
-      expect(component.validateStep('summary-confirm')).toBeNull();
-    });
-  });
-
-  describe('navigation', () => {
-    it('nextStep advances when validation passes', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.nextStep();
-      expect(component.currentStep()).toBe('review-lines');
-    });
-
-    it('nextStep does not advance when validation fails', () => {
-      component.nextStep();
-      expect(component.currentStep()).toBe('child-month');
-    });
-
-    it('nextStep marks current step as complete on advance', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.nextStep();
-      expect(component.stepIsComplete('child-month')).toBeTrue();
-    });
-
-    it('prevStep goes back', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.nextStep();
-      expect(component.currentStep()).toBe('review-lines');
-      component.prevStep();
-      expect(component.currentStep()).toBe('child-month');
-    });
-
-    it('prevStep does nothing on first step', () => {
-      component.prevStep();
-      expect(component.currentStep()).toBe('child-month');
-    });
-
-    it('goToStep navigates to completed step', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.nextStep(); // -> review-lines, child-month complete
-      component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
-      component.nextStep(); // -> add-extras, review-lines complete
-      component.goToStep('child-month');
-      expect(component.currentStep()).toBe('child-month');
-    });
-
-    it('goToStep blocks forward navigation to locked steps', () => {
-      component.goToStep('summary-confirm');
-      expect(component.currentStep()).toBe('child-month');
+    it('should have default payment terms', () => {
+      expect(component.paymentTerms).toContain('7 days');
     });
   });
 
@@ -252,22 +151,14 @@ describe('ManagerInvoiceCreateComponent', () => {
       expect(component.canSaveDraft()).toBeTrue();
     });
 
-    it('canIssue returns false when not on summary-confirm step', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
+    it('canIssue returns false when no data', () => {
       expect(component.canIssue()).toBeFalse();
     });
 
-    it('canIssue returns true on summary-confirm step with all data', () => {
+    it('canIssue returns true when child, month, and lines exist', () => {
       component.selectedChild = mockChild;
       component.billingMonth.set('2026-07');
       component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
-      // Navigate to summary-confirm
-      component.nextStep(); // -> review-lines
-      component.nextStep(); // -> add-extras
-      component.nextStep(); // -> summary-confirm
-      expect(component.currentStep()).toBe('summary-confirm');
       expect(component.canIssue()).toBeTrue();
     });
   });
@@ -320,37 +211,21 @@ describe('ManagerInvoiceCreateComponent', () => {
     });
   });
 
-  describe('state persistence across steps', () => {
-    it('lines signal retains data when navigating forward and back', () => {
+  describe('clearChild', () => {
+    it('resets selectedChild and related state', () => {
       component.selectedChild = mockChild;
       component.billingMonth.set('2026-07');
-      component.nextStep(); // -> review-lines
-
       component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
-      const linesBefore = component.lines();
+      component.entitlementLabel = 'test';
+      component.hasFundingProfile = true;
 
-      component.nextStep(); // -> add-extras
-      expect(component.lines()).toEqual(linesBefore);
+      component.clearChild();
 
-      component.prevStep(); // -> review-lines
-      expect(component.lines()).toEqual(linesBefore);
-    });
-
-    it('internalNotes and paymentTerms persist across steps', () => {
-      component.selectedChild = mockChild;
-      component.billingMonth.set('2026-07');
-      component.nextStep();
-      component.lines.set([toFormLine(mockPrefill.lines[0], 'auto-1')]);
-      component.nextStep();
-      component.nextStep(); // -> summary-confirm
-
-      component.internalNotes = 'Test note';
-      component.paymentTerms = 'Custom terms';
-      component.prevStep();
-      component.nextStep(); // -> summary-confirm again
-
-      expect(component.internalNotes).toBe('Test note');
-      expect(component.paymentTerms).toBe('Custom terms');
+      expect(component.selectedChild).toBeNull();
+      expect(component.childSearchTerm).toBe('');
+      expect(component.lines()).toEqual([]);
+      expect(component.entitlementLabel).toBe('');
+      expect(component.hasFundingProfile).toBeFalse();
     });
   });
 
@@ -377,6 +252,37 @@ describe('ManagerInvoiceCreateComponent', () => {
         toFormLine(mockPrefill.lines[1], 'auto-2'),
       ]);
       expect(component.totalDueMinor()).toBe(34000);
+    });
+  });
+
+  describe('calculateAgeGroup', () => {
+    it('returns correct age group for different dates', () => {
+      const now = new Date();
+      const under1 = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split('T')[0];
+      expect(component.calculateAgeGroup(under1)).toBe('Under 1 Year');
+
+      const age1 = new Date(now.getFullYear() - 1, now.getMonth(), 15).toISOString().split('T')[0];
+      expect(component.calculateAgeGroup(age1)).toBe('1-2 Years');
+
+      const age2 = new Date(now.getFullYear() - 2, now.getMonth(), 15).toISOString().split('T')[0];
+      expect(component.calculateAgeGroup(age2)).toBe('2-3 Years');
+
+      const age4 = new Date(now.getFullYear() - 4, now.getMonth(), 15).toISOString().split('T')[0];
+      expect(component.calculateAgeGroup(age4)).toBe('3-5 Years');
+    });
+
+    it('returns Unknown for empty string', () => {
+      expect(component.calculateAgeGroup('')).toBe('Unknown');
+    });
+  });
+
+  describe('getRoomNameByAgeGroup', () => {
+    it('returns correct room names', () => {
+      expect(component.getRoomNameByAgeGroup('Under 1 Year')).toBe('Babies Room');
+      expect(component.getRoomNameByAgeGroup('1-2 Years')).toBe('Minnows Room');
+      expect(component.getRoomNameByAgeGroup('2-3 Years')).toBe('Squirrels Room');
+      expect(component.getRoomNameByAgeGroup('3-5 Years')).toBe('Badgers Room');
+      expect(component.getRoomNameByAgeGroup('Unknown')).toBe('Main Hall');
     });
   });
 });

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AttendanceChildRecord, AbsenceMarkerRecord } from '../models/attendance-child.models';
-import { FundingProfileRecord, FundingOverviewRecord } from '../models/funding.models';
+import { FundingRecordDetail, FundingOverviewRecord } from '../models/funding.models';
 import { InviteRecord } from '../models/invites.models';
 import { StaffApiService } from './staff-api.service';
 
@@ -476,13 +476,25 @@ describe('StaffApiService — Funding', () => {
   let service: StaffApiService;
   let httpMock: HttpTestingController;
 
-  const fundingProfileApiModel = {
-    id: 'fp-1',
-    child_id: 'child-1',
-    billing_month: '2026-06',
+  const fundingRecordDetailApiModel = {
+    record: {
+      id: 'fr-1',
+      child_id: 'child-1',
+      funding_enabled: true,
+      funding_type: 'universal_15',
+      funding_model: 'term_time_only',
+      funded_hours_per_week: 15,
+      funding_start_date: '2026-01-01',
+      funding_end_date: null,
+      eligibility_code: 'ABC123',
+      eligibility_code_validated: true,
+      evidence_received: true,
+      created_at: '2026-06-01T10:00:00Z',
+      updated_at: '2026-06-08T12:00:00Z',
+    },
     funded_allowance_minutes: 570,
-    created_at: '2026-06-01T10:00:00Z',
-    updated_at: '2026-06-08T12:00:00Z',
+    allocation: [],
+    history: [],
   };
 
   beforeEach(() => {
@@ -498,52 +510,62 @@ describe('StaffApiService — Funding', () => {
     httpMock.verify();
   });
 
-  it('getFundingProfile sends billing_month query param and maps response', () => {
-    service.getFundingProfile('child-1', '2026-06').subscribe((profile: FundingProfileRecord) => {
-      expect(profile).toEqual({
-        id: 'fp-1',
-        childId: 'child-1',
-        billingMonth: '2026-06',
-        fundedAllowanceMinutes: 570,
-        createdAt: '2026-06-01T10:00:00Z',
-        updatedAt: '2026-06-08T12:00:00Z',
-      });
+  it('getFundingRecord sends billing_month query param and maps response', () => {
+    service.getFundingRecord('child-1', '2026-06').subscribe((detail: FundingRecordDetail) => {
+      expect(detail.record.id).toBe('fr-1');
+      expect(detail.record.childId).toBe('child-1');
+      expect(detail.record.fundingType).toBe('universal_15');
+      expect(detail.fundedAllowanceMinutes).toBe(570);
     });
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/funding/children/child-1');
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('billing_month')).toBe('2026-06');
-    req.flush(fundingProfileApiModel);
+    req.flush(fundingRecordDetailApiModel);
   });
 
-  it('upsertFundingProfile PUTs billing_month and funded_allowance_minutes', () => {
+  it('upsertFundingRecord PUTs funding fields and maps response', () => {
     service
-      .upsertFundingProfile('child-1', { billing_month: '2026-06', funded_allowance_minutes: 570 })
-      .subscribe((profile: FundingProfileRecord) => {
-        expect(profile.fundedAllowanceMinutes).toBe(570);
-        expect(profile.billingMonth).toBe('2026-06');
+      .upsertFundingRecord('child-1', {
+        funding_enabled: true,
+        funding_type: 'universal_15',
+        funding_model: 'term_time_only',
+        funded_hours_per_week: 15,
+        funding_start_date: '2026-01-01',
+      })
+      .subscribe((record) => {
+        expect(record.fundingType).toBe('universal_15');
+        expect(record.fundedHoursPerWeek).toBe(15);
       });
 
     const req = httpMock.expectOne('/api/v1/funding/children/child-1');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ billing_month: '2026-06', funded_allowance_minutes: 570 });
-    req.flush(fundingProfileApiModel);
+    expect(req.request.body).toEqual({
+      funding_enabled: true,
+      funding_type: 'universal_15',
+      funding_model: 'term_time_only',
+      funded_hours_per_week: 15,
+      funding_start_date: '2026-01-01',
+    });
+    req.flush(fundingRecordDetailApiModel.record);
   });
 
-  it('upsertFundingProfile accepts 201 created response', () => {
+  it('upsertFundingRecord accepts 201 created response', () => {
     const createdModel = {
-      ...fundingProfileApiModel,
-      id: 'fp-new',
-      funded_allowance_minutes: 0,
+      ...fundingRecordDetailApiModel.record,
+      id: 'fr-new',
+      funding_enabled: false,
+      funding_type: 'none',
+      funded_hours_per_week: null,
       created_at: '2026-06-08T14:00:00Z',
       updated_at: '2026-06-08T14:00:00Z',
     };
 
     service
-      .upsertFundingProfile('child-1', { billing_month: '2026-06', funded_allowance_minutes: 0 })
-      .subscribe((profile: FundingProfileRecord) => {
-        expect(profile.id).toBe('fp-new');
-        expect(profile.fundedAllowanceMinutes).toBe(0);
+      .upsertFundingRecord('child-1', { funding_enabled: false, funding_type: 'none', funding_model: 'term_time_only' })
+      .subscribe((record) => {
+        expect(record.id).toBe('fr-new');
+        expect(record.fundingEnabled).toBe(false);
       });
 
     const req = httpMock.expectOne('/api/v1/funding/children/child-1');
@@ -564,9 +586,10 @@ describe('StaffApiService — Funding', () => {
       },
       items: [
         {
-          child_id: 'child-1',child_first_name: 'Alice',
-child_middle_name: null,
-child_last_name: null,
+          child_id: 'child-1',
+          child_first_name: 'Alice',
+          child_middle_name: null,
+          child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,
@@ -574,14 +597,15 @@ child_last_name: null,
           flags: ['missing_profile'],
         },
         {
-          child_id: 'child-2',child_first_name: 'Bob',
-child_middle_name: null,
-child_last_name: null,
+          child_id: 'child-2',
+          child_first_name: 'Bob',
+          child_middle_name: null,
+          child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,
-          funding_profile_id: 'fp-2',
-          funded_allowance_minutes: 0,
+          funding_record_id: 'fr-2',
+          remaining_minutes: 0,
           funding_updated_at: '2026-06-01T10:00:00Z',
           photo_url: null,
           flags: ['explicit_zero_allowance'],
@@ -598,9 +622,9 @@ child_last_name: null,
       expect(overview.items.length).toBe(2);
       expect(overview.items[0].childId).toBe('child-1');
       expect(overview.items[0].flags).toEqual(['missing_profile']);
-      expect(overview.items[0].fundedAllowanceMinutes).toBeNull();
-      expect(overview.items[1].fundedAllowanceMinutes).toBe(0);
-      expect(overview.items[1].fundingProfileId).toBe('fp-2');
+      expect(overview.items[0].remainingMinutes).toBeNull();
+      expect(overview.items[1].remainingMinutes).toBe(0);
+      expect(overview.items[1].fundingRecordId).toBe('fr-2');
     });
 
     const req = httpMock.expectOne((r) => r.url === '/api/v1/funding/overview');
@@ -609,7 +633,7 @@ child_last_name: null,
     req.flush(overviewApiModel);
   });
 
-  it('getFundingOverview maps nullable profile fields to null', () => {
+  it('getFundingOverview maps nullable fields to null', () => {
     const emptyOverview = {
       billing_month: '2026-07',
       summary: {

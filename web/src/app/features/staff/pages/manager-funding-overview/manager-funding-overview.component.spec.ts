@@ -98,8 +98,8 @@ child_last_name: null,
           is_active: true,
           start_date: '2026-01-01',
           end_date: null,
-          funding_profile_id: 'fp-2',
-          funded_allowance_minutes: 0,
+          funding_record_id: 'fr-2',
+          remaining_minutes: 0,
           funding_updated_at: '2026-06-01T10:00:00Z',
           photo_url: null,
           flags: ['explicit_zero_allowance'],
@@ -112,7 +112,7 @@ child_last_name: null,
     expect(component.overview!.summary.includedChildCount).toBe(3);
     expect(component.overview!.items.length).toBe(2);
     expect(component.overview!.items[0].childName).toBe('Alice');
-    expect(component.overview!.items[1].fundedAllowanceMinutes).toBe(0);
+    expect(component.overview!.items[1].remainingMinutes).toBe(0);
   });
 
   it('sets errorMessage on API error', () => {

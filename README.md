@@ -33,7 +33,7 @@ The month-1 MVP baseline is complete. The backend covers the main domain flows a
 - Guardian-child links and parent access mappings
 - Attendance check-in/check-out flows
 - Absence markers and correction workflows
-- Funding profiles and funding-aware billing inputs
+- Funding records and funding-aware billing inputs
 - Draft invoice generation and invoice issue flow
 - Parent invoice access and payment-session groundwork
 - Stripe webhook reconciliation groundwork
