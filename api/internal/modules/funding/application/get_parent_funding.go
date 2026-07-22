@@ -29,12 +29,13 @@ type ParentChildLookupForFunding interface {
 }
 
 type GetParentFunding struct {
-	repo      domain.Repository
-	childLook ParentChildLookupForFunding
+	recordRepo domain.FundingRecordRepository
+	childLook  ParentChildLookupForFunding
+	termDates  domain.TermDateProvider
 }
 
-func NewGetParentFunding(repo domain.Repository, childLook ParentChildLookupForFunding) *GetParentFunding {
-	return &GetParentFunding{repo: repo, childLook: childLook}
+func NewGetParentFunding(recordRepo domain.FundingRecordRepository, childLook ParentChildLookupForFunding, termDates domain.TermDateProvider) *GetParentFunding {
+	return &GetParentFunding{recordRepo: recordRepo, childLook: childLook, termDates: termDates}
 }
 
 func (uc *GetParentFunding) Execute(ctx context.Context, actor tenant.ActorContext) ([]ParentFundingEntitlement, error) {
@@ -47,24 +48,32 @@ func (uc *GetParentFunding) Execute(ctx context.Context, actor tenant.ActorConte
 	}
 
 	billingMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC)
+	termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
 
 	var results []ParentFundingEntitlement
 	for _, childID := range childIDs {
-		profile, found, err := uc.repo.Get(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
+		record, found, err := uc.recordRepo.GetFundingRecord(ctx, actor.TenantID, actor.BranchID, childID)
 		if err != nil {
 			return nil, domainerrors.Internal(err)
 		}
-		if !found {
+		if !found || !record.FundingEnabled {
 			results = append(results, ParentFundingEntitlement{
 				ChildID: childID,
 			})
 			continue
 		}
+
+		allowance := 0
+		if record.FundedHoursPerWeek != nil && *record.FundedHoursPerWeek > 0 {
+			allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+		}
+
+		ft := string(record.FundingType)
 		results = append(results, ParentFundingEntitlement{
 			ChildID:                childID,
-			FundingType:            profile.FundingType,
-			FundedHoursPerWeek:     profile.FundedHoursPerWeek,
-			FundedAllowanceMinutes: profile.FundedAllowanceMinutes,
+			FundingType:            &ft,
+			FundedHoursPerWeek:     record.FundedHoursPerWeek,
+			FundedAllowanceMinutes: allowance,
 		})
 	}
 

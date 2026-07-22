@@ -20,7 +20,7 @@ import (
 	postgres20 "nursery-management-system/api/internal/modules/ad_hoc_bookings/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/ad_hoc_bookings/interfaces/http"
 	application6 "nursery-management-system/api/internal/modules/attendance/application"
-	domain7 "nursery-management-system/api/internal/modules/attendance/domain"
+	domain6 "nursery-management-system/api/internal/modules/attendance/domain"
 	postgres11 "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/attendance/interfaces/http"
 	"nursery-management-system/api/internal/modules/authentication/application"
@@ -42,12 +42,12 @@ import (
 	postgres15 "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 	application3 "nursery-management-system/api/internal/modules/children/application"
-	domain5 "nursery-management-system/api/internal/modules/children/domain"
+	domain4 "nursery-management-system/api/internal/modules/children/domain"
 	postgres3 "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/children/infrastructure/storage"
 	"nursery-management-system/api/internal/modules/children/interfaces/http"
 	application7 "nursery-management-system/api/internal/modules/funding/application"
-	domain3 "nursery-management-system/api/internal/modules/funding/domain"
+	domain7 "nursery-management-system/api/internal/modules/funding/domain"
 	postgres9 "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/funding/interfaces/http"
 	application18 "nursery-management-system/api/internal/modules/hourly_bookings/application"
@@ -65,11 +65,11 @@ import (
 	postgres6 "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/owner/interfaces/http"
 	application5 "nursery-management-system/api/internal/modules/parentchildmappings/application"
-	domain6 "nursery-management-system/api/internal/modules/parentchildmappings/domain"
+	domain5 "nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	postgres10 "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/parentchildmappings/interfaces/http"
 	application2 "nursery-management-system/api/internal/modules/passwordreset/application"
-	domain4 "nursery-management-system/api/internal/modules/passwordreset/domain"
+	domain3 "nursery-management-system/api/internal/modules/passwordreset/domain"
 	postgres2 "nursery-management-system/api/internal/modules/passwordreset/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 	application9 "nursery-management-system/api/internal/modules/payments/application"
@@ -280,21 +280,22 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	markAbsent := provideMarkAbsent(absenceRepository, bootstrapChildEnrollmentCheckerAdapter, transactionManager, writer, attendanceClock)
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
+	fundingRecordRepositoryImpl := postgres9.NewFundingRecordRepository(pool)
+	getChildFunding := application7.NewGetChildFunding(fundingRecordRepositoryImpl)
+	updateChildFunding := application7.NewUpdateChildFunding(fundingRecordRepositoryImpl, writer, historyRepository)
 	repository3 := postgres9.NewRepository(pool)
-	applicationGetProfile := application7.NewGetProfile(repository3)
-	bootstrapChildFundingRecordReaderAdapter := provideChildFundingRecordReaderAdapter(childRepository)
-	upsertProfile := provideUpsertProfile(repository3, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
 	bootstrapConsumedMinutesProviderAdapter := provideConsumedMinutesProviderAdapter(pool)
-	listOverview := application7.NewListOverview(repository3, bootstrapConsumedMinutesProviderAdapter)
+	academicTermRepository := postgres13.NewRepository(pool)
+	bootstrapTermDateProviderAdapter := provideTermDateProviderAdapter(academicTermRepository)
+	listOverview := application7.NewListOverview(repository3, bootstrapConsumedMinutesProviderAdapter, bootstrapTermDateProviderAdapter)
 	getEnhancedOverview := application7.NewGetEnhancedOverview(repository3)
-	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository3, historyRepository)
+	getEnhancedChildDetail := application7.NewGetEnhancedChildDetail(fundingRecordRepositoryImpl, repository3, historyRepository, bootstrapTermDateProviderAdapter)
 	listExpiring := application7.NewListExpiring(repository3)
 	bootstrapParentChildLookupForFundingAdapter := provideParentChildLookupForFundingAdapter(parentChildMappingRepository)
-	getParentFunding := application7.NewGetParentFunding(repository3, bootstrapParentChildLookupForFundingAdapter)
-	getParentFundingBreakdown := application7.NewGetParentFundingBreakdown(repository3, historyRepository, bootstrapParentChildLookupForFundingAdapter)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
+	getParentFunding := application7.NewGetParentFunding(fundingRecordRepositoryImpl, bootstrapParentChildLookupForFundingAdapter, bootstrapTermDateProviderAdapter)
+	getParentFundingBreakdown := application7.NewGetParentFundingBreakdown(fundingRecordRepositoryImpl, repository3, historyRepository, bootstrapParentChildLookupForFundingAdapter, bootstrapTermDateProviderAdapter)
+	httpfundingHandler := httpfunding.NewHandler(getChildFunding, updateChildFunding, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
 	preflightDraftInvoices := application8.NewPreflightDraftInvoices(repository2)
-	academicTermRepository := postgres13.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
 	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository2)
 	hourlyBookingRepository := postgres14.NewRepository(pool)
@@ -684,21 +685,22 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	markAbsent := provideMarkAbsent(absenceRepository, bootstrapChildEnrollmentCheckerAdapter, transactionManager, writer, attendanceClock)
 	clearMarker := provideClearMarker(absenceRepository, transactionManager, writer, attendanceClock)
 	httpabsenceHandler := httpabsence.NewHandler(markAbsent, clearMarker, logger)
+	fundingRecordRepositoryImpl := postgres9.NewFundingRecordRepository(pool)
+	getChildFunding := application7.NewGetChildFunding(fundingRecordRepositoryImpl)
+	updateChildFunding := application7.NewUpdateChildFunding(fundingRecordRepositoryImpl, writer, historyRepository)
 	repository3 := postgres9.NewRepository(pool)
-	applicationGetProfile := application7.NewGetProfile(repository3)
-	bootstrapChildFundingRecordReaderAdapter := provideChildFundingRecordReaderAdapter(childRepository)
-	upsertProfile := provideUpsertProfile(repository3, transactionManager, writer, bootstrapChildFundingRecordReaderAdapter, historyRepository)
 	bootstrapConsumedMinutesProviderAdapter := provideConsumedMinutesProviderAdapter(pool)
-	listOverview := application7.NewListOverview(repository3, bootstrapConsumedMinutesProviderAdapter)
+	academicTermRepository := postgres13.NewRepository(pool)
+	bootstrapTermDateProviderAdapter := provideTermDateProviderAdapter(academicTermRepository)
+	listOverview := application7.NewListOverview(repository3, bootstrapConsumedMinutesProviderAdapter, bootstrapTermDateProviderAdapter)
 	getEnhancedOverview := application7.NewGetEnhancedOverview(repository3)
-	getEnhancedChildDetail := provideGetEnhancedChildDetail(repository3, historyRepository)
+	getEnhancedChildDetail := application7.NewGetEnhancedChildDetail(fundingRecordRepositoryImpl, repository3, historyRepository, bootstrapTermDateProviderAdapter)
 	listExpiring := application7.NewListExpiring(repository3)
 	bootstrapParentChildLookupForFundingAdapter := provideParentChildLookupForFundingAdapter(parentChildMappingRepository)
-	getParentFunding := application7.NewGetParentFunding(repository3, bootstrapParentChildLookupForFundingAdapter)
-	getParentFundingBreakdown := application7.NewGetParentFundingBreakdown(repository3, historyRepository, bootstrapParentChildLookupForFundingAdapter)
-	httpfundingHandler := httpfunding.NewHandler(applicationGetProfile, upsertProfile, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
+	getParentFunding := application7.NewGetParentFunding(fundingRecordRepositoryImpl, bootstrapParentChildLookupForFundingAdapter, bootstrapTermDateProviderAdapter)
+	getParentFundingBreakdown := application7.NewGetParentFundingBreakdown(fundingRecordRepositoryImpl, repository3, historyRepository, bootstrapParentChildLookupForFundingAdapter, bootstrapTermDateProviderAdapter)
+	httpfundingHandler := httpfunding.NewHandler(getChildFunding, updateChildFunding, listOverview, getEnhancedOverview, getEnhancedChildDetail, listExpiring, getParentFunding, getParentFundingBreakdown, logger)
 	preflightDraftInvoices := application8.NewPreflightDraftInvoices(repository2)
-	academicTermRepository := postgres13.NewRepository(pool)
 	bootstrapTermDateLookupAdapter := provideTermDateLookupAdapter(academicTermRepository)
 	bootstrapAdHocBookingLookupAdapter := provideAdHocBookingLookupAdapter(repository2)
 	hourlyBookingRepository := postgres14.NewRepository(pool)
@@ -940,37 +942,21 @@ func provideClearMarker(
 	return application21.NewClearMarker(repo, txMgr, audit2, clock)
 }
 
-func provideUpsertProfile(
-	repo domain3.Repository,
-	txMgr *transaction.Manager, audit2 *audit.Writer,
-	fundingReader application7.ChildFundingRecordReader,
-	historyRepo domain3.HistoryRepository,
-) *application7.UpsertProfile {
-	return application7.NewUpsertProfile(repo, txMgr, audit2, fundingReader, historyRepo)
-}
-
-func provideGetEnhancedChildDetail(
-	repo domain3.Repository,
-	historyRepo domain3.HistoryRepository,
-) *application7.GetEnhancedChildDetail {
-	return application7.NewGetEnhancedChildDetail(repo, historyRepo)
-}
-
 var passwordResetSet = wire.NewSet(
-	provideResetTokenManager, postgres2.NewRepository, wire.Bind(new(domain4.Repository), new(*postgres2.Repository)), application2.NewTokenGeneratorAdapter, wire.Bind(new(application2.TokenGenerator), new(*application2.TokenGeneratorAdapter)), application2.NewEmailAdapter, wire.Bind(new(domain4.EmailSender), new(*application2.EmailAdapter)), application2.NewRequestResetUseCase, application2.NewSetNewPasswordUseCase, provideResetHandler,
+	provideResetTokenManager, postgres2.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres2.Repository)), application2.NewTokenGeneratorAdapter, wire.Bind(new(application2.TokenGenerator), new(*application2.TokenGeneratorAdapter)), application2.NewEmailAdapter, wire.Bind(new(domain3.EmailSender), new(*application2.EmailAdapter)), application2.NewRequestResetUseCase, application2.NewSetNewPasswordUseCase, provideResetHandler,
 )
 
-func provideFileStorage() domain5.FileStorage {
+func provideFileStorage() domain4.FileStorage {
 	return storage.NewLocalStorage(".")
 }
 
-var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain5.Repository), new(*postgres3.ChildRepository)), provideFileStorage,
+var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain4.Repository), new(*postgres3.ChildRepository)), provideFileStorage,
 	provideSessionTypeLookupAdapter, wire.Bind(new(application3.SessionTypeLookup), new(*sessionTypeLookupAdapter)), provideEnrollmentTermCreatorAdapter, wire.Bind(new(application3.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)), provideClock,
 	provideTodayFunc,
 	provideFundingHistoryWriterAdapter, wire.Bind(new(application3.FundingHistoryWriter), new(*fundingHistoryWriterAdapter)), application3.NewListChildren, application3.NewGetChild, application3.NewCreateChildWithFullProfile, application3.NewUpdateChild, application3.NewMarkInactive, application3.NewListAttendance, application3.NewGetProfile, application3.NewUpdateProfile, application3.NewGetContacts, application3.NewReplaceContacts, application3.NewGetHealth, application3.NewUpdateHealth, application3.NewGetSafeguarding, application3.NewUpdateSafeguarding, application3.NewGetConsent, application3.NewUpdateConsent, application3.NewGetFunding, application3.NewUpdateFunding, application3.NewGetCollectionSetting, application3.NewSetCollectionPassword, application3.NewListRoomAssignments, application3.NewCreateRoomAssignment, application3.NewCloseRoomAssignment, application3.NewGetBillingProfile, application3.NewUpdateBillingProfile, application3.NewGetLeavingRecord, application3.NewListBookingPatterns, application3.NewGetBookingPattern, application3.NewGetCurrentBookingPattern, application3.NewCreateBookingPattern, application3.NewUpdateBookingPattern, application3.NewUploadPhoto, application3.NewRemovePhoto, wire.Struct(new(httpchild.CoreUseCases), "*"), wire.Struct(new(httpchild.ProfileUseCases), "*"), wire.Struct(new(httpchild.ContactsUseCases), "*"), wire.Struct(new(httpchild.HealthUseCases), "*"), wire.Struct(new(httpchild.SafeguardingUseCases), "*"), wire.Struct(new(httpchild.ConsentUseCases), "*"), wire.Struct(new(httpchild.FundingUseCases), "*"), wire.Struct(new(httpchild.CollectionUseCases), "*"), wire.Struct(new(httpchild.RoomAssignmentUseCases), "*"), wire.Struct(new(httpchild.BillingProfileUseCases), "*"), wire.Struct(new(httpchild.BookingPatternUseCases), "*"), wire.Struct(new(httpchild.PhotoUseCases), "*"), wire.Struct(new(httpchild.ChildrenHandlerConfig), "*"), httpchild.NewHandler,
 )
 
-var parentChildMappingsSet = wire.NewSet(postgres10.NewParentChildMappingRepository, wire.Bind(new(domain6.Repository), new(*postgres10.ParentChildMappingRepository)), provideMembershipCheckerAdapter, wire.Bind(new(domain6.MembershipChecker), new(*membershipCheckerAdapter)), provideChildScopeCheckerAdapter, wire.Bind(new(application5.ChildChecker), new(*childScopeCheckerAdapter)), application5.NewCreateMappingUseCase, application5.NewEndMappingUseCase, httpmapping.NewHandler)
+var parentChildMappingsSet = wire.NewSet(postgres10.NewParentChildMappingRepository, wire.Bind(new(domain5.Repository), new(*postgres10.ParentChildMappingRepository)), provideMembershipCheckerAdapter, wire.Bind(new(domain5.MembershipChecker), new(*membershipCheckerAdapter)), provideChildScopeCheckerAdapter, wire.Bind(new(application5.ChildChecker), new(*childScopeCheckerAdapter)), application5.NewCreateMappingUseCase, application5.NewEndMappingUseCase, httpmapping.NewHandler)
 
 func provideParentChildLookupForAttendanceAdapter(
 	parentChildRepo *postgres10.ParentChildMappingRepository,
@@ -978,9 +964,9 @@ func provideParentChildLookupForAttendanceAdapter(
 	return &parentChildLookupForAttendanceAdapter{repo: parentChildRepo}
 }
 
-var attendanceSet = wire.NewSet(postgres11.NewAttendanceRepository, wire.Bind(new(domain7.Repository), new(*postgres11.AttendanceRepository)), provideChildEnrollmentCheckerAdapter, wire.Bind(new(domain7.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)), provideChildCorrectionCheckerAdapter, wire.Bind(new(domain7.ChildCorrectionChecker), new(*childCorrectionCheckerAdapter)), application6.NewCheckInChild, application6.NewCheckOutChild, application6.NewCorrectAttendance, application6.NewListCorrectionSessions, application6.NewListCorrectionHistory, application6.NewGetRegister, application6.NewGetRegisterSummary, provideParentChildLookupForAttendanceAdapter, wire.Bind(new(application6.ParentChildLookupForAttendance), new(*parentChildLookupForAttendanceAdapter)), application6.NewListParentAttendance, httpattendance.NewHandler)
+var attendanceSet = wire.NewSet(postgres11.NewAttendanceRepository, wire.Bind(new(domain6.Repository), new(*postgres11.AttendanceRepository)), provideChildEnrollmentCheckerAdapter, wire.Bind(new(domain6.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)), provideChildCorrectionCheckerAdapter, wire.Bind(new(domain6.ChildCorrectionChecker), new(*childCorrectionCheckerAdapter)), application6.NewCheckInChild, application6.NewCheckOutChild, application6.NewCorrectAttendance, application6.NewListCorrectionSessions, application6.NewListCorrectionHistory, application6.NewGetRegister, application6.NewGetRegisterSummary, provideParentChildLookupForAttendanceAdapter, wire.Bind(new(application6.ParentChildLookupForAttendance), new(*parentChildLookupForAttendanceAdapter)), application6.NewListParentAttendance, httpattendance.NewHandler)
 
-var absenceSet = wire.NewSet(postgres12.NewAbsenceRepository, wire.Bind(new(domain2.Repository), new(*postgres12.AbsenceRepository)), provideAbsenceMarkerCheckerAdapter, wire.Bind(new(domain7.AbsenceMarkerChecker), new(*absenceMarkerCheckerAdapter)), provideMarkAbsent,
+var absenceSet = wire.NewSet(postgres12.NewAbsenceRepository, wire.Bind(new(domain2.Repository), new(*postgres12.AbsenceRepository)), provideAbsenceMarkerCheckerAdapter, wire.Bind(new(domain6.AbsenceMarkerChecker), new(*absenceMarkerCheckerAdapter)), provideMarkAbsent,
 	provideClearMarker, httpabsence.NewHandler,
 )
 
@@ -990,7 +976,7 @@ func provideParentChildLookupForFundingAdapter(
 	return &parentChildLookupForFundingAdapter{repo: parentChildRepo}
 }
 
-var fundingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres9.Repository)), postgres9.NewHistoryRepository, wire.Bind(new(domain3.HistoryRepository), new(*postgres9.HistoryRepository)), provideChildFundingRecordReaderAdapter, wire.Bind(new(application7.ChildFundingRecordReader), new(*childFundingRecordReaderAdapter)), provideConsumedMinutesProviderAdapter, wire.Bind(new(application7.ConsumedMinutesProvider), new(*consumedMinutesProviderAdapter)), application7.NewGetProfile, provideUpsertProfile, application7.NewListOverview, application7.NewGetEnhancedOverview, provideGetEnhancedChildDetail, application7.NewListExpiring, provideParentChildLookupForFundingAdapter, wire.Bind(new(application7.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)), application7.NewGetParentFunding, application7.NewGetParentFundingBreakdown, httpfunding.NewHandler)
+var fundingSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain7.FundingQueryRepository), new(*postgres9.Repository)), postgres9.NewHistoryRepository, wire.Bind(new(domain7.HistoryRepository), new(*postgres9.HistoryRepository)), postgres9.NewFundingRecordRepository, wire.Bind(new(domain7.FundingRecordRepository), new(*postgres9.FundingRecordRepositoryImpl)), provideTermDateProviderAdapter, wire.Bind(new(domain7.TermDateProvider), new(*termDateProviderAdapter)), provideConsumedMinutesProviderAdapter, wire.Bind(new(application7.ConsumedMinutesProvider), new(*consumedMinutesProviderAdapter)), application7.NewGetChildFunding, application7.NewUpdateChildFunding, application7.NewListOverview, application7.NewGetEnhancedOverview, application7.NewGetEnhancedChildDetail, application7.NewListExpiring, provideParentChildLookupForFundingAdapter, wire.Bind(new(application7.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)), application7.NewGetParentFunding, application7.NewGetParentFundingBreakdown, httpfunding.NewHandler)
 
 func provideFundingLookupAdapter(
 	childRepo *postgres3.ChildRepository,

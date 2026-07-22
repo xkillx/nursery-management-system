@@ -38,19 +38,17 @@ func (r *Repository) ListPreflightChildren(ctx context.Context, tenantID, branch
 	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, PreflightChildRow{
-			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FirstName:              row.FirstName,
-			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
-			LastName:               pgtypeTextToStrPtr(row.LastName),
-			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
-			StartDate:              pgtypeDateToTime(row.StartDate),
-			EndDate:                pgtypeDateToTimePtr(row.EndDate),
-			CoreHourlyRateMinor:    pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
-			HasParentCarerContact:  row.HasParentCarerContact,
-			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
-			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
-			ExistingInvoiceID:      pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
-			ExistingInvoiceStatus:  pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
+			ChildID:               pgtypeUUIDToUUID(row.ChildID),
+			FirstName:             row.FirstName,
+			MiddleName:            pgtypeTextToStrPtr(row.MiddleName),
+			LastName:              pgtypeTextToStrPtr(row.LastName),
+			DateOfBirth:           pgtypeDateToTime(row.DateOfBirth),
+			StartDate:             pgtypeDateToTime(row.StartDate),
+			EndDate:               pgtypeDateToTimePtr(row.EndDate),
+			CoreHourlyRateMinor:   pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
+			HasParentCarerContact: row.HasParentCarerContact,
+			ExistingInvoiceID:     pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
+			ExistingInvoiceStatus: pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
 		})
 	}
 	return result, nil
@@ -1149,19 +1147,17 @@ func mapCandidateRows(rows []sqlc.ListCandidateChildrenForUpdateRow) []Preflight
 	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, PreflightChildRow{
-			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FirstName:              row.FirstName,
-			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
-			LastName:               pgtypeTextToStrPtr(row.LastName),
-			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
-			StartDate:              pgtypeDateToTime(row.StartDate),
-			EndDate:                pgtypeDateToTimePtr(row.EndDate),
-			CoreHourlyRateMinor:    pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
-			HasParentCarerContact:  row.HasParentCarerContact,
-			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
-			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
-			ExistingInvoiceID:      pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
-			ExistingInvoiceStatus:  pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
+			ChildID:               pgtypeUUIDToUUID(row.ChildID),
+			FirstName:             row.FirstName,
+			MiddleName:            pgtypeTextToStrPtr(row.MiddleName),
+			LastName:              pgtypeTextToStrPtr(row.LastName),
+			DateOfBirth:           pgtypeDateToTime(row.DateOfBirth),
+			StartDate:             pgtypeDateToTime(row.StartDate),
+			EndDate:               pgtypeDateToTimePtr(row.EndDate),
+			CoreHourlyRateMinor:   pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
+			HasParentCarerContact: row.HasParentCarerContact,
+			ExistingInvoiceID:     pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
+			ExistingInvoiceStatus: pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
 		})
 	}
 	return result
@@ -1171,19 +1167,17 @@ func mapSelectedRows(rows []sqlc.ListSelectedChildrenForUpdateRow) []PreflightCh
 	result := make([]PreflightChildRow, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, PreflightChildRow{
-			ChildID:                pgtypeUUIDToUUID(row.ChildID),
-			FirstName:              row.FirstName,
-			MiddleName:             pgtypeTextToStrPtr(row.MiddleName),
-			LastName:               pgtypeTextToStrPtr(row.LastName),
-			DateOfBirth:            pgtypeDateToTime(row.DateOfBirth),
-			StartDate:              pgtypeDateToTime(row.StartDate),
-			EndDate:                pgtypeDateToTimePtr(row.EndDate),
-			CoreHourlyRateMinor:    pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
-			HasParentCarerContact:  row.HasParentCarerContact,
-			FundingProfileID:       pgtypeUUIDToUUIDPtr(row.FundingProfileID),
-			FundedAllowanceMinutes: pgtypeInt4ToIntPtr(row.FundedAllowanceMinutes),
-			ExistingInvoiceID:      pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
-			ExistingInvoiceStatus:  pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
+			ChildID:               pgtypeUUIDToUUID(row.ChildID),
+			FirstName:             row.FirstName,
+			MiddleName:            pgtypeTextToStrPtr(row.MiddleName),
+			LastName:              pgtypeTextToStrPtr(row.LastName),
+			DateOfBirth:           pgtypeDateToTime(row.DateOfBirth),
+			StartDate:             pgtypeDateToTime(row.StartDate),
+			EndDate:               pgtypeDateToTimePtr(row.EndDate),
+			CoreHourlyRateMinor:   pgtypeInt4ToIntPtr(row.CoreHourlyRateMinor),
+			HasParentCarerContact: row.HasParentCarerContact,
+			ExistingInvoiceID:     pgtypeUUIDToUUIDPtr(row.ExistingInvoiceID),
+			ExistingInvoiceStatus: pgtypeTextToStrPtr(row.ExistingInvoiceStatus),
 		})
 	}
 	return result

@@ -11,19 +11,22 @@ import (
 )
 
 type ParentFundingBreakdown struct {
-	Profile    domain.FundingProfile
-	Allocation []domain.AllocationEntry
-	History    []domain.FundingHistory
+	Record                 domain.FundingRecord
+	FundedAllowanceMinutes int
+	Allocation             []domain.AllocationEntry
+	History                []domain.FundingHistory
 }
 
 type GetParentFundingBreakdown struct {
-	repo        domain.Repository
-	historyRepo domain.HistoryRepository
-	childLook   ParentChildLookupForFunding
+	recordRepo domain.FundingRecordRepository
+	queryRepo  domain.FundingQueryRepository
+	historyR   domain.HistoryRepository
+	childLook  ParentChildLookupForFunding
+	termDates  domain.TermDateProvider
 }
 
-func NewGetParentFundingBreakdown(repo domain.Repository, historyRepo domain.HistoryRepository, childLook ParentChildLookupForFunding) *GetParentFundingBreakdown {
-	return &GetParentFundingBreakdown{repo: repo, historyRepo: historyRepo, childLook: childLook}
+func NewGetParentFundingBreakdown(recordRepo domain.FundingRecordRepository, queryRepo domain.FundingQueryRepository, historyR domain.HistoryRepository, childLook ParentChildLookupForFunding, termDates domain.TermDateProvider) *GetParentFundingBreakdown {
+	return &GetParentFundingBreakdown{recordRepo: recordRepo, queryRepo: queryRepo, historyR: historyR, childLook: childLook, termDates: termDates}
 }
 
 func (uc *GetParentFundingBreakdown) Execute(ctx context.Context, actor tenant.ActorContext, childID uuid.UUID, billingMonthRaw string) (ParentFundingBreakdown, error) {
@@ -48,7 +51,7 @@ func (uc *GetParentFundingBreakdown) Execute(ctx context.Context, actor tenant.A
 		return ParentFundingBreakdown{}, domainerrors.Validation("Invalid billing month. Must be YYYY-MM.", "billing_month")
 	}
 
-	profile, found, err := uc.repo.Get(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
+	record, found, err := uc.recordRepo.GetFundingRecord(ctx, actor.TenantID, actor.BranchID, childID)
 	if err != nil {
 		return ParentFundingBreakdown{}, domainerrors.Internal(err)
 	}
@@ -56,21 +59,27 @@ func (uc *GetParentFundingBreakdown) Execute(ctx context.Context, actor tenant.A
 		return ParentFundingBreakdown{}, nil
 	}
 
-	billingMonthStart := billingMonth
 	billingMonthEnd := billingMonth.AddDate(0, 1, 0).AddDate(0, 0, -1)
-	allocation, err := uc.repo.GetChildAllocation(ctx, actor.TenantID, actor.BranchID, childID, billingMonthStart, billingMonthEnd)
+	allocation, err := uc.queryRepo.GetChildAllocation(ctx, actor.TenantID, actor.BranchID, childID, billingMonth, billingMonthEnd)
 	if err != nil {
 		return ParentFundingBreakdown{}, domainerrors.Internal(err)
 	}
 
-	history, err := uc.historyRepo.ListByChild(ctx, actor.TenantID, actor.BranchID, childID)
+	history, err := uc.historyR.ListByChild(ctx, actor.TenantID, actor.BranchID, childID)
 	if err != nil {
 		return ParentFundingBreakdown{}, domainerrors.Internal(err)
+	}
+
+	allowance := 0
+	if record.FundingEnabled && record.FundedHoursPerWeek != nil && *record.FundedHoursPerWeek > 0 {
+		termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
+		allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
 	}
 
 	return ParentFundingBreakdown{
-		Profile:    profile,
-		Allocation: allocation,
-		History:    history,
+		Record:                 record,
+		FundedAllowanceMinutes: allowance,
+		Allocation:             allocation,
+		History:                history,
 	}, nil
 }

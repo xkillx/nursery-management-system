@@ -9,10 +9,10 @@ import (
 )
 
 type GetEnhancedOverview struct {
-	repo domain.Repository
+	repo domain.FundingQueryRepository
 }
 
-func NewGetEnhancedOverview(repo domain.Repository) *GetEnhancedOverview {
+func NewGetEnhancedOverview(repo domain.FundingQueryRepository) *GetEnhancedOverview {
 	return &GetEnhancedOverview{repo: repo}
 }
 

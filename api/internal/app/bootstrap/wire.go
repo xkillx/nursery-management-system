@@ -165,23 +165,6 @@ func provideClearMarker(
 	return absenceapp.NewClearMarker(repo, txMgr, audit, clock)
 }
 
-func provideUpsertProfile(
-	repo fundingdomain.Repository,
-	txMgr *transaction.Manager,
-	audit *audit.Writer,
-	fundingReader fundingapp.ChildFundingRecordReader,
-	historyRepo fundingdomain.HistoryRepository,
-) *fundingapp.UpsertProfile {
-	return fundingapp.NewUpsertProfile(repo, txMgr, audit, fundingReader, historyRepo)
-}
-
-func provideGetEnhancedChildDetail(
-	repo fundingdomain.Repository,
-	historyRepo fundingdomain.HistoryRepository,
-) *fundingapp.GetEnhancedChildDetail {
-	return fundingapp.NewGetEnhancedChildDetail(repo, historyRepo)
-}
-
 // ── Password reset module ───────────────────────────────────────────────
 
 var passwordResetSet = wire.NewSet(
@@ -328,18 +311,20 @@ func provideParentChildLookupForFundingAdapter(
 
 var fundingSet = wire.NewSet(
 	fundingpostgres.NewRepository,
-	wire.Bind(new(fundingdomain.Repository), new(*fundingpostgres.Repository)),
+	wire.Bind(new(fundingdomain.FundingQueryRepository), new(*fundingpostgres.Repository)),
 	fundingpostgres.NewHistoryRepository,
 	wire.Bind(new(fundingdomain.HistoryRepository), new(*fundingpostgres.HistoryRepository)),
-	provideChildFundingRecordReaderAdapter,
-	wire.Bind(new(fundingapp.ChildFundingRecordReader), new(*childFundingRecordReaderAdapter)),
+	fundingpostgres.NewFundingRecordRepository,
+	wire.Bind(new(fundingdomain.FundingRecordRepository), new(*fundingpostgres.FundingRecordRepositoryImpl)),
+	provideTermDateProviderAdapter,
+	wire.Bind(new(fundingdomain.TermDateProvider), new(*termDateProviderAdapter)),
 	provideConsumedMinutesProviderAdapter,
 	wire.Bind(new(fundingapp.ConsumedMinutesProvider), new(*consumedMinutesProviderAdapter)),
-	fundingapp.NewGetProfile,
-	provideUpsertProfile,
+	fundingapp.NewGetChildFunding,
+	fundingapp.NewUpdateChildFunding,
 	fundingapp.NewListOverview,
 	fundingapp.NewGetEnhancedOverview,
-	provideGetEnhancedChildDetail,
+	fundingapp.NewGetEnhancedChildDetail,
 	fundingapp.NewListExpiring,
 	provideParentChildLookupForFundingAdapter,
 	wire.Bind(new(fundingapp.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)),

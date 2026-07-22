@@ -27,21 +27,17 @@ func (m *mockConsumedMinutesProvider) GetConsumedMinutes(_ context.Context, _, _
 	return m.consumed, nil
 }
 
-func (m *mockOverviewRepo) Get(_ context.Context, _, _, _ uuid.UUID, _ time.Time) (domain.FundingProfile, bool, error) {
-	return domain.FundingProfile{}, false, nil
+type mockTermDateProvider struct {
+	ranges []domain.TermDateRange
 }
-func (m *mockOverviewRepo) GetForUpdate(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time) (domain.FundingProfile, bool, error) {
-	return domain.FundingProfile{}, false, nil
+
+func (m *mockTermDateProvider) GetTermDatesForBranchAndMonth(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.TermDateRange, error) {
+	if m.ranges == nil {
+		return []domain.TermDateRange{}, nil
+	}
+	return m.ranges, nil
 }
-func (m *mockOverviewRepo) Create(_ context.Context, _ domain.Tx, _ domain.FundingProfile) (domain.FundingProfile, error) {
-	return domain.FundingProfile{}, nil
-}
-func (m *mockOverviewRepo) UpdateAllowance(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time, _ int) (domain.FundingProfile, error) {
-	return domain.FundingProfile{}, nil
-}
-func (m *mockOverviewRepo) GetChildEnrollmentForUpdate(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (domain.ChildEnrollment, bool, error) {
-	return domain.ChildEnrollment{}, false, nil
-}
+
 func (m *mockOverviewRepo) ListOverview(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.OverviewRow, error) {
 	return m.rows, m.err
 }
@@ -91,21 +87,33 @@ func testActor() tenant.ActorContext {
 func ptrInt(v int) *int                 { return &v }
 func ptrTimeVal(v time.Time) *time.Time { return &v }
 func ptrUUID(v uuid.UUID) *uuid.UUID    { return &v }
+func ptrFloat64(v float64) *float64     { return &v }
+func ptrString(v string) *string        { return &v }
 
-func makeRow(name string, profileID *uuid.UUID, allowance *int) domain.OverviewRow {
+func makeRow(name string, recordID *uuid.UUID, enabled bool, hoursPerWeek *float64, model *string) domain.OverviewRow {
 	return domain.OverviewRow{
-		ChildID:                uuid.New(),
-		ChildFirstName:         name,
-		IsActive:               true,
-		StartDate:              time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndDate:                nil,
-		FundingProfileID:       profileID,
-		FundedAllowanceMinutes: allowance,
+		ChildID:            uuid.New(),
+		ChildFirstName:     name,
+		IsActive:           true,
+		StartDate:          time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            nil,
+		FundingRecordID:    recordID,
+		FundingEnabled:     enabled,
+		FundedHoursPerWeek: hoursPerWeek,
+		FundingModel:       model,
 	}
 }
 
+func newTestListOverview(repo *mockOverviewRepo) *ListOverview {
+	return NewListOverview(repo, &mockConsumedMinutesProvider{}, &mockTermDateProvider{
+		ranges: []domain.TermDateRange{
+			{StartDate: time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2026, 7, 18, 0, 0, 0, 0, time.UTC)},
+		},
+	})
+}
+
 func TestListOverview_InvalidMonth(t *testing.T) {
-	uc := NewListOverview(&mockOverviewRepo{}, &mockConsumedMinutesProvider{})
+	uc := newTestListOverview(&mockOverviewRepo{})
 	_, err := uc.Execute(context.Background(), testActor(), "bad")
 	if err == nil {
 		t.Fatal("expected error for invalid month")
@@ -113,8 +121,8 @@ func TestListOverview_InvalidMonth(t *testing.T) {
 }
 
 func TestListOverview_MissingProfile(t *testing.T) {
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Alice", nil, nil)}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
+	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Alice", nil, false, nil, nil)}}
+	uc := newTestListOverview(repo)
 	result, err := uc.Execute(context.Background(), testActor(), "2026-06")
 	if err != nil {
 		t.Fatal(err)
@@ -134,9 +142,9 @@ func TestListOverview_MissingProfile(t *testing.T) {
 }
 
 func TestListOverview_ExplicitZero(t *testing.T) {
-	pid := uuid.New()
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Bob", &pid, ptrInt(0))}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
+	rid := uuid.New()
+	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Bob", &rid, true, ptrFloat64(0), ptrString("term_time_only"))}}
+	uc := newTestListOverview(repo)
 	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
 	if result.Summary.ExplicitZeroCount != 1 {
 		t.Fatalf("zero = %d, want 1", result.Summary.ExplicitZeroCount)
@@ -146,67 +154,14 @@ func TestListOverview_ExplicitZero(t *testing.T) {
 	}
 }
 
-func TestListOverview_UnderOneHour(t *testing.T) {
-	pid := uuid.New()
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Cara", &pid, ptrInt(30))}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
-	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
-	if result.Summary.UnderOneHourCount != 1 {
-		t.Fatalf("under1h = %d, want 1", result.Summary.UnderOneHourCount)
-	}
-}
-
-func TestListOverview_ExactlySixtyNotFlagged(t *testing.T) {
-	pid := uuid.New()
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Dana", &pid, ptrInt(60))}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
-	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
-	if result.Summary.FlaggedChildCount != 0 {
-		t.Fatalf("60 min should not be flagged, got %d flagged", result.Summary.FlaggedChildCount)
-	}
-}
-
-func TestListOverview_Above160Hours(t *testing.T) {
-	pid := uuid.New()
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Eve", &pid, ptrInt(9601))}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
-	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
-	if result.Summary.Above160HoursCount != 1 {
-		t.Fatalf("above160 = %d, want 1", result.Summary.Above160HoursCount)
-	}
-}
-
-func TestListOverview_Exactly9600NotFlagged(t *testing.T) {
-	pid := uuid.New()
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{makeRow("Frank", &pid, ptrInt(9600))}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
-	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
-	if result.Summary.FlaggedChildCount != 0 {
-		t.Fatalf("9600 min (160h) should not be flagged, got %d flagged", result.Summary.FlaggedChildCount)
-	}
-}
-
 func TestListOverview_EmptyResult(t *testing.T) {
 	repo := &mockOverviewRepo{rows: []domain.OverviewRow{}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
+	uc := newTestListOverview(repo)
 	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
 	if result.Summary.IncludedChildCount != 0 {
 		t.Fatalf("included = %d, want 0", result.Summary.IncludedChildCount)
 	}
 	if result.Items == nil {
 		t.Fatal("items should be empty slice, not nil")
-	}
-}
-
-func TestListOverview_MultipleFlagsOnOneChild(t *testing.T) {
-	pid := uuid.New()
-	// Zero allowance but also not above 160h — zero only
-	repo := &mockOverviewRepo{rows: []domain.OverviewRow{
-		makeRow("Zero", &pid, ptrInt(0)),
-	}}
-	uc := NewListOverview(repo, &mockConsumedMinutesProvider{})
-	result, _ := uc.Execute(context.Background(), testActor(), "2026-06")
-	if len(result.Items[0].Flags) != 1 {
-		t.Fatalf("zero should have 1 flag (explicit_zero), got %d", len(result.Items[0].Flags))
 	}
 }

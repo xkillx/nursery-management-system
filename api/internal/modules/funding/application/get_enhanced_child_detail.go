@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -12,12 +11,14 @@ import (
 )
 
 type GetEnhancedChildDetail struct {
-	repo     domain.Repository
-	historyR domain.HistoryRepository
+	recordRepo domain.FundingRecordRepository
+	queryRepo  domain.FundingQueryRepository
+	historyR   domain.HistoryRepository
+	termDates  domain.TermDateProvider
 }
 
-func NewGetEnhancedChildDetail(repo domain.Repository, historyR domain.HistoryRepository) *GetEnhancedChildDetail {
-	return &GetEnhancedChildDetail{repo: repo, historyR: historyR}
+func NewGetEnhancedChildDetail(recordRepo domain.FundingRecordRepository, queryRepo domain.FundingQueryRepository, historyR domain.HistoryRepository, termDates domain.TermDateProvider) *GetEnhancedChildDetail {
+	return &GetEnhancedChildDetail{recordRepo: recordRepo, queryRepo: queryRepo, historyR: historyR, termDates: termDates}
 }
 
 func (uc *GetEnhancedChildDetail) Execute(ctx context.Context, actor tenant.ActorContext, childIDRaw, billingMonthRaw string) (domain.EnhancedChildDetail, error) {
@@ -31,16 +32,16 @@ func (uc *GetEnhancedChildDetail) Execute(ctx context.Context, actor tenant.Acto
 		return domain.EnhancedChildDetail{}, domainerrors.Validation("Invalid billing month. Must be YYYY-MM.", "billing_month")
 	}
 
-	profile, found, err := uc.repo.Get(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
+	record, found, err := uc.recordRepo.GetFundingRecord(ctx, actor.TenantID, actor.BranchID, childID)
 	if err != nil {
 		return domain.EnhancedChildDetail{}, domainerrors.Internal(err)
 	}
 	if !found {
-		return domain.EnhancedChildDetail{}, domainerrors.NotFound("funding_profile", "No funding profile found for this child and billing month.")
+		return domain.EnhancedChildDetail{}, domainerrors.NotFound("funding_record", "No funding record found for this child.")
 	}
 
 	billingMonthEnd := billingMonth.AddDate(0, 1, -1)
-	allocation, err := uc.repo.GetChildAllocation(ctx, actor.TenantID, actor.BranchID, childID, billingMonth, billingMonthEnd)
+	allocation, err := uc.queryRepo.GetChildAllocation(ctx, actor.TenantID, actor.BranchID, childID, billingMonth, billingMonthEnd)
 	if err != nil {
 		return domain.EnhancedChildDetail{}, domainerrors.Internal(err)
 	}
@@ -56,13 +57,16 @@ func (uc *GetEnhancedChildDetail) Execute(ctx context.Context, actor tenant.Acto
 		history = []domain.FundingHistory{}
 	}
 
-	return domain.EnhancedChildDetail{
-		Profile:    profile,
-		Allocation: allocation,
-		History:    history,
-	}, nil
-}
+	allowance := 0
+	if record.FundingEnabled && record.FundedHoursPerWeek != nil && *record.FundedHoursPerWeek > 0 {
+		termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
+		allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+	}
 
-func billingMonthEnd(billingMonth time.Time) time.Time {
-	return billingMonth.AddDate(0, 1, -1)
+	return domain.EnhancedChildDetail{
+		Record:                 record,
+		FundedAllowanceMinutes: allowance,
+		Allocation:             allocation,
+		History:                history,
+	}, nil
 }

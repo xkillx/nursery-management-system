@@ -323,12 +323,6 @@ func provideEmailSenderAdapter(sender email.Sender, cfg config.Config) *emailSen
 	return &emailSenderAdapter{sender: sender, baseURL: cfg.WebBaseURL}
 }
 
-func provideChildFundingRecordReaderAdapter(
-	childRepo *childpostgres.ChildRepository,
-) *childFundingRecordReaderAdapter {
-	return &childFundingRecordReaderAdapter{repo: childRepo}
-}
-
 func provideConsumedMinutesProviderAdapter(
 	pool *pgxpool.Pool,
 ) *consumedMinutesProviderAdapter {

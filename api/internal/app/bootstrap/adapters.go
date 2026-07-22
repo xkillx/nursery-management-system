@@ -1105,52 +1105,6 @@ func (a *billingNotificationAdapter) writeAudit(ctx context.Context, tx pgx.Tx, 
 
 var _ billingdomain.HourlyBookingLookup = (*hourlyBookingLookupAdapter)(nil)
 
-type childFundingRecordReaderAdapter struct {
-	repo *postgreschild.ChildRepository
-}
-
-func (a *childFundingRecordReaderAdapter) GetByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*fundingapp.ChildFundingRecordData, error) {
-	record, found, err := a.repo.GetFundingByChild(ctx, tenantID, branchID, childID)
-	if err != nil {
-		return nil, fmt.Errorf("get child funding record: %w", err)
-	}
-	if !found {
-		return nil, nil
-	}
-
-	var fundingType *string
-	if string(record.FundingType) != "" {
-		s := string(record.FundingType)
-		fundingType = &s
-	}
-
-	var fundingModel *string
-	if string(record.FundingModel) != "" {
-		s := string(record.FundingModel)
-		fundingModel = &s
-	}
-
-	var fundingStartDate *string
-	if record.FundingStartDate != nil {
-		s := record.FundingStartDate.Format("2006-01-02")
-		fundingStartDate = &s
-	}
-
-	var fundingEndDate *string
-	if record.FundingEndDate != nil {
-		s := record.FundingEndDate.Format("2006-01-02")
-		fundingEndDate = &s
-	}
-
-	return &fundingapp.ChildFundingRecordData{
-		FundingType:        fundingType,
-		FundingModel:       fundingModel,
-		FundedHoursPerWeek: record.FundedHoursPerWeek,
-		FundingStartDate:   fundingStartDate,
-		FundingEndDate:     fundingEndDate,
-	}, nil
-}
-
 type consumedMinutesProviderAdapter struct {
 	pool *pgxpool.Pool
 }
@@ -1227,6 +1181,37 @@ func (a *fundingHistoryWriterAdapter) Write(ctx context.Context, tenantID, branc
 	}
 
 	return a.repo.Create(ctx, history)
+}
+
+// termDateProviderAdapter satisfies fundingdomain.TermDateProvider by delegating
+// to the academic term repository.
+type termDateProviderAdapter struct {
+	repo *termcalendarpostgres.AcademicTermRepository
+}
+
+func (a *termDateProviderAdapter) GetTermDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]fundingdomain.TermDateRange, error) {
+	from := month
+	to := month.AddDate(0, 1, 0).AddDate(0, 0, -1)
+	ranges, err := a.repo.ListActiveDateRanges(ctx, tenantID, branchID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("term date provider: %w", err)
+	}
+	out := make([]fundingdomain.TermDateRange, 0, len(ranges))
+	for _, r := range ranges {
+		out = append(out, fundingdomain.TermDateRange{
+			StartDate: r.StartDate,
+			EndDate:   r.EndDate,
+		})
+	}
+	return out, nil
+}
+
+var _ fundingdomain.TermDateProvider = (*termDateProviderAdapter)(nil)
+
+func provideTermDateProviderAdapter(
+	repo *termcalendarpostgres.AcademicTermRepository,
+) *termDateProviderAdapter {
+	return &termDateProviderAdapter{repo: repo}
 }
 
 // fundingLookupAdapter satisfies billingdomain.FundingLookup by loading

@@ -295,17 +295,19 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	absenceHandler.RegisterRoutes(protected)
 
 	fundingRepo := fundingpostgres.NewRepository(pool)
-	childFundingReader := &childFundingRecordReaderAdapter{repo: childRepo}
+	fundingRecordRepo := fundingpostgres.NewFundingRecordRepository(pool)
 	consumedMinutesProvider := &consumedMinutesProviderAdapter{pool: pool}
+	termCalendarRepo := termcalendarpostgres.NewRepository(pool)
+	termDateProv := &termDateProviderAdapter{repo: termCalendarRepo}
 	fundingHandler := fundinghandler.NewHandler(
-		fundingapp.NewGetProfile(fundingRepo),
-		fundingapp.NewUpsertProfile(fundingRepo, txManager, auditWriter, childFundingReader, fundingHistoryRepo),
-		fundingapp.NewListOverview(fundingRepo, consumedMinutesProvider),
+		fundingapp.NewGetChildFunding(fundingRecordRepo),
+		fundingapp.NewUpdateChildFunding(fundingRecordRepo, auditWriter, fundingHistoryRepo),
+		fundingapp.NewListOverview(fundingRepo, consumedMinutesProvider, termDateProv),
 		fundingapp.NewGetEnhancedOverview(fundingRepo),
-		fundingapp.NewGetEnhancedChildDetail(fundingRepo, fundingHistoryRepo),
+		fundingapp.NewGetEnhancedChildDetail(fundingRecordRepo, fundingRepo, fundingHistoryRepo, termDateProv),
 		fundingapp.NewListExpiring(fundingRepo),
-		fundingapp.NewGetParentFunding(fundingRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}),
-		fundingapp.NewGetParentFundingBreakdown(fundingRepo, fundingHistoryRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}),
+		fundingapp.NewGetParentFunding(fundingRecordRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}, termDateProv),
+		fundingapp.NewGetParentFundingBreakdown(fundingRecordRepo, fundingRepo, fundingHistoryRepo, &parentChildLookupForFundingAdapter{repo: mappingRepo}, termDateProv),
 		logger,
 	)
 	fundingHandler.RegisterRoutes(manager)
@@ -317,7 +319,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	siteProfileHandler.RegisterRoutes(protected)
 
 	billingRepo := billingpostgres.NewRepository(pool)
-	termCalendarRepo := termcalendarpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
 	fundingLookup := &fundingLookupAdapter{childRepo: childRepo, ownerRepo: ownerRepo}

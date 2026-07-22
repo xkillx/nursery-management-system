@@ -9,10 +9,10 @@ import (
 )
 
 type ListExpiring struct {
-	repo domain.Repository
+	repo domain.FundingQueryRepository
 }
 
-func NewListExpiring(repo domain.Repository) *ListExpiring {
+func NewListExpiring(repo domain.FundingQueryRepository) *ListExpiring {
 	return &ListExpiring{repo: repo}
 }
 

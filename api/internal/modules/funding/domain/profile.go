@@ -6,20 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type FundingProfile struct {
-	ID                     uuid.UUID
-	TenantID               uuid.UUID
-	BranchID               uuid.UUID
-	ChildID                uuid.UUID
-	BillingMonth           time.Time
-	FundedAllowanceMinutes int
-	FundingType            *string
-	FundingModel           *string
-	FundedHoursPerWeek     *float64
-	CreatedAt              time.Time
-	UpdatedAt              time.Time
-}
-
 type ChildEnrollment struct {
 	ID        uuid.UUID
 	StartDate time.Time
@@ -36,17 +22,22 @@ const (
 )
 
 type OverviewRow struct {
-	ChildID                uuid.UUID
-	ChildFirstName         string
-	ChildMiddleName        *string
-	ChildLastName          *string
-	IsActive               bool
-	StartDate              time.Time
-	EndDate                *time.Time
-	FundingProfileID       *uuid.UUID
-	FundedAllowanceMinutes *int
-	FundingUpdatedAt       *time.Time
-	ChildPhotoPath         *string
+	ChildID            uuid.UUID
+	ChildFirstName     string
+	ChildMiddleName    *string
+	ChildLastName      *string
+	IsActive           bool
+	StartDate          time.Time
+	EndDate            *time.Time
+	FundingRecordID    *uuid.UUID
+	FundingEnabled     bool
+	FundingType        *string
+	FundingModel       *string
+	FundedHoursPerWeek *float64
+	FundingStartDate   *time.Time
+	FundingEndDate     *time.Time
+	FundingUpdatedAt   *time.Time
+	ChildPhotoPath     *string
 }
 
 type OverviewSummary struct {
@@ -99,7 +90,8 @@ type AllocationEntry struct {
 }
 
 type EnhancedChildDetail struct {
-	Profile    FundingProfile
-	Allocation []AllocationEntry
-	History    []FundingHistory
+	Record                 FundingRecord
+	FundedAllowanceMinutes int
+	Allocation             []AllocationEntry
+	History                []FundingHistory
 }

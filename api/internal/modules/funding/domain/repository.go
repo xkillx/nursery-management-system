@@ -9,12 +9,7 @@ import (
 
 type Tx = any
 
-type Repository interface {
-	Get(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (FundingProfile, bool, error)
-	GetForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (FundingProfile, bool, error)
-	Create(ctx context.Context, tx Tx, profile FundingProfile) (FundingProfile, error)
-	UpdateAllowance(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, billingMonth time.Time, minutes int) (FundingProfile, error)
-	GetChildEnrollmentForUpdate(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (ChildEnrollment, bool, error)
+type FundingQueryRepository interface {
 	ListOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]OverviewRow, error)
 	ListOverviewPaginated(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time, limit, offset int) ([]OverviewRow, error)
 	CountOverview(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) (int, error)
@@ -33,4 +28,8 @@ type HistoryRepository interface {
 type FundingRecordRepository interface {
 	GetFundingRecord(ctx context.Context, tenantID, branchID, childID uuid.UUID) (FundingRecord, bool, error)
 	UpsertFundingRecord(ctx context.Context, tx Tx, record FundingRecord) (FundingRecord, error)
+}
+
+type TermDateProvider interface {
+	GetTermDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]TermDateRange, error)
 }

@@ -52,17 +52,10 @@ SELECT
           AND cc.child_id = c.id
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
-    fp.id AS funding_profile_id,
-    fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
-LEFT JOIN funding_profiles fp
-    ON fp.tenant_id = c.tenant_id
-    AND fp.branch_id = c.branch_id
-    AND fp.child_id = c.id
-    AND fp.billing_month = $3
 LEFT JOIN invoices i
     ON i.tenant_id = c.tenant_id
     AND i.branch_id = c.branch_id
@@ -110,17 +103,10 @@ SELECT
           AND cc.child_id = c.id
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
-    fp.id AS funding_profile_id,
-    fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
-LEFT JOIN funding_profiles fp
-    ON fp.tenant_id = c.tenant_id
-    AND fp.branch_id = c.branch_id
-    AND fp.child_id = c.id
-    AND fp.billing_month = $3
 LEFT JOIN invoices i
     ON i.tenant_id = c.tenant_id
     AND i.branch_id = c.branch_id
@@ -152,16 +138,10 @@ SELECT
           AND cc.child_id = c.id
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
-    fp.id AS funding_profile_id,
-    fp.funded_allowance_minutes,
     i.id AS existing_invoice_id,
     i.status AS existing_invoice_status
 FROM children c
 JOIN branches b ON b.tenant_id = c.tenant_id AND b.id = c.branch_id
-LEFT JOIN funding_profiles fp
-    ON fp.tenant_id = c.tenant_id
-    AND fp.branch_id = c.branch_id
-    AND fp.child_id = c.id
 LEFT JOIN invoices i
     ON i.tenant_id = c.tenant_id
     AND i.branch_id = c.branch_id

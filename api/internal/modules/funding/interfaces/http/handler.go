@@ -1,7 +1,6 @@
 package httpfunding
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -19,8 +18,8 @@ import (
 
 type Handler struct {
 	logger           *slog.Logger
-	get              *application.GetProfile
-	upsert           *application.UpsertProfile
+	getChildFunding  *application.GetChildFunding
+	updateFunding    *application.UpdateChildFunding
 	overview         *application.ListOverview
 	enhancedOverview *application.GetEnhancedOverview
 	enhancedDetail   *application.GetEnhancedChildDetail
@@ -30,8 +29,8 @@ type Handler struct {
 }
 
 func NewHandler(
-	get *application.GetProfile,
-	upsert *application.UpsertProfile,
+	getChildFunding *application.GetChildFunding,
+	updateFunding *application.UpdateChildFunding,
 	overview *application.ListOverview,
 	enhancedOverview *application.GetEnhancedOverview,
 	enhancedDetail *application.GetEnhancedChildDetail,
@@ -42,8 +41,8 @@ func NewHandler(
 ) *Handler {
 	return &Handler{
 		logger:           logger,
-		get:              get,
-		upsert:           upsert,
+		getChildFunding:  getChildFunding,
+		updateFunding:    updateFunding,
 		overview:         overview,
 		enhancedOverview: enhancedOverview,
 		enhancedDetail:   enhancedDetail,
@@ -56,8 +55,8 @@ func NewHandler(
 func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	g := manager.Group("/funding")
 	g.GET("/overview", h.overviewHandler)
-	g.GET("/children/:child_id", h.getProfileHandler)
-	g.PUT("/children/:child_id", h.upsertProfileHandler)
+	g.GET("/children/:child_id", h.getChildFundingHandler)
+	g.PUT("/children/:child_id", h.updateFundingHandler)
 	g.GET("/expiring", h.expiringHandler)
 }
 
@@ -66,17 +65,6 @@ func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
 	parent.GET("/funding/:child_id/breakdown", h.parentFundingBreakdownHandler)
 }
 
-// parentFundingHandler returns funding entitlement and usage for the parent's children.
-//
-//	@Summary		Parent funding entitlement
-//	@Description	Get funding entitlement and usage for the authenticated parent's children.
-//	@Tags			parent-funding
-//	@Produce		json
-//	@Success		200	{object}	object{items=[]parentFundingEntitlementResponse}
-//	@Failure		401	{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["parent"]
-//	@Router			/parent/funding [get]
 func (h *Handler) parentFundingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -107,20 +95,6 @@ func (h *Handler) parentFundingHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
-// parentFundingBreakdownHandler returns detailed funding breakdown for a child.
-//
-//	@Summary		Parent funding breakdown
-//	@Description	Get detailed funding breakdown for a specific child.
-//	@Tags			parent-funding
-//	@Produce		json
-//	@Param			child_id		path		string	true	"Child ID"		format(uuid)
-//	@Param			billing_month	query		string	true	"Billing month"	format(month)
-//	@Success		200				{object}	parentFundingBreakdownResponse
-//	@Failure		400				{object}	object{code=string,message=string}
-//	@Failure		401				{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["parent"]
-//	@Router			/parent/funding/{child_id}/breakdown [get]
 func (h *Handler) parentFundingBreakdownHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -148,21 +122,6 @@ func (h *Handler) parentFundingBreakdownHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toParentFundingBreakdownResponse(result))
 }
 
-// overviewHandler returns the funding overview for a billing month.
-//
-//	@Summary		Funding overview
-//	@Description	Get the funding overview for a billing month, including enhanced metrics.
-//	@Tags			funding
-//	@Produce		json
-//	@Param			billing_month	query		string	true	"Billing month"		format(month)
-//	@Param			page			query		int		false	"Page number"		default(1)	minimum(1)
-//	@Param			page_size		query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
-//	@Success		200				{object}	object{items=[]overviewItemResponse,total=int,page=int,page_size=int,metrics=enhancedOverviewMetricsResponse}
-//	@Failure		400				{object}	object{code=string,message=string}
-//	@Failure		401				{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["manager"]
-//	@Router			/funding/overview [get]
 func (h *Handler) overviewHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -206,22 +165,7 @@ func (h *Handler) overviewHandler(c *gin.Context) {
 	})
 }
 
-// getProfileHandler returns the funding profile for a child with allocation and history.
-//
-//	@Summary		Get funding profile
-//	@Description	Get the funding profile for a child for a billing month, including allocation table and history.
-//	@Tags			funding
-//	@Produce		json
-//	@Param			child_id		path		string	true	"Child ID"		format(uuid)
-//	@Param			billing_month	query		string	true	"Billing month"	format(month)
-//	@Success		200				{object}	enhancedChildDetailResponse
-//	@Failure		400				{object}	object{code=string,message=string}
-//	@Failure		401				{object}	object{code=string,message=string}
-//	@Failure		404				{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["manager"]
-//	@Router			/funding/children/{child_id} [get]
-func (h *Handler) getProfileHandler(c *gin.Context) {
+func (h *Handler) getChildFundingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
 		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
@@ -243,66 +187,40 @@ func (h *Handler) getProfileHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, toEnhancedChildDetailResponse(detail))
 }
 
-// upsertProfileHandler creates or updates the funding profile for a child.
-//
-//	@Summary		Upsert funding profile
-//	@Description	Create or update the funding profile for a child.
-//	@Tags			funding
-//	@Accept			json
-//	@Produce		json
-//	@Param			child_id	path		string					true	"Child ID"	format(uuid)
-//	@Param			body		body		fundingProfileRequest	true	"Funding profile data"
-//	@Success		200			{object}	fundingProfileResponse
-//	@Success		201			{object}	fundingProfileResponse
-//	@Failure		400			{object}	object{code=string,message=string}
-//	@Failure		401			{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["manager"]
-//	@Router			/funding/children/{child_id} [put]
-func (h *Handler) upsertProfileHandler(c *gin.Context) {
+func (h *Handler) updateFundingHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
 		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
 		return
 	}
 
-	var req fundingProfileRequest
+	var req fundingRecordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
 		return
 	}
 
-	result, err := h.upsert.Execute(c.Request.Context(), actor, c.Param("child_id"), application.UpsertProfileParams{
-		BillingMonth:           req.BillingMonth,
-		FundedAllowanceMinutes: req.FundedAllowanceMinutes,
-	})
+	params := application.UpdateChildFundingParams{
+		FundingEnabled:           req.FundingEnabled,
+		FundingType:              domain.FundingType(req.FundingType),
+		FundingModel:             domain.FundingModel(req.FundingModel),
+		FundedHoursPerWeek:       req.FundedHoursPerWeek,
+		FundingStartDate:         req.FundingStartDate,
+		FundingEndDate:           req.FundingEndDate,
+		EligibilityCode:          req.EligibilityCode,
+		EligibilityCodeValidated: req.EligibilityCodeValidated,
+		EvidenceReceived:         req.EvidenceReceived,
+	}
+
+	record, err := h.updateFunding.Execute(c.Request.Context(), actor, c.Param("child_id"), params)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	if result.Created {
-		resp := toResponse(result.Profile)
-		c.Header("Location", fmt.Sprintf("/api/children/%s/funding/%s", resp.ChildID, resp.ID))
-		c.JSON(http.StatusCreated, resp)
-	} else {
-		c.JSON(http.StatusOK, toResponse(result.Profile))
-	}
+	c.JSON(http.StatusOK, toFundingRecordResponse(record))
 }
 
-// expiringHandler returns children with funding expiring within N days.
-//
-//	@Summary		Funding expiring soon
-//	@Description	Get children with funding expiring within N days.
-//	@Tags			funding
-//	@Produce		json
-//	@Param			within	query		int	true	"Number of days"	default(30)	minimum(1)
-//	@Success		200		{object}	object{items=[]expiringFundingResponse}
-//	@Failure		400		{object}	object{code=string,message=string}
-//	@Failure		401		{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["manager"]
-//	@Router			/funding/expiring [get]
 func (h *Handler) expiringHandler(c *gin.Context) {
 	actor, ok := tenant.ActorFromGinContext(c)
 	if !ok {
@@ -340,15 +258,33 @@ func (h *Handler) expiringHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
-func toResponse(p domain.FundingProfile) fundingProfileResponse {
-	return fundingProfileResponse{
-		ID:                     p.ID.String(),
-		ChildID:                p.ChildID.String(),
-		BillingMonth:           p.BillingMonth.Format("2006-01"),
-		FundedAllowanceMinutes: p.FundedAllowanceMinutes,
-		CreatedAt:              p.CreatedAt,
-		UpdatedAt:              p.UpdatedAt,
+func toFundingRecordResponse(r domain.FundingRecord) fundingRecordResponse {
+	resp := fundingRecordResponse{
+		ID:                       r.ID.String(),
+		ChildID:                  r.ChildID.String(),
+		FundingEnabled:           r.FundingEnabled,
+		FundingType:              string(r.FundingType),
+		FundingModel:             string(r.FundingModel),
+		EligibilityCodeValidated: r.EligibilityCodeValidated,
+		EvidenceReceived:         r.EvidenceReceived,
+		CreatedAt:                r.CreatedAt,
+		UpdatedAt:                r.UpdatedAt,
 	}
+	if r.FundedHoursPerWeek != nil {
+		resp.FundedHoursPerWeek = r.FundedHoursPerWeek
+	}
+	if r.FundingStartDate != nil {
+		s := r.FundingStartDate.Format("2006-01-02")
+		resp.FundingStartDate = &s
+	}
+	if r.FundingEndDate != nil {
+		s := r.FundingEndDate.Format("2006-01-02")
+		resp.FundingEndDate = &s
+	}
+	if r.EligibilityCode != nil {
+		resp.EligibilityCode = r.EligibilityCode
+	}
+	return resp
 }
 
 func toOverviewResponse(r domain.OverviewResult) overviewResponse {
@@ -390,11 +326,8 @@ func toOverviewItemResponse(item domain.OverviewItem) overviewItemResponse {
 	if row.EndDate != nil {
 		resp.EndDate = row.EndDate
 	}
-	if row.FundingProfileID != nil {
-		resp.FundingProfileID = row.FundingProfileID.String()
-	}
-	if row.FundedAllowanceMinutes != nil {
-		resp.FundedAllowanceMinutes = row.FundedAllowanceMinutes
+	if row.FundingRecordID != nil {
+		resp.FundingRecordID = row.FundingRecordID.String()
 	}
 	if row.FundingUpdatedAt != nil {
 		resp.FundingUpdatedAt = row.FundingUpdatedAt
@@ -448,10 +381,66 @@ func toEnhancedChildDetailResponse(d domain.EnhancedChildDetail) enhancedChildDe
 	}
 
 	return enhancedChildDetailResponse{
-		Profile:    toResponse(d.Profile),
-		Allocation: allocation,
-		History:    history,
+		Record:                 toFundingRecordResponse(d.Record),
+		FundedAllowanceMinutes: d.FundedAllowanceMinutes,
+		Allocation:             allocation,
+		History:                history,
 	}
+}
+
+func toParentFundingBreakdownResponse(d application.ParentFundingBreakdown) parentFundingBreakdownResponse {
+	return parentFundingBreakdownResponse{
+		Record:                 toFundingRecordResponse(d.Record),
+		FundedAllowanceMinutes: d.FundedAllowanceMinutes,
+		Allocation:             toAllocationResponse(d.Allocation),
+		History:                toHistoryResponse(d.History),
+	}
+}
+
+func toAllocationResponse(allocation []domain.AllocationEntry) []allocationEntryResponse {
+	out := make([]allocationEntryResponse, 0, len(allocation))
+	for _, a := range allocation {
+		var endDate *string
+		if a.EffectiveEndDate != nil {
+			s := a.EffectiveEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		out = append(out, allocationEntryResponse{
+			BookingID:              a.BookingID.String(),
+			EffectiveStartDate:     a.EffectiveStartDate.Format("2006-01-02"),
+			EffectiveEndDate:       endDate,
+			DaysOfWeek:             a.DaysOfWeek,
+			SessionTypeName:        a.SessionTypeName,
+			SessionDurationMinutes: a.SessionDurationMinutes,
+		})
+	}
+	return out
+}
+
+func toHistoryResponse(history []domain.FundingHistory) []fundingHistoryResponse {
+	out := make([]fundingHistoryResponse, 0, len(history))
+	for _, h := range history {
+		var startDate *string
+		if h.FundingStartDate != nil {
+			s := h.FundingStartDate.Format("2006-01-02")
+			startDate = &s
+		}
+		var endDate *string
+		if h.FundingEndDate != nil {
+			s := h.FundingEndDate.Format("2006-01-02")
+			endDate = &s
+		}
+		out = append(out, fundingHistoryResponse{
+			ID:                 h.ID.String(),
+			FundingType:        h.FundingType,
+			FundingModel:       h.FundingModel,
+			FundedHoursPerWeek: h.FundedHoursPerWeek,
+			FundingStartDate:   startDate,
+			FundingEndDate:     endDate,
+			ChangedAt:          h.ChangedAt,
+		})
+	}
+	return out
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

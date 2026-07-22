@@ -165,9 +165,9 @@ func (r *OwnerRepository) GetFundingReadiness(ctx context.Context, tenantID uuid
 	}
 	q := sqlc.New(r.pool)
 	rows, err := q.OwnerGetFundingReadinessByBranches(ctx, sqlc.OwnerGetFundingReadinessByBranchesParams{
-		TenantID:     uuidToPgtype(tenantID),
-		Column2:      uuidsToPgtypeArray(branchIDs),
-		BillingMonth: timeToPgtypeDate(billingMonth),
+		TenantID: uuidToPgtype(tenantID),
+		Column2:  uuidsToPgtypeArray(branchIDs),
+		Column3:  timeToPgtypeDate(billingMonth),
 	})
 	if err != nil {
 		return nil, err

@@ -7,19 +7,17 @@ import (
 )
 
 type PreflightChildRow struct {
-	ChildID                uuid.UUID
-	FirstName              string
-	MiddleName             *string
-	LastName               *string
-	DateOfBirth            time.Time
-	StartDate              time.Time
-	EndDate                *time.Time
-	CoreHourlyRateMinor    *int
-	HasParentCarerContact  bool
-	FundingProfileID       *uuid.UUID
-	FundedAllowanceMinutes *int
-	ExistingInvoiceID      *uuid.UUID
-	ExistingInvoiceStatus  *string
+	ChildID               uuid.UUID
+	FirstName             string
+	MiddleName            *string
+	LastName              *string
+	DateOfBirth           time.Time
+	StartDate             time.Time
+	EndDate               *time.Time
+	CoreHourlyRateMinor   *int
+	HasParentCarerContact bool
+	ExistingInvoiceID     *uuid.UUID
+	ExistingInvoiceStatus *string
 }
 
 type PreflightAttendanceSessionRow struct {

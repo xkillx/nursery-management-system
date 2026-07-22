@@ -517,16 +517,15 @@ const ownerGetFundingReadinessByBranches = `-- name: OwnerGetFundingReadinessByB
 
 SELECT c.branch_id,
        COUNT(*)::int AS included_child_count,
-       COUNT(*) FILTER (WHERE fp.id IS NULL)::int AS missing_profile_count,
-       COUNT(*) FILTER (WHERE fp.funded_allowance_minutes = 0)::int AS explicit_zero_count,
-       COUNT(*) FILTER (WHERE fp.funded_allowance_minutes > 0 AND fp.funded_allowance_minutes < 60)::int AS under_one_hour_count,
-       COUNT(*) FILTER (WHERE fp.funded_allowance_minutes > 9600)::int AS above_160_hours_count
+       COUNT(*) FILTER (WHERE fr.id IS NULL OR fr.funding_enabled = false)::int AS missing_profile_count,
+       COUNT(*) FILTER (WHERE fr.id IS NOT NULL AND fr.funding_enabled = true AND (fr.funded_hours_per_week IS NULL OR fr.funded_hours_per_week = 0))::int AS explicit_zero_count,
+       0::int AS under_one_hour_count,
+       0::int AS above_160_hours_count
 FROM children c
-LEFT JOIN funding_profiles fp
-  ON fp.tenant_id = c.tenant_id
-  AND fp.branch_id = c.branch_id
-  AND fp.child_id = c.id
-  AND fp.billing_month = $3
+LEFT JOIN child_funding_records fr
+  ON fr.tenant_id = c.tenant_id
+  AND fr.branch_id = c.branch_id
+  AND fr.child_id = c.id
 WHERE c.tenant_id = $1
   AND c.branch_id = ANY($2::uuid[])
   AND c.is_active = true
@@ -536,9 +535,9 @@ GROUP BY c.branch_id
 `
 
 type OwnerGetFundingReadinessByBranchesParams struct {
-	TenantID     pgtype.UUID
-	Column2      []pgtype.UUID
-	BillingMonth pgtype.Date
+	TenantID pgtype.UUID
+	Column2  []pgtype.UUID
+	Column3  interface{}
 }
 
 type OwnerGetFundingReadinessByBranchesRow struct {
@@ -552,7 +551,7 @@ type OwnerGetFundingReadinessByBranchesRow struct {
 
 // ── Funding readiness ─────────────────────────────────────────────────────────
 func (q *Queries) OwnerGetFundingReadinessByBranches(ctx context.Context, arg OwnerGetFundingReadinessByBranchesParams) ([]OwnerGetFundingReadinessByBranchesRow, error) {
-	rows, err := q.db.Query(ctx, ownerGetFundingReadinessByBranches, arg.TenantID, arg.Column2, arg.BillingMonth)
+	rows, err := q.db.Query(ctx, ownerGetFundingReadinessByBranches, arg.TenantID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}

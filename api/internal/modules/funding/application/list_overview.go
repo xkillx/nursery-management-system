@@ -16,12 +16,13 @@ type ConsumedMinutesProvider interface {
 }
 
 type ListOverview struct {
-	repo         domain.Repository
+	repo         domain.FundingQueryRepository
 	consumedProv ConsumedMinutesProvider
+	termDates    domain.TermDateProvider
 }
 
-func NewListOverview(repo domain.Repository, consumedProv ConsumedMinutesProvider) *ListOverview {
-	return &ListOverview{repo: repo, consumedProv: consumedProv}
+func NewListOverview(repo domain.FundingQueryRepository, consumedProv ConsumedMinutesProvider, termDates domain.TermDateProvider) *ListOverview {
+	return &ListOverview{repo: repo, consumedProv: consumedProv, termDates: termDates}
 }
 
 func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string) (domain.OverviewResult, error) {
@@ -35,17 +36,17 @@ func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, 
 		return domain.OverviewResult{}, domainerrors.Internal(err)
 	}
 
-	// Collect child IDs for consumed minutes lookup
 	childIDs := make([]uuid.UUID, 0, len(rows))
 	for _, row := range rows {
 		childIDs = append(childIDs, row.ChildID)
 	}
 
-	// Get consumed minutes for all children
 	consumedMap, err := uc.consumedProv.GetConsumedMinutes(ctx, actor.TenantID, actor.BranchID, childIDs, billingMonth)
 	if err != nil {
 		return domain.OverviewResult{}, domainerrors.Internal(err)
 	}
+
+	termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
 
 	var summary domain.OverviewSummary
 	var items []domain.OverviewItem
@@ -53,13 +54,12 @@ func (uc *ListOverview) Execute(ctx context.Context, actor tenant.ActorContext, 
 	summary.IncludedChildCount = len(rows)
 
 	for _, row := range rows {
-		flags := computeFlags(row)
+		flags, computedAllowance := computeFlagsWithAllowance(row, termDateRanges, billingMonth)
 
-		// Compute remaining minutes
 		var remaining *int
-		if row.FundedAllowanceMinutes != nil {
+		if computedAllowance > 0 {
 			consumed := consumedMap[row.ChildID]
-			r := max(0, *row.FundedAllowanceMinutes-consumed)
+			r := max(0, computedAllowance-consumed)
 			remaining = &r
 		}
 
@@ -108,17 +108,17 @@ func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.Actor
 		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
 	}
 
-	// Collect child IDs for consumed minutes lookup
 	childIDs := make([]uuid.UUID, 0, len(rows))
 	for _, row := range rows {
 		childIDs = append(childIDs, row.ChildID)
 	}
 
-	// Get consumed minutes for all children
 	consumedMap, err := uc.consumedProv.GetConsumedMinutes(ctx, actor.TenantID, actor.BranchID, childIDs, billingMonth)
 	if err != nil {
 		return domain.OverviewResult{}, 0, domainerrors.Internal(err)
 	}
+
+	termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
 
 	var summary domain.OverviewSummary
 	var items []domain.OverviewItem
@@ -126,13 +126,12 @@ func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.Actor
 	summary.IncludedChildCount = total
 
 	for _, row := range rows {
-		flags := computeFlags(row)
+		flags, computedAllowance := computeFlagsWithAllowance(row, termDateRanges, billingMonth)
 
-		// Compute remaining minutes
 		var remaining *int
-		if row.FundedAllowanceMinutes != nil {
+		if computedAllowance > 0 {
 			consumed := consumedMap[row.ChildID]
-			r := max(0, *row.FundedAllowanceMinutes-consumed)
+			r := max(0, computedAllowance-consumed)
 			remaining = &r
 		}
 
@@ -165,23 +164,35 @@ func (uc *ListOverview) ExecutePaginated(ctx context.Context, actor tenant.Actor
 	}, total, nil
 }
 
-func computeFlags(row domain.OverviewRow) []domain.OverviewFlag {
-	if row.FundingProfileID == nil {
-		return []domain.OverviewFlag{domain.FlagMissingProfile}
+func computeFlagsWithAllowance(row domain.OverviewRow, termDates []domain.TermDateRange, billingMonth time.Time) ([]domain.OverviewFlag, int) {
+	if !row.FundingEnabled || row.FundingRecordID == nil {
+		return []domain.OverviewFlag{domain.FlagMissingProfile}, 0
 	}
 
-	var flags []domain.OverviewFlag
-	allowance := *row.FundedAllowanceMinutes
+	hoursPerWeek := 0.0
+	if row.FundedHoursPerWeek != nil {
+		hoursPerWeek = *row.FundedHoursPerWeek
+	}
+	if hoursPerWeek <= 0 {
+		return []domain.OverviewFlag{domain.FlagExplicitZero}, 0
+	}
 
+	model := domain.FundingModelTermTimeOnly
+	if row.FundingModel != nil {
+		model = domain.FundingModel(*row.FundingModel)
+	}
+
+	allowance, _ := domain.ComputeAllowanceMinutes(hoursPerWeek, model, termDates, billingMonth, nil, row.FundingStartDate, row.FundingEndDate)
+
+	var flags []domain.OverviewFlag
 	if allowance == 0 {
 		flags = append(flags, domain.FlagExplicitZero)
 	} else if allowance > 0 && allowance < 60 {
 		flags = append(flags, domain.FlagUnderOneHour)
 	}
-
 	if allowance > 9600 {
 		flags = append(flags, domain.FlagAbove160Hours)
 	}
 
-	return flags
+	return flags, allowance
 }
