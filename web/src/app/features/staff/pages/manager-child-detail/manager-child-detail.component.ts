@@ -51,7 +51,7 @@ import {
 } from '../../models/child-profile.models';
 import { BookingPattern } from '../../models/booking-pattern.models';
 import { ManagerInvoiceListItem } from '../../models/manager-invoices.models';
-import { FundingProfileRecord } from '../../models/funding.models';
+import { FundingRecordDetail, FundingRecordWritePayload } from '../../models/funding.models';
 import { formatSiteRate, formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
@@ -148,14 +148,12 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   resolvedPhotoUrl: string | null = null;
 
   billingMonth = '';
-  monthlyProfile: FundingProfileRecord | null = null;
-  monthlyAllowanceMinutes = 0;
-  isSavingMonthly = false;
-  monthlySaveMessage: string | null = null;
+  fundingDetail: FundingRecordDetail | null = null;
+  isSavingFunding = false;
+  fundingSaveMessage: string | null = null;
 
-  get suggestedMinutes(): number | null {
-    if (!this.funding?.funded_hours_per_week) return null;
-    return Math.round(this.funding.funded_hours_per_week * 4.33 * 60);
+  get fundedAllowanceMinutes(): number {
+    return this.fundingDetail?.fundedAllowanceMinutes ?? 0;
   }
 
   showPickupPassword = false;
@@ -327,41 +325,43 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadMonthlyProfile(): void {
-    this.staffApi.getFundingProfile(this.childId, this.billingMonth).subscribe({
-      next: (profile) => {
-        this.monthlyProfile = profile;
-        this.monthlyAllowanceMinutes = profile?.fundedAllowanceMinutes ?? 0;
+    this.staffApi.getFundingRecord(this.childId, this.billingMonth).subscribe({
+      next: (detail) => {
+        this.fundingDetail = detail;
         this.isLoading = false;
       },
       error: () => {
-        this.monthlyProfile = null;
-        this.monthlyAllowanceMinutes = 0;
+        this.fundingDetail = null;
         this.isLoading = false;
       },
     });
   }
 
-  useSuggestedValue(): void {
-    if (this.suggestedMinutes !== null) {
-      this.monthlyAllowanceMinutes = this.suggestedMinutes;
-    }
-  }
-
-  saveMonthlyProfile(): void {
-    if (!this.billingMonth) return;
-    this.isSavingMonthly = true;
-    this.monthlySaveMessage = null;
-    this.staffApi.upsertFundingProfile(this.childId, {
-      billing_month: this.billingMonth,
-      funded_allowance_minutes: this.monthlyAllowanceMinutes,
-    }).subscribe({
+  saveFundingRecord(): void {
+    if (!this.fundingDetail?.record) return;
+    this.isSavingFunding = true;
+    this.fundingSaveMessage = null;
+    const r = this.fundingDetail.record;
+    const payload: FundingRecordWritePayload = {
+      funding_enabled: r.fundingEnabled,
+      funding_type: r.fundingType,
+      funding_model: r.fundingModel,
+      funded_hours_per_week: r.fundedHoursPerWeek,
+      funding_start_date: r.fundingStartDate,
+      funding_end_date: r.fundingEndDate,
+      eligibility_code: r.eligibilityCode,
+      eligibility_code_validated: r.eligibilityCodeValidated,
+      evidence_received: r.evidenceReceived,
+    };
+    this.staffApi.upsertFundingRecord(this.childId, payload).subscribe({
       next: () => {
-        this.isSavingMonthly = false;
-        this.monthlySaveMessage = 'Monthly funding profile saved.';
+        this.isSavingFunding = false;
+        this.fundingSaveMessage = 'Funding record saved.';
+        this.loadMonthlyProfile();
       },
       error: (err) => {
-        this.isSavingMonthly = false;
-        this.errorMessage = err?.message ?? 'Failed to save monthly funding profile.';
+        this.isSavingFunding = false;
+        this.errorMessage = err?.message ?? 'Failed to save funding record.';
       },
     });
   }

@@ -737,59 +737,47 @@
                 <div class="p-1.5 bg-brand-50 rounded-lg text-brand-600">
                   <ng-icon name="heroCalendarDays" size="18"></ng-icon>
                 </div>
-                <h3 class="text-md font-bold text-gray-900">Monthly Funding Profile — {{ billingMonth }}</h3>
+                <h3 class="text-md font-bold text-gray-900">Funding — {{ billingMonth }}</h3>
               </div>
 
-              @if (funding && funding.funding_enabled) {
+              @if (fundingDetail && fundingDetail.record) {
                 <div class="rounded-2xl border border-brand-100 bg-brand-50/30 p-4 space-y-3">
-                  <h4 class="text-xs font-bold text-brand-800 uppercase tracking-wider">Registration funding reference info</h4>
+                  <h4 class="text-xs font-bold text-brand-800 uppercase tracking-wider">Funding Record</h4>
                   <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-brand-700">
-                    <div><span class="font-semibold text-brand-500">Type:</span> {{ funding.funding_type.replace('_', ' ') }}</div>
-                    <div><span class="font-semibold text-brand-500">Model:</span> {{ funding.funding_model === 'stretched' ? 'Stretched' : 'Term time' }}</div>
-                    @if (funding.funded_hours_per_week) {
-                      <div><span class="font-semibold text-brand-500">Hours/week:</span> {{ funding.funded_hours_per_week }}</div>
+                    <div><span class="font-semibold text-brand-500">Type:</span> {{ fundingDetail.record.fundingType.replace('_', ' ') }}</div>
+                    <div><span class="font-semibold text-brand-500">Model:</span> {{ fundingDetail.record.fundingModel === 'stretched' ? 'Stretched' : 'Term time' }}</div>
+                    @if (fundingDetail.record.fundedHoursPerWeek) {
+                      <div><span class="font-semibold text-brand-500">Hours/week:</span> {{ fundingDetail.record.fundedHoursPerWeek }}</div>
                     }
-                    @if (funding.eligibility_code) {
-                      <div><span class="font-semibold text-brand-500">Eligibility Code:</span> {{ funding.eligibility_code }}</div>
+                    @if (fundingDetail.record.eligibilityCode) {
+                      <div><span class="font-semibold text-brand-500">Eligibility Code:</span> {{ fundingDetail.record.eligibilityCode }}</div>
+                    }
+                    @if (fundingDetail.record.fundingStartDate) {
+                      <div><span class="font-semibold text-brand-500">Start:</span> {{ fundingDetail.record.fundingStartDate }}</div>
+                    }
+                    @if (fundingDetail.record.fundingEndDate) {
+                      <div><span class="font-semibold text-brand-500">End:</span> {{ fundingDetail.record.fundingEndDate }}</div>
                     }
                   </dl>
-                  <p class="text-[10px] text-brand-600/80 leading-relaxed pt-1 border-t border-brand-100/40">This info is static from registration. Monthly deductions are governed strictly by the allowance minutes set below.</p>
                 </div>
-              }
 
-              @if (suggestedMinutes !== null) {
-                <div class="flex items-center justify-between gap-3 bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100 text-xs">
-                  <span class="text-gray-600 font-medium">Suggested monthly allowance: <strong class="text-gray-900 font-bold">{{ suggestedMinutes }}</strong> minutes</span>
-                  <button type="button" class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline" (click)="useSuggestedValue()">Use suggested value</button>
+                <div class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Computed Allowance</div>
+                  <div class="text-2xl font-bold text-gray-900 font-outfit">
+                    {{ fundedAllowanceMinutes }} <span class="text-sm font-normal text-gray-500">minutes</span>
+                  </div>
+                  <p class="text-[10px] text-gray-500 mt-1">Computed from funding record + term dates. Not editable.</p>
                 </div>
-              }
 
-              <div class="space-y-4">
-                <div class="max-w-xs">
-                  <label for="monthly-allowance" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Funded allowance (minutes)</label>
-                  <input
-                    id="monthly-allowance"
-                    type="number"
-                    min="0"
-                    [(ngModel)]="monthlyAllowanceMinutes"
-                    class="block w-full rounded-xl border border-gray-250 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 font-mono font-semibold"
-                  />
-                </div>
-                <div class="flex gap-2">
-                  <button class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/10 transition-all active:scale-98" (click)="saveMonthlyProfile()" [disabled]="isSavingMonthly">
-                    @if (!isSavingMonthly) {
-                      <ng-icon name="heroCheck" size="14" aria-hidden="true" />
-                    }
-                    {{ isSavingMonthly ? 'Saving...' : 'Save Allowance' }}
-                  </button>
-                </div>
-                @if (monthlySaveMessage) {
+                @if (fundingSaveMessage) {
                   <p class="text-xs text-success-600 font-bold flex items-center gap-1">
                     <ng-icon name="heroCheckCircle" size="16" class="text-success-500"></ng-icon>
-                    {{ monthlySaveMessage }}
+                    {{ fundingSaveMessage }}
                   </p>
                 }
-              </div>
+              } @else {
+                <p class="text-xs text-gray-500 font-medium">No funding record found for this child.</p>
+              }
             </div>
           }
 

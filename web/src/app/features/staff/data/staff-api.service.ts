@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
-import { FundingProfileRecord, FundingProfileWritePayload, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
+import { FundingRecord, FundingRecordWritePayload, FundingRecordDetail, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
 import { BookingPattern, BookingPatternInput } from '../models/booking-pattern.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 import {
@@ -126,13 +126,46 @@ interface CorrectionHistoryEventApiModel {
   created_by_correction: boolean;
 }
 
-interface FundingProfileApiModel {
+interface FundingRecordApiModel {
   id: string;
   child_id: string;
-  billing_month: string;
-  funded_allowance_minutes: number;
+  funding_enabled: boolean;
+  funding_type: string;
+  funding_model: string;
+  funded_hours_per_week?: number | null;
+  funding_start_date?: string | null;
+  funding_end_date?: string | null;
+  eligibility_code?: string | null;
+  eligibility_code_validated: boolean;
+  evidence_received: boolean;
   created_at: string;
   updated_at: string;
+}
+
+interface FundingRecordDetailApiModel {
+  record: FundingRecordApiModel;
+  funded_allowance_minutes: number;
+  allocation: AllocationEntryApiModel[];
+  history: FundingHistoryEntryApiModel[];
+}
+
+interface AllocationEntryApiModel {
+  booking_id: string;
+  effective_start_date: string;
+  effective_end_date?: string | null;
+  days_of_week: number[];
+  session_type_name: string;
+  session_duration_minutes: number;
+}
+
+interface FundingHistoryEntryApiModel {
+  id: string;
+  funding_type?: string | null;
+  funding_model?: string | null;
+  funded_hours_per_week?: number | null;
+  funding_start_date?: string | null;
+  funding_end_date?: string | null;
+  changed_at: string;
 }
 
 interface FundingOverviewApiModel {
@@ -156,8 +189,7 @@ interface FundingOverviewItemApiModel {
   is_active: boolean;
   start_date: string;
   end_date?: string | null;
-  funding_profile_id?: string | null;
-  funded_allowance_minutes?: number | null;
+  funding_record_id?: string | null;
   funding_updated_at?: string | null;
   child_photo_url?: string | null;
   flags: string[];
@@ -564,18 +596,18 @@ export class StaffApiService {
       .pipe(map((invite) => this.toInviteRecord(invite)));
   }
 
-  getFundingProfile(childId: string, billingMonth: string): Observable<FundingProfileRecord> {
+  getFundingRecord(childId: string, billingMonth: string): Observable<FundingRecordDetail> {
     return this.http
-      .get<FundingProfileApiModel>(apiUrl(`/funding/children/${childId}`), {
+      .get<FundingRecordDetailApiModel>(apiUrl(`/funding/children/${childId}`), {
         params: new HttpParams({ fromObject: { billing_month: billingMonth } }),
       })
-      .pipe(map((profile) => this.toFundingProfileRecord(profile)));
+      .pipe(map((detail) => this.toFundingRecordDetail(detail)));
   }
 
-  upsertFundingProfile(childId: string, payload: FundingProfileWritePayload): Observable<FundingProfileRecord> {
+  upsertFundingRecord(childId: string, payload: FundingRecordWritePayload): Observable<FundingRecord> {
     return this.http
-      .put<FundingProfileApiModel>(apiUrl(`/funding/children/${childId}`), payload)
-      .pipe(map((profile) => this.toFundingProfileRecord(profile)));
+      .put<FundingRecordApiModel>(apiUrl(`/funding/children/${childId}`), payload)
+      .pipe(map((record) => this.toFundingRecord(record)));
   }
 
   getFundingOverview(billingMonth: string): Observable<FundingOverviewRecord> {
@@ -731,8 +763,7 @@ export class StaffApiService {
       isActive: item.is_active,
       startDate: item.start_date,
       endDate: item.end_date ?? null,
-      fundingProfileId: item.funding_profile_id ?? null,
-      fundedAllowanceMinutes: item.funded_allowance_minutes ?? null,
+      fundingRecordId: item.funding_record_id ?? null,
       fundingUpdatedAt: item.funding_updated_at ?? null,
       photoUrl: item.child_photo_url ?? null,
       flags: item.flags as FundingOverviewFlag[],
@@ -761,14 +792,45 @@ export class StaffApiService {
     });
   }
 
-  private toFundingProfileRecord(profile: FundingProfileApiModel): FundingProfileRecord {
+  private toFundingRecord(record: FundingRecordApiModel): FundingRecord {
     return {
-      id: profile.id,
-      childId: profile.child_id,
-      billingMonth: profile.billing_month,
-      fundedAllowanceMinutes: profile.funded_allowance_minutes,
-      createdAt: profile.created_at,
-      updatedAt: profile.updated_at,
+      id: record.id,
+      childId: record.child_id,
+      fundingEnabled: record.funding_enabled,
+      fundingType: record.funding_type,
+      fundingModel: record.funding_model,
+      fundedHoursPerWeek: record.funded_hours_per_week ?? null,
+      fundingStartDate: record.funding_start_date ?? null,
+      fundingEndDate: record.funding_end_date ?? null,
+      eligibilityCode: record.eligibility_code ?? null,
+      eligibilityCodeValidated: record.eligibility_code_validated,
+      evidenceReceived: record.evidence_received,
+      createdAt: record.created_at,
+      updatedAt: record.updated_at,
+    };
+  }
+
+  private toFundingRecordDetail(detail: FundingRecordDetailApiModel): FundingRecordDetail {
+    return {
+      record: this.toFundingRecord(detail.record),
+      fundedAllowanceMinutes: detail.funded_allowance_minutes,
+      allocation: detail.allocation.map((a) => ({
+        bookingId: a.booking_id,
+        effectiveStartDate: a.effective_start_date,
+        effectiveEndDate: a.effective_end_date ?? null,
+        daysOfWeek: a.days_of_week,
+        sessionTypeName: a.session_type_name,
+        sessionDurationMinutes: a.session_duration_minutes,
+      })),
+      history: detail.history.map((h) => ({
+        id: h.id,
+        fundingType: h.funding_type ?? null,
+        fundingModel: h.funding_model ?? null,
+        fundedHoursPerWeek: h.funded_hours_per_week ?? null,
+        fundingStartDate: h.funding_start_date ?? null,
+        fundingEndDate: h.funding_end_date ?? null,
+        changedAt: h.changed_at,
+      })),
     };
   }
 

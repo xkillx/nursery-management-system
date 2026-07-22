@@ -19,8 +19,7 @@ export interface FundingOverviewItem {
   isActive: boolean;
   startDate: string;
   endDate: string | null;
-  fundingProfileId: string | null;
-  fundedAllowanceMinutes: number | null;
+  fundingRecordId: string | null;
   fundingUpdatedAt: string | null;
   photoUrl: string | null;
   flags: FundingOverviewFlag[];
@@ -33,16 +32,56 @@ export interface FundingOverviewRecord {
   items: FundingOverviewItem[];
 }
 
-export interface FundingProfileRecord {
+export interface FundingRecord {
   id: string;
   childId: string;
-  billingMonth: string;
-  fundedAllowanceMinutes: number;
+  fundingEnabled: boolean;
+  fundingType: string;
+  fundingModel: string;
+  fundedHoursPerWeek: number | null;
+  fundingStartDate: string | null;
+  fundingEndDate: string | null;
+  eligibilityCode: string | null;
+  eligibilityCodeValidated: boolean;
+  evidenceReceived: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface FundingProfileWritePayload {
-  billing_month: string;
-  funded_allowance_minutes: number;
+export interface FundingRecordDetail {
+  record: FundingRecord;
+  fundedAllowanceMinutes: number;
+  allocation: AllocationEntry[];
+  history: FundingHistoryEntry[];
+}
+
+export interface AllocationEntry {
+  bookingId: string;
+  effectiveStartDate: string;
+  effectiveEndDate: string | null;
+  daysOfWeek: number[];
+  sessionTypeName: string;
+  sessionDurationMinutes: number;
+}
+
+export interface FundingHistoryEntry {
+  id: string;
+  fundingType: string | null;
+  fundingModel: string | null;
+  fundedHoursPerWeek: number | null;
+  fundingStartDate: string | null;
+  fundingEndDate: string | null;
+  changedAt: string;
+}
+
+export interface FundingRecordWritePayload {
+  funding_enabled: boolean;
+  funding_type: string;
+  funding_model: string;
+  funded_hours_per_week?: number | null;
+  funding_start_date?: string | null;
+  funding_end_date?: string | null;
+  eligibility_code?: string | null;
+  eligibility_code_validated?: boolean;
+  evidence_received?: boolean;
 }
