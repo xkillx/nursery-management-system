@@ -234,6 +234,7 @@ CREATE TABLE branches (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
     core_hourly_rate_minor integer,
+    funded_hourly_rate_minor integer NOT NULL DEFAULT 0,
     ad_hoc_rate_multiplier numeric(4,2) NOT NULL DEFAULT 1.50,
     overdue_grace_days integer NOT NULL DEFAULT 3,
     reminder_days_before integer NOT NULL DEFAULT 3,
@@ -496,7 +497,9 @@ CREATE TABLE child_funding_records (
     benefit_child_tax_credit boolean NOT NULL DEFAULT false,
     benefit_other_support boolean NOT NULL DEFAULT false,
     other_benefit_name text,
-    CONSTRAINT child_funding_records_funding_type_check CHECK (funding_type IN ('none','fifteen_hours','thirty_hours','two_year_old','custom','unknown')),
+    eypp_eligible boolean NOT NULL DEFAULT false,
+    daf_eligible boolean NOT NULL DEFAULT false,
+    CONSTRAINT child_funding_records_funding_type_check CHECK (funding_type IN ('none','universal_15','working_parent','working_parent_under_3','disadvantaged_2yo','unknown')),
     CONSTRAINT child_funding_records_funding_model_check CHECK (funding_model IN ('term_time_only','stretched','unknown')),
     CONSTRAINT child_funding_records_benefits_status_check CHECK (benefits_status IN ('no','yes','unknown')),
     CONSTRAINT child_funding_records_end_after_start CHECK (funding_end_date IS NULL OR funding_start_date IS NULL OR funding_end_date > funding_start_date)
@@ -616,22 +619,6 @@ CREATE TABLE absence_markers (
     CONSTRAINT absence_markers_cleared_at_null_implies_user_null CHECK (((cleared_at IS NULL) = (cleared_by_user_id IS NULL)))
 );
 
-CREATE TABLE funding_profiles (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    billing_month date NOT NULL,
-    funded_allowance_minutes integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    funding_type text,
-    funding_model text,
-    funded_hours_per_week numeric(5,2),
-    CONSTRAINT funding_profiles_allowance_bounds_check CHECK (((funded_allowance_minutes >= 0) AND (funded_allowance_minutes <= 44640))),
-    CONSTRAINT funding_profiles_billing_month_first_day_check CHECK ((billing_month = (date_trunc('month'::text, (billing_month)::timestamp with time zone))::date))
-);
-
 CREATE TABLE child_funding_history (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
@@ -644,7 +631,7 @@ CREATE TABLE child_funding_history (
     funding_end_date date,
     changed_at timestamptz NOT NULL DEFAULT now(),
     changed_by_user_id uuid NOT NULL,
-    CONSTRAINT chk_funding_type CHECK (funding_type IS NULL OR funding_type IN ('fifteen_hours', 'thirty_hours')),
+    CONSTRAINT chk_funding_type CHECK (funding_type IS NULL OR funding_type IN ('none', 'universal_15', 'working_parent', 'working_parent_under_3', 'disadvantaged_2yo', 'unknown')),
     CONSTRAINT chk_funding_model CHECK (funding_model IS NULL OR funding_model IN ('term_time', 'stretched'))
 );
 
@@ -716,7 +703,6 @@ CREATE TABLE bookings (
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
     session_template_id uuid,
-    room_id uuid NOT NULL,
     days_of_week integer[] NOT NULL,
     effective_start_date date NOT NULL,
     effective_end_date date,
@@ -729,7 +715,7 @@ CREATE TABLE bookings (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT bookings_status_check CHECK (status IN ('active', 'paused', 'cancelled')),
-    CONSTRAINT bookings_funding_type_check CHECK (funding_type IS NULL OR funding_type IN ('none', 'fifteen_hours', 'thirty_hours', 'two_year_old', 'custom')),
+    CONSTRAINT bookings_funding_type_check CHECK (funding_type IS NULL OR funding_type IN ('none', 'universal_15', 'working_parent', 'working_parent_under_3', 'disadvantaged_2yo', 'unknown')),
     CONSTRAINT bookings_days_of_week_check CHECK (array_length(days_of_week, 1) > 0),
     CONSTRAINT bookings_effective_dates_check CHECK (effective_end_date IS NULL OR effective_end_date >= effective_start_date),
     CONSTRAINT bookings_session_source_check CHECK (session_template_id IS NOT NULL OR session_entries IS NOT NULL)
@@ -919,6 +905,7 @@ CREATE TABLE invoices (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     voided_at timestamp with time zone,
     void_reason text,
+    parent_note text,
     CONSTRAINT invoices_adjustment_shape CHECK (((invoice_kind <> 'adjustment'::text) OR ((adjusts_invoice_id IS NOT NULL) AND (adjustment_reason_code IS NOT NULL) AND (btrim(adjustment_reason_code) <> ''::text) AND (adjustment_reason_note IS NOT NULL) AND (btrim(adjustment_reason_note) <> ''::text)))),
     CONSTRAINT invoices_amount_paid_lte_total CHECK ((amount_paid_minor <= total_due_minor)),
     CONSTRAINT invoices_amount_paid_nonneg CHECK ((amount_paid_minor >= 0)),
@@ -1285,12 +1272,6 @@ ALTER TABLE ONLY attendance_events
 ALTER TABLE ONLY absence_markers
     ADD CONSTRAINT absence_markers_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY funding_profiles
-    ADD CONSTRAINT funding_profiles_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY funding_profiles
-    ADD CONSTRAINT funding_profiles_scope_child_month_unique UNIQUE (tenant_id, branch_id, child_id, billing_month);
-
 ALTER TABLE ONLY session_types
     ADD CONSTRAINT session_types_pkey PRIMARY KEY (id);
 
@@ -1462,10 +1443,6 @@ CREATE INDEX idx_children_active ON children USING btree (tenant_id, branch_id, 
 
 CREATE INDEX idx_children_scope ON children USING btree (tenant_id, branch_id);
 
-CREATE INDEX idx_funding_profiles_child_month ON funding_profiles USING btree (tenant_id, branch_id, child_id, billing_month);
-
-CREATE INDEX idx_funding_profiles_scope_month ON funding_profiles USING btree (tenant_id, branch_id, billing_month);
-
 CREATE INDEX idx_invoice_lines_invoice_order ON invoice_lines USING btree (tenant_id, branch_id, invoice_id, sort_order);
 
 CREATE INDEX idx_invoice_runs_billing_scope ON invoice_runs USING btree (tenant_id, branch_id, billing_month, run_type, started_at DESC);
@@ -1583,7 +1560,6 @@ CREATE INDEX session_template_entries_by_template
     ON session_template_entries USING btree (tenant_id, branch_id, template_id, day_of_week);
 
 CREATE INDEX idx_bookings_tenant_branch_child ON bookings USING btree (tenant_id, branch_id, child_id);
-CREATE INDEX idx_bookings_tenant_branch_room_dates ON bookings USING btree (tenant_id, branch_id, room_id, effective_start_date);
 CREATE INDEX idx_bookings_tenant_branch_status ON bookings USING btree (tenant_id, branch_id, status);
 
 CREATE UNIQUE INDEX term_one_active_per_child ON term USING btree (tenant_id, branch_id, child_id)
@@ -1820,12 +1796,6 @@ ALTER TABLE ONLY absence_markers
 ALTER TABLE ONLY absence_markers
     ADD CONSTRAINT absence_markers_cleared_membership_scope_fkey FOREIGN KEY (tenant_id, branch_id, cleared_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY funding_profiles
-    ADD CONSTRAINT funding_profiles_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY funding_profiles
-    ADD CONSTRAINT funding_profiles_child_scope_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
 ALTER TABLE ONLY session_types
     ADD CONSTRAINT session_types_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
@@ -1870,9 +1840,6 @@ ALTER TABLE ONLY bookings
 
 ALTER TABLE ONLY bookings
     ADD CONSTRAINT bookings_session_template_id_fkey FOREIGN KEY (session_template_id) REFERENCES session_templates(id);
-
-ALTER TABLE ONLY bookings
-    ADD CONSTRAINT bookings_room_id_fkey FOREIGN KEY (room_id) REFERENCES rooms(id);
 
 ALTER TABLE ONLY term
     ADD CONSTRAINT term_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);

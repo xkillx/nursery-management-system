@@ -27,7 +27,6 @@ DROP TABLE IF EXISTS child_booking_pattern_entries;
 DROP TABLE IF EXISTS child_booking_patterns;
 DROP TABLE IF EXISTS session_types;
 DROP TABLE IF EXISTS child_funding_history;
-DROP TABLE IF EXISTS funding_profiles;
 DROP TABLE IF EXISTS absence_markers;
 DROP TABLE IF EXISTS attendance_events;
 DROP TABLE IF EXISTS attendance_sessions;
