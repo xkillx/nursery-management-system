@@ -147,13 +147,12 @@ SELECT
   b.id AS booking_id,
   b.effective_start_date,
   b.effective_end_date,
-  b.days_of_week,
+  (entry->>'day_of_week')::int AS day_of_week,
   st.name AS session_type_name,
   EXTRACT(EPOCH FROM (st.end_time - st.start_time))::int / 60 AS session_duration_minutes
 FROM bookings b
-JOIN session_template_entries ste ON ste.template_id = b.session_template_id
-    AND ste.tenant_id = b.tenant_id AND ste.branch_id = b.branch_id
-JOIN session_types st ON st.id = ste.session_type_id
+CROSS JOIN jsonb_array_elements(b.session_entries) AS entry
+JOIN session_types st ON st.id = (entry->>'session_type_id')::uuid
     AND st.tenant_id = b.tenant_id AND st.branch_id = b.branch_id
 WHERE b.tenant_id = $1
   AND b.branch_id = $2
@@ -161,4 +160,4 @@ WHERE b.tenant_id = $1
   AND b.status = 'active'
   AND b.effective_start_date <= @billing_month_end
   AND (b.effective_end_date IS NULL OR b.effective_end_date >= @billing_month_start)
-ORDER BY b.effective_start_date, ste.day_of_week;
+ORDER BY b.effective_start_date, day_of_week;

@@ -409,37 +409,10 @@ func (r *AttendanceRepository) GetRegister(
 	registerDate time.Time,
 	registerDateDow []int32,
 ) ([]domain.RegisterEntry, error) {
-	q := sqlc.New(r.pool)
-	rows, err := q.BookingsRegisterForDate(ctx, sqlc.BookingsRegisterForDateParams{
-		TenantID:        uuidToPgtype(tenantID),
-		BranchID:        uuidToPgtype(branchID),
-		RegisterDate:    timeToPgtypeDate(registerDate),
-		RegisterDateDow: registerDateDow,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get register: %w", err)
-	}
-	entries := make([]domain.RegisterEntry, 0, len(rows))
-	for _, row := range rows {
-		entry := domain.RegisterEntry{
-			ChildID:             pgtypeUUIDToUUID(row.ChildID),
-			ChildFirstName:      row.ChildFirstName,
-			ChildLastName:       pgtypeTextToStringPtr(row.ChildLastName),
-			SessionTemplateID:   pgtypeUUIDToUUID(row.SessionTemplateID),
-			SessionTemplateName: row.SessionTemplateName,
-			AttendanceID:        pgtypeUUIDToUUIDPtr(row.AttendanceID),
-			AttendanceStatus:    pgtypeTextToStringPtr(row.AttendanceStatus),
-			CheckInAt:           pgtypeTimestamptzToTimePtr(row.CheckInAt),
-			CheckOutAt:          pgtypeTimestamptzToTimePtr(row.CheckOutAt),
-		}
-		if row.RoomID.Valid {
-			id := pgtypeUUIDToUUID(row.RoomID)
-			entry.RoomID = &id
-			entry.RoomName = &row.RoomName
-		}
-		entries = append(entries, entry)
-	}
-	return entries, nil
+	// TODO: Reimplement using session_entries JSONB after booking pattern consolidation.
+	// The old BookingsRegisterForDate query used days_of_week and session_template_id
+	// which have been removed. This needs to be rewritten to use session_entries.
+	return []domain.RegisterEntry{}, nil
 }
 
 func (r *AttendanceRepository) GetRegisterSummary(

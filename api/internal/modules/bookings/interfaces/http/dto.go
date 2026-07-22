@@ -1,7 +1,6 @@
 package httpbookings
 
 import (
-	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,8 +19,6 @@ type sessionEntryResponse struct {
 type bookingResponse struct {
 	ID                   string                 `json:"id"`
 	ChildID              string                 `json:"child_id"`
-	SessionTemplateID    *string                `json:"session_template_id,omitempty"`
-	DaysOfWeek           []int32                `json:"days_of_week"`
 	EffectiveStartDate   string                 `json:"effective_start_date"`
 	EffectiveEndDate     *string                `json:"effective_end_date,omitempty"`
 	FundingType          *string                `json:"funding_type,omitempty"`
@@ -36,17 +33,16 @@ type bookingResponse struct {
 }
 
 type unifiedBookingResponse struct {
-	BookingType       string  `json:"booking_type"`
-	ID                string  `json:"id"`
-	ChildID           string  `json:"child_id"`
-	StartDate         string  `json:"start_date"`
-	EndDate           *string `json:"end_date,omitempty"`
-	SessionTemplateID *string `json:"session_template_id,omitempty"`
-	Status            string  `json:"status"`
-	CreatedAt         string  `json:"created_at"`
-	UpdatedAt         string  `json:"updated_at"`
-	ChildFirstName    string  `json:"child_first_name"`
-	ChildLastName     string  `json:"child_last_name"`
+	BookingType    string  `json:"booking_type"`
+	ID             string  `json:"id"`
+	ChildID        string  `json:"child_id"`
+	StartDate      string  `json:"start_date"`
+	EndDate        *string `json:"end_date,omitempty"`
+	Status         string  `json:"status"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
+	ChildFirstName string  `json:"child_first_name"`
+	ChildLastName  string  `json:"child_last_name"`
 }
 
 type roomCapacityEntryResponse struct {
@@ -66,8 +62,6 @@ type sessionEntryRequest struct {
 
 type createBookingRequest struct {
 	ChildID             string                `json:"child_id" binding:"required"`
-	SessionTemplateID   string                `json:"session_template_id"`
-	DaysOfWeek          []int32               `json:"days_of_week"`
 	EffectiveStartDate  string                `json:"effective_start_date" binding:"required"`
 	EffectiveEndDate    *string               `json:"effective_end_date"`
 	FundingType         *string               `json:"funding_type"`
@@ -78,7 +72,6 @@ type createBookingRequest struct {
 }
 
 type updateBookingRequest struct {
-	DaysOfWeek          []int32  `json:"days_of_week"`
 	EffectiveStartDate  *string  `json:"effective_start_date"`
 	EffectiveEndDate    *string  `json:"effective_end_date"`
 	FundingType         *string  `json:"funding_type"`
@@ -100,12 +93,6 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 		endDate = &s
 	}
 
-	var sessionTemplateID *string
-	if b.SessionTemplateID != nil {
-		s := b.SessionTemplateID.String()
-		sessionTemplateID = &s
-	}
-
 	var sessionEntries []sessionEntryResponse
 	if len(b.SessionEntries) > 0 {
 		sessionEntries = make([]sessionEntryResponse, 0, len(b.SessionEntries))
@@ -120,8 +107,6 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 	return bookingResponse{
 		ID:                   b.ID.String(),
 		ChildID:              b.ChildID.String(),
-		SessionTemplateID:    sessionTemplateID,
-		DaysOfWeek:           b.DaysOfWeek,
 		EffectiveStartDate:   b.EffectiveStartDate.UTC().Format("2006-01-02"),
 		EffectiveEndDate:     endDate,
 		FundingType:          b.FundingType,
@@ -144,24 +129,18 @@ func toUnifiedBookingListResponse(items []domain.UnifiedBookingRow) []unifiedBoo
 			s := b.EndDate.UTC().Format("2006-01-02")
 			endDate = &s
 		}
-		var sessionTemplateID *string
-		if b.SessionTemplateID != nil {
-			s := b.SessionTemplateID.String()
-			sessionTemplateID = &s
-		}
 
 		out = append(out, unifiedBookingResponse{
-			BookingType:       b.BookingType,
-			ID:                b.ID.String(),
-			ChildID:           b.ChildID.String(),
-			StartDate:         b.StartDate.UTC().Format("2006-01-02"),
-			EndDate:           endDate,
-			SessionTemplateID: sessionTemplateID,
-			Status:            b.Status,
-			CreatedAt:         b.CreatedAt.UTC().Format(time.RFC3339),
-			UpdatedAt:         b.UpdatedAt.UTC().Format(time.RFC3339),
-			ChildFirstName:    b.ChildFirstName,
-			ChildLastName:     b.ChildLastName,
+			BookingType:    b.BookingType,
+			ID:             b.ID.String(),
+			ChildID:        b.ChildID.String(),
+			StartDate:      b.StartDate.UTC().Format("2006-01-02"),
+			EndDate:        endDate,
+			Status:         b.Status,
+			CreatedAt:      b.CreatedAt.UTC().Format(time.RFC3339),
+			UpdatedAt:      b.UpdatedAt.UTC().Format(time.RFC3339),
+			ChildFirstName: b.ChildFirstName,
+			ChildLastName:  b.ChildLastName,
 		})
 	}
 	return out
@@ -185,15 +164,6 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 	childID, err := uuid.Parse(req.ChildID)
 	if err != nil {
 		return application.CreateBookingParams{}, err
-	}
-
-	var sessionTemplateID *uuid.UUID
-	if req.SessionTemplateID != "" {
-		id, err := uuid.Parse(req.SessionTemplateID)
-		if err != nil {
-			return application.CreateBookingParams{}, err
-		}
-		sessionTemplateID = &id
 	}
 
 	startDate, err := time.Parse("2006-01-02", req.EffectiveStartDate)
@@ -224,23 +194,8 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 		}
 	}
 
-	daysOfWeek := req.DaysOfWeek
-	if len(daysOfWeek) == 0 && len(sessionEntries) > 0 {
-		daySet := make(map[int32]struct{})
-		for _, e := range sessionEntries {
-			daySet[e.DayOfWeek] = struct{}{}
-		}
-		daysOfWeek = make([]int32, 0, len(daySet))
-		for d := range daySet {
-			daysOfWeek = append(daysOfWeek, d)
-		}
-		sort.Slice(daysOfWeek, func(i, j int) bool { return daysOfWeek[i] < daysOfWeek[j] })
-	}
-
 	return application.CreateBookingParams{
 		ChildID:             childID,
-		SessionTemplateID:   sessionTemplateID,
-		DaysOfWeek:          daysOfWeek,
 		EffectiveStartDate:  startDate,
 		EffectiveEndDate:    endDate,
 		FundingType:         req.FundingType,
@@ -254,9 +209,6 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 func parseUpdateRequest(req updateBookingRequest) (application.UpdateBookingParams, error) {
 	var params application.UpdateBookingParams
 
-	if req.DaysOfWeek != nil {
-		params.DaysOfWeek = req.DaysOfWeek
-	}
 	if req.EffectiveStartDate != nil {
 		t, err := time.Parse("2006-01-02", *req.EffectiveStartDate)
 		if err != nil {

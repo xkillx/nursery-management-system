@@ -138,8 +138,8 @@ func (q *Queries) BookingsCountByBranch(ctx context.Context, arg BookingsCountBy
 }
 
 const bookingsCreate = `-- name: BookingsCreate :exec
-INSERT INTO bookings (id, tenant_id, branch_id, child_id, session_template_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'active', $13, $14)
+INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)
 `
 
 type BookingsCreateParams struct {
@@ -147,8 +147,6 @@ type BookingsCreateParams struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -165,8 +163,6 @@ func (q *Queries) BookingsCreate(ctx context.Context, arg BookingsCreateParams) 
 		arg.TenantID,
 		arg.BranchID,
 		arg.ChildID,
-		arg.SessionTemplateID,
-		arg.DaysOfWeek,
 		arg.EffectiveStartDate,
 		arg.EffectiveEndDate,
 		arg.FundingType,
@@ -180,7 +176,7 @@ func (q *Queries) BookingsCreate(ctx context.Context, arg BookingsCreateParams) 
 }
 
 const bookingsGetByID = `-- name: BookingsGetByID :one
-SELECT id, tenant_id, branch_id, child_id, session_template_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -198,8 +194,6 @@ type BookingsGetByIDRow struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -221,8 +215,6 @@ func (q *Queries) BookingsGetByID(ctx context.Context, arg BookingsGetByIDParams
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.SessionTemplateID,
-		&i.DaysOfWeek,
 		&i.EffectiveStartDate,
 		&i.EffectiveEndDate,
 		&i.FundingType,
@@ -239,7 +231,7 @@ func (q *Queries) BookingsGetByID(ctx context.Context, arg BookingsGetByIDParams
 }
 
 const bookingsGetByIDForUpdate = `-- name: BookingsGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, session_template_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -258,8 +250,6 @@ type BookingsGetByIDForUpdateRow struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -281,8 +271,6 @@ func (q *Queries) BookingsGetByIDForUpdate(ctx context.Context, arg BookingsGetB
 		&i.TenantID,
 		&i.BranchID,
 		&i.ChildID,
-		&i.SessionTemplateID,
-		&i.DaysOfWeek,
 		&i.EffectiveStartDate,
 		&i.EffectiveEndDate,
 		&i.FundingType,
@@ -299,7 +287,7 @@ func (q *Queries) BookingsGetByIDForUpdate(ctx context.Context, arg BookingsGetB
 }
 
 const bookingsListByBranchPaginated = `-- name: BookingsListByBranchPaginated :many
-SELECT id, tenant_id, branch_id, child_id, session_template_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -331,8 +319,6 @@ type BookingsListByBranchPaginatedRow struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -371,8 +357,6 @@ func (q *Queries) BookingsListByBranchPaginated(ctx context.Context, arg Booking
 			&i.TenantID,
 			&i.BranchID,
 			&i.ChildID,
-			&i.SessionTemplateID,
-			&i.DaysOfWeek,
 			&i.EffectiveStartDate,
 			&i.EffectiveEndDate,
 			&i.FundingType,
@@ -396,7 +380,7 @@ func (q *Queries) BookingsListByBranchPaginated(ctx context.Context, arg Booking
 }
 
 const bookingsListByChildAndDateRange = `-- name: BookingsListByChildAndDateRange :many
-SELECT id, tenant_id, branch_id, child_id, session_template_id, days_of_week, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -420,8 +404,6 @@ type BookingsListByChildAndDateRangeRow struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -455,8 +437,6 @@ func (q *Queries) BookingsListByChildAndDateRange(ctx context.Context, arg Booki
 			&i.TenantID,
 			&i.BranchID,
 			&i.ChildID,
-			&i.SessionTemplateID,
-			&i.DaysOfWeek,
 			&i.EffectiveStartDate,
 			&i.EffectiveEndDate,
 			&i.FundingType,
@@ -496,165 +476,6 @@ func (q *Queries) BookingsPause(ctx context.Context, arg BookingsPauseParams) er
 	return err
 }
 
-const bookingsRegisterForDate = `-- name: BookingsRegisterForDate :many
-SELECT
-    b.child_id,
-    c.first_name AS child_first_name,
-    c.last_name AS child_last_name,
-    r.id AS room_id,
-    r.name AS room_name,
-    b.session_template_id,
-    st.name AS session_template_name,
-    b.effective_start_date,
-    b.effective_end_date,
-    att.id AS attendance_id,
-    att.status AS attendance_status,
-    att.check_in_at,
-    att.check_out_at
-FROM bookings b
-JOIN children c ON c.id = b.child_id AND c.tenant_id = b.tenant_id AND c.branch_id = b.branch_id
-JOIN child_room_assignments cra ON cra.child_id = c.id AND cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
-    AND cra.start_date <= $3 AND (cra.end_date IS NULL OR cra.end_date >= $3)
-JOIN rooms r ON r.id = cra.room_id AND r.tenant_id = cra.tenant_id AND r.branch_id = cra.branch_id
-JOIN session_templates st ON st.id = b.session_template_id AND st.tenant_id = b.tenant_id AND st.branch_id = b.branch_id
-LEFT JOIN attendance_sessions att ON att.child_id = b.child_id
-    AND att.tenant_id = b.tenant_id
-    AND att.branch_id = b.branch_id
-    AND att.check_in_local_date = $3
-WHERE b.tenant_id = $1
-  AND b.branch_id = $2
-  AND b.status = 'active'
-  AND b.effective_start_date <= $3
-  AND (b.effective_end_date IS NULL OR b.effective_end_date >= $3)
-  AND $4 = ANY(b.days_of_week)
-
-UNION ALL
-
-SELECT
-    ah.child_id,
-    c.first_name AS child_first_name,
-    c.last_name AS child_last_name,
-    r.id AS room_id,
-    r.name AS room_name,
-    ah.session_type_id AS session_template_id,
-    st.name AS session_template_name,
-    ah.calendar_date AS effective_start_date,
-    ah.calendar_date AS effective_end_date,
-    att.id AS attendance_id,
-    att.status AS attendance_status,
-    att.check_in_at,
-    att.check_out_at
-FROM ad_hoc_bookings ah
-JOIN children c ON c.id = ah.child_id AND c.tenant_id = ah.tenant_id AND c.branch_id = ah.branch_id
-JOIN child_room_assignments cra ON cra.child_id = c.id AND cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
-    AND cra.start_date <= $3 AND (cra.end_date IS NULL OR cra.end_date >= $3)
-JOIN rooms r ON r.id = cra.room_id AND r.tenant_id = cra.tenant_id AND r.branch_id = cra.branch_id
-JOIN session_types st ON st.id = ah.session_type_id AND st.tenant_id = ah.tenant_id AND st.branch_id = ah.branch_id
-LEFT JOIN attendance_sessions att ON att.child_id = ah.child_id
-    AND att.tenant_id = ah.tenant_id
-    AND att.branch_id = ah.branch_id
-    AND att.check_in_local_date = $3
-WHERE ah.tenant_id = $1
-  AND ah.branch_id = $2
-  AND ah.calendar_date = $3
-  AND ah.status = 'active'
-
-UNION ALL
-
-SELECT
-    h.child_id,
-    c.first_name AS child_first_name,
-    c.last_name AS child_last_name,
-    r.id AS room_id,
-    r.name AS room_name,
-    h.session_type_id AS session_template_id,
-    st.name AS session_template_name,
-    h.calendar_date AS effective_start_date,
-    h.calendar_date AS effective_end_date,
-    att.id AS attendance_id,
-    att.status AS attendance_status,
-    att.check_in_at,
-    att.check_out_at
-FROM hourly_bookings h
-JOIN children c ON c.id = h.child_id AND c.tenant_id = h.tenant_id AND c.branch_id = h.branch_id
-JOIN child_room_assignments cra ON cra.child_id = c.id AND cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id
-    AND cra.start_date <= $3 AND (cra.end_date IS NULL OR cra.end_date >= $3)
-JOIN rooms r ON r.id = cra.room_id AND r.tenant_id = cra.tenant_id AND r.branch_id = cra.branch_id
-JOIN session_types st ON st.id = h.session_type_id AND st.tenant_id = h.tenant_id AND st.branch_id = h.branch_id
-LEFT JOIN attendance_sessions att ON att.child_id = h.child_id
-    AND att.tenant_id = h.tenant_id
-    AND att.branch_id = h.branch_id
-    AND att.check_in_local_date = $3
-WHERE h.tenant_id = $1
-  AND h.branch_id = $2
-  AND h.calendar_date = $3
-  AND h.status = 'active'
-
-ORDER BY child_last_name, child_first_name
-`
-
-type BookingsRegisterForDateParams struct {
-	TenantID        pgtype.UUID
-	BranchID        pgtype.UUID
-	RegisterDate    pgtype.Date
-	RegisterDateDow []int32
-}
-
-type BookingsRegisterForDateRow struct {
-	ChildID             pgtype.UUID
-	ChildFirstName      string
-	ChildLastName       pgtype.Text
-	RoomID              pgtype.UUID
-	RoomName            string
-	SessionTemplateID   pgtype.UUID
-	SessionTemplateName string
-	EffectiveStartDate  pgtype.Date
-	EffectiveEndDate    pgtype.Date
-	AttendanceID        pgtype.UUID
-	AttendanceStatus    pgtype.Text
-	CheckInAt           pgtype.Timestamptz
-	CheckOutAt          pgtype.Timestamptz
-}
-
-func (q *Queries) BookingsRegisterForDate(ctx context.Context, arg BookingsRegisterForDateParams) ([]BookingsRegisterForDateRow, error) {
-	rows, err := q.db.Query(ctx, bookingsRegisterForDate,
-		arg.TenantID,
-		arg.BranchID,
-		arg.RegisterDate,
-		arg.RegisterDateDow,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []BookingsRegisterForDateRow
-	for rows.Next() {
-		var i BookingsRegisterForDateRow
-		if err := rows.Scan(
-			&i.ChildID,
-			&i.ChildFirstName,
-			&i.ChildLastName,
-			&i.RoomID,
-			&i.RoomName,
-			&i.SessionTemplateID,
-			&i.SessionTemplateName,
-			&i.EffectiveStartDate,
-			&i.EffectiveEndDate,
-			&i.AttendanceID,
-			&i.AttendanceStatus,
-			&i.CheckInAt,
-			&i.CheckOutAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const bookingsUnifiedListByBranch = `-- name: BookingsUnifiedListByBranch :many
 SELECT
     'recurring' AS booking_type,
@@ -664,7 +485,6 @@ SELECT
     b.child_id,
     b.effective_start_date AS start_date,
     b.effective_end_date AS end_date,
-    b.session_template_id,
     b.status,
     b.created_at,
     b.updated_at,
@@ -691,7 +511,6 @@ SELECT
     ah.child_id,
     ah.calendar_date AS start_date,
     ah.calendar_date AS end_date,
-    ah.session_type_id AS session_template_id,
     ah.status,
     ah.created_at,
     ah.updated_at,
@@ -716,7 +535,6 @@ SELECT
     h.child_id,
     h.calendar_date AS start_date,
     h.calendar_date AS end_date,
-    h.session_type_id AS session_template_id,
     h.status,
     h.created_at,
     h.updated_at,
@@ -749,19 +567,18 @@ type BookingsUnifiedListByBranchParams struct {
 }
 
 type BookingsUnifiedListByBranchRow struct {
-	BookingType       string
-	ID                pgtype.UUID
-	TenantID          pgtype.UUID
-	BranchID          pgtype.UUID
-	ChildID           pgtype.UUID
-	StartDate         pgtype.Date
-	EndDate           pgtype.Date
-	SessionTemplateID pgtype.UUID
-	Status            string
-	CreatedAt         pgtype.Timestamptz
-	UpdatedAt         pgtype.Timestamptz
-	ChildFirstName    string
-	ChildLastName     pgtype.Text
+	BookingType    string
+	ID             pgtype.UUID
+	TenantID       pgtype.UUID
+	BranchID       pgtype.UUID
+	ChildID        pgtype.UUID
+	StartDate      pgtype.Date
+	EndDate        pgtype.Date
+	Status         string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	ChildFirstName string
+	ChildLastName  pgtype.Text
 }
 
 func (q *Queries) BookingsUnifiedListByBranch(ctx context.Context, arg BookingsUnifiedListByBranchParams) ([]BookingsUnifiedListByBranchRow, error) {
@@ -792,7 +609,6 @@ func (q *Queries) BookingsUnifiedListByBranch(ctx context.Context, arg BookingsU
 			&i.ChildID,
 			&i.StartDate,
 			&i.EndDate,
-			&i.SessionTemplateID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -811,13 +627,12 @@ func (q *Queries) BookingsUnifiedListByBranch(ctx context.Context, arg BookingsU
 
 const bookingsUpdate = `-- name: BookingsUpdate :exec
 UPDATE bookings
-SET days_of_week = $4,
-    effective_start_date = $5,
-    effective_end_date = $6,
-    funding_type = $7,
-    funding_hours_per_week = $8,
-    la_reference = $9,
-    term_time_only = $10,
+SET effective_start_date = $4,
+    effective_end_date = $5,
+    funding_type = $6,
+    funding_hours_per_week = $7,
+    la_reference = $8,
+    term_time_only = $9,
     updated_at = now()
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -828,7 +643,6 @@ type BookingsUpdateParams struct {
 	TenantID            pgtype.UUID
 	BranchID            pgtype.UUID
 	ID                  pgtype.UUID
-	DaysOfWeek          []int32
 	EffectiveStartDate  pgtype.Date
 	EffectiveEndDate    pgtype.Date
 	FundingType         pgtype.Text
@@ -842,7 +656,6 @@ func (q *Queries) BookingsUpdate(ctx context.Context, arg BookingsUpdateParams) 
 		arg.TenantID,
 		arg.BranchID,
 		arg.ID,
-		arg.DaysOfWeek,
 		arg.EffectiveStartDate,
 		arg.EffectiveEndDate,
 		arg.FundingType,

@@ -88,8 +88,6 @@ type bookingRow struct {
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
-	SessionTemplateID    pgtype.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -121,8 +119,6 @@ func mapBooking(row bookingRow) domain.Booking {
 		TenantID:             pgtypeUUIDToUUID(row.TenantID),
 		BranchID:             pgtypeUUIDToUUID(row.BranchID),
 		ChildID:              pgtypeUUIDToUUID(row.ChildID),
-		SessionTemplateID:    pgtypeUUIDPtr(row.SessionTemplateID),
-		DaysOfWeek:           row.DaysOfWeek,
 		EffectiveStartDate:   pgtypeDateToTime(row.EffectiveStartDate),
 		EffectiveEndDate:     pgtypeDatePtr(row.EffectiveEndDate),
 		FundingType:          pgtypeTextPtr(row.FundingType),
@@ -140,7 +136,6 @@ func mapBooking(row bookingRow) domain.Booking {
 func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 	return bookingRow{
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
-		SessionTemplateID: r.SessionTemplateID, DaysOfWeek: r.DaysOfWeek,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
@@ -153,7 +148,6 @@ func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow) bookingRow {
 	return bookingRow{
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
-		SessionTemplateID: r.SessionTemplateID, DaysOfWeek: r.DaysOfWeek,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
@@ -166,7 +160,6 @@ func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow)
 func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPaginatedRow) bookingRow {
 	return bookingRow{
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
-		SessionTemplateID: r.SessionTemplateID, DaysOfWeek: r.DaysOfWeek,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
@@ -179,7 +172,6 @@ func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPag
 func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAndDateRangeRow) bookingRow {
 	return bookingRow{
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
-		SessionTemplateID: r.SessionTemplateID, DaysOfWeek: r.DaysOfWeek,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
@@ -191,18 +183,17 @@ func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAn
 
 func mapUnifiedBookingRow(row sqlc.BookingsUnifiedListByBranchRow) domain.UnifiedBookingRow {
 	return domain.UnifiedBookingRow{
-		BookingType:       row.BookingType,
-		ID:                pgtypeUUIDToUUID(row.ID),
-		TenantID:          pgtypeUUIDToUUID(row.TenantID),
-		BranchID:          pgtypeUUIDToUUID(row.BranchID),
-		ChildID:           pgtypeUUIDToUUID(row.ChildID),
-		StartDate:         pgtypeDateToTime(row.StartDate),
-		EndDate:           pgtypeDatePtr(row.EndDate),
-		SessionTemplateID: pgtypeUUIDPtr(row.SessionTemplateID),
-		Status:            row.Status,
-		CreatedAt:         pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:         pgtypeTimestamptzToTime(row.UpdatedAt),
-		ChildFirstName:    row.ChildFirstName,
-		ChildLastName:     row.ChildLastName.String,
+		BookingType:    row.BookingType,
+		ID:             pgtypeUUIDToUUID(row.ID),
+		TenantID:       pgtypeUUIDToUUID(row.TenantID),
+		BranchID:       pgtypeUUIDToUUID(row.BranchID),
+		ChildID:        pgtypeUUIDToUUID(row.ChildID),
+		StartDate:      pgtypeDateToTime(row.StartDate),
+		EndDate:        pgtypeDatePtr(row.EndDate),
+		Status:         row.Status,
+		CreatedAt:      pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:      pgtypeTimestamptzToTime(row.UpdatedAt),
+		ChildFirstName: row.ChildFirstName,
+		ChildLastName:  row.ChildLastName.String,
 	}
 }

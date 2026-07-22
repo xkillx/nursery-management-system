@@ -9,19 +9,18 @@ import (
 )
 
 type UnifiedBookingRow struct {
-	BookingType       string
-	ID                uuid.UUID
-	TenantID          uuid.UUID
-	BranchID          uuid.UUID
-	ChildID           uuid.UUID
-	StartDate         string
-	EndDate           string
-	SessionTemplateID *uuid.UUID
-	Status            string
-	CreatedAt         string
-	UpdatedAt         string
-	ChildFirstName    string
-	ChildLastName     string
+	BookingType    string
+	ID             uuid.UUID
+	TenantID       uuid.UUID
+	BranchID       uuid.UUID
+	ChildID        uuid.UUID
+	StartDate      string
+	EndDate        string
+	Status         string
+	CreatedAt      string
+	UpdatedAt      string
+	ChildFirstName string
+	ChildLastName  string
 }
 
 type ListBookings struct {

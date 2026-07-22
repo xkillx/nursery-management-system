@@ -325,7 +325,7 @@ func (r *Repository) GetChildAllocation(ctx context.Context, tenantID, branchID,
 			BookingID:              pgtypeUUIDToUUID(row.BookingID),
 			EffectiveStartDate:     pgtypeDateToTime(row.EffectiveStartDate),
 			EffectiveEndDate:       endDate,
-			DaysOfWeek:             row.DaysOfWeek,
+			DayOfWeek:              row.DayOfWeek,
 			SessionTypeName:        row.SessionTypeName,
 			SessionDurationMinutes: int(row.SessionDurationMinutes),
 		})

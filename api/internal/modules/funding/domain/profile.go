@@ -84,7 +84,7 @@ type AllocationEntry struct {
 	BookingID              uuid.UUID
 	EffectiveStartDate     time.Time
 	EffectiveEndDate       *time.Time
-	DaysOfWeek             []int32
+	DayOfWeek              int32
 	SessionTypeName        string
 	SessionDurationMinutes int
 }

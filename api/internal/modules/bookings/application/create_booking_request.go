@@ -12,13 +12,12 @@ import (
 
 type CreateBookingRequestParams struct {
 	ChildID             uuid.UUID
-	SessionTemplateID   uuid.UUID
-	DaysOfWeek          []int32
 	EffectiveStartDate  time.Time
 	EffectiveEndDate    *time.Time
 	FundingType         *string
 	FundingHoursPerWeek *float64
 	LaReference         *string
+	SessionEntries      []domain.SessionEntry
 }
 
 type CreateBookingRequest struct {
@@ -57,13 +56,12 @@ func (uc *CreateBookingRequest) Execute(ctx context.Context, actor BookingActor,
 		TenantID:             actor.TenantID(),
 		BranchID:             siteID,
 		ChildID:              params.ChildID,
-		SessionTemplateID:    &params.SessionTemplateID,
-		DaysOfWeek:           params.DaysOfWeek,
 		EffectiveStartDate:   params.EffectiveStartDate,
 		EffectiveEndDate:     params.EffectiveEndDate,
 		FundingType:          params.FundingType,
 		FundingHoursPerWeek:  params.FundingHoursPerWeek,
 		LaReference:          params.LaReference,
+		SessionEntries:       params.SessionEntries,
 		Status:               domain.StatusActive,
 		BookedByMembershipID: actor.MembershipID(),
 		CreatedAt:            time.Now(),

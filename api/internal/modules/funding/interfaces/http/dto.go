@@ -84,8 +84,8 @@ type expiringFundingResponse struct {
 type allocationEntryResponse struct {
 	BookingID              string  `json:"booking_id"`
 	EffectiveStartDate     string  `json:"effective_start_date"`
-	EffectiveEndDate       *string `json:"effective_end_date,omitempty"`
-	DaysOfWeek             []int32 `json:"days_of_week"`
+	EffectiveEndDate       *string `json:"end_date,omitempty"`
+	DayOfWeek              int32   `json:"day_of_week"`
 	SessionTypeName        string  `json:"session_type_name"`
 	SessionDurationMinutes int     `json:"session_duration_minutes"`
 }

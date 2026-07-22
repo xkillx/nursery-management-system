@@ -207,13 +207,12 @@ func (h *Handler) createBookingRequestHandler(c *gin.Context) {
 
 	booking, err := h.createBookingReq.Execute(c.Request.Context(), parentActor, siteID, application.CreateBookingRequestParams{
 		ChildID:             params.ChildID,
-		SessionTemplateID:   *params.SessionTemplateID,
-		DaysOfWeek:          params.DaysOfWeek,
 		EffectiveStartDate:  params.EffectiveStartDate,
 		EffectiveEndDate:    params.EffectiveEndDate,
 		FundingType:         params.FundingType,
 		FundingHoursPerWeek: params.FundingHoursPerWeek,
 		LaReference:         params.LaReference,
+		SessionEntries:      params.SessionEntries,
 	})
 	if err != nil {
 		h.handleError(c, err)

@@ -82,7 +82,7 @@ func (uc *ListCapacity) Execute(ctx context.Context, actor BookingActor, siteID 
 			if dayOfWeek == 0 {
 				dayOfWeek = 7
 			}
-			if containsDay(b.DaysOfWeek, dayOfWeek) &&
+			if containsDayFromEntries(b.SessionEntries, dayOfWeek) &&
 				!d.Before(b.EffectiveStartDate) &&
 				(b.EffectiveEndDate == nil || !d.After(*b.EffectiveEndDate)) {
 				roomID := getRoomForDate(assignments, d)
@@ -120,9 +120,9 @@ func getRoomForDate(assignments []ChildRoomAssignmentInfo, date time.Time) uuid.
 	return uuid.Nil
 }
 
-func containsDay(days []int32, day int32) bool {
-	for _, d := range days {
-		if d == day {
+func containsDayFromEntries(entries []domain.SessionEntry, day int32) bool {
+	for _, e := range entries {
+		if e.DayOfWeek == day {
 			return true
 		}
 	}

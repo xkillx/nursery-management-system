@@ -22,8 +22,6 @@ type Booking struct {
 	TenantID             uuid.UUID
 	BranchID             uuid.UUID
 	ChildID              uuid.UUID
-	SessionTemplateID    *uuid.UUID
-	DaysOfWeek           []int32
 	EffectiveStartDate   time.Time
 	EffectiveEndDate     *time.Time
 	FundingType          *string
@@ -51,16 +49,4 @@ func ValidFundingType(ft string) bool {
 		return true
 	}
 	return false
-}
-
-func ValidDaysOfWeek(days []int32) bool {
-	if len(days) == 0 {
-		return false
-	}
-	for _, d := range days {
-		if d < 1 || d > 7 {
-			return false
-		}
-	}
-	return true
 }

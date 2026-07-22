@@ -26,11 +26,6 @@ func NewRepository(pool *pgxpool.Pool) *BookingRepository {
 func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) error {
 	q := sqlc.New(r.pool)
 
-	var sessionTemplateID pgtype.UUID
-	if booking.SessionTemplateID != nil {
-		sessionTemplateID = uuidToPgtype(*booking.SessionTemplateID)
-	}
-
 	var sessionEntriesJSON []byte
 	if len(booking.SessionEntries) > 0 {
 		sessionEntriesJSON, _ = json.Marshal(booking.SessionEntries)
@@ -41,8 +36,6 @@ func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) 
 		TenantID:             uuidToPgtype(booking.TenantID),
 		BranchID:             uuidToPgtype(booking.BranchID),
 		ChildID:              uuidToPgtype(booking.ChildID),
-		SessionTemplateID:    sessionTemplateID,
-		DaysOfWeek:           booking.DaysOfWeek,
 		EffectiveStartDate:   timeToPgtypeDate(booking.EffectiveStartDate),
 		EffectiveEndDate:     timeToPgtypeDatePtr(booking.EffectiveEndDate),
 		FundingType:          stringToPgtypeText(booking.FundingType),
@@ -166,7 +159,6 @@ func (r *BookingRepository) Update(ctx context.Context, tx domain.Tx, booking do
 		TenantID:            uuidToPgtype(booking.TenantID),
 		BranchID:            uuidToPgtype(booking.BranchID),
 		ID:                  uuidToPgtype(booking.ID),
-		DaysOfWeek:          booking.DaysOfWeek,
 		EffectiveStartDate:  timeToPgtypeDate(booking.EffectiveStartDate),
 		EffectiveEndDate:    timeToPgtypeDatePtr(booking.EffectiveEndDate),
 		FundingType:         stringToPgtypeText(booking.FundingType),

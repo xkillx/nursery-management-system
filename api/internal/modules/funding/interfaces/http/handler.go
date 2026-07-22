@@ -351,7 +351,7 @@ func toEnhancedChildDetailResponse(d domain.EnhancedChildDetail) enhancedChildDe
 			BookingID:              a.BookingID.String(),
 			EffectiveStartDate:     a.EffectiveStartDate.Format("2006-01-02"),
 			EffectiveEndDate:       endDate,
-			DaysOfWeek:             a.DaysOfWeek,
+			DayOfWeek:              a.DayOfWeek,
 			SessionTypeName:        a.SessionTypeName,
 			SessionDurationMinutes: a.SessionDurationMinutes,
 		})
@@ -409,7 +409,7 @@ func toAllocationResponse(allocation []domain.AllocationEntry) []allocationEntry
 			BookingID:              a.BookingID.String(),
 			EffectiveStartDate:     a.EffectiveStartDate.Format("2006-01-02"),
 			EffectiveEndDate:       endDate,
-			DaysOfWeek:             a.DaysOfWeek,
+			DayOfWeek:              a.DayOfWeek,
 			SessionTypeName:        a.SessionTypeName,
 			SessionDurationMinutes: a.SessionDurationMinutes,
 		})

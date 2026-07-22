@@ -12,8 +12,6 @@ import (
 
 type CreateBookingParams struct {
 	ChildID             uuid.UUID
-	SessionTemplateID   *uuid.UUID
-	DaysOfWeek          []int32
 	EffectiveStartDate  time.Time
 	EffectiveEndDate    *time.Time
 	FundingType         *string
@@ -39,11 +37,8 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 	if params.ChildID == uuid.Nil {
 		return domain.Booking{}, domainerrors.Validation("Child is required.", "child_id")
 	}
-	if params.SessionTemplateID == nil && len(params.SessionEntries) == 0 {
-		return domain.Booking{}, domainerrors.Validation("Either session template or session entries is required.", "session_entries")
-	}
-	if params.SessionTemplateID != nil && !domain.ValidDaysOfWeek(params.DaysOfWeek) {
-		return domain.Booking{}, domain.ErrInvalidDaysOfWeek
+	if len(params.SessionEntries) == 0 {
+		return domain.Booking{}, domainerrors.Validation("Session entries are required.", "session_entries")
 	}
 	if params.EffectiveEndDate != nil && params.EffectiveEndDate.Before(params.EffectiveStartDate) {
 		return domain.Booking{}, domain.ErrInvalidDateRange
@@ -57,8 +52,6 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		TenantID:             actor.TenantID(),
 		BranchID:             siteID,
 		ChildID:              params.ChildID,
-		SessionTemplateID:    params.SessionTemplateID,
-		DaysOfWeek:           params.DaysOfWeek,
 		EffectiveStartDate:   params.EffectiveStartDate,
 		EffectiveEndDate:     params.EffectiveEndDate,
 		FundingType:          params.FundingType,

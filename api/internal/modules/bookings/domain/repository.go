@@ -23,19 +23,18 @@ type Repository interface {
 }
 
 type UnifiedBookingRow struct {
-	BookingType       string
-	ID                uuid.UUID
-	TenantID          uuid.UUID
-	BranchID          uuid.UUID
-	ChildID           uuid.UUID
-	StartDate         time.Time
-	EndDate           *time.Time
-	SessionTemplateID *uuid.UUID
-	Status            string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	ChildFirstName    string
-	ChildLastName     string
+	BookingType    string
+	ID             uuid.UUID
+	TenantID       uuid.UUID
+	BranchID       uuid.UUID
+	ChildID        uuid.UUID
+	StartDate      time.Time
+	EndDate        *time.Time
+	Status         string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	ChildFirstName string
+	ChildLastName  string
 }
 
 type ListFilters struct {
