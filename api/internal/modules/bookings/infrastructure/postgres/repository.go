@@ -50,6 +50,7 @@ func (r *BookingRepository) Create(ctx context.Context, booking domain.Booking) 
 		LaReference:          stringToPgtypeText(booking.LaReference),
 		SessionEntries:       sessionEntriesJSON,
 		BookedByMembershipID: uuidToPgtype(booking.BookedByMembershipID),
+		TermTimeOnly:         booking.TermTimeOnly,
 	})
 }
 
@@ -171,6 +172,7 @@ func (r *BookingRepository) Update(ctx context.Context, tx domain.Tx, booking do
 		FundingType:         stringToPgtypeText(booking.FundingType),
 		FundingHoursPerWeek: float64ToPgtypeNumeric(booking.FundingHoursPerWeek),
 		LaReference:         stringToPgtypeText(booking.LaReference),
+		TermTimeOnly:        booking.TermTimeOnly,
 	})
 }
 

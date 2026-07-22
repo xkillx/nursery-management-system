@@ -96,6 +96,7 @@ type bookingRow struct {
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
 	SessionEntries       []byte
+	TermTimeOnly         bool
 	Status               string
 	BookedByMembershipID pgtype.UUID
 	CreatedAt            pgtype.Timestamptz
@@ -128,6 +129,7 @@ func mapBooking(row bookingRow) domain.Booking {
 		FundingHoursPerWeek:  fundingHours,
 		LaReference:          pgtypeTextPtr(row.LaReference),
 		SessionEntries:       sessionEntries,
+		TermTimeOnly:         row.TermTimeOnly,
 		Status:               row.Status,
 		BookedByMembershipID: pgtypeUUIDToUUID(row.BookedByMembershipID),
 		CreatedAt:            pgtypeTimestamptzToTime(row.CreatedAt),
@@ -142,6 +144,7 @@ func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		TermTimeOnly: r.TermTimeOnly,
 		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
@@ -154,6 +157,7 @@ func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow)
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		TermTimeOnly: r.TermTimeOnly,
 		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
@@ -166,6 +170,7 @@ func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPag
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		TermTimeOnly: r.TermTimeOnly,
 		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
@@ -178,6 +183,7 @@ func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAn
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		TermTimeOnly: r.TermTimeOnly,
 		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}

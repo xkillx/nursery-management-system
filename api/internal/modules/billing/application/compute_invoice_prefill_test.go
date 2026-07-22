@@ -19,6 +19,15 @@ type stubPrefillRepo struct {
 	entriesErr error
 }
 
+type stubBookingEntriesLookup struct {
+	entries []domain.BookedPatternEntry
+	err     error
+}
+
+func (s *stubBookingEntriesLookup) GetEntriesForChildInMonth(_ context.Context, _, _, _ uuid.UUID, _ time.Time) ([]domain.BookedPatternEntry, error) {
+	return s.entries, s.err
+}
+
 func (s *stubPrefillRepo) ListActiveTermsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
 	return s.terms, s.termsErr
 }
@@ -199,16 +208,16 @@ func makeTerm() domain.AdvancePayTermRow {
 func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
 	termRow := makeTerm()
-	entries := []domain.BookingPatternEntryRow{
-		{DayOfWeek: 1, SessionTypeID: uuid.New(), SessionTypeName: "Full Day", StartMinutes: 480, EndMinutes: 1020},
-		{DayOfWeek: 2, SessionTypeID: uuid.New(), SessionTypeName: "Full Day", StartMinutes: 480, EndMinutes: 1020},
+	lookupEntries := []domain.BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 1020, DurationMinutes: 540}},
+		{DayOfWeek: 2, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 1020, DurationMinutes: 540}},
 	}
 
 	repo := &stubPrefillRepo{
-		terms:   []domain.AdvancePayTermRow{termRow},
-		entries: entries,
+		terms: []domain.AdvancePayTermRow{termRow},
 	}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{entries: lookupEntries}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
 		TenantID: termRow.TenantID,
@@ -228,23 +237,23 @@ func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 	if result.SubtotalMinor <= 0 {
 		t.Fatal("expected positive subtotal")
 	}
-	if result.FundedDeductionMinor <= 0 {
-		t.Fatal("expected positive funded deduction for a child with funding profile")
+	if result.FundedDeductionMinor != 0 {
+		t.Fatalf("expected zero funded deduction (no funding in prefill), got %d", result.FundedDeductionMinor)
 	}
 	if result.TotalDueMinor <= 0 {
 		t.Fatal("expected positive total due")
 	}
-	if len(result.Lines) != 2 {
-		t.Fatalf("expected 2 lines (core + deduction), got %d", len(result.Lines))
+	if len(result.Lines) != 1 {
+		t.Fatalf("expected 1 line (core only, no funding), got %d", len(result.Lines))
 	}
 	if result.Lines[0].LineKind != domain.LineKindCoreChildcare {
 		t.Fatalf("line[0] kind: got %q, want %q", result.Lines[0].LineKind, domain.LineKindCoreChildcare)
 	}
-	if result.Lines[1].LineKind != domain.LineKindFundedDeduction {
-		t.Fatalf("line[1] kind: got %q, want %q", result.Lines[1].LineKind, domain.LineKindFundedDeduction)
+	if len(result.Warnings) != 1 {
+		t.Fatalf("expected 1 warning (missing_funding_record), got %d: %v", len(result.Warnings), result.Warnings)
 	}
-	if len(result.Warnings) != 0 {
-		t.Fatalf("expected no warnings, got %v", result.Warnings)
+	if result.Warnings[0] != "missing_funding_record" {
+		t.Fatalf("expected warning 'missing_funding_record', got %q", result.Warnings[0])
 	}
 }
 
@@ -253,10 +262,10 @@ func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 	termRow := makeTerm()
 
 	repo := &stubPrefillRepo{
-		terms:   []domain.AdvancePayTermRow{termRow},
-		entries: []domain.BookingPatternEntryRow{},
+		terms: []domain.AdvancePayTermRow{termRow},
 	}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
 		TenantID: termRow.TenantID,
@@ -290,10 +299,10 @@ func TestComputeInvoicePrefill_ZeroAttendance(t *testing.T) {
 	termRow := makeTerm()
 
 	repo := &stubPrefillRepo{
-		terms:   []domain.AdvancePayTermRow{termRow},
-		entries: []domain.BookingPatternEntryRow{},
+		terms: []domain.AdvancePayTermRow{termRow},
 	}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
 		TenantID: termRow.TenantID,
@@ -315,10 +324,10 @@ func TestComputeInvoicePrefill_ZeroAttendance(t *testing.T) {
 func TestComputeInvoicePrefill_ChildNotFound(t *testing.T) {
 	childID := uuid.New()
 	repo := &stubPrefillRepo{
-		terms:   []domain.AdvancePayTermRow{},
-		entries: []domain.BookingPatternEntryRow{},
+		terms: []domain.AdvancePayTermRow{},
 	}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
 		TenantID: uuid.MustParse("00000000-0000-4000-8000-000000000001"),
@@ -333,7 +342,8 @@ func TestComputeInvoicePrefill_ChildNotFound(t *testing.T) {
 func TestComputeInvoicePrefill_InvalidBillingMonth(t *testing.T) {
 	childID := uuid.New()
 	repo := &stubPrefillRepo{}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{}
 	_, err := uc.Execute(context.Background(), actor, childID.String(), "invalid-month")
@@ -348,10 +358,10 @@ func TestComputeInvoicePrefill_SiteRateNotSet(t *testing.T) {
 	termRow.SiteHourlyRateMinor = 0
 
 	repo := &stubPrefillRepo{
-		terms:   []domain.AdvancePayTermRow{termRow},
-		entries: []domain.BookingPatternEntryRow{},
+		terms: []domain.AdvancePayTermRow{termRow},
 	}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo})
+	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
 		TenantID: termRow.TenantID,

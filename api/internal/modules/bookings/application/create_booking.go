@@ -20,6 +20,7 @@ type CreateBookingParams struct {
 	FundingHoursPerWeek *float64
 	LaReference         *string
 	SessionEntries      []domain.SessionEntry
+	TermTimeOnly        bool
 }
 
 type CreateBooking struct {
@@ -64,6 +65,7 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		FundingHoursPerWeek:  params.FundingHoursPerWeek,
 		LaReference:          params.LaReference,
 		SessionEntries:       params.SessionEntries,
+		TermTimeOnly:         params.TermTimeOnly,
 		Status:               domain.StatusActive,
 		BookedByMembershipID: actor.MembershipID(),
 	}

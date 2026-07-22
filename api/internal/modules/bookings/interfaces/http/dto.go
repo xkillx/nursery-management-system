@@ -28,6 +28,7 @@ type bookingResponse struct {
 	FundingHoursPerWeek  *float64               `json:"funding_hours_per_week,omitempty"`
 	LaReference          *string                `json:"la_reference,omitempty"`
 	SessionEntries       []sessionEntryResponse `json:"session_entries,omitempty"`
+	TermTimeOnly         bool                   `json:"term_time_only"`
 	Status               string                 `json:"status"`
 	BookedByMembershipID string                 `json:"booked_by_membership_id"`
 	CreatedAt            string                 `json:"created_at"`
@@ -73,6 +74,7 @@ type createBookingRequest struct {
 	FundingHoursPerWeek *float64              `json:"funding_hours_per_week"`
 	LaReference         *string               `json:"la_reference"`
 	SessionEntries      []sessionEntryRequest `json:"session_entries"`
+	TermTimeOnly        bool                  `json:"term_time_only"`
 }
 
 type updateBookingRequest struct {
@@ -82,6 +84,7 @@ type updateBookingRequest struct {
 	FundingType         *string  `json:"funding_type"`
 	FundingHoursPerWeek *float64 `json:"funding_hours_per_week"`
 	LaReference         *string  `json:"la_reference"`
+	TermTimeOnly        *bool    `json:"term_time_only"`
 }
 
 type cloneBookingRequest struct {
@@ -125,6 +128,7 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 		FundingHoursPerWeek:  b.FundingHoursPerWeek,
 		LaReference:          b.LaReference,
 		SessionEntries:       sessionEntries,
+		TermTimeOnly:         b.TermTimeOnly,
 		Status:               b.Status,
 		BookedByMembershipID: b.BookedByMembershipID.String(),
 		CreatedAt:            b.CreatedAt.UTC().Format(time.RFC3339),
@@ -243,6 +247,7 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 		FundingHoursPerWeek: req.FundingHoursPerWeek,
 		LaReference:         req.LaReference,
 		SessionEntries:      sessionEntries,
+		TermTimeOnly:        req.TermTimeOnly,
 	}, nil
 }
 
@@ -274,6 +279,9 @@ func parseUpdateRequest(req updateBookingRequest) (application.UpdateBookingPara
 	}
 	if req.LaReference != nil {
 		params.LaReference = req.LaReference
+	}
+	if req.TermTimeOnly != nil {
+		params.TermTimeOnly = req.TermTimeOnly
 	}
 
 	return params, nil

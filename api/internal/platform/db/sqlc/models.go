@@ -256,6 +256,7 @@ type Booking struct {
 	SessionEntries       []byte
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
+	TermTimeOnly         bool
 }
 
 type Branch struct {
@@ -266,10 +267,10 @@ type Branch struct {
 	UpdatedAt             pgtype.Timestamptz
 	IsActive              bool
 	CoreHourlyRateMinor   pgtype.Int4
+	FundedHourlyRateMinor int32
 	AdHocRateMultiplier   pgtype.Numeric
 	OverdueGraceDays      int32
 	ReminderDaysBefore    int32
-	FundedHourlyRateMinor int32
 }
 
 type BranchClosureDay struct {

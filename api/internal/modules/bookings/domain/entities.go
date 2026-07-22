@@ -30,6 +30,7 @@ type Booking struct {
 	FundingHoursPerWeek  *float64
 	LaReference          *string
 	SessionEntries       []SessionEntry
+	TermTimeOnly         bool
 	Status               string
 	BookedByMembershipID uuid.UUID
 	CreatedAt            time.Time

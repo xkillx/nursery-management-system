@@ -94,6 +94,13 @@ type ClosureDateLookup interface {
 	GetClosureDatesForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]time.Time, error)
 }
 
+// BookingEntriesLookup resolves a child's active recurring booking entries
+// for a given billing month. This replaces the old BookingPatternLookup that
+// read from child_booking_pattern_entries.
+type BookingEntriesLookup interface {
+	GetEntriesForChildInMonth(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) ([]BookedPatternEntry, error)
+}
+
 type FundingRecordRow struct {
 	FundingModel       string
 	FundedHoursPerWeek *float64

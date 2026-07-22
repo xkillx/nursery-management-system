@@ -16,17 +16,18 @@ import (
 )
 
 type GenerateTermInvoices struct {
-	repo              domain.BillingRepository
-	auditW            *audit.Writer
-	termDateLookup    domain.TermDateLookup
-	adHocLookup       domain.AdHocBookingLookup
-	hourlyLookup      domain.HourlyBookingLookup
-	closureDateLookup domain.ClosureDateLookup
-	fundingLookup     domain.FundingLookup
+	repo                domain.BillingRepository
+	auditW              *audit.Writer
+	termDateLookup      domain.TermDateLookup
+	adHocLookup         domain.AdHocBookingLookup
+	hourlyLookup        domain.HourlyBookingLookup
+	closureDateLookup   domain.ClosureDateLookup
+	fundingLookup       domain.FundingLookup
+	bookingEntriesLookup domain.BookingEntriesLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, fundingLookup domain.FundingLookup) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, fundingLookup: fundingLookup}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, fundingLookup domain.FundingLookup, bookingEntriesLookup domain.BookingEntriesLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, fundingLookup: fundingLookup, bookingEntriesLookup: bookingEntriesLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -88,24 +89,12 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			continue
 		}
 
-		entries, err := uc.repo.ListBookingPatternEntries(ctx, in.Tx, in.Actor.TenantID, in.Actor.BranchID, termRow.BookingPatternID)
+		entries, err := uc.bookingEntriesLookup.GetEntriesForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
 		if err != nil {
-			return GenerateTermInvoicesOutput{}, fmt.Errorf("list booking pattern entries: %w", err)
+			return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup booking entries for child: %w", err)
 		}
 
-		domainEntries := make([]domain.BookedPatternEntry, 0, len(entries))
-		for _, e := range entries {
-			domainEntries = append(domainEntries, domain.BookedPatternEntry{
-				DayOfWeek: e.DayOfWeek,
-				SessionType: domain.BookedSessionType{
-					ID:              e.SessionTypeID.String(),
-					Name:            e.SessionTypeName,
-					StartMinutes:    e.StartMinutes,
-					EndMinutes:      e.EndMinutes,
-					DurationMinutes: e.EndMinutes - e.StartMinutes,
-				},
-			})
-		}
+		domainEntries := entries
 
 		var termDates []domain.TermDateRange
 		var termDatesUsedLabels []string

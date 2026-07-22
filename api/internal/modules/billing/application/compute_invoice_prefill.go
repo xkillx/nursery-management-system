@@ -17,12 +17,13 @@ type PrefillTxManager interface {
 }
 
 type ComputeInvoicePrefill struct {
-	repo  domain.BillingRepository
-	txMgr PrefillTxManager
+	repo                domain.BillingRepository
+	txMgr               PrefillTxManager
+	bookingEntriesLookup domain.BookingEntriesLookup
 }
 
-func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager) *ComputeInvoicePrefill {
-	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr}
+func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager, bookingEntriesLookup domain.BookingEntriesLookup) *ComputeInvoicePrefill {
+	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr, bookingEntriesLookup: bookingEntriesLookup}
 }
 
 type ComputeInvoicePrefillResult struct {
@@ -84,24 +85,12 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 
 		warnings := prefillWarnings(*termRow)
 
-		entries, entriesErr := uc.repo.ListBookingPatternEntries(ctx, tx, actor.TenantID, actor.BranchID, termRow.BookingPatternID)
+		entries, entriesErr := uc.bookingEntriesLookup.GetEntriesForChildInMonth(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
 		if entriesErr != nil {
-			return fmt.Errorf("list booking pattern entries: %w", entriesErr)
+			return fmt.Errorf("lookup booking entries for child: %w", entriesErr)
 		}
 
-		domainEntries := make([]domain.BookedPatternEntry, 0, len(entries))
-		for _, e := range entries {
-			domainEntries = append(domainEntries, domain.BookedPatternEntry{
-				DayOfWeek: e.DayOfWeek,
-				SessionType: domain.BookedSessionType{
-					ID:              e.SessionTypeID.String(),
-					Name:            e.SessionTypeName,
-					StartMinutes:    e.StartMinutes,
-					EndMinutes:      e.EndMinutes,
-					DurationMinutes: e.EndMinutes - e.StartMinutes,
-				},
-			})
-		}
+		domainEntries := entries
 
 		fundedAllowance := 0
 

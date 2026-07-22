@@ -18,6 +18,7 @@ type UpdateBookingParams struct {
 	FundingType         *string
 	FundingHoursPerWeek *float64
 	LaReference         *string
+	TermTimeOnly        *bool
 }
 
 type UpdateBooking struct {
@@ -71,6 +72,9 @@ func (uc *UpdateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		}
 		if params.LaReference != nil {
 			booking.LaReference = params.LaReference
+		}
+		if params.TermTimeOnly != nil {
+			booking.TermTimeOnly = *params.TermTimeOnly
 		}
 
 		if err := uc.repo.Update(ctx, tx, booking); err != nil {
