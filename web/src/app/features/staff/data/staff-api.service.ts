@@ -7,7 +7,6 @@ import { apiUrl } from '../../../core/config/api.config';
 import { AbsenceMarkerRecord, AttendanceChildRecord, AttendanceCorrectionPayload, AttendanceSessionRecord, AttendanceState, CorrectionHistory, CorrectionHistoryEvent, CorrectionSessionContext, IssuedInvoiceWarning } from '../models/attendance-child.models';
 import { ChildRecord, ChildWritePayload, StaffListQuery, StatusFilter } from '../models/children.models';
 import { FundingRecord, FundingRecordWritePayload, FundingRecordDetail, FundingOverviewRecord, FundingOverviewItem, FundingOverviewFlag } from '../models/funding.models';
-import { BookingPattern, BookingPatternInput } from '../models/booking-pattern.models';
 import { InviteCreatePayload, InviteRecord, InviteRole, InviteStatus, InviteStatusFilter } from '../models/invites.models';
 import {
   ChildProfile, ChildProfileInput,
@@ -44,7 +43,6 @@ interface ChildApiModel {
   is_active: boolean;
   primary_room_id?: string | null;
   has_current_room: boolean;
-  has_booking_pattern?: boolean;
   enrollment_complete: boolean;
   missing_requirements?: string[];
   photo_url?: string | null;
@@ -390,38 +388,6 @@ export class StaffApiService {
       .delete<void>(apiUrl(`/children/${childId}/room-assignments/${assignmentId}`));
   }
 
-  listChildBookingPatterns(childId: string): Observable<BookingPattern[]> {
-    return this.http
-      .get<{ items: BookingPattern[] }>(apiUrl(`/children/${childId}/booking-patterns`))
-      .pipe(map((r) => r.items ?? []));
-  }
-
-  getCurrentChildBookingPattern(childId: string, date?: string): Observable<BookingPattern | null> {
-    let params = new HttpParams();
-    if (date) params = params.set('date', date);
-    return this.http
-      .get<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/current`), { params });
-  }
-
-  getChildBookingPattern(childId: string, patternId: string): Observable<BookingPattern> {
-    return this.http
-      .get<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/${patternId}`));
-  }
-
-  createChildBookingPattern(childId: string, payload: BookingPatternInput): Observable<BookingPattern> {
-    return this.http
-      .post<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns`), payload);
-  }
-
-  updateChildBookingPattern(
-    childId: string,
-    patternId: string,
-    payload: Partial<BookingPatternInput>,
-  ): Observable<BookingPattern> {
-    return this.http
-      .patch<BookingPattern>(apiUrl(`/children/${childId}/booking-patterns/${patternId}`), payload);
-  }
-
   getChildBillingProfile(childId: string): Observable<ChildBillingProfile | null> {
     return this.http
       .get<{ billing_profile: ChildBillingProfile | null } | ChildBillingProfile | null>(apiUrl(`/children/${childId}/billing-profile`))
@@ -658,7 +624,6 @@ export class StaffApiService {
       isActive: child.is_active,
       primaryRoomId: child.primary_room_id ?? null,
       hasCurrentRoom: child.has_current_room,
-      hasBookingPattern: child.has_booking_pattern ?? false,
       enrollmentComplete: child.enrollment_complete,
       missingRequirements: child.missing_requirements ?? [],
       photoUrl: child.photo_url ?? null,

@@ -384,11 +384,6 @@ export interface CreateChildPayload {
     room_id: string;
     start_date: string;
   };
-  booking_pattern?: {
-    effective_from: string;
-    effective_to?: string;
-    entries: { day_of_week: number; session_type_id: string }[];
-  };
 }
 
 export interface CreateChildResponse {

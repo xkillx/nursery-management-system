@@ -1,29 +1,6 @@
 <div class="space-y-6 p-6 max-w-[1440px] mx-auto bg-gray-50/50 min-h-screen">
   
 
-  @if (child && child.hasBookingPattern === false) {
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm"
-      role="status"
-    >
-      <div class="flex items-start gap-3">
-        <ng-icon name="heroExclamationTriangle" size="24" class="text-amber-500 shrink-0"></ng-icon>
-        <div>
-          <p class="font-semibold text-amber-900">No session pattern recorded for this child</p>
-          <p class="mt-1 text-xs text-amber-800/80">
-            Captured at registration. You can configure a recurring session pattern from the dedicated screen.
-          </p>
-        </div>
-      </div>
-      <a [routerLink]="['/manager/children', childId, 'booking-pattern']">
-        <button class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
-          <ng-icon name="heroCalendarDays" size="16" aria-hidden="true" />
-          Set up session pattern
-        </button>
-      </a>
-    </div>
-  }
-
   @if (errorMessage) {
     <app-alert variant="error" [message]="errorMessage"></app-alert>
   }
@@ -107,12 +84,6 @@
         </div>
         
         <div class="flex items-center justify-center gap-3 shrink-0">
-          <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="w-full sm:w-auto">
-            <button class="w-full px-4 py-2.5 bg-gray-50 hover:bg-gray-105 hover:text-gray-900 text-gray-700 font-bold text-xs rounded-xl border border-gray-200/80 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm active:scale-98">
-              <ng-icon name="heroCalendarDays" size="18" class="text-gray-500"></ng-icon>
-              Session Pattern
-            </button>
-          </a>
           <a [routerLink]="['/manager/children', childId, 'edit']" class="w-full sm:w-auto">
             <button class="w-full px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-98">
               <ng-icon name="heroPencilSquare" size="18" class="text-white"></ng-icon>
@@ -329,19 +300,22 @@
               <!-- Schedule & Weekly Days Grid -->
               <div class="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-between">
                 <div>
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Schedule &amp; Pattern</div>
-                  @if (currentBookingPattern) {
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Schedule &amp; Current Booking</div>
+                  @if (currentBooking) {
                     <div class="text-xs space-y-1">
                       <p class="font-bold text-gray-800 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-success-500"></span>
-                        Active Schedule
+                        Active Recurring Booking
                       </p>
-                      <p class="text-[11px] text-gray-400">Effective: {{ currentBookingPattern.effective_from }}</p>
+                      <p class="text-[11px] text-gray-400">From: {{ currentBooking.startDate }}</p>
+                      @if (currentBooking.endDate) {
+                        <p class="text-[11px] text-gray-400">Until: {{ currentBooking.endDate }}</p>
+                      }
                     </div>
                   } @else {
                     <p class="text-xs text-gray-500 font-medium">
-                      No active session pattern. 
-                      <a [routerLink]="['/manager/children', childId, 'booking-pattern']" class="text-brand-600 hover:underline font-bold">Set schedule now</a>.
+                      No active booking.
+                      <a routerLink="/manager/bookings" class="text-brand-600 hover:underline font-bold">Create booking now</a>.
                     </p>
                   }
                 </div>

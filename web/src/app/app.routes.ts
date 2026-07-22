@@ -13,7 +13,6 @@ import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/mana
 import { ManagerSessionTypesComponent } from './features/staff/pages/manager-session-types/manager-session-types.component';
 import { ManagerSessionTemplatesComponent } from './features/staff/pages/manager-session-templates/manager-session-templates.component';
 import { ManagerSessionTemplateFormComponent } from './features/staff/pages/manager-session-template-form/manager-session-template-form.component';
-import { ManagerBookingPatternComponent } from './features/staff/pages/manager-booking-pattern/manager-booking-pattern.component';
 import { ManagerFundingOverviewComponent } from './features/staff/pages/manager-funding-overview/manager-funding-overview.component';
 import { ManagerInvoiceCreateComponent } from './features/staff/pages/manager-invoice-create/manager-invoice-create.component';
 import { ManagerInvoiceEditComponent } from './features/staff/pages/manager-invoice-edit/manager-invoice-edit.component';
@@ -109,12 +108,6 @@ export const routes: Routes = [
                     component: ManagerChildEditComponent,
                     data: { breadcrumb: { label: 'Edit' } },
                     title: 'Edit Child | Nursery Management',
-                  },
-                  {
-                    path: 'booking-pattern',
-                    component: ManagerBookingPatternComponent,
-                    data: { breadcrumb: { label: 'Session pattern' } },
-                    title: 'Session pattern (booking pattern) | Nursery Management',
                   },
                   {
                     path: ':tab',

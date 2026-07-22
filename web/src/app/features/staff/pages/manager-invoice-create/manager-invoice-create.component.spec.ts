@@ -24,7 +24,6 @@ const mockChild: ChildRecord = {
   isActive: true,
   primaryRoomId: null,
   hasCurrentRoom: false,
-  hasBookingPattern: false,
   enrollmentComplete: true,
   missingRequirements: [],
   photoUrl: null,

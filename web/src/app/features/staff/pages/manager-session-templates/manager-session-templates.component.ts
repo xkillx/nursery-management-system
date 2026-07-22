@@ -141,8 +141,8 @@ export class ManagerSessionTemplatesComponent implements OnInit {
   get emptyMessage(): string {
     if (this.searchTerm) return 'Try a different name or adjust the status filter.';
     if (this.statusFilter === 'archived') return 'Archived templates will appear here once you archive an active template.';
-    if (this.statusFilter === 'active') return 'Create your first template to start planning booking patterns for this site.';
-    return 'Create your first template to start planning booking patterns for this site.';
+    if (this.statusFilter === 'active') return 'Create your first template to start planning bookings for this site.';
+    return 'Create your first template to start planning bookings for this site.';
   }
 
   editRoute(t: SessionTemplateListItem): string {
@@ -175,7 +175,7 @@ export class ManagerSessionTemplatesComponent implements OnInit {
 
   archive(t: SessionTemplateListItem): void {
     if (!this.siteId || !t.isActive) return;
-    if (!confirm(`Archive "${t.name}"? It can no longer be used when creating new booking patterns.`)) return;
+    if (!confirm(`Archive "${t.name}"? It can no longer be used when creating new bookings.`)) return;
     this.mutatingId = t.id;
     this.templatesApi.archiveSessionTemplate(this.siteId, t.id).subscribe({
       next: () => {

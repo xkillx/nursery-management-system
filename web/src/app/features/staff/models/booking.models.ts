@@ -10,7 +10,6 @@ export interface UnifiedBooking {
   childLastName: string;
   startDate: string;
   endDate: string | null;
-  sessionTemplateId?: string;
   status: BookingStatus;
   createdAt: string;
   updatedAt: string;
@@ -40,14 +39,13 @@ export interface SessionEntry {
 
 export interface CreateRecurringBookingRequest {
   child_id: string;
-  session_template_id?: string;
-  days_of_week?: number[];
   effective_start_date: string;
   effective_end_date?: string;
   funding_type?: string;
   funding_hours_per_week?: number;
   la_reference?: string;
   session_entries?: SessionEntry[];
+  term_time_only?: boolean;
 }
 
 export interface CreateAdHocBookingRequest {
@@ -65,10 +63,10 @@ export interface CreateHourlyBookingRequest {
 }
 
 export interface UpdateRecurringBookingRequest {
-  days_of_week?: number[];
   effective_start_date?: string;
   effective_end_date?: string;
   funding_type?: string;
   funding_hours_per_week?: number;
   la_reference?: string;
+  term_time_only?: boolean;
 }

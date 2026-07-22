@@ -193,7 +193,6 @@ export class BookingDetailDrawerComponent implements OnChanges {
     this.formFieldErrors = {};
 
     this.bookingsApi.updateRecurringBooking(this.siteId, this.booking.id, {
-      days_of_week: this.editDaysOfWeek.length > 0 ? this.editDaysOfWeek : undefined,
       effective_start_date: this.editStartDate || undefined,
       effective_end_date: this.editEndDate || undefined,
       funding_type: this.editFundingType || undefined,

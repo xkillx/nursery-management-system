@@ -35,6 +35,7 @@ import {
   heroTrash
 } from '@ng-icons/heroicons/outline';
 import { StaffApiService } from '../../data/staff-api.service';
+import { BookingsApiService } from '../../data/bookings-api.service';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ChildRecord } from '../../models/children.models';
@@ -49,7 +50,8 @@ import {
   ChildRoomAssignment,
   ChildBillingProfile
 } from '../../models/child-profile.models';
-import { BookingPattern } from '../../models/booking-pattern.models';
+import { UnifiedBooking, SessionEntry } from '../../models/booking.models';
+import { StaffSessionType, StaffSessionTypesApiService } from '../../data/session-types-api.service';
 import { ManagerInvoiceListItem } from '../../models/manager-invoices.models';
 import { FundingRecordDetail, FundingRecordWritePayload } from '../../models/funding.models';
 import { formatSiteRate, formatHourlyRateGbp, missingRequirementLabel } from '../../utils/manager-list-formatters';
@@ -107,7 +109,9 @@ export type ChildProfileTab = 'overview' | 'attendance' | 'funding' | 'health' |
 })
 export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   private readonly staffApi = inject(StaffApiService);
+  private readonly bookingsApi = inject(BookingsApiService);
   private readonly invoicesApi = inject(ManagerInvoicesApiService);
+  private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -136,8 +140,9 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   collectionSettings: ChildCollectionSettings | null = null;
   roomAssignments: ChildRoomAssignment[] = [];
   billingProfile: ChildBillingProfile | null = null;
-  bookingPatterns: BookingPattern[] = [];
-  currentBookingPattern: BookingPattern | null = null;
+  currentBooking: UnifiedBooking | null = null;
+  currentBookingEntries: SessionEntry[] | null = null;
+  sessionTypes: StaffSessionType[] = [];
   invoices: ManagerInvoiceListItem[] = [];
 
   isLoading = false;
@@ -198,12 +203,13 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       { dayOfWeek: 4, dayName: 'Thursday', shortName: 'Thu' },
       { dayOfWeek: 5, dayName: 'Friday', shortName: 'Fri' }
     ];
-    
+
     return days.map(day => {
-      const matchingEntries = this.currentBookingPattern?.entries.filter(e => e.day_of_week === day.dayOfWeek) ?? [];
+      const matchingEntries = this.currentBookingEntries?.filter(e => e.day_of_week === day.dayOfWeek) ?? [];
       const sessions = matchingEntries.map(e => {
-        if (e.session_type) {
-          return `${e.session_type.name} (${e.session_type.start_time.slice(0, 5)} - ${e.session_type.end_time.slice(0, 5)})`;
+        const st = this.sessionTypes.find(t => t.id === e.session_type_id);
+        if (st) {
+          return `${st.name} (${st.startTime.slice(0, 5)} - ${st.endTime.slice(0, 5)})`;
         }
         return 'Scheduled';
       });
@@ -291,8 +297,6 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       collectionSettings: this.staffApi.getChildCollectionSettings(childId).pipe(catchError(() => of(null))),
       roomAssignments: this.staffApi.listChildRoomAssignments(childId).pipe(catchError(() => of([]))),
       billingProfile: this.staffApi.getChildBillingProfile(childId).pipe(catchError(() => of(null))),
-      bookingPatterns: this.staffApi.listChildBookingPatterns(childId).pipe(catchError(() => of([]))),
-      currentBookingPattern: this.staffApi.getCurrentChildBookingPattern(childId).pipe(catchError(() => of(null))),
       invoices: this.invoicesApi.listInvoices({ childId, status: 'all', limit: 50, offset: 0 }).pipe(catchError(() => of({ items: [], total: 0 }))),
     }).subscribe({
       next: (res) => {
@@ -307,9 +311,9 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
         this.collectionSettings = res.collectionSettings;
         this.roomAssignments = res.roomAssignments;
         this.billingProfile = res.billingProfile;
-        this.bookingPatterns = res.bookingPatterns;
-        this.currentBookingPattern = res.currentBookingPattern;
         this.invoices = res.invoices.items;
+
+        this.loadCurrentBooking();
 
         if (this.billingMonth) {
           this.loadMonthlyProfile();
@@ -333,6 +337,39 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       error: () => {
         this.fundingDetail = null;
         this.isLoading = false;
+      },
+    });
+  }
+
+  private loadCurrentBooking(): void {
+    const membership = this.auth.activeMembership();
+    const siteId = membership?.branch_id;
+    if (!siteId) return;
+
+    this.sessionTypesApi.listSessionTypes(siteId, { includeArchived: false }).subscribe({
+      next: (types) => (this.sessionTypes = types),
+      error: () => { /* Session types load failure handled gracefully */ },
+    });
+
+    this.bookingsApi.listBookings(siteId, { childId: this.childId, status: 'active' }, 1, 50).subscribe({
+      next: (result) => {
+        const recurring = result.items.find(b => b.bookingType === 'recurring' && b.status === 'active');
+        if (recurring) {
+          this.currentBooking = recurring;
+          this.bookingsApi.getBooking(siteId, recurring.id).subscribe({
+            next: (detail) => {
+              this.currentBookingEntries = (detail as unknown as { session_entries?: SessionEntry[] }).session_entries ?? [];
+            },
+            error: () => (this.currentBookingEntries = []),
+          });
+        } else {
+          this.currentBooking = null;
+          this.currentBookingEntries = [];
+        }
+      },
+      error: () => {
+        this.currentBooking = null;
+        this.currentBookingEntries = [];
       },
     });
   }

@@ -140,8 +140,8 @@ export class ManagerSessionTypesComponent implements OnInit {
   get emptyMessage(): string {
     if (this.searchTerm) return 'Try a different name or adjust the status filter.';
     if (this.statusFilter === 'archived') return 'Archived types will appear here once you archive an active type.';
-    if (this.statusFilter === 'active') return 'Create your first session type to start planning booking patterns for this site.';
-    return 'Create your first session type to start planning booking patterns for this site.';
+    if (this.statusFilter === 'active') return 'Create your first session type to start planning bookings for this site.';
+    return 'Create your first session type to start planning bookings for this site.';
   }
 
   editRoute(t: StaffSessionType): string {
@@ -174,7 +174,7 @@ export class ManagerSessionTypesComponent implements OnInit {
 
   archive(t: StaffSessionType): void {
     if (!this.siteId || !t.isActive) return;
-    if (!confirm(`Archive "${t.name}"? It can no longer be used for new booking patterns.`)) return;
+    if (!confirm(`Archive "${t.name}"? It can no longer be used for new bookings.`)) return;
     this.mutatingId = t.id;
     this.api.archiveSessionType(this.siteId, t.id).subscribe({
       next: () => {

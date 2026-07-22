@@ -82,6 +82,13 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
                 <span class="text-gray-600 dark:text-gray-400 font-semibold">Chargeable Hours</span>
                 <span class="font-bold text-gray-900 dark:text-white">{{ chargeableHours | number:'1.2-2' }}</span>
               </div>
+
+              @if (termTimeOnly) {
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600 dark:text-gray-400 font-semibold">Term Time Only</span>
+                  <span class="text-brand-600 dark:text-brand-400 font-bold text-xs">Yes</span>
+                </div>
+              }
             </div>
 
             <!-- Dashed Divider -->
@@ -149,6 +156,7 @@ export class BookingSummarySidebarComponent implements OnChanges {
   @Input() hourlyRateMinor: number | null = null;
   @Input() canSubmit = false;
   @Input() isSaving = false;
+  @Input() termTimeOnly = false;
 
   @Output() save = new EventEmitter<void>();
   // eslint-disable-next-line @angular-eslint/no-output-native

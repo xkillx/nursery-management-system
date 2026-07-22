@@ -127,13 +127,13 @@ last_name: 'Hopper',
     expect(labels).toEqual(['Parent carer contact']);
   });
 
-  it('maps has_booking_pattern to hasBookingPattern on each child', () => {
+  it('maps child overview status correctly', () => {
     fixture.detectChanges();
-    flushChildren([{ ...childApi, has_booking_pattern: false }, { ...completeChildApi, id: 'child-2', has_booking_pattern: true }]);
+    flushChildren([{ ...childApi, has_current_room: false }, { ...completeChildApi, id: 'child-2', has_current_room: true }]);
     fixture.detectChanges();
 
-    expect(component.children[0].hasBookingPattern).toBe(false);
-    expect(component.children[1].hasBookingPattern).toBe(true);
+    expect(component.children[0].hasCurrentRoom).toBe(false);
+    expect(component.children[1].hasCurrentRoom).toBe(true);
   });
 
   it('navigates to the edit stepper route when openEdit is called', () => {

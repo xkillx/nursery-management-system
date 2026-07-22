@@ -339,7 +339,7 @@ export class ManagerChildrenComponent implements OnInit, OnDestroy {
   childOverviewStatus(child: ChildRecord): string {
     if (!child.isActive) return 'inactive';
     if (!child.enrollmentComplete) return 'incomplete';
-    if (!child.hasCurrentRoom || child.hasBookingPattern === false) return 'incomplete';
+    if (!child.hasCurrentRoom) return 'incomplete';
     return 'enrolled';
   }
 

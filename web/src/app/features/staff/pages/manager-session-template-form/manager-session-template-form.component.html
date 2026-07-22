@@ -5,8 +5,8 @@
     </h1>
     <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
       {{ mode === 'create'
-        ? 'Create a reusable week of booked sessions for ' + (siteName || 'this site') + '. Templates are copied into each child\'s booking pattern at creation time.'
-        : 'Update the name, description, or sessions for this template. Changes apply to new booking patterns only.' }}
+        ? 'Create a reusable week of booked sessions for ' + (siteName || 'this site') + '. Templates are copied into each child\'s booking at creation time.'
+        : 'Update the name, description, or sessions for this template. Changes apply to new bookings only.' }}
     </p>
   </div>
 
@@ -169,7 +169,7 @@
         <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
           <li class="flex items-start gap-2">
             <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
-            <span>Templates are copied into booking patterns at creation time. Editing a template never changes existing patterns.</span>
+            <span>Templates are copied into bookings at creation time. Editing a template never changes existing bookings.</span>
           </li>
           <li class="flex items-start gap-2">
             <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
@@ -177,7 +177,7 @@
           </li>
           <li class="flex items-start gap-2">
             <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
-            <span>Archived templates can no longer be used for new booking patterns but remain referenced by historical ones.</span>
+            <span>Archived templates can no longer be used for new bookings but remain referenced by existing ones.</span>
           </li>
         </ul>
       </div>

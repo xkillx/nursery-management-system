@@ -23,7 +23,6 @@ interface UnifiedBookingApi {
   child_last_name: string;
   start_date: string;
   end_date: string | null;
-  session_template_id?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -114,7 +113,6 @@ export class BookingsApiService {
       childLastName: b.child_last_name,
       startDate: b.start_date,
       endDate: b.end_date ?? null,
-      sessionTemplateId: b.session_template_id ?? undefined,
       status: b.status as BookingStatus,
       createdAt: b.created_at,
       updatedAt: b.updated_at,

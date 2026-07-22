@@ -75,6 +75,7 @@ export class CreateRecurringBookingComponent implements OnInit {
   fundingHours: number | null = null;
   laReference = '';
   hourlyRateMinor: number | null = null;
+  termTimeOnly = false;
 
   isSaving = false;
   formError: string | null = null;
@@ -160,6 +161,7 @@ export class CreateRecurringBookingComponent implements OnInit {
       funding_type: this.fundingType || undefined,
       funding_hours_per_week: this.fundingHours ?? undefined,
       la_reference: this.laReference || undefined,
+      term_time_only: this.termTimeOnly,
     }).subscribe({
       next: () => {
         this.isSaving = false;
