@@ -14,7 +14,7 @@ const (
 	BlockerMissingChildStartDate   BlockerCode = "missing_child_start_date"
 	BlockerMissingGuardianLink     BlockerCode = "missing_guardian_link"
 	BlockerMissingBillingRate      BlockerCode = "missing_billing_rate"
-	BlockerMissingFundingProfile   BlockerCode = "missing_funding_profile"
+	BlockerMissingFundingRecord    BlockerCode = "missing_funding_record"
 	BlockerIncompleteAttendance    BlockerCode = "incomplete_attendance"
 	BlockerInvoiceAlreadyIssued    BlockerCode = "invoice_already_issued"
 )
@@ -25,7 +25,7 @@ var BlockerPriority = []BlockerCode{
 	BlockerMissingChildStartDate,
 	BlockerMissingGuardianLink,
 	BlockerMissingBillingRate,
-	BlockerMissingFundingProfile,
+	BlockerMissingFundingRecord,
 	BlockerIncompleteAttendance,
 	BlockerInvoiceAlreadyIssued,
 }

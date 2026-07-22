@@ -872,7 +872,7 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 
 	t.Run("funding child B not found from scope A", func(t *testing.T) {
 		w := h.get(t, "/api/v1/funding/children/"+h.childB.String()+"?billing_month=2026-05", h.managerAToken)
-		assertStatusAndCode(t, w, http.StatusNotFound, "funding_profile_not_found")
+		assertStatusAndCode(t, w, http.StatusNotFound, "funding_record_not_found")
 	})
 
 	t.Run("invoice B not found from scope A", func(t *testing.T) {

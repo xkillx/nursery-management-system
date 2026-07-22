@@ -269,7 +269,7 @@ func CalculateBookedCoreMinutesInMonth(
 // the billable minutes after the deduction is applied.
 //
 // bookedCoreMinutes is the booking-driven monthly total.
-// fundedAllowanceMinutes comes from funding_profiles.
+// fundedAllowanceMinutes comes from the funding module via FundingLookup.
 // siteHourlyRateMinor is the term's snapshotted rate.
 //
 // fundedDeductionMinutes = min(bookedCoreMinutes, fundedAllowanceMinutes)

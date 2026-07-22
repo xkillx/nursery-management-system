@@ -113,7 +113,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 		warnings = append(warnings, "site_rate_not_set")
 	}
 	if !params.HasFunding {
-		warnings = append(warnings, "missing_funding_profile")
+		warnings = append(warnings, "missing_funding_record")
 	}
 	if fundedDeductionMinor > 0 && subtotalMinor > 0 {
 		threshold := subtotalMinor / 4

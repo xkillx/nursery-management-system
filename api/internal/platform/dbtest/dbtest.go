@@ -215,7 +215,7 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 		"invoices",
 		"invoice_runs",
 		"invoice_number_sequences",
-		"funding_profiles",
+
 		"absence_markers",
 		"attendance_events",
 		"attendance_sessions",

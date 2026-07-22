@@ -275,13 +275,13 @@ func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 	}
 	found := false
 	for _, w := range result.Warnings {
-		if w == "missing_funding_profile" {
+		if w == "missing_funding_record" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Fatal("expected missing_funding_profile warning")
+		t.Fatal("expected missing_funding_record warning")
 	}
 }
 

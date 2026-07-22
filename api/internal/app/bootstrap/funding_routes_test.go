@@ -236,7 +236,7 @@ func TestFundingProfileNotFound(t *testing.T) {
 	// No profile created for this child+month
 	w := doRequest(t, h.router, http.MethodGet, "/api/v1/funding/children/"+h.childID.String()+"?billing_month=2026-12", h.managerToken, "")
 	requireStatus(t, w, http.StatusNotFound)
-	requireErrorCode(t, w, "funding_profile_not_found")
+	requireErrorCode(t, w, "funding_record_not_found")
 }
 
 func TestFundingAuditEvents(t *testing.T) {

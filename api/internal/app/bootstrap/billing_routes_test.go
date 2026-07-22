@@ -150,25 +150,17 @@ func TestBillingPreflightMixed(t *testing.T) {
 	child1 := uuid.MustParse("b5000000-0000-0000-0000-000000000001")
 	guardian1 := uuid.MustParse("b6000000-0000-0000-0000-000000000001")
 	link1 := uuid.MustParse("b7000000-0000-0000-0000-000000000001")
-	fundingProfile1 := uuid.MustParse("b8000000-0000-0000-0000-000000000001")
 	session1 := uuid.MustParse("b9000000-0000-0000-0000-000000000001")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Alice Eligible",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian One", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	// Funding profile with 300 minutes
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding profile 1: %v", err)
-	}
 	// Complete attendance session: 8:00 to 16:00 = 480 min raw, 480 rounded
 	checkIn1 := time.Date(2026, 5, 15, 8, 0, 0, 0, time.UTC)
 	checkOut1 := time.Date(2026, 5, 15, 16, 0, 0, 0, time.UTC)
 	localDate1 := dbtest.DateAt(2026, 5, 15)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		session1, h.tenantID, h.branchID, child1, checkIn1, checkOut1, localDate1, localDate1)
 	if err != nil {
@@ -179,18 +171,11 @@ func TestBillingPreflightMixed(t *testing.T) {
 	child2 := uuid.MustParse("b5000000-0000-0000-0000-000000000002")
 	guardian2 := uuid.MustParse("b6000000-0000-0000-0000-000000000002")
 	link2 := uuid.MustParse("b7000000-0000-0000-0000-000000000002")
-	fundingProfile2 := uuid.MustParse("b8000000-0000-0000-0000-000000000002")
 
 	dbtest.InsertChild(t, h.pool, child2, h.tenantID, h.branchID, "Bob Zero Attendance",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian2, h.tenantID, h.branchID, "Guardian Two", true)
 	dbtest.InsertGuardianLink(t, h.pool, link2, h.tenantID, h.branchID, guardian2, child2)
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile2, h.tenantID, h.branchID, child2, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding profile 2: %v", err)
-	}
 
 	// Child 3: blocked - missing funding profile
 	child3 := uuid.MustParse("b5000000-0000-0000-0000-000000000003")
@@ -204,34 +189,20 @@ func TestBillingPreflightMixed(t *testing.T) {
 
 	// Child 4: blocked - missing guardian link
 	child4 := uuid.MustParse("b5000000-0000-0000-0000-000000000004")
-	fundingProfile4 := uuid.MustParse("b8000000-0000-0000-0000-000000000004")
 
 	dbtest.InsertChild(t, h.pool, child4, h.tenantID, h.branchID, "Diana No Guardian",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile4, h.tenantID, h.branchID, child4, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding profile 4: %v", err)
-	}
 
 	// Child 5: blocked - open attendance session (no checkout)
 	child5 := uuid.MustParse("b5000000-0000-0000-0000-000000000005")
 	guardian5 := uuid.MustParse("b6000000-0000-0000-0000-000000000005")
 	link5 := uuid.MustParse("b7000000-0000-0000-0000-000000000005")
-	fundingProfile5 := uuid.MustParse("b8000000-0000-0000-0000-000000000005")
 	session5 := uuid.MustParse("b9000000-0000-0000-0000-000000000005")
 
 	dbtest.InsertChild(t, h.pool, child5, h.tenantID, h.branchID, "Eve Open Session",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian5, h.tenantID, h.branchID, "Guardian Five", true)
 	dbtest.InsertGuardianLink(t, h.pool, link5, h.tenantID, h.branchID, guardian5, child5)
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile5, h.tenantID, h.branchID, child5, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding profile 5: %v", err)
-	}
 	// Open session (no checkout)
 	dbtest.InsertAttendanceSession(t, h.pool, session5, h.tenantID, h.branchID, child5, "open",
 		time.Date(2026, 5, 3, 8, 30, 0, 0, time.UTC),
@@ -241,19 +212,12 @@ func TestBillingPreflightMixed(t *testing.T) {
 	child6 := uuid.MustParse("b5000000-0000-0000-0000-000000000006")
 	guardian6 := uuid.MustParse("b6000000-0000-0000-0000-000000000006")
 	link6 := uuid.MustParse("b7000000-0000-0000-0000-000000000006")
-	fundingProfile6 := uuid.MustParse("b8000000-0000-0000-0000-000000000006")
 	invoice6 := uuid.MustParse("ba000000-0000-0000-0000-000000000006")
 
 	dbtest.InsertChild(t, h.pool, child6, h.tenantID, h.branchID, "Frank Draft Invoice",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian6, h.tenantID, h.branchID, "Guardian Six", true)
 	dbtest.InsertGuardianLink(t, h.pool, link6, h.tenantID, h.branchID, guardian6, child6)
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile6, h.tenantID, h.branchID, child6, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding profile 6: %v", err)
-	}
 	// Existing draft invoice
 	_, err = h.pool.Exec(ctx,
 		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, period_start_date, period_end_date)
@@ -267,19 +231,12 @@ func TestBillingPreflightMixed(t *testing.T) {
 	child7 := uuid.MustParse("b5000000-0000-0000-0000-000000000007")
 	guardian7 := uuid.MustParse("b6000000-0000-0000-0000-000000000007")
 	link7 := uuid.MustParse("b7000000-0000-0000-0000-000000000007")
-	fundingProfile7 := uuid.MustParse("b8000000-0000-0000-0000-000000000007")
 	invoice7 := uuid.MustParse("ba000000-0000-0000-0000-000000000007")
 
 	dbtest.InsertChild(t, h.pool, child7, h.tenantID, h.branchID, "Grace Issued Invoice",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian7, h.tenantID, h.branchID, "Guardian Seven", true)
 	dbtest.InsertGuardianLink(t, h.pool, link7, h.tenantID, h.branchID, guardian7, child7)
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingProfile7, h.tenantID, h.branchID, child7, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding profile 7: %v", err)
-	}
 	// Issued invoice (needs all required fields per schema constraint)
 	issuedByUID := uuid.MustParse("b3000000-0000-0000-0000-000000000001")
 	issuedByMID := uuid.MustParse("b4000000-0000-0000-0000-000000000001")
@@ -404,8 +361,8 @@ func TestBillingPreflightMixed(t *testing.T) {
 	if resp.BlockedChildren[0].ChildFirstName != "Charlie No Funding" {
 		t.Fatalf("first blocked = %s, want Charlie No Funding", resp.BlockedChildren[0].ChildFirstName)
 	}
-	if resp.BlockedChildren[0].Blockers[0].Code != "missing_funding_profile" {
-		t.Fatalf("charlie blocker = %s, want missing_funding_profile", resp.BlockedChildren[0].Blockers[0].Code)
+	if resp.BlockedChildren[0].Blockers[0].Code != "missing_funding_record" {
+		t.Fatalf("charlie blocker = %s, want missing_funding_record", resp.BlockedChildren[0].Blockers[0].Code)
 	}
 
 	if resp.BlockedChildren[1].ChildFirstName != "Diana No Guardian" {
@@ -440,8 +397,8 @@ func TestBillingPreflightMixed(t *testing.T) {
 	for _, bc := range resp.Summary.BlockerCounts {
 		blockerCountMap[bc.Code] = bc.ChildrenCount
 	}
-	if blockerCountMap["missing_funding_profile"] != 1 {
-		t.Fatalf("missing_funding_profile count = %d, want 1", blockerCountMap["missing_funding_profile"])
+	if blockerCountMap["missing_funding_record"] != 1 {
+		t.Fatalf("missing_funding_record count = %d, want 1", blockerCountMap["missing_funding_record"])
 	}
 	if blockerCountMap["missing_guardian_link"] != 1 {
 		t.Fatalf("missing_guardian_link count = %d, want 1", blockerCountMap["missing_guardian_link"])
@@ -479,38 +436,22 @@ func TestBillingPreflightCrossMonthAllocation(t *testing.T) {
 	childID := uuid.MustParse("b5000000-0000-0000-0000-000000000010")
 	guardianID := uuid.MustParse("b6000000-0000-0000-0000-000000000010")
 	linkID := uuid.MustParse("b7000000-0000-0000-0000-000000000010")
-	fundingID := uuid.MustParse("b8000000-0000-0000-0000-000000000010")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Cross Month Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Cross", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	// Session checking in on May 31 (London) and checking out June 1 - allocated to May
 	london, _ := time.LoadLocation("Europe/London")
 	checkInAt := time.Date(2026, 5, 31, 20, 0, 0, 0, london).UTC()
 	checkOutAt := time.Date(2026, 6, 1, 8, 0, 0, 0, london).UTC()
 	sessionID := uuid.MustParse("b9000000-0000-0000-0000-000000000010")
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		sessionID, h.tenantID, h.branchID, childID, checkInAt, checkOutAt, dbtest.DateAt(2026, 5, 31), dbtest.DateAt(2026, 6, 1))
 	if err != nil {
 		t.Fatalf("insert session: %v", err)
-	}
-
-	// April funding profile so April preflight includes the child
-	fundingID2 := uuid.MustParse("b8000000-0000-0000-0000-000000000011")
-	_, err = h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingID2, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 4, 1), 0)
-	if err != nil {
-		t.Fatalf("insert april funding: %v", err)
 	}
 
 	// Session checking in on Apr 30 (London) and checking out May 1 - allocated to April, NOT May
@@ -615,23 +556,16 @@ func TestBillingGenerationFullMonthCreatesDrafts(t *testing.T) {
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000001")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000001")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000001")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000001")
 	session1 := uuid.MustParse("c9000000-0000-0000-0000-000000000001")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Alice Eligible",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Alice", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 	checkIn1 := time.Date(2026, 5, 15, 8, 0, 0, 0, time.UTC)
 	checkOut1 := time.Date(2026, 5, 15, 16, 0, 0, 0, time.UTC)
 	localDate1 := dbtest.DateAt(2026, 5, 15)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		session1, h.tenantID, h.branchID, child1, checkIn1, checkOut1, localDate1, localDate1)
 	if err != nil {
@@ -704,23 +638,16 @@ func TestBillingGenerationRerunUpdatesSameDraft(t *testing.T) {
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000002")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000002")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000002")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000002")
 	session1 := uuid.MustParse("c9000000-0000-0000-0000-000000000002")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Bob Rerun",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Bob", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 	checkIn1 := time.Date(2026, 5, 10, 8, 0, 0, 0, time.UTC)
 	checkOut1 := time.Date(2026, 5, 10, 16, 0, 0, 0, time.UTC)
 	localDate1 := dbtest.DateAt(2026, 5, 10)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		session1, h.tenantID, h.branchID, child1, checkIn1, checkOut1, localDate1, localDate1)
 	if err != nil {
@@ -789,7 +716,6 @@ func TestBillingGenerationIssuedInvoiceBlocked(t *testing.T) {
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000003")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000003")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000003")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000003")
 	invoice1 := uuid.MustParse("ca000000-0000-0000-0000-000000000003")
 	run1 := uuid.MustParse("cb000000-0000-0000-0000-000000000003")
 
@@ -797,15 +723,9 @@ func TestBillingGenerationIssuedInvoiceBlocked(t *testing.T) {
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Grace", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 300)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 	managerUID := uuid.MustParse("b3000000-0000-0000-0000-000000000001")
 	managerMID := uuid.MustParse("b4000000-0000-0000-0000-000000000001")
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
 		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-issued-test')`,
 		run1, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1), managerUID, managerMID)
@@ -864,23 +784,16 @@ func TestBillingGenerationSelectedChildren(t *testing.T) {
 		name := fmt.Sprintf("Child %d", i+1)
 		gid := uuid.MustParse(fmt.Sprintf("c6000000-0000-0000-0000-%012d", i+10))
 		lid := uuid.MustParse(fmt.Sprintf("c7000000-0000-0000-0000-%012d", i+10))
-		fid := uuid.MustParse(fmt.Sprintf("c8000000-0000-0000-0000-%012d", i+10))
 
 		dbtest.InsertChild(t, h.pool, cid, h.tenantID, h.branchID, name,
 			dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 		dbtest.InsertGuardian(t, h.pool, gid, h.tenantID, h.branchID, "G "+name, true)
 		dbtest.InsertGuardianLink(t, h.pool, lid, h.tenantID, h.branchID, gid, cid)
-		_, err := h.pool.Exec(ctx,
-			"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-			fid, h.tenantID, h.branchID, cid, dbtest.DateAt(2026, 5, 1), 0)
-		if err != nil {
-			t.Fatalf("insert funding %d: %v", i, err)
-		}
 		sid := uuid.MustParse(fmt.Sprintf("c9000000-0000-0000-0000-%012d", i+10))
 		checkIn := time.Date(2026, 5, 15, 8, 0, 0, 0, time.UTC)
 		checkOut := time.Date(2026, 5, 15, 16, 0, 0, 0, time.UTC)
 		localDate := dbtest.DateAt(2026, 5, 15)
-		_, err = h.pool.Exec(ctx,
+		_, err := h.pool.Exec(ctx,
 			"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 			sid, h.tenantID, h.branchID, cid, checkIn, checkOut, localDate, localDate)
 		if err != nil {
@@ -957,18 +870,11 @@ func TestBillingGenerationDuplicateChildIDsDeduped(t *testing.T) {
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000020")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000020")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000020")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000020")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Dedup Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Dedup", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s","%s"]}`, child1, child1)
 	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
@@ -990,23 +896,15 @@ func TestBillingGenerationDuplicateChildIDsDeduped(t *testing.T) {
 
 func TestBillingGenerationZeroAttendanceGetsDraft(t *testing.T) {
 	h := setupBillingHarness(t)
-	ctx := context.Background()
 
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000030")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000030")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000030")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000030")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Zero Attendance",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Zero", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 	// No attendance sessions
 
 	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
@@ -1030,18 +928,11 @@ func TestBillingGenerationPreservesExtraLines(t *testing.T) {
 	child1 := uuid.MustParse("c5000000-0000-0000-0000-000000000040")
 	guardian1 := uuid.MustParse("c6000000-0000-0000-0000-000000000040")
 	link1 := uuid.MustParse("c7000000-0000-0000-0000-000000000040")
-	funding1 := uuid.MustParse("c8000000-0000-0000-0000-000000000040")
 
 	dbtest.InsertChild(t, h.pool, child1, h.tenantID, h.branchID, "Extra Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardian1, h.tenantID, h.branchID, "Guardian Extra", true)
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		funding1, h.tenantID, h.branchID, child1, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	// First generation
 	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
@@ -1053,7 +944,7 @@ func TestBillingGenerationPreservesExtraLines(t *testing.T) {
 	// Insert an extra line manually
 	extraLineID := uuid.MustParse("cc000000-0000-0000-0000-000000000040")
 	extraInvoiceID, _ := uuid.Parse(invoiceID)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, line_amount_minor, details)
 		 VALUES ($1, $2, $3, $4, 'extra', 'Late pickup fee', 3, 500, '{}'::jsonb)`,
 		extraLineID, h.tenantID, h.branchID, extraInvoiceID)
@@ -1209,18 +1100,11 @@ func TestBillingGenerationCriticalCalculationSnapshot(t *testing.T) {
 	childID := uuid.MustParse("f5000000-0000-0000-0000-000000000001")
 	guardianID := uuid.MustParse("f6000000-0000-0000-0000-000000000001")
 	linkID := uuid.MustParse("f7000000-0000-0000-0000-000000000001")
-	fundingID := uuid.MustParse("f8000000-0000-0000-0000-000000000001")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Snapshot Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Snapshot", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 30)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	session1 := uuid.MustParse("f9000000-0000-0000-0000-000000000001")
 	session2 := uuid.MustParse("f9000000-0000-0000-0000-000000000002")
@@ -1228,7 +1112,7 @@ func TestBillingGenerationCriticalCalculationSnapshot(t *testing.T) {
 	checkIn1 := time.Date(2026, 5, 12, 8, 0, 0, 0, time.UTC)
 	checkOut1 := time.Date(2026, 5, 12, 9, 1, 0, 0, time.UTC)
 	localDate1 := dbtest.DateAt(2026, 5, 12)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		session1, h.tenantID, h.branchID, childID, checkIn1, checkOut1, localDate1, localDate1)
 	if err != nil {
@@ -1393,24 +1277,17 @@ func TestBillingGenerationRerunRecalculatesSameDraftAndReplacesSystemLines(t *te
 	childID := uuid.MustParse("f5000000-0000-0000-0000-000000000010")
 	guardianID := uuid.MustParse("f6000000-0000-0000-0000-000000000010")
 	linkID := uuid.MustParse("f7000000-0000-0000-0000-000000000010")
-	fundingID := uuid.MustParse("f8000000-0000-0000-0000-000000000010")
 	session1 := uuid.MustParse("f9000000-0000-0000-0000-000000000010")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Rerun Calc Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Rerun", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	checkIn1 := time.Date(2026, 5, 10, 8, 0, 0, 0, time.UTC)
 	checkOut1 := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
 	localDate1 := dbtest.DateAt(2026, 5, 10)
-	_, err = h.pool.Exec(ctx,
+	_, err := h.pool.Exec(ctx,
 		"INSERT INTO attendance_sessions (id, tenant_id, branch_id, child_id, status, check_in_at, check_out_at, check_in_local_date, check_out_local_date) VALUES ($1, $2, $3, $4, 'complete', $5, $6, $7, $8)",
 		session1, h.tenantID, h.branchID, childID, checkIn1, checkOut1, localDate1, localDate1)
 	if err != nil {
@@ -1617,7 +1494,7 @@ func TestInvoiceListDraftInvoice(t *testing.T) {
 		runID, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1),
 		uuid.MustParse("b3000000-0000-0000-0000-000000000001"),
 		uuid.MustParse("b4000000-0000-0000-0000-000000000001"),
-		`{"blocked_children":[{"child_id":"b5000000-0000-0000-0000-000000000099","child_first_name":"Blocked Kid","blocker_codes":["missing_funding_profile"]}]}`)
+		`{"blocked_children":[{"child_id":"b5000000-0000-0000-0000-000000000099","child_first_name":"Blocked Kid","blocker_codes":["missing_funding_record"]}]}`)
 	if err != nil {
 		t.Fatalf("insert run: %v", err)
 	}
@@ -1754,7 +1631,7 @@ func TestInvoiceDetailDraft(t *testing.T) {
 		runID, h.tenantID, h.branchID, dbtest.DateAt(2026, 5, 1),
 		uuid.MustParse("b3000000-0000-0000-0000-000000000001"),
 		uuid.MustParse("b4000000-0000-0000-0000-000000000001"),
-		`{"blocked_children":[{"child_id":"`+childID.String()+`","child_first_name":"Detail Child","blocker_codes":["missing_funding_profile"]}]}`)
+		`{"blocked_children":[{"child_id":"`+childID.String()+`","child_first_name":"Detail Child","blocker_codes":["missing_funding_record"]}]}`)
 	if err != nil {
 		t.Fatalf("insert run: %v", err)
 	}
@@ -1848,8 +1725,8 @@ func TestInvoiceDetailDraft(t *testing.T) {
 	if len(resp.GeneratedRunExceptions) != 1 {
 		t.Fatalf("expected 1 exception, got %d", len(resp.GeneratedRunExceptions))
 	}
-	if len(resp.GeneratedRunExceptions[0].BlockerCodes) != 1 || resp.GeneratedRunExceptions[0].BlockerCodes[0] != "missing_funding_profile" {
-		t.Fatalf("expected blocker_code 'missing_funding_profile', got %v", resp.GeneratedRunExceptions[0].BlockerCodes)
+	if len(resp.GeneratedRunExceptions[0].BlockerCodes) != 1 || resp.GeneratedRunExceptions[0].BlockerCodes[0] != "missing_funding_record" {
+		t.Fatalf("expected blocker_code 'missing_funding_record', got %v", resp.GeneratedRunExceptions[0].BlockerCodes)
 	}
 }
 

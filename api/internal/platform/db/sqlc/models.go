@@ -550,20 +550,6 @@ type ChildSafeguardingProfile struct {
 	UpdatedAt                 pgtype.Timestamptz
 }
 
-type FundingProfile struct {
-	ID                     pgtype.UUID
-	TenantID               pgtype.UUID
-	BranchID               pgtype.UUID
-	ChildID                pgtype.UUID
-	BillingMonth           pgtype.Date
-	FundedAllowanceMinutes int32
-	CreatedAt              pgtype.Timestamptz
-	UpdatedAt              pgtype.Timestamptz
-	FundingType            pgtype.Text
-	FundingModel           pgtype.Text
-	FundedHoursPerWeek     pgtype.Numeric
-}
-
 type HourlyBooking struct {
 	ID                   pgtype.UUID
 	TenantID             pgtype.UUID

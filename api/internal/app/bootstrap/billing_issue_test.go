@@ -611,15 +611,8 @@ func TestInvoiceIssueRegenerationGuard(t *testing.T) {
 	// Add guardian and funding so child is eligible for generation
 	guardianID := uuid.MustParse("e8000000-0000-0000-0000-000000000600")
 	linkID := uuid.MustParse("e9000000-0000-0000-0000-000000000600")
-	fundingID := uuid.MustParse("ea000000-0000-0000-0000-000000000600")
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian Guard", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	_, err := h.pool.Exec(ctx,
-		"INSERT INTO funding_profiles (id, tenant_id, branch_id, child_id, billing_month, funded_allowance_minutes) VALUES ($1, $2, $3, $4, $5, $6)",
-		fundingID, h.tenantID, h.branchID, childID, dbtest.DateAt(2026, 5, 1), 0)
-	if err != nil {
-		t.Fatalf("insert funding: %v", err)
-	}
 
 	// Try draft generation for same month
 	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":["`+childID.String()+`"]}`)
