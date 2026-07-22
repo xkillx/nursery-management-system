@@ -1078,8 +1078,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     const payload: ChildWritePayload = {
       first_name: this.step1.first_name.trim(),
-      middle_name: this.step1.middle_name.trim() || null,
-      last_name: this.step1.last_name.trim() || null,
+      middle_name: this.step1.middle_name.trim() || '',
+      last_name: this.step1.last_name.trim() || '',
       date_of_birth: this.step1.date_of_birth,
       start_date: this.step1.start_date,
       notes: this.step1.notes.trim() || undefined,
@@ -2071,8 +2071,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
     const child: ChildWritePayload = {
       first_name: this.step1.first_name.trim(),
-      middle_name: this.step1.middle_name.trim() || null,
-      last_name: this.step1.last_name.trim() || null,
+      middle_name: this.step1.middle_name.trim() || '',
+      last_name: this.step1.last_name.trim() || '',
       date_of_birth: this.step1.date_of_birth,
       start_date: this.step1.start_date,
       notes: this.step1.notes.trim() || undefined,
