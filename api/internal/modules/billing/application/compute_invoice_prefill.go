@@ -17,8 +17,8 @@ type PrefillTxManager interface {
 }
 
 type ComputeInvoicePrefill struct {
-	repo                domain.BillingRepository
-	txMgr               PrefillTxManager
+	repo                 domain.BillingRepository
+	txMgr                PrefillTxManager
 	bookingEntriesLookup domain.BookingEntriesLookup
 }
 

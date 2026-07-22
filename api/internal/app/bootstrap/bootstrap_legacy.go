@@ -240,13 +240,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			Update: childapp.NewUpdateBillingProfile(childRepo, auditWriter, txManager),
 		},
 		LeavingRecord: childapp.NewGetLeavingRecord(childRepo),
-		BookingPatterns: childhandler.BookingPatternUseCases{
-			List:       childapp.NewListBookingPatterns(childRepo),
-			Get:        childapp.NewGetBookingPattern(childRepo),
-			GetCurrent: childapp.NewGetCurrentBookingPattern(childRepo, func() time.Time { return time.Now().UTC() }),
-			Create:     childapp.NewCreateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-			Update:     childapp.NewUpdateBookingPattern(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, func() time.Time { return time.Now().UTC() }),
-		},
 	}
 	childrenHandler := childhandler.NewHandler(childConfig, logger)
 

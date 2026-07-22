@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -67,14 +66,6 @@ type (
 		Update *application.UpdateBillingProfile
 	}
 
-	BookingPatternUseCases struct {
-		List       *application.ListBookingPatterns
-		Get        *application.GetBookingPattern
-		GetCurrent *application.GetCurrentBookingPattern
-		Create     *application.CreateBookingPattern
-		Update     *application.UpdateBookingPattern
-	}
-
 	ChildrenHandlerConfig struct {
 		Core            CoreUseCases
 		Profile         ProfileUseCases
@@ -86,7 +77,6 @@ type (
 		RoomAssignments RoomAssignmentUseCases
 		BillingProfile  BillingProfileUseCases
 		LeavingRecord   *application.GetLeavingRecord
-		BookingPatterns BookingPatternUseCases
 		Photo           PhotoUseCases
 	}
 )
@@ -127,61 +117,44 @@ type Handler struct {
 
 	getLeavingRecord *application.GetLeavingRecord
 
-	listBookingPatterns      *application.ListBookingPatterns
-	getBookingPattern        *application.GetBookingPattern
-	getCurrentBookingPattern *application.GetCurrentBookingPattern
-	createBookingPattern     *application.CreateBookingPattern
-	updateBookingPattern     *application.UpdateBookingPattern
-
 	uploadPhoto *application.UploadPhoto
 	removePhoto *application.RemovePhoto
 }
 
 func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
-		logger:                   logger,
-		listChildren:             cfg.Core.List,
-		getChild:                 cfg.Core.Get,
-		createChildWithFull:      cfg.Core.Create,
-		updateChild:              cfg.Core.Update,
-		markInactive:             cfg.Core.MarkInactive,
-		listAttendance:           cfg.Core.ListAttendance,
-		getProfile:               cfg.Profile.Get,
-		updateProfile:            cfg.Profile.Update,
-		getContacts:              cfg.Contacts.Get,
-		replaceContacts:          cfg.Contacts.Replace,
-		getHealth:                cfg.Health.Get,
-		updateHealth:             cfg.Health.Update,
-		getSafeguarding:          cfg.Safeguarding.Get,
-		updateSafeguarding:       cfg.Safeguarding.Update,
-		getConsent:               cfg.Consent.Get,
-		updateConsent:            cfg.Consent.Update,
-		getCollectionSetting:     cfg.Collection.GetSetting,
-		setCollectionPassword:    cfg.Collection.SetPassword,
-		listRoomAssignments:      cfg.RoomAssignments.List,
-		createRoomAssignment:     cfg.RoomAssignments.Create,
-		closeRoomAssignment:      cfg.RoomAssignments.Close,
-		getBillingProfile:        cfg.BillingProfile.Get,
-		updateBillingProfile:     cfg.BillingProfile.Update,
-		getLeavingRecord:         cfg.LeavingRecord,
-		listBookingPatterns:      cfg.BookingPatterns.List,
-		getBookingPattern:        cfg.BookingPatterns.Get,
-		getCurrentBookingPattern: cfg.BookingPatterns.GetCurrent,
-		createBookingPattern:     cfg.BookingPatterns.Create,
-		updateBookingPattern:     cfg.BookingPatterns.Update,
-		uploadPhoto:              cfg.Photo.Upload,
-		removePhoto:              cfg.Photo.Remove,
+		logger:                logger,
+		listChildren:          cfg.Core.List,
+		getChild:              cfg.Core.Get,
+		createChildWithFull:   cfg.Core.Create,
+		updateChild:           cfg.Core.Update,
+		markInactive:          cfg.Core.MarkInactive,
+		listAttendance:        cfg.Core.ListAttendance,
+		getProfile:            cfg.Profile.Get,
+		updateProfile:         cfg.Profile.Update,
+		getContacts:           cfg.Contacts.Get,
+		replaceContacts:       cfg.Contacts.Replace,
+		getHealth:             cfg.Health.Get,
+		updateHealth:          cfg.Health.Update,
+		getSafeguarding:       cfg.Safeguarding.Get,
+		updateSafeguarding:    cfg.Safeguarding.Update,
+		getConsent:            cfg.Consent.Get,
+		updateConsent:         cfg.Consent.Update,
+		getCollectionSetting:  cfg.Collection.GetSetting,
+		setCollectionPassword: cfg.Collection.SetPassword,
+		listRoomAssignments:   cfg.RoomAssignments.List,
+		createRoomAssignment:  cfg.RoomAssignments.Create,
+		closeRoomAssignment:   cfg.RoomAssignments.Close,
+		getBillingProfile:     cfg.BillingProfile.Get,
+		updateBillingProfile:  cfg.BillingProfile.Update,
+		getLeavingRecord:      cfg.LeavingRecord,
+		uploadPhoto:           cfg.Photo.Upload,
+		removePhoto:           cfg.Photo.Remove,
 	}
 }
 
 func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	protected.GET("/children/attendance", httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"), h.listAttendanceHandler)
-
-	bookingRead := protected.Group("")
-	bookingRead.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager", "practitioner"))
-	bookingRead.GET("/children/:child_id/booking-patterns", h.listBookingPatternsHandler)
-	bookingRead.GET("/children/:child_id/booking-patterns/current", h.getCurrentBookingPatternHandler)
-	bookingRead.GET("/children/:child_id/booking-patterns/:pattern_id", h.getBookingPatternHandler)
 
 	manager := protected.Group("")
 	manager.Use(httpserver.RequireRolesWithObservability(h.logger, nil, "manager"))
@@ -218,9 +191,6 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 	manager.PATCH("/children/:child_id/billing-profile", h.updateBillingProfileHandler)
 
 	manager.GET("/children/:child_id/leaving-record", h.getLeavingRecordHandler)
-
-	manager.POST("/children/:child_id/booking-patterns", h.createBookingPatternHandler)
-	manager.PATCH("/children/:child_id/booking-patterns/:pattern_id", h.updateBookingPatternHandler)
 
 	manager.PUT("/children/:child_id/photo", h.uploadPhotoHandler)
 	manager.DELETE("/children/:child_id/photo", h.removePhotoHandler)
@@ -822,157 +792,6 @@ func (h *Handler) getLeavingRecordHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, toChildLeavingRecordResponse(p))
-}
-
-// --- Booking Pattern handlers ---
-
-// listBookingPatternsHandler returns a paginated list of booking patterns for a child.
-//
-//	@Summary		List booking patterns
-//	@Description	Get a paginated list of booking patterns for a child.
-//	@Tags			children
-//	@Produce		json
-//	@Param			child_id	path		string	true	"Child ID"			format(uuid)
-//	@Param			page		query		int		false	"Page number"		default(1)	minimum(1)
-//	@Param			page_size	query		int		false	"Items per page"	default(50)	minimum(1)	maximum(200)
-//	@Success		200			{object}	object{items=[]bookingPatternResponse,total=int,page=int,page_size=int}
-//	@Failure		401			{object}	object{code=string,message=string}
-//	@Failure		404			{object}	object{code=string,message=string}
-//	@Security		BearerAuth
-//	@x-roles		["manager","practitioner"]
-//	@Router			/children/{child_id}/booking-patterns [get]
-func (h *Handler) listBookingPatternsHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-
-	page, pageSize := pagination.ParsePageParams(c)
-	offset := (page - 1) * pageSize
-
-	items, total, err := h.listBookingPatterns.ExecutePaginated(c.Request.Context(), actor, c.Param("child_id"), pageSize, offset)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, pagination.PaginatedResponse(toBookingPatternListResponse(items), total, page, pageSize))
-}
-
-func (h *Handler) getBookingPatternHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	p, err := h.getBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"))
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, toBookingPatternResponse(*p))
-}
-
-func (h *Handler) getCurrentBookingPatternHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	p, err := h.getCurrentBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Query("date"))
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, toBookingPatternResponse(*p))
-}
-
-func (h *Handler) createBookingPatternHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	var req bookingPatternRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
-		return
-	}
-	effectiveFrom, err := time.Parse("2006-01-02", req.EffectiveFrom)
-	if err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "effective_from", "message": "must be a valid date (YYYY-MM-DD)"}})
-		return
-	}
-	entries := make([]application.BookingPatternEntryInput, 0, len(req.Entries))
-	for _, e := range req.Entries {
-		stID, perr := uuid.Parse(e.SessionTypeID)
-		if perr != nil {
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "session_type_id", "message": "must be a valid UUID"}})
-			return
-		}
-		entries = append(entries, application.BookingPatternEntryInput{
-			DayOfWeek:     e.DayOfWeek,
-			SessionTypeID: stID,
-		})
-	}
-	result, err := h.createBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), application.CreateBookingPatternInput{
-		EffectiveFrom: effectiveFrom,
-		Entries:       entries,
-		TermTimeOnly:  req.TermTimeOnly,
-	})
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	resp := toBookingPatternResponse(*result)
-	c.Header("Location", fmt.Sprintf("/api/children/%s/booking-patterns/%s", resp.ChildID, resp.ID))
-	c.JSON(http.StatusCreated, resp)
-}
-
-func (h *Handler) updateBookingPatternHandler(c *gin.Context) {
-	actor, ok := tenant.ActorFromGinContext(c)
-	if !ok {
-		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
-		return
-	}
-	var req bookingPatternUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
-		return
-	}
-	in := application.UpdateBookingPatternInput{}
-	if req.EffectiveFrom != nil {
-		t, err := time.Parse("2006-01-02", *req.EffectiveFrom)
-		if err != nil {
-			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "effective_from", "message": "must be a valid date (YYYY-MM-DD)"}})
-			return
-		}
-		in.EffectiveFrom = &t
-	}
-	if req.Entries != nil {
-		entries := make([]application.BookingPatternEntryInput, 0, len(*req.Entries))
-		for _, e := range *req.Entries {
-			stID, perr := uuid.Parse(e.SessionTypeID)
-			if perr != nil {
-				httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Validation failed.", []map[string]string{{"field": "session_type_id", "message": "must be a valid UUID"}})
-				return
-			}
-			entries = append(entries, application.BookingPatternEntryInput{
-				DayOfWeek:     e.DayOfWeek,
-				SessionTypeID: stID,
-			})
-		}
-		in.Entries = &entries
-	}
-	if req.TermTimeOnly != nil {
-		in.TermTimeOnly = req.TermTimeOnly
-	}
-	result, err := h.updateBookingPattern.Execute(c.Request.Context(), actor, c.Param("child_id"), c.Param("pattern_id"), in)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, toBookingPatternResponse(*result))
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

@@ -34,9 +34,9 @@ func (a *BookingEntriesLookupAdapter) GetEntriesForChildInMonth(ctx context.Cont
 	monthEnd := monthStart.AddDate(0, 1, -1)
 
 	rows, err := q.BookingEntriesForChildInMonth(ctx, sqlc.BookingEntriesForChildInMonthParams{
-		TenantID:  pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
-		BranchID:  pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
-		ChildID:   pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
+		TenantID:   pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
+		BranchID:   pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
+		ChildID:    pgtype.UUID{Bytes: [16]byte(childID), Valid: true},
 		MonthStart: pgtype.Date{Time: monthStart, Valid: true},
 		MonthEnd:   pgtype.Date{Time: monthEnd, Valid: true},
 	})

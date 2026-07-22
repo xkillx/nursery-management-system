@@ -86,21 +86,6 @@ type Repository interface {
 	GetLeavingRecordByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*ChildLeavingRecord, bool, error)
 	InsertLeavingRecord(ctx context.Context, tx Tx, p *ChildLeavingRecord) error
 
-	// Booking Patterns
-	ListByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) ([]BookingPattern, error)
-	ListByChildPaginated(ctx context.Context, tenantID, branchID, childID uuid.UUID, limit, offset int) ([]BookingPattern, error)
-	CountByChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (int, error)
-	GetPatternByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (*BookingPattern, bool, error)
-	GetActiveForDate(ctx context.Context, tenantID, branchID, childID uuid.UUID, date time.Time) (*BookingPattern, bool, error)
-	GetCurrentOpenByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*BookingPattern, bool, error)
-	GetPreviousClosedByChild(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID) (*BookingPattern, bool, error)
-	InsertPattern(ctx context.Context, tx Tx, p *BookingPattern, entries []BookingPatternEntry) (*BookingPattern, error)
-	CloseCurrentPattern(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, effectiveTo time.Time) error
-	ClosePatternByID(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveTo time.Time) error
-	ReplaceEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, entries []BookingPatternEntry) error
-	UpdateEffectiveFrom(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, effectiveFrom time.Time) error
-	UpdateTermTimeOnly(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID, termTimeOnly bool) error
-
 	// Photo
 	UpdatePhotoPath(ctx context.Context, tenantID, branchID, childID uuid.UUID, path *string) error
 }

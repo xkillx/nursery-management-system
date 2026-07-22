@@ -214,18 +214,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Update: updateBillingProfile,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
-	listBookingPatterns := application3.NewListBookingPatterns(childRepository)
-	getBookingPattern := application3.NewGetBookingPattern(childRepository)
-	getCurrentBookingPattern := application3.NewGetCurrentBookingPattern(childRepository, todayFunc)
-	createBookingPattern := application3.NewCreateBookingPattern(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
-	updateBookingPattern := application3.NewUpdateBookingPattern(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
-	bookingPatternUseCases := httpchild.BookingPatternUseCases{
-		List:       listBookingPatterns,
-		Get:        getBookingPattern,
-		GetCurrent: getCurrentBookingPattern,
-		Create:     createBookingPattern,
-		Update:     updateBookingPattern,
-	}
 	fileStorage := provideFileStorage()
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
@@ -244,7 +232,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		RoomAssignments: roomAssignmentUseCases,
 		BillingProfile:  billingProfileUseCases,
 		LeavingRecord:   getLeavingRecord,
-		BookingPatterns: bookingPatternUseCases,
 		Photo:           photoUseCases,
 	}
 	httpchildHandler := httpchild.NewHandler(childrenHandlerConfig, logger)
@@ -612,18 +599,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Update: updateBillingProfile,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
-	listBookingPatterns := application3.NewListBookingPatterns(childRepository)
-	getBookingPattern := application3.NewGetBookingPattern(childRepository)
-	getCurrentBookingPattern := application3.NewGetCurrentBookingPattern(childRepository, todayFunc)
-	createBookingPattern := application3.NewCreateBookingPattern(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
-	updateBookingPattern := application3.NewUpdateBookingPattern(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, todayFunc)
-	bookingPatternUseCases := httpchild.BookingPatternUseCases{
-		List:       listBookingPatterns,
-		Get:        getBookingPattern,
-		GetCurrent: getCurrentBookingPattern,
-		Create:     createBookingPattern,
-		Update:     updateBookingPattern,
-	}
 	fileStorage := provideFileStorage()
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
@@ -642,7 +617,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		RoomAssignments: roomAssignmentUseCases,
 		BillingProfile:  billingProfileUseCases,
 		LeavingRecord:   getLeavingRecord,
-		BookingPatterns: bookingPatternUseCases,
 		Photo:           photoUseCases,
 	}
 	httpchildHandler := httpchild.NewHandler(childrenHandlerConfig, logger)
@@ -939,7 +913,7 @@ func provideFileStorage() domain4.FileStorage {
 var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain4.Repository), new(*postgres3.ChildRepository)), provideFileStorage,
 	provideSessionTypeLookupAdapter, wire.Bind(new(application3.SessionTypeLookup), new(*sessionTypeLookupAdapter)), provideEnrollmentTermCreatorAdapter, wire.Bind(new(application3.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)), provideClock,
 	provideTodayFunc,
-	provideChildFundingWriterAdapter, wire.Bind(new(domain4.ChildFundingWriter), new(*childFundingWriterAdapter)), application3.NewListChildren, application3.NewGetChild, application3.NewCreateChildWithFullProfile, application3.NewUpdateChild, application3.NewMarkInactive, application3.NewListAttendance, application3.NewGetProfile, application3.NewUpdateProfile, application3.NewGetContacts, application3.NewReplaceContacts, application3.NewGetHealth, application3.NewUpdateHealth, application3.NewGetSafeguarding, application3.NewUpdateSafeguarding, application3.NewGetConsent, application3.NewUpdateConsent, application3.NewGetCollectionSetting, application3.NewSetCollectionPassword, application3.NewListRoomAssignments, application3.NewCreateRoomAssignment, application3.NewCloseRoomAssignment, application3.NewGetBillingProfile, application3.NewUpdateBillingProfile, application3.NewGetLeavingRecord, application3.NewListBookingPatterns, application3.NewGetBookingPattern, application3.NewGetCurrentBookingPattern, application3.NewCreateBookingPattern, application3.NewUpdateBookingPattern, application3.NewUploadPhoto, application3.NewRemovePhoto, wire.Struct(new(httpchild.CoreUseCases), "*"), wire.Struct(new(httpchild.ProfileUseCases), "*"), wire.Struct(new(httpchild.ContactsUseCases), "*"), wire.Struct(new(httpchild.HealthUseCases), "*"), wire.Struct(new(httpchild.SafeguardingUseCases), "*"), wire.Struct(new(httpchild.ConsentUseCases), "*"), wire.Struct(new(httpchild.CollectionUseCases), "*"), wire.Struct(new(httpchild.RoomAssignmentUseCases), "*"), wire.Struct(new(httpchild.BillingProfileUseCases), "*"), wire.Struct(new(httpchild.BookingPatternUseCases), "*"), wire.Struct(new(httpchild.PhotoUseCases), "*"), wire.Struct(new(httpchild.ChildrenHandlerConfig), "*"), httpchild.NewHandler,
+	provideChildFundingWriterAdapter, wire.Bind(new(domain4.ChildFundingWriter), new(*childFundingWriterAdapter)), application3.NewListChildren, application3.NewGetChild, application3.NewCreateChildWithFullProfile, application3.NewUpdateChild, application3.NewMarkInactive, application3.NewListAttendance, application3.NewGetProfile, application3.NewUpdateProfile, application3.NewGetContacts, application3.NewReplaceContacts, application3.NewGetHealth, application3.NewUpdateHealth, application3.NewGetSafeguarding, application3.NewUpdateSafeguarding, application3.NewGetConsent, application3.NewUpdateConsent, application3.NewGetCollectionSetting, application3.NewSetCollectionPassword, application3.NewListRoomAssignments, application3.NewCreateRoomAssignment, application3.NewCloseRoomAssignment, application3.NewGetBillingProfile, application3.NewUpdateBillingProfile, application3.NewGetLeavingRecord, application3.NewUploadPhoto, application3.NewRemovePhoto, wire.Struct(new(httpchild.CoreUseCases), "*"), wire.Struct(new(httpchild.ProfileUseCases), "*"), wire.Struct(new(httpchild.ContactsUseCases), "*"), wire.Struct(new(httpchild.HealthUseCases), "*"), wire.Struct(new(httpchild.SafeguardingUseCases), "*"), wire.Struct(new(httpchild.ConsentUseCases), "*"), wire.Struct(new(httpchild.CollectionUseCases), "*"), wire.Struct(new(httpchild.RoomAssignmentUseCases), "*"), wire.Struct(new(httpchild.BillingProfileUseCases), "*"), wire.Struct(new(httpchild.PhotoUseCases), "*"), wire.Struct(new(httpchild.ChildrenHandlerConfig), "*"), httpchild.NewHandler,
 )
 
 var parentChildMappingsSet = wire.NewSet(postgres10.NewParentChildMappingRepository, wire.Bind(new(domain5.Repository), new(*postgres10.ParentChildMappingRepository)), provideMembershipCheckerAdapter, wire.Bind(new(domain5.MembershipChecker), new(*membershipCheckerAdapter)), provideChildScopeCheckerAdapter, wire.Bind(new(application5.ChildChecker), new(*childScopeCheckerAdapter)), application5.NewCreateMappingUseCase, application5.NewEndMappingUseCase, httpmapping.NewHandler)

@@ -140,7 +140,7 @@ func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
 		TermTimeOnly: r.TermTimeOnly,
-		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
 }
@@ -152,7 +152,7 @@ func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow)
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
 		TermTimeOnly: r.TermTimeOnly,
-		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
 }
@@ -164,7 +164,7 @@ func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPag
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
 		TermTimeOnly: r.TermTimeOnly,
-		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
 }
@@ -176,7 +176,7 @@ func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAn
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
 		TermTimeOnly: r.TermTimeOnly,
-		Status: r.Status, BookedByMembershipID: r.BookedByMembershipID,
+		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 	}
 }

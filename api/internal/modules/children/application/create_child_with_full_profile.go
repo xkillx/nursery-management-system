@@ -147,7 +147,6 @@ type CreateChildFullInput struct {
 	Funding            *domain.ChildFundingRecordInput
 	CollectionSettings *ChildCollectionSettingsInput
 	Room               *ChildRoomAssignmentInput
-	BookingPattern     *BookingPatternInput
 }
 
 type ChildCreationResult struct {
@@ -216,14 +215,6 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 	if input.CollectionSettings != nil {
 		collectionPassword = strings.TrimSpace(input.CollectionSettings.Password)
 		collectionPasswordHint = strings.TrimSpace(input.CollectionSettings.PasswordHint)
-	}
-
-	var resolvedEntries []domain.BookingPatternEntry
-	if input.BookingPattern != nil {
-		resolvedEntries, err = resolveBookingPatternEntries(ctx, uc.sessionLookup, actor, input.BookingPattern.Entries)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	var result ChildCreationResult
@@ -399,30 +390,6 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		}
 		created = append(created, "billing_profile")
 
-		if input.BookingPattern != nil {
-			bpEffectiveFrom := startDate
-			if !input.BookingPattern.EffectiveFrom.IsZero() {
-				bpEffectiveFrom = input.BookingPattern.EffectiveFrom
-			}
-			bp, err := createBookingPatternInTx(ctx, tx, uc.repo, uc.audit, actor, childID, bpEffectiveFrom, input.BookingPattern.EffectiveTo, resolvedEntries, input.BookingPattern.TermTimeOnly, true, uc.clock)
-			if err != nil {
-				return err
-			}
-			created = append(created, "booking_pattern")
-
-			if bp != nil {
-				termStart := time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, time.UTC)
-				termID, err := uc.termCreator.CreateEnrollmentTerm(ctx, tx, actor, childID, termStart, bp.ID)
-				if err != nil {
-					return fmt.Errorf("create enrollment term: %w", err)
-				}
-				if termID != uuid.Nil {
-					result.TermID = &termID
-					created = append(created, "term")
-				}
-			}
-		}
-
 		if uc.audit != nil {
 			if err := uc.audit.WriteWithTx(ctx, tx, actor, audit.WriteParams{
 				ActionType: "child_created",
@@ -431,7 +398,6 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 				Details: map[string]any{
 					"first_name":          firstName,
 					"created_sub_records": created,
-					"booking_pattern":     input.BookingPattern != nil,
 				},
 			}); err != nil {
 				return fmt.Errorf("audit child_created: %w", err)
@@ -526,15 +492,6 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 					Message: "Enter the postcode.",
 				})
 			}
-		}
-	}
-
-	if input.BookingPattern != nil {
-		if len(input.BookingPattern.Entries) == 0 {
-			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.entries", Message: "Invalid request payload."})
-		}
-		if !input.BookingPattern.EffectiveFrom.IsZero() && input.BookingPattern.EffectiveFrom.Year() < 1970 {
-			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "booking_pattern.effective_from", Message: "Invalid request payload."})
 		}
 	}
 

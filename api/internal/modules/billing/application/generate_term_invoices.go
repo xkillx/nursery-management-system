@@ -16,13 +16,13 @@ import (
 )
 
 type GenerateTermInvoices struct {
-	repo                domain.BillingRepository
-	auditW              *audit.Writer
-	termDateLookup      domain.TermDateLookup
-	adHocLookup         domain.AdHocBookingLookup
-	hourlyLookup        domain.HourlyBookingLookup
-	closureDateLookup   domain.ClosureDateLookup
-	fundingLookup       domain.FundingLookup
+	repo                 domain.BillingRepository
+	auditW               *audit.Writer
+	termDateLookup       domain.TermDateLookup
+	adHocLookup          domain.AdHocBookingLookup
+	hourlyLookup         domain.HourlyBookingLookup
+	closureDateLookup    domain.ClosureDateLookup
+	fundingLookup        domain.FundingLookup
 	bookingEntriesLookup domain.BookingEntriesLookup
 }
 
