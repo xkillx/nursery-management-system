@@ -2573,17 +2573,34 @@
 
             <div class="space-y-8 p-5 md:p-6">
 
-              <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/60">
+              <div
+                role="button"
+                tabindex="0"
+                class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition-all duration-250 focus:ring-3 focus:ring-brand-500/15"
+                [class.border-brand-500]="step5.funding_enabled"
+                [class.bg-brand-50/15]="step5.funding_enabled"
+                [class.dark:border-brand-400]="step5.funding_enabled"
+                [class.dark:bg-brand-500/10]="step5.funding_enabled"
+                [class.border-gray-250]="!step5.funding_enabled"
+                [class.bg-white]="!step5.funding_enabled"
+                [class.dark:border-gray-800]="!step5.funding_enabled"
+                [class.dark:bg-gray-900/60]="!step5.funding_enabled"
+                (click)="step5.funding_enabled = !step5.funding_enabled; notifyDraftChanged()"
+                (keydown.enter)="step5.funding_enabled = !step5.funding_enabled; notifyDraftChanged()"
+                (keydown.space)="step5.funding_enabled = !step5.funding_enabled; notifyDraftChanged(); $event.preventDefault()"
+              >
                 <div class="min-w-0">
                   <p class="text-sm font-bold text-gray-900 dark:text-white">Funding Enabled</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Toggle on if this child has a funding entitlement.</p>
                 </div>
-                <app-switch
-                  name="funding_enabled"
-                  ariaLabel="Enable funding"
-                  [(ngModel)]="step5.funding_enabled"
-                  (ngModelChange)="notifyDraftChanged()"
-                />
+                <div class="shrink-0 pointer-events-none">
+                  <app-switch
+                    name="funding_enabled"
+                    ariaLabel="Enable funding"
+                    [(ngModel)]="step5.funding_enabled"
+                    (ngModelChange)="notifyDraftChanged()"
+                  />
+                </div>
               </div>
 
               @if (step5.funding_enabled) {
