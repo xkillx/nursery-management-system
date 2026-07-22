@@ -7,8 +7,6 @@ import {
   ParentFundingEntitlement,
   ParentFundingBreakdown,
   ParentFundingRecord,
-  ParentAllocationEntry,
-  ParentFundingHistoryEntry,
 } from '../models/parent-funding.models';
 
 interface ParentFundingEntitlementApiModel {
