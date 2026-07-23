@@ -1091,8 +1091,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   protected step3FieldError(field: string): string | null {
-    if (field === 'selected_parent_id' && !this.selectedParentId) {
-      return 'Select a parent/guardian for this child.';
+    if (field === 'selected_parent_id' && this.linkedParents.length === 0) {
+      return 'Link at least one parent/guardian for this child.';
+    }
+    if (field === 'emergency_contacts') {
+      const validEmergency = this.emergencyContactsDraft.filter(contact =>
+        contact.fullName.trim() && contact.relationshipToChild?.trim() && contact.telephone?.trim(),
+      );
+      if (validEmergency.length === 0) {
+        return 'Add at least one emergency contact with name, relationship, and phone number.';
+      }
+    }
+    if (field === 'collection_password' && !this.step3.collection_password.trim()) {
+      return 'Set a collection password before completing.';
     }
     return null;
   }
@@ -1206,14 +1217,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
     }).subscribe({
       next: () => {
-        if (this.selectedParentId) {
-          this.parentsApi.linkChild(this.selectedParentId, this.childId!).subscribe({
-            next: () => this.saveStep3Collection(this.childId!, advance),
-            error: () => this.saveStep3Collection(this.childId!, advance),
-          });
-        } else {
-          this.saveStep3Collection(this.childId!, advance);
-        }
+        this.linkAllParents(0, advance);
       },
       error: (error) => {
         this.isSaving = false;
@@ -1221,6 +1225,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
         this.toast.error(this.errorMessage);
       },
+    });
+  }
+
+  private linkAllParents(index: number, advance: boolean): void {
+    if (index >= this.linkedParents.length) {
+      this.saveStep3Collection(this.childId!, advance);
+      return;
+    }
+
+    const entry = this.linkedParents[index];
+    this.parentsApi.linkChild(entry.parentId, this.childId!).subscribe({
+      next: () => this.linkAllParents(index + 1, advance),
+      error: () => this.linkAllParents(index + 1, advance),
     });
   }
 
@@ -1656,11 +1673,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     this.step3Submitted = true;
 
-    if (!this.selectedParentId && this.showInlineParentForm && this.newParent.first_name.trim()) {
-      this.autoCreateParentAndContinue(advance);
-      return;
-    }
-
     const firstIssue = this.firstBlockingIssueForStep('contacts-collection');
     if (firstIssue) {
       this.handleValidationFailure(firstIssue);
@@ -1702,14 +1714,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
     }).subscribe({
       next: () => {
-        if (this.selectedParentId) {
-          this.parentsApi.linkChild(this.selectedParentId, this.childId!).subscribe({
-            next: () => this.saveStep3Collection(this.childId!, advance),
-            error: () => this.saveStep3Collection(this.childId!, advance),
-          });
-        } else {
-          this.saveStep3Collection(this.childId!, advance);
-        }
+        this.linkAllParents(0, advance);
       },
       error: (error) => {
         this.isSaving = false;
@@ -1946,6 +1951,15 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
             next: () => { /* parent linked */ },
             error: () => { /* non-fatal */ },
           });
+        }
+
+        if (this.linkedParents.length > 0 && result.id) {
+          for (const entry of this.linkedParents) {
+            this.parentsApi.linkChild(entry.parentId, result.id).subscribe({
+              next: () => { /* parent linked */ },
+              error: () => { /* non-fatal */ },
+            });
+          }
         }
 
         if (this.selectedPhotoFile) {
@@ -2704,8 +2718,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private collectContactsIssues(issues: FinalCompletionIssue[]): void {
-    if (!this.selectedParentId) {
-      issues.push({ stepKey: 'contacts-collection', field: 'selected_parent_id', message: 'Select a parent/guardian for this child.' });
+    if (this.linkedParents.length === 0) {
+      issues.push({ stepKey: 'contacts-collection', field: 'selected_parent_id', message: 'Link at least one parent/guardian for this child.' });
     }
 
     const validEmergency = this.emergencyContactsDraft.filter(contact =>
@@ -2715,11 +2729,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       issues.push({ stepKey: 'contacts-collection', field: 'emergency_contacts', message: 'Add at least one emergency contact with name, relationship, and phone number.' });
     }
 
-    const hasAuthorisedNonParent = this.emergencyContactsDraft.some((contact, index) =>
-      this.emergencyAuthorisedFlags[index] && contact.fullName.trim(),
-    );
-    if (hasAuthorisedNonParent && !this.step3.collection_password.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'collection_password', message: 'Set an authorised collection password before completing.' });
+    if (!this.step3.collection_password.trim()) {
+      issues.push({ stepKey: 'contacts-collection', field: 'collection_password', message: 'Set a collection password before completing.' });
     }
   }
 
