@@ -196,6 +196,27 @@ interface ConsentItem {
   detail: string;
 }
 
+interface LinkedParentEntry {
+  id: string;
+  parentId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  relationship: string;
+  customRelationship: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressCity: string;
+  addressPostcode: string;
+  hasParentalResponsibility: boolean;
+  canPickUp: boolean;
+  isEmergencyContact: boolean;
+  portalStatus: 'active' | 'none';
+  isEditing: boolean;
+  isNew: boolean;
+}
+
 interface RegistrationDraft {
   currentStep: StepperStep;
   step1: {
@@ -290,6 +311,7 @@ interface RegistrationDraft {
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
   selectedParentId: string;
+  linkedParents: LinkedParentEntry[];
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
   emergencyContactAddresses: string[];
@@ -426,6 +448,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     'Urdu',
   ];
   readonly relationshipOptions = ['Mother', 'Father', 'Parent', 'Carer', 'Grandparent', 'Aunt', 'Uncle', 'Other'];
+  readonly parentRelationshipOptions = [
+    'Mother', 'Father', 'Step-Mother', 'Step-Father', 'Grandmother', 'Grandfather',
+    'Guardian', 'Foster Carer', 'Legal Guardian', 'Other',
+  ];
   showCollectionPassword = false;
 
   readonly sexOptions: Option[] = [
@@ -440,6 +466,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   readonly relationshipSelectOptions: Option[] = this.relationshipOptions.map((relationship) => ({
     value: relationship,
     label: relationship,
+  }));
+  readonly parentRelationshipSelectOptions: Option[] = this.parentRelationshipOptions.map((r) => ({
+    value: r,
+    label: r,
   }));
   readonly religionOptions: Option[] = [
     { value: 'christian', label: 'Christian' },
@@ -769,6 +799,32 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     relationship_to_child: '',
     has_parental_responsibility: false,
   };
+
+  linkedParents: LinkedParentEntry[] = [];
+  parentSearchTerm = '';
+  parentSearchResults: ParentRecord[] = [];
+  isSearchingParents = false;
+  showCreateParentForm = false;
+  newParentDraft = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    relationship_to_child: '',
+    custom_relationship: '',
+    has_parental_responsibility: true,
+    can_pick_up: true,
+    is_emergency_contact: true,
+  };
+  readonly parentCap = 4;
+
+  get isParentCapReached(): boolean {
+    return this.linkedParents.length >= this.parentCap;
+  }
+
+  get linkedParentIds(): string[] {
+    return this.linkedParents.map(p => p.parentId);
+  }
 
   readonly referralTypeOptions: Option[] = [
     { value: 'community_paediatrician', label: 'Community Paediatrician' },
@@ -1760,6 +1816,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       consentsReviewed: this.consentsReviewed,
       parentCarersDraft: this.parentCarersDraft,
       selectedParentId: this.selectedParentId,
+      linkedParents: this.linkedParents,
       emergencyContactsDraft: this.emergencyContactsDraft,
       referralsDraft: this.referralsDraft,
       child: this.child,
@@ -3123,6 +3180,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
       selectedParentId: this.selectedParentId,
+      linkedParents: this.linkedParents.map(p => ({ ...p })),
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
       emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
       emergencyContactAddresses: [...this.emergencyContactAddresses],
@@ -3194,6 +3252,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
     if (draft.selectedParentId) {
       this.selectedParentId = draft.selectedParentId;
+    }
+    if (draft.linkedParents?.length) {
+      this.linkedParents = draft.linkedParents.map(p => ({ ...p }));
     }
     if (draft.emergencyContactsDraft?.length) {
       this.emergencyContactsDraft = draft.emergencyContactsDraft.map(contact => ({ ...contact }));
@@ -3351,6 +3412,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     };
     this.parentCarersDraft = [this.emptyContact('Mother')];
     this.selectedParentId = '';
+    this.linkedParents = [];
     this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = [true];
     this.emergencyContactAddresses = [''];
