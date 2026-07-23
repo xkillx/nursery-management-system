@@ -3,7 +3,7 @@ import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit } from '
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { Subject, Subscription, debounceTime, takeUntil } from 'rxjs';
+import { Subject, Subscription, catchError, debounceTime, forkJoin, of, takeUntil } from 'rxjs';
 import {
   heroAcademicCap,
   heroArrowLeft,
@@ -866,6 +866,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.childId = childIdParam;
       this.loadChildAndStatus();
       this.loadRoomOptions();
+      this.loadAvailableParents();
       return;
     }
 
@@ -2976,8 +2977,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private loadChildView(): void {
     if (!this.childId) return;
 
-    this.staffApi.getStepperView(this.childId).subscribe({
-      next: (view) => {
+    forkJoin({
+      view: this.staffApi.getStepperView(this.childId),
+      parents: this.parentsApi.listByChild(this.childId).pipe(catchError(() => of({ parents: [] }))),
+    }).subscribe({
+      next: ({ view, parents }) => {
+        this.linkedParents = parents.parents.map(p => this.mapParentToLinkedEntry(p));
         this.populateDraftsFromView(view);
         this.applyConsent(view.consent);
         this.loadStatus(StaffApiService.isLoadError(view.consent) ? undefined : view.consent);
@@ -2986,6 +2991,29 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.loadStatus(undefined);
       },
     });
+  }
+
+  private mapParentToLinkedEntry(p: ParentRecord & { link_id: string }): LinkedParentEntry {
+    return {
+      id: p.link_id,
+      parentId: p.id,
+      firstName: p.first_name ?? '',
+      lastName: p.last_name ?? '',
+      email: p.email ?? '',
+      phone: p.phone ?? '',
+      relationship: p.relationship_to_child ?? '',
+      customRelationship: '',
+      addressLine1: p.address_line1 ?? '',
+      addressLine2: p.address_line2 ?? '',
+      addressCity: p.address_city ?? '',
+      addressPostcode: p.address_postcode ?? '',
+      hasParentalResponsibility: p.has_parental_responsibility ?? false,
+      canPickUp: p.can_pick_up ?? false,
+      isEmergencyContact: p.is_emergency_contact ?? false,
+      portalStatus: p.user_id ? 'active' : 'none',
+      isEditing: false,
+      isNew: false,
+    };
   }
 
   private applyConsent(consent: ConsentRecord | null | typeof StaffApiService.LOAD_ERROR): void {
