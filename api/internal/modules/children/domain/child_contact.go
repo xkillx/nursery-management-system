@@ -9,7 +9,6 @@ import (
 type ContactType string
 
 const (
-	ContactTypeParentCarer         ContactType = "parent_carer"
 	ContactTypeEmergencyContact    ContactType = "emergency_contact"
 	ContactTypeAuthorisedCollector ContactType = "authorised_collector"
 )

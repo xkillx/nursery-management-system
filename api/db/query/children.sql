@@ -26,13 +26,13 @@ SELECT c.id,
               AND cra.is_current
         ) AS has_current_room,
          EXISTS (
-             SELECT 1
-             FROM child_contacts cc
-             WHERE cc.tenant_id = c.tenant_id
-               AND cc.branch_id = c.branch_id
-               AND cc.child_id = c.id
-               AND cc.contact_type = 'parent_carer'
-         ) AS has_parent_carer_contact,
+              SELECT 1
+              FROM parent_children pc
+              WHERE pc.tenant_id = c.tenant_id
+                AND pc.branch_id = c.branch_id
+                AND pc.child_id = c.id
+                AND pc.ended_at IS NULL
+          ) AS has_parent_carer_contact,
          EXISTS (
              SELECT 1
              FROM child_booking_patterns cbp
@@ -90,11 +90,11 @@ SELECT c.id,
        ) AS has_current_room,
         EXISTS (
             SELECT 1
-            FROM child_contacts cc
-            WHERE cc.tenant_id = c.tenant_id
-              AND cc.branch_id = c.branch_id
-              AND cc.child_id = c.id
-              AND cc.contact_type = 'parent_carer'
+            FROM parent_children pc
+            WHERE pc.tenant_id = c.tenant_id
+              AND pc.branch_id = c.branch_id
+              AND pc.child_id = c.id
+              AND pc.ended_at IS NULL
         ) AS has_parent_carer_contact,
         EXISTS (
             SELECT 1
@@ -167,11 +167,11 @@ SELECT c.id,
        ) AS has_current_room,
         EXISTS (
             SELECT 1
-            FROM child_contacts cc
-            WHERE cc.tenant_id = c.tenant_id
-              AND cc.branch_id = c.branch_id
-              AND cc.child_id = c.id
-              AND cc.contact_type = 'parent_carer'
+            FROM parent_children pc
+            WHERE pc.tenant_id = c.tenant_id
+              AND pc.branch_id = c.branch_id
+              AND pc.child_id = c.id
+              AND pc.ended_at IS NULL
         ) AS has_parent_carer_contact,
         EXISTS (
             SELECT 1
@@ -222,11 +222,11 @@ SELECT c.id,
         AND c.start_date IS NOT NULL
         AND EXISTS (
             SELECT 1
-            FROM child_contacts cc
-            WHERE cc.tenant_id = c.tenant_id
-              AND cc.branch_id = c.branch_id
-              AND cc.child_id = c.id
-              AND cc.contact_type = 'parent_carer'
+            FROM parent_children pc
+            WHERE pc.tenant_id = c.tenant_id
+              AND pc.branch_id = c.branch_id
+              AND pc.child_id = c.id
+              AND pc.ended_at IS NULL
         )) AS enrollment_complete,
        CASE
          WHEN s.id IS NOT NULL THEN 'checked_in'
@@ -279,7 +279,7 @@ SELECT c.id,
        c.is_active,
        (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
-       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM parent_children pc WHERE pc.tenant_id = c.tenant_id AND pc.branch_id = c.branch_id AND pc.child_id = c.id AND pc.ended_at IS NULL) AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
        c.profile_photo_path,
        c.created_at,
@@ -306,7 +306,7 @@ SELECT c.id,
        c.is_active,
        (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
-       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM parent_children pc WHERE pc.tenant_id = c.tenant_id AND pc.branch_id = c.branch_id AND pc.child_id = c.id AND pc.ended_at IS NULL) AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
        c.profile_photo_path,
        c.created_at,
@@ -333,7 +333,7 @@ SELECT c.id,
        c.is_active,
        (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
-       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM parent_children pc WHERE pc.tenant_id = c.tenant_id AND pc.branch_id = c.branch_id AND pc.child_id = c.id AND pc.ended_at IS NULL) AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
        c.profile_photo_path,
        c.created_at,
@@ -360,7 +360,7 @@ SELECT c.id,
        c.is_active,
        (SELECT cra.room_id FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS primary_room_id,
        EXISTS (SELECT 1 FROM child_room_assignments cra WHERE cra.tenant_id = c.tenant_id AND cra.branch_id = c.branch_id AND cra.child_id = c.id AND cra.is_current) AS has_current_room,
-       EXISTS (SELECT 1 FROM child_contacts cc WHERE cc.tenant_id = c.tenant_id AND cc.branch_id = c.branch_id AND cc.child_id = c.id AND cc.contact_type = 'parent_carer') AS has_parent_carer_contact,
+       EXISTS (SELECT 1 FROM parent_children pc WHERE pc.tenant_id = c.tenant_id AND pc.branch_id = c.branch_id AND pc.child_id = c.id AND pc.ended_at IS NULL) AS has_parent_carer_contact,
        EXISTS (SELECT 1 FROM child_booking_patterns cbp WHERE cbp.tenant_id = c.tenant_id AND cbp.branch_id = c.branch_id AND cbp.child_id = c.id AND (cbp.effective_to IS NULL OR cbp.effective_to >= CURRENT_DATE)) AS has_booking_pattern,
        c.profile_photo_path,
        c.created_at,

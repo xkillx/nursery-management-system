@@ -91,7 +91,6 @@ type childSafeguardingPayload struct {
 }
 
 type childContactsPayload struct {
-	ParentCarers         []contactPayload `json:"parent_carers"`
 	EmergencyContacts    []contactPayload `json:"emergency_contacts"`
 	AuthorisedCollectors []contactPayload `json:"authorised_collectors"`
 }
@@ -252,15 +251,7 @@ func mapChildSafeguardingPayloadToInput(p *childSafeguardingPayload) *applicatio
 }
 
 func mapChildContactsPayloadToInput(p *childContactsPayload) []application.ChildContactInput {
-	out := make([]application.ChildContactInput, 0, len(p.ParentCarers)+len(p.EmergencyContacts)+len(p.AuthorisedCollectors))
-	for _, c := range p.ParentCarers {
-		out = append(out, application.ChildContactInput{
-			ContactType: domain.ContactTypeParentCarer, FullName: c.FullName,
-			RelationshipToChild: c.RelationshipToChild, Address: c.Address,
-			Telephone: c.Telephone, Email: c.Email, WorkAddress: c.WorkAddress,
-			HasParentalResponsibility: c.HasParentalResponsibility,
-		})
-	}
+	out := make([]application.ChildContactInput, 0, len(p.EmergencyContacts)+len(p.AuthorisedCollectors))
 	for _, c := range p.EmergencyContacts {
 		out = append(out, application.ChildContactInput{
 			ContactType: domain.ContactTypeEmergencyContact, FullName: c.FullName,

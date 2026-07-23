@@ -35,6 +35,11 @@ import (
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	parentchildhandler "nursery-management-system/api/internal/modules/parentchildmappings/interfaces/http"
 
+	parentsapp "nursery-management-system/api/internal/modules/parents/application"
+	parentsdomain "nursery-management-system/api/internal/modules/parents/domain"
+	parentspostgres "nursery-management-system/api/internal/modules/parents/infrastructure/postgres"
+	parentshandler "nursery-management-system/api/internal/modules/parents/interfaces/http"
+
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
@@ -250,6 +255,35 @@ var parentChildMappingsSet = wire.NewSet(
 	parentchildapp.NewCreateMappingUseCase,
 	parentchildapp.NewEndMappingUseCase,
 	parentchildhandler.NewHandler,
+)
+
+// ── Parents module ─────────────────────────────────────────────────────
+
+func provideParentsChildExistenceCheckerAdapter(
+	childRepo *childpostgres.ChildRepository,
+) *parentsChildExistenceCheckerAdapter {
+	return &parentsChildExistenceCheckerAdapter{repo: childRepo}
+}
+
+var parentsSet = wire.NewSet(
+	parentspostgres.NewParentRepository,
+	wire.Bind(new(parentsdomain.Repository), new(*parentspostgres.ParentRepository)),
+	provideParentsChildExistenceCheckerAdapter,
+	wire.Bind(new(parentsdomain.ChildExistenceChecker), new(*parentsChildExistenceCheckerAdapter)),
+	provideParentUserCreatorAdapter,
+	wire.Bind(new(parentsapp.UserCreator), new(*parentUserCreatorAdapter)),
+	provideParentEmailSenderAdapter,
+	wire.Bind(new(parentsapp.EmailSender), new(*parentEmailSenderAdapter)),
+	parentsapp.NewCreateParentUseCase,
+	parentsapp.NewUpdateParentUseCase,
+	parentsapp.NewGetParentUseCase,
+	parentsapp.NewListParentsUseCase,
+	parentsapp.NewSoftDeleteParentUseCase,
+	parentsapp.NewLinkChildUseCase,
+	parentsapp.NewUnlinkChildUseCase,
+	parentsapp.NewInviteToPortalUseCase,
+	parentsapp.NewRevokePortalAccessUseCase,
+	parentshandler.NewHandler,
 )
 
 // ── Attendance module ──────────────────────────────────────────────────
@@ -699,6 +733,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		wire.Bind(new(hourlyapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(bookingsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(parentsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
 		wire.Bind(new(absencedomain.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)),
@@ -721,6 +756,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		passwordResetSet,
 		childrenSet,
 		parentChildMappingsSet,
+		parentsSet,
 		attendanceSet,
 		absenceSet,
 		fundingSet,
@@ -757,6 +793,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		wire.Bind(new(hourlyapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(bookingsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(parentchildapp.TxManager), new(*transaction.Manager)),
+		wire.Bind(new(parentsapp.TxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.PrefillTxManager), new(*transaction.Manager)),
 		wire.Bind(new(billingapp.DraftInvoiceTxManager), new(*transaction.Manager)),
 		wire.Bind(new(absencedomain.ChildEnrollmentChecker), new(*childEnrollmentCheckerAdapter)),
@@ -779,6 +816,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		passwordResetSet,
 		childrenSet,
 		parentChildMappingsSet,
+		parentsSet,
 		attendanceSet,
 		absenceSet,
 		fundingSet,

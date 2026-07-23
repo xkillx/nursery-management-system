@@ -715,6 +715,42 @@ type Membership struct {
 	EndedAt   pgtype.Timestamptz
 }
 
+type Parent struct {
+	ID                        pgtype.UUID
+	TenantID                  pgtype.UUID
+	BranchID                  pgtype.UUID
+	FirstName                 string
+	LastName                  pgtype.Text
+	Email                     pgtype.Text
+	Phone                     pgtype.Text
+	AddressLine1              pgtype.Text
+	AddressLine2              pgtype.Text
+	AddressCity               pgtype.Text
+	AddressPostcode           pgtype.Text
+	RelationshipToChild       pgtype.Text
+	HasParentalResponsibility bool
+	CanPickUp                 bool
+	IsEmergencyContact        bool
+	Notes                     pgtype.Text
+	UserID                    pgtype.UUID
+	IsActive                  bool
+	CreatedAt                 pgtype.Timestamptz
+	UpdatedAt                 pgtype.Timestamptz
+}
+
+type ParentChild struct {
+	ID              pgtype.UUID
+	TenantID        pgtype.UUID
+	BranchID        pgtype.UUID
+	ParentID        pgtype.UUID
+	ChildID         pgtype.UUID
+	EndedAt         pgtype.Timestamptz
+	EndedReasonCode NullLifecycleReasonCode
+	EndedReasonNote pgtype.Text
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
 type ParentMembershipChild struct {
 	ID              pgtype.UUID
 	TenantID        pgtype.UUID

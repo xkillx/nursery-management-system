@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -68,7 +67,6 @@ func (uc *ReplaceContacts) Execute(ctx context.Context, actor tenant.ActorContex
 
 		// Bucket the inputs by type and assign sort_order within each bucket.
 		bucketed := map[domain.ContactType][]ChildContactInput{
-			domain.ContactTypeParentCarer:         {},
 			domain.ContactTypeEmergencyContact:    {},
 			domain.ContactTypeAuthorisedCollector: {},
 		}
@@ -76,24 +74,10 @@ func (uc *ReplaceContacts) Execute(ctx context.Context, actor tenant.ActorContex
 			if _, ok := bucketed[in.ContactType]; !ok {
 				return domainerrors.Validation("Invalid request payload.", "contact_type")
 			}
-			if in.ContactType == domain.ContactTypeParentCarer {
-				if in.Email == nil || strings.TrimSpace(*in.Email) == "" {
-					return domainerrors.Validation("Enter the parent/carer email address.", "email")
-				}
-				if street, ok := in.Address["street"].(string); !ok || strings.TrimSpace(street) == "" {
-					return domainerrors.Validation("Enter the street address.", "street")
-				}
-				if city, ok := in.Address["city"].(string); !ok || strings.TrimSpace(city) == "" {
-					return domainerrors.Validation("Enter the city.", "city")
-				}
-				if postcode, ok := in.Address["postcode"].(string); !ok || strings.TrimSpace(postcode) == "" {
-					return domainerrors.Validation("Enter the postcode.", "postcode")
-				}
-			}
 			bucketed[in.ContactType] = append(bucketed[in.ContactType], in)
 		}
 
-		types := []domain.ContactType{domain.ContactTypeParentCarer, domain.ContactTypeEmergencyContact, domain.ContactTypeAuthorisedCollector}
+		types := []domain.ContactType{domain.ContactTypeEmergencyContact, domain.ContactTypeAuthorisedCollector}
 		flat := make([]ChildContactInput, 0, len(inputs))
 		for _, t := range types {
 			flat = append(flat, bucketed[t]...)

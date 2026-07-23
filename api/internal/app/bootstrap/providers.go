@@ -49,6 +49,7 @@ import (
 	ownerhandler "nursery-management-system/api/internal/modules/owner/interfaces/http"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	parentchildhandler "nursery-management-system/api/internal/modules/parentchildmappings/interfaces/http"
+	parentshandler "nursery-management-system/api/internal/modules/parents/interfaces/http"
 	resettokens "nursery-management-system/api/internal/modules/passwordreset/infrastructure/tokens"
 	resethandler "nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
@@ -174,6 +175,14 @@ func provideSiteProfileLookupAdapter(getUC *siteprofileapp.GetSiteProfileUseCase
 
 func provideParentContactLookupAdapter(pool *pgxpool.Pool) *parentContactLookupAdapter {
 	return &parentContactLookupAdapter{pool: pool}
+}
+
+func provideParentUserCreatorAdapter(pool *pgxpool.Pool) *parentUserCreatorAdapter {
+	return &parentUserCreatorAdapter{pool: pool}
+}
+
+func provideParentEmailSenderAdapter(sender email.Sender, cfg config.Config) *parentEmailSenderAdapter {
+	return &parentEmailSenderAdapter{sender: sender, baseURL: cfg.WebBaseURL}
 }
 
 func provideSiteProfileHandler(
@@ -338,6 +347,7 @@ type appComponents struct {
 	ResetHandler            *resethandler.Handler
 	ChildrenHandler         *childhandler.Handler
 	MappingsHandler         *parentchildhandler.Handler
+	ParentsHandler          *parentshandler.Handler
 	AttendanceHandler       *attendancehandler.Handler
 	AbsenceHandler          *absencehandler.Handler
 	FundingHandler          *fundinghandler.Handler
@@ -409,6 +419,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	manager := protected.Group("")
 	manager.Use(httpserver.RequireRolesWithObservability(c.Logger, c.Recorder, "manager"))
 	c.MappingsHandler.RegisterRoutes(manager)
+	c.ParentsHandler.RegisterRoutes(manager)
 
 	c.AttendanceHandler.RegisterRoutes(protected)
 	c.AbsenceHandler.RegisterRoutes(protected)

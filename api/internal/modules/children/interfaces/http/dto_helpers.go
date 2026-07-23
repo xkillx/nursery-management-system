@@ -26,7 +26,6 @@ func dateStringPtr(t *time.Time) *string {
 }
 
 type childContactsRequest struct {
-	ParentCarers         []contactPayload `json:"parent_carers"`
 	EmergencyContacts    []contactPayload `json:"emergency_contacts"`
 	AuthorisedCollectors []contactPayload `json:"authorised_collectors"`
 }
@@ -57,15 +56,7 @@ type contactResponse struct {
 }
 
 func mapChildContactsRequest(req childContactsRequest) []application.ChildContactInput {
-	out := make([]application.ChildContactInput, 0, len(req.ParentCarers)+len(req.EmergencyContacts)+len(req.AuthorisedCollectors))
-	for _, p := range req.ParentCarers {
-		out = append(out, application.ChildContactInput{
-			ContactType: domain.ContactTypeParentCarer, FullName: p.FullName,
-			RelationshipToChild: p.RelationshipToChild, Address: p.Address,
-			Telephone: p.Telephone, Email: p.Email, WorkAddress: p.WorkAddress,
-			HasParentalResponsibility: p.HasParentalResponsibility,
-		})
-	}
+	out := make([]application.ChildContactInput, 0, len(req.EmergencyContacts)+len(req.AuthorisedCollectors))
 	for _, p := range req.EmergencyContacts {
 		out = append(out, application.ChildContactInput{
 			ContactType: domain.ContactTypeEmergencyContact, FullName: p.FullName,
@@ -86,7 +77,6 @@ func mapChildContactsRequest(req childContactsRequest) []application.ChildContac
 }
 
 func toChildContactsResponse(contacts []domain.ChildContact) gin.H {
-	parentCarers := make([]contactResponse, 0)
 	emergencyContacts := make([]contactResponse, 0)
 	authorisedCollectors := make([]contactResponse, 0)
 	for _, c := range contacts {
@@ -105,8 +95,6 @@ func toChildContactsResponse(contacts []domain.ChildContact) gin.H {
 			UpdatedAt:                 c.UpdatedAt.UTC().Format(time.RFC3339),
 		}
 		switch c.ContactType {
-		case domain.ContactTypeParentCarer:
-			parentCarers = append(parentCarers, cr)
 		case domain.ContactTypeEmergencyContact:
 			emergencyContacts = append(emergencyContacts, cr)
 		case domain.ContactTypeAuthorisedCollector:
@@ -114,7 +102,6 @@ func toChildContactsResponse(contacts []domain.ChildContact) gin.H {
 		}
 	}
 	return gin.H{
-		"parent_carers":         parentCarers,
 		"emergency_contacts":    emergencyContacts,
 		"authorised_collectors": authorisedCollectors,
 	}

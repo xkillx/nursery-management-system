@@ -3,7 +3,6 @@ package bootstrap
 import (
 	"context"
 	"embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -38,6 +37,8 @@ import (
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
 	parentchilddomain "nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
+	parentsdomain "nursery-management-system/api/internal/modules/parents/domain"
+	parentsapp "nursery-management-system/api/internal/modules/parents/application"
 	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
@@ -73,6 +74,74 @@ func (a *childScopeCheckerAdapter) ExistsInScope(ctx context.Context, tx pgx.Tx,
 }
 
 var _ parentchildapp.ChildChecker = (*childScopeCheckerAdapter)(nil)
+
+type parentsChildExistenceCheckerAdapter struct {
+	repo *postgreschild.ChildRepository
+}
+
+func (a *parentsChildExistenceCheckerAdapter) ExistsInScope(ctx context.Context, tx parentsdomain.Tx, tenantID, branchID, childID uuid.UUID) (bool, error) {
+	if tx != nil {
+		return a.repo.ExistsInScope(ctx, tx.(pgx.Tx), tenantID, branchID, childID)
+	}
+	return a.repo.ExistsInScope(ctx, nil, tenantID, branchID, childID)
+}
+
+var _ parentsdomain.ChildExistenceChecker = (*parentsChildExistenceCheckerAdapter)(nil)
+
+// parentUserCreatorAdapter creates a user account and membership for a parent portal invite.
+type parentUserCreatorAdapter struct {
+	pool *pgxpool.Pool
+}
+
+func (a *parentUserCreatorAdapter) CreateParentUser(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, emailAddr string) (uuid.UUID, error) {
+	q := sqlc.New(tx)
+	userID := uid.NewUUID()
+	emailNormalized := strings.ToLower(strings.TrimSpace(emailAddr))
+
+	_, err := q.InviteCreateUser(ctx, sqlc.InviteCreateUserParams{
+		ID:              pgtype.UUID{Bytes: [16]byte(userID), Valid: true},
+		Email:           emailAddr,
+		EmailNormalized: emailNormalized,
+		PasswordHash:    "",
+	})
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("create parent user: %w", err)
+	}
+
+	err = q.InviteCreateMembership(ctx, sqlc.InviteCreateMembershipParams{
+		ID:       pgtype.UUID{Bytes: [16]byte(uid.NewUUID()), Valid: true},
+		TenantID: pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
+		BranchID: pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
+		UserID:   pgtype.UUID{Bytes: [16]byte(userID), Valid: true},
+		Role:     "parent",
+	})
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("create parent membership: %w", err)
+	}
+
+	return userID, nil
+}
+
+var _ parentsapp.UserCreator = (*parentUserCreatorAdapter)(nil)
+
+// parentEmailSenderAdapter sends portal invite emails to parents.
+type parentEmailSenderAdapter struct {
+	sender  email.Sender
+	baseURL string
+}
+
+func (a *parentEmailSenderAdapter) SendParentPortalInvite(ctx context.Context, toEmail, acceptURL string) error {
+	msg := email.Message{
+		To:      toEmail,
+		Subject: "You're invited to access the parent portal",
+		Text: "You have been invited to access the parent portal.\n\n" +
+			"Click the link below to set up your account:\n" + acceptURL + "\n\n" +
+			"This invitation expires in 7 days.",
+	}
+	return a.sender.Send(ctx, msg)
+}
+
+var _ parentsapp.EmailSender = (*parentEmailSenderAdapter)(nil)
 
 type childEnrollmentCheckerAdapter struct {
 	repo *postgreschild.ChildRepository
@@ -162,30 +231,36 @@ func (a *siteRateUpdateAdapter) UpdateCoreHourlyRate(ctx context.Context, tx bil
 
 var _ billingdomain.SiteRateRepository = (*siteRateUpdateAdapter)(nil)
 
-// ── Parent Contact adapter ───────────────────────────────────────────────
-
-type childAddressJSON struct {
-	Street   string `json:"street"`
-	Line2    string `json:"line2"`
-	City     string `json:"city"`
-	Postcode string `json:"postcode"`
-}
+// ── Parent Contact adapter (reads from parents table via parent_children) ──
 
 type parentContactLookupAdapter struct {
 	pool *pgxpool.Pool
 }
 
 func (a *parentContactLookupAdapter) GetForInvoice(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*billingdomain.ParentContact, error) {
-	var fullName, email, telephone string
-	var addressRaw []byte
+	var fullName, email string
+	var phone pgtype.Text
+	var addrLine1, addrLine2, addrCity, addrPostcode pgtype.Text
 
 	err := a.pool.QueryRow(ctx, `
-		SELECT full_name, address, email, telephone
-		FROM child_contacts
-		WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND contact_type = 'parent_carer'
-		ORDER BY sort_order
+		SELECT
+			p.first_name || COALESCE(' ' || p.last_name, ''),
+			COALESCE(p.email, ''),
+			p.phone,
+			p.address_line1,
+			p.address_line2,
+			p.address_city,
+			p.address_postcode
+		FROM parent_children pc
+		JOIN parents p ON p.id = pc.parent_id
+		WHERE pc.tenant_id = $1
+		  AND pc.branch_id = $2
+		  AND pc.child_id = $3
+		  AND pc.ended_at IS NULL
+		  AND p.is_active = true
+		ORDER BY pc.created_at ASC
 		LIMIT 1
-	`, tenantID, branchID, childID).Scan(&fullName, &addressRaw, &email, &telephone)
+	`, tenantID, branchID, childID).Scan(&fullName, &email, &phone, &addrLine1, &addrLine2, &addrCity, &addrPostcode)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -196,20 +271,29 @@ func (a *parentContactLookupAdapter) GetForInvoice(ctx context.Context, tenantID
 	pc := &billingdomain.ParentContact{
 		FullName:  fullName,
 		Email:     email,
-		Telephone: telephone,
+		Telephone: pgtypeTextVal(phone),
 	}
-
-	if len(addressRaw) > 0 {
-		var addr childAddressJSON
-		if err := json.Unmarshal(addressRaw, &addr); err == nil {
-			pc.AddressLine1 = addr.Street
-			pc.AddressLine2 = addr.Line2
-			pc.AddressCity = addr.City
-			pc.AddressPostcode = addr.Postcode
-		}
+	if addrLine1.Valid {
+		pc.AddressLine1 = addrLine1.String
+	}
+	if addrLine2.Valid {
+		pc.AddressLine2 = addrLine2.String
+	}
+	if addrCity.Valid {
+		pc.AddressCity = addrCity.String
+	}
+	if addrPostcode.Valid {
+		pc.AddressPostcode = addrPostcode.String
 	}
 
 	return pc, nil
+}
+
+func pgtypeTextVal(t pgtype.Text) string {
+	if t.Valid {
+		return t.String
+	}
+	return ""
 }
 
 var _ billingapp.ParentContactLookup = (*parentContactLookupAdapter)(nil)

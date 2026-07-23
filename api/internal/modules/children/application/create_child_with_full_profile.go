@@ -307,7 +307,6 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 		// optional contacts
 		if len(input.Contacts) > 0 {
 			contactTypes := []domain.ContactType{
-				domain.ContactTypeParentCarer,
 				domain.ContactTypeEmergencyContact,
 				domain.ContactTypeAuthorisedCollector,
 			}
@@ -463,35 +462,6 @@ func (uc *CreateChildWithFullProfile) validateInput(input CreateChildFullInput) 
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "consents.signed_date", Message: "Enter the signed date."})
 		} else if _, err := time.Parse("2006-01-02", s); err != nil {
 			fieldErrors = append(fieldErrors, domainerrors.FieldError{Field: "consents.signed_date", Message: "Enter the signed date."})
-		}
-	}
-
-	for i, c := range input.Contacts {
-		if c.ContactType == domain.ContactTypeParentCarer {
-			if c.Email == nil || strings.TrimSpace(*c.Email) == "" {
-				fieldErrors = append(fieldErrors, domainerrors.FieldError{
-					Field:   fmt.Sprintf("contacts[%d].email", i),
-					Message: "Enter the primary parent/carer email address.",
-				})
-			}
-			if street, ok := c.Address["street"].(string); !ok || strings.TrimSpace(street) == "" {
-				fieldErrors = append(fieldErrors, domainerrors.FieldError{
-					Field:   fmt.Sprintf("contacts[%d].address.street", i),
-					Message: "Enter the street address.",
-				})
-			}
-			if city, ok := c.Address["city"].(string); !ok || strings.TrimSpace(city) == "" {
-				fieldErrors = append(fieldErrors, domainerrors.FieldError{
-					Field:   fmt.Sprintf("contacts[%d].address.city", i),
-					Message: "Enter the city.",
-				})
-			}
-			if postcode, ok := c.Address["postcode"].(string); !ok || strings.TrimSpace(postcode) == "" {
-				fieldErrors = append(fieldErrors, domainerrors.FieldError{
-					Field:   fmt.Sprintf("contacts[%d].address.postcode", i),
-					Message: "Enter the postcode.",
-				})
-			}
 		}
 	}
 
