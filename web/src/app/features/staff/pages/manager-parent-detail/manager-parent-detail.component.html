@@ -1,11 +1,12 @@
 <div class="space-y-6">
+  <!-- Back Button Navigation -->
   <div class="flex items-center gap-3">
     <button
       type="button"
-      class="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
       (click)="goBack()"
     >
-      <ng-icon name="heroArrowLeft" size="16" aria-hidden="true" />
+      <ng-icon name="heroArrowLeft" size="14" aria-hidden="true" />
       Back to Parents
     </button>
   </div>
@@ -23,219 +24,358 @@
       [message]="'The parent record could not be loaded.'"
     />
   } @else {
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div>
-        <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
-          {{ parentName() }}
-        </h1>
-        @if (parent.relationship_to_child) {
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ parent.relationship_to_child }}</p>
-        }
-      </div>
+    <!-- Profile Hero Card Header -->
+    <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-theme-sm relative overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+      <!-- Background Decorative Accent Glow -->
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-brand-500/5 to-transparent rounded-full pointer-events-none"></div>
 
-      <div class="flex flex-wrap gap-2">
-        <a
-          [routerLink]="['/manager/parents', parent.id, 'edit']"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
-          Edit
-        </a>
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-1">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+          <!-- Avatar Circle with Gradient -->
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-400 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-brand-500/20 shrink-0 select-none">
+            {{ parentInitials() }}
+          </div>
 
-        @if (!parent.user_id) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-            [disabled]="actionInProgress"
-            (click)="inviteToPortal()"
-          >
-            <ng-icon name="heroEnvelope" size="16" aria-hidden="true" />
-            Invite to Portal
-          </button>
-        } @else {
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-warning-300 bg-white px-4 py-2 text-sm font-medium text-warning-700 shadow-theme-xs transition hover:bg-warning-50 dark:border-warning-700 dark:bg-gray-900 dark:text-warning-400 dark:hover:bg-warning-500/10"
-            [disabled]="actionInProgress"
-            (click)="revokeAccess()"
-          >
-            <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
-            Revoke Access
-          </button>
-        }
+          <div>
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight font-outfit">
+                {{ parentName() }}
+              </h1>
 
-        @if (parent.is_active) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-error-300 bg-white px-4 py-2 text-sm font-medium text-error-700 shadow-theme-xs transition hover:bg-error-50 dark:border-error-700 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-500/10"
-            [disabled]="actionInProgress"
-            (click)="deactivateParent()"
+              <app-status-badge [status]="parent.is_active ? 'active' : 'inactive'" />
+
+              @if (parent.relationship_to_child) {
+                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100 text-[11px] font-bold font-outfit dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30">
+                  {{ parent.relationship_to_child }}
+                </span>
+              }
+            </div>
+
+            <!-- Permission Badge Pills -->
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mt-2">
+              @if (parent.has_parental_responsibility) {
+                <app-badge variant="light" color="primary" size="sm">
+                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                    <ng-icon name="heroShieldCheck" size="12" />
+                    Parental Responsibility
+                  </span>
+                </app-badge>
+              }
+              @if (parent.can_pick_up) {
+                <app-badge variant="light" color="success" size="sm">
+                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                    <ng-icon name="heroCheck" size="12" />
+                    Can Pick Up
+                  </span>
+                </app-badge>
+              }
+              @if (parent.is_emergency_contact) {
+                <app-badge variant="light" color="error" size="sm">
+                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                    <ng-icon name="heroExclamationCircle" size="12" />
+                    Emergency Contact
+                  </span>
+                </app-badge>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar Actions -->
+        <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 shrink-0">
+          <a
+            [routerLink]="['/manager/parents', parent.id, 'edit']"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 active:scale-98 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
           >
-            <ng-icon name="heroTrash" size="16" aria-hidden="true" />
-            Deactivate
-          </button>
-        }
+            <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
+            Edit Profile
+          </a>
+
+          @if (!parent.user_id) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/10 transition hover:bg-brand-600 active:scale-98 disabled:opacity-50"
+              [disabled]="actionInProgress"
+              (click)="promptInviteToPortal()"
+            >
+              <ng-icon name="heroEnvelope" size="16" aria-hidden="true" />
+              Invite to Portal
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-warning-300 bg-white px-4 py-2.5 text-xs font-bold text-warning-700 shadow-theme-xs transition hover:bg-warning-50 active:scale-98 disabled:opacity-50 dark:border-warning-700 dark:bg-gray-900 dark:text-warning-400 dark:hover:bg-warning-500/10"
+              [disabled]="actionInProgress"
+              (click)="promptRevokeAccess()"
+            >
+              <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
+              Revoke Access
+            </button>
+          }
+
+          @if (parent.is_active) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-error-300 bg-white px-4 py-2.5 text-xs font-bold text-error-700 shadow-theme-xs transition hover:bg-error-50 active:scale-98 disabled:opacity-50 dark:border-error-700 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-500/10"
+              [disabled]="actionInProgress"
+              (click)="promptDeactivateParent()"
+            >
+              <ng-icon name="heroTrash" size="16" aria-hidden="true" />
+              Deactivate
+            </button>
+          }
+        </div>
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-      <div class="lg:col-span-2 space-y-6">
-        <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Contact Information</h2>
-          <dl class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Email</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ parent.email || '—' }}</dd>
+    <!-- Details Grid Layout -->
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Main Column -->
+      <div class="col-span-12 lg:col-span-8 space-y-6">
+        <!-- Contact Information Section -->
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+              <ng-icon name="heroEnvelope" size="18" />
             </div>
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Phone</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ parent.phone || '—' }}</dd>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Contact Information</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Email -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between">
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Email Address</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ parent.email || '—' }}
+                </dd>
+              </div>
+              @if (parent.email) {
+                <a
+                  [href]="'mailto:' + parent.email"
+                  class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
+                  title="Send Email"
+                >
+                  <ng-icon name="heroEnvelope" size="16" />
+                </a>
+              }
             </div>
-            <div class="sm:col-span-2">
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Address</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ formatAddress() }}</dd>
+
+            <!-- Phone -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between">
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Phone Number</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ parent.phone || '—' }}
+                </dd>
+              </div>
+              @if (parent.phone) {
+                <a
+                  [href]="'tel:' + parent.phone"
+                  class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
+                  title="Call Phone"
+                >
+                  <ng-icon name="heroPhone" size="16" />
+                </a>
+              }
             </div>
-          </dl>
+
+            <!-- Full Address -->
+            <div class="md:col-span-2 p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30">
+              <div class="flex items-center gap-1.5 mb-1">
+                <ng-icon name="heroMapPin" size="14" class="text-gray-400" />
+                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Home Address</dt>
+              </div>
+              <dd class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
+                {{ formatAddress() }}
+              </dd>
+            </div>
+          </div>
         </section>
 
-        <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Flags & Permissions</h2>
-          <dl class="mt-4 grid gap-4 sm:grid-cols-3">
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Parental Responsibility</dt>
-              <dd class="mt-1">
+        <!-- Flags & Permissions Section -->
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+              <ng-icon name="heroShieldCheck" size="18" />
+            </div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Permissions & Authorization</h2>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Parental Responsibility -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
+              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Parental Responsibility</span>
+              <div class="mt-3">
                 @if (parent.has_parental_responsibility) {
-                  <span class="inline-flex items-center gap-1 text-sm text-success-600 dark:text-success-400">
-                    <ng-icon name="heroCheckCircle" size="16" aria-hidden="true" /> Yes
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
+                    <ng-icon name="heroCheckCircle" size="14" /> Granted
                   </span>
                 } @else {
-                  <span class="text-sm text-gray-500 dark:text-gray-400">No</span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    No
+                  </span>
                 }
-              </dd>
+              </div>
             </div>
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Can Pick Up</dt>
-              <dd class="mt-1">
+
+            <!-- Can Pick Up -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
+              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Can Pick Up Child</span>
+              <div class="mt-3">
                 @if (parent.can_pick_up) {
-                  <span class="inline-flex items-center gap-1 text-sm text-success-600 dark:text-success-400">
-                    <ng-icon name="heroCheckCircle" size="16" aria-hidden="true" /> Yes
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
+                    <ng-icon name="heroCheckCircle" size="14" /> Authorized
                   </span>
                 } @else {
-                  <span class="text-sm text-gray-500 dark:text-gray-400">No</span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    No
+                  </span>
                 }
-              </dd>
+              </div>
             </div>
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Emergency Contact</dt>
-              <dd class="mt-1">
+
+            <!-- Emergency Contact -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
+              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Emergency Contact</span>
+              <div class="mt-3">
                 @if (parent.is_emergency_contact) {
-                  <span class="inline-flex items-center gap-1 text-sm text-success-600 dark:text-success-400">
-                    <ng-icon name="heroCheckCircle" size="16" aria-hidden="true" /> Yes
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-50 text-error-700 border border-error-100 text-xs font-bold dark:bg-error-500/15 dark:text-error-400 dark:border-error-500/30">
+                    <ng-icon name="heroCheckCircle" size="14" /> Emergency Listed
                   </span>
                 } @else {
-                  <span class="text-sm text-gray-500 dark:text-gray-400">No</span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    No
+                  </span>
                 }
-              </dd>
+              </div>
             </div>
-          </dl>
+          </div>
         </section>
 
+        <!-- Notes Section -->
         @if (parent.notes) {
-          <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Notes</h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ parent.notes }}</p>
+          <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">Notes</h2>
+            <div class="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 dark:bg-gray-900/40 dark:border-gray-800 text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-normal">
+              {{ parent.notes }}
+            </div>
           </section>
         }
       </div>
 
-      <div class="space-y-6">
-        <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Linked Children</h2>
+      <!-- Right Side Column -->
+      <div class="col-span-12 lg:col-span-4 space-y-6">
+        <!-- Linked Children Section -->
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <ng-icon name="heroUserGroup" size="18" class="text-brand-500" />
+              Linked Children
+            </h2>
             <a
               [routerLink]="['/manager/parents', parent.id, 'link-child']"
-              class="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+              class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
-              <ng-icon name="heroLink" size="14" aria-hidden="true" />
+              <ng-icon name="heroPlus" size="14" aria-hidden="true" />
               Link Child
             </a>
           </div>
 
-          @if (children.length === 0) {
-            <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">No children linked yet.</p>
+          @if (linkedChildrenDetails.length === 0) {
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-2">No children linked yet.</p>
           } @else {
-            <ul class="mt-4 divide-y divide-gray-200 dark:divide-gray-800">
-              @for (link of children; track link.id) {
-                <li class="flex items-center justify-between py-3">
-                  <a
-                    [routerLink]="['/manager/children', link.child_id]"
-                    class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-                  >
-                    {{ link.child_id }}
-                  </a>
-                  <button
-                    type="button"
-                    class="text-xs text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
-                    [disabled]="actionInProgress"
-                    (click)="unlinkChild(link.child_id)"
-                  >
-                    Unlink
-                  </button>
-                </li>
+            <div class="space-y-3">
+              @for (item of linkedChildrenDetails; track item.link.id) {
+                <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/30 dark:border-gray-800 dark:bg-gray-900/20 hover:border-brand-300 transition-all flex items-center justify-between gap-3 group">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                      {{ childInitials(item.child) }}
+                    </div>
+                    <div class="min-w-0">
+                      <a
+                        [routerLink]="['/manager/children', item.link.child_id]"
+                        class="text-sm font-bold text-gray-900 hover:text-brand-600 dark:text-white dark:hover:text-brand-400 truncate block"
+                      >
+                        {{ item.child?.fullName || 'Child (' + item.link.child_id.slice(0, 8) + '...)' }}
+                      </a>
+                      @if (item.child) {
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                          DOB: {{ item.child.dateOfBirth }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 shrink-0">
+                    <a
+                      [routerLink]="['/manager/children', item.link.child_id]"
+                      class="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 inline-flex items-center gap-0.5"
+                    >
+                      View
+                      <ng-icon name="heroChevronRight" size="14" />
+                    </a>
+                    <button
+                      type="button"
+                      class="text-xs font-semibold text-error-600 hover:text-error-700 dark:text-error-400 ml-1"
+                      [disabled]="actionInProgress"
+                      (click)="promptUnlinkChild(item.link.child_id, item.child?.fullName)"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                </div>
               }
-            </ul>
+            </div>
           }
         </section>
 
-        <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Portal Access</h2>
-          <dl class="mt-4 space-y-3">
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</dt>
-              <dd class="mt-1">
+        <!-- Portal Access Section -->
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-4">Portal Access</h2>
+          <dl class="space-y-3.5 text-xs">
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2.5">
+              <dt class="font-semibold text-gray-500 dark:text-gray-400">Account Status</dt>
+              <dd>
                 @if (parent.user_id) {
-                  <span class="inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
-                    Active
+                  <span class="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-bold text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                    Active Account
                   </span>
                 } @else {
-                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
                     Not invited
                   </span>
                 }
               </dd>
             </div>
+
             @if (parent.user_id) {
-              <div>
-                <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">User ID</dt>
-                <dd class="mt-1 text-xs font-mono text-gray-600 dark:text-gray-300">{{ parent.user_id }}</dd>
+              <div class="flex items-center justify-between pt-1">
+                <dt class="font-semibold text-gray-500 dark:text-gray-400">User ID</dt>
+                <dd class="font-mono text-gray-700 dark:text-gray-300 text-[11px] truncate max-w-[180px]">
+                  {{ parent.user_id }}
+                </dd>
               </div>
             }
           </dl>
         </section>
 
-        <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">Record</h2>
-          <dl class="mt-4 space-y-3">
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Created</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ formatDate(parent.created_at) }}</dd>
+        <!-- System Record Section -->
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-4">Record Meta</h2>
+          <dl class="space-y-3 text-xs">
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+              <dt class="font-semibold text-gray-500 dark:text-gray-400">Created</dt>
+              <dd class="font-medium text-gray-800 dark:text-gray-200">{{ formatDate(parent.created_at) }}</dd>
             </div>
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Last Updated</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white/90">{{ formatDate(parent.updated_at) }}</dd>
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+              <dt class="font-semibold text-gray-500 dark:text-gray-400">Last Updated</dt>
+              <dd class="font-medium text-gray-800 dark:text-gray-200">{{ formatDate(parent.updated_at) }}</dd>
             </div>
-            <div>
-              <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</dt>
-              <dd class="mt-1">
-                @if (parent.is_active) {
-                  <span class="inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
-                    Active
-                  </span>
-                } @else {
-                  <span class="inline-flex items-center rounded-full bg-error-50 px-2 py-0.5 text-xs font-medium text-error-700 dark:bg-error-500/15 dark:text-error-400">
-                    Inactive
-                  </span>
-                }
+            <div class="flex items-center justify-between pt-1">
+              <dt class="font-semibold text-gray-500 dark:text-gray-400">Status</dt>
+              <dd>
+                <app-status-badge [status]="parent.is_active ? 'active' : 'inactive'" />
               </dd>
             </div>
           </dl>
@@ -244,3 +384,42 @@
     </div>
   }
 </div>
+
+<!-- Unlink Child Confirmation Dialog -->
+<app-confirmation-dialog
+  [isOpen]="showUnlinkDialog"
+  title="Unlink Child"
+  [message]="'Are you sure you want to unlink ' + childNameToUnlink + ' from this parent?'"
+  confirmText="Unlink Child"
+  cancelText="Cancel"
+  variant="danger"
+  [loading]="actionInProgress"
+  (confirmed)="confirmUnlinkChild()"
+  (cancelled)="showUnlinkDialog = false"
+/>
+
+<!-- Revoke Access Confirmation Dialog -->
+<app-confirmation-dialog
+  [isOpen]="showRevokeDialog"
+  title="Revoke Portal Access"
+  message="Are you sure you want to revoke portal access for this parent?"
+  confirmText="Revoke Access"
+  cancelText="Cancel"
+  variant="danger"
+  [loading]="actionInProgress"
+  (confirmed)="confirmRevokeAccess()"
+  (cancelled)="showRevokeDialog = false"
+/>
+
+<!-- Deactivate Parent Confirmation Dialog -->
+<app-confirmation-dialog
+  [isOpen]="showDeactivateDialog"
+  title="Deactivate Parent"
+  message="Are you sure you want to deactivate this parent record?"
+  confirmText="Deactivate"
+  cancelText="Cancel"
+  variant="danger"
+  [loading]="actionInProgress"
+  (confirmed)="confirmDeactivateParent()"
+  (cancelled)="showDeactivateDialog = false"
+/>

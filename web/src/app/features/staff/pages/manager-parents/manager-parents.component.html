@@ -1,19 +1,19 @@
 <div class="space-y-6">
-  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="parents-directory-title">
+  <!-- Header section -->
+  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="parents-title">
     <div class="max-w-3xl">
-      <h1 id="parents-directory-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+      <h1 id="parents-title" class="text-title-sm font-bold text-gray-900 dark:text-white md:text-title-md tracking-tight">
         Parents
       </h1>
-      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
         Manage parent and guardian records, link them to children, and control portal access.
       </p>
     </div>
 
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div class="flex flex-wrap items-center gap-2">
       <a
         routerLink="/manager/parents/new"
-        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
-        aria-label="Add a new parent"
+        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4.5 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
       >
         <ng-icon name="heroPlus" size="18" aria-hidden="true" />
         Add Parent
@@ -22,55 +22,128 @@
   </section>
 
   @if (errorMessage) {
-    <app-alert [variant]="'error'" [message]="errorMessage" [dismissible]="true" />
+    <app-alert variant="error" title="Error" [message]="errorMessage"></app-alert>
   }
 
-  <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
-    <div class="relative flex-1">
-      <ng-icon name="heroMagnifyingGlass" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size="18" aria-hidden="true" />
-      <input
-        type="search"
-        placeholder="Search by name, email, or phone..."
-        class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
-        [value]="searchTerm"
-        (input)="onSearchChange($event)"
-        aria-label="Search parents"
-      />
-    </div>
-
-    <app-select
-      [value]="status"
-      [options]="statusSelectOptions"
-      (valueChange)="onStatusChange($event)"
-    />
+  <!-- Metric summary cards -->
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Parent summary">
+    @for (metric of metricCards; track metric.key) {
+      <article class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/40 p-5 shadow-theme-xs hover:shadow-md hover:border-brand-200 dark:hover:border-brand-900/50 hover:-translate-y-1 transition-all duration-300 ease-in-out group">
+        <div class="flex items-start justify-between gap-4">
+          <div
+            class="flex size-12 items-center justify-center rounded-xl transition-transform group-hover:scale-105 duration-300"
+            [ngClass]="metricIconToneClasses(metric.tone)"
+          >
+            @switch (metric.key) {
+              @case ('active') { <ng-icon name="heroUserGroup" size="22" aria-hidden="true" /> }
+              @case ('inactive') { <ng-icon name="heroUser" size="22" aria-hidden="true" /> }
+              @case ('total') { <ng-icon name="heroUsers" size="22" aria-hidden="true" /> }
+            }
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-50 dark:bg-white/[0.03]" [ngClass]="metricPillToneClasses(metric.tone)">
+            {{ metric.pill }}
+          </span>
+        </div>
+        <p class="mt-5 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          {{ metric.label }}
+        </p>
+        <p class="mt-1 text-title-sm font-extrabold text-gray-900 dark:text-white font-mono tracking-tight">
+          {{ metric.count }}
+        </p>
+        <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            [ngClass]="metricProgressToneClasses(metric.tone)"
+            [style.width.%]="metricProgressWidth(metric.count)"
+          ></div>
+        </div>
+      </article>
+    }
   </section>
 
-  @if (isLoading) {
-    <app-loading-state [label]="'Loading parents...'" />
-  } @else if (parents.length === 0) {
-    @if (isSearchActive || status !== 'active') {
-      <app-empty-state
-        [icon]="'heroUserGroup'"
-        [title]="'No parents found'"
-        [message]="'Try adjusting your search or filter criteria.'"
-      />
-    } @else {
-      <app-empty-state
-        [icon]="'heroUserGroup'"
-        [title]="'No parents yet'"
-        [message]="'Add your first parent to get started.'"
-      />
-    }
-  } @else {
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm" aria-label="Parents list">
+  <!-- Filters and Table section -->
+  <section
+    class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/20 shadow-theme-xs"
+    aria-label="Parent records"
+  >
+    <div class="px-4 py-5 lg:px-6 space-y-4">
+      <!-- Row 1: Search and Status Filters -->
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <!-- Search bar -->
+        <div class="relative flex-1 min-w-[280px] max-w-md">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+            <ng-icon name="heroMagnifyingGlass" size="18" />
+          </span>
+          <input
+            type="text"
+            [ngModel]="searchTerm"
+            (ngModelChange)="onSearchInput($event)"
+            placeholder="Search by name, email, or phone..."
+            class="w-full h-10 pl-10 pr-9 rounded-xl border border-gray-200 bg-gray-50/50 dark:bg-gray-900/50 dark:border-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 transition-all duration-200"
+          />
+          @if (searchTerm) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              title="Clear search"
+            >
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Status Filter Chips -->
+        <div class="flex items-center flex-wrap gap-2 self-start lg:self-auto">
+          @for (option of statusChipOptions; track option.value) {
+            <label
+              class="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200"
+              [ngClass]="{
+                'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-500/15 dark:text-brand-300': status === option.value,
+                'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600': status !== option.value
+              }"
+            >
+              <input
+                type="checkbox"
+                class="size-3.5 appearance-none cursor-pointer border border-gray-300 checked:border-transparent rounded checked:bg-brand-500 dark:border-gray-600"
+                [checked]="status === option.value"
+                (change)="onStatusToggle(option.value)"
+              />
+              {{ option.label }}
+            </label>
+          }
+
+          @if (hasActiveFilters) {
+            <button
+              type="button"
+              (click)="clearAllFilters()"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-error-600 hover:bg-error-50 dark:text-gray-400 dark:hover:text-error-400 dark:hover:bg-error-500/10 transition-all duration-200 cursor-pointer"
+              title="Clear all filters"
+            >
+              <ng-icon name="heroXMark" size="14" />
+              Clear all
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="border-b border-gray-100 dark:border-gray-800/80"></div>
+
+    @if (isLoading) {
+      <app-loading-state label="Loading parents..."></app-loading-state>
+    } @else if (parents.length > 0) {
+      <!-- Desktop table -->
+      <div class="overflow-x-auto hidden lg:block">
+        <table class="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
-            <tr class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
-              <th class="px-5 py-3 text-left">
+            <tr class="border-b border-gray-100 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800/80 dark:bg-white/[0.01] dark:text-gray-500 sticky top-0 z-10">
+              <th class="pl-4 pr-6 py-3.5">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   (click)="toggleSort('name')"
                   aria-sort="{{ sortColumn === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
                 >
@@ -78,10 +151,10 @@
                   <ng-icon [name]="getSortIcon('name')" size="14" aria-hidden="true" />
                 </button>
               </th>
-              <th class="px-5 py-3 text-left">
+              <th class="px-6 py-3.5">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   (click)="toggleSort('email')"
                   aria-sort="{{ sortColumn === 'email' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
                 >
@@ -89,16 +162,12 @@
                   <ng-icon [name]="getSortIcon('email')" size="14" aria-hidden="true" />
                 </button>
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Phone
-              </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Status
-              </th>
-              <th class="px-5 py-3 text-left">
+              <th class="px-6 py-3.5">Phone</th>
+              <th class="px-6 py-3.5">Status</th>
+              <th class="px-6 py-3.5">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   (click)="toggleSort('created_at')"
                   aria-sort="{{ sortColumn === 'created_at' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
                 >
@@ -106,50 +175,101 @@
                   <ng-icon [name]="getSortIcon('created_at')" size="14" aria-hidden="true" />
                 </button>
               </th>
+              <th class="px-6 py-3.5 text-right pr-8">Action</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+          <tbody class="divide-y divide-gray-100/80 dark:divide-gray-800/50">
             @for (parent of sortedParents; track parent.id) {
               <tr
-                class="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                class="group transition-all duration-200 hover:bg-gray-50/40 dark:hover:bg-white/[0.01] cursor-pointer border-l-4"
+                [ngClass]="parent.is_active ? 'border-l-success-500' : 'border-l-gray-300 dark:border-l-gray-700'"
                 (click)="viewParent(parent)"
                 tabindex="0"
                 role="link"
                 [attr.aria-label]="'View ' + parentName(parent)"
                 (keydown.enter)="viewParent(parent)"
               >
-                <td class="whitespace-nowrap px-5 py-4">
+                <td class="pl-4 pr-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="flex size-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-                      <span class="text-xs font-semibold">{{ parent.first_name.charAt(0) }}{{ (parent.last_name || '').charAt(0) }}</span>
+                    <div class="flex size-10 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300 font-semibold shadow-theme-xs">
+                      <span class="text-xs">{{ parent.first_name.charAt(0) }}{{ (parent.last_name || '').charAt(0) }}</span>
                     </div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white/90">{{ parentName(parent) }}</p>
-                      @if (parent.relationship_to_child) {
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ parent.relationship_to_child }}</p>
-                      }
+                    <div class="min-w-0">
+                      <p class="font-semibold text-gray-900 dark:text-white/95 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {{ parentName(parent) }}
+                      </p>
+                      <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                        @if (parent.relationship_to_child) {
+                          <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{ parent.relationship_to_child }}</span>
+                        }
+                        @if (parent.has_parental_responsibility) {
+                          <span class="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                          <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                            <ng-icon name="heroShieldCheck" size="12" />
+                            PR
+                          </span>
+                        }
+                        @if (parent.is_emergency_contact) {
+                          <span class="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                          <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300">
+                            <ng-icon name="heroExclamationCircle" size="12" />
+                            Emergency
+                          </span>
+                        }
+                        @if (parent.can_pick_up) {
+                          <span class="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                          <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+                            <ng-icon name="heroUser" size="12" />
+                            Pick Up
+                          </span>
+                        }
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
-                  {{ parent.email || '—' }}
-                </td>
-                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
-                  {{ formatPhone(parent) }}
-                </td>
-                <td class="whitespace-nowrap px-5 py-4">
-                  @if (parent.is_active) {
-                    <span class="inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
-                      Active
-                    </span>
+                <td class="px-6 py-4">
+                  @if (parent.email) {
+                    <a
+                      [href]="'mailto:' + parent.email"
+                      (click)="$event.stopPropagation()"
+                      class="inline-flex items-center gap-1.5 text-gray-600 hover:text-brand-500 dark:text-gray-300 dark:hover:text-brand-400 hover:underline transition text-xs font-medium"
+                    >
+                      <ng-icon name="heroEnvelope" class="text-gray-400 dark:text-gray-500" size="14" />
+                      {{ parent.email }}
+                    </a>
                   } @else {
-                    <span class="inline-flex items-center rounded-full bg-error-50 px-2 py-0.5 text-xs font-medium text-error-700 dark:bg-error-500/15 dark:text-error-400">
-                      Inactive
-                    </span>
+                    <span class="text-gray-400 dark:text-gray-600">—</span>
                   }
                 </td>
-                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
+                <td class="px-6 py-4">
+                  @if (parent.phone) {
+                    <a
+                      [href]="'tel:' + parent.phone"
+                      (click)="$event.stopPropagation()"
+                      class="inline-flex items-center gap-1.5 text-gray-600 hover:text-brand-500 dark:text-gray-300 dark:hover:text-brand-400 hover:underline transition text-xs font-medium"
+                    >
+                      <ng-icon name="heroPhone" class="text-gray-400 dark:text-gray-500" size="14" />
+                      {{ formatPhone(parent) }}
+                    </a>
+                  } @else {
+                    <span class="text-gray-400 dark:text-gray-600">—</span>
+                  }
+                </td>
+                <td class="px-6 py-4">
+                  <app-status-badge [status]="parent.is_active ? 'active' : 'inactive'" variant="light" size="sm" />
+                </td>
+                <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                   {{ formatDate(parent.created_at) }}
+                </td>
+                <td class="px-6 py-4 text-right pr-8">
+                  <button
+                    type="button"
+                    class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
+                    (click)="viewParent(parent); $event.stopPropagation()"
+                  >
+                    <ng-icon name="heroEye" size="14" aria-hidden="true" />
+                    <span>View</span>
+                  </button>
                 </td>
               </tr>
             }
@@ -157,14 +277,161 @@
         </table>
       </div>
 
-      <app-table-pagination
-        [offset]="(page - 1) * pageSize"
-        [limit]="pageSize"
-        [total]="totalCount"
-        [loading]="isLoading"
-        (previous)="previousPage()"
-        (next)="nextPage()"
-      />
-    </div>
-  }
+      <!-- Mobile cards view -->
+      <div class="divide-y divide-gray-100/80 lg:hidden dark:divide-gray-800/60">
+        @for (parent of sortedParents; track parent.id) {
+          <article
+            class="p-4 transition-all duration-200 hover:bg-gray-50/50 dark:hover:bg-white/[0.015] cursor-pointer border-l-4"
+            [ngClass]="parent.is_active ? 'border-l-success-500' : 'border-l-gray-300 dark:border-l-gray-700'"
+            (click)="viewParent(parent)"
+            (keydown.enter)="viewParent(parent)"
+            (keydown.space)="viewParent(parent)"
+            tabindex="0"
+            role="link"
+            [attr.aria-label]="'View ' + parentName(parent)"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="flex size-10 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300 font-semibold shadow-theme-xs">
+                  <span class="text-xs">{{ parent.first_name.charAt(0) }}{{ (parent.last_name || '').charAt(0) }}</span>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900 dark:text-white/95">{{ parentName(parent) }}</p>
+                  @if (parent.relationship_to_child) {
+                    <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">{{ parent.relationship_to_child }}</p>
+                  }
+                </div>
+              </div>
+              <app-status-badge [status]="parent.is_active ? 'active' : 'inactive'" variant="light" size="sm" />
+            </div>
+
+            <!-- Badges -->
+            @if (parent.has_parental_responsibility || parent.is_emergency_contact || parent.can_pick_up) {
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                @if (parent.has_parental_responsibility) {
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                    <ng-icon name="heroShieldCheck" size="12" />
+                    PR
+                  </span>
+                }
+                @if (parent.is_emergency_contact) {
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-300">
+                    <ng-icon name="heroExclamationCircle" size="12" />
+                    Emergency
+                  </span>
+                }
+                @if (parent.can_pick_up) {
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+                    <ng-icon name="heroUser" size="12" />
+                    Pick Up
+                  </span>
+                }
+              </div>
+            }
+
+            <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Email</p>
+                @if (parent.email) {
+                  <a
+                    [href]="'mailto:' + parent.email"
+                    (click)="$event.stopPropagation()"
+                    class="inline-flex items-center gap-1 font-medium text-gray-700 hover:text-brand-500 dark:text-gray-200 dark:hover:text-brand-400 hover:underline transition"
+                  >
+                    <ng-icon name="heroEnvelope" class="text-gray-400" size="12" />
+                    {{ parent.email }}
+                  </a>
+                } @else {
+                  <span class="text-gray-400">—</span>
+                }
+              </div>
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Phone</p>
+                @if (parent.phone) {
+                  <a
+                    [href]="'tel:' + parent.phone"
+                    (click)="$event.stopPropagation()"
+                    class="inline-flex items-center gap-1 font-medium text-gray-700 hover:text-brand-500 dark:text-gray-200 dark:hover:text-brand-400 hover:underline transition"
+                  >
+                    <ng-icon name="heroPhone" class="text-gray-400" size="12" />
+                    {{ formatPhone(parent) }}
+                  </a>
+                } @else {
+                  <span class="text-gray-400">—</span>
+                }
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-2 border-t border-gray-100/80 dark:border-gray-800/40 pt-3">
+              <span class="text-[11px] text-gray-400 font-medium">
+                {{ formatDate(parent.created_at) }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
+                (click)="viewParent(parent); $event.stopPropagation()"
+              >
+                <ng-icon name="heroEye" size="14" aria-hidden="true" />
+                <span>View</span>
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <app-empty-state
+        title="No parents found"
+        [message]="hasActiveFilters ? 'No parents match your current filters.' : 'Add your first parent to get started.'"
+      >
+        @if (!hasActiveFilters) {
+          <button
+            type="button"
+            class="mt-3 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 cursor-pointer"
+            routerLink="/manager/parents/new"
+          >
+            <ng-icon name="heroPlus" size="16" aria-hidden="true" />
+            Add your first parent
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-error-600 hover:bg-error-50 dark:text-gray-400 dark:hover:text-error-400 dark:hover:bg-error-500/10 transition-all duration-200 cursor-pointer"
+            (click)="clearAllFilters()"
+          >
+            <ng-icon name="heroXMark" size="14" />
+            Clear filters
+          </button>
+        }
+      </app-empty-state>
+    }
+
+    @if (parents.length > 0 || totalCount > 0) {
+      <div class="flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800/80 p-4 text-sm sm:flex-row sm:items-center sm:justify-between lg:p-6">
+        <span class="text-gray-500 dark:text-gray-400 font-medium">
+          Page {{ page }} &middot; {{ parents.length }} parent{{ parents.length === 1 ? '' : 's' }} of {{ totalCount }}
+        </span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!hasPreviousPage"
+            (click)="previousPage()"
+          >
+            <ng-icon name="heroChevronLeft" size="16" aria-hidden="true" />
+            Previous
+          </button>
+          <span class="text-xs text-gray-400 font-semibold px-2 py-1 bg-gray-50 dark:bg-white/[0.02] rounded-md border border-gray-100 dark:border-gray-800/50">Page {{ page }} of {{ totalPages }}</span>
+          <button
+            type="button"
+            class="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05]"
+            [disabled]="!hasNextPage"
+            (click)="nextPage()"
+          >
+            Next
+            <ng-icon name="heroChevronRight" size="16" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    }
+  </section>
 </div>

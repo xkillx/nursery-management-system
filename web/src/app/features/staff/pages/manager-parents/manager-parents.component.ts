@@ -1,14 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroChevronDown,
+  heroChevronLeft,
+  heroChevronRight,
   heroChevronUp,
   heroChevronUpDown,
+  heroEnvelope,
+  heroExclamationCircle,
+  heroEye,
   heroMagnifyingGlass,
+  heroPhone,
   heroPlus,
+  heroShieldCheck,
+  heroUser,
   heroUserGroup,
+  heroUsers,
+  heroXMark,
 } from '@ng-icons/heroicons/outline';
 import { Subject } from 'rxjs';
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
@@ -17,37 +28,54 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ParentsApiService } from '../../data/parents-api.service';
 import { ParentRecord, ParentStatusFilter } from '../../models/parents.models';
-import { SelectComponent, Option } from '../../../../shared/components/form/select/select.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { TablePaginationComponent } from '../../../../shared/components/ui/table/table-pagination.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 
 type SortColumn = 'name' | 'email' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
+interface ParentMetric {
+  key: string;
+  label: string;
+  count: number;
+  tone: 'brand' | 'success' | 'neutral';
+  pill: string;
+}
+
 @Component({
   selector: 'app-manager-parents',
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
-    SelectComponent,
     AlertComponent,
     EmptyStateComponent,
     LoadingStateComponent,
-    TablePaginationComponent,
+    StatusBadgeComponent,
     NgIcon,
   ],
   templateUrl: './manager-parents.component.html',
   providers: [
     provideIcons({
       heroChevronDown,
+      heroChevronLeft,
+      heroChevronRight,
       heroChevronUp,
       heroChevronUpDown,
+      heroEnvelope,
+      heroExclamationCircle,
+      heroEye,
       heroMagnifyingGlass,
+      heroPhone,
       heroPlus,
+      heroShieldCheck,
+      heroUser,
       heroUserGroup,
+      heroUsers,
+      heroXMark,
     }),
   ],
 })
@@ -59,11 +87,11 @@ export class ManagerParentsComponent implements OnInit, OnDestroy {
   private readonly searchSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  readonly statusOptions: ParentStatusFilter[] = ['active', 'inactive', 'all'];
-  readonly statusLabel = (s: ParentStatusFilter) => s === 'active' ? 'Active' : s === 'inactive' ? 'Inactive' : 'All';
-  get statusSelectOptions(): Option[] {
-    return this.statusOptions.map(s => ({ value: s, label: this.statusLabel(s) }));
-  }
+  readonly statusChipOptions: { value: ParentStatusFilter; label: string }[] = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'all', label: 'All' },
+  ];
 
   parents: ParentRecord[] = [];
   totalCount = 0;
@@ -77,6 +105,76 @@ export class ManagerParentsComponent implements OnInit, OnDestroy {
   sortDirection: SortDirection = 'asc';
 
   errorMessage: string | null = null;
+
+  private activeCount = 0;
+  private inactiveCount = 0;
+
+  get metricCards(): ParentMetric[] {
+    return [
+      {
+        key: 'active',
+        label: 'Active parents',
+        count: this.activeCount,
+        tone: 'success',
+        pill: 'Current',
+      },
+      {
+        key: 'inactive',
+        label: 'Inactive parents',
+        count: this.inactiveCount,
+        tone: 'neutral',
+        pill: 'Archived',
+      },
+      {
+        key: 'total',
+        label: 'Total parents',
+        count: this.totalCount,
+        tone: 'brand',
+        pill: 'All records',
+      },
+    ];
+  }
+
+  metricIconToneClasses(tone: ParentMetric['tone']): string {
+    const map: Record<ParentMetric['tone'], string> = {
+      brand: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
+      success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300',
+      neutral: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  metricPillToneClasses(tone: ParentMetric['tone']): string {
+    const map: Record<ParentMetric['tone'], string> = {
+      brand: 'text-brand-600 dark:text-brand-300',
+      success: 'text-success-600 dark:text-success-300',
+      neutral: 'text-gray-600 dark:text-gray-300',
+    };
+    return map[tone];
+  }
+
+  metricProgressToneClasses(tone: ParentMetric['tone']): string {
+    const map: Record<ParentMetric['tone'], string> = {
+      brand: 'bg-brand-500',
+      success: 'bg-success-500',
+      neutral: 'bg-gray-400',
+    };
+    return map[tone];
+  }
+
+  metricProgressWidth(count: number): number {
+    if (count === 0) return 0;
+    const maxCount = Math.max(this.activeCount, this.inactiveCount, this.totalCount, 1);
+    return Math.max(6, Math.min(100, Math.round((count / maxCount) * 100)));
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.totalCount / this.pageSize));
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.status !== 'active' || this.searchTerm.trim().length > 0;
+  }
 
   get isSearchActive(): boolean {
     return this.searchTerm.trim().length > 0;
@@ -118,12 +216,22 @@ export class ManagerParentsComponent implements OnInit, OnDestroy {
         this.parents = parents;
         this.totalCount = total_count;
         this.isLoading = false;
+        this.loadMetricCounts();
       },
       error: (error) => {
         this.isLoading = false;
         const mapped = this.errorMapper.mapAndHandle(error);
         this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'people.parent'));
       },
+    });
+  }
+
+  private loadMetricCounts(): void {
+    this.parentsApi.list(1, 1, 'active').subscribe({
+      next: ({ total_count }) => (this.activeCount = total_count),
+    });
+    this.parentsApi.list(1, 1, 'inactive').subscribe({
+      next: ({ total_count }) => (this.inactiveCount = total_count),
     });
   }
 
@@ -148,14 +256,27 @@ export class ManagerParentsComponent implements OnInit, OnDestroy {
     return this.page > 1;
   }
 
-  onStatusChange(nextStatus: string): void {
-    this.status = nextStatus as ParentStatusFilter;
+  onStatusToggle(nextStatus: ParentStatusFilter): void {
+    this.status = this.status === nextStatus ? 'active' : nextStatus;
     this.page = 1;
     this.loadParents();
   }
 
-  onSearchChange(event: Event): void {
-    this.searchSubject.next((event.target as HTMLInputElement).value);
+  onSearchInput(value: string): void {
+    this.searchSubject.next(value);
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.page = 1;
+    this.loadParents();
+  }
+
+  clearAllFilters(): void {
+    this.status = 'active';
+    this.searchTerm = '';
+    this.page = 1;
+    this.loadParents();
   }
 
   toggleSort(column: SortColumn): void {
