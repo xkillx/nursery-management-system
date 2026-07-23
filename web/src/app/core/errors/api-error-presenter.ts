@@ -10,6 +10,7 @@ export type ApiErrorContext =
   | 'attendance.rowAction'
   | 'attendance.correction'
   | 'people.child'
+  | 'people.parent'
   | 'invoice.run'
   | 'invoice.managerList'
   | 'invoice.managerDetail'

@@ -26,6 +26,7 @@ import {
 export type SidebarIcon =
   | 'dashboard'
   | 'children'
+  | 'parents'
   | 'invites'
   | 'attendance'
   | 'attendance-corrections'
@@ -86,6 +87,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   iconMap: Record<SidebarIcon, string> = {
     dashboard: 'heroSquares2x2',
     children: 'heroUserGroup',
+    parents: 'heroUsers',
     invites: 'heroEnvelope',
     attendance: 'heroClipboardDocumentCheck',
     'attendance-corrections': 'heroClipboardDocumentList',
@@ -183,6 +185,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
           label: 'People',
           items: [
             { label: 'Children', path: ROLE_ROUTES.managerChildren, testId: 'staff-link-manager-children', icon: 'children', matchPaths: ['/manager/children/'] },
+            { label: 'Parents', path: ROLE_ROUTES.managerParents, testId: 'staff-link-manager-parents', icon: 'parents', matchPaths: ['/manager/parents/'] },
           ],
         },
         {

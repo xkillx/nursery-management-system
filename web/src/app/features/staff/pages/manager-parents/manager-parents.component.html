@@ -1,0 +1,170 @@
+<div class="space-y-6">
+  <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="parents-directory-title">
+    <div class="max-w-3xl">
+      <h1 id="parents-directory-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        Parents
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        Manage parent and guardian records, link them to children, and control portal access.
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <a
+        routerLink="/manager/parents/new"
+        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+        aria-label="Add a new parent"
+      >
+        <ng-icon name="heroPlus" size="18" aria-hidden="true" />
+        Add Parent
+      </a>
+    </div>
+  </section>
+
+  @if (errorMessage) {
+    <app-alert [variant]="'error'" [message]="errorMessage" [dismissible]="true" />
+  }
+
+  <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div class="relative flex-1">
+      <ng-icon name="heroMagnifyingGlass" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size="18" aria-hidden="true" />
+      <input
+        type="search"
+        placeholder="Search by name, email, or phone..."
+        class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
+        [value]="searchTerm"
+        (input)="onSearchChange($event)"
+        aria-label="Search parents"
+      />
+    </div>
+
+    <app-select
+      [value]="status"
+      [options]="statusSelectOptions"
+      (valueChange)="onStatusChange($event)"
+    />
+  </section>
+
+  @if (isLoading) {
+    <app-loading-state [label]="'Loading parents...'" />
+  } @else if (parents.length === 0) {
+    @if (isSearchActive || status !== 'active') {
+      <app-empty-state
+        [icon]="'heroUserGroup'"
+        [title]="'No parents found'"
+        [message]="'Try adjusting your search or filter criteria.'"
+      />
+    } @else {
+      <app-empty-state
+        [icon]="'heroUserGroup'"
+        [title]="'No parents yet'"
+        [message]="'Add your first parent to get started.'"
+      />
+    }
+  } @else {
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm" aria-label="Parents list">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+              <th class="px-5 py-3 text-left">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  (click)="toggleSort('name')"
+                  aria-sort="{{ sortColumn === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
+                >
+                  Name
+                  <ng-icon [name]="getSortIcon('name')" size="14" aria-hidden="true" />
+                </button>
+              </th>
+              <th class="px-5 py-3 text-left">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  (click)="toggleSort('email')"
+                  aria-sort="{{ sortColumn === 'email' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
+                >
+                  Email
+                  <ng-icon [name]="getSortIcon('email')" size="14" aria-hidden="true" />
+                </button>
+              </th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Phone
+              </th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Status
+              </th>
+              <th class="px-5 py-3 text-left">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  (click)="toggleSort('created_at')"
+                  aria-sort="{{ sortColumn === 'created_at' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}"
+                >
+                  Created
+                  <ng-icon [name]="getSortIcon('created_at')" size="14" aria-hidden="true" />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (parent of sortedParents; track parent.id) {
+              <tr
+                class="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                (click)="viewParent(parent)"
+                tabindex="0"
+                role="link"
+                [attr.aria-label]="'View ' + parentName(parent)"
+                (keydown.enter)="viewParent(parent)"
+              >
+                <td class="whitespace-nowrap px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                      <span class="text-xs font-semibold">{{ parent.first_name.charAt(0) }}{{ (parent.last_name || '').charAt(0) }}</span>
+                    </div>
+                    <div>
+                      <p class="font-medium text-gray-900 dark:text-white/90">{{ parentName(parent) }}</p>
+                      @if (parent.relationship_to_child) {
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ parent.relationship_to_child }}</p>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
+                  {{ parent.email || '—' }}
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
+                  {{ formatPhone(parent) }}
+                </td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  @if (parent.is_active) {
+                    <span class="inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                      Active
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center rounded-full bg-error-50 px-2 py-0.5 text-xs font-medium text-error-700 dark:bg-error-500/15 dark:text-error-400">
+                      Inactive
+                    </span>
+                  }
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
+                  {{ formatDate(parent.created_at) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-table-pagination
+        [offset]="(page - 1) * pageSize"
+        [limit]="pageSize"
+        [total]="totalCount"
+        [loading]="isLoading"
+        (previous)="previousPage()"
+        (next)="nextPage()"
+      />
+    </div>
+  }
+</div>

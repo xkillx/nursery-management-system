@@ -7,6 +7,7 @@ import { ManagerDashboardComponent } from './features/staff/pages/manager-dashbo
 import { ManagerChildrenComponent } from './features/staff/pages/manager-children/manager-children.component';
 import { ManagerChildDetailComponent } from './features/staff/pages/manager-child-detail/manager-child-detail.component';
 import { ManagerChildEditComponent } from './features/staff/pages/manager-child-edit/manager-child-edit.component';
+import { ManagerParentsComponent } from './features/staff/pages/manager-parents/manager-parents.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
@@ -115,6 +116,21 @@ export const routes: Routes = [
                     title: 'Child Enrollment | Nursery Management',
                   },
                 ],
+              },
+            ],
+          },
+          {
+            path: 'manager/parents',
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Parents', link: ['/manager/parents'] },
+            },
+            children: [
+              {
+                path: '',
+                component: ManagerParentsComponent,
+                title: 'Parents | Nursery Management',
               },
             ],
           },
