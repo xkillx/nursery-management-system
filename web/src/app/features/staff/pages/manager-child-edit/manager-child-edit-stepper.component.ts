@@ -1417,7 +1417,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (use) {
       this.linkedParents[index].addressLine1 = this.step1.home_address;
       this.linkedParents[index].addressPostcode = this.step1.home_postcode;
+    } else {
+      this.linkedParents[index].addressLine1 = '';
+      this.linkedParents[index].addressLine2 = '';
+      this.linkedParents[index].addressCity = '';
+      this.linkedParents[index].addressPostcode = '';
     }
+  }
+
+  get childAddressSummary(): string | null {
+    const addr = this.step1.home_address?.trim();
+    const postcode = this.step1.home_postcode?.trim();
+    if (!addr) return null;
+    return postcode ? `${addr}, ${postcode}` : addr;
   }
 
   get selectedParentRecord(): ParentRecord | undefined {

@@ -10,13 +10,14 @@ import {
   heroChevronDown,
   heroChevronUp,
   heroUser,
+  heroHome,
+  heroMapPin,
 } from '@ng-icons/heroicons/outline';
 import { ButtonComponent } from '../button/button.component';
 import { FormFieldComponent } from '../../form/form-field/form-field.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
 import { SelectComponent, Option } from '../../form/select/select.component';
 import { SwitchComponent } from '../../form/input/switch.component';
-import { CheckboxComponent } from '../../form/input/checkbox.component';
 
 interface LinkedParentEntry {
   id: string;
@@ -50,7 +51,6 @@ interface LinkedParentEntry {
     InputFieldComponent,
     SelectComponent,
     SwitchComponent,
-    CheckboxComponent,
   ],
   providers: [
     provideIcons({
@@ -61,6 +61,8 @@ interface LinkedParentEntry {
       heroChevronDown,
       heroChevronUp,
       heroUser,
+      heroHome,
+      heroMapPin,
     }),
   ],
   template: `
@@ -183,48 +185,86 @@ interface LinkedParentEntry {
             }
           </div>
 
-          <!-- Address Grid -->
+          <!-- Address -->
           <div class="space-y-3">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Address</span>
-              <app-checkbox
-                name="useChildAddress"
-                [(ngModel)]="useChildAddress"
-                (ngModelChange)="useChildAddressChange.emit($event)"
-                label="Same as child's home address"
-              />
+              @if (childAddress) {
+                <div
+                  role="button"
+                  tabindex="0"
+                  class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:border-brand-300 hover:text-brand-600"
+                  [class.border-brand-500]="useChildAddress"
+                  [class.bg-brand-50]="useChildAddress"
+                  [class.text-brand-700]="useChildAddress"
+                  [class.dark:border-brand-400]="useChildAddress"
+                  [class.dark:bg-brand-500/10]="useChildAddress"
+                  [class.dark:text-brand-300]="useChildAddress"
+                  [class.border-gray-200]="!useChildAddress"
+                  [class.text-gray-600]="!useChildAddress"
+                  [class.dark:border-gray-700]="!useChildAddress"
+                  [class.dark:text-gray-400]="!useChildAddress"
+                  (click)="toggleUseChildAddress()"
+                  (keydown.enter)="toggleUseChildAddress()"
+                  (keydown.space)="toggleUseChildAddress(); $event.preventDefault()"
+                >
+                  <ng-icon name="heroHome" size="14" aria-hidden="true" />
+                  @if (useChildAddress) {
+                    Using child's address
+                  } @else {
+                    Same as child's address
+                  }
+                </div>
+              }
             </div>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <app-form-field label="Address line 1">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="parent.addressLine1"
-                  placeholder="Street address"
-                />
-              </app-form-field>
-              <app-form-field label="Address line 2">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="parent.addressLine2"
-                  placeholder="Flat, suite, etc."
-                />
-              </app-form-field>
-              <app-form-field label="City">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="parent.addressCity"
-                  placeholder="City"
-                />
-              </app-form-field>
-              <app-form-field label="Postcode">
-                <app-input-field
-                  type="text"
-                  [(ngModel)]="parent.addressPostcode"
-                  placeholder="SW1A 1AA"
-                  className="uppercase"
-                />
-              </app-form-field>
-            </div>
+            @if (useChildAddress && childAddress) {
+              <div class="flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50/30 p-4 dark:border-brand-800/40 dark:bg-brand-500/5">
+                <ng-icon name="heroMapPin" size="18" class="mt-0.5 shrink-0 text-brand-500" aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ childAddress }}</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Copied from child's home address</p>
+                </div>
+                <button
+                  type="button"
+                  class="shrink-0 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  (click)="toggleUseChildAddress()"
+                >
+                  Edit
+                </button>
+              </div>
+            } @else {
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <app-form-field label="Address line 1">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="parent.addressLine1"
+                    placeholder="Street address"
+                  />
+                </app-form-field>
+                <app-form-field label="Address line 2">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="parent.addressLine2"
+                    placeholder="Flat, suite, etc."
+                  />
+                </app-form-field>
+                <app-form-field label="City">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="parent.addressCity"
+                    placeholder="City"
+                  />
+                </app-form-field>
+                <app-form-field label="Postcode">
+                  <app-input-field
+                    type="text"
+                    [(ngModel)]="parent.addressPostcode"
+                    placeholder="SW1A 1AA"
+                    className="uppercase"
+                  />
+                </app-form-field>
+              </div>
+            }
           </div>
 
           <!-- Flags -->
@@ -324,6 +364,7 @@ interface LinkedParentEntry {
 export class ParentCardComponent {
   @Input() parent!: LinkedParentEntry;
   @Input() parentRelationshipOptions: Option[] = [];
+  @Input() childAddress: string | null = null;
 
   @Output() editRequested = new EventEmitter<void>();
   @Output() removeRequested = new EventEmitter<void>();
@@ -332,4 +373,9 @@ export class ParentCardComponent {
   @Output() useChildAddressChange = new EventEmitter<boolean>();
 
   useChildAddress = false;
+
+  toggleUseChildAddress(): void {
+    this.useChildAddress = !this.useChildAddress;
+    this.useChildAddressChange.emit(this.useChildAddress);
+  }
 }
