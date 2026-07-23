@@ -1737,18 +1737,40 @@
                 </p>
                 <div class="space-y-4">
                   @for (contact of emergencyContactsDraft; track trackByIndex($index); let i = $index) {
-                    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-850 dark:bg-gray-900/40 space-y-4 animate-fade-in">
-                      <div class="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-800">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Emergency Contact #{{ i + 1 }}</span>
-                        @if (emergencyContactsDraft.length > 1) {
-                          <app-button type="button" variant="ghost" size="xs" className="inline-flex items-center gap-1 min-h-9 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeEmergencyContact(i)">
-                            <ng-icon name="heroXCircle" size="15" aria-hidden="true" />
-                            Remove
-                          </app-button>
-                        }
+                    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900/40 space-y-4 animate-fade-in">
+                      <!-- Card Header: Name + Relationship + Status -->
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                            <ng-icon name="heroUser" size="20" class="text-gray-500 dark:text-gray-400" />
+                          </div>
+                          <div class="min-w-0">
+                            <p class="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {{ contact.fullName || 'New Contact' }}
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                              {{ contact.relationshipToChild || 'Relationship not set' }}
+                            </p>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          @if (emergencyAuthorisedFlags[i]) {
+                            <span class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-700 dark:bg-success-500/10 dark:text-success-400">
+                              <ng-icon name="heroCheck" size="12" aria-hidden="true" />
+                              Can Collect
+                            </span>
+                          }
+                          @if (emergencyContactsDraft.length > 1) {
+                            <app-button type="button" variant="ghost" size="xs" className="min-h-9 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10" (btnClick)="removeEmergencyContact(i)">
+                              <ng-icon name="heroXCircle" size="15" aria-hidden="true" />
+                              Remove
+                            </app-button>
+                          }
+                        </div>
                       </div>
-                      
-                      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+                      <!-- Contact Fields -->
+                      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <app-form-field label="Contact name">
                           <app-input-field
                             type="text"
@@ -1773,7 +1795,7 @@
                             placeholder="Phone number"
                           />
                         </app-form-field>
-                        <app-form-field label="Address" className="md:col-span-2">
+                        <app-form-field label="Address">
                           <app-input-field
                             type="text"
                             [(ngModel)]="emergencyContactAddresses[i]"
@@ -1781,12 +1803,27 @@
                           />
                         </app-form-field>
                       </div>
-                      <div class="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                        <app-checkbox
-                          [name]="'emergency-authorised-' + i"
-                          [(ngModel)]="emergencyAuthorisedFlags[i]"
-                          label="Authorised to collect child from nursery"
-                        />
+
+                      <!-- Collection Authorisation Toggle -->
+                      <div
+                        role="button"
+                        tabindex="0"
+                        class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3 transition-colors hover:bg-gray-100/70 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-800 dark:bg-gray-900/20 dark:hover:bg-gray-800/40"
+                        (click)="emergencyAuthorisedFlags[i] = !emergencyAuthorisedFlags[i]"
+                        (keydown.enter)="emergencyAuthorisedFlags[i] = !emergencyAuthorisedFlags[i]"
+                        (keydown.space)="emergencyAuthorisedFlags[i] = !emergencyAuthorisedFlags[i]; $event.preventDefault()"
+                      >
+                        <div class="flex items-center gap-2.5">
+                          <ng-icon name="heroShieldCheck" size="18" [class]="emergencyAuthorisedFlags[i] ? 'text-success-500' : 'text-gray-400 dark:text-gray-500'" aria-hidden="true" />
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Authorised to collect from nursery</span>
+                        </div>
+                        <div class="pointer-events-none">
+                          <app-switch
+                            [name]="'emergency-authorised-' + i"
+                            [(ngModel)]="emergencyAuthorisedFlags[i]"
+                            [ariaLabel]="'Authorise ' + (contact.fullName || 'this contact') + ' to collect'"
+                          />
+                        </div>
                       </div>
                     </div>
                   }
