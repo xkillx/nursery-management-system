@@ -50,14 +50,16 @@ func TestChildProfile_InsertAndGet(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	sex := "F"
 	regDate := dbtest.DateAt(2024, 8, 1)
-	addr := map[string]any{"line1": "1 Nursery Lane", "city": "London"}
+	addrLine1 := "1 Nursery Lane"
+	addrCity := "London"
 	p := &childdomain.ChildProfile{
 		ID:                       uuid.New(),
 		TenantID:                 childTenantID,
 		BranchID:                 childBranchID,
 		ChildID:                  childID,
 		Sex:                      &sex,
-		HomeAddress:              addr,
+		AddressLine1:             &addrLine1,
+		AddressCity:              &addrCity,
 		RegistrationDate:         &regDate,
 		DemographicsHomeReviewed: true,
 		GDPRDeclaredAt:           &now,
@@ -87,8 +89,8 @@ func TestChildProfile_InsertAndGet(t *testing.T) {
 	if got.Sex == nil || *got.Sex != "F" {
 		t.Errorf("Sex = %v, want F", got.Sex)
 	}
-	if got.HomeAddress["city"] != "London" {
-		t.Errorf("HomeAddress.city = %v, want London", got.HomeAddress["city"])
+	if got.AddressCity == nil || *got.AddressCity != "London" {
+		t.Errorf("AddressCity = %v, want London", got.AddressCity)
 	}
 	if !got.DemographicsHomeReviewed {
 		t.Error("DemographicsHomeReviewed = false, want true")
@@ -106,7 +108,6 @@ func TestChildProfile_Update(t *testing.T) {
 		BranchID:         childBranchID,
 		ChildID:          childID,
 		DisabilityStatus: childdomain.YesNoUnknownUnknown,
-		HomeAddress:      map[string]any{},
 	}
 	tx := dbtest.BeginTx(t, pool)
 	if _, err := repo.InsertProfile(ctx, tx, p); err != nil {

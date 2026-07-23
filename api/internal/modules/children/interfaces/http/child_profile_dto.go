@@ -8,50 +8,54 @@ import (
 )
 
 type childProfileRequest struct {
-	Sex                          *string        `json:"sex"`
-	Religion                     *string        `json:"religion"`
-	EthnicOrigin                 *string        `json:"ethnic_origin"`
-	FirstLanguage                *string        `json:"first_language"`
-	OtherLanguages               *string        `json:"other_languages"`
-	HomeAddress                  map[string]any `json:"home_address"`
-	HomePostcode                 *string        `json:"home_postcode"`
-	HomeTelephone                *string        `json:"home_telephone"`
-	DisabilityStatus             string         `json:"disability_status"`
-	DisabilityNotes              *string        `json:"disability_notes"`
-	AccessRequirements           *string        `json:"access_requirements"`
-	RoutineCareNotes             *string        `json:"routine_care_notes"`
-	GDPRDeclaredByName           *string        `json:"gdpr_declared_by_name"`
-	GDPRDeclaredAt               *string        `json:"gdpr_declared_at"`
-	GDPRDeclarationDate          *string        `json:"gdpr_declaration_date"`
-	RegistrationDate             *string        `json:"registration_date"`
-	DemographicsHomeReviewed     bool           `json:"demographics_home_reviewed"`
-	MedicalDietaryReviewed       bool           `json:"medical_dietary_reviewed"`
-	HealthContactsReviewed       bool           `json:"health_contacts_reviewed"`
-	SocialDevelopmentReviewed    bool           `json:"social_development_reviewed"`
-	ParentResponsibilityReviewed bool           `json:"parent_responsibility_reviewed"`
-	EmergencyCollectionReviewed  bool           `json:"emergency_collection_reviewed"`
-	RoutineCareReviewed          bool           `json:"routine_care_reviewed"`
+	Sex                          *string `json:"sex"`
+	Religion                     *string `json:"religion"`
+	EthnicOrigin                 *string `json:"ethnic_origin"`
+	FirstLanguage                *string `json:"first_language"`
+	OtherLanguages               *string `json:"other_languages"`
+	AddressLine1                 *string `json:"address_line1"`
+	AddressLine2                 *string `json:"address_line2"`
+	AddressCity                  *string `json:"address_city"`
+	AddressPostcode              *string `json:"address_postcode"`
+	HomeTelephone                *string `json:"home_telephone"`
+	DisabilityStatus             string  `json:"disability_status"`
+	DisabilityNotes              *string `json:"disability_notes"`
+	AccessRequirements           *string `json:"access_requirements"`
+	RoutineCareNotes             *string `json:"routine_care_notes"`
+	GDPRDeclaredByName           *string `json:"gdpr_declared_by_name"`
+	GDPRDeclaredAt               *string `json:"gdpr_declared_at"`
+	GDPRDeclarationDate          *string `json:"gdpr_declaration_date"`
+	RegistrationDate             *string `json:"registration_date"`
+	DemographicsHomeReviewed     bool    `json:"demographics_home_reviewed"`
+	MedicalDietaryReviewed       bool    `json:"medical_dietary_reviewed"`
+	HealthContactsReviewed       bool    `json:"health_contacts_reviewed"`
+	SocialDevelopmentReviewed    bool    `json:"social_development_reviewed"`
+	ParentResponsibilityReviewed bool    `json:"parent_responsibility_reviewed"`
+	EmergencyCollectionReviewed  bool    `json:"emergency_collection_reviewed"`
+	RoutineCareReviewed          bool    `json:"routine_care_reviewed"`
 }
 
 type childProfileResponse struct {
-	ID                  string         `json:"id"`
-	ChildID             string         `json:"child_id"`
-	Sex                 *string        `json:"sex,omitempty"`
-	Religion            *string        `json:"religion,omitempty"`
-	EthnicOrigin        *string        `json:"ethnic_origin,omitempty"`
-	FirstLanguage       *string        `json:"first_language,omitempty"`
-	OtherLanguages      *string        `json:"other_languages,omitempty"`
-	HomeAddress         map[string]any `json:"home_address"`
-	HomePostcode        *string        `json:"home_postcode,omitempty"`
-	HomeTelephone       *string        `json:"home_telephone,omitempty"`
-	DisabilityStatus    string         `json:"disability_status"`
-	DisabilityNotes     *string        `json:"disability_notes,omitempty"`
-	AccessRequirements  *string        `json:"access_requirements,omitempty"`
-	RoutineCareNotes    *string        `json:"routine_care_notes,omitempty"`
-	GDPRDeclaredByName  *string        `json:"gdpr_declared_by_name,omitempty"`
-	GDPRDeclaredAt      *string        `json:"gdpr_declared_at,omitempty"`
-	GDPRDeclarationDate *string        `json:"gdpr_declaration_date,omitempty"`
-	RegistrationDate    *string        `json:"registration_date,omitempty"`
+	ID                  string  `json:"id"`
+	ChildID             string  `json:"child_id"`
+	Sex                 *string `json:"sex,omitempty"`
+	Religion            *string `json:"religion,omitempty"`
+	EthnicOrigin        *string `json:"ethnic_origin,omitempty"`
+	FirstLanguage       *string `json:"first_language,omitempty"`
+	OtherLanguages      *string `json:"other_languages,omitempty"`
+	AddressLine1        *string `json:"address_line1,omitempty"`
+	AddressLine2        *string `json:"address_line2,omitempty"`
+	AddressCity         *string `json:"address_city,omitempty"`
+	AddressPostcode     *string `json:"address_postcode,omitempty"`
+	HomeTelephone       *string `json:"home_telephone,omitempty"`
+	DisabilityStatus    string  `json:"disability_status"`
+	DisabilityNotes     *string `json:"disability_notes,omitempty"`
+	AccessRequirements  *string `json:"access_requirements,omitempty"`
+	RoutineCareNotes    *string `json:"routine_care_notes,omitempty"`
+	GDPRDeclaredByName  *string `json:"gdpr_declared_by_name,omitempty"`
+	GDPRDeclaredAt      *string `json:"gdpr_declared_at,omitempty"`
+	GDPRDeclarationDate *string `json:"gdpr_declaration_date,omitempty"`
+	RegistrationDate    *string `json:"registration_date,omitempty"`
 
 	DemographicsHomeReviewed     bool `json:"demographics_home_reviewed"`
 	MedicalDietaryReviewed       bool `json:"medical_dietary_reviewed"`
@@ -72,8 +76,10 @@ func mapChildProfileRequest(req childProfileRequest) *application.ChildProfileIn
 		EthnicOrigin:                 req.EthnicOrigin,
 		FirstLanguage:                req.FirstLanguage,
 		OtherLanguages:               req.OtherLanguages,
-		HomeAddress:                  req.HomeAddress,
-		HomePostcode:                 req.HomePostcode,
+		AddressLine1:                 req.AddressLine1,
+		AddressLine2:                 req.AddressLine2,
+		AddressCity:                  req.AddressCity,
+		AddressPostcode:              req.AddressPostcode,
 		HomeTelephone:                req.HomeTelephone,
 		DisabilityStatus:             req.DisabilityStatus,
 		DisabilityNotes:              req.DisabilityNotes,
@@ -105,8 +111,10 @@ func toChildProfileResponse(p *domain.ChildProfile) gin.H {
 		EthnicOrigin:                 p.EthnicOrigin,
 		FirstLanguage:                p.FirstLanguage,
 		OtherLanguages:               p.OtherLanguages,
-		HomeAddress:                  p.HomeAddress,
-		HomePostcode:                 p.HomePostcode,
+		AddressLine1:                 p.AddressLine1,
+		AddressLine2:                 p.AddressLine2,
+		AddressCity:                  p.AddressCity,
+		AddressPostcode:              p.AddressPostcode,
 		HomeTelephone:                p.HomeTelephone,
 		DisabilityStatus:             string(p.DisabilityStatus),
 		DisabilityNotes:              p.DisabilityNotes,

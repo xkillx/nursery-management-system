@@ -6,8 +6,10 @@ export interface ChildProfile {
   ethnic_origin?: string | null;
   first_language?: string | null;
   other_languages?: string | null;
-  home_address: Record<string, unknown>;
-  home_postcode?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_postcode?: string | null;
   home_telephone?: string | null;
   disability_status: string;
   disability_notes?: string | null;
@@ -73,8 +75,10 @@ export interface ChildProfileInput {
   ethnic_origin?: string | null;
   first_language?: string | null;
   other_languages?: string | null;
-  home_address?: Record<string, unknown>;
-  home_postcode?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_postcode?: string | null;
   home_telephone?: string | null;
   disability_status: string;
   disability_notes?: string | null;

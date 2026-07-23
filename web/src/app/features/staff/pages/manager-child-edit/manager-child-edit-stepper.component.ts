@@ -166,8 +166,10 @@ type Step1Field =
   | 'start_date'
   | 'sex'
   | 'first_language'
-  | 'home_address'
-  | 'home_postcode'
+  | 'address_line1'
+  | 'address_line2'
+  | 'address_city'
+  | 'address_postcode'
   | 'home_telephone'
   | 'notes'
   | 'religion'
@@ -181,7 +183,7 @@ type Step1Field =
 
 type Step1RequiredField = Extract<
   Step1Field,
-  'first_name' | 'date_of_birth' | 'start_date' | 'home_address' | 'first_language' | 'primary_room_id' | 'registration_date'
+  'first_name' | 'date_of_birth' | 'start_date' | 'address_line1' | 'address_postcode' | 'first_language' | 'primary_room_id' | 'registration_date'
 >;
 
 interface ReferralEntry {
@@ -229,8 +231,10 @@ interface RegistrationDraft {
     start_date: string;
     sex: string;
     first_language: string;
-    home_address: string;
-    home_postcode: string;
+    address_line1: string;
+    address_line2: string;
+    address_city: string;
+    address_postcode: string;
     home_telephone: string;
     notes: string;
     religion: string;
@@ -528,7 +532,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     'first_name',
     'date_of_birth',
     'start_date',
-    'home_address',
+    'address_line1',
+    'address_postcode',
     'first_language',
     'primary_room_id',
     'registration_date',
@@ -667,8 +672,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     start_date: '',
     sex: '',
     first_language: '',
-    home_address: '',
-    home_postcode: '',
+    address_line1: '',
+    address_line2: '',
+    address_city: '',
+    address_postcode: '',
     home_telephone: '',
     notes: '',
     religion: '',
@@ -1040,8 +1047,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (field === 'start_date' && !this.step1.start_date) {
       return 'Enter the proposed start date.';
     }
-    if (field === 'home_address' && !this.step1.home_address.trim()) {
+    if (field === 'address_line1' && !this.step1.address_line1.trim()) {
       return 'Enter the child\'s home address.';
+    }
+    if (field === 'address_postcode' && !this.step1.address_postcode.trim()) {
+      return 'Enter the postcode.';
     }
     if (field === 'first_language' && !this.step1.first_language.trim()) {
       return 'Select the primary language spoken at home.';
@@ -1415,8 +1425,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   onUseChildAddress(index: number, use: boolean): void {
     if (use) {
-      this.linkedParents[index].addressLine1 = this.step1.home_address;
-      this.linkedParents[index].addressPostcode = this.step1.home_postcode;
+      this.linkedParents[index].addressLine1 = this.step1.address_line1;
+      this.linkedParents[index].addressLine2 = this.step1.address_line2;
+      this.linkedParents[index].addressCity = this.step1.address_city;
+      this.linkedParents[index].addressPostcode = this.step1.address_postcode;
     } else {
       this.linkedParents[index].addressLine1 = '';
       this.linkedParents[index].addressLine2 = '';
@@ -1426,10 +1438,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   get childAddressSummary(): string | null {
-    const addr = this.step1.home_address?.trim();
-    const postcode = this.step1.home_postcode?.trim();
-    if (!addr) return null;
-    return postcode ? `${addr}, ${postcode}` : addr;
+    const line1 = this.step1.address_line1?.trim();
+    const line2 = this.step1.address_line2?.trim();
+    const city = this.step1.address_city?.trim();
+    const postcode = this.step1.address_postcode?.trim();
+    if (!line1) return null;
+    const parts = [line1, line2, city, postcode].filter(Boolean);
+    return parts.join(', ');
   }
 
   get selectedParentRecord(): ParentRecord | undefined {
@@ -1638,8 +1653,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.patchChildProfile(childId, {
       sex: this.step1.sex || null,
       first_language: this.step1.first_language || null,
-      home_address: this.stringToAddress(this.step1.home_address) ?? undefined,
-      home_postcode: this.step1.home_postcode.trim() || null,
+      address_line1: this.step1.address_line1.trim() || null,
+      address_line2: this.step1.address_line2.trim() || null,
+      address_city: this.step1.address_city.trim() || null,
+      address_postcode: this.step1.address_postcode.trim() || null,
       home_telephone: this.step1.home_telephone.trim() || null,
       religion: this.step1.religion.trim() || null,
       ethnic_origin: this.step1.ethnic_origin.trim() || null,
@@ -2062,7 +2079,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       last_name: 'child-last-name',
       date_of_birth: 'child-date-of-birth',
       start_date: 'child-start-date',
-      home_address: 'child-home-address',
+      address_line1: 'child-address-line1',
+      address_postcode: 'child-address-postcode',
       first_language: 'child-first-language',
       disability_status: 'child-disability-status-group',
       disability_notes: 'child-disability-notes',
@@ -2436,7 +2454,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       ethnic_origin: this.step1.ethnic_origin.trim() || null,
       first_language: this.step1.first_language.trim() || null,
       other_languages: this.step1.other_languages || null,
-      home_postcode: this.step1.home_postcode.trim() || null,
+      address_line1: this.step1.address_line1.trim() || null,
+      address_line2: this.step1.address_line2.trim() || null,
+      address_city: this.step1.address_city.trim() || null,
+      address_postcode: this.step1.address_postcode.trim() || null,
       home_telephone: this.step1.home_telephone.trim() || null,
       disability_status: this.parseYesNoUnknownFromStr(this.step1.disability_status) ?? 'unknown',
       disability_notes: this.step1.disability_notes.trim() || null,
@@ -2451,9 +2472,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       emergency_collection_reviewed: true,
       routine_care_reviewed: true,
     };
-    if (this.step1.home_address.trim()) {
-      profile.home_address = { text: this.step1.home_address.trim() };
-    }
 
     const health: ChildHealthProfileInput = {
       medical_conditions_status: this.step2.allergy_status || 'unknown',
@@ -2604,8 +2622,11 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (!this.step1.start_date) {
       issues.push({ stepKey: 'child-basics', field: 'start_date', message: 'Enter the proposed start date.' });
     }
-    if (!this.step1.home_address.trim()) {
-      issues.push({ stepKey: 'child-basics', field: 'home_address', message: 'Enter the child\'s home address.' });
+    if (!this.step1.address_line1.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'address_line1', message: 'Enter the child\'s home address.' });
+    }
+    if (!this.step1.address_postcode.trim()) {
+      issues.push({ stepKey: 'child-basics', field: 'address_postcode', message: 'Enter the postcode.' });
     }
     if (!this.step1.first_language.trim()) {
       issues.push({ stepKey: 'child-basics', field: 'first_language', message: 'Select the primary language spoken at home.' });
@@ -2891,8 +2912,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     this.staffApi.patchChildProfile(childId, {
       sex: this.step1.sex || null,
       first_language: this.step1.first_language || null,
-      home_address: this.stringToAddress(this.step1.home_address) ?? undefined,
-      home_postcode: this.step1.home_postcode.trim() || null,
+      address_line1: this.step1.address_line1.trim() || null,
+      address_line2: this.step1.address_line2.trim() || null,
+      address_city: this.step1.address_city.trim() || null,
+      address_postcode: this.step1.address_postcode.trim() || null,
       home_telephone: this.step1.home_telephone.trim() || null,
       religion: this.step1.religion.trim() || null,
       ethnic_origin: this.step1.ethnic_origin.trim() || null,
@@ -3080,8 +3103,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }
       this.step1.sex = p.sex ?? '';
       this.step1.first_language = p.first_language ?? '';
-      this.step1.home_address = this.addressToString(p.home_address);
-      this.step1.home_postcode = p.home_postcode ?? '';
+      this.step1.address_line1 = p.address_line1 ?? '';
+      this.step1.address_line2 = p.address_line2 ?? '';
+      this.step1.address_city = p.address_city ?? '';
+      this.step1.address_postcode = p.address_postcode ?? '';
       this.step1.home_telephone = p.home_telephone ?? '';
       this.step1.religion = p.religion ?? '';
       this.step1.ethnic_origin = p.ethnic_origin ?? '';
@@ -3503,8 +3528,10 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       start_date: '',
       sex: '',
       first_language: '',
-      home_address: '',
-      home_postcode: '',
+      address_line1: '',
+      address_line2: '',
+      address_city: '',
+      address_postcode: '',
       home_telephone: '',
       notes: '',
       religion: '',

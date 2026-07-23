@@ -522,15 +522,11 @@ func (r *ChildRepository) GetProfileForUpdate(ctx context.Context, tx domain.Tx,
 	if err != nil {
 		return nil, fmt.Errorf("get child profile for update: %w", err)
 	}
-	return mapChildProfileRow(row), nil
+	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
 }
 
 func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
 	q := sqlc.New(tx.(pgx.Tx))
-	homeAddr, _ := json.Marshal(p.HomeAddress)
-	if p.HomeAddress == nil {
-		homeAddr = []byte("{}")
-	}
 	row, err := q.ChildProfileInsert(ctx, sqlc.ChildProfileInsertParams{
 		ID:                           uuidToPgtype(p.ID),
 		TenantID:                     uuidToPgtype(p.TenantID),
@@ -541,14 +537,16 @@ func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *do
 		Column7:                      stringPtrToText(p.EthnicOrigin),
 		Column8:                      stringPtrToText(p.FirstLanguage),
 		Column9:                      stringPtrToText(p.OtherLanguages),
-		HomeAddress:                  homeAddr,
-		Column11:                     stringPtrToText(p.HomePostcode),
-		Column12:                     stringPtrToText(p.HomeTelephone),
+		Column10:                     stringPtrToText(p.AddressLine1),
+		Column11:                     stringPtrToText(p.AddressLine2),
+		Column12:                     stringPtrToText(p.AddressCity),
+		Column13:                     stringPtrToText(p.AddressPostcode),
+		Column14:                     stringPtrToText(p.HomeTelephone),
 		DisabilityStatus:             string(p.DisabilityStatus),
-		Column14:                     stringPtrToText(p.DisabilityNotes),
-		Column15:                     stringPtrToText(p.AccessRequirements),
-		Column16:                     stringPtrToText(p.RoutineCareNotes),
-		Column17:                     stringPtrToText(p.GDPRDeclaredByName),
+		Column16:                     stringPtrToText(p.DisabilityNotes),
+		Column17:                     stringPtrToText(p.AccessRequirements),
+		Column18:                     stringPtrToText(p.RoutineCareNotes),
+		Column19:                     stringPtrToText(p.GDPRDeclaredByName),
 		GdprDeclaredAt:               timestamptzPtrToPgtype(p.GDPRDeclaredAt),
 		GdprDeclarationDate:          datePtrToPgtype(p.GDPRDeclarationDate),
 		RegistrationDate:             datePtrToPgtype(p.RegistrationDate),
@@ -563,15 +561,11 @@ func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *do
 	if err != nil {
 		return nil, fmt.Errorf("insert child profile: %w", err)
 	}
-	return mapChildProfileRow(row), nil
+	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
 }
 
 func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
 	q := sqlc.New(tx.(pgx.Tx))
-	homeAddr, _ := json.Marshal(p.HomeAddress)
-	if p.HomeAddress == nil {
-		homeAddr = []byte("{}")
-	}
 	row, err := q.ChildProfileUpdate(ctx, sqlc.ChildProfileUpdateParams{
 		TenantID:                     uuidToPgtype(p.TenantID),
 		BranchID:                     uuidToPgtype(p.BranchID),
@@ -582,14 +576,16 @@ func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *do
 		Column7:                      stringPtrToText(p.EthnicOrigin),
 		Column8:                      stringPtrToText(p.FirstLanguage),
 		Column9:                      stringPtrToText(p.OtherLanguages),
-		HomeAddress:                  homeAddr,
-		Column11:                     stringPtrToText(p.HomePostcode),
-		Column12:                     stringPtrToText(p.HomeTelephone),
+		Column10:                     stringPtrToText(p.AddressLine1),
+		Column11:                     stringPtrToText(p.AddressLine2),
+		Column12:                     stringPtrToText(p.AddressCity),
+		Column13:                     stringPtrToText(p.AddressPostcode),
+		Column14:                     stringPtrToText(p.HomeTelephone),
 		DisabilityStatus:             string(p.DisabilityStatus),
-		Column14:                     stringPtrToText(p.DisabilityNotes),
-		Column15:                     stringPtrToText(p.AccessRequirements),
-		Column16:                     stringPtrToText(p.RoutineCareNotes),
-		Column17:                     stringPtrToText(p.GDPRDeclaredByName),
+		Column16:                     stringPtrToText(p.DisabilityNotes),
+		Column17:                     stringPtrToText(p.AccessRequirements),
+		Column18:                     stringPtrToText(p.RoutineCareNotes),
+		Column19:                     stringPtrToText(p.GDPRDeclaredByName),
 		GdprDeclaredAt:               timestamptzPtrToPgtype(p.GDPRDeclaredAt),
 		GdprDeclarationDate:          datePtrToPgtype(p.GDPRDeclarationDate),
 		RegistrationDate:             datePtrToPgtype(p.RegistrationDate),
@@ -604,11 +600,11 @@ func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *do
 	if err != nil {
 		return nil, fmt.Errorf("update child profile: %w", err)
 	}
-	return mapChildProfileRow(row), nil
+	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
 }
 
-func mapChildProfileRow(row sqlc.ChildProfile) *domain.ChildProfile {
-	p := &domain.ChildProfile{
+func mapChildProfileRow(row sqlc.ChildProfileGetByChildRow) *domain.ChildProfile {
+	return &domain.ChildProfile{
 		ID:                           pgtypeUUIDToUUID(row.ID),
 		TenantID:                     pgtypeUUIDToUUID(row.TenantID),
 		BranchID:                     pgtypeUUIDToUUID(row.BranchID),
@@ -618,7 +614,10 @@ func mapChildProfileRow(row sqlc.ChildProfile) *domain.ChildProfile {
 		EthnicOrigin:                 pgtypeTextToPtr(row.EthnicOrigin),
 		FirstLanguage:                pgtypeTextToPtr(row.FirstLanguage),
 		OtherLanguages:               pgtypeTextToPtr(row.OtherLanguages),
-		HomePostcode:                 pgtypeTextToPtr(row.HomePostcode),
+		AddressLine1:                 pgtypeTextToPtr(row.AddressLine1),
+		AddressLine2:                 pgtypeTextToPtr(row.AddressLine2),
+		AddressCity:                  pgtypeTextToPtr(row.AddressCity),
+		AddressPostcode:              pgtypeTextToPtr(row.AddressPostcode),
 		HomeTelephone:                pgtypeTextToPtr(row.HomeTelephone),
 		DisabilityStatus:             domain.YesNoUnknown(row.DisabilityStatus),
 		DisabilityNotes:              pgtypeTextToPtr(row.DisabilityNotes),
@@ -638,13 +637,6 @@ func mapChildProfileRow(row sqlc.ChildProfile) *domain.ChildProfile {
 		CreatedAt:                    pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:                    pgtypeTimestamptzToTime(row.UpdatedAt),
 	}
-	if row.HomeAddress != nil {
-		_ = json.Unmarshal(row.HomeAddress, &p.HomeAddress)
-	}
-	if p.HomeAddress == nil {
-		p.HomeAddress = map[string]any{}
-	}
-	return p
 }
 
 // --- Child Contacts ---

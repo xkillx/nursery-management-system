@@ -32,8 +32,10 @@ type ChildProfileInput struct {
 	EthnicOrigin                 *string
 	FirstLanguage                *string
 	OtherLanguages               *string
-	HomeAddress                  map[string]any
-	HomePostcode                 *string
+	AddressLine1                 *string
+	AddressLine2                 *string
+	AddressCity                  *string
+	AddressPostcode              *string
 	HomeTelephone                *string
 	DisabilityStatus             string
 	DisabilityNotes              *string

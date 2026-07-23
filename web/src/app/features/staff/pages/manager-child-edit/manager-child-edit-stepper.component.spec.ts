@@ -66,7 +66,8 @@ describe('ManagerChildEditStepperComponent', () => {
     component.step1.last_name = 'Smith';
     component.step1.date_of_birth = '2022-01-01';
     component.step1.start_date = '2026-09-01';
-    component.step1.home_address = '123 High Street';
+    component.step1.address_line1 = '123 High Street';
+    component.step1.address_postcode = 'SW1A 1AA';
     component.step1.first_language = 'English';
     component.step1.disability_status = 'no';
     component.step1.disability_notes = '';
@@ -187,7 +188,8 @@ describe('ManagerChildEditStepperComponent', () => {
           last_name: 'Smith',
           date_of_birth: '2022-01-01',
           start_date: '2026-09-01',
-          home_address: '123 High Street',
+          address_line1: '123 High Street',
+          address_postcode: 'SW1A 1AA',
           first_language: 'English',
           primary_room_id: 'room-99',
           registration_date: '2026-01-15',
@@ -225,9 +227,15 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when home address missing', () => {
+    it('blocks when address line 1 missing', () => {
       fillRequiredForCompletion();
-      component.step1.home_address = '';
+      component.step1.address_line1 = '';
+      expect(component.canSubmitLocally()).toBe(false);
+    });
+
+    it('blocks when postcode missing', () => {
+      fillRequiredForCompletion();
+      component.step1.address_postcode = '';
       expect(component.canSubmitLocally()).toBe(false);
     });
 

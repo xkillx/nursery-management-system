@@ -459,26 +459,66 @@
                 <div class="grid grid-cols-1 gap-6">
                   <app-form-field
                     label="Address line 1"
-                    labelFor="child-home-address"
+                    labelFor="child-address-line1"
                     [required]="true"
-                    errorId="child-home-address-error"
-                    [error]="step1VisibleError('home_address')"
+                    errorId="child-address-line1-error"
+                    [error]="step1VisibleError('address_line1')"
                   >
                     <app-input-field
-                      id="child-home-address"
-                      name="home_address"
+                      id="child-address-line1"
+                      name="address_line1"
                       type="text"
-                      [(ngModel)]="step1.home_address"
-                      (blurred)="markStep1Touched('home_address')"
-                      [error]="shouldShowStep1Error('home_address')"
-                      [describedBy]="shouldShowStep1Error('home_address') ? 'child-home-address-error' : undefined"
+                      [(ngModel)]="step1.address_line1"
+                      (blurred)="markStep1Touched('address_line1')"
+                      [error]="shouldShowStep1Error('address_line1')"
+                      [describedBy]="shouldShowStep1Error('address_line1') ? 'child-address-line1-error' : undefined"
                       autocomplete="street-address"
                       placeholder="e.g. 123 High Street"
                     />
                   </app-form-field>
+                  <app-form-field label="Address line 2" labelFor="child-address-line2">
+                    <app-input-field
+                      id="child-address-line2"
+                      name="address_line2"
+                      type="text"
+                      [(ngModel)]="step1.address_line2"
+                      autocomplete="address-line2"
+                      placeholder="e.g. Flat 4"
+                    />
+                  </app-form-field>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <app-form-field label="City" labelFor="child-address-city">
+                    <app-input-field
+                      id="child-address-city"
+                      name="address_city"
+                      type="text"
+                      [(ngModel)]="step1.address_city"
+                      autocomplete="address-level2"
+                      placeholder="e.g. London"
+                    />
+                  </app-form-field>
+                  <app-form-field
+                    label="Postcode"
+                    labelFor="child-address-postcode"
+                    [required]="true"
+                    errorId="child-address-postcode-error"
+                    [error]="step1VisibleError('address_postcode')"
+                  >
+                    <app-input-field
+                      id="child-address-postcode"
+                      name="address_postcode"
+                      type="text"
+                      [(ngModel)]="step1.address_postcode"
+                      (blurred)="markStep1Touched('address_postcode')"
+                      [error]="shouldShowStep1Error('address_postcode')"
+                      [describedBy]="shouldShowStep1Error('address_postcode') ? 'child-address-postcode-error' : undefined"
+                      autocomplete="postal-code"
+                      className="uppercase"
+                      placeholder="SW1A 1AA"
+                    />
+                  </app-form-field>
                   <app-form-field label="Home telephone" labelFor="child-home-telephone">
                     <app-input-field
                       id="child-home-telephone"
@@ -487,17 +527,6 @@
                       [(ngModel)]="step1.home_telephone"
                       autocomplete="tel"
                       placeholder="e.g. 020 1234 5678"
-                    />
-                  </app-form-field>
-                  <app-form-field label="Post code" labelFor="child-home-postcode">
-                    <app-input-field
-                      id="child-home-postcode"
-                      name="home_postcode"
-                      type="text"
-                      [(ngModel)]="step1.home_postcode"
-                      autocomplete="postal-code"
-                      className="uppercase"
-                      placeholder="SW1A 1AA"
                     />
                   </app-form-field>
                 </div>

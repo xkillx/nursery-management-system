@@ -25,18 +25,20 @@ const (
 )
 
 type ChildProfile struct {
-	ID             uuid.UUID
-	TenantID       uuid.UUID
-	BranchID       uuid.UUID
-	ChildID        uuid.UUID
-	Sex            *string
-	Religion       *string
-	EthnicOrigin   *string
-	FirstLanguage  *string
-	OtherLanguages *string
-	HomeAddress    map[string]any
-	HomePostcode   *string
-	HomeTelephone  *string
+	ID              uuid.UUID
+	TenantID        uuid.UUID
+	BranchID        uuid.UUID
+	ChildID         uuid.UUID
+	Sex             *string
+	Religion        *string
+	EthnicOrigin    *string
+	FirstLanguage   *string
+	OtherLanguages  *string
+	AddressLine1    *string
+	AddressLine2    *string
+	AddressCity     *string
+	AddressPostcode *string
+	HomeTelephone   *string
 
 	DisabilityStatus   YesNoUnknown
 	DisabilityNotes    *string

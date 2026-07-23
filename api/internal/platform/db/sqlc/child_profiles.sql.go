@@ -14,7 +14,7 @@ import (
 const childProfileGetByChild = `-- name: ChildProfileGetByChild :one
 SELECT id, tenant_id, branch_id, child_id,
        sex, religion, ethnic_origin, first_language, other_languages,
-       home_address, home_postcode, home_telephone,
+       address_line1, address_line2, address_city, address_postcode, home_telephone,
        disability_status, disability_notes, access_requirements,
        routine_care_notes,
        gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
@@ -34,9 +34,43 @@ type ChildProfileGetByChildParams struct {
 	ChildID  pgtype.UUID
 }
 
-func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGetByChildParams) (ChildProfile, error) {
+type ChildProfileGetByChildRow struct {
+	ID                           pgtype.UUID
+	TenantID                     pgtype.UUID
+	BranchID                     pgtype.UUID
+	ChildID                      pgtype.UUID
+	Sex                          pgtype.Text
+	Religion                     pgtype.Text
+	EthnicOrigin                 pgtype.Text
+	FirstLanguage                pgtype.Text
+	OtherLanguages               pgtype.Text
+	AddressLine1                 pgtype.Text
+	AddressLine2                 pgtype.Text
+	AddressCity                  pgtype.Text
+	AddressPostcode              pgtype.Text
+	HomeTelephone                pgtype.Text
+	DisabilityStatus             string
+	DisabilityNotes              pgtype.Text
+	AccessRequirements           pgtype.Text
+	RoutineCareNotes             pgtype.Text
+	GdprDeclaredByName           pgtype.Text
+	GdprDeclaredAt               pgtype.Timestamptz
+	GdprDeclarationDate          pgtype.Date
+	RegistrationDate             pgtype.Date
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
+	ParentResponsibilityReviewed bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGetByChildParams) (ChildProfileGetByChildRow, error) {
 	row := q.db.QueryRow(ctx, childProfileGetByChild, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildProfile
+	var i ChildProfileGetByChildRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -47,8 +81,10 @@ func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGe
 		&i.EthnicOrigin,
 		&i.FirstLanguage,
 		&i.OtherLanguages,
-		&i.HomeAddress,
-		&i.HomePostcode,
+		&i.AddressLine1,
+		&i.AddressLine2,
+		&i.AddressCity,
+		&i.AddressPostcode,
 		&i.HomeTelephone,
 		&i.DisabilityStatus,
 		&i.DisabilityNotes,
@@ -74,7 +110,7 @@ func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGe
 const childProfileGetForUpdate = `-- name: ChildProfileGetForUpdate :one
 SELECT id, tenant_id, branch_id, child_id,
        sex, religion, ethnic_origin, first_language, other_languages,
-       home_address, home_postcode, home_telephone,
+       address_line1, address_line2, address_city, address_postcode, home_telephone,
        disability_status, disability_notes, access_requirements,
        routine_care_notes,
        gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
@@ -95,9 +131,43 @@ type ChildProfileGetForUpdateParams struct {
 	ChildID  pgtype.UUID
 }
 
-func (q *Queries) ChildProfileGetForUpdate(ctx context.Context, arg ChildProfileGetForUpdateParams) (ChildProfile, error) {
+type ChildProfileGetForUpdateRow struct {
+	ID                           pgtype.UUID
+	TenantID                     pgtype.UUID
+	BranchID                     pgtype.UUID
+	ChildID                      pgtype.UUID
+	Sex                          pgtype.Text
+	Religion                     pgtype.Text
+	EthnicOrigin                 pgtype.Text
+	FirstLanguage                pgtype.Text
+	OtherLanguages               pgtype.Text
+	AddressLine1                 pgtype.Text
+	AddressLine2                 pgtype.Text
+	AddressCity                  pgtype.Text
+	AddressPostcode              pgtype.Text
+	HomeTelephone                pgtype.Text
+	DisabilityStatus             string
+	DisabilityNotes              pgtype.Text
+	AccessRequirements           pgtype.Text
+	RoutineCareNotes             pgtype.Text
+	GdprDeclaredByName           pgtype.Text
+	GdprDeclaredAt               pgtype.Timestamptz
+	GdprDeclarationDate          pgtype.Date
+	RegistrationDate             pgtype.Date
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
+	ParentResponsibilityReviewed bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+func (q *Queries) ChildProfileGetForUpdate(ctx context.Context, arg ChildProfileGetForUpdateParams) (ChildProfileGetForUpdateRow, error) {
 	row := q.db.QueryRow(ctx, childProfileGetForUpdate, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildProfile
+	var i ChildProfileGetForUpdateRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -108,8 +178,10 @@ func (q *Queries) ChildProfileGetForUpdate(ctx context.Context, arg ChildProfile
 		&i.EthnicOrigin,
 		&i.FirstLanguage,
 		&i.OtherLanguages,
-		&i.HomeAddress,
-		&i.HomePostcode,
+		&i.AddressLine1,
+		&i.AddressLine2,
+		&i.AddressCity,
+		&i.AddressPostcode,
 		&i.HomeTelephone,
 		&i.DisabilityStatus,
 		&i.DisabilityNotes,
@@ -136,7 +208,7 @@ const childProfileInsert = `-- name: ChildProfileInsert :one
 INSERT INTO child_profiles (
     id, tenant_id, branch_id, child_id,
     sex, religion, ethnic_origin, first_language, other_languages,
-    home_address, home_postcode, home_telephone,
+    address_line1, address_line2, address_city, address_postcode, home_telephone,
     disability_status, disability_notes, access_requirements,
     routine_care_notes,
     gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
@@ -149,16 +221,16 @@ INSERT INTO child_profiles (
 VALUES (
     $1, $2, $3, $4,
     NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), NULLIF($9, ''),
-    $10, NULLIF($11, ''), NULLIF($12, ''),
-    $13, NULLIF($14, ''), NULLIF($15, ''),
-    NULLIF($16, ''),
-    NULLIF($17, ''), $18, $19,
-    $20,
-    $21, $22, $23, $24, $25, $26, $27
+    NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''),
+    $15, NULLIF($16, ''), NULLIF($17, ''),
+    NULLIF($18, ''),
+    NULLIF($19, ''), $20, $21,
+    $22,
+    $23, $24, $25, $26, $27, $28, $29
 )
 RETURNING id, tenant_id, branch_id, child_id,
           sex, religion, ethnic_origin, first_language, other_languages,
-          home_address, home_postcode, home_telephone,
+          address_line1, address_line2, address_city, address_postcode, home_telephone,
           disability_status, disability_notes, access_requirements,
           routine_care_notes,
           gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
@@ -180,14 +252,16 @@ type ChildProfileInsertParams struct {
 	Column7                      interface{}
 	Column8                      interface{}
 	Column9                      interface{}
-	HomeAddress                  []byte
+	Column10                     interface{}
 	Column11                     interface{}
 	Column12                     interface{}
-	DisabilityStatus             string
+	Column13                     interface{}
 	Column14                     interface{}
-	Column15                     interface{}
+	DisabilityStatus             string
 	Column16                     interface{}
 	Column17                     interface{}
+	Column18                     interface{}
+	Column19                     interface{}
 	GdprDeclaredAt               pgtype.Timestamptz
 	GdprDeclarationDate          pgtype.Date
 	RegistrationDate             pgtype.Date
@@ -200,7 +274,41 @@ type ChildProfileInsertParams struct {
 	RoutineCareReviewed          bool
 }
 
-func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsertParams) (ChildProfile, error) {
+type ChildProfileInsertRow struct {
+	ID                           pgtype.UUID
+	TenantID                     pgtype.UUID
+	BranchID                     pgtype.UUID
+	ChildID                      pgtype.UUID
+	Sex                          pgtype.Text
+	Religion                     pgtype.Text
+	EthnicOrigin                 pgtype.Text
+	FirstLanguage                pgtype.Text
+	OtherLanguages               pgtype.Text
+	AddressLine1                 pgtype.Text
+	AddressLine2                 pgtype.Text
+	AddressCity                  pgtype.Text
+	AddressPostcode              pgtype.Text
+	HomeTelephone                pgtype.Text
+	DisabilityStatus             string
+	DisabilityNotes              pgtype.Text
+	AccessRequirements           pgtype.Text
+	RoutineCareNotes             pgtype.Text
+	GdprDeclaredByName           pgtype.Text
+	GdprDeclaredAt               pgtype.Timestamptz
+	GdprDeclarationDate          pgtype.Date
+	RegistrationDate             pgtype.Date
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
+	ParentResponsibilityReviewed bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsertParams) (ChildProfileInsertRow, error) {
 	row := q.db.QueryRow(ctx, childProfileInsert,
 		arg.ID,
 		arg.TenantID,
@@ -211,14 +319,16 @@ func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsert
 		arg.Column7,
 		arg.Column8,
 		arg.Column9,
-		arg.HomeAddress,
+		arg.Column10,
 		arg.Column11,
 		arg.Column12,
-		arg.DisabilityStatus,
+		arg.Column13,
 		arg.Column14,
-		arg.Column15,
+		arg.DisabilityStatus,
 		arg.Column16,
 		arg.Column17,
+		arg.Column18,
+		arg.Column19,
 		arg.GdprDeclaredAt,
 		arg.GdprDeclarationDate,
 		arg.RegistrationDate,
@@ -230,7 +340,7 @@ func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsert
 		arg.EmergencyCollectionReviewed,
 		arg.RoutineCareReviewed,
 	)
-	var i ChildProfile
+	var i ChildProfileInsertRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -241,8 +351,10 @@ func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsert
 		&i.EthnicOrigin,
 		&i.FirstLanguage,
 		&i.OtherLanguages,
-		&i.HomeAddress,
-		&i.HomePostcode,
+		&i.AddressLine1,
+		&i.AddressLine2,
+		&i.AddressCity,
+		&i.AddressPostcode,
 		&i.HomeTelephone,
 		&i.DisabilityStatus,
 		&i.DisabilityNotes,
@@ -272,29 +384,31 @@ UPDATE child_profiles SET
     ethnic_origin = NULLIF($7, ''),
     first_language = NULLIF($8, ''),
     other_languages = NULLIF($9, ''),
-    home_address = $10,
-    home_postcode = NULLIF($11, ''),
-    home_telephone = NULLIF($12, ''),
-    disability_status = $13,
-    disability_notes = NULLIF($14, ''),
-    access_requirements = NULLIF($15, ''),
-    routine_care_notes = NULLIF($16, ''),
-    gdpr_declared_by_name = NULLIF($17, ''),
-    gdpr_declared_at = $18,
-    gdpr_declaration_date = $19,
-    registration_date = $20,
-    demographics_home_reviewed = $21,
-    medical_dietary_reviewed = $22,
-    health_contacts_reviewed = $23,
-    social_development_reviewed = $24,
-    parent_responsibility_reviewed = $25,
-    emergency_collection_reviewed = $26,
-    routine_care_reviewed = $27,
+    address_line1 = NULLIF($10, ''),
+    address_line2 = NULLIF($11, ''),
+    address_city = NULLIF($12, ''),
+    address_postcode = NULLIF($13, ''),
+    home_telephone = NULLIF($14, ''),
+    disability_status = $15,
+    disability_notes = NULLIF($16, ''),
+    access_requirements = NULLIF($17, ''),
+    routine_care_notes = NULLIF($18, ''),
+    gdpr_declared_by_name = NULLIF($19, ''),
+    gdpr_declared_at = $20,
+    gdpr_declaration_date = $21,
+    registration_date = $22,
+    demographics_home_reviewed = $23,
+    medical_dietary_reviewed = $24,
+    health_contacts_reviewed = $25,
+    social_development_reviewed = $26,
+    parent_responsibility_reviewed = $27,
+    emergency_collection_reviewed = $28,
+    routine_care_reviewed = $29,
     updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND child_id = $3 AND id = $4
 RETURNING id, tenant_id, branch_id, child_id,
           sex, religion, ethnic_origin, first_language, other_languages,
-          home_address, home_postcode, home_telephone,
+          address_line1, address_line2, address_city, address_postcode, home_telephone,
           disability_status, disability_notes, access_requirements,
           routine_care_notes,
           gdpr_declared_by_name, gdpr_declared_at, gdpr_declaration_date,
@@ -316,14 +430,16 @@ type ChildProfileUpdateParams struct {
 	Column7                      interface{}
 	Column8                      interface{}
 	Column9                      interface{}
-	HomeAddress                  []byte
+	Column10                     interface{}
 	Column11                     interface{}
 	Column12                     interface{}
-	DisabilityStatus             string
+	Column13                     interface{}
 	Column14                     interface{}
-	Column15                     interface{}
+	DisabilityStatus             string
 	Column16                     interface{}
 	Column17                     interface{}
+	Column18                     interface{}
+	Column19                     interface{}
 	GdprDeclaredAt               pgtype.Timestamptz
 	GdprDeclarationDate          pgtype.Date
 	RegistrationDate             pgtype.Date
@@ -336,7 +452,41 @@ type ChildProfileUpdateParams struct {
 	RoutineCareReviewed          bool
 }
 
-func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdateParams) (ChildProfile, error) {
+type ChildProfileUpdateRow struct {
+	ID                           pgtype.UUID
+	TenantID                     pgtype.UUID
+	BranchID                     pgtype.UUID
+	ChildID                      pgtype.UUID
+	Sex                          pgtype.Text
+	Religion                     pgtype.Text
+	EthnicOrigin                 pgtype.Text
+	FirstLanguage                pgtype.Text
+	OtherLanguages               pgtype.Text
+	AddressLine1                 pgtype.Text
+	AddressLine2                 pgtype.Text
+	AddressCity                  pgtype.Text
+	AddressPostcode              pgtype.Text
+	HomeTelephone                pgtype.Text
+	DisabilityStatus             string
+	DisabilityNotes              pgtype.Text
+	AccessRequirements           pgtype.Text
+	RoutineCareNotes             pgtype.Text
+	GdprDeclaredByName           pgtype.Text
+	GdprDeclaredAt               pgtype.Timestamptz
+	GdprDeclarationDate          pgtype.Date
+	RegistrationDate             pgtype.Date
+	DemographicsHomeReviewed     bool
+	MedicalDietaryReviewed       bool
+	HealthContactsReviewed       bool
+	SocialDevelopmentReviewed    bool
+	ParentResponsibilityReviewed bool
+	EmergencyCollectionReviewed  bool
+	RoutineCareReviewed          bool
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdateParams) (ChildProfileUpdateRow, error) {
 	row := q.db.QueryRow(ctx, childProfileUpdate,
 		arg.TenantID,
 		arg.BranchID,
@@ -347,14 +497,16 @@ func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdate
 		arg.Column7,
 		arg.Column8,
 		arg.Column9,
-		arg.HomeAddress,
+		arg.Column10,
 		arg.Column11,
 		arg.Column12,
-		arg.DisabilityStatus,
+		arg.Column13,
 		arg.Column14,
-		arg.Column15,
+		arg.DisabilityStatus,
 		arg.Column16,
 		arg.Column17,
+		arg.Column18,
+		arg.Column19,
 		arg.GdprDeclaredAt,
 		arg.GdprDeclarationDate,
 		arg.RegistrationDate,
@@ -366,7 +518,7 @@ func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdate
 		arg.EmergencyCollectionReviewed,
 		arg.RoutineCareReviewed,
 	)
-	var i ChildProfile
+	var i ChildProfileUpdateRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -377,8 +529,10 @@ func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdate
 		&i.EthnicOrigin,
 		&i.FirstLanguage,
 		&i.OtherLanguages,
-		&i.HomeAddress,
-		&i.HomePostcode,
+		&i.AddressLine1,
+		&i.AddressLine2,
+		&i.AddressCity,
+		&i.AddressPostcode,
 		&i.HomeTelephone,
 		&i.DisabilityStatus,
 		&i.DisabilityNotes,

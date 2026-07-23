@@ -30,7 +30,10 @@ func buildChildProfileFromInput(tenantID, branchID, childID uuid.UUID, in *Child
 		EthnicOrigin:                 in.EthnicOrigin,
 		FirstLanguage:                in.FirstLanguage,
 		OtherLanguages:               in.OtherLanguages,
-		HomePostcode:                 in.HomePostcode,
+		AddressLine1:                 in.AddressLine1,
+		AddressLine2:                 in.AddressLine2,
+		AddressCity:                  in.AddressCity,
+		AddressPostcode:              in.AddressPostcode,
 		HomeTelephone:                in.HomeTelephone,
 		DisabilityStatus:             domain.YesNoUnknown(in.DisabilityStatus),
 		DisabilityNotes:              in.DisabilityNotes,
@@ -44,11 +47,6 @@ func buildChildProfileFromInput(tenantID, branchID, childID uuid.UUID, in *Child
 		ParentResponsibilityReviewed: in.ParentResponsibilityReviewed,
 		EmergencyCollectionReviewed:  in.EmergencyCollectionReviewed,
 		RoutineCareReviewed:          in.RoutineCareReviewed,
-	}
-	if in.HomeAddress != nil {
-		p.HomeAddress = in.HomeAddress
-	} else {
-		p.HomeAddress = map[string]any{}
 	}
 	if s := trimEmptyToNil(in.GDPRDeclaredAt); s != nil {
 		if t, err := time.Parse(time.RFC3339, *s); err == nil {

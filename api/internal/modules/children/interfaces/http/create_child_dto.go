@@ -30,29 +30,31 @@ type childIdentityPayload struct {
 }
 
 type childProfilePayload struct {
-	Sex                          *string        `json:"sex"`
-	Religion                     *string        `json:"religion"`
-	EthnicOrigin                 *string        `json:"ethnic_origin"`
-	FirstLanguage                *string        `json:"first_language"`
-	OtherLanguages               *string        `json:"other_languages"`
-	HomeAddress                  map[string]any `json:"home_address"`
-	HomePostcode                 *string        `json:"home_postcode"`
-	HomeTelephone                *string        `json:"home_telephone"`
-	DisabilityStatus             string         `json:"disability_status"`
-	DisabilityNotes              *string        `json:"disability_notes"`
-	AccessRequirements           *string        `json:"access_requirements"`
-	RoutineCareNotes             *string        `json:"routine_care_notes"`
-	GDPRDeclaredByName           *string        `json:"gdpr_declared_by_name"`
-	GDPRDeclaredAt               *string        `json:"gdpr_declared_at"`
-	GDPRDeclarationDate          *string        `json:"gdpr_declaration_date"`
-	RegistrationDate             *string        `json:"registration_date"`
-	DemographicsHomeReviewed     bool           `json:"demographics_home_reviewed"`
-	MedicalDietaryReviewed       bool           `json:"medical_dietary_reviewed"`
-	HealthContactsReviewed       bool           `json:"health_contacts_reviewed"`
-	SocialDevelopmentReviewed    bool           `json:"social_development_reviewed"`
-	ParentResponsibilityReviewed bool           `json:"parent_responsibility_reviewed"`
-	EmergencyCollectionReviewed  bool           `json:"emergency_collection_reviewed"`
-	RoutineCareReviewed          bool           `json:"routine_care_reviewed"`
+	Sex                          *string `json:"sex"`
+	Religion                     *string `json:"religion"`
+	EthnicOrigin                 *string `json:"ethnic_origin"`
+	FirstLanguage                *string `json:"first_language"`
+	OtherLanguages               *string `json:"other_languages"`
+	AddressLine1                 *string `json:"address_line1"`
+	AddressLine2                 *string `json:"address_line2"`
+	AddressCity                  *string `json:"address_city"`
+	AddressPostcode              *string `json:"address_postcode"`
+	HomeTelephone                *string `json:"home_telephone"`
+	DisabilityStatus             string  `json:"disability_status"`
+	DisabilityNotes              *string `json:"disability_notes"`
+	AccessRequirements           *string `json:"access_requirements"`
+	RoutineCareNotes             *string `json:"routine_care_notes"`
+	GDPRDeclaredByName           *string `json:"gdpr_declared_by_name"`
+	GDPRDeclaredAt               *string `json:"gdpr_declared_at"`
+	GDPRDeclarationDate          *string `json:"gdpr_declaration_date"`
+	RegistrationDate             *string `json:"registration_date"`
+	DemographicsHomeReviewed     bool    `json:"demographics_home_reviewed"`
+	MedicalDietaryReviewed       bool    `json:"medical_dietary_reviewed"`
+	HealthContactsReviewed       bool    `json:"health_contacts_reviewed"`
+	SocialDevelopmentReviewed    bool    `json:"social_development_reviewed"`
+	ParentResponsibilityReviewed bool    `json:"parent_responsibility_reviewed"`
+	EmergencyCollectionReviewed  bool    `json:"emergency_collection_reviewed"`
+	RoutineCareReviewed          bool    `json:"routine_care_reviewed"`
 }
 
 type childHealthPayload struct {
@@ -214,7 +216,9 @@ func mapChildProfilePayloadToInput(p *childProfilePayload) *application.ChildPro
 	return &application.ChildProfileInput{
 		Sex: p.Sex, Religion: p.Religion, EthnicOrigin: p.EthnicOrigin,
 		FirstLanguage: p.FirstLanguage, OtherLanguages: p.OtherLanguages,
-		HomeAddress: p.HomeAddress, HomePostcode: p.HomePostcode, HomeTelephone: p.HomeTelephone,
+		AddressLine1: p.AddressLine1, AddressLine2: p.AddressLine2,
+		AddressCity: p.AddressCity, AddressPostcode: p.AddressPostcode,
+		HomeTelephone:    p.HomeTelephone,
 		DisabilityStatus: p.DisabilityStatus, DisabilityNotes: p.DisabilityNotes, AccessRequirements: p.AccessRequirements,
 		RoutineCareNotes:   p.RoutineCareNotes,
 		GDPRDeclaredByName: p.GDPRDeclaredByName, GDPRDeclaredAt: p.GDPRDeclaredAt, GDPRDeclarationDate: p.GDPRDeclarationDate,
