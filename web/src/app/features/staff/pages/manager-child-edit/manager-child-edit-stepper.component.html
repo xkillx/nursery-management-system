@@ -1571,405 +1571,112 @@
               </div>
             </div>
 
-            <div class="space-y-8 p-5 md:p-6">              <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-parent-carer-heading">
+            <div class="space-y-8 p-5 md:p-6">              <!-- Parent/Guardian Selector -->
+              <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-parent-heading">
                 <div class="flex items-center gap-3 border-b border-gray-200/60 pb-4 dark:border-gray-800/50">
                   <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
                     <ng-icon name="heroUserGroup" size="18" aria-hidden="true" />
                   </div>
                   <div>
-                    <h4 id="contacts-parent-carer-heading" class="text-sm font-bold text-gray-900 dark:text-white">Primary Parent/Carer Details</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Primary guardian details and contact coordinates.</p>
+                    <h4 id="contacts-parent-heading" class="text-sm font-bold text-gray-900 dark:text-white">Parent / Guardian</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Select an existing parent or create a new one.</p>
                   </div>
                 </div>
 
-                @if (parentCarersDraft[0]; as parent) {
-                  <div class="space-y-6">
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <app-form-field
-                        label="Primary parent/carer full name"
-                        labelFor="primary-full-name"
-                        [required]="true"
-                        errorId="primary-full-name-error"
-                        [error]="step3VisibleError('primary_full_name')"
-                      >
-                        <app-input-field
-                          id="primary-full-name"
-                          name="primary_full_name"
-                          type="text"
-                          [(ngModel)]="parent.fullName"
-                          (blurred)="markStep3Touched('primary_full_name')"
-                          [error]="shouldShowStep3Error('primary_full_name')"
-                          [describedBy]="shouldShowStep3Error('primary_full_name') ? 'primary-full-name-error' : undefined"
-                          autocomplete="name"
-                          placeholder="e.g. Sarah Johnson"
-                        />
-                      </app-form-field>
-                      <app-form-field
-                        label="Relationship to child"
-                        labelFor="primary-relationship"
-                        [required]="true"
-                        errorId="primary-relationship-error"
-                        [error]="step3VisibleError('primary_relationship')"
-                      >
-                        <app-select
-                          id="primary-relationship"
-                          name="primary_relationship"
-                          [(ngModel)]="parent.relationshipToChild"
-                          [options]="relationshipSelectOptions"
-                          placeholder="Select relationship"
-                          [placeholderDisabled]="false"
-                        />
-                      </app-form-field>
-                      <app-form-field
-                        label="Contact number"
-                        labelFor="primary-telephone"
-                        [required]="true"
-                        errorId="primary-telephone-error"
-                        [error]="step3VisibleError('primary_telephone')"
-                      >
-                        <app-input-field
-                          id="primary-telephone"
-                          name="primary_telephone"
-                          type="tel"
-                          [(ngModel)]="parent.telephone"
-                          (blurred)="markStep3Touched('primary_telephone')"
-                          [error]="shouldShowStep3Error('primary_telephone')"
-                          [describedBy]="shouldShowStep3Error('primary_telephone') ? 'primary-telephone-error' : undefined"
-                          autocomplete="tel"
-                          placeholder="+44 7000 000000"
-                        />
-                      </app-form-field>
-                      <app-form-field
-                        label="Email address"
-                        labelFor="primary-email"
-                        [required]="true"
-                        errorId="primary-email-error"
-                        [error]="step3VisibleError('primary_email')"
-                      >
-                        <app-input-field
-                          id="primary-email"
-                          name="primary_email"
-                          type="email"
-                          [(ngModel)]="parent.email"
-                          (blurred)="markStep3Touched('primary_email')"
-                          [error]="shouldShowStep3Error('primary_email')"
-                          [describedBy]="shouldShowStep3Error('primary_email') ? 'primary-email-error' : undefined"
-                          autocomplete="email"
-                          placeholder="sarah.j@example.com"
-                        />
-                      </app-form-field>
-                      <app-form-field label="Work address" className="md:col-span-2">
-                        <app-input-field
-                          type="text"
-                          [(ngModel)]="step3.parent1_work_address"
-                          placeholder="Work address if applicable"
-                        />
-                      </app-form-field>
-                      <app-form-field
-                        label="Street address"
-                        labelFor="parent1-address-street"
-                        [required]="true"
-                        errorId="parent1-address-street-error"
-                        [error]="step3VisibleError('parent1_address_street')"
-                        className="md:col-span-2"
-                      >
-                        <app-input-field
-                          id="parent1-address-street"
-                          name="parent1_address_street"
-                          type="text"
-                          [(ngModel)]="step3.parent1_address_street"
-                          (blurred)="markStep3Touched('parent1_address_street')"
-                          [error]="shouldShowStep3Error('parent1_address_street')"
-                          [describedBy]="shouldShowStep3Error('parent1_address_street') ? 'parent1-address-street-error' : undefined"
-                          autocomplete="street-address"
-                          placeholder="e.g. 123 High Street"
-                        />
-                      </app-form-field>
-                      <div class="grid grid-cols-1 gap-6 md:grid-cols-3 md:col-span-2">
-                        <app-form-field label="Apartment/floor (optional)" labelFor="parent1-address-line2">
-                          <app-input-field
-                            id="parent1-address-line2"
-                            name="parent1_address_line2"
-                            type="text"
-                            [(ngModel)]="step3.parent1_address_line2"
-                            placeholder="e.g. Flat 4B"
-                          />
-                        </app-form-field>
-                        <app-form-field
-                          label="City"
-                          labelFor="parent1-address-city"
-                          [required]="true"
-                          errorId="parent1-address-city-error"
-                          [error]="step3VisibleError('parent1_address_city')"
-                        >
-                          <app-input-field
-                            id="parent1-address-city"
-                            name="parent1_address_city"
-                            type="text"
-                            [(ngModel)]="step3.parent1_address_city"
-                            (blurred)="markStep3Touched('parent1_address_city')"
-                            [error]="shouldShowStep3Error('parent1_address_city')"
-                            [describedBy]="shouldShowStep3Error('parent1_address_city') ? 'parent1-address-city-error' : undefined"
-                            autocomplete="address-level2"
-                            placeholder="e.g. London"
-                          />
-                        </app-form-field>
-                        <app-form-field
-                          label="Postcode"
-                          labelFor="parent1-address-postcode"
-                          [required]="true"
-                          errorId="parent1-address-postcode-error"
-                          [error]="step3VisibleError('parent1_address_postcode')"
-                        >
-                          <app-input-field
-                            id="parent1-address-postcode"
-                            name="parent1_address_postcode"
-                            type="text"
-                            [(ngModel)]="step3.parent1_address_postcode"
-                            (blurred)="markStep3Touched('parent1_address_postcode')"
-                            [error]="shouldShowStep3Error('parent1_address_postcode')"
-                            [describedBy]="shouldShowStep3Error('parent1_address_postcode') ? 'parent1-address-postcode-error' : undefined"
-                            autocomplete="postal-code"
-                            className="uppercase"
-                            placeholder="SW1A 1AA"
-                          />
-                        </app-form-field>
+                <div class="space-y-4">
+                  <app-form-field
+                    label="Select parent/guardian"
+                    labelFor="parent-selector"
+                    [required]="true"
+                    errorId="parent-selector-error"
+                    [error]="step3VisibleError('selected_parent_id')"
+                  >
+                    <app-select
+                      id="parent-selector"
+                      name="selected_parent_id"
+                      [ngModel]="selectedParentId"
+                      (ngModelChange)="onParentSelected($event)"
+                      [options]="availableParents.map(p => ({ value: p.id, label: p.first_name + (p.last_name ? ' ' + p.last_name : '') + (p.email ? ' (' + p.email + ')' : '') }))"
+                      placeholder="Choose a parent/guardian"
+                      [placeholderDisabled]="true"
+                    />
+                  </app-form-field>
+
+                  @if (selectedParentRecord; as parent) {
+                    <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-850 dark:bg-gray-900/40 space-y-3 animate-fade-in">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center border border-brand-100 shrink-0">
+                          {{ parent.first_name[0] }}{{ parent.last_name ? parent.last_name[0] : '' }}
+                        </div>
+                        <div>
+                          <div class="font-bold text-gray-900 text-sm">{{ parent.first_name }} {{ parent.last_name }}</div>
+                          <div class="text-xs text-gray-500">{{ parent.relationship_to_child || 'Guardian' }}</div>
+                        </div>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-gray-50/40 p-3 rounded-xl border border-gray-100">
+                        <div>
+                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Phone</span>
+                          <span class="font-semibold text-gray-800">{{ parent.phone || 'Not provided' }}</span>
+                        </div>
+                        <div>
+                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email</span>
+                          <span class="font-semibold text-gray-800 truncate block">{{ parent.email || 'Not provided' }}</span>
+                        </div>
                       </div>
                     </div>
-                    
-                    <fieldset
-                      class="mt-4"
-                      [attr.data-focus-target]="'parent1-responsibility-group'"
-                      role="radiogroup"
-                      [attr.aria-invalid]="shouldShowStep3Error('parent1_has_responsibility')"
-                      [attr.aria-describedby]="shouldShowStep3Error('parent1_has_responsibility') ? 'parent1-responsibility-error' : null"
-                    >
-                      <legend class="text-sm font-semibold leading-6 text-gray-800 dark:text-white/90">
-                        Does the primary parent/carer hold parental responsibility?
-                        <span class="text-error-500" aria-hidden="true"> *</span>
-                      </legend>
+                  }
 
-                      <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <label
-                          for="parent1-responsibility-yes"
-                          class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 focus-within:ring-3 focus-within:ring-brand-50/15"
-                          [class.border-brand-500]="step3.parent1_has_responsibility === true"
-                          [class.bg-brand-50/15]="step3.parent1_has_responsibility === true"
-                          [class.text-brand-700]="step3.parent1_has_responsibility === true"
-                          [class.dark:border-brand-400]="step3.parent1_has_responsibility === true"
-                          [class.dark:bg-brand-500/10]="step3.parent1_has_responsibility === true"
-                          [class.dark:text-brand-300]="step3.parent1_has_responsibility === true"
-                          [class.border-gray-200]="step3.parent1_has_responsibility !== true"
-                          [class.bg-white]="step3.parent1_has_responsibility !== true"
-                          [class.text-gray-655]="step3.parent1_has_responsibility !== true"
-                          [class.dark:border-gray-800]="step3.parent1_has_responsibility !== true"
-                          [class.dark:bg-gray-900/60]="step3.parent1_has_responsibility !== true"
-                          [class.dark:text-gray-400]="step3.parent1_has_responsibility !== true"
-                        >
-                          <input
-                            id="parent1-responsibility-yes"
-                            type="radio"
-                            name="parent1_has_responsibility"
-                            value="yes"
-                            class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
-                            [checked]="step3.parent1_has_responsibility === true"
-                            (change)="step3.parent1_has_responsibility = true; markStep3Touched('parent1_has_responsibility')"
-                          />
-                          <span>Yes</span>
-                        </label>
-
-                        <label
-                          for="parent1-responsibility-no"
-                          class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 focus-within:ring-3 focus-within:ring-brand-50/15"
-                          [class.border-brand-500]="step3.parent1_has_responsibility === false"
-                          [class.bg-brand-50/15]="step3.parent1_has_responsibility === false"
-                          [class.text-brand-700]="step3.parent1_has_responsibility === false"
-                          [class.dark:border-brand-400]="step3.parent1_has_responsibility === false"
-                          [class.dark:bg-brand-500/10]="step3.parent1_has_responsibility === false"
-                          [class.dark:text-brand-300]="step3.parent1_has_responsibility === false"
-                          [class.border-gray-200]="step3.parent1_has_responsibility !== false"
-                          [class.bg-white]="step3.parent1_has_responsibility !== false"
-                          [class.text-gray-655]="step3.parent1_has_responsibility !== false"
-                          [class.dark:border-gray-800]="step3.parent1_has_responsibility !== false"
-                          [class.dark:bg-gray-900/60]="step3.parent1_has_responsibility !== false"
-                          [class.dark:text-gray-400]="step3.parent1_has_responsibility !== false"
-                        >
-                          <input
-                            id="parent1-responsibility-no"
-                            type="radio"
-                            name="parent1_has_responsibility"
-                            value="no"
-                            class="h-5 w-5 border-gray-300 text-brand-500 focus:ring-3 focus:ring-brand-500/20"
-                            [checked]="step3.parent1_has_responsibility === false"
-                            (change)="step3.parent1_has_responsibility = false; markStep3Touched('parent1_has_responsibility')"
-                          />
-                          <span>No</span>
-                        </label>
-                      </div>
-
-                      @if (shouldShowStep3Error('parent1_has_responsibility')) {
-                        <p id="parent1-responsibility-error" class="mt-2 text-sm text-error-500" role="alert">{{ step3VisibleError('parent1_has_responsibility') }}</p>
-                      }
-                    </fieldset>
-                  </div>
-                }
-              </section>
-
-              <!-- 2. Second Parent/Carer details wrapper -->
-              <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-second-carer-heading">
-                <div class="flex items-center gap-3 border-b border-gray-200/60 pb-4 dark:border-gray-800/50">
-                  <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
-                    <ng-icon name="heroUser" size="18" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h4 id="contacts-second-carer-heading" class="text-sm font-bold text-gray-900 dark:text-white">Second Parent/Carer Details</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Optional additional contact details.</p>
-                  </div>
-                </div>
-
-                @if (step3.show_second_parent) {
-                  <div class="space-y-6">
-                    <div class="flex items-center justify-end">
-                      <app-button type="button" variant="ghost" size="xs" className="min-h-10 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10 animate-fade-in" (btnClick)="step3.show_second_parent = false">
-                        <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
-                        Discard Second Carer
+                  @if (!showInlineParentForm) {
+                    <div class="flex justify-center">
+                      <app-button type="button" variant="outline" size="sm" className="min-h-11 border-dashed border-gray-350 text-brand-600 hover:bg-brand-50/50 dark:border-gray-700 dark:text-brand-400 dark:hover:bg-brand-500/10" (btnClick)="toggleInlineParentForm()">
+                        <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
+                        Add new parent
                       </app-button>
                     </div>
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <app-form-field label="Full name">
-                        <app-input-field
-                          type="text"
-                          [(ngModel)]="step3.second_parent_name"
-                          placeholder="e.g. Mark Johnson"
-                        />
-                      </app-form-field>
-                      <app-form-field label="Relationship to child">
-                        <app-select
-                          [(ngModel)]="step3.second_parent_relationship"
-                          [options]="relationshipSelectOptions"
-                          placeholder="Select relationship"
-                          [placeholderDisabled]="false"
-                        />
-                      </app-form-field>
-                      <app-form-field label="Contact number">
-                        <app-input-field
-                          type="tel"
-                          [(ngModel)]="step3.second_parent_telephone"
-                          placeholder="+44 7000 000000"
-                        />
-                      </app-form-field>
-                      <app-form-field label="Email address">
-                        <app-input-field
-                          type="email"
-                          [(ngModel)]="step3.second_parent_email"
-                          placeholder="mark.j@example.com"
-                        />
-                      </app-form-field>
-                      <app-form-field label="Work address" className="md:col-span-2">
-                        <app-input-field
-                          type="text"
-                          [(ngModel)]="step3.second_parent_work_address"
-                          placeholder="Work address if applicable"
-                        />
-                      </app-form-field>
-                      <app-form-field
-                        label="Street address"
-                        labelFor="second-parent-address-street"
-                        [required]="true"
-                        errorId="second-parent-address-street-error"
-                        [error]="step3VisibleError('second_parent_address_street')"
-                        className="md:col-span-2"
-                      >
-                        <app-input-field
-                          id="second-parent-address-street"
-                          name="second_parent_address_street"
-                          type="text"
-                          [(ngModel)]="step3.second_parent_address_street"
-                          (blurred)="markStep3Touched('second_parent_address_street')"
-                          [error]="shouldShowStep3Error('second_parent_address_street')"
-                          [describedBy]="shouldShowStep3Error('second_parent_address_street') ? 'second-parent-address-street-error' : undefined"
-                          autocomplete="street-address"
-                          placeholder="e.g. 123 High Street"
-                        />
-                      </app-form-field>
-                      <div class="grid grid-cols-1 gap-6 md:grid-cols-3 md:col-span-2">
-                        <app-form-field label="Apartment/floor (optional)" labelFor="second-parent-address-line2">
-                          <app-input-field
-                            id="second-parent-address-line2"
-                            name="second_parent_address_line2"
-                            type="text"
-                            [(ngModel)]="step3.second_parent_address_line2"
-                            placeholder="e.g. Flat 4B"
+                  } @else {
+                    <div class="rounded-xl border border-brand-200 bg-brand-50/20 p-5 dark:border-brand-800/40 dark:bg-brand-500/5 space-y-4 animate-fade-in">
+                      <div class="flex items-center justify-between">
+                        <h5 class="text-sm font-bold text-gray-900 dark:text-white">New Parent Details</h5>
+                        <app-button type="button" variant="ghost" size="xs" className="text-gray-500" (btnClick)="toggleInlineParentForm()">
+                          <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
+                          Cancel
+                        </app-button>
+                      </div>
+                      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <app-form-field label="First name" [required]="true">
+                          <app-input-field type="text" [(ngModel)]="newParent.first_name" placeholder="e.g. Sarah" autocomplete="given-name" />
+                        </app-form-field>
+                        <app-form-field label="Last name">
+                          <app-input-field type="text" [(ngModel)]="newParent.last_name" placeholder="e.g. Johnson" autocomplete="family-name" />
+                        </app-form-field>
+                        <app-form-field label="Email">
+                          <app-input-field type="email" [(ngModel)]="newParent.email" placeholder="sarah@example.com" autocomplete="email" />
+                        </app-form-field>
+                        <app-form-field label="Phone">
+                          <app-input-field type="tel" [(ngModel)]="newParent.phone" placeholder="+44 7000 000000" autocomplete="tel" />
+                        </app-form-field>
+                        <app-form-field label="Relationship">
+                          <app-select
+                            [(ngModel)]="newParent.relationship_to_child"
+                            [options]="relationshipSelectOptions"
+                            placeholder="Select relationship"
+                            [placeholderDisabled]="false"
                           />
                         </app-form-field>
-                        <app-form-field
-                          label="City"
-                          labelFor="second-parent-address-city"
-                          [required]="true"
-                          errorId="second-parent-address-city-error"
-                          [error]="step3VisibleError('second_parent_address_city')"
-                        >
-                          <app-input-field
-                            id="second-parent-address-city"
-                            name="second_parent_address_city"
-                            type="text"
-                            [(ngModel)]="step3.second_parent_address_city"
-                            (blurred)="markStep3Touched('second_parent_address_city')"
-                            [error]="shouldShowStep3Error('second_parent_address_city')"
-                            [describedBy]="shouldShowStep3Error('second_parent_address_city') ? 'second-parent-address-city-error' : undefined"
-                            autocomplete="address-level2"
-                            placeholder="e.g. London"
-                          />
-                        </app-form-field>
-                        <app-form-field
-                          label="Postcode"
-                          labelFor="second-parent-address-postcode"
-                          [required]="true"
-                          errorId="second-parent-address-postcode-error"
-                          [error]="step3VisibleError('second_parent_address_postcode')"
-                        >
-                          <app-input-field
-                            id="second-parent-address-postcode"
-                            name="second_parent_address_postcode"
-                            type="text"
-                            [(ngModel)]="step3.second_parent_address_postcode"
-                            (blurred)="markStep3Touched('second_parent_address_postcode')"
-                            [error]="shouldShowStep3Error('second_parent_address_postcode')"
-                            [describedBy]="shouldShowStep3Error('second_parent_address_postcode') ? 'second-parent-address-postcode-error' : undefined"
-                            autocomplete="postal-code"
-                            className="uppercase"
-                            placeholder="SW1A 1AA"
-                          />
-                        </app-form-field>
+                      </div>
+                      <div class="flex justify-end">
+                        <app-button type="button" variant="primary" size="sm" [disabled]="isCreatingParent || !newParent.first_name.trim()" (btnClick)="createInlineParent()">
+                          @if (isCreatingParent) {
+                            Saving...
+                          } @else {
+                            <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+                            Create &amp; Select
+                          }
+                        </app-button>
                       </div>
                     </div>
-                    <fieldset class="mt-4">
-                      <legend class="mb-2 block text-sm font-semibold text-gray-750 dark:text-gray-300">
-                        Does the second parent/carer hold parental responsibility?
-                      </legend>
-                      <div class="grid gap-3 sm:grid-cols-2">
-                        @for (option of parentalResponsibilityOptions; track option.value) {
-                          <app-radio
-                            [id]="'second-parent-responsibility-' + option.value"
-                            name="second_parent_has_responsibility"
-                            [value]="option.value"
-                            [label]="option.label"
-                            [checked]="step3.second_parent_has_responsibility === (option.value === 'yes')"
-                            [className]="'min-h-12 rounded-xl border px-4 transition-all ' + (step3.second_parent_has_responsibility === (option.value === 'yes') ? 'border-brand-500 bg-brand-50/15 text-brand-700 dark:border-brand-400 dark:bg-brand-500/10 dark:text-brand-300 font-semibold' : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400')"
-                            (valueChange)="step3.second_parent_has_responsibility = $event === 'yes'"
-                          />
-                        }
-                      </div>
-                    </fieldset>
-                  </div>
-                } @else {
-                  <div class="flex justify-center py-4">
-                    <app-button type="button" variant="outline" size="sm" className="min-h-11 border-dashed border-gray-350 text-brand-600 hover:bg-brand-50/50 dark:border-gray-700 dark:text-brand-400 dark:hover:bg-brand-500/10" (btnClick)="step3.show_second_parent = true">
-                      <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
-                      Add second parent/carer details
-                    </app-button>
-                  </div>
-                }
+                  }
+                </div>
               </section>              <!-- 3. Emergency Contacts -->
               <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-emergency-heading" [attr.data-focus-target]="'emergency-contacts-group'">
                 <div class="flex items-center justify-between border-b border-gray-200/60 pb-4 dark:border-gray-800/50">

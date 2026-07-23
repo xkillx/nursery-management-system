@@ -95,6 +95,7 @@ describe('ManagerChildEditStepperComponent', () => {
       workAddress: null,
       hasParentalResponsibility: null,
     }];
+    component.selectedParentId = 'parent-1';
     component.step3.parent1_has_responsibility = true;
     component.step3.parent1_address_street = '123 High Street';
     component.step3.parent1_address_city = 'London';
@@ -378,27 +379,9 @@ describe('ManagerChildEditStepperComponent', () => {
   });
 
   describe('canSubmitLocally — contacts and collection', () => {
-    it('requires primary parent full name', () => {
+    it('requires parent selection', () => {
       fillRequiredForCompletion();
-      component.parentCarersDraft[0].fullName = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('requires primary parent relationship', () => {
-      fillRequiredForCompletion();
-      component.parentCarersDraft[0].relationshipToChild = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('requires primary parent phone', () => {
-      fillRequiredForCompletion();
-      component.parentCarersDraft[0].telephone = '';
-      expect(component.canSubmitLocally()).toBe(false);
-    });
-
-    it('requires parental responsibility answer', () => {
-      fillRequiredForCompletion();
-      component.step3.parent1_has_responsibility = null;
+      component.selectedParentId = '';
       expect(component.canSubmitLocally()).toBe(false);
     });
 
@@ -647,9 +630,9 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(toastErrorSpy).toHaveBeenCalled();
     });
 
-    it('saveContactsCollection blocks on missing primary phone', () => {
+    it('saveContactsCollection blocks on missing parent selection', () => {
       fillRequiredForCompletion();
-      component.parentCarersDraft[0].telephone = '';
+      component.selectedParentId = '';
       component.currentStep = 'contacts-collection';
 
       component.saveContactsCollection();

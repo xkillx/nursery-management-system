@@ -57,6 +57,8 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { StaffApiService } from '../../data/staff-api.service';
 import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
+import { ParentsApiService } from '../../data/parents-api.service';
+import { ParentRecord } from '../../models/parents.models';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ChildPhotoService } from '../../../../shared/services/child-photo.service';
@@ -287,6 +289,7 @@ interface RegistrationDraft {
   };
   consentsReviewed: Partial<Record<keyof ConsentWritePayload, boolean>>;
   parentCarersDraft: RegistrationContactEntry[];
+  selectedParentId: string;
   emergencyContactsDraft: RegistrationContactEntry[];
   emergencyAuthorisedFlags: boolean[];
   emergencyContactAddresses: string[];
@@ -361,6 +364,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   private readonly draftStorage = inject(RegistrationDraftStorage);
   private readonly toast = inject(ToastService);
   private readonly photoService = inject(ChildPhotoService);
+  private readonly parentsApi = inject(ParentsApiService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroy$ = new Subject<void>();
   private photoSub: Subscription | null = null;
@@ -753,6 +757,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   emergencyContactAddresses: string[] = [''];
   referralsDraft: ReferralEntry[] = [];
 
+  availableParents: ParentRecord[] = [];
+  selectedParentId = '';
+  showInlineParentForm = false;
+  isCreatingParent = false;
+  newParent = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    relationship_to_child: '',
+    has_parental_responsibility: false,
+  };
+
   readonly referralTypeOptions: Option[] = [
     { value: 'community_paediatrician', label: 'Community Paediatrician' },
     { value: 'speech_language_therapist', label: 'Speech and Language Therapist' },
@@ -786,6 +803,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     }
 
     this.loadRoomOptions();
+    this.loadAvailableParents();
     this.restoreDraftIfPresent();
     this.subscribeToDraftAutoSave();
   }
@@ -804,6 +822,17 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.roomOptions = [];
+      },
+    });
+  }
+
+  loadAvailableParents(): void {
+    this.parentsApi.list(1, 100, 'active').subscribe({
+      next: (res) => {
+        this.availableParents = res.parents;
+      },
+      error: () => {
+        this.availableParents = [];
       },
     });
   }
@@ -1002,21 +1031,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   protected step3FieldError(field: string): string | null {
-    const primary = this.parentCarersDraft[0];
-    if (field === 'primary_full_name' && !primary?.fullName?.trim()) {
-      return 'Enter the primary parent/carer full name.';
-    }
-    if (field === 'primary_relationship' && !primary?.relationshipToChild?.trim()) {
-      return 'Select the primary parent/carer relationship to the child.';
-    }
-    if (field === 'primary_telephone' && !primary?.telephone?.trim()) {
-      return 'Enter the primary parent/carer contact number.';
-    }
-    if (field === 'parent1_has_responsibility' && this.step3.parent1_has_responsibility === null) {
-      return 'Confirm whether the primary parent/carer holds parental responsibility.';
-    }
-    if (field === 'primary_email' && !primary?.email?.trim()) {
-      return 'Enter the primary parent/carer email address.';
+    if (field === 'selected_parent_id' && !this.selectedParentId) {
+      return 'Select a parent/guardian for this child.';
     }
     return null;
   }
@@ -1027,6 +1043,54 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
 
   protected step3VisibleError(field: string): string {
     return this.shouldShowStep3Error(field) ? this.step3FieldError(field) ?? '' : '';
+  }
+
+  toggleInlineParentForm(): void {
+    this.showInlineParentForm = !this.showInlineParentForm;
+    if (this.showInlineParentForm) {
+      this.newParent = {
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        relationship_to_child: '',
+        has_parental_responsibility: false,
+      };
+    }
+  }
+
+  createInlineParent(): void {
+    if (!this.newParent.first_name.trim()) return;
+    this.isCreatingParent = true;
+    this.parentsApi.create({
+      first_name: this.newParent.first_name.trim(),
+      last_name: this.newParent.last_name.trim() || undefined,
+      email: this.newParent.email.trim() || undefined,
+      phone: this.newParent.phone.trim() || undefined,
+      relationship_to_child: this.newParent.relationship_to_child || undefined,
+      has_parental_responsibility: this.newParent.has_parental_responsibility,
+    }).subscribe({
+      next: (parent) => {
+        this.availableParents = [parent, ...this.availableParents];
+        this.selectedParentId = parent.id;
+        this.showInlineParentForm = false;
+        this.isCreatingParent = false;
+        this.notifyDraftChanged();
+      },
+      error: () => {
+        this.isCreatingParent = false;
+        this.toast.error('Failed to create parent. Please try again.');
+      },
+    });
+  }
+
+  onParentSelected(parentId: string): void {
+    this.selectedParentId = parentId;
+    this.notifyDraftChanged();
+  }
+
+  get selectedParentRecord(): ParentRecord | undefined {
+    return this.availableParents.find(p => p.id === this.selectedParentId);
   }
 
   protected step2FieldError(field: string): string | null {
@@ -1296,44 +1360,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const parent1 = this.parentCarersDraft[0]
-      ? {
-          ...this.parentCarersDraft[0],
-          hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
-          address: this.buildStructuredAddress(
-            this.step3.parent1_address_street,
-            this.step3.parent1_address_line2,
-            this.step3.parent1_address_city,
-            this.step3.parent1_address_postcode,
-          ) ?? this.parentCarersDraft[0].address,
-          workAddress: this.step3.parent1_work_address
-            ? { text: this.step3.parent1_work_address.trim() }
-            : this.parentCarersDraft[0].workAddress,
-        }
-      : null;
-
-    const parentCarers: RegistrationContactEntry[] = [];
-    if (parent1) parentCarers.push(parent1);
-
-    if (this.step3.show_second_parent && this.step3.second_parent_name.trim()) {
-      parentCarers.push({
-        fullName: this.step3.second_parent_name.trim(),
-        relationshipToChild: this.step3.second_parent_relationship.trim() || null,
-        address: this.buildStructuredAddress(
-          this.step3.second_parent_address_street,
-          this.step3.second_parent_address_line2,
-          this.step3.second_parent_address_city,
-          this.step3.second_parent_address_postcode,
-        ) as unknown as Record<string, unknown>,
-        telephone: this.step3.second_parent_telephone.trim() || null,
-        email: this.step3.second_parent_email.trim() || null,
-        workAddress: this.step3.second_parent_work_address.trim()
-          ? { text: this.step3.second_parent_work_address.trim() } as unknown as Record<string, unknown>
-          : null,
-        hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
-      });
-    }
-
     const emergencyContacts = this.filterContacts(this.emergencyContactsDraft)
       .map((contact, index) => ({
         ...contact,
@@ -1352,11 +1378,19 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       }));
 
     this.staffApi.putChildContacts(this.childId!, {
-      parentCarers: parentCarers.map(c => this.toContactWire(c as ChildContact)),
       emergencyContacts: emergencyContacts.map(c => this.toContactWire(c as ChildContact)),
       authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
     }).subscribe({
-      next: () => this.saveStep3Collection(this.childId!, advance),
+      next: () => {
+        if (this.selectedParentId) {
+          this.parentsApi.linkChild(this.selectedParentId, this.childId!).subscribe({
+            next: () => this.saveStep3Collection(this.childId!, advance),
+            error: () => this.saveStep3Collection(this.childId!, advance),
+          });
+        } else {
+          this.saveStep3Collection(this.childId!, advance);
+        }
+      },
       error: (error) => {
         this.isSaving = false;
         const mapped = this.errorMapper.mapAndHandle(error);
@@ -1587,6 +1621,13 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
         this.draftRestoredAt = null;
         this.isDraftRestoredBannerVisible = false;
 
+        if (this.selectedParentId && result.id) {
+          this.parentsApi.linkChild(this.selectedParentId, result.id).subscribe({
+            next: () => { /* parent linked */ },
+            error: () => { /* non-fatal */ },
+          });
+        }
+
         if (this.selectedPhotoFile) {
           this.isUploadingPhoto = true;
           this.staffApi.uploadPhoto(result.id, this.selectedPhotoFile).subscribe({
@@ -1632,6 +1673,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step5: this.step5,
       consentsReviewed: this.consentsReviewed,
       parentCarersDraft: this.parentCarersDraft,
+      selectedParentId: this.selectedParentId,
       emergencyContactsDraft: this.emergencyContactsDraft,
       referralsDraft: this.referralsDraft,
       child: this.child,
@@ -1693,6 +1735,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       primary_relationship: 'primary-relationship',
       primary_telephone: 'primary-telephone',
       primary_email: 'primary-email',
+      selected_parent_id: 'parent-selector',
       parent1_address_street: 'parent1-address-street',
       parent1_address_city: 'parent1-address-city',
       parent1_address_postcode: 'parent1-address-postcode',
@@ -1994,44 +2037,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       this.step2.medication_storage && `Storage: ${this.step2.medication_storage}`,
     ].filter(Boolean).join('\n');
 
-    const parentCarers: ChildContact[] = [];
-    if (this.parentCarersDraft[0] && this.parentCarersDraft[0].fullName.trim()) {
-      parentCarers.push({
-        fullName: this.parentCarersDraft[0].fullName.trim(),
-        relationshipToChild: this.parentCarersDraft[0].relationshipToChild || null,
-        address: this.buildStructuredAddress(
-          this.step3.parent1_address_street,
-          this.step3.parent1_address_line2,
-          this.step3.parent1_address_city,
-          this.step3.parent1_address_postcode,
-        ),
-        telephone: this.parentCarersDraft[0].telephone || null,
-        email: this.parentCarersDraft[0].email || null,
-        workAddress: this.step3.parent1_work_address?.trim()
-          ? { text: this.step3.parent1_work_address.trim() }
-          : null,
-        hasParentalResponsibility: this.step3.parent1_has_responsibility || null,
-      });
-    }
-    if (this.step3.show_second_parent && this.step3.second_parent_name.trim()) {
-      parentCarers.push({
-        fullName: this.step3.second_parent_name.trim(),
-        relationshipToChild: this.step3.second_parent_relationship.trim() || null,
-        address: this.buildStructuredAddress(
-          this.step3.second_parent_address_street,
-          this.step3.second_parent_address_line2,
-          this.step3.second_parent_address_city,
-          this.step3.second_parent_address_postcode,
-        ),
-        telephone: this.step3.second_parent_telephone.trim() || null,
-        email: this.step3.second_parent_email.trim() || null,
-        workAddress: this.step3.second_parent_work_address?.trim()
-          ? { text: this.step3.second_parent_work_address.trim() }
-          : null,
-        hasParentalResponsibility: this.step3.second_parent_has_responsibility || null,
-      });
-    }
-
     const emergencyContacts: ChildContact[] = this.emergencyContactsDraft
       .filter(c => c.fullName.trim())
       .map((c, index) => ({
@@ -2179,7 +2184,6 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       health,
       safeguarding,
       contacts: {
-        parent_carers: parentCarers.map(c => this.toContactWire(c)),
         emergency_contacts: emergencyContacts.map(c => this.toContactWire(c)),
         authorised_collectors: authorisedCollectors.map(c => this.toContactWire(c)),
       },
@@ -2379,43 +2383,8 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   }
 
   private collectContactsIssues(issues: FinalCompletionIssue[]): void {
-    const primary = this.parentCarersDraft[0];
-    if (!primary?.fullName?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'primary_full_name', message: 'Record the primary parent/carer full name.' });
-    }
-    if (!primary?.relationshipToChild?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'primary_relationship', message: 'Record the primary parent/carer relationship to the child.' });
-    }
-    if (!primary?.telephone?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'primary_telephone', message: 'Record the primary parent/carer phone number.' });
-    }
-    if (this.step3.parent1_has_responsibility === null) {
-      issues.push({ stepKey: 'contacts-collection', field: 'parent1_has_responsibility', message: 'Confirm whether the primary parent/carer holds parental responsibility.' });
-    }
-    if (!primary?.email?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'primary_email', message: 'Record the primary parent/carer email address.' });
-    }
-
-    if (!this.step3.parent1_address_street?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_street', message: 'Enter the street address.' });
-    }
-    if (!this.step3.parent1_address_city?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_city', message: 'Enter the city.' });
-    }
-    if (!this.step3.parent1_address_postcode?.trim()) {
-      issues.push({ stepKey: 'contacts-collection', field: 'parent1_address_postcode', message: 'Enter the postcode.' });
-    }
-
-    if (this.step3.show_second_parent && this.step3.second_parent_name?.trim()) {
-      if (!this.step3.second_parent_address_street?.trim()) {
-        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_street', message: 'Enter the street address.' });
-      }
-      if (!this.step3.second_parent_address_city?.trim()) {
-        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_city', message: 'Enter the city.' });
-      }
-      if (!this.step3.second_parent_address_postcode?.trim()) {
-        issues.push({ stepKey: 'contacts-collection', field: 'second_parent_address_postcode', message: 'Enter the postcode.' });
-      }
+    if (!this.selectedParentId) {
+      issues.push({ stepKey: 'contacts-collection', field: 'selected_parent_id', message: 'Select a parent/guardian for this child.' });
     }
 
     const validEmergency = this.emergencyContactsDraft.filter(contact =>
@@ -2892,6 +2861,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       if (!this.emergencyAuthorisedFlags.some(Boolean) && this.emergencyAuthorisedFlags.length > 0) {
         this.emergencyAuthorisedFlags[0] = true;
       }
+
+      this.parentsApi.list(1, 100, 'active').subscribe({
+        next: (res) => {
+          this.availableParents = res.parents;
+        },
+      });
     }
 
     if (view.collection && !StaffApiService.isLoadError(view.collection)) {
@@ -3061,6 +3036,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       step5: { ...this.step5 },
       consentsReviewed: { ...this.consentsReviewed },
       parentCarersDraft: this.parentCarersDraft.map(contact => ({ ...contact })),
+      selectedParentId: this.selectedParentId,
       emergencyContactsDraft: this.emergencyContactsDraft.map(contact => ({ ...contact })),
       emergencyAuthorisedFlags: [...this.emergencyAuthorisedFlags],
       emergencyContactAddresses: [...this.emergencyContactAddresses],
@@ -3129,6 +3105,9 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     if (draft.consentsReviewed) this.consentsReviewed = { ...this.consentsReviewed, ...draft.consentsReviewed };
     if (draft.parentCarersDraft?.length) {
       this.parentCarersDraft = draft.parentCarersDraft.map(contact => ({ ...contact }));
+    }
+    if (draft.selectedParentId) {
+      this.selectedParentId = draft.selectedParentId;
     }
     if (draft.emergencyContactsDraft?.length) {
       this.emergencyContactsDraft = draft.emergencyContactsDraft.map(contact => ({ ...contact }));
@@ -3285,6 +3264,7 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       evidence_received: false,
     };
     this.parentCarersDraft = [this.emptyContact('Mother')];
+    this.selectedParentId = '';
     this.emergencyContactsDraft = [this.emptyContact('Grandparent')];
     this.emergencyAuthorisedFlags = [true];
     this.emergencyContactAddresses = [''];
