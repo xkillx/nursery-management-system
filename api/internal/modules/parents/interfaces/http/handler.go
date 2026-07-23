@@ -21,6 +21,7 @@ type Handler struct {
 	updateParent   *app.UpdateParentUseCase
 	getParent      *app.GetParentUseCase
 	listParents    *app.ListParentsUseCase
+	listByChild    *app.ListParentsByChildUseCase
 	softDelete     *app.SoftDeleteParentUseCase
 	linkChild      *app.LinkChildUseCase
 	unlinkChild    *app.UnlinkChildUseCase
@@ -34,6 +35,7 @@ func NewHandler(
 	updateParent *app.UpdateParentUseCase,
 	getParent *app.GetParentUseCase,
 	listParents *app.ListParentsUseCase,
+	listByChild *app.ListParentsByChildUseCase,
 	softDelete *app.SoftDeleteParentUseCase,
 	linkChild *app.LinkChildUseCase,
 	unlinkChild *app.UnlinkChildUseCase,
@@ -46,6 +48,7 @@ func NewHandler(
 		updateParent:   updateParent,
 		getParent:      getParent,
 		listParents:    listParents,
+		listByChild:    listByChild,
 		softDelete:     softDelete,
 		linkChild:      linkChild,
 		unlinkChild:    unlinkChild,
@@ -65,6 +68,7 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.DELETE("/parents/:parent_id/link-child/:child_id", h.unlinkChildHandler)
 	group.POST("/parents/:parent_id/invite", h.inviteToPortalHandler)
 	group.POST("/parents/:parent_id/revoke-access", h.revokeAccessHandler)
+	group.GET("/children/:child_id/parents", h.listParentsByChildHandler)
 }
 
 func (h *Handler) listParentsHandler(c *gin.Context) {
@@ -114,6 +118,32 @@ func (h *Handler) listParentsHandler(c *gin.Context) {
 		Page:       page,
 		PageSize:   pageSize,
 	})
+}
+
+func (h *Handler) listParentsByChildHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	childID, ok := parseUUIDParam(c, "child_id")
+	if !ok {
+		return
+	}
+
+	result, err := h.listByChild.Execute(c.Request.Context(), actor, childID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	resp := make([]parentForChildResponse, 0, len(result))
+	for _, r := range result {
+		resp = append(resp, toParentForChildResponse(r))
+	}
+
+	c.JSON(http.StatusOK, gin.H{"parents": resp})
 }
 
 func (h *Handler) createParentHandler(c *gin.Context) {

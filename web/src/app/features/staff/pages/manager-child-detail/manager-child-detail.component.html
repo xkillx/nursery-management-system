@@ -1046,71 +1046,115 @@
       <!-- ==================== CONTACTS TAB ==================== -->
       @if (activeTab === 'contacts') {
         <div class="col-span-12 lg:col-span-8 space-y-6">
-          <!-- Guardians List -->
+          <!-- Parents Section -->
           <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-6">
             <div class="flex justify-between items-center border-b border-gray-50 pb-4">
               <div>
                 <h3 class="text-md font-bold text-gray-900 flex items-center gap-2">
                   <ng-icon name="heroUserGroup" size="20" class="text-brand-500"></ng-icon>
-                  Parent/Carer Details
+                  Parents / Guardians
                 </h3>
-                <p class="text-xs text-gray-400 mt-0.5">Primary legal guardians registered for the child.</p>
+                <p class="text-xs text-gray-400 mt-0.5">Linked parent records from the parents module.</p>
               </div>
+              <button (click)="openLinkParentModal()"
+                class="px-3 py-2 text-xs font-bold text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors border border-brand-100 flex items-center gap-1.5">
+                <ng-icon name="heroPlus" size="14"></ng-icon>
+                Link Parent
+              </button>
             </div>
 
-            @if (parentCarers.length === 0) {
-              <app-empty-state message="No parent carers registered."></app-empty-state>
+            @if (linkedParents.length === 0) {
+              <app-empty-state message="No parents linked to this child."></app-empty-state>
             } @else {
-              <div class="space-y-6">
-                @for (carer of parentCarers; track carer.id; let idx = $index) {
-                  <div class="space-y-4">
+              <div class="space-y-4">
+                @for (parent of linkedParents; track parent.id; let idx = $index) {
+                  <div class="space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
-                        <!-- Initial avatar with soft background -->
                         <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center border border-brand-100 shrink-0">
-                          {{ carer.fullName ? carer.fullName[0] : 'C' }}
+                          {{ parent.first_name[0] }}{{ parent.last_name ? parent.last_name[0] : '' }}
                         </div>
                         <div>
-                          <div class="font-bold text-gray-900 text-sm">{{ carer.fullName }}</div>
+                          <div class="font-bold text-gray-900 text-sm">{{ parent.first_name }} {{ parent.last_name }}</div>
                           <div class="text-xs font-bold text-brand-600 uppercase tracking-wider mt-0.5 capitalize">
-                            {{ carer.relationshipToChild || 'Guardian' }}
+                            {{ parent.relationship_to_child || 'Guardian' }}
                           </div>
                         </div>
                       </div>
-                      
-                      <!-- Parental Responsibility Badge -->
-                      <span class="self-start sm:self-auto px-2.5 py-0.5 rounded-full text-[10px] font-bold border tracking-wide uppercase select-none"
-                        [ngClass]="carer.hasParentalResponsibility ? 'bg-success-50 text-success-700 border-success-100' : 'bg-gray-50 text-gray-500 border-gray-200'">
-                        Parental Responsibility: {{ carer.hasParentalResponsibility ? 'Yes' : 'No' }}
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <span class="self-start sm:self-auto px-2.5 py-0.5 rounded-full text-[10px] font-bold border tracking-wide uppercase select-none"
+                          [ngClass]="parent.has_parental_responsibility ? 'bg-success-50 text-success-700 border-success-100' : 'bg-gray-50 text-gray-500 border-gray-200'">
+                          PR: {{ parent.has_parental_responsibility ? 'Yes' : 'No' }}
+                        </span>
+                        <button (click)="unlinkParent(parent)"
+                          class="px-2 py-1 text-[10px] font-bold text-error-600 bg-error-50 rounded-md hover:bg-error-100 transition-colors border border-error-100">
+                          Unlink
+                        </button>
+                      </div>
                     </div>
-                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-gray-50/40 p-4 rounded-2xl border border-gray-100">
                       <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Contact Number</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Phone</span>
                         <div class="flex items-center gap-2">
-                          <span class="font-bold text-gray-800 font-mono">{{ carer.telephone || 'Not provided' }}</span>
-                          @if (carer.telephone) {
-                            <a [href]="'tel:' + carer.telephone" class="text-xs font-bold text-brand-600 hover:underline">Call</a>
+                          <span class="font-bold text-gray-800 font-mono">{{ parent.phone || 'Not provided' }}</span>
+                          @if (parent.phone) {
+                            <a [href]="'tel:' + parent.phone" class="text-xs font-bold text-brand-600 hover:underline">Call</a>
                           }
                         </div>
                       </div>
                       <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email Address</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email</span>
                         <div class="flex items-center gap-2">
-                          <span class="font-bold text-gray-800 truncate block max-w-[200px]">{{ carer.email || 'Not provided' }}</span>
-                          @if (carer.email) {
-                            <a [href]="'mailto:' + carer.email" class="text-xs font-bold text-brand-600 hover:underline">Email</a>
+                          <span class="font-bold text-gray-800 truncate block max-w-[200px]">{{ parent.email || 'Not provided' }}</span>
+                          @if (parent.email) {
+                            <a [href]="'mailto:' + parent.email" class="text-xs font-bold text-brand-600 hover:underline">Email</a>
                           }
                         </div>
                       </div>
                     </div>
                   </div>
-                  @if (idx < parentCarers.length - 1) { <div class="h-px bg-gray-100"></div> }
+                  @if (idx < linkedParents.length - 1) { <div class="h-px bg-gray-100"></div> }
                 }
               </div>
             }
           </div>
+
+          <!-- Link Parent Modal -->
+          @if (showLinkParentModal) {
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="closeLinkParentModal()" (keyup.escape)="closeLinkParentModal()" tabindex="0" role="dialog">
+              <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" (click)="$event.stopPropagation()" (keyup.escape)="closeLinkParentModal()" tabindex="0">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-bold text-gray-900">Link Parent</h3>
+                  <button (click)="closeLinkParentModal()" class="text-gray-400 hover:text-gray-600">
+                    <ng-icon name="heroXCircle" size="20"></ng-icon>
+                  </button>
+                </div>
+                <p class="text-sm text-gray-500">Select a parent to link to this child.</p>
+                @if (linkableParents.length === 0) {
+                  <p class="text-sm text-gray-400 italic">No available parents to link. All active parents are already linked.</p>
+                } @else {
+                  <select [(ngModel)]="selectedLinkParentId"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+                    <option value="">Select a parent...</option>
+                    @for (p of linkableParents; track p.id) {
+                      <option [value]="p.id">{{ p.first_name }} {{ p.last_name }} {{ p.email ? '(' + p.email + ')' : '' }}</option>
+                    }
+                  </select>
+                }
+                <div class="flex justify-end gap-3">
+                  <button (click)="closeLinkParentModal()"
+                    class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                  </button>
+                  <button (click)="linkParent()"
+                    [disabled]="!selectedLinkParentId || isLinkingParent"
+                    class="px-4 py-2 text-sm font-bold text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50">
+                    {{ isLinkingParent ? 'Linking...' : 'Link Parent' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
 
           <!-- Authorized Collectors -->
           <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-theme-sm space-y-4">

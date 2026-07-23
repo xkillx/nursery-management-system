@@ -278,6 +278,7 @@ var parentsSet = wire.NewSet(
 	parentsapp.NewUpdateParentUseCase,
 	parentsapp.NewGetParentUseCase,
 	parentsapp.NewListParentsUseCase,
+	parentsapp.NewListParentsByChildUseCase,
 	parentsapp.NewSoftDeleteParentUseCase,
 	parentsapp.NewLinkChildUseCase,
 	parentsapp.NewUnlinkChildUseCase,

@@ -37,8 +37,10 @@ import {
 import { StaffApiService } from '../../data/staff-api.service';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
+import { ParentsApiService } from '../../data/parents-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ChildRecord } from '../../models/children.models';
+import { ParentRecord } from '../../models/parents.models';
 import {
   ChildProfile,
   ChildFundingRecord,
@@ -113,6 +115,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   private readonly invoicesApi = inject(ManagerInvoicesApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
   private readonly auth = inject(AuthService);
+  private readonly parentsApi = inject(ParentsApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly photoService = inject(ChildPhotoService);
@@ -156,6 +159,13 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
   fundingDetail: FundingRecordDetail | null = null;
   isSavingFunding = false;
   fundingSaveMessage: string | null = null;
+
+  linkedParents: (ParentRecord & { link_id: string })[] = [];
+  isLoadingParents = false;
+  showLinkParentModal = false;
+  linkableParents: ParentRecord[] = [];
+  selectedLinkParentId = '';
+  isLinkingParent = false;
 
   get fundedAllowanceMinutes(): number {
     return this.fundingDetail?.fundedAllowanceMinutes ?? 0;
@@ -298,6 +308,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       roomAssignments: this.staffApi.listChildRoomAssignments(childId).pipe(catchError(() => of([]))),
       billingProfile: this.staffApi.getChildBillingProfile(childId).pipe(catchError(() => of(null))),
       invoices: this.invoicesApi.listInvoices({ childId, status: 'all', limit: 50, offset: 0 }).pipe(catchError(() => of({ items: [], total: 0 }))),
+      parents: this.parentsApi.listByChild(childId).pipe(catchError(() => of({ parents: [] }))),
     }).subscribe({
       next: (res) => {
         this.profile = res.profile;
@@ -312,6 +323,7 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
         this.roomAssignments = res.roomAssignments;
         this.billingProfile = res.billingProfile;
         this.invoices = res.invoices.items;
+        this.linkedParents = res.parents.parents;
 
         this.loadCurrentBooking();
 
@@ -469,5 +481,61 @@ export class ManagerChildDetailComponent implements OnInit, OnDestroy {
       const fallback = parent.querySelector('.photo-fallback') as HTMLElement;
       if (fallback) fallback.style.display = 'flex';
     }
+  }
+
+  openLinkParentModal(): void {
+    this.showLinkParentModal = true;
+    this.selectedLinkParentId = '';
+    this.parentsApi.list(1, 100, 'active').subscribe({
+      next: (res) => {
+        const linkedIds = new Set(this.linkedParents.map(p => p.id));
+        this.linkableParents = res.parents.filter(p => !linkedIds.has(p.id));
+      },
+      error: () => {
+        this.linkableParents = [];
+      },
+    });
+  }
+
+  closeLinkParentModal(): void {
+    this.showLinkParentModal = false;
+    this.selectedLinkParentId = '';
+  }
+
+  linkParent(): void {
+    if (!this.selectedLinkParentId) return;
+    this.isLinkingParent = true;
+    this.parentsApi.linkChild(this.selectedLinkParentId, this.childId).subscribe({
+      next: () => {
+        this.isLinkingParent = false;
+        this.showLinkParentModal = false;
+        this.loadLinkedParents();
+      },
+      error: () => {
+        this.isLinkingParent = false;
+        this.errorMessage = 'Failed to link parent. Please try again.';
+      },
+    });
+  }
+
+  unlinkParent(parent: ParentRecord & { link_id: string }): void {
+    if (!confirm(`Unlink ${parent.first_name} ${parent.last_name || ''} from this child?`)) return;
+    this.parentsApi.unlinkChild(parent.id, this.childId, 'manual', 'Unlinked by staff').subscribe({
+      next: () => {
+        this.linkedParents = this.linkedParents.filter(p => p.id !== parent.id);
+      },
+      error: () => {
+        this.errorMessage = 'Failed to unlink parent. Please try again.';
+      },
+    });
+  }
+
+  private loadLinkedParents(): void {
+    this.parentsApi.listByChild(this.childId).subscribe({
+      next: (res) => {
+        this.linkedParents = res.parents;
+      },
+      error: () => { /* handled gracefully */ },
+    });
   }
 }

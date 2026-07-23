@@ -109,4 +109,10 @@ export class ParentsApiService {
       {},
     );
   }
+
+  listByChild(childId: string): Observable<{ parents: (ParentRecord & { link_id: string })[] }> {
+    return this.http.get<{ parents: (ParentRecord & { link_id: string })[] }>(
+      apiUrl(`/children/${childId}/parents`),
+    );
+  }
 }

@@ -3,6 +3,7 @@ package httpparents
 import (
 	"time"
 
+	app "nursery-management-system/api/internal/modules/parents/application"
 	"nursery-management-system/api/internal/modules/parents/domain"
 )
 
@@ -90,4 +91,41 @@ func toParentChildLinkResponse(link domain.ParentChild) parentChildLinkResponse 
 		resp.EndedAt = &v
 	}
 	return resp
+}
+
+type parentForChildResponse struct {
+	ID                        string  `json:"id"`
+	FirstName                 string  `json:"first_name"`
+	LastName                  *string `json:"last_name,omitempty"`
+	Email                     *string `json:"email,omitempty"`
+	Phone                     *string `json:"phone,omitempty"`
+	AddressLine1              *string `json:"address_line1,omitempty"`
+	AddressLine2              *string `json:"address_line2,omitempty"`
+	AddressCity               *string `json:"address_city,omitempty"`
+	AddressPostcode           *string `json:"address_postcode,omitempty"`
+	RelationshipToChild       *string `json:"relationship_to_child,omitempty"`
+	HasParentalResponsibility bool    `json:"has_parental_responsibility"`
+	CanPickUp                 bool    `json:"can_pick_up"`
+	IsEmergencyContact        bool    `json:"is_emergency_contact"`
+	LinkID                    string  `json:"link_id"`
+}
+
+func toParentForChildResponse(r app.ParentForChild) parentForChildResponse {
+	p := r.Parent
+	return parentForChildResponse{
+		ID:                        p.ID.String(),
+		FirstName:                 p.FirstName,
+		LastName:                  p.LastName,
+		Email:                     p.Email,
+		Phone:                     p.Phone,
+		AddressLine1:              p.AddressLine1,
+		AddressLine2:              p.AddressLine2,
+		AddressCity:               p.AddressCity,
+		AddressPostcode:           p.AddressPostcode,
+		RelationshipToChild:       p.RelationshipToChild,
+		HasParentalResponsibility: p.HasParentalResponsibility,
+		CanPickUp:                 p.CanPickUp,
+		IsEmergencyContact:        p.IsEmergencyContact,
+		LinkID:                    r.LinkID.String(),
+	}
 }

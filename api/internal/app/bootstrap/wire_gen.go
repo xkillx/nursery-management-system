@@ -250,6 +250,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	updateParentUseCase := application6.NewUpdateParentUseCase(parentRepository, writer, transactionManager)
 	getParentUseCase := application6.NewGetParentUseCase(parentRepository)
 	listParentsUseCase := application6.NewListParentsUseCase(parentRepository)
+	listParentsByChildUseCase := application6.NewListParentsByChildUseCase(parentRepository)
 	softDeleteParentUseCase := application6.NewSoftDeleteParentUseCase(parentRepository, writer, transactionManager)
 	bootstrapParentsChildExistenceCheckerAdapter := provideParentsChildExistenceCheckerAdapter(childRepository)
 	linkChildUseCase := application6.NewLinkChildUseCase(parentRepository, writer, transactionManager, bootstrapParentsChildExistenceCheckerAdapter)
@@ -258,7 +259,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(sender, cfg)
 	inviteToPortalUseCase := application6.NewInviteToPortalUseCase(parentRepository, writer, transactionManager, bootstrapParentUserCreatorAdapter, bootstrapParentEmailSenderAdapter, string2)
 	revokePortalAccessUseCase := application6.NewRevokePortalAccessUseCase(parentRepository, writer, transactionManager)
-	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
+	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, listParentsByChildUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
 	attendanceRepository := postgres12.NewAttendanceRepository(pool)
 	bootstrapChildEnrollmentCheckerAdapter := provideChildEnrollmentCheckerAdapter(childRepository)
 	absenceRepository := postgres13.NewAbsenceRepository(pool)
@@ -650,6 +651,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	updateParentUseCase := application6.NewUpdateParentUseCase(parentRepository, writer, transactionManager)
 	getParentUseCase := application6.NewGetParentUseCase(parentRepository)
 	listParentsUseCase := application6.NewListParentsUseCase(parentRepository)
+	listParentsByChildUseCase := application6.NewListParentsByChildUseCase(parentRepository)
 	softDeleteParentUseCase := application6.NewSoftDeleteParentUseCase(parentRepository, writer, transactionManager)
 	bootstrapParentsChildExistenceCheckerAdapter := provideParentsChildExistenceCheckerAdapter(childRepository)
 	linkChildUseCase := application6.NewLinkChildUseCase(parentRepository, writer, transactionManager, bootstrapParentsChildExistenceCheckerAdapter)
@@ -658,7 +660,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(sender, cfg)
 	inviteToPortalUseCase := application6.NewInviteToPortalUseCase(parentRepository, writer, transactionManager, bootstrapParentUserCreatorAdapter, bootstrapParentEmailSenderAdapter, string2)
 	revokePortalAccessUseCase := application6.NewRevokePortalAccessUseCase(parentRepository, writer, transactionManager)
-	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
+	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, listParentsByChildUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
 	attendanceRepository := postgres12.NewAttendanceRepository(pool)
 	bootstrapChildEnrollmentCheckerAdapter := provideChildEnrollmentCheckerAdapter(childRepository)
 	absenceRepository := postgres13.NewAbsenceRepository(pool)
@@ -958,7 +960,7 @@ func provideParentsChildExistenceCheckerAdapter(
 	return &parentsChildExistenceCheckerAdapter{repo: childRepo}
 }
 
-var parentsSet = wire.NewSet(postgres11.NewParentRepository, wire.Bind(new(domain6.Repository), new(*postgres11.ParentRepository)), provideParentsChildExistenceCheckerAdapter, wire.Bind(new(domain6.ChildExistenceChecker), new(*parentsChildExistenceCheckerAdapter)), provideParentUserCreatorAdapter, wire.Bind(new(application6.UserCreator), new(*parentUserCreatorAdapter)), provideParentEmailSenderAdapter, wire.Bind(new(application6.EmailSender), new(*parentEmailSenderAdapter)), application6.NewCreateParentUseCase, application6.NewUpdateParentUseCase, application6.NewGetParentUseCase, application6.NewListParentsUseCase, application6.NewSoftDeleteParentUseCase, application6.NewLinkChildUseCase, application6.NewUnlinkChildUseCase, application6.NewInviteToPortalUseCase, application6.NewRevokePortalAccessUseCase, httpparents.NewHandler)
+var parentsSet = wire.NewSet(postgres11.NewParentRepository, wire.Bind(new(domain6.Repository), new(*postgres11.ParentRepository)), provideParentsChildExistenceCheckerAdapter, wire.Bind(new(domain6.ChildExistenceChecker), new(*parentsChildExistenceCheckerAdapter)), provideParentUserCreatorAdapter, wire.Bind(new(application6.UserCreator), new(*parentUserCreatorAdapter)), provideParentEmailSenderAdapter, wire.Bind(new(application6.EmailSender), new(*parentEmailSenderAdapter)), application6.NewCreateParentUseCase, application6.NewUpdateParentUseCase, application6.NewGetParentUseCase, application6.NewListParentsUseCase, application6.NewListParentsByChildUseCase, application6.NewSoftDeleteParentUseCase, application6.NewLinkChildUseCase, application6.NewUnlinkChildUseCase, application6.NewInviteToPortalUseCase, application6.NewRevokePortalAccessUseCase, httpparents.NewHandler)
 
 func provideParentChildLookupForAttendanceAdapter(
 	parentChildRepo *postgres10.ParentChildMappingRepository,
