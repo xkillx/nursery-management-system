@@ -11,7 +11,6 @@ import {
   heroChevronUp,
   heroUser,
 } from '@ng-icons/heroicons/outline';
-import { BadgeComponent } from '../badge/badge.component';
 import { ButtonComponent } from '../button/button.component';
 import { FormFieldComponent } from '../../form/form-field/form-field.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';

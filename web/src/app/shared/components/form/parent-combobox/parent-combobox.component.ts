@@ -15,7 +15,7 @@ import { BadgeComponent } from '../../ui/badge/badge.component';
     provideIcons({ heroMagnifyingGlass, heroPlus, heroXMark, heroCheck }),
   ],
   template: `
-    <div class="relative" (click)="$event.stopPropagation()">
+    <div class="relative">
       <div class="relative">
         <span class="pointer-events-none absolute left-4 inset-y-0 z-10 flex items-center text-gray-400">
           <ng-icon name="heroMagnifyingGlass" size="18" aria-hidden="true" />
@@ -55,6 +55,8 @@ import { BadgeComponent } from '../../ui/badge/badge.component';
           id="parent-combobox-listbox"
           class="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-md dark:border-gray-700 dark:bg-gray-900"
           role="listbox"
+          tabindex="-1"
+          (keydown)="onDropdownKeydown($event)"
         >
           @if (isSearching) {
             <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
@@ -126,7 +128,7 @@ export class ParentComboboxComponent implements OnDestroy {
   @ViewChild('searchInput', { static: false }) searchInput!: ElementRef<HTMLInputElement>;
 
   @Input() excludeIds: string[] = [];
-  @Input() branchId: string = '';
+  @Input() branchId = '';
   @Input() placeholder = 'Search for a parent...';
   @Input() disabled = false;
 
@@ -217,6 +219,13 @@ export class ParentComboboxComponent implements OnDestroy {
       this.createNewParent();
     } else if (this.showCreateOption) {
       this.createNewParent();
+    }
+  }
+
+  onDropdownKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.closeDropdown();
+      this.searchInput?.nativeElement.focus();
     }
   }
 
