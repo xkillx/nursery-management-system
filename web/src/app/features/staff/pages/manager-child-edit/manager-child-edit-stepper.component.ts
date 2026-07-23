@@ -1084,6 +1084,86 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
     });
   }
 
+  private autoCreateParentAndContinue(advance: boolean): void {
+    this.isCreatingParent = true;
+    this.parentsApi.create({
+      first_name: this.newParent.first_name.trim(),
+      last_name: this.newParent.last_name.trim() || undefined,
+      email: this.newParent.email.trim() || undefined,
+      phone: this.newParent.phone.trim() || undefined,
+      relationship_to_child: this.newParent.relationship_to_child || undefined,
+      has_parental_responsibility: this.newParent.has_parental_responsibility,
+    }).subscribe({
+      next: (parent) => {
+        this.availableParents = [parent, ...this.availableParents];
+        this.selectedParentId = parent.id;
+        this.showInlineParentForm = false;
+        this.isCreatingParent = false;
+        this.notifyDraftChanged();
+        this.proceedWithContactsSave(advance);
+      },
+      error: () => {
+        this.isCreatingParent = false;
+        this.toast.error('Failed to create parent. Please try again.');
+      },
+    });
+  }
+
+  private proceedWithContactsSave(advance: boolean): void {
+    if (this.isNewRegistration) {
+      if (advance) this.nextStep();
+      return;
+    }
+
+    this.isSaving = true;
+    this.errorMessage = null;
+
+    if (!this.loadedSections.has('contacts')) {
+      this.isSaving = false;
+      this.errorMessage = 'Contacts data unavailable — could not save. Please reload the page.';
+      return;
+    }
+
+    const emergencyContacts = this.filterContacts(this.emergencyContactsDraft)
+      .map((contact, index) => ({
+        ...contact,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() } as unknown as Record<string, unknown>
+          : contact.address,
+      }));
+    const authorisedCollectors = this.emergencyContactsDraft
+      .filter((contact, index) => this.emergencyAuthorisedFlags[index] && this.contactHasValue(contact))
+      .map((contact, index) => ({
+        ...contact,
+        hasParentalResponsibility: null,
+        address: this.emergencyContactAddresses[index]?.trim()
+          ? { text: this.emergencyContactAddresses[index].trim() } as unknown as Record<string, unknown>
+          : contact.address,
+      }));
+
+    this.staffApi.putChildContacts(this.childId!, {
+      emergencyContacts: emergencyContacts.map(c => this.toContactWire(c as ChildContact)),
+      authorisedCollectors: authorisedCollectors.map(c => this.toContactWire(c as ChildContact)),
+    }).subscribe({
+      next: () => {
+        if (this.selectedParentId) {
+          this.parentsApi.linkChild(this.selectedParentId, this.childId!).subscribe({
+            next: () => this.saveStep3Collection(this.childId!, advance),
+            error: () => this.saveStep3Collection(this.childId!, advance),
+          });
+        } else {
+          this.saveStep3Collection(this.childId!, advance);
+        }
+      },
+      error: (error) => {
+        this.isSaving = false;
+        const mapped = this.errorMapper.mapAndHandle(error);
+        this.errorMessage = formatPresentedApiError(presentApiError(mapped, 'registration.intake'));
+        this.toast.error(this.errorMessage);
+      },
+    });
+  }
+
   onParentSelected(parentId: string): void {
     this.selectedParentId = parentId;
     this.notifyDraftChanged();
@@ -1341,6 +1421,12 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
       return;
     }
     this.step3Submitted = true;
+
+    if (!this.selectedParentId && this.showInlineParentForm && this.newParent.first_name.trim()) {
+      this.autoCreateParentAndContinue(advance);
+      return;
+    }
+
     const firstIssue = this.firstBlockingIssueForStep('contacts-collection');
     if (firstIssue) {
       this.handleValidationFailure(firstIssue);
