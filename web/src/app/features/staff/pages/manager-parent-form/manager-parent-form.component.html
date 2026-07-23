@@ -1,0 +1,270 @@
+<div class="space-y-6">
+  <!-- Back Button -->
+  <div class="flex items-center gap-3">
+    <a
+      routerLink="/manager/parents"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+    >
+      <ng-icon name="heroArrowLeft" size="14" aria-hidden="true" />
+      Back to Parents
+    </a>
+  </div>
+
+  <!-- Page Header -->
+  <div class="flex items-center gap-3">
+    <div class="p-2.5 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+      <ng-icon name="heroUser" size="22" />
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight font-outfit">
+        {{ pageTitle }}
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        @if (isEditMode) {
+          Update the parent's profile information.
+        } @else {
+          Enter the parent's details to create a new record.
+        }
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <app-alert [variant]="'error'" [message]="errorMessage" [dismissible]="true" />
+  }
+
+  <form (ngSubmit)="onSubmit()" #parentForm="ngForm" class="space-y-6">
+    <!-- Name Section -->
+    <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroUser" size="18" />
+        </div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Name</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-form-field label="First Name" [required]="true" [error]="isFirstNameInvalid ? 'First name is required.' : ''">
+          <app-input-field
+            type="text"
+            id="first_name"
+            name="first_name"
+            placeholder="e.g. Sarah"
+            [(ngModel)]="form.first_name"
+            [error]="isFirstNameInvalid"
+            autocomplete="given-name"
+          />
+        </app-form-field>
+
+        <app-form-field label="Last Name">
+          <app-input-field
+            type="text"
+            id="last_name"
+            name="last_name"
+            placeholder="e.g. Johnson"
+            [(ngModel)]="form.last_name"
+            autocomplete="family-name"
+          />
+        </app-form-field>
+      </div>
+    </section>
+
+    <!-- Contact Information Section -->
+    <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroEnvelope" size="18" />
+        </div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Contact Information</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-form-field label="Email Address" hint="Used for portal invitations.">
+          <app-input-field
+            type="email"
+            id="email"
+            name="email"
+            placeholder="e.g. sarah@example.com"
+            [(ngModel)]="form.email"
+            autocomplete="email"
+          />
+        </app-form-field>
+
+        <app-form-field label="Phone Number">
+          <app-input-field
+            type="tel"
+            id="phone"
+            name="phone"
+            placeholder="e.g. 07700 900123"
+            [(ngModel)]="form.phone"
+            autocomplete="tel"
+          />
+        </app-form-field>
+      </div>
+    </section>
+
+    <!-- Address Section -->
+    <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroMapPin" size="18" />
+        </div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Address</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-form-field label="Address Line 1" className="md:col-span-2">
+          <app-input-field
+            type="text"
+            id="address_line1"
+            name="address_line1"
+            placeholder="e.g. 123 High Street"
+            [(ngModel)]="form.address_line1"
+            autocomplete="address-line1"
+          />
+        </app-form-field>
+
+        <app-form-field label="Address Line 2" className="md:col-span-2">
+          <app-input-field
+            type="text"
+            id="address_line2"
+            name="address_line2"
+            placeholder="e.g. Flat 4"
+            [(ngModel)]="form.address_line2"
+            autocomplete="address-line2"
+          />
+        </app-form-field>
+
+        <app-form-field label="City">
+          <app-input-field
+            type="text"
+            id="address_city"
+            name="address_city"
+            placeholder="e.g. London"
+            [(ngModel)]="form.address_city"
+            autocomplete="address-level2"
+          />
+        </app-form-field>
+
+        <app-form-field label="Postcode">
+          <app-input-field
+            type="text"
+            id="address_postcode"
+            name="address_postcode"
+            placeholder="e.g. SW1A 1AA"
+            [(ngModel)]="form.address_postcode"
+            autocomplete="postal-code"
+          />
+        </app-form-field>
+      </div>
+    </section>
+
+    <!-- Permissions Section -->
+    <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroShieldCheck" size="18" />
+        </div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Permissions</h2>
+      </div>
+
+      <div class="space-y-5">
+        <div
+          class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/40 cursor-pointer select-none hover:border-brand-300 transition-colors dark:border-gray-800 dark:bg-gray-900/30 dark:hover:border-brand-600"
+          role="button"
+          tabindex="0"
+          (click)="form.has_parental_responsibility = !form.has_parental_responsibility"
+          (keydown.enter)="form.has_parental_responsibility = !form.has_parental_responsibility"
+          (keydown.space)="form.has_parental_responsibility = !form.has_parental_responsibility"
+        >
+          <div>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">Parental Responsibility</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Grants authority over key decisions for the child.</p>
+          </div>
+          <app-switch
+            name="has_parental_responsibility"
+            [(ngModel)]="form.has_parental_responsibility"
+            ariaLabel="Parental Responsibility"
+          />
+        </div>
+
+        <div
+          class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/40 cursor-pointer select-none hover:border-brand-300 transition-colors dark:border-gray-800 dark:bg-gray-900/30 dark:hover:border-brand-600"
+          role="button"
+          tabindex="0"
+          (click)="form.can_pick_up = !form.can_pick_up"
+          (keydown.enter)="form.can_pick_up = !form.can_pick_up"
+          (keydown.space)="form.can_pick_up = !form.can_pick_up"
+        >
+          <div>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">Can Pick Up Child</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Authorised to collect the child from the nursery.</p>
+          </div>
+          <app-switch
+            name="can_pick_up"
+            [(ngModel)]="form.can_pick_up"
+            ariaLabel="Can Pick Up Child"
+          />
+        </div>
+
+        <div
+          class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/40 cursor-pointer select-none hover:border-brand-300 transition-colors dark:border-gray-800 dark:bg-gray-900/30 dark:hover:border-brand-600"
+          role="button"
+          tabindex="0"
+          (click)="form.is_emergency_contact = !form.is_emergency_contact"
+          (keydown.enter)="form.is_emergency_contact = !form.is_emergency_contact"
+          (keydown.space)="form.is_emergency_contact = !form.is_emergency_contact"
+        >
+          <div>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">Emergency Contact</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Listed as a primary emergency contact for the child.</p>
+          </div>
+          <app-switch
+            name="is_emergency_contact"
+            [(ngModel)]="form.is_emergency_contact"
+            ariaLabel="Emergency Contact"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Notes Section -->
+    <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <ng-icon name="heroExclamationCircle" size="18" />
+        </div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Notes</h2>
+      </div>
+
+      <app-form-field label="Additional Notes" hint="Optional. Any relevant information about the parent.">
+        <app-text-area
+          id="notes"
+          name="notes"
+          placeholder="e.g. Works night shifts, prefers email contact."
+          [rows]="4"
+          [(ngModel)]="form.notes"
+        />
+      </app-form-field>
+    </section>
+
+    <!-- Submit -->
+    <div class="flex items-center justify-end gap-3">
+      <a
+        routerLink="/manager/parents"
+        class="inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3.5 text-sm font-medium ring-1 ring-inset ring-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:text-gray-300"
+      >
+        Cancel
+      </a>
+      <app-button
+        type="submit"
+        variant="primary"
+        [loading]="isSubmitting"
+        [disabled]="isSubmitting"
+        startIcon="<ng-icon name='heroCheck' size='16' />"
+      >
+        {{ submitLabel }}
+      </app-button>
+    </div>
+  </form>
+</div>

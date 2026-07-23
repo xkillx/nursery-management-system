@@ -9,6 +9,8 @@ import { ManagerChildDetailComponent } from './features/staff/pages/manager-chil
 import { ManagerChildEditComponent } from './features/staff/pages/manager-child-edit/manager-child-edit.component';
 import { ManagerParentsComponent } from './features/staff/pages/manager-parents/manager-parents.component';
 import { ManagerParentDetailComponent } from './features/staff/pages/manager-parent-detail/manager-parent-detail.component';
+import { ManagerParentNewComponent } from './features/staff/pages/manager-parent-new/manager-parent-new.component';
+import { ManagerParentEditComponent } from './features/staff/pages/manager-parent-edit/manager-parent-edit.component';
 import { ManagerInvitesComponent } from './features/staff/pages/manager-invites/manager-invites.component';
 import { ManagerAttendanceCorrectionsComponent } from './features/staff/pages/manager-attendance-corrections/manager-attendance-corrections.component';
 import { ManagerRoomsComponent } from './features/staff/pages/manager-rooms/manager-rooms.component';
@@ -134,12 +136,31 @@ export const routes: Routes = [
                 title: 'Parents | Nursery Management',
               },
               {
-                path: ':parentId',
-                component: ManagerParentDetailComponent,
+                path: 'new',
+                component: ManagerParentNewComponent,
                 data: {
-                  breadcrumb: { label: 'Parent' },
+                  breadcrumb: { label: 'Add parent' },
                 },
-                title: 'Parent Details | Nursery Management',
+                title: 'Add Parent | Nursery Management',
+              },
+              {
+                path: ':parentId',
+                children: [
+                  {
+                    path: '',
+                    component: ManagerParentDetailComponent,
+                    data: {
+                      breadcrumb: { label: 'Parent' },
+                    },
+                    title: 'Parent Details | Nursery Management',
+                  },
+                  {
+                    path: 'edit',
+                    component: ManagerParentEditComponent,
+                    data: { breadcrumb: { label: 'Edit' } },
+                    title: 'Edit Parent | Nursery Management',
+                  },
+                ],
               },
             ],
           },
