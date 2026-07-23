@@ -96,6 +96,26 @@ describe('ManagerChildEditStepperComponent', () => {
       hasParentalResponsibility: null,
     }];
     component.selectedParentId = 'parent-1';
+    component.linkedParents = [{
+      id: 'link-1',
+      parentId: 'parent-1',
+      firstName: 'Sarah',
+      lastName: 'Johnson',
+      email: 'sarah.johnson@example.com',
+      phone: '020 1234 5678',
+      relationship: 'Mother',
+      customRelationship: '',
+      addressLine1: '123 High Street',
+      addressLine2: '',
+      addressCity: 'London',
+      addressPostcode: 'SW1A 1AA',
+      hasParentalResponsibility: true,
+      canPickUp: true,
+      isEmergencyContact: true,
+      portalStatus: 'none',
+      isEditing: false,
+      isNew: false,
+    }];
     component.step3.parent1_has_responsibility = true;
     component.step3.parent1_address_street = '123 High Street';
     component.step3.parent1_address_city = 'London';
@@ -115,7 +135,7 @@ describe('ManagerChildEditStepperComponent', () => {
     component.emergencyAuthorisedFlags = [false];
     component.emergencyContactAddresses = [''];
 
-    component.step3.collection_password = '';
+    component.step3.collection_password = 'password123';
 
     component.step4.safeguarding_reporting_acknowledgement = true;
     component.step4.information_sharing_consent = true;
@@ -379,9 +399,9 @@ describe('ManagerChildEditStepperComponent', () => {
   });
 
   describe('canSubmitLocally — contacts and collection', () => {
-    it('requires parent selection', () => {
+    it('requires at least one linked parent', () => {
       fillRequiredForCompletion();
-      component.selectedParentId = '';
+      component.linkedParents = [];
       expect(component.canSubmitLocally()).toBe(false);
     });
 
@@ -397,22 +417,11 @@ describe('ManagerChildEditStepperComponent', () => {
       expect(component.canSubmitLocally()).toBe(false);
     });
 
-    it('blocks when authorised collector present without password', () => {
+    it('requires collection password', () => {
       fillRequiredForCompletion();
-      component.emergencyContactsDraft[0].fullName = 'Mary Hill';
-      component.emergencyContactsDraft[0].relationshipToChild = 'Grandparent';
-      component.emergencyContactsDraft[0].telephone = '020 9999 0000';
-      component.emergencyAuthorisedFlags = [true];
       component.step3.collection_password = '';
       expect(component.canSubmitLocally()).toBe(false);
       component.step3.collection_password = 'secret123';
-      expect(component.canSubmitLocally()).toBe(true);
-    });
-
-    it('does not require password when no non-parent authorised collector', () => {
-      fillRequiredForCompletion();
-      component.emergencyAuthorisedFlags = [false];
-      component.step3.collection_password = '';
       expect(component.canSubmitLocally()).toBe(true);
     });
   });
@@ -632,7 +641,7 @@ describe('ManagerChildEditStepperComponent', () => {
 
     it('saveContactsCollection blocks on missing parent selection', () => {
       fillRequiredForCompletion();
-      component.selectedParentId = '';
+      component.linkedParents = [];
       component.currentStep = 'contacts-collection';
 
       component.saveContactsCollection();
