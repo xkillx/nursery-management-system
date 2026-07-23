@@ -1571,112 +1571,120 @@
               </div>
             </div>
 
-            <div class="space-y-8 p-5 md:p-6">              <!-- Parent/Guardian Selector -->
+            <div class="space-y-8 p-5 md:p-6">              <!-- Parent/Guardian Section -->
               <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-parent-heading">
-                <div class="flex items-center gap-3 border-b border-gray-200/60 pb-4 dark:border-gray-800/50">
-                  <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
-                    <ng-icon name="heroUserGroup" size="18" aria-hidden="true" />
+                <div class="flex items-center justify-between border-b border-gray-200/60 pb-4 dark:border-gray-800/50">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
+                      <ng-icon name="heroUserGroup" size="18" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h4 id="contacts-parent-heading" class="text-sm font-bold text-gray-900 dark:text-white">Parent / Guardian</h4>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">Link up to {{ parentCap }} parents or guardians.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 id="contacts-parent-heading" class="text-sm font-bold text-gray-900 dark:text-white">Parent / Guardian</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Select an existing parent or create a new one.</p>
-                  </div>
+                  @if (!isParentCapReached && !showCreateParentForm) {
+                    <app-button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-11 border-dashed border-gray-350 text-brand-600 hover:bg-brand-50/50 dark:border-gray-700 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                      (btnClick)="showCreateParentForm = true"
+                    >
+                      <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
+                      Add parent
+                    </app-button>
+                  }
+                  @if (isParentCapReached) {
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Maximum {{ parentCap }} parents reached</span>
+                  }
                 </div>
 
-                <div class="space-y-4">
-                  <app-form-field
-                    label="Select parent/guardian"
-                    labelFor="parent-selector"
-                    [required]="true"
-                    errorId="parent-selector-error"
-                    [error]="step3VisibleError('selected_parent_id')"
-                  >
-                    <app-select
-                      id="parent-selector"
-                      name="selected_parent_id"
-                      [ngModel]="selectedParentId"
-                      (ngModelChange)="onParentSelected($event)"
-                      [options]="availableParents.map(p => ({ value: p.id, label: p.first_name + (p.last_name ? ' ' + p.last_name : '') + (p.email ? ' (' + p.email + ')' : '') }))"
-                      placeholder="Choose a parent/guardian"
-                      [placeholderDisabled]="true"
-                    />
-                  </app-form-field>
+                <!-- Linked Parents List -->
+                @if (linkedParents.length > 0) {
+                  <div class="space-y-3">
+                    @for (parent of linkedParents; track parent.id; let i = $index) {
+                      <app-parent-card
+                        [parent]="parent"
+                        [parentRelationshipOptions]="parentRelationshipSelectOptions"
+                        (editRequested)="editLinkedParent(i)"
+                        (removeRequested)="removeLinkedParent(i)"
+                        (saveRequested)="saveLinkedParent(i)"
+                        (cancelRequested)="cancelEditLinkedParent(i)"
+                        (useChildAddressChange)="onUseChildAddress(i, $event)"
+                      />
+                    }
+                  </div>
+                }
 
-                  @if (selectedParentRecord; as parent) {
-                    <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-850 dark:bg-gray-900/40 space-y-3 animate-fade-in">
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center border border-brand-100 shrink-0">
-                          {{ parent.first_name[0] }}{{ parent.last_name ? parent.last_name[0] : '' }}
-                        </div>
-                        <div>
-                          <div class="font-bold text-gray-900 text-sm">{{ parent.first_name }} {{ parent.last_name }}</div>
-                          <div class="text-xs text-gray-500">{{ parent.relationship_to_child || 'Guardian' }}</div>
-                        </div>
+                <!-- Search/Create Combobox -->
+                @if (!isParentCapReached) {
+                  <div class="space-y-4">
+                    @if (!showCreateParentForm) {
+                      <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Search for an existing parent to link:</p>
+                        <app-parent-combobox
+                          [excludeIds]="linkedParentIds"
+                          (parentSelected)="onParentSelectedFromCombobox($event)"
+                          (parentCreateRequested)="onCreateParentRequested($event)"
+                        />
                       </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-gray-50/40 p-3 rounded-xl border border-gray-100">
-                        <div>
-                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Phone</span>
-                          <span class="font-semibold text-gray-800">{{ parent.phone || 'Not provided' }}</span>
+                    } @else {
+                      <div class="rounded-xl border border-brand-200 bg-brand-50/20 p-5 dark:border-brand-800/40 dark:bg-brand-500/5 space-y-4 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                          <h5 class="text-sm font-bold text-gray-900 dark:text-white">New Parent Details</h5>
+                          <app-button type="button" variant="ghost" size="xs" className="text-gray-500" (btnClick)="cancelCreateParent()">
+                            <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
+                            Cancel
+                          </app-button>
                         </div>
-                        <div>
-                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email</span>
-                          <span class="font-semibold text-gray-800 truncate block">{{ parent.email || 'Not provided' }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  }
-
-                  @if (!showInlineParentForm) {
-                    <div class="flex justify-center">
-                      <app-button type="button" variant="outline" size="sm" className="min-h-11 border-dashed border-gray-350 text-brand-600 hover:bg-brand-50/50 dark:border-gray-700 dark:text-brand-400 dark:hover:bg-brand-500/10" (btnClick)="toggleInlineParentForm()">
-                        <ng-icon name="heroPlusCircle" size="18" aria-hidden="true" />
-                        Add new parent
-                      </app-button>
-                    </div>
-                  } @else {
-                    <div class="rounded-xl border border-brand-200 bg-brand-50/20 p-5 dark:border-brand-800/40 dark:bg-brand-500/5 space-y-4 animate-fade-in">
-                      <div class="flex items-center justify-between">
-                        <h5 class="text-sm font-bold text-gray-900 dark:text-white">New Parent Details</h5>
-                        <app-button type="button" variant="ghost" size="xs" className="text-gray-500" (btnClick)="toggleInlineParentForm()">
-                          <ng-icon name="heroXCircle" size="16" aria-hidden="true" />
-                          Cancel
-                        </app-button>
-                      </div>
-                      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <app-form-field label="First name" [required]="true">
-                          <app-input-field type="text" [(ngModel)]="newParent.first_name" placeholder="e.g. Sarah" autocomplete="given-name" />
-                        </app-form-field>
-                        <app-form-field label="Last name">
-                          <app-input-field type="text" [(ngModel)]="newParent.last_name" placeholder="e.g. Johnson" autocomplete="family-name" />
-                        </app-form-field>
-                        <app-form-field label="Email">
-                          <app-input-field type="email" [(ngModel)]="newParent.email" placeholder="sarah@example.com" autocomplete="email" />
-                        </app-form-field>
-                        <app-form-field label="Phone">
-                          <app-input-field type="tel" [(ngModel)]="newParent.phone" placeholder="+44 7000 000000" autocomplete="tel" />
-                        </app-form-field>
-                        <app-form-field label="Relationship">
-                          <app-select
-                            [(ngModel)]="newParent.relationship_to_child"
-                            [options]="relationshipSelectOptions"
-                            placeholder="Select relationship"
-                            [placeholderDisabled]="false"
-                          />
-                        </app-form-field>
-                      </div>
-                      <div class="flex justify-end">
-                        <app-button type="button" variant="primary" size="sm" [disabled]="isCreatingParent || !newParent.first_name.trim()" (btnClick)="createInlineParent()">
-                          @if (isCreatingParent) {
-                            Saving...
-                          } @else {
-                            <ng-icon name="heroCheck" size="16" aria-hidden="true" />
-                            Create &amp; Select
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <app-form-field label="First name" [required]="true">
+                            <app-input-field type="text" [(ngModel)]="newParentDraft.first_name" placeholder="e.g. Sarah" autocomplete="given-name" />
+                          </app-form-field>
+                          <app-form-field label="Last name">
+                            <app-input-field type="text" [(ngModel)]="newParentDraft.last_name" placeholder="e.g. Johnson" autocomplete="family-name" />
+                          </app-form-field>
+                          <app-form-field label="Email">
+                            <app-input-field type="email" [(ngModel)]="newParentDraft.email" placeholder="sarah@example.com" autocomplete="email" />
+                          </app-form-field>
+                          <app-form-field label="Phone">
+                            <app-input-field type="tel" [(ngModel)]="newParentDraft.phone" placeholder="+44 7000 000000" autocomplete="tel" />
+                          </app-form-field>
+                          <app-form-field label="Relationship" [required]="true">
+                            <app-select
+                              [(ngModel)]="newParentDraft.relationship_to_child"
+                              [options]="parentRelationshipSelectOptions"
+                              placeholder="Select relationship"
+                              [placeholderDisabled]="false"
+                            />
+                          </app-form-field>
+                          @if (newParentDraft.relationship_to_child === 'Other') {
+                            <app-form-field label="Custom relationship">
+                              <app-input-field type="text" [(ngModel)]="newParentDraft.custom_relationship" placeholder="e.g. Aunt, Uncle" />
+                            </app-form-field>
                           }
-                        </app-button>
+                        </div>
+                        <div class="flex justify-end">
+                          <app-button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            [disabled]="isCreatingParent || !newParentDraft.first_name.trim()"
+                            (btnClick)="createParentFromDraft()"
+                          >
+                            @if (isCreatingParent) {
+                              Saving...
+                            } @else {
+                              <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+                              Create &amp; Link
+                            }
+                          </app-button>
+                        </div>
                       </div>
-                    </div>
-                  }
-                </div>
+                    }
+                  </div>
+                }
               </section>              <!-- 3. Emergency Contacts -->
               <section class="rounded-2xl border border-gray-150 bg-gray-50/30 p-5 dark:border-gray-800/60 dark:bg-white/[0.01] md:p-6 space-y-6" aria-labelledby="contacts-emergency-heading" [attr.data-focus-target]="'emergency-contacts-group'">
                 <div class="flex items-center justify-between border-b border-gray-200/60 pb-4 dark:border-gray-800/50">

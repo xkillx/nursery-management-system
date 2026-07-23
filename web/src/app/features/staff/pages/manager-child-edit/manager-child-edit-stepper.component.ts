@@ -62,6 +62,8 @@ import { ParentRecord } from '../../models/parents.models';
 import { RegistrationDraftStorage } from '../../data/registration-draft.storage';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ChildPhotoService } from '../../../../shared/services/child-photo.service';
+import { ParentComboboxComponent } from '../../../../shared/components/form/parent-combobox/parent-combobox.component';
+import { ParentCardComponent } from '../../../../shared/components/ui/parent-card/parent-card.component';
 import { ChildRecord, ChildWritePayload } from '../../models/children.models';
 import {
   ConsentRecord,
@@ -196,7 +198,7 @@ interface ConsentItem {
   detail: string;
 }
 
-interface LinkedParentEntry {
+export interface LinkedParentEntry {
   id: string;
   parentId: string;
   firstName: string;
@@ -335,6 +337,8 @@ interface RegistrationDraft {
     TextAreaComponent,
     DatePickerComponent,
     DebugPanelComponent,
+    ParentComboboxComponent,
+    ParentCardComponent,
   ],
   providers: [
     provideIcons({
@@ -1223,6 +1227,180 @@ export class ManagerChildEditStepperComponent implements OnInit, OnDestroy {
   onParentSelected(parentId: string): void {
     this.selectedParentId = parentId;
     this.notifyDraftChanged();
+  }
+
+  onParentSelectedFromCombobox(parent: ParentRecord): void {
+    const entry: LinkedParentEntry = {
+      id: crypto.randomUUID(),
+      parentId: parent.id,
+      firstName: parent.first_name,
+      lastName: parent.last_name || '',
+      email: parent.email || '',
+      phone: parent.phone || '',
+      relationship: parent.relationship_to_child || '',
+      customRelationship: '',
+      addressLine1: parent.address_line1 || '',
+      addressLine2: parent.address_line2 || '',
+      addressCity: parent.address_city || '',
+      addressPostcode: parent.address_postcode || '',
+      hasParentalResponsibility: parent.has_parental_responsibility,
+      canPickUp: parent.can_pick_up,
+      isEmergencyContact: parent.is_emergency_contact,
+      portalStatus: parent.user_id ? 'active' : 'none',
+      isEditing: false,
+      isNew: false,
+    };
+    this.linkedParents.push(entry);
+    this.showCreateParentForm = false;
+    this.notifyDraftChanged();
+  }
+
+  onCreateParentRequested(event: { name: string }): void {
+    const parts = event.name.split(' ');
+    this.newParentDraft.first_name = parts[0] || '';
+    this.newParentDraft.last_name = parts.slice(1).join(' ') || '';
+    this.showCreateParentForm = true;
+  }
+
+  createParentFromDraft(): void {
+    if (!this.newParentDraft.first_name.trim()) return;
+    this.isCreatingParent = true;
+    this.parentsApi.create({
+      first_name: this.newParentDraft.first_name.trim(),
+      last_name: this.newParentDraft.last_name.trim() || undefined,
+      email: this.newParentDraft.email.trim() || undefined,
+      phone: this.newParentDraft.phone.trim() || undefined,
+      relationship_to_child: this.newParentDraft.relationship_to_child || undefined,
+      has_parental_responsibility: this.newParentDraft.has_parental_responsibility,
+      can_pick_up: this.newParentDraft.can_pick_up,
+      is_emergency_contact: this.newParentDraft.is_emergency_contact,
+    }).subscribe({
+      next: (parent) => {
+        const entry: LinkedParentEntry = {
+          id: crypto.randomUUID(),
+          parentId: parent.id,
+          firstName: parent.first_name,
+          lastName: parent.last_name || '',
+          email: parent.email || '',
+          phone: parent.phone || '',
+          relationship: this.newParentDraft.relationship_to_child,
+          customRelationship: this.newParentDraft.custom_relationship,
+          addressLine1: '',
+          addressLine2: '',
+          addressCity: '',
+          addressPostcode: '',
+          hasParentalResponsibility: this.newParentDraft.has_parental_responsibility,
+          canPickUp: this.newParentDraft.can_pick_up,
+          isEmergencyContact: this.newParentDraft.is_emergency_contact,
+          portalStatus: 'none',
+          isEditing: true,
+          isNew: true,
+        };
+        this.linkedParents.push(entry);
+        this.showCreateParentForm = false;
+        this.resetNewParentDraft();
+        this.isCreatingParent = false;
+        this.notifyDraftChanged();
+      },
+      error: () => {
+        this.isCreatingParent = false;
+        this.toast.error('Failed to create parent. Please try again.');
+      },
+    });
+  }
+
+  cancelCreateParent(): void {
+    this.showCreateParentForm = false;
+    this.resetNewParentDraft();
+  }
+
+  private resetNewParentDraft(): void {
+    this.newParentDraft = {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      relationship_to_child: '',
+      custom_relationship: '',
+      has_parental_responsibility: true,
+      can_pick_up: true,
+      is_emergency_contact: true,
+    };
+  }
+
+  editLinkedParent(index: number): void {
+    this.linkedParents[index].isEditing = true;
+  }
+
+  cancelEditLinkedParent(index: number): void {
+    if (this.linkedParents[index].isNew) {
+      this.linkedParents.splice(index, 1);
+    } else {
+      this.linkedParents[index].isEditing = false;
+    }
+  }
+
+  saveLinkedParent(index: number): void {
+    const entry = this.linkedParents[index];
+    if (entry.relationship === 'Other' && entry.customRelationship) {
+      entry.relationship = entry.customRelationship;
+    }
+    if (!this.isNewRegistration && entry.parentId) {
+      this.parentsApi.update(entry.parentId, {
+        first_name: entry.firstName,
+        last_name: entry.lastName || null,
+        email: entry.email || null,
+        phone: entry.phone || null,
+        address_line1: entry.addressLine1 || null,
+        address_line2: entry.addressLine2 || null,
+        address_city: entry.addressCity || null,
+        address_postcode: entry.addressPostcode || null,
+        relationship_to_child: entry.relationship || null,
+        has_parental_responsibility: entry.hasParentalResponsibility,
+        can_pick_up: entry.canPickUp,
+        is_emergency_contact: entry.isEmergencyContact,
+      }).subscribe({
+        next: () => {
+          entry.isEditing = false;
+          this.toast.success('Parent updated.');
+          this.notifyDraftChanged();
+        },
+        error: () => {
+          this.toast.error('Failed to update parent.');
+        },
+      });
+    } else {
+      entry.isEditing = false;
+      this.notifyDraftChanged();
+    }
+  }
+
+  removeLinkedParent(index: number): void {
+    const entry = this.linkedParents[index];
+    if (!this.isNewRegistration && entry.parentId && this.childId) {
+      if (confirm('Are you sure you want to remove this parent from the child?')) {
+        this.parentsApi.unlinkChild(entry.parentId, this.childId, 'removed_by_staff').subscribe({
+          next: () => {
+            this.linkedParents.splice(index, 1);
+            this.toast.success('Parent removed.');
+            this.notifyDraftChanged();
+          },
+          error: () => {
+            this.toast.error('Failed to remove parent.');
+          },
+        });
+      }
+    } else {
+      this.linkedParents.splice(index, 1);
+      this.notifyDraftChanged();
+    }
+  }
+
+  onUseChildAddress(index: number, use: boolean): void {
+    if (use) {
+      this.linkedParents[index].addressLine1 = this.step1.home_address;
+      this.linkedParents[index].addressPostcode = this.step1.home_postcode;
+    }
   }
 
   get selectedParentRecord(): ParentRecord | undefined {

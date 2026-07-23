@@ -11,14 +11,34 @@ import {
   heroChevronUp,
   heroUser,
 } from '@ng-icons/heroicons/outline';
-import { LinkedParentEntry } from '../../../features/staff/pages/manager-child-edit/manager-child-edit-stepper.component';
 import { BadgeComponent } from '../badge/badge.component';
 import { ButtonComponent } from '../button/button.component';
-import { FormFieldComponent } from '../form/form-field/form-field.component';
-import { InputFieldComponent } from '../form/input/input-field.component';
-import { SelectComponent, Option } from '../form/select/select.component';
-import { SwitchComponent } from '../form/input/switch.component';
-import { CheckboxComponent } from '../form/input/checkbox.component';
+import { FormFieldComponent } from '../../form/form-field/form-field.component';
+import { InputFieldComponent } from '../../form/input/input-field.component';
+import { SelectComponent, Option } from '../../form/select/select.component';
+import { SwitchComponent } from '../../form/input/switch.component';
+import { CheckboxComponent } from '../../form/input/checkbox.component';
+
+interface LinkedParentEntry {
+  id: string;
+  parentId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  relationship: string;
+  customRelationship: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressCity: string;
+  addressPostcode: string;
+  hasParentalResponsibility: boolean;
+  canPickUp: boolean;
+  isEmergencyContact: boolean;
+  portalStatus: 'active' | 'none';
+  isEditing: boolean;
+  isNew: boolean;
+}
 
 @Component({
   selector: 'app-parent-card',
@@ -26,7 +46,6 @@ import { CheckboxComponent } from '../form/input/checkbox.component';
     CommonModule,
     FormsModule,
     NgIcon,
-    BadgeComponent,
     ButtonComponent,
     FormFieldComponent,
     InputFieldComponent,
