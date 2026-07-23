@@ -232,49 +232,70 @@ interface LinkedParentEntry {
             <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Permissions</span>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div
-                class="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                role="button"
+                tabindex="0"
+                class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
                 [class.border-brand-500]="parent.hasParentalResponsibility"
                 [class.bg-brand-50/15]="parent.hasParentalResponsibility"
                 [class.dark:border-brand-400]="parent.hasParentalResponsibility"
                 [class.dark:bg-brand-500/10]="parent.hasParentalResponsibility"
                 [class.border-gray-200]="!parent.hasParentalResponsibility"
                 [class.dark:border-gray-800]="!parent.hasParentalResponsibility"
+                (click)="parent.hasParentalResponsibility = !parent.hasParentalResponsibility"
+                (keydown.enter)="parent.hasParentalResponsibility = !parent.hasParentalResponsibility"
+                (keydown.space)="parent.hasParentalResponsibility = !parent.hasParentalResponsibility; $event.preventDefault()"
               >
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Parental Responsibility</span>
-                <app-switch
-                  name="hasParentalResponsibility"
-                  [(ngModel)]="parent.hasParentalResponsibility"
-                />
+                <div class="pointer-events-none">
+                  <app-switch
+                    name="hasParentalResponsibility"
+                    [(ngModel)]="parent.hasParentalResponsibility"
+                  />
+                </div>
               </div>
               <div
-                class="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                role="button"
+                tabindex="0"
+                class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
                 [class.border-blue-light-500]="parent.canPickUp"
                 [class.bg-blue-light-50/15]="parent.canPickUp"
                 [class.dark:border-blue-light-400]="parent.canPickUp"
                 [class.dark:bg-blue-light-500/10]="parent.canPickUp"
                 [class.border-gray-200]="!parent.canPickUp"
                 [class.dark:border-gray-800]="!parent.canPickUp"
+                (click)="parent.canPickUp = !parent.canPickUp"
+                (keydown.enter)="parent.canPickUp = !parent.canPickUp"
+                (keydown.space)="parent.canPickUp = !parent.canPickUp; $event.preventDefault()"
               >
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Can Pick Up</span>
-                <app-switch
-                  name="canPickUp"
-                  [(ngModel)]="parent.canPickUp"
-                />
+                <div class="pointer-events-none">
+                  <app-switch
+                    name="canPickUp"
+                    [(ngModel)]="parent.canPickUp"
+                  />
+                </div>
               </div>
               <div
-                class="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                role="button"
+                tabindex="0"
+                class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
                 [class.border-warning-500]="parent.isEmergencyContact"
                 [class.bg-warning-50/15]="parent.isEmergencyContact"
                 [class.dark:border-orange-400]="parent.isEmergencyContact"
                 [class.dark:bg-warning-500/10]="parent.isEmergencyContact"
                 [class.border-gray-200]="!parent.isEmergencyContact"
                 [class.dark:border-gray-800]="!parent.isEmergencyContact"
+                (click)="parent.isEmergencyContact = !parent.isEmergencyContact"
+                (keydown.enter)="parent.isEmergencyContact = !parent.isEmergencyContact"
+                (keydown.space)="parent.isEmergencyContact = !parent.isEmergencyContact; $event.preventDefault()"
               >
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Emergency Contact</span>
-                <app-switch
-                  name="isEmergencyContact"
-                  [(ngModel)]="parent.isEmergencyContact"
-                />
+                <div class="pointer-events-none">
+                  <app-switch
+                    name="isEmergencyContact"
+                    [(ngModel)]="parent.isEmergencyContact"
+                  />
+                </div>
               </div>
             </div>
           </div>
