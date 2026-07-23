@@ -1695,6 +1695,87 @@
                             </app-form-field>
                           }
                         </div>
+                        <!-- Address -->
+                        <div class="space-y-3">
+                          <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Address</span>
+                          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <app-form-field label="Address line 1">
+                              <app-input-field type="text" [(ngModel)]="newParentDraft.address_line1" placeholder="Street address" />
+                            </app-form-field>
+                            <app-form-field label="Address line 2">
+                              <app-input-field type="text" [(ngModel)]="newParentDraft.address_line2" placeholder="Flat, suite, etc." />
+                            </app-form-field>
+                            <app-form-field label="City">
+                              <app-input-field type="text" [(ngModel)]="newParentDraft.address_city" placeholder="City" />
+                            </app-form-field>
+                            <app-form-field label="Postcode">
+                              <app-input-field type="text" [(ngModel)]="newParentDraft.address_postcode" placeholder="SW1A 1AA" className="uppercase" />
+                            </app-form-field>
+                          </div>
+                        </div>
+                        <!-- Permissions -->
+                        <div class="space-y-3">
+                          <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Permissions</span>
+                          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <div
+                              role="button"
+                              tabindex="0"
+                              class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                              [class.border-brand-500]="newParentDraft.has_parental_responsibility"
+                              [class.bg-brand-50/15]="newParentDraft.has_parental_responsibility"
+                              [class.dark:border-brand-400]="newParentDraft.has_parental_responsibility"
+                              [class.dark:bg-brand-500/10]="newParentDraft.has_parental_responsibility"
+                              [class.border-gray-200]="!newParentDraft.has_parental_responsibility"
+                              [class.dark:border-gray-800]="!newParentDraft.has_parental_responsibility"
+                              (click)="newParentDraft.has_parental_responsibility = !newParentDraft.has_parental_responsibility"
+                              (keydown.enter)="newParentDraft.has_parental_responsibility = !newParentDraft.has_parental_responsibility"
+                              (keydown.space)="newParentDraft.has_parental_responsibility = !newParentDraft.has_parental_responsibility; $event.preventDefault()"
+                            >
+                              <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Parental Responsibility</span>
+                              <div class="pointer-events-none">
+                                <app-switch name="newParentHasPR" [(ngModel)]="newParentDraft.has_parental_responsibility" />
+                              </div>
+                            </div>
+                            <div
+                              role="button"
+                              tabindex="0"
+                              class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                              [class.border-blue-light-500]="newParentDraft.can_pick_up"
+                              [class.bg-blue-light-50/15]="newParentDraft.can_pick_up"
+                              [class.dark:border-blue-light-400]="newParentDraft.can_pick_up"
+                              [class.dark:bg-blue-light-500/10]="newParentDraft.can_pick_up"
+                              [class.border-gray-200]="!newParentDraft.can_pick_up"
+                              [class.dark:border-gray-800]="!newParentDraft.can_pick_up"
+                              (click)="newParentDraft.can_pick_up = !newParentDraft.can_pick_up"
+                              (keydown.enter)="newParentDraft.can_pick_up = !newParentDraft.can_pick_up"
+                              (keydown.space)="newParentDraft.can_pick_up = !newParentDraft.can_pick_up; $event.preventDefault()"
+                            >
+                              <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Can Pick Up</span>
+                              <div class="pointer-events-none">
+                                <app-switch name="newParentCanPickup" [(ngModel)]="newParentDraft.can_pick_up" />
+                              </div>
+                            </div>
+                            <div
+                              role="button"
+                              tabindex="0"
+                              class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors"
+                              [class.border-warning-500]="newParentDraft.is_emergency_contact"
+                              [class.bg-warning-50/15]="newParentDraft.is_emergency_contact"
+                              [class.dark:border-orange-400]="newParentDraft.is_emergency_contact"
+                              [class.dark:bg-warning-500/10]="newParentDraft.is_emergency_contact"
+                              [class.border-gray-200]="!newParentDraft.is_emergency_contact"
+                              [class.dark:border-gray-800]="!newParentDraft.is_emergency_contact"
+                              (click)="newParentDraft.is_emergency_contact = !newParentDraft.is_emergency_contact"
+                              (keydown.enter)="newParentDraft.is_emergency_contact = !newParentDraft.is_emergency_contact"
+                              (keydown.space)="newParentDraft.is_emergency_contact = !newParentDraft.is_emergency_contact; $event.preventDefault()"
+                            >
+                              <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Emergency Contact</span>
+                              <div class="pointer-events-none">
+                                <app-switch name="newParentIsEmergency" [(ngModel)]="newParentDraft.is_emergency_contact" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         <div class="flex justify-end">
                           <app-button
                             type="button"
