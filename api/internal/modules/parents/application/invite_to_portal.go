@@ -12,9 +12,9 @@ import (
 )
 
 type InviteToPortalUseCase struct {
-	repo       domain.Repository
-	audit      *audit.Writer
-	txMgr      TxManager
+	repo        domain.Repository
+	audit       *audit.Writer
+	txMgr       TxManager
 	userCreator UserCreator
 	emailSender EmailSender
 	webBaseURL  string

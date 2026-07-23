@@ -23,20 +23,20 @@ func NewUpdateParentUseCase(repo domain.Repository, auditWriter *audit.Writer, t
 }
 
 type UpdateParentParams struct {
-	FirstName               *string
-	LastName                *string
-	Email                   *string
-	Phone                   *string
-	AddressLine1            *string
-	AddressLine2            *string
-	AddressCity             *string
-	AddressPostcode         *string
-	RelationshipToChild     *string
+	FirstName                 *string
+	LastName                  *string
+	Email                     *string
+	Phone                     *string
+	AddressLine1              *string
+	AddressLine2              *string
+	AddressCity               *string
+	AddressPostcode           *string
+	RelationshipToChild       *string
 	HasParentalResponsibility *bool
-	CanPickUp               *bool
-	IsEmergencyContact      *bool
-	Notes                   *string
-	IsActive                *bool
+	CanPickUp                 *bool
+	IsEmergencyContact        *bool
+	Notes                     *string
+	IsActive                  *bool
 }
 
 func (uc *UpdateParentUseCase) Execute(ctx context.Context, actor ActorContext, parentID uuid.UUID, params UpdateParentParams) (domain.Parent, error) {

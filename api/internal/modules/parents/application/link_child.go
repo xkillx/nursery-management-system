@@ -12,9 +12,9 @@ import (
 )
 
 type LinkChildUseCase struct {
-	repo      domain.Repository
-	audit     *audit.Writer
-	txMgr     TxManager
+	repo       domain.Repository
+	audit      *audit.Writer
+	txMgr      TxManager
 	childCheck domain.ChildExistenceChecker
 }
 

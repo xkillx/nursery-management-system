@@ -17,16 +17,16 @@ import (
 )
 
 type Handler struct {
-	createParent    *app.CreateParentUseCase
-	updateParent    *app.UpdateParentUseCase
-	getParent       *app.GetParentUseCase
-	listParents     *app.ListParentsUseCase
-	softDelete      *app.SoftDeleteParentUseCase
-	linkChild       *app.LinkChildUseCase
-	unlinkChild     *app.UnlinkChildUseCase
-	inviteToPortal  *app.InviteToPortalUseCase
-	revokeAccess    *app.RevokePortalAccessUseCase
-	logger          *slog.Logger
+	createParent   *app.CreateParentUseCase
+	updateParent   *app.UpdateParentUseCase
+	getParent      *app.GetParentUseCase
+	listParents    *app.ListParentsUseCase
+	softDelete     *app.SoftDeleteParentUseCase
+	linkChild      *app.LinkChildUseCase
+	unlinkChild    *app.UnlinkChildUseCase
+	inviteToPortal *app.InviteToPortalUseCase
+	revokeAccess   *app.RevokePortalAccessUseCase
+	logger         *slog.Logger
 }
 
 func NewHandler(

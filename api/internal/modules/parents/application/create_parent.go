@@ -23,19 +23,19 @@ func NewCreateParentUseCase(repo domain.Repository, auditWriter *audit.Writer, t
 }
 
 type CreateParentParams struct {
-	FirstName               string
-	LastName                *string
-	Email                   *string
-	Phone                   *string
-	AddressLine1            *string
-	AddressLine2            *string
-	AddressCity             *string
-	AddressPostcode         *string
-	RelationshipToChild     *string
+	FirstName                 string
+	LastName                  *string
+	Email                     *string
+	Phone                     *string
+	AddressLine1              *string
+	AddressLine2              *string
+	AddressCity               *string
+	AddressPostcode           *string
+	RelationshipToChild       *string
 	HasParentalResponsibility bool
-	CanPickUp               bool
-	IsEmergencyContact      bool
-	Notes                   *string
+	CanPickUp                 bool
+	IsEmergencyContact        bool
+	Notes                     *string
 }
 
 func (uc *CreateParentUseCase) Execute(ctx context.Context, actor ActorContext, params CreateParentParams) (domain.Parent, error) {
@@ -46,23 +46,23 @@ func (uc *CreateParentUseCase) Execute(ctx context.Context, actor ActorContext, 
 	var result domain.Parent
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		parent := domain.Parent{
-			ID:                      uid.NewUUID(),
-			TenantID:                actor.TenantID,
-			BranchID:                actor.BranchID,
-			FirstName:               strings.TrimSpace(params.FirstName),
-			LastName:                params.LastName,
-			Email:                   params.Email,
-			Phone:                   params.Phone,
-			AddressLine1:            params.AddressLine1,
-			AddressLine2:            params.AddressLine2,
-			AddressCity:             params.AddressCity,
-			AddressPostcode:         params.AddressPostcode,
-			RelationshipToChild:     params.RelationshipToChild,
+			ID:                        uid.NewUUID(),
+			TenantID:                  actor.TenantID,
+			BranchID:                  actor.BranchID,
+			FirstName:                 strings.TrimSpace(params.FirstName),
+			LastName:                  params.LastName,
+			Email:                     params.Email,
+			Phone:                     params.Phone,
+			AddressLine1:              params.AddressLine1,
+			AddressLine2:              params.AddressLine2,
+			AddressCity:               params.AddressCity,
+			AddressPostcode:           params.AddressPostcode,
+			RelationshipToChild:       params.RelationshipToChild,
 			HasParentalResponsibility: params.HasParentalResponsibility,
-			CanPickUp:               params.CanPickUp,
-			IsEmergencyContact:      params.IsEmergencyContact,
-			Notes:                   params.Notes,
-			IsActive:                true,
+			CanPickUp:                 params.CanPickUp,
+			IsEmergencyContact:        params.IsEmergencyContact,
+			Notes:                     params.Notes,
+			IsActive:                  true,
 		}
 
 		if err := uc.repo.Create(ctx, tx, parent); err != nil {
