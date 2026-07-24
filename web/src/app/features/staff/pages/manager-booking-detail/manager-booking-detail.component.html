@@ -288,39 +288,6 @@
       <!-- ==================== CARD 4: AUDIT TRAIL & SYSTEM METADATA (SIDE COL 4) ==================== -->
       <div class="col-span-12 lg:col-span-4 space-y-6">
 
-        <!-- Recent Activity Timeline Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm space-y-4">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
-              <ng-icon name="heroClock" size="18"></ng-icon>
-            </div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white">Recent Activity</h2>
-          </div>
-
-          <div class="relative pl-5 space-y-4 text-xs">
-            <!-- Connector Line -->
-            <div class="absolute left-1.5 top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
-
-            <div class="relative">
-              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-800"></span>
-              <p class="font-bold text-gray-900 dark:text-white">Booking Renewed</p>
-              <p class="text-gray-500 dark:text-gray-400">Today, 08:36 by Manager</p>
-            </div>
-
-            <div class="relative">
-              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-800"></span>
-              <p class="font-bold text-gray-900 dark:text-white">Financial Eligibility Verified</p>
-              <p class="text-gray-500 dark:text-gray-400">12 Jun 2026, 14:22</p>
-            </div>
-
-            <div class="relative">
-              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-gray-800"></span>
-              <p class="font-bold text-gray-900 dark:text-white">Initial Booking Created</p>
-              <p class="text-gray-500 dark:text-gray-400">{{ formatDateTime(booking.createdAt) || '05 Jun 2026, 09:15' }}</p>
-            </div>
-          </div>
-        </div>
-
         <!-- System Info Box -->
         <div class="bg-gray-50/80 dark:bg-gray-800/60 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-5 space-y-3">
           <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">System Metadata</span>

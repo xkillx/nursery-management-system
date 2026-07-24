@@ -9,7 +9,6 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowLeft,
   heroCalendarDays,
-  heroClock,
   heroPencilSquare,
   heroXCircle,
   heroUser,
@@ -63,7 +62,6 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     provideIcons({
       heroArrowLeft,
       heroCalendarDays,
-      heroClock,
       heroPencilSquare,
       heroXCircle,
       heroUser,
