@@ -13,6 +13,7 @@ import { SessionGridComponent } from '../../../../shared/components/form/session
 import { BookingSummarySidebarComponent } from './booking-summary-sidebar/booking-summary-sidebar.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { SwitchComponent } from '../../../../shared/components/form/input/switch.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.service';
@@ -44,6 +45,7 @@ interface AutoFundingInfo {
     BookingSummarySidebarComponent,
     FormFieldComponent,
     InputFieldComponent,
+    SwitchComponent,
     DatePickerComponent,
     RadioCardGroupComponent,
     NgIcon,

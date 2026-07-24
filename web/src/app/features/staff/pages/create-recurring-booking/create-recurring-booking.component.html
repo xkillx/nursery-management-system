@@ -254,19 +254,14 @@
             </div>
           }
 
-          <div class="flex items-center gap-3 pt-2">
-            <input
-              id="rec-term-time-only"
+          <div class="pt-2">
+            <app-switch
               name="rec-term-time-only"
-              type="checkbox"
+              label="Term time only booking"
               [ngModel]="effectiveTermTimeOnly"
               (ngModelChange)="termTimeOnly = $event"
               [disabled]="!isOverrideActive && !!autoFunding"
-              class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
             />
-            <label for="rec-term-time-only" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Term time only booking
-            </label>
           </div>
         </div>
       </div>
