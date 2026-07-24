@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RadioCardGroupComponent, RadioCardOption } from '../../../../shared/components/form/radio-card-group/radio-card-group.component';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroCake, heroHomeModern, heroCheckCircle, heroExclamationTriangle } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroCake, heroHomeModern, heroCheckCircle, heroExclamationTriangle, heroBanknotes, heroPencilSquare, heroArrowUturnLeft, heroClock } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
@@ -61,6 +61,10 @@ interface AutoFundingInfo {
       heroHomeModern,
       heroCheckCircle,
       heroExclamationTriangle,
+      heroBanknotes,
+      heroPencilSquare,
+      heroArrowUturnLeft,
+      heroClock,
     }),
   ],
 })
