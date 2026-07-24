@@ -1304,6 +1304,55 @@ func provideChildFundingWriterAdapter(
 	return &childFundingWriterAdapter{repo: repo}
 }
 
+// childFundingReaderAdapter satisfies childdomain.ChildFundingReader by reading
+// from the funding module's repository and mapping to the children domain struct.
+type childFundingReaderAdapter struct {
+	repo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *childFundingReaderAdapter) GetFundingForChild(ctx context.Context, tenantID, branchID, childID uuid.UUID) (*childdomain.ChildFundingData, bool, error) {
+	record, found, err := a.repo.GetFundingRecord(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return nil, false, fmt.Errorf("adapter get funding record: %w", err)
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	var startDate, endDate *time.Time
+	if record.FundingStartDate != nil {
+		startDate = record.FundingStartDate
+	}
+	if record.FundingEndDate != nil {
+		endDate = record.FundingEndDate
+	}
+
+	return &childdomain.ChildFundingData{
+		ID:                       record.ID,
+		ChildID:                  record.ChildID,
+		FundingEnabled:           record.FundingEnabled,
+		FundingType:              string(record.FundingType),
+		FundingModel:             string(record.FundingModel),
+		FundedHoursPerWeek:       record.FundedHoursPerWeek,
+		FundingStartDate:         startDate,
+		FundingEndDate:           endDate,
+		EligibilityCode:          record.EligibilityCode,
+		EligibilityCodeValidated: record.EligibilityCodeValidated,
+		EvidenceReceived:         record.EvidenceReceived,
+		BenefitsStatus:           "unknown",
+		CreatedAt:                record.CreatedAt,
+		UpdatedAt:                record.UpdatedAt,
+	}, true, nil
+}
+
+var _ childdomain.ChildFundingReader = (*childFundingReaderAdapter)(nil)
+
+func provideChildFundingReaderAdapter(
+	repo *fundingpostgres.FundingRecordRepositoryImpl,
+) *childFundingReaderAdapter {
+	return &childFundingReaderAdapter{repo: repo}
+}
+
 // fundingLookupAdapter satisfies billingdomain.FundingLookup by loading
 // FundingRecord from the funding module's repository and computing allowance on the fly.
 type fundingLookupAdapter struct {

@@ -510,3 +510,76 @@ func toChildLeavingRecordResponse(p *domain.ChildLeavingRecord) childLeavingReco
 		CreatedAt:  p.CreatedAt.UTC().Format(time.RFC3339),
 	}
 }
+
+type childFundingResponse struct {
+	ID                       string   `json:"id"`
+	ChildID                  string   `json:"child_id"`
+	FundingEnabled           bool     `json:"funding_enabled"`
+	FundingType              string   `json:"funding_type"`
+	FundingModel             string   `json:"funding_model"`
+	FundedHoursPerWeek       *float64 `json:"funded_hours_per_week,omitempty"`
+	FundingStartDate         *string  `json:"funding_start_date,omitempty"`
+	FundingEndDate           *string  `json:"funding_end_date,omitempty"`
+	EligibilityCode          *string  `json:"eligibility_code,omitempty"`
+	EligibilityCodeValidated bool     `json:"eligibility_code_validated"`
+	EvidenceReceived         bool     `json:"evidence_received"`
+	BenefitsStatus           string   `json:"benefits_status"`
+	Benefits                 []string `json:"benefits"`
+	OtherBenefitName         *string  `json:"other_benefit_name,omitempty"`
+	BenefitNotes             *string  `json:"benefit_notes,omitempty"`
+	ManagerNotes             *string  `json:"manager_notes,omitempty"`
+	CreatedAt                string   `json:"created_at"`
+	UpdatedAt                string   `json:"updated_at"`
+}
+
+func toChildFundingResponse(d *domain.ChildFundingData) childFundingResponse {
+	var startDate, endDate *string
+	if d.FundingStartDate != nil {
+		s := d.FundingStartDate.Format("2006-01-02")
+		startDate = &s
+	}
+	if d.FundingEndDate != nil {
+		s := d.FundingEndDate.Format("2006-01-02")
+		endDate = &s
+	}
+
+	benefits := make([]string, 0)
+	if d.BenefitUniversalCredit {
+		benefits = append(benefits, "universal_credit")
+	}
+	if d.BenefitIncomeSupport {
+		benefits = append(benefits, "income_support")
+	}
+	if d.BenefitJobseekers {
+		benefits = append(benefits, "jobseekers_allowance")
+	}
+	if d.BenefitESAIncomeRelated {
+		benefits = append(benefits, "esa_income_related")
+	}
+	if d.BenefitChildTaxCredit {
+		benefits = append(benefits, "child_tax_credit")
+	}
+	if d.BenefitOtherSupport {
+		benefits = append(benefits, "other_support")
+	}
+
+	return childFundingResponse{
+		ID: d.ID.String(), ChildID: d.ChildID.String(),
+		FundingEnabled:           d.FundingEnabled,
+		FundingType:              d.FundingType,
+		FundingModel:             d.FundingModel,
+		FundedHoursPerWeek:       d.FundedHoursPerWeek,
+		FundingStartDate:         startDate,
+		FundingEndDate:           endDate,
+		EligibilityCode:          d.EligibilityCode,
+		EligibilityCodeValidated: d.EligibilityCodeValidated,
+		EvidenceReceived:         d.EvidenceReceived,
+		BenefitsStatus:           d.BenefitsStatus,
+		Benefits:                 benefits,
+		OtherBenefitName:         d.OtherBenefitName,
+		BenefitNotes:             d.BenefitNotes,
+		ManagerNotes:             d.ManagerNotes,
+		CreatedAt:                d.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:                d.UpdatedAt.UTC().Format(time.RFC3339),
+	}
+}

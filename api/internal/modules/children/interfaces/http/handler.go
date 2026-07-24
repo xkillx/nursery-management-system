@@ -66,6 +66,10 @@ type (
 		Update *application.UpdateBillingProfile
 	}
 
+	FundingUseCases struct {
+		Get *application.GetChildFunding
+	}
+
 	ChildrenHandlerConfig struct {
 		Core            CoreUseCases
 		Profile         ProfileUseCases
@@ -76,6 +80,7 @@ type (
 		Collection      CollectionUseCases
 		RoomAssignments RoomAssignmentUseCases
 		BillingProfile  BillingProfileUseCases
+		Funding         FundingUseCases
 		LeavingRecord   *application.GetLeavingRecord
 		Photo           PhotoUseCases
 	}
@@ -115,6 +120,8 @@ type Handler struct {
 	getBillingProfile    *application.GetBillingProfile
 	updateBillingProfile *application.UpdateBillingProfile
 
+	getChildFunding *application.GetChildFunding
+
 	getLeavingRecord *application.GetLeavingRecord
 
 	uploadPhoto *application.UploadPhoto
@@ -147,6 +154,7 @@ func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 		closeRoomAssignment:   cfg.RoomAssignments.Close,
 		getBillingProfile:     cfg.BillingProfile.Get,
 		updateBillingProfile:  cfg.BillingProfile.Update,
+		getChildFunding:       cfg.Funding.Get,
 		getLeavingRecord:      cfg.LeavingRecord,
 		uploadPhoto:           cfg.Photo.Upload,
 		removePhoto:           cfg.Photo.Remove,
@@ -189,6 +197,8 @@ func (h *Handler) RegisterRoutes(protected *gin.RouterGroup) {
 
 	manager.GET("/children/:child_id/billing-profile", h.getBillingProfileHandler)
 	manager.PATCH("/children/:child_id/billing-profile", h.updateBillingProfileHandler)
+
+	manager.GET("/children/:child_id/funding", h.getChildFundingHandler)
 
 	manager.GET("/children/:child_id/leaving-record", h.getLeavingRecordHandler)
 
@@ -774,6 +784,24 @@ func (h *Handler) updateBillingProfileHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, toChildBillingProfileResponse(p))
+}
+
+func (h *Handler) getChildFundingHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+	data, err := h.getChildFunding.Execute(c.Request.Context(), actor, c.Param("child_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	if data == nil {
+		c.JSON(http.StatusOK, gin.H{"funding": nil})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"funding": toChildFundingResponse(data)})
 }
 
 func (h *Handler) getLeavingRecordHandler(c *gin.Context) {

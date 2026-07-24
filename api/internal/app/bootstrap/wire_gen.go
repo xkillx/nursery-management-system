@@ -146,6 +146,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bootstrapEnrollmentTermCreatorAdapter := provideEnrollmentTermCreatorAdapter(termRepository, bootstrapSiteRateProviderAdapter, writer)
 	fundingRecordRepositoryImpl := postgres7.NewFundingRecordRepository(pool)
 	bootstrapChildFundingWriterAdapter := provideChildFundingWriterAdapter(fundingRecordRepositoryImpl)
+	bootstrapChildFundingReaderAdapter := provideChildFundingReaderAdapter(fundingRecordRepositoryImpl)
 	todayFunc := provideTodayFunc()
 	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, bootstrapEnrollmentTermCreatorAdapter, bootstrapChildFundingWriterAdapter, todayFunc)
 	updateChild := application3.NewUpdateChild(childRepository, writer, transactionManager)
@@ -218,6 +219,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Update: updateBillingProfile,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
+	childGetFunding := application3.NewGetChildFunding(childRepository, bootstrapChildFundingReaderAdapter)
+	fundingUseCases := httpchild.FundingUseCases{
+		Get: childGetFunding,
+	}
 	fileStorage := provideFileStorage()
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
@@ -235,6 +240,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Collection:      collectionUseCases,
 		RoomAssignments: roomAssignmentUseCases,
 		BillingProfile:  billingProfileUseCases,
+		Funding:         fundingUseCases,
 		LeavingRecord:   getLeavingRecord,
 		Photo:           photoUseCases,
 	}
@@ -548,6 +554,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bootstrapEnrollmentTermCreatorAdapter := provideEnrollmentTermCreatorAdapter(termRepository, bootstrapSiteRateProviderAdapter, writer)
 	fundingRecordRepositoryImpl := postgres7.NewFundingRecordRepository(pool)
 	bootstrapChildFundingWriterAdapter := provideChildFundingWriterAdapter(fundingRecordRepositoryImpl)
+	bootstrapChildFundingReaderAdapter := provideChildFundingReaderAdapter(fundingRecordRepositoryImpl)
 	todayFunc := provideTodayFunc()
 	createChildWithFullProfile := application3.NewCreateChildWithFullProfile(childRepository, writer, transactionManager, bootstrapSessionTypeLookupAdapter, bootstrapEnrollmentTermCreatorAdapter, bootstrapChildFundingWriterAdapter, todayFunc)
 	updateChild := application3.NewUpdateChild(childRepository, writer, transactionManager)
@@ -620,6 +627,10 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Update: updateBillingProfile,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
+	childGetFunding := application3.NewGetChildFunding(childRepository, bootstrapChildFundingReaderAdapter)
+	fundingUseCases := httpchild.FundingUseCases{
+		Get: childGetFunding,
+	}
 	fileStorage := provideFileStorage()
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
@@ -637,6 +648,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Collection:      collectionUseCases,
 		RoomAssignments: roomAssignmentUseCases,
 		BillingProfile:  billingProfileUseCases,
+		Funding:         fundingUseCases,
 		LeavingRecord:   getLeavingRecord,
 		Photo:           photoUseCases,
 	}
@@ -951,7 +963,9 @@ func provideFileStorage() domain4.FileStorage {
 var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain4.Repository), new(*postgres3.ChildRepository)), provideFileStorage,
 	provideSessionTypeLookupAdapter, wire.Bind(new(application3.SessionTypeLookup), new(*sessionTypeLookupAdapter)), provideEnrollmentTermCreatorAdapter, wire.Bind(new(application3.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)), provideClock,
 	provideTodayFunc,
-	provideChildFundingWriterAdapter, wire.Bind(new(domain4.ChildFundingWriter), new(*childFundingWriterAdapter)), application3.NewListChildren, application3.NewGetChild, application3.NewCreateChildWithFullProfile, application3.NewUpdateChild, application3.NewMarkInactive, application3.NewListAttendance, application3.NewGetProfile, application3.NewUpdateProfile, application3.NewGetContacts, application3.NewReplaceContacts, application3.NewGetHealth, application3.NewUpdateHealth, application3.NewGetSafeguarding, application3.NewUpdateSafeguarding, application3.NewGetConsent, application3.NewUpdateConsent, application3.NewGetCollectionSetting, application3.NewSetCollectionPassword, application3.NewListRoomAssignments, application3.NewCreateRoomAssignment, application3.NewCloseRoomAssignment, application3.NewGetBillingProfile, application3.NewUpdateBillingProfile, application3.NewGetLeavingRecord, application3.NewUploadPhoto, application3.NewRemovePhoto, wire.Struct(new(httpchild.CoreUseCases), "*"), wire.Struct(new(httpchild.ProfileUseCases), "*"), wire.Struct(new(httpchild.ContactsUseCases), "*"), wire.Struct(new(httpchild.HealthUseCases), "*"), wire.Struct(new(httpchild.SafeguardingUseCases), "*"), wire.Struct(new(httpchild.ConsentUseCases), "*"), wire.Struct(new(httpchild.CollectionUseCases), "*"), wire.Struct(new(httpchild.RoomAssignmentUseCases), "*"), wire.Struct(new(httpchild.BillingProfileUseCases), "*"), wire.Struct(new(httpchild.PhotoUseCases), "*"), wire.Struct(new(httpchild.ChildrenHandlerConfig), "*"), httpchild.NewHandler,
+	provideChildFundingWriterAdapter, wire.Bind(new(domain4.ChildFundingWriter), new(*childFundingWriterAdapter)),
+	provideChildFundingReaderAdapter, wire.Bind(new(domain4.ChildFundingReader), new(*childFundingReaderAdapter)),
+	application3.NewListChildren, application3.NewGetChild, application3.NewCreateChildWithFullProfile, application3.NewUpdateChild, application3.NewMarkInactive, application3.NewListAttendance, application3.NewGetProfile, application3.NewUpdateProfile, application3.NewGetContacts, application3.NewReplaceContacts, application3.NewGetHealth, application3.NewUpdateHealth, application3.NewGetSafeguarding, application3.NewUpdateSafeguarding, application3.NewGetConsent, application3.NewUpdateConsent, application3.NewGetCollectionSetting, application3.NewSetCollectionPassword, application3.NewListRoomAssignments, application3.NewCreateRoomAssignment, application3.NewCloseRoomAssignment, application3.NewGetBillingProfile, application3.NewUpdateBillingProfile, application3.NewGetChildFunding, application3.NewGetLeavingRecord, application3.NewUploadPhoto, application3.NewRemovePhoto, wire.Struct(new(httpchild.CoreUseCases), "*"), wire.Struct(new(httpchild.ProfileUseCases), "*"), wire.Struct(new(httpchild.ContactsUseCases), "*"), wire.Struct(new(httpchild.HealthUseCases), "*"), wire.Struct(new(httpchild.SafeguardingUseCases), "*"), wire.Struct(new(httpchild.ConsentUseCases), "*"), wire.Struct(new(httpchild.CollectionUseCases), "*"), wire.Struct(new(httpchild.RoomAssignmentUseCases), "*"), wire.Struct(new(httpchild.BillingProfileUseCases), "*"), wire.Struct(new(httpchild.FundingUseCases), "*"), wire.Struct(new(httpchild.PhotoUseCases), "*"), wire.Struct(new(httpchild.ChildrenHandlerConfig), "*"), httpchild.NewHandler,
 )
 
 var parentChildMappingsSet = wire.NewSet(postgres10.NewParentChildMappingRepository, wire.Bind(new(domain5.Repository), new(*postgres10.ParentChildMappingRepository)), provideMembershipCheckerAdapter, wire.Bind(new(domain5.MembershipChecker), new(*membershipCheckerAdapter)), provideChildScopeCheckerAdapter, wire.Bind(new(application5.ChildChecker), new(*childScopeCheckerAdapter)), application5.NewCreateMappingUseCase, application5.NewEndMappingUseCase, httpmapping.NewHandler)

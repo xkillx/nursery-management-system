@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -48,6 +49,8 @@ func (uc *UpdateChildFunding) Execute(ctx context.Context, actor tenant.ActorCon
 		FundingType:              params.FundingType,
 		FundingModel:             params.FundingModel,
 		FundedHoursPerWeek:       params.FundedHoursPerWeek,
+		FundingStartDate:         parseDatePtr(params.FundingStartDate),
+		FundingEndDate:           parseDatePtr(params.FundingEndDate),
 		EligibilityCode:          params.EligibilityCode,
 		EligibilityCodeValidated: params.EligibilityCodeValidated,
 		EvidenceReceived:         params.EvidenceReceived,
@@ -72,4 +75,15 @@ func (uc *UpdateChildFunding) Execute(ctx context.Context, actor tenant.ActorCon
 	}
 
 	return saved, nil
+}
+
+func parseDatePtr(s *string) *time.Time {
+	if s == nil || *s == "" {
+		return nil
+	}
+	t, err := time.Parse("2006-01-02", *s)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
