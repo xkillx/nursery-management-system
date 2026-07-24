@@ -157,6 +157,30 @@ func toUnifiedBookingListResponse(items []domain.UnifiedBookingRow) []unifiedBoo
 	return out
 }
 
+func toUnifiedBookingDetailResponse(b domain.UnifiedBookingRow) bookingResponse {
+	var endDate *string
+	if b.EndDate != nil {
+		s := b.EndDate.UTC().Format("2006-01-02")
+		endDate = &s
+	}
+
+	startDateStr := b.StartDate.UTC().Format("2006-01-02")
+	return bookingResponse{
+		BookingType:        b.BookingType,
+		ID:                 b.ID.String(),
+		ChildID:            b.ChildID.String(),
+		ChildFirstName:     b.ChildFirstName,
+		ChildLastName:      b.ChildLastName,
+		StartDate:          startDateStr,
+		EndDate:            endDate,
+		EffectiveStartDate: startDateStr,
+		EffectiveEndDate:   endDate,
+		Status:             b.Status,
+		CreatedAt:          b.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:          b.UpdatedAt.UTC().Format(time.RFC3339),
+	}
+}
+
 func toRoomCapacityListResponse(entries []application.RoomCapacityEntry) []roomCapacityEntryResponse {
 	out := make([]roomCapacityEntryResponse, 0, len(entries))
 	for _, e := range entries {

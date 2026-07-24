@@ -209,3 +209,20 @@ func mapUnifiedBookingRow(row sqlc.BookingsUnifiedListByBranchRow) domain.Unifie
 		ChildLastName:  row.ChildLastName.String,
 	}
 }
+
+func mapUnifiedGetByIDRow(row sqlc.BookingsUnifiedGetByIDRow) domain.UnifiedBookingRow {
+	return domain.UnifiedBookingRow{
+		BookingType:    row.BookingType,
+		ID:             pgtypeUUIDToUUID(row.ID),
+		TenantID:       pgtypeUUIDToUUID(row.TenantID),
+		BranchID:       pgtypeUUIDToUUID(row.BranchID),
+		ChildID:        pgtypeUUIDToUUID(row.ChildID),
+		StartDate:      pgtypeDateToTime(row.StartDate),
+		EndDate:        pgtypeDatePtr(row.EndDate),
+		Status:         row.Status,
+		CreatedAt:      pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:      pgtypeTimestamptzToTime(row.UpdatedAt),
+		ChildFirstName: row.ChildFirstName,
+		ChildLastName:  row.ChildLastName.String,
+	}
+}

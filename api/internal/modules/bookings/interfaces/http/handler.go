@@ -337,7 +337,7 @@ func (h *Handler) listBookings(c *gin.Context) {
 // getBooking returns a single booking.
 //
 //	@Summary		Get booking
-//	@Description	Get a single booking by ID.
+//	@Description	Get a single booking by ID (supports recurring, ad-hoc, and hourly bookings).
 //	@Tags			bookings
 //	@Produce		json
 //	@Param			site_id		path		string	true	"Site ID"		format(uuid)
@@ -368,13 +368,26 @@ func (h *Handler) getBooking(c *gin.Context) {
 		return
 	}
 
-	booking, err := h.get.Execute(c.Request.Context(), actor, siteID, bookingID)
+	// Try unified lookup first to determine booking type
+	unified, err := h.list.GetUnifiedByID(c.Request.Context(), actor, siteID, bookingID)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"booking": toBookingResponse(booking)})
+	if unified.BookingType == "recurring" {
+		// For recurring bookings, return full detail
+		booking, err := h.get.Execute(c.Request.Context(), actor, siteID, bookingID)
+		if err != nil {
+			h.handleError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"booking": toBookingResponse(booking)})
+		return
+	}
+
+	// For ad_hoc and hourly bookings, return unified format
+	c.JSON(http.StatusOK, gin.H{"booking": toUnifiedBookingDetailResponse(unified)})
 }
 
 // createBooking creates a new recurring booking.

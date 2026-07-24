@@ -83,7 +83,7 @@ func (q *Queries) BookingEntriesForChildInMonth(ctx context.Context, arg Booking
 const bookingsCancel = `-- name: BookingsCancel :exec
 UPDATE bookings
 SET status = 'cancelled', updated_at = now()
-WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status = 'active'
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status IN ('active', 'paused')
 `
 
 type BookingsCancelParams struct {
@@ -496,6 +496,112 @@ type BookingsPauseParams struct {
 func (q *Queries) BookingsPause(ctx context.Context, arg BookingsPauseParams) error {
 	_, err := q.db.Exec(ctx, bookingsPause, arg.TenantID, arg.BranchID, arg.ID)
 	return err
+}
+
+const bookingsUnifiedGetByID = `-- name: BookingsUnifiedGetByID :one
+SELECT
+    'recurring' AS booking_type,
+    b.id,
+    b.tenant_id,
+    b.branch_id,
+    b.child_id,
+    b.effective_start_date AS start_date,
+    b.effective_end_date AS end_date,
+    b.status,
+    b.created_at,
+    b.updated_at,
+    c.first_name AS child_first_name,
+    c.last_name AS child_last_name
+FROM bookings b
+JOIN children c ON c.id = b.child_id AND c.tenant_id = b.tenant_id AND c.branch_id = b.branch_id
+WHERE b.tenant_id = $1
+  AND b.branch_id = $2
+  AND b.id = $3
+
+UNION ALL
+
+SELECT
+    'ad_hoc' AS booking_type,
+    ah.id,
+    ah.tenant_id,
+    ah.branch_id,
+    ah.child_id,
+    ah.calendar_date AS start_date,
+    ah.calendar_date AS end_date,
+    ah.status,
+    ah.created_at,
+    ah.updated_at,
+    c.first_name AS child_first_name,
+    c.last_name AS child_last_name
+FROM ad_hoc_bookings ah
+JOIN children c ON c.id = ah.child_id AND c.tenant_id = ah.tenant_id AND c.branch_id = ah.branch_id
+WHERE ah.tenant_id = $1
+  AND ah.branch_id = $2
+  AND ah.id = $3
+
+UNION ALL
+
+SELECT
+    'hourly' AS booking_type,
+    h.id,
+    h.tenant_id,
+    h.branch_id,
+    h.child_id,
+    h.calendar_date AS start_date,
+    h.calendar_date AS end_date,
+    h.status,
+    h.created_at,
+    h.updated_at,
+    c.first_name AS child_first_name,
+    c.last_name AS child_last_name
+FROM hourly_bookings h
+JOIN children c ON c.id = h.child_id AND c.tenant_id = h.tenant_id AND c.branch_id = h.branch_id
+WHERE h.tenant_id = $1
+  AND h.branch_id = $2
+  AND h.id = $3
+
+LIMIT 1
+`
+
+type BookingsUnifiedGetByIDParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+type BookingsUnifiedGetByIDRow struct {
+	BookingType    string
+	ID             pgtype.UUID
+	TenantID       pgtype.UUID
+	BranchID       pgtype.UUID
+	ChildID        pgtype.UUID
+	StartDate      pgtype.Date
+	EndDate        pgtype.Date
+	Status         string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	ChildFirstName string
+	ChildLastName  pgtype.Text
+}
+
+func (q *Queries) BookingsUnifiedGetByID(ctx context.Context, arg BookingsUnifiedGetByIDParams) (BookingsUnifiedGetByIDRow, error) {
+	row := q.db.QueryRow(ctx, bookingsUnifiedGetByID, arg.TenantID, arg.BranchID, arg.ID)
+	var i BookingsUnifiedGetByIDRow
+	err := row.Scan(
+		&i.BookingType,
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.ChildID,
+		&i.StartDate,
+		&i.EndDate,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ChildFirstName,
+		&i.ChildLastName,
+	)
+	return i, err
 }
 
 const bookingsUnifiedListByBranch = `-- name: BookingsUnifiedListByBranch :many

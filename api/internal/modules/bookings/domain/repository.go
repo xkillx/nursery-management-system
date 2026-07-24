@@ -20,6 +20,7 @@ type Repository interface {
 	Pause(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
 	ListByChildAndDateRange(ctx context.Context, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]Booking, error)
 	ListUnifiedByBranchPaginated(ctx context.Context, tenantID, branchID uuid.UUID, filters ListFilters, limit, offset int) ([]UnifiedBookingRow, error)
+	GetUnifiedByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (UnifiedBookingRow, error)
 }
 
 type UnifiedBookingRow struct {

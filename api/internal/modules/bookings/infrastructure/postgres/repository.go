@@ -244,3 +244,19 @@ func (r *BookingRepository) ListUnifiedByBranchPaginated(ctx context.Context, te
 	}
 	return out, nil
 }
+
+func (r *BookingRepository) GetUnifiedByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (domain.UnifiedBookingRow, error) {
+	q := sqlc.New(r.pool)
+	row, err := q.BookingsUnifiedGetByID(ctx, sqlc.BookingsUnifiedGetByIDParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
+	if isNoRows(err) {
+		return domain.UnifiedBookingRow{}, domain.ErrBookingNotFound
+	}
+	if err != nil {
+		return domain.UnifiedBookingRow{}, fmt.Errorf("query unified booking by id: %w", err)
+	}
+	return mapUnifiedGetByIDRow(row), nil
+}

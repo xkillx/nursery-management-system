@@ -61,3 +61,16 @@ func (uc *ListBookings) ExecuteUnified(ctx context.Context, actor BookingActor, 
 
 	return rows, nil
 }
+
+func (uc *ListBookings) GetUnifiedByID(ctx context.Context, actor BookingActor, siteID, bookingID uuid.UUID) (domain.UnifiedBookingRow, error) {
+	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
+		return domain.UnifiedBookingRow{}, err
+	}
+
+	row, err := uc.repo.GetUnifiedByID(ctx, actor.TenantID(), siteID, bookingID)
+	if err != nil {
+		return domain.UnifiedBookingRow{}, err
+	}
+
+	return row, nil
+}
