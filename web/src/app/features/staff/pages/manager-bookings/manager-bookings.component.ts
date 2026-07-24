@@ -28,14 +28,12 @@ import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/ch
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffSessionTypesApiService } from '../../data/session-types-api.service';
 import { StaffSessionTemplatesApiService } from '../../data/session-templates-api.service';
-import { ToastService } from '../../../../shared/services/toast.service';
 import {
   UnifiedBooking,
   BookingType,
   BookingStatus,
   BookingListFilters,
 } from '../../models/booking.models';
-import { BookingDetailDrawerComponent } from './booking-detail-drawer/booking-detail-drawer.component';
 
 const BOOKING_TYPE_OPTIONS: { value: BookingType; label: string }[] = [
   { value: 'recurring', label: 'Recurring' },
@@ -88,7 +86,6 @@ interface SessionLookup {
     StatusBadgeComponent,
     ChildAvatarComponent,
     NgIcon,
-    BookingDetailDrawerComponent,
   ],
   templateUrl: './manager-bookings.component.html',
   providers: [
@@ -114,7 +111,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
   private readonly searchChanged$ = new Subject<string>();
@@ -145,7 +141,6 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
 
   isCreateDropdownOpen = false;
-  selectedBooking: UnifiedBooking | null = null;
 
   get metricCards(): BookingMetric[] {
     const recurring = this.items.filter((b) => b.bookingType === 'recurring');
@@ -438,23 +433,11 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
   openBookingDetail(booking: UnifiedBooking, event: Event): void {
     const target = event.target as HTMLElement;
     if (target.closest('button')) return;
-    this.selectedBooking = booking;
+    this.router.navigate(['/manager/bookings', booking.id]);
   }
 
-  closeDetailDrawer(): void {
-    this.selectedBooking = null;
-  }
-
-  onBookingCancelled(): void {
-    this.closeDetailDrawer();
-    this.loadList();
-    this.toast.success('Booking cancelled successfully.');
-  }
-
-  onBookingUpdated(): void {
-    this.closeDetailDrawer();
-    this.loadList();
-    this.toast.success('Booking updated successfully.');
+  navigateToView(booking: UnifiedBooking): void {
+    this.router.navigate(['/manager/bookings', booking.id]);
   }
 
   sessionName(id: string | undefined): string {

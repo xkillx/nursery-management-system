@@ -17,8 +17,13 @@ type sessionEntryResponse struct {
 }
 
 type bookingResponse struct {
+	BookingType          string                 `json:"booking_type"`
 	ID                   string                 `json:"id"`
 	ChildID              string                 `json:"child_id"`
+	ChildFirstName       string                 `json:"child_first_name"`
+	ChildLastName        string                 `json:"child_last_name"`
+	StartDate            string                 `json:"start_date"`
+	EndDate              *string                `json:"end_date,omitempty"`
 	EffectiveStartDate   string                 `json:"effective_start_date"`
 	EffectiveEndDate     *string                `json:"effective_end_date,omitempty"`
 	FundingType          *string                `json:"funding_type,omitempty"`
@@ -104,10 +109,16 @@ func toBookingResponse(b domain.Booking) bookingResponse {
 		}
 	}
 
+	startDateStr := b.EffectiveStartDate.UTC().Format("2006-01-02")
 	return bookingResponse{
+		BookingType:          "recurring",
 		ID:                   b.ID.String(),
 		ChildID:              b.ChildID.String(),
-		EffectiveStartDate:   b.EffectiveStartDate.UTC().Format("2006-01-02"),
+		ChildFirstName:       b.ChildFirstName,
+		ChildLastName:        b.ChildLastName,
+		StartDate:            startDateStr,
+		EndDate:              endDate,
+		EffectiveStartDate:   startDateStr,
 		EffectiveEndDate:     endDate,
 		FundingType:          b.FundingType,
 		FundingHoursPerWeek:  b.FundingHoursPerWeek,

@@ -29,6 +29,7 @@ import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/
 import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
 import { ManagerClosureDaysComponent } from './features/staff/pages/manager-closure-days/manager-closure-days.component';
 import { ManagerBookingsComponent } from './features/staff/pages/manager-bookings/manager-bookings.component';
+import { ManagerBookingDetailComponent } from './features/staff/pages/manager-booking-detail/manager-booking-detail.component';
 import { CreateRecurringBookingComponent } from './features/staff/pages/create-recurring-booking/create-recurring-booking.component';
 import { CreateAdHocBookingComponent } from './features/staff/pages/create-ad-hoc-booking/create-ad-hoc-booking.component';
 import { CreateHourlyBookingComponent } from './features/staff/pages/create-hourly-booking/create-hourly-booking.component';
@@ -340,6 +341,16 @@ export const routes: Routes = [
               breadcrumb: { label: 'New Hourly Booking', parent: '/manager/bookings' },
             },
             title: 'New Hourly Booking | Nursery Management',
+          },
+          {
+            path: 'manager/bookings/:bookingId',
+            component: ManagerBookingDetailComponent,
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['manager'],
+              breadcrumb: { label: 'Booking Details', parent: '/manager/bookings' },
+            },
+            title: 'Booking Details | Nursery Management',
           },
           {
             path: 'manager/bookings',

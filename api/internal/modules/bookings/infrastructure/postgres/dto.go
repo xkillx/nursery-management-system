@@ -83,11 +83,20 @@ func float64ToPgtypeNumeric(f *float64) pgtype.Numeric {
 	return n
 }
 
+func pgtypeTextString(t pgtype.Text) string {
+	if !t.Valid {
+		return ""
+	}
+	return t.String
+}
+
 type bookingRow struct {
 	ID                   pgtype.UUID
 	TenantID             pgtype.UUID
 	BranchID             pgtype.UUID
 	ChildID              pgtype.UUID
+	ChildFirstName       string
+	ChildLastName        string
 	EffectiveStartDate   pgtype.Date
 	EffectiveEndDate     pgtype.Date
 	FundingType          pgtype.Text
@@ -119,6 +128,8 @@ func mapBooking(row bookingRow) domain.Booking {
 		TenantID:             pgtypeUUIDToUUID(row.TenantID),
 		BranchID:             pgtypeUUIDToUUID(row.BranchID),
 		ChildID:              pgtypeUUIDToUUID(row.ChildID),
+		ChildFirstName:       row.ChildFirstName,
+		ChildLastName:        row.ChildLastName,
 		EffectiveStartDate:   pgtypeDateToTime(row.EffectiveStartDate),
 		EffectiveEndDate:     pgtypeDatePtr(row.EffectiveEndDate),
 		FundingType:          pgtypeTextPtr(row.FundingType),
@@ -136,6 +147,7 @@ func mapBooking(row bookingRow) domain.Booking {
 func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 	return bookingRow{
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
+		ChildFirstName: r.ChildFirstName, ChildLastName: pgtypeTextString(r.ChildLastName),
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
 		LaReference: r.LaReference, SessionEntries: r.SessionEntries,

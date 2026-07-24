@@ -3,11 +3,29 @@ INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12);
 
 -- name: BookingsGetByID :one
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
-FROM bookings
-WHERE tenant_id = $1
-  AND branch_id = $2
-  AND id = $3;
+SELECT
+    b.id,
+    b.tenant_id,
+    b.branch_id,
+    b.child_id,
+    b.effective_start_date,
+    b.effective_end_date,
+    b.funding_type,
+    b.funding_hours_per_week,
+    b.la_reference,
+    b.session_entries,
+    b.status,
+    b.booked_by_membership_id,
+    b.term_time_only,
+    b.created_at,
+    b.updated_at,
+    c.first_name AS child_first_name,
+    c.last_name AS child_last_name
+FROM bookings b
+JOIN children c ON c.id = b.child_id AND c.tenant_id = b.tenant_id AND c.branch_id = b.branch_id
+WHERE b.tenant_id = $1
+  AND b.branch_id = $2
+  AND b.id = $3;
 
 -- name: BookingsGetByIDForUpdate :one
 SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at

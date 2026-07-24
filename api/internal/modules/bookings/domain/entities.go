@@ -22,6 +22,8 @@ type Booking struct {
 	TenantID             uuid.UUID
 	BranchID             uuid.UUID
 	ChildID              uuid.UUID
+	ChildFirstName       string
+	ChildLastName        string
 	EffectiveStartDate   time.Time
 	EffectiveEndDate     *time.Time
 	FundingType          *string

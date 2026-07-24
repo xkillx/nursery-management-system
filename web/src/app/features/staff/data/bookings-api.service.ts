@@ -9,6 +9,8 @@ import {
   BookingListFilters,
   BookingType,
   BookingStatus,
+  BookingDetail,
+  SessionEntry,
   CreateRecurringBookingRequest,
   CreateAdHocBookingRequest,
   CreateHourlyBookingRequest,
@@ -27,6 +29,31 @@ interface UnifiedBookingApi {
   funding_type?: string | null;
   funding_hours_per_week?: number | null;
   la_reference?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SessionEntryApi {
+  day_of_week: number;
+  session_type_id: string;
+}
+
+interface BookingDetailApi {
+  booking_type?: string;
+  id: string;
+  child_id: string;
+  child_first_name?: string;
+  child_last_name?: string;
+  start_date?: string;
+  end_date?: string | null;
+  effective_start_date?: string;
+  effective_end_date?: string | null;
+  status: string;
+  funding_type?: string | null;
+  funding_hours_per_week?: number | null;
+  la_reference?: string | null;
+  session_entries?: SessionEntryApi[];
+  term_time_only?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +96,12 @@ export class BookingsApiService {
     return this.http
       .get<{ booking: UnifiedBookingApi }>(apiUrl(`/sites/${siteId}/bookings/${bookingId}`))
       .pipe(map((res) => this.toBooking(res.booking)));
+  }
+
+  getBookingDetail(siteId: string, bookingId: string): Observable<BookingDetail> {
+    return this.http
+      .get<{ booking: BookingDetailApi }>(apiUrl(`/sites/${siteId}/bookings/${bookingId}`))
+      .pipe(map((res) => this.toBookingDetail(res.booking)));
   }
 
   createRecurringBooking(siteId: string, data: CreateRecurringBookingRequest): Observable<unknown> {
@@ -120,6 +153,29 @@ export class BookingsApiService {
       fundingType: b.funding_type ?? null,
       fundingHoursPerWeek: b.funding_hours_per_week ?? null,
       laReference: b.la_reference ?? null,
+      createdAt: b.created_at,
+      updatedAt: b.updated_at,
+    };
+  }
+
+  private toBookingDetail(b: BookingDetailApi): BookingDetail {
+    return {
+      bookingType: (b.booking_type || 'recurring') as BookingType,
+      id: b.id,
+      childId: b.child_id,
+      childFirstName: b.child_first_name ?? '',
+      childLastName: b.child_last_name ?? '',
+      startDate: b.start_date || b.effective_start_date || '',
+      endDate: b.end_date ?? b.effective_end_date ?? null,
+      status: b.status as BookingStatus,
+      fundingType: b.funding_type ?? null,
+      fundingHoursPerWeek: b.funding_hours_per_week ?? null,
+      laReference: b.la_reference ?? null,
+      sessionEntries: (b.session_entries ?? []).map((e) => ({
+        day_of_week: e.day_of_week,
+        session_type_id: e.session_type_id,
+      } as SessionEntry)),
+      termTimeOnly: b.term_time_only ?? false,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
     };

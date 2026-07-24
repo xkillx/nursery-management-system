@@ -12,6 +12,19 @@
     @if (!isEditMode) {
       <!-- Detail view -->
       <div class="space-y-6">
+        <!-- View full details link -->
+        @if (booking) {
+          <a
+            [routerLink]="['/manager/bookings', booking.id]"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+          >
+            View full details
+            <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        }
+
         <!-- Type badge and status -->
         <div class="flex items-center gap-3">
           <span

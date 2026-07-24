@@ -40,6 +40,24 @@ export interface SessionEntry {
   session_type_id: string;
 }
 
+export interface BookingDetail {
+  bookingType: BookingType;
+  id: string;
+  childId: string;
+  childFirstName: string;
+  childLastName: string;
+  startDate: string;
+  endDate: string | null;
+  status: BookingStatus;
+  fundingType: string | null;
+  fundingHoursPerWeek: number | null;
+  laReference: string | null;
+  sessionEntries: SessionEntry[];
+  termTimeOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateRecurringBookingRequest {
   child_id: string;
   effective_start_date: string;

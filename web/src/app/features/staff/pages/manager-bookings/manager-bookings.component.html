@@ -312,7 +312,7 @@
                   <button
                     type="button"
                     class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
-                    (click)="selectedBooking = booking"
+                    (click)="navigateToView(booking)"
                   >
                     <ng-icon name="heroEye" size="14" aria-hidden="true" />
                     <span>View</span>
@@ -372,7 +372,7 @@
               <button
                 type="button"
                 class="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-brand-500 hover:text-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400 cursor-pointer"
-                (click)="selectedBooking = booking"
+                (click)="navigateToView(booking)"
               >
                 <ng-icon name="heroEye" size="14" aria-hidden="true" />
                 <span>View</span>
@@ -437,17 +437,4 @@
       </div>
     }
   </section>
-
-  <!-- Detail Booking Drawer -->
-  @if (selectedBooking) {
-    <app-booking-detail-drawer
-      [isOpen]="!!selectedBooking"
-      [booking]="selectedBooking"
-      [siteId]="siteId"
-      [sessionLookup]="sessionLookup"
-      (closed)="closeDetailDrawer()"
-      (cancelled)="onBookingCancelled()"
-      (updated)="onBookingUpdated()"
-    />
-  }
 </div>

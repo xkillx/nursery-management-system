@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCalendarDays, heroPencilSquare, heroXMark, heroXCircle } from '@ng-icons/heroicons/outline';
 
@@ -17,6 +18,7 @@ import { UnifiedBooking, BookingType } from '../../../models/booking.models';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     DrawerComponent,
     AlertComponent,
     StatusBadgeComponent,
