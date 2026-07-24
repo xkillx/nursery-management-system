@@ -24,6 +24,9 @@ interface UnifiedBookingApi {
   start_date: string;
   end_date: string | null;
   status: string;
+  funding_type?: string | null;
+  funding_hours_per_week?: number | null;
+  la_reference?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +117,9 @@ export class BookingsApiService {
       startDate: b.start_date,
       endDate: b.end_date ?? null,
       status: b.status as BookingStatus,
+      fundingType: b.funding_type ?? null,
+      fundingHoursPerWeek: b.funding_hours_per_week ?? null,
+      laReference: b.la_reference ?? null,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
     };

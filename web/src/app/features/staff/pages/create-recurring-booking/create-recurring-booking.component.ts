@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RadioCardGroupComponent, RadioCardOption } from '../../../../shared/components/form/radio-card-group/radio-card-group.component';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroCake, heroHomeModern, heroCheckCircle } from '@ng-icons/heroicons/outline';
+import { heroCalendarDays, heroArrowLeft, heroUser, heroCreditCard, heroCake, heroHomeModern, heroCheckCircle, heroExclamationTriangle } from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
@@ -19,8 +19,17 @@ import { StaffRoomsApiService, StaffRoom } from '../../data/staff-rooms-api.serv
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
-import { SessionEntry } from '../../models/booking.models';
+import { SessionEntry, CreateRecurringBookingRequest } from '../../models/booking.models';
+import { FundingRecordDetail } from '../../models/funding.models';
 import { AuthService } from '../../../../core/services/auth.service';
+
+interface AutoFundingInfo {
+  fundingType: string;
+  fundingHours: number | null;
+  laReference: string;
+  termTimeOnly: boolean;
+  fundingEndDate: string | null;
+}
 
 @Component({
   selector: 'app-create-recurring-booking',
@@ -49,6 +58,7 @@ import { AuthService } from '../../../../core/services/auth.service';
       heroCake,
       heroHomeModern,
       heroCheckCircle,
+      heroExclamationTriangle,
     }),
   ],
 })
@@ -77,6 +87,11 @@ export class CreateRecurringBookingComponent implements OnInit {
   hourlyRateMinor: number | null = null;
   termTimeOnly = false;
 
+  autoFunding: AutoFundingInfo | null = null;
+  hasFundingRecord = false;
+  isLoadingFunding = false;
+  isOverrideActive = false;
+
   isSaving = false;
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
@@ -84,13 +99,15 @@ export class CreateRecurringBookingComponent implements OnInit {
   readonly fundingOptions: RadioCardOption[] = [
     { value: 'universal_15', label: 'Universal (15h)', description: 'Available for 3-4 year olds' },
     { value: 'working_parent', label: 'Working Parent (30h)', description: 'Working families grant' },
+    { value: 'working_parent_under_3', label: 'Working Parent Under 3 (15h)', description: 'Under 3 working parent' },
+    { value: 'disadvantaged_2yo', label: 'Disadvantaged 2yr (15h)', description: 'Two-year-old funding' },
     { value: 'none', label: 'None / Private', description: 'Fully chargeable rate' },
   ];
 
   onFundingTypeChange(): void {
-    if (this.fundingType === 'universal_15') {
+    if (this.fundingType === 'universal_15' || this.fundingType === 'disadvantaged_2yo' || this.fundingType === 'working_parent_under_3') {
       this.fundingHours = 15;
-    } else if (this.fundingType === 'working_parent' || this.fundingType === 'working_parent_under_3') {
+    } else if (this.fundingType === 'working_parent') {
       this.fundingHours = 30;
     } else {
       this.fundingHours = null;
@@ -112,6 +129,28 @@ export class CreateRecurringBookingComponent implements OnInit {
     return room?.name ?? '';
   }
 
+  get effectiveFundingType(): string {
+    return this.isOverrideActive ? this.fundingType : (this.autoFunding?.fundingType ?? '');
+  }
+
+  get effectiveFundingHours(): number | null {
+    return this.isOverrideActive ? this.fundingHours : (this.autoFunding?.fundingHours ?? null);
+  }
+
+  get effectiveLaReference(): string {
+    return this.isOverrideActive ? this.laReference : (this.autoFunding?.laReference ?? '');
+  }
+
+  get effectiveTermTimeOnly(): boolean {
+    return this.isOverrideActive ? this.termTimeOnly : (this.autoFunding?.termTimeOnly ?? false);
+  }
+
+  get fundingTypeLabel(): string {
+    const type = this.effectiveFundingType;
+    const opt = this.fundingOptions.find((o) => o.value === type);
+    return opt?.label ?? type;
+  }
+
   ngOnInit(): void {
     const membership = this.auth.activeMembership();
     if (!membership?.branch_id) {
@@ -125,6 +164,35 @@ export class CreateRecurringBookingComponent implements OnInit {
   onChildSelected(child: ChildRecord | null): void {
     this.selectedChild = child;
     this.childId = child?.id ?? '';
+    this.autoFunding = null;
+    this.hasFundingRecord = false;
+    this.isOverrideActive = false;
+    this.fundingType = '';
+    this.fundingHours = null;
+    this.laReference = '';
+    this.termTimeOnly = false;
+
+    if (child && this.siteId) {
+      this.loadChildFunding(child.id);
+    }
+  }
+
+  toggleOverride(): void {
+    this.isOverrideActive = !this.isOverrideActive;
+    if (this.isOverrideActive && this.autoFunding) {
+      this.fundingType = this.autoFunding.fundingType;
+      this.fundingHours = this.autoFunding.fundingHours;
+      this.laReference = this.autoFunding.laReference;
+      this.termTimeOnly = this.autoFunding.termTimeOnly;
+    }
+  }
+
+  clearOverride(): void {
+    this.isOverrideActive = false;
+    this.fundingType = '';
+    this.fundingHours = null;
+    this.laReference = '';
+    this.termTimeOnly = false;
   }
 
   childLabelFn(child: ChildRecord): string {
@@ -153,16 +221,21 @@ export class CreateRecurringBookingComponent implements OnInit {
     this.formError = null;
     this.formFieldErrors = {};
 
-    this.bookingsApi.createRecurringBooking(this.siteId, {
+    const payload: CreateRecurringBookingRequest = {
       child_id: this.childId,
       session_entries: this.sessionEntries,
       effective_start_date: this.startDate,
       effective_end_date: this.endDate || undefined,
-      funding_type: this.fundingType || undefined,
-      funding_hours_per_week: this.fundingHours ?? undefined,
-      la_reference: this.laReference || undefined,
-      term_time_only: this.termTimeOnly,
-    }).subscribe({
+      term_time_only: this.effectiveTermTimeOnly,
+    };
+
+    if (this.isOverrideActive) {
+      payload.funding_type = this.fundingType || undefined;
+      payload.funding_hours_per_week = this.fundingHours ?? undefined;
+      payload.la_reference = this.laReference || undefined;
+    }
+
+    this.bookingsApi.createRecurringBooking(this.siteId, payload).subscribe({
       next: () => {
         this.isSaving = false;
         this.router.navigate(['/manager/bookings']);
@@ -182,6 +255,34 @@ export class CreateRecurringBookingComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/manager/bookings']);
+  }
+
+  private loadChildFunding(childId: string): void {
+    this.isLoadingFunding = true;
+    const billingMonth = new Date().toISOString().slice(0, 7);
+    this.staffApi.getFundingRecord(childId, billingMonth).subscribe({
+      next: (detail: FundingRecordDetail) => {
+        this.isLoadingFunding = false;
+        if (detail.record.fundingEnabled) {
+          this.hasFundingRecord = true;
+          this.autoFunding = {
+            fundingType: detail.record.fundingType,
+            fundingHours: detail.record.fundedHoursPerWeek,
+            laReference: detail.record.eligibilityCode ?? '',
+            termTimeOnly: detail.record.fundingModel === 'term_time_only',
+            fundingEndDate: detail.record.fundingEndDate,
+          };
+        } else {
+          this.hasFundingRecord = false;
+          this.autoFunding = null;
+        }
+      },
+      error: () => {
+        this.isLoadingFunding = false;
+        this.hasFundingRecord = false;
+        this.autoFunding = null;
+      },
+    });
   }
 
   private loadData(): void {

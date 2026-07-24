@@ -461,7 +461,8 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
-	createBooking := application10.NewCreateBooking(bookingRepository)
+	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
+	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
 	getBooking := application10.NewGetBooking(bookingRepository)
 	listBookings := application10.NewListBookings(bookingRepository)
 	updateBooking := application10.NewUpdateBooking(bookingRepository, transactionManager)
@@ -862,7 +863,8 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
-	createBooking := application10.NewCreateBooking(bookingRepository)
+	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
+	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
 	getBooking := application10.NewGetBooking(bookingRepository)
 	listBookings := application10.NewListBookings(bookingRepository)
 	updateBooking := application10.NewUpdateBooking(bookingRepository, transactionManager)
@@ -1109,7 +1111,13 @@ func provideParentChildLookupAdapter(
 	return &parentChildLookupAdapter{repo: parentChildRepo}
 }
 
-var bookingsSet = wire.NewSet(postgres22.NewRepository, wire.Bind(new(domain20.Repository), new(*postgres22.BookingRepository)), application10.NewCreateBooking, application10.NewGetBooking, application10.NewListBookings, application10.NewUpdateBooking, application10.NewCancelBooking, application10.NewPauseBooking, application10.NewCloneBooking, application10.NewListCapacity, provideRoomCapacityLookupAdapter, wire.Bind(new(application10.RoomCapacityLookup), new(*roomCapacityLookupAdapter)), provideParentChildLookupAdapter, wire.Bind(new(application10.ParentChildLookup), new(*parentChildLookupAdapter)), application10.NewListParentBookings, application10.NewCreateBookingRequest, application10.NewCancelParentBooking, httpbookings.NewHandler)
+func provideBookingsFundingLookupAdapterForWire(
+	fundingRepo *postgres7.FundingRecordRepositoryImpl,
+) *bookingsFundingLookupAdapter {
+	return provideBookingsFundingLookupAdapter(fundingRepo)
+}
+
+var bookingsSet = wire.NewSet(postgres22.NewRepository, wire.Bind(new(domain20.Repository), new(*postgres22.BookingRepository)), application10.NewCreateBooking, provideBookingsFundingLookupAdapterForWire, wire.Bind(new(domain20.FundingLookup), new(*bookingsFundingLookupAdapter)), application10.NewGetBooking, application10.NewListBookings, application10.NewUpdateBooking, application10.NewCancelBooking, application10.NewPauseBooking, application10.NewCloneBooking, application10.NewListCapacity, provideRoomCapacityLookupAdapter, wire.Bind(new(application10.RoomCapacityLookup), new(*roomCapacityLookupAdapter)), provideParentChildLookupAdapter, wire.Bind(new(application10.ParentChildLookup), new(*parentChildLookupAdapter)), application10.NewListParentBookings, application10.NewCreateBookingRequest, application10.NewCancelParentBooking, httpbookings.NewHandler)
 
 var branchClosuresSet = wire.NewSet(postgres16.NewRepository, wire.Bind(new(domain21.Repository), new(*postgres16.Repository)), application21.NewCreateClosureDay, application21.NewListClosureDays, application21.NewDeleteClosureDay, httpclosure.NewHandler, provideClosureDateLookupAdapter, wire.Bind(new(domain9.ClosureDateLookup), new(*closureDateLookupAdapter)))
 

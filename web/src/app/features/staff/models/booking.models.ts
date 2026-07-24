@@ -11,6 +11,9 @@ export interface UnifiedBooking {
   startDate: string;
   endDate: string | null;
   status: BookingStatus;
+  fundingType?: string | null;
+  fundingHoursPerWeek?: number | null;
+  laReference?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -677,10 +677,18 @@ func provideParentChildLookupAdapter(
 	return &parentChildLookupAdapter{repo: parentChildRepo}
 }
 
+func provideBookingsFundingLookupAdapterForWire(
+	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl,
+) *bookingsFundingLookupAdapter {
+	return provideBookingsFundingLookupAdapter(fundingRepo)
+}
+
 var bookingsSet = wire.NewSet(
 	bookingspostgres.NewRepository,
 	wire.Bind(new(bookingsdomain.Repository), new(*bookingspostgres.BookingRepository)),
 	bookingsapp.NewCreateBooking,
+	provideBookingsFundingLookupAdapterForWire,
+	wire.Bind(new(bookingsdomain.FundingLookup), new(*bookingsFundingLookupAdapter)),
 	bookingsapp.NewGetBooking,
 	bookingsapp.NewListBookings,
 	bookingsapp.NewUpdateBooking,

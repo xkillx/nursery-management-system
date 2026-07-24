@@ -22,11 +22,12 @@ type CreateBookingParams struct {
 }
 
 type CreateBooking struct {
-	repo domain.Repository
+	repo          domain.Repository
+	fundingLookup domain.FundingLookup
 }
 
-func NewCreateBooking(repo domain.Repository) *CreateBooking {
-	return &CreateBooking{repo: repo}
+func NewCreateBooking(repo domain.Repository, fundingLookup domain.FundingLookup) *CreateBooking {
+	return &CreateBooking{repo: repo, fundingLookup: fundingLookup}
 }
 
 func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID uuid.UUID, params CreateBookingParams) (domain.Booking, error) {
@@ -47,6 +48,27 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		return domain.Booking{}, domain.ErrInvalidFundingType
 	}
 
+	fundingType := params.FundingType
+	fundingHours := params.FundingHoursPerWeek
+	laReference := params.LaReference
+	termTimeOnly := params.TermTimeOnly
+
+	if fundingType == nil {
+		fi, err := uc.fundingLookup.GetChildFunding(ctx, actor.TenantID(), siteID, params.ChildID)
+		if err != nil {
+			return domain.Booking{}, internalError(err)
+		}
+		if fi.HasFunding {
+			fundingType = &fi.FundingType
+			fundingHours = fi.FundedHoursPerWeek
+			laReference = fi.LaReference
+			termTimeOnly = fi.TermTimeOnly
+		} else {
+			none := "none"
+			fundingType = &none
+		}
+	}
+
 	booking := domain.Booking{
 		ID:                   uuid.New(),
 		TenantID:             actor.TenantID(),
@@ -54,11 +76,11 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		ChildID:              params.ChildID,
 		EffectiveStartDate:   params.EffectiveStartDate,
 		EffectiveEndDate:     params.EffectiveEndDate,
-		FundingType:          params.FundingType,
-		FundingHoursPerWeek:  params.FundingHoursPerWeek,
-		LaReference:          params.LaReference,
+		FundingType:          fundingType,
+		FundingHoursPerWeek:  fundingHours,
+		LaReference:          laReference,
 		SessionEntries:       params.SessionEntries,
-		TermTimeOnly:         params.TermTimeOnly,
+		TermTimeOnly:         termTimeOnly,
 		Status:               domain.StatusActive,
 		BookedByMembershipID: actor.MembershipID(),
 	}

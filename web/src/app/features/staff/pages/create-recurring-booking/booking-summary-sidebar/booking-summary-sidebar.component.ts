@@ -73,7 +73,12 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
             <div class="space-y-3 pt-2">
               @if (fundingType && fundingHours && fundingType !== 'none') {
                 <div class="flex items-center justify-between text-sm">
-                  <span class="text-gray-600 dark:text-gray-400 font-semibold">Funded Hours{{ getFundingTypeLabel() }}</span>
+                  <span class="text-gray-600 dark:text-gray-400 font-semibold">
+                    Funded Hours{{ getFundingTypeLabel() }}
+                    @if (isOverride) {
+                      <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 ml-1">OVERRIDE</span>
+                    }
+                  </span>
                   <span class="text-emerald-600 dark:text-emerald-400 font-bold">- {{ fundingHours | number:'1.2-2' }}</span>
                 </div>
               }
@@ -157,6 +162,7 @@ export class BookingSummarySidebarComponent implements OnChanges {
   @Input() canSubmit = false;
   @Input() isSaving = false;
   @Input() termTimeOnly = false;
+  @Input() isOverride = false;
 
   @Output() save = new EventEmitter<void>();
   // eslint-disable-next-line @angular-eslint/no-output-native

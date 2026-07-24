@@ -128,6 +128,17 @@ export class BookingDetailDrawerComponent implements OnChanges {
     return this.sessionLookup[id] ?? id ?? '—';
   }
 
+  fundingTypeLabel(type: string | null | undefined): string {
+    switch (type) {
+      case 'universal_15': return 'Universal (15h)';
+      case 'working_parent': return 'Working Parent (30h)';
+      case 'working_parent_under_3': return 'Working Parent Under 3 (15h)';
+      case 'disadvantaged_2yo': return 'Disadvantaged 2yr (15h)';
+      case 'none': return 'None';
+      default: return type ?? '—';
+    }
+  }
+
   openEdit(): void {
     if (!this.siteId || !this.booking) return;
     this.isLoadingDetail = true;

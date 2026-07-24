@@ -22,6 +22,7 @@ import (
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	bookingsapp "nursery-management-system/api/internal/modules/bookings/application"
+	bookingsdomain "nursery-management-system/api/internal/modules/bookings/domain"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
@@ -1351,3 +1352,44 @@ func (a *fundingLookupAdapter) getTermDates(ctx context.Context, tenantID, branc
 	// For now, return nil to use the fallback computation.
 	return nil, nil
 }
+
+// ── Bookings Funding Lookup adapter ─────────────────────────────────────
+
+// bookingsFundingLookupAdapter satisfies bookingsdomain.FundingLookup by
+// loading FundingRecord from the funding module's repository.
+type bookingsFundingLookupAdapter struct {
+	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *bookingsFundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, branchID, childID uuid.UUID) (bookingsdomain.FundingInfo, error) {
+	record, found, err := a.fundingRepo.GetFundingRecord(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return bookingsdomain.FundingInfo{}, fmt.Errorf("get child funding record: %w", err)
+	}
+	if !found || !record.FundingEnabled {
+		return bookingsdomain.FundingInfo{HasFunding: false}, nil
+	}
+
+	laRef := ""
+	if record.EligibilityCode != nil {
+		laRef = *record.EligibilityCode
+	}
+
+	termTimeOnly := record.FundingModel == fundingdomain.FundingModelTermTimeOnly
+
+	return bookingsdomain.FundingInfo{
+		HasFunding:         true,
+		FundingType:        string(record.FundingType),
+		FundedHoursPerWeek: record.FundedHoursPerWeek,
+		LaReference:        &laRef,
+		TermTimeOnly:       termTimeOnly,
+	}, nil
+}
+
+func provideBookingsFundingLookupAdapter(
+	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl,
+) *bookingsFundingLookupAdapter {
+	return &bookingsFundingLookupAdapter{fundingRepo: fundingRepo}
+}
+
+var _ bookingsdomain.FundingLookup = (*bookingsFundingLookupAdapter)(nil)

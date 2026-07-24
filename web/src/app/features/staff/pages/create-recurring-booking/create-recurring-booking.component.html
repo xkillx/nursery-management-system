@@ -123,45 +123,134 @@
           </app-form-field>
           </div>
 
-          <div>
-            <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2.5">Funding Type</span>
-            <app-radio-card-group
-              [options]="fundingOptions"
-              name="fundingType"
-              [ngModel]="fundingType"
-              (ngModelChange)="fundingType = $event; onFundingTypeChange()"
-            />
-          </div>
+          <!-- Funding Summary (auto-populated from child's funding record) -->
+          @if (selectedChild && childId) {
+            @if (isLoadingFunding) {
+              <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Loading funding information...
+                </div>
+              </div>
+            } @else if (!hasFundingRecord) {
+              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-500/10">
+                <div class="flex items-start gap-3">
+                  <ng-icon name="heroExclamationTriangle" size="20" class="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">No funding record found</p>
+                    <p class="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                      This child does not have a funding record. The booking will be created with no funding (fully chargeable).
+                      <a [routerLink]="['/manager/children', childId, 'edit']" class="underline font-medium">Add funding record</a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            } @else if (autoFunding) {
+              <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-800 dark:bg-emerald-500/10">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Auto-populated from funding record</span>
+                  @if (!isOverrideActive) {
+                    <button
+                      type="button"
+                      class="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 cursor-pointer"
+                      (click)="toggleOverride()"
+                    >
+                      Change
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 cursor-pointer"
+                      (click)="clearOverride()"
+                    >
+                      Revert to auto
+                    </button>
+                  }
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 font-medium">Funding Type</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ fundingTypeLabel }}</span>
+                  </div>
+                  @if (effectiveFundingHours) {
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400 font-medium">Hours per Week</span>
+                      <span class="font-semibold text-gray-900 dark:text-white">{{ effectiveFundingHours }}</span>
+                    </div>
+                  }
+                  @if (effectiveLaReference) {
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400 font-medium">LA Reference</span>
+                      <span class="font-semibold text-gray-900 dark:text-white">{{ effectiveLaReference }}</span>
+                    </div>
+                  }
+                  @if (effectiveTermTimeOnly) {
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400 font-medium">Term Time Only</span>
+                      <span class="font-semibold text-emerald-600 dark:text-emerald-400">Yes</span>
+                    </div>
+                  }
+                  @if (autoFunding.fundingEndDate) {
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400 font-medium">Valid Until</span>
+                      <span class="font-semibold text-gray-900 dark:text-white">{{ autoFunding.fundingEndDate }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
 
-          @if (fundingType && fundingType !== 'none') {
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 pt-2">
-              <app-form-field
-                label="Funding Hours per Week"
-                labelFor="rec-funding-hours"
-              >
-                <app-input-field
-                  id="rec-funding-hours"
-                  name="rec-funding-hours"
-                  type="number"
-                  [(ngModel)]="fundingHours"
-                  min="0"
-                  max="30"
-                  [step]="0.5"
-                />
-              </app-form-field>
+          <!-- Override Panel -->
+          @if (isOverrideActive) {
+            <div class="rounded-xl border border-brand-200 bg-brand-50/30 p-4 dark:border-brand-800 dark:bg-brand-500/5">
+              <span class="block text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-3">Override Funding</span>
+              <div class="space-y-4">
+                <div>
+                  <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2.5">Funding Type</span>
+                  <app-radio-card-group
+                    [options]="fundingOptions"
+                    name="fundingType"
+                    [ngModel]="fundingType"
+                    (ngModelChange)="fundingType = $event; onFundingTypeChange()"
+                  />
+                </div>
 
-              <app-form-field
-                label="LA Reference"
-                labelFor="rec-la-ref"
-              >
-                <app-input-field
-                  id="rec-la-ref"
-                  name="rec-la-ref"
-                  type="text"
-                  [(ngModel)]="laReference"
-                  placeholder="Local authority reference"
-                />
-              </app-form-field>
+                @if (fundingType && fundingType !== 'none') {
+                  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 pt-2">
+                    <app-form-field
+                      label="Funding Hours per Week"
+                      labelFor="rec-funding-hours"
+                    >
+                      <app-input-field
+                        id="rec-funding-hours"
+                        name="rec-funding-hours"
+                        type="number"
+                        [(ngModel)]="fundingHours"
+                        min="0"
+                        max="30"
+                        [step]="0.5"
+                      />
+                    </app-form-field>
+
+                    <app-form-field
+                      label="LA Reference"
+                      labelFor="rec-la-ref"
+                    >
+                      <app-input-field
+                        id="rec-la-ref"
+                        name="rec-la-ref"
+                        type="text"
+                        [(ngModel)]="laReference"
+                        placeholder="Local authority reference"
+                      />
+                    </app-form-field>
+                  </div>
+                }
+              </div>
             </div>
           }
 
@@ -170,7 +259,9 @@
               id="rec-term-time-only"
               name="rec-term-time-only"
               type="checkbox"
-              [(ngModel)]="termTimeOnly"
+              [ngModel]="effectiveTermTimeOnly"
+              (ngModelChange)="termTimeOnly = $event"
+              [disabled]="!isOverrideActive && !!autoFunding"
               class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
             />
             <label for="rec-term-time-only" class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -206,12 +297,13 @@
         [childName]="childDisplayName"
         [sessionEntries]="sessionEntries"
         [sessionTypes]="sessionTypes"
-        [fundingType]="fundingType"
-        [fundingHours]="fundingHours"
+        [fundingType]="effectiveFundingType"
+        [fundingHours]="effectiveFundingHours"
         [hourlyRateMinor]="hourlyRateMinor"
         [canSubmit]="canSubmit"
         [isSaving]="isSaving"
-        [termTimeOnly]="termTimeOnly"
+        [termTimeOnly]="effectiveTermTimeOnly"
+        [isOverride]="isOverrideActive"
         (save)="submit()"
         (cancel)="cancel()"
       />

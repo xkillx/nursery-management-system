@@ -45,7 +45,7 @@ func ValidBookingStatus(s string) bool {
 
 func ValidFundingType(ft string) bool {
 	switch ft {
-	case "none", "fifteen_hours", "thirty_hours", "two_year_old", "custom":
+	case "none", "universal_15", "working_parent", "working_parent_under_3", "disadvantaged_2yo":
 		return true
 	}
 	return false
