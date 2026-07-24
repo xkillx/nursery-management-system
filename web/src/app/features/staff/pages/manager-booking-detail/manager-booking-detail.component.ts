@@ -27,6 +27,7 @@ import {
   heroCheck,
   heroDocumentDuplicate,
   heroArrowPath,
+  heroClock,
 } from '@ng-icons/heroicons/outline';
 
 import { AuthService } from '../../../../core/services/auth.service';
@@ -39,7 +40,6 @@ import { BookingDetail, BookingType, BookingStatus } from '../../models/booking.
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
-import { DaySelectorComponent } from '../../../../shared/components/form/day-selector/day-selector.component';
 
 export type BookingDetailTab = 'overview' | 'audit' | 'edit';
 
@@ -55,7 +55,6 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     AlertComponent,
     LoadingStateComponent,
     ConfirmationDialogComponent,
-    DaySelectorComponent,
   ],
   templateUrl: './manager-booking-detail.component.html',
   providers: [
@@ -80,6 +79,7 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       heroCheck,
       heroDocumentDuplicate,
       heroArrowPath,
+      heroClock,
     }),
   ],
 })
@@ -109,6 +109,8 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
 
   isLoading = false;
   errorMessage: string | null = null;
+  private roomsLoaded = false;
+  private pendingChildId: string | null = null;
 
   // Edit form state
   isSaving = false;
@@ -126,6 +128,16 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
   isCancelling = false;
 
   readonly dayNames = DAY_NAMES;
+
+  readonly scheduleDays = [
+    { label: 'Monday', index: 0 },
+    { label: 'Tuesday', index: 1 },
+    { label: 'Wednesday', index: 2 },
+    { label: 'Thursday', index: 3 },
+    { label: 'Friday', index: 4 },
+    { label: 'Saturday', index: 5 },
+    { label: 'Sunday', index: 6 },
+  ];
 
   ngOnInit(): void {
     const membership = this.auth.activeMembership();
@@ -302,22 +314,17 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
     return `${months} mo${months > 1 ? 's' : ''}`;
   }
 
-  isDayActive(dayIndex: number): boolean {
+  isSessionBooked(dayIndex: number, sessionTypeId: string): boolean {
     if (!this.booking?.sessionEntries) return false;
-    return this.booking.sessionEntries.some((e) => e.day_of_week === dayIndex);
+    return this.booking.sessionEntries.some(
+      (e) => e.day_of_week === dayIndex && e.session_type_id === sessionTypeId,
+    );
   }
 
-  isSlotActive(dayIndex: number, slot: 'morning' | 'afternoon' | 'evening'): boolean {
-    if (!this.booking?.sessionEntries) return false;
-    const entry = this.booking.sessionEntries.find((e) => e.day_of_week === dayIndex);
-    if (!entry) return false;
-
-    const sName = (this.sessionLookup[entry.session_type_id] ?? '').toLowerCase();
-    if (sName.includes('morning')) return slot === 'morning';
-    if (sName.includes('afternoon')) return slot === 'afternoon';
-    if (sName.includes('evening')) return slot === 'evening';
-    // Default full day / standard session: active morning and afternoon
-    return slot === 'morning' || slot === 'afternoon';
+  formatSessionTime(time: string): string {
+    if (!time) return '';
+    const parts = time.split(':');
+    return `${parts[0]}:${parts[1]}`;
   }
 
   // Edit form
@@ -374,27 +381,31 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
 
   // Cancel
   openCancelConfirm(): void {
+    this.formError = null;
     this.isConfirmCancelOpen = true;
   }
 
   closeCancelConfirm(): void {
     this.isConfirmCancelOpen = false;
+    this.formError = null;
   }
 
   confirmCancel(): void {
     if (!this.siteId || !this.booking) return;
     this.isCancelling = true;
+    this.formError = null;
 
     this.bookingsApi.cancelBooking(this.siteId, this.booking.bookingType, this.booking.id).subscribe({
       next: () => {
         this.isCancelling = false;
         this.isConfirmCancelOpen = false;
         this.toast.success('The booking has been cancelled.');
-        this.router.navigate(['/manager/bookings']);
+        this.loadBooking();
       },
-      error: () => {
+      error: (err) => {
         this.isCancelling = false;
-        this.formError = 'Failed to cancel booking.';
+        const body = err?.error;
+        this.formError = body?.message ?? 'Failed to cancel booking. Please try again.';
       },
     });
   }
@@ -409,7 +420,11 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
         this.booking = booking;
         this.isLoading = false;
         if (booking.childId) {
-          this.loadChildDetails(booking.childId);
+          if (this.roomsLoaded) {
+            this.loadChildDetails(booking.childId);
+          } else {
+            this.pendingChildId = booking.childId;
+          }
         }
       },
       error: () => {
@@ -441,6 +456,11 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
         this.roomsLookup = {};
         for (const r of rooms) {
           this.roomsLookup[r.id] = r.name;
+        }
+        this.roomsLoaded = true;
+        if (this.pendingChildId) {
+          this.loadChildDetails(this.pendingChildId);
+          this.pendingChildId = null;
         }
       },
     });
