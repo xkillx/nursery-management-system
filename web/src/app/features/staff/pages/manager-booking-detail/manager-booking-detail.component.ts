@@ -26,19 +26,23 @@ import {
   heroQueueList,
   heroPrinter,
   heroCheck,
+  heroDocumentDuplicate,
+  heroArrowPath,
 } from '@ng-icons/heroicons/outline';
 
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BookingsApiService } from '../../data/bookings-api.service';
 import { StaffSessionTypesApiService, StaffSessionType } from '../../data/session-types-api.service';
+import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { BookingDetail, BookingType, BookingStatus } from '../../models/booking.models';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { DaySelectorComponent } from '../../../../shared/components/form/day-selector/day-selector.component';
 
-export type BookingDetailTab = 'overview' | 'funding' | 'audit' | 'edit';
+export type BookingDetailTab = 'overview' | 'audit' | 'edit';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -76,6 +80,8 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       heroQueueList,
       heroPrinter,
       heroCheck,
+      heroDocumentDuplicate,
+      heroArrowPath,
     }),
   ],
 })
@@ -86,6 +92,8 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly bookingsApi = inject(BookingsApiService);
   private readonly sessionTypesApi = inject(StaffSessionTypesApiService);
+  private readonly staffApi = inject(StaffApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly destroy$ = new Subject<void>();
 
   activeTab: BookingDetailTab = 'overview';
@@ -95,6 +103,11 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
   booking: BookingDetail | null = null;
   sessionTypes: StaffSessionType[] = [];
   sessionLookup: Record<string, string> = {};
+
+  childAge = '';
+  childPhotoUrl: string | null = null;
+  assignedRoomName = '';
+  roomsLookup: Record<string, string> = {};
 
   isLoading = false;
   errorMessage: string | null = null;
@@ -129,6 +142,7 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
 
     if (this.siteId) {
       this.loadSessionTypes();
+      this.loadRooms();
     }
   }
 
@@ -162,6 +176,27 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
 
   printPage(): void {
     window.print();
+  }
+
+  copyBookingRef(): void {
+    if (!this.booking) return;
+    const ref = this.shortRef(this.booking.id);
+    navigator.clipboard.writeText(ref).then(() => {
+      this.toast.success(`Booking reference ${ref} copied to clipboard.`);
+    }).catch(() => {
+      this.toast.success(`Booking reference: ${ref}`);
+    });
+  }
+
+  duplicateBooking(): void {
+    if (!this.booking) return;
+    if (this.booking.bookingType === 'recurring') {
+      this.router.navigate(['/manager/bookings/new/recurring'], { queryParams: { childId: this.booking.childId } });
+    } else if (this.booking.bookingType === 'ad_hoc') {
+      this.router.navigate(['/manager/bookings/new/ad_hoc'], { queryParams: { childId: this.booking.childId } });
+    } else {
+      this.router.navigate(['/manager/bookings/new/hourly'], { queryParams: { childId: this.booking.childId } });
+    }
   }
 
   selectTab(tab: BookingDetailTab): void {
@@ -233,17 +268,58 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
 
   fundingTypeLabel(type: string | null | undefined): string {
     switch (type) {
-      case 'universal_15': return 'Universal (15h)';
-      case 'working_parent': return 'Working Parent (30h)';
+      case 'universal_15': return 'Universal 15h Entitlement';
+      case 'working_parent': return 'Working Parent 30h Entitlement';
       case 'working_parent_under_3': return 'Working Parent Under 3 (15h)';
       case 'disadvantaged_2yo': return 'Disadvantaged 2yr (15h)';
-      case 'none': return 'None';
-      default: return type ?? '—';
+      case 'none': return 'None (Fully Chargeable)';
+      default: return type ?? 'None';
     }
   }
 
   shortRef(id: string): string {
     return 'BK-' + id.slice(0, 8).toUpperCase();
+  }
+
+  computeAge(dateOfBirthIso?: string): string {
+    if (!dateOfBirthIso) return '';
+    const dob = new Date(dateOfBirthIso);
+    const now = new Date();
+    let years = now.getFullYear() - dob.getFullYear();
+    let months = now.getMonth() - dob.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (now.getDate() < dob.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+    if (years > 0) {
+      return `${years} yr${years > 1 ? 's' : ''}${months > 0 ? `, ${months} mo${months > 1 ? 's' : ''}` : ''}`;
+    }
+    return `${months} mo${months > 1 ? 's' : ''}`;
+  }
+
+  isDayActive(dayIndex: number): boolean {
+    if (!this.booking?.sessionEntries) return false;
+    return this.booking.sessionEntries.some((e) => e.day_of_week === dayIndex);
+  }
+
+  isSlotActive(dayIndex: number, slot: 'morning' | 'afternoon' | 'evening'): boolean {
+    if (!this.booking?.sessionEntries) return false;
+    const entry = this.booking.sessionEntries.find((e) => e.day_of_week === dayIndex);
+    if (!entry) return false;
+
+    const sName = (this.sessionLookup[entry.session_type_id] ?? '').toLowerCase();
+    if (sName.includes('morning')) return slot === 'morning';
+    if (sName.includes('afternoon')) return slot === 'afternoon';
+    if (sName.includes('evening')) return slot === 'evening';
+    // Default full day / standard session: active morning and afternoon
+    return slot === 'morning' || slot === 'afternoon';
   }
 
   // Edit form
@@ -334,10 +410,40 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
       next: (booking) => {
         this.booking = booking;
         this.isLoading = false;
+        if (booking.childId) {
+          this.loadChildDetails(booking.childId);
+        }
       },
       error: () => {
         this.errorMessage = 'Failed to load booking details.';
         this.isLoading = false;
+      },
+    });
+  }
+
+  private loadChildDetails(childId: string): void {
+    this.staffApi.getChild(childId).subscribe({
+      next: (child) => {
+        this.childAge = this.computeAge(child.dateOfBirth);
+        this.childPhotoUrl = child.photoUrl ?? null;
+        if (child.primaryRoomId && this.roomsLookup[child.primaryRoomId]) {
+          this.assignedRoomName = this.roomsLookup[child.primaryRoomId];
+        }
+      },
+      error: () => {
+        // Soft fallback
+      },
+    });
+  }
+
+  private loadRooms(): void {
+    if (!this.siteId) return;
+    this.roomsApi.listRooms(this.siteId).subscribe({
+      next: (rooms) => {
+        this.roomsLookup = {};
+        for (const r of rooms) {
+          this.roomsLookup[r.id] = r.name;
+        }
       },
     });
   }
@@ -355,3 +461,4 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
     });
   }
 }
+

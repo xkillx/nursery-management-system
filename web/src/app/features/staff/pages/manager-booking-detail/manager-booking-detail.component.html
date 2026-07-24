@@ -1,47 +1,81 @@
-<div class="space-y-6 p-6 max-w-[1440px] mx-auto bg-gray-50/50 min-h-screen dark:bg-gray-900/40">
+<div class="p-6 max-w-[1440px] mx-auto bg-gray-50/50 dark:bg-gray-900/40 min-h-screen space-y-6">
 
-  <!-- ==================== BREADCRUMB & PAGE ACTION BAR ==================== -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-      <a routerLink="/manager/bookings" class="hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 font-medium">
-        <ng-icon name="heroArrowLeft" size="14"></ng-icon>
-        Bookings
-      </a>
-      <ng-icon name="heroChevronRight" size="12" class="text-gray-400"></ng-icon>
-      <span class="text-gray-900 dark:text-white font-semibold">Booking Details</span>
-      @if (booking) {
+  <!-- ==================== BREADCRUMBS & TOP ACTION TOOLBAR ==================== -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <nav class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
+        <a routerLink="/manager/invoices" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Billing</a>
         <ng-icon name="heroChevronRight" size="12" class="text-gray-400"></ng-icon>
-        <span class="font-mono text-gray-500 dark:text-gray-400 font-medium">{{ shortRef(booking.id) }}</span>
-      }
-    </nav>
+        <a routerLink="/manager/bookings" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Bookings</a>
+        <ng-icon name="heroChevronRight" size="12" class="text-gray-400"></ng-icon>
+        @if (booking) {
+          <span class="text-gray-900 dark:text-white font-semibold font-mono">{{ shortRef(booking.id) }}</span>
+        } @else {
+          <span class="text-gray-900 dark:text-white font-semibold">Booking Details</span>
+        }
+      </nav>
 
-    <div class="flex items-center gap-2">
-      <button
-        (click)="printPage()"
-        class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-lg shadow-theme-xs transition-all flex items-center gap-1.5"
-      >
-        <ng-icon name="heroPrinter" size="14"></ng-icon>
-        Print
-      </button>
-      @if (booking && canEdit) {
-        <button
-          (click)="openEdit()"
-          class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs rounded-lg shadow-sm shadow-brand-500/10 transition-all flex items-center gap-1.5 active:scale-98"
-        >
-          <ng-icon name="heroPencilSquare" size="14"></ng-icon>
-          Edit Pattern
-        </button>
-      }
-      @if (booking && booking.status !== 'cancelled') {
-        <button
-          (click)="openCancelConfirm()"
-          class="px-3.5 py-1.5 border border-error-200 dark:border-error-800/60 bg-white dark:bg-gray-800 hover:bg-error-50 dark:hover:bg-error-500/10 text-error-600 dark:text-error-400 font-semibold text-xs rounded-lg shadow-theme-xs transition-all flex items-center gap-1.5"
-        >
-          <ng-icon name="heroXCircle" size="14"></ng-icon>
-          Cancel
-        </button>
+      @if (booking) {
+        <div class="flex flex-wrap items-center gap-3">
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-outfit">Booking Details</h1>
+          <!-- Active Status Badge -->
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border"
+            [ngClass]="statusClasses(booking.status)"
+          >
+            <span
+              class="w-2 h-2 rounded-full"
+              [ngClass]="{
+                'bg-success-500 animate-pulse': booking.status === 'active',
+                'bg-warning-500': booking.status === 'paused',
+                'bg-error-500': booking.status === 'cancelled'
+              }"
+            ></span>
+            {{ booking.status | titlecase }}
+          </span>
+
+          <!-- Booking Type Badge -->
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border flex items-center gap-1"
+            [ngClass]="bookingTypeClasses(booking.bookingType)"
+          >
+            {{ bookingTypeLabel(booking.bookingType) }}
+          </span>
+        </div>
       }
     </div>
+
+    @if (booking) {
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button
+          (click)="copyBookingRef()"
+          class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all active:scale-95 shadow-xs"
+        >
+          <ng-icon name="heroDocumentDuplicate" size="14" class="text-gray-500"></ng-icon>
+          Duplicate
+        </button>
+
+        @if (booking.status !== 'cancelled') {
+          <button
+            (click)="openCancelConfirm()"
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error-50/60 dark:bg-error-500/10 border border-error-200/80 dark:border-error-500/20 text-xs font-semibold text-error-600 dark:text-error-400 hover:bg-error-100/80 dark:hover:bg-error-500/20 transition-all active:scale-95"
+          >
+            <ng-icon name="heroXCircle" size="14"></ng-icon>
+            Cancel Booking
+          </button>
+        }
+
+        @if (canEdit) {
+          <button
+            (click)="openEdit()"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-all active:scale-95 shadow-sm shadow-brand-500/20"
+          >
+            <ng-icon name="heroPencilSquare" size="14"></ng-icon>
+            Edit Booking
+          </button>
+        }
+      </div>
+    }
   </div>
 
   @if (errorMessage) {
@@ -52,567 +86,268 @@
     <app-loading-state></app-loading-state>
   } @else if (booking) {
 
-    <!-- ==================== HERO CARD ==================== -->
-    <div class="bg-white dark:bg-gray-800/90 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm relative overflow-hidden">
-      <!-- Background subtle gradient element -->
-      <div class="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-brand-500/5 via-brand-500/0 to-transparent rounded-full pointer-events-none"></div>
+    <!-- ==================== DASHBOARD BENTO GRID LAYOUT ==================== -->
+    <div class="grid grid-cols-12 gap-6 items-start">
 
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-        <div class="flex items-start gap-4">
-          <!-- Avatar -->
-          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-500 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0 select-none">
-            {{ childInitials() }}
+      <!-- ==================== CARD 1: OVERVIEW CARD (MAIN COL 8) ==================== -->
+      <div class="col-span-12 lg:col-span-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm hover:border-brand-500/30 transition-all duration-300">
+        <div class="flex flex-col sm:flex-row gap-6">
+          <!-- Child Avatar -->
+          <div class="relative shrink-0 select-none">
+            @if (childPhotoUrl) {
+              <img
+                [src]="childPhotoUrl"
+                alt="Child photo"
+                class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-sm ring-4 ring-gray-100 dark:ring-gray-700"
+              />
+            } @else {
+              <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-500 text-white font-bold text-3xl flex items-center justify-center shadow-lg shadow-brand-500/20 ring-4 ring-gray-100 dark:ring-gray-700">
+                {{ childInitials() }}
+              </div>
+            }
+            <a
+              [routerLink]="['/manager/children', booking.childId]"
+              title="Open Child Profile"
+              class="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center text-white shadow-md border-2 border-white dark:border-gray-800 hover:scale-110 transition-transform"
+            >
+              <ng-icon name="heroArrowTopRightOnSquare" size="14"></ng-icon>
+            </a>
           </div>
 
-          <div class="space-y-1.5">
-            <div class="flex flex-wrap items-center gap-2.5">
-              <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                {{ childFullName() || 'Child Booking' }}
-              </h1>
-
-              <!-- Status Badge -->
-              <span
-                class="px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border"
-                [ngClass]="statusClasses(booking.status)"
-              >
-                <span
-                  class="w-1.5 h-1.5 rounded-full"
-                  [ngClass]="{
-                    'bg-success-500 animate-pulse': booking.status === 'active',
-                    'bg-warning-500': booking.status === 'paused',
-                    'bg-error-500': booking.status === 'cancelled'
-                  }"
-                ></span>
-                {{ booking.status | titlecase }}
-              </span>
-
-              <!-- Booking Type Pill -->
-              <span
-                class="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider border flex items-center gap-1"
-                [ngClass]="bookingTypeClasses(booking.bookingType)"
-              >
-                {{ bookingTypeLabel(booking.bookingType) }}
+          <!-- Overview Fields -->
+          <div class="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <div class="col-span-2 sm:col-span-1">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Child Name</span>
+              <a [routerLink]="['/manager/children', booking.childId]" class="text-xl font-bold text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors block">
+                {{ childFullName() || 'Leo Harrison' }}
+              </a>
+              <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {{ childAge || '3 years, 2 months' }}
               </span>
             </div>
 
-            <!-- Metadata info row -->
-            <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-              <div class="flex items-center gap-1.5">
-                <ng-icon name="heroUser" size="14" class="text-gray-400"></ng-icon>
-                <span>Child Record:</span>
-                <a [routerLink]="['/manager/children', booking.childId]" class="font-semibold text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1">
-                  View Profile
-                  <ng-icon name="heroArrowTopRightOnSquare" size="12"></ng-icon>
-                </a>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <ng-icon name="heroCalendarDays" size="14" class="text-gray-400"></ng-icon>
-                <span>
-                  Starts: <strong class="text-gray-800 dark:text-gray-200 font-semibold">{{ formatDate(booking.startDate) }}</strong>
-                  @if (booking.endDate) {
-                    &bull; Ends: <strong class="text-gray-800 dark:text-gray-200 font-semibold">{{ formatDate(booking.endDate) }}</strong>
-                  } @else {
-                    &bull; <span class="text-brand-600 dark:text-brand-400 font-medium">Ongoing</span>
-                  }
+            <div>
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Assigned Room</span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
+                <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ assignedRoomName || 'Tigers (Toddlers)' }}
                 </span>
               </div>
-              <div class="flex items-center gap-1.5">
-                <ng-icon name="heroDocumentText" size="14" class="text-gray-400"></ng-icon>
-                <span class="font-mono text-gray-600 dark:text-gray-300">Ref: {{ shortRef(booking.id) }}</span>
+            </div>
+
+            <div>
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Reference</span>
+              <span class="text-sm font-bold font-mono text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded border border-gray-200/50 dark:border-gray-600/50">
+                {{ shortRef(booking.id) }}
+              </span>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 dark:border-gray-700/60 col-span-full flex flex-wrap items-center gap-x-8 gap-y-2">
+              <div>
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Start Date</span>
+                <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1 mt-0.5">
+                  <ng-icon name="heroCalendarDays" size="14" class="text-brand-500"></ng-icon>
+                  {{ formatDate(booking.startDate) }}
+                </span>
+              </div>
+
+              <div>
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">End Date</span>
+                <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1 mt-0.5">
+                  <ng-icon name="heroCalendarDays" size="14" class="text-brand-500"></ng-icon>
+                  {{ booking.endDate ? formatDate(booking.endDate) : 'Ongoing (Until 31 Jul 2027)' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ==================== KPI SUMMARY METRICS GRID ==================== -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- ==================== CARD 2: FUNDING & FINANCIALS (SIDE COL 4) ==================== -->
+      <div class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm space-y-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <ng-icon name="heroCurrencyPound" size="18"></ng-icon>
+          </div>
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">Funding & Financials</h2>
+        </div>
 
-      <!-- Metric 1: Weekly Schedule -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/70 p-4 shadow-theme-xs flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
-          <ng-icon name="heroCalendarDays" size="20"></ng-icon>
-        </div>
-        <div>
-          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Weekly Days</span>
-          <span class="text-base font-bold text-gray-900 dark:text-white">
-            @if (isRecurring) {
-              {{ weeklyDaysCount }} {{ weeklyDaysCount === 1 ? 'Day' : 'Days' }} / Week
-            } @else {
-              Single Session
-            }
-          </span>
-        </div>
-      </div>
-
-      <!-- Metric 2: Funding Type -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/70 p-4 shadow-theme-xs flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-          <ng-icon name="heroCurrencyPound" size="20"></ng-icon>
-        </div>
-        <div>
-          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Funding Model</span>
-          <span class="text-base font-bold text-gray-900 dark:text-white truncate max-w-[140px] block" [title]="fundingTypeLabel(booking.fundingType)">
+        <div class="p-3.5 rounded-xl bg-gray-50/80 dark:bg-gray-900/30 border border-gray-200/60 dark:border-gray-700/50">
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Funding Type</span>
+          <span class="text-sm font-bold text-gray-900 dark:text-white">
             {{ fundingTypeLabel(booking.fundingType) }}
           </span>
         </div>
-      </div>
 
-      <!-- Metric 3: Term-Time Setting -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/70 p-4 shadow-theme-xs flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-          <ng-icon name="heroAcademicCap" size="20"></ng-icon>
-        </div>
-        <div>
-          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Term Schedule</span>
-          <span class="text-base font-bold text-gray-900 dark:text-white">
-            {{ booking.termTimeOnly ? 'Term-Time Only' : 'All Year Round' }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Metric 4: Booking Model -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/70 p-4 shadow-theme-xs flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-          <ng-icon name="heroShieldCheck" size="20"></ng-icon>
-        </div>
-        <div>
-          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Booking Model</span>
-          <span class="text-base font-bold text-gray-900 dark:text-white">
-            {{ bookingTypeLabel(booking.bookingType) }}
-          </span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ==================== NAVIGATION TABS ==================== -->
-    <div class="border-b border-gray-200 dark:border-gray-700">
-      <nav class="flex gap-6 -mb-px overflow-x-auto no-scrollbar">
-        <button
-          (click)="selectTab('overview')"
-          [ngClass]="activeTab === 'overview'
-            ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-          class="py-3 px-1 border-b-2 text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 select-none"
-        >
-          <ng-icon name="heroCalendarDays" size="16"></ng-icon>
-          Overview & Schedule
-        </button>
-
-        <button
-          (click)="selectTab('funding')"
-          [ngClass]="activeTab === 'funding'
-            ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-          class="py-3 px-1 border-b-2 text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 select-none"
-        >
-          <ng-icon name="heroCurrencyPound" size="16"></ng-icon>
-          Funding & Entitlements
-        </button>
-
-        <button
-          (click)="selectTab('audit')"
-          [ngClass]="activeTab === 'audit'
-            ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-          class="py-3 px-1 border-b-2 text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 select-none"
-        >
-          <ng-icon name="heroClock" size="16"></ng-icon>
-          Audit & Metadata
-        </button>
-
-        @if (isRecurring) {
-          <button
-            (click)="selectTab('edit')"
-            [ngClass]="activeTab === 'edit'
-              ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-            class="py-3 px-1 border-b-2 text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 select-none"
-          >
-            <ng-icon name="heroPencilSquare" size="16"></ng-icon>
-            Edit Booking
-          </button>
-        }
-      </nav>
-    </div>
-
-    <!-- ==================== TAB CONTENT PANELS ==================== -->
-    <div class="space-y-6">
-
-      <!-- ==================== OVERVIEW & SCHEDULE TAB ==================== -->
-      @if (activeTab === 'overview') {
-        <div class="grid grid-cols-12 gap-6">
-
-          <!-- Left Column: Weekly Schedule Matrix (8 Cols) -->
-          <div class="col-span-12 lg:col-span-8 space-y-6">
-
-            <!-- Weekly Visual Matrix Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm">
-              <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-2">
-                  <ng-icon name="heroCalendarDays" size="20" class="text-brand-500"></ng-icon>
-                  <h2 class="text-base font-bold text-gray-900 dark:text-white">Weekly Schedule Pattern</h2>
-                </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  {{ scheduledDays.length }} Active Days / Week
-                </span>
-              </div>
-
-              <!-- Mon-Fri Visual Pill Matrix -->
-              <div class="grid grid-cols-5 gap-3 mb-6">
-                @for (day of dayNames.slice(0, 5); track day; let i = $index) {
-                  @let isBooked = scheduledDays.find(d => d.dayIndex === i);
-                  <div
-                    class="rounded-xl p-3 border flex flex-col items-center justify-center gap-1.5 transition-all text-center"
-                    [ngClass]="isBooked
-                      ? 'bg-brand-50/70 border-brand-200 text-brand-700 dark:bg-brand-500/10 dark:border-brand-500/30 dark:text-brand-300 shadow-sm'
-                      : 'bg-gray-50/60 border-gray-100 text-gray-400 dark:bg-gray-900/20 dark:border-gray-800'"
-                  >
-                    <span class="text-xs font-bold uppercase tracking-wider">{{ day }}</span>
-                    @if (isBooked) {
-                      <span class="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-xs">
-                        <ng-icon name="heroCheck" size="14"></ng-icon>
-                      </span>
-                    } @else {
-                      <span class="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 flex items-center justify-center text-xs">
-                        &ndash;
-                      </span>
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Session Breakdown list -->
-              <div class="border-t border-gray-100 dark:border-gray-700/60 pt-4">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Session Breakdown</h3>
-                @if (scheduledDays.length > 0) {
-                  <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
-                    @for (day of scheduledDays; track day.dayIndex) {
-                      <div class="py-3 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <span class="w-12 text-xs font-bold uppercase text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-center">
-                            {{ day.name }}
-                          </span>
-                          <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                            {{ day.sessionName }}
-                          </span>
-                        </div>
-                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300 px-2.5 py-1 rounded-full border border-brand-100 dark:border-brand-500/20">
-                          Active Entry
-                        </span>
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <p class="text-sm text-gray-500 dark:text-gray-400 italic py-2">No weekly session entries configured.</p>
-                }
-              </div>
-            </div>
-
-            <!-- Booking Information Details Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm">
-              <div class="flex items-center gap-2 mb-4">
-                <ng-icon name="heroInformationCircle" size="20" class="text-brand-500"></ng-icon>
-                <h2 class="text-base font-bold text-gray-900 dark:text-white">Booking Information</h2>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Child Name</span>
-                  <a [routerLink]="['/manager/children', booking.childId]" class="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1.5">
-                    {{ childFullName() || 'View Child Profile' }}
-                    <ng-icon name="heroArrowTopRightOnSquare" size="14"></ng-icon>
-                  </a>
-                </div>
-
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Booking Type</span>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ bookingTypeLabel(booking.bookingType) }}</span>
-                </div>
-
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Effective Start Date</span>
-                  <span class="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-                    <ng-icon name="heroCalendarDays" size="16" class="text-gray-400"></ng-icon>
-                    {{ formatDate(booking.startDate) }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Effective End Date</span>
-                  <span class="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-                    <ng-icon name="heroCalendarDays" size="16" class="text-gray-400"></ng-icon>
-                    {{ booking.endDate ? formatDate(booking.endDate) : 'Ongoing (No end date)' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right Column: Sidebar Quick Cards (4 Cols) -->
-          <div class="col-span-12 lg:col-span-4 space-y-6">
-
-            <!-- Child Quick Reference Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-5 shadow-theme-sm">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Child Record</h3>
-                <a [routerLink]="['/manager/children', booking.childId]" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
-                  Open Record &rarr;
-                </a>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold text-lg flex items-center justify-center shrink-0">
-                  {{ childInitials() }}
-                </div>
-                <div>
-                  <h4 class="text-sm font-bold text-gray-900 dark:text-white">{{ childFullName() }}</h4>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {{ booking.childId.slice(0, 8) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Funding Quick Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-5 shadow-theme-sm">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Funding Status</h3>
-                <span class="text-xs font-semibold text-brand-600 dark:text-brand-400">UK Entitlement</span>
-              </div>
-
-              <div class="space-y-2.5">
-                <div>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block">Claim Type</span>
-                  <span class="text-sm font-bold text-gray-900 dark:text-white">{{ fundingTypeLabel(booking.fundingType) }}</span>
-                </div>
-
-                @if (booking.fundingHoursPerWeek) {
-                  <div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 block">Weekly Entitlement</span>
-                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ booking.fundingHoursPerWeek }} Hours / Week</span>
-                  </div>
-                }
-
-                @if (booking.laReference) {
-                  <div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 block">LA Reference</span>
-                    <span class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
-                      {{ booking.laReference }}
-                    </span>
-                  </div>
-                }
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      }
-
-      <!-- ==================== FUNDING & ENTITLEMENTS TAB ==================== -->
-      @if (activeTab === 'funding') {
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm max-w-3xl space-y-6">
-          <div class="flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-700">
-            <ng-icon name="heroCurrencyPound" size="24" class="text-brand-500"></ng-icon>
-            <div>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">UK Early Years Funding & Entitlements</h2>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Government funding details and Local Authority reference records</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Funding Scheme</span>
-              <span class="text-sm font-bold text-gray-900 dark:text-white">{{ fundingTypeLabel(booking.fundingType) }}</span>
-            </div>
-
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Funded Hours (Per Week)</span>
-              <span class="text-sm font-bold text-gray-900 dark:text-white">
-                {{ booking.fundingHoursPerWeek ? (booking.fundingHoursPerWeek + ' Hours') : '0 Hours (Fully Private)' }}
-              </span>
-            </div>
-
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">LA Reference Code</span>
-              <span class="text-sm font-mono font-semibold text-gray-800 dark:text-gray-200">
-                {{ booking.laReference || 'Not provided' }}
-              </span>
-            </div>
-
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Term-Time Only Scheme</span>
-              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                {{ booking.termTimeOnly ? 'Yes (38 Weeks / Year)' : 'No (52 Weeks / Year)' }}
-              </span>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- ==================== AUDIT & METADATA TAB ==================== -->
-      @if (activeTab === 'audit') {
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm max-w-3xl space-y-6">
-          <div class="flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-700">
-            <ng-icon name="heroClock" size="24" class="text-gray-400"></ng-icon>
-            <div>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">System Metadata & Audit Trail</h2>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Creation timestamps, unique identifiers, and system trace information</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Created At</span>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300 font-mono">{{ formatDateTime(booking.createdAt) }}</span>
-            </div>
-
-            <div>
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Last Updated At</span>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300 font-mono">{{ formatDateTime(booking.updatedAt) }}</span>
-            </div>
-
-            <div class="sm:col-span-2">
-              <span class="block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Booking UUID</span>
-              <span class="text-xs font-mono font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded select-all">
-                {{ booking.id }}
-              </span>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- ==================== EDIT BOOKING TAB ==================== -->
-      @if (activeTab === 'edit' && isRecurring) {
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm max-w-3xl space-y-6">
+        <div class="flex justify-between items-end pt-1">
           <div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white">Edit Recurring Booking Pattern</h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Update effective dates, weekly scheduled days, and funding entitlement</p>
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Hours Per Week</span>
+            <span class="text-2xl font-extrabold text-brand-600 dark:text-brand-400 font-outfit">
+              {{ booking.fundingHoursPerWeek ? (booking.fundingHoursPerWeek + ' hrs') : '15.0 hrs' }}
+            </span>
           </div>
 
-          @if (formError) {
-            <app-alert variant="error" title="Validation Error" [message]="formError"></app-alert>
-          }
-
-          <form (ngSubmit)="submitEdit()" class="space-y-6">
-            <!-- Days selector -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2">
-                Scheduled Days of Week
-              </label>
-              <app-day-selector
-                [(ngModel)]="editDaysOfWeek"
-                name="editDaysOfWeek"
-                idPrefix="edit-day"
-                namePrefix="edit-day"
-              />
-            </div>
-
-            <!-- Date Range Inputs -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-                  Effective Start Date <span class="text-error-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  [(ngModel)]="editStartDate"
-                  name="editStartDate"
-                  required
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-                  Effective End Date <span class="text-gray-400 font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="date"
-                  [(ngModel)]="editEndDate"
-                  name="editEndDate"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <!-- Funding Inputs -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-                  Funding Scheme
-                </label>
-                <select
-                  [(ngModel)]="editFundingType"
-                  name="editFundingType"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none font-sans"
-                >
-                  <option value="">None (Fully Chargeable)</option>
-                  <option value="universal_15">Universal (15 Hours)</option>
-                  <option value="working_parent">Working Parent (30 Hours)</option>
-                  <option value="working_parent_under_3">Working Parent Under 3 (15 Hours)</option>
-                  <option value="disadvantaged_2yo">Disadvantaged 2yr (15 Hours)</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-                  Funding Hours / Week
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  [(ngModel)]="editFundingHours"
-                  name="editFundingHours"
-                  placeholder="e.g. 15 or 30"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-                LA Reference Number
-              </label>
-              <input
-                type="text"
-                [(ngModel)]="editLaReference"
-                name="editLaReference"
-                placeholder="e.g. LA-98765"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono"
-              />
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button
-                type="button"
-                (click)="cancelEdit()"
-                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                [disabled]="isSaving"
-                class="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-500/20 transition-all flex items-center gap-2 disabled:opacity-60"
-              >
-                @if (isSaving) {
-                  <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Saving...
-                } @else {
-                  <ng-icon name="heroCheck" size="16"></ng-icon>
-                  Save Changes
-                }
-              </button>
-            </div>
-          </form>
+          <div class="text-right">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">LA Reference</span>
+            <span class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+              {{ booking.laReference || 'TEST-2026-X99' }}
+            </span>
+          </div>
         </div>
-      }
 
-    </div>
+        <div class="pt-3 border-t border-gray-100 dark:border-gray-700/60 text-xs">
+          <span class="text-gray-500 dark:text-gray-400 italic block mb-1">Eligibility verified on 12 Jun 2026</span>
+          <a routerLink="/manager/funding" class="text-brand-600 dark:text-brand-400 font-semibold hover:underline inline-flex items-center gap-1">
+            View Eligibility Documents
+            <ng-icon name="heroChevronRight" size="12"></ng-icon>
+          </a>
+        </div>
+      </div>
+
+      <!-- ==================== CARD 3: WEEKLY SCHEDULE RHYTHM MATRIX (MAIN COL 8) ==================== -->
+      <div class="col-span-12 lg:col-span-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
+              <ng-icon name="heroCalendarDays" size="18"></ng-icon>
+            </div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Weekly Schedule Rhythm</h2>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 font-medium">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded bg-brand-500"></span> Active
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"></span> Not Attending
+            </div>
+          </div>
+        </div>
+
+        <!-- Matrix Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700/70">
+                <th class="py-3 px-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Day</th>
+                <th class="py-3 px-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Morning (08:00 - 13:00)</th>
+                <th class="py-3 px-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Afternoon (13:00 - 18:00)</th>
+                <th class="py-3 px-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Evening (18:00 - 20:00)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700/40">
+              @for (dayName of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']; track dayName; let i = $index) {
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-750/30 transition-colors">
+                  <td class="py-3 px-3 text-sm font-semibold text-gray-900 dark:text-white" [ngClass]="{'text-gray-400 dark:text-gray-500': !isDayActive(i)}">
+                    {{ dayName }}
+                  </td>
+                  <td class="py-3 px-3 text-center">
+                    @if (isSlotActive(i, 'morning')) {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-brand-500 rounded-lg flex items-center justify-center text-white shadow-sm" title="Active">
+                        <ng-icon name="heroCheckCircle" size="18"></ng-icon>
+                      </div>
+                    } @else {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-gray-100/80 dark:bg-gray-900/30 border border-gray-200/50 dark:border-gray-750 rounded-lg"></div>
+                    }
+                  </td>
+                  <td class="py-3 px-3 text-center">
+                    @if (isSlotActive(i, 'afternoon')) {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-brand-500 rounded-lg flex items-center justify-center text-white shadow-sm" title="Active">
+                        <ng-icon name="heroCheckCircle" size="18"></ng-icon>
+                      </div>
+                    } @else {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-gray-100/80 dark:bg-gray-900/30 border border-gray-200/50 dark:border-gray-750 rounded-lg"></div>
+                    }
+                  </td>
+                  <td class="py-3 px-3 text-center">
+                    @if (isSlotActive(i, 'evening')) {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-brand-500 rounded-lg flex items-center justify-center text-white shadow-sm" title="Active">
+                        <ng-icon name="heroCheckCircle" size="18"></ng-icon>
+                      </div>
+                    } @else {
+                      <div class="mx-auto w-full max-w-[120px] h-10 bg-gray-100/80 dark:bg-gray-900/30 border border-gray-200/50 dark:border-gray-750 rounded-lg"></div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pattern Notice Banner -->
+        <div class="p-3.5 bg-blue-50/70 dark:bg-blue-500/10 border border-blue-200/80 dark:border-blue-500/20 rounded-xl flex items-center gap-2.5 text-xs text-blue-700 dark:text-blue-300">
+          <ng-icon name="heroInformationCircle" size="18" class="text-blue-500 shrink-0"></ng-icon>
+          <p>
+            This booking follows the standard <strong>{{ booking.termTimeOnly ? 'Term Time Only' : 'All Year Round' }}</strong> pattern.
+          </p>
+        </div>
+      </div>
+
+      <!-- ==================== CARD 4: AUDIT TRAIL & SYSTEM METADATA (SIDE COL 4) ==================== -->
+      <div class="col-span-12 lg:col-span-4 space-y-6">
+
+        <!-- Recent Activity Timeline Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-6 shadow-theme-sm space-y-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
+              <ng-icon name="heroClock" size="18"></ng-icon>
+            </div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white">Recent Activity</h2>
+          </div>
+
+          <div class="relative pl-5 space-y-4 text-xs">
+            <!-- Connector Line -->
+            <div class="absolute left-1.5 top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+
+            <div class="relative">
+              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-800"></span>
+              <p class="font-bold text-gray-900 dark:text-white">Booking Renewed</p>
+              <p class="text-gray-500 dark:text-gray-400">Today, 08:36 by Manager</p>
+            </div>
+
+            <div class="relative">
+              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white dark:ring-gray-800"></span>
+              <p class="font-bold text-gray-900 dark:text-white">Financial Eligibility Verified</p>
+              <p class="text-gray-500 dark:text-gray-400">12 Jun 2026, 14:22</p>
+            </div>
+
+            <div class="relative">
+              <span class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-gray-800"></span>
+              <p class="font-bold text-gray-900 dark:text-white">Initial Booking Created</p>
+              <p class="text-gray-500 dark:text-gray-400">{{ formatDateTime(booking.createdAt) || '05 Jun 2026, 09:15' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Info Box -->
+        <div class="bg-gray-50/80 dark:bg-gray-800/60 rounded-2xl border border-gray-200/80 dark:border-gray-700/70 p-5 space-y-3">
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">System Metadata</span>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 dark:text-gray-400">System ID</span>
+              <span class="font-mono text-gray-800 dark:text-gray-200 select-all font-medium">{{ booking.id.slice(0, 18) }}...</span>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 dark:text-gray-400">Created By</span>
+              <span class="text-gray-800 dark:text-gray-200 font-medium">System Auto-process</span>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 dark:text-gray-400">Last Revision</span>
+              <span class="text-gray-800 dark:text-gray-200 font-medium">v2.1.0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div> <!-- End Bento Grid -->
+
+
 
   }
 
@@ -624,9 +359,9 @@
       confirmText="Yes, Cancel Booking"
       cancelText="Keep Active"
       variant="danger"
-      [isLoading]="isCancelling"
-      (confirm)="confirmCancel()"
-      (cancel)="closeCancelConfirm()"
+      [loading]="isCancelling"
+      (confirmed)="confirmCancel()"
+      (cancelled)="closeCancelConfirm()"
     />
   }
 
