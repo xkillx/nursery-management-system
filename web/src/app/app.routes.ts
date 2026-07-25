@@ -28,6 +28,7 @@ import { ManagerInvoiceDetailComponent } from './features/staff/pages/manager-in
 import { PractitionerAttendanceChildrenComponent } from './features/staff/pages/practitioner-attendance-children/practitioner-attendance-children.component';
 import { ManagerTermCalendarComponent } from './features/staff/pages/manager-term-calendar/manager-term-calendar.component';
 import { ManagerClosureDaysComponent } from './features/staff/pages/manager-closure-days/manager-closure-days.component';
+import { ManagerHolidayPeriodsComponent } from './features/staff/pages/manager-holiday-periods/manager-holiday-periods.component';
 import { ManagerBookingsComponent } from './features/staff/pages/manager-bookings/manager-bookings.component';
 import { ManagerBookingDetailComponent } from './features/staff/pages/manager-booking-detail/manager-booking-detail.component';
 import { CreateRecurringBookingComponent } from './features/staff/pages/create-recurring-booking/create-recurring-booking.component';
@@ -286,6 +287,12 @@ export const routes: Routes = [
                 component: ManagerClosureDaysComponent,
                 data: { breadcrumb: { label: 'Closure days' } },
                 title: 'Closure Days | Nursery Management',
+              },
+              {
+                path: 'holiday-periods',
+                component: ManagerHolidayPeriodsComponent,
+                data: { breadcrumb: { label: 'Holiday periods' } },
+                title: 'Holiday Periods | Nursery Management',
               },
               {
                 path: 'session-templates',
