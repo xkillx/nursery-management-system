@@ -34,6 +34,7 @@ import (
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
+	nurserycalendardomain "nursery-management-system/api/internal/modules/nursery_calendar/domain"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
@@ -1472,3 +1473,54 @@ func provideBookingsFundingLookupAdapter(
 }
 
 var _ bookingsdomain.FundingLookup = (*bookingsFundingLookupAdapter)(nil)
+
+// nurseryCalendarClosureAdapter satisfies nursery_calendar/domain.ClosureDayLookup
+// by delegating to the branch_closures module's repository.
+type nurseryCalendarClosureAdapter struct {
+	repo *branchclosurepostgres.Repository
+}
+
+func (a *nurseryCalendarClosureAdapter) GetClosureDatesForBranchAndDateRange(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time) ([]time.Time, error) {
+	closures, err := a.repo.ListByBranchAndDateRange(ctx, tenantID, branchID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("nursery calendar closure lookup: %w", err)
+	}
+	dates := make([]time.Time, 0, len(closures))
+	for _, c := range closures {
+		dates = append(dates, c.Date)
+	}
+	return dates, nil
+}
+
+var _ nurserycalendardomain.ClosureDayLookup = (*nurseryCalendarClosureAdapter)(nil)
+
+func provideNurseryCalendarClosureAdapter(repo *branchclosurepostgres.Repository) *nurseryCalendarClosureAdapter {
+	return &nurseryCalendarClosureAdapter{repo: repo}
+}
+
+// nurseryCalendarHolidayAdapter satisfies nursery_calendar/domain.HolidayPeriodLookup
+// by delegating to the holiday_periods module's repository.
+type nurseryCalendarHolidayAdapter struct {
+	repo *holidayperiodspostgres.Repository
+}
+
+func (a *nurseryCalendarHolidayAdapter) GetHolidayPeriodsForBranchAndDateRange(ctx context.Context, tenantID, branchID uuid.UUID, from, to time.Time) ([]nurserycalendardomain.HolidayPeriodDateRange, error) {
+	periods, err := a.repo.ListForBranchAndMonth(ctx, tenantID, branchID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("nursery calendar holiday lookup: %w", err)
+	}
+	out := make([]nurserycalendardomain.HolidayPeriodDateRange, 0, len(periods))
+	for _, p := range periods {
+		out = append(out, nurserycalendardomain.HolidayPeriodDateRange{
+			StartDate: p.StartDate,
+			EndDate:   p.EndDate,
+		})
+	}
+	return out, nil
+}
+
+var _ nurserycalendardomain.HolidayPeriodLookup = (*nurseryCalendarHolidayAdapter)(nil)
+
+func provideNurseryCalendarHolidayAdapter(repo *holidayperiodspostgres.Repository) *nurseryCalendarHolidayAdapter {
+	return &nurseryCalendarHolidayAdapter{repo: repo}
+}

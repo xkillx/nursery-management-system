@@ -136,6 +136,10 @@ import (
 	holidayperiodsapp "nursery-management-system/api/internal/modules/holiday_periods/application"
 	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
 	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
+
+	nurserycalendarapp "nursery-management-system/api/internal/modules/nursery_calendar/application"
+	nurserycalendardomain "nursery-management-system/api/internal/modules/nursery_calendar/domain"
+	nurserycalendarhandler "nursery-management-system/api/internal/modules/nursery_calendar/interfaces/http"
 )
 
 // ── Auth module ─────────────────────────────────────────────────────────
@@ -738,6 +742,18 @@ var holidayPeriodsSet = wire.NewSet(
 	wire.Bind(new(billingdomain.HolidayPeriodLookup), new(*holidayPeriodLookupAdapter)),
 )
 
+// ── Nursery Calendar module ────────────────────────────────────────────
+
+var nurseryCalendarSet = wire.NewSet(
+	provideNurseryCalendarClosureAdapter,
+	wire.Bind(new(nurserycalendardomain.ClosureDayLookup), new(*nurseryCalendarClosureAdapter)),
+	provideNurseryCalendarHolidayAdapter,
+	wire.Bind(new(nurserycalendardomain.HolidayPeriodLookup), new(*nurseryCalendarHolidayAdapter)),
+	nurserycalendarapp.NewQueryCalendarDay,
+	nurserycalendarapp.NewQueryDateRange,
+	nurserycalendarhandler.NewHandler,
+)
+
 // ── Notifications module ──────────────────────────────────────────────
 
 var notificationsSet = wire.NewSet(
@@ -803,6 +819,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		siteProfileSet,
 		branchClosuresSet,
 		holidayPeriodsSet,
+		nurseryCalendarSet,
 		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
@@ -864,6 +881,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		siteProfileSet,
 		branchClosuresSet,
 		holidayPeriodsSet,
+		nurseryCalendarSet,
 		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
