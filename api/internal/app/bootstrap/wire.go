@@ -132,6 +132,10 @@ import (
 	branchclosuredomain "nursery-management-system/api/internal/modules/branch_closures/domain"
 	branchclosurepostgres "nursery-management-system/api/internal/modules/branch_closures/infrastructure/postgres"
 	branchclosurehandler "nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
+
+	holidayperiodsapp "nursery-management-system/api/internal/modules/holiday_periods/application"
+	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
+	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
 )
 
 // ── Auth module ─────────────────────────────────────────────────────────
@@ -721,6 +725,19 @@ var branchClosuresSet = wire.NewSet(
 	wire.Bind(new(billingdomain.ClosureDateLookup), new(*closureDateLookupAdapter)),
 )
 
+// ── Holiday Periods module ──────────────────────────────────────────
+
+var holidayPeriodsSet = wire.NewSet(
+	holidayperiodspostgres.NewRepository,
+	holidayperiodsapp.NewCreateHolidayPeriod,
+	holidayperiodsapp.NewUpdateHolidayPeriod,
+	holidayperiodsapp.NewDeleteHolidayPeriod,
+	holidayperiodsapp.NewListHolidayPeriods,
+	holidayperiodshttphandler.NewHandler,
+	provideHolidayPeriodLookupAdapter,
+	wire.Bind(new(billingdomain.HolidayPeriodLookup), new(*holidayPeriodLookupAdapter)),
+)
+
 // ── Notifications module ──────────────────────────────────────────────
 
 var notificationsSet = wire.NewSet(
@@ -785,6 +802,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		bookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
+		holidayPeriodsSet,
 		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
@@ -845,6 +863,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		bookingsSet,
 		siteProfileSet,
 		branchClosuresSet,
+		holidayPeriodsSet,
 		notificationsSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,

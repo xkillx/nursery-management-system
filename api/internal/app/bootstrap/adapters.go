@@ -30,6 +30,7 @@ import (
 	fundingapp "nursery-management-system/api/internal/modules/funding/application"
 	fundingdomain "nursery-management-system/api/internal/modules/funding/domain"
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
+	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
@@ -724,6 +725,35 @@ func (a *closureDateLookupAdapter) GetClosureDatesForBranchAndMonth(ctx context.
 }
 
 var _ billingdomain.ClosureDateLookup = (*closureDateLookupAdapter)(nil)
+
+// holidayPeriodLookupAdapter satisfies billingdomain.HolidayPeriodLookup by
+// delegating to the holiday_periods module's repository.
+type holidayPeriodLookupAdapter struct {
+	repo *holidayperiodspostgres.Repository
+}
+
+func (a *holidayPeriodLookupAdapter) GetHolidayPeriodsForBranchAndMonth(ctx context.Context, tenantID, branchID uuid.UUID, month time.Time) ([]billingdomain.HolidayPeriodDateRange, error) {
+	monthStart := month
+	monthEnd := month.AddDate(0, 1, 0).AddDate(0, 0, -1)
+	periods, err := a.repo.ListForBranchAndMonth(ctx, tenantID, branchID, monthStart, monthEnd)
+	if err != nil {
+		return nil, fmt.Errorf("holiday period lookup: %w", err)
+	}
+	out := make([]billingdomain.HolidayPeriodDateRange, 0, len(periods))
+	for _, p := range periods {
+		out = append(out, billingdomain.HolidayPeriodDateRange{
+			StartDate: p.StartDate,
+			EndDate:   p.EndDate,
+		})
+	}
+	return out, nil
+}
+
+var _ billingdomain.HolidayPeriodLookup = (*holidayPeriodLookupAdapter)(nil)
+
+func provideHolidayPeriodLookupAdapter(repo *holidayperiodspostgres.Repository) *holidayPeriodLookupAdapter {
+	return &holidayPeriodLookupAdapter{repo: repo}
+}
 
 // hourlyBookingLookupAdapter satisfies billingdomain.HourlyBookingLookup by
 // delegating to the hourly_bookings module's repository.

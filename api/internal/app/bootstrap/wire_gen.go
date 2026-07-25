@@ -50,6 +50,9 @@ import (
 	domain8 "nursery-management-system/api/internal/modules/funding/domain"
 	postgres7 "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	"nursery-management-system/api/internal/modules/funding/interfaces/http"
+	holidayperiodsapp "nursery-management-system/api/internal/modules/holiday_periods/application"
+	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
+	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
 	application20 "nursery-management-system/api/internal/modules/hourly_bookings/application"
 	domain19 "nursery-management-system/api/internal/modules/hourly_bookings/domain"
 	postgres15 "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
@@ -307,9 +310,11 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bootstrapHourlyBookingLookupAdapter := provideHourlyBookingLookupAdapter(hourlyBookingRepository)
 	repository4 := postgres16.NewRepository(pool)
 	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository4)
+	holidayPeriodRepository := holidayperiodspostgres.NewRepository(pool)
+	bootstrapHolidayPeriodLookupAdapter := provideHolidayPeriodLookupAdapter(holidayPeriodRepository)
 	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository)
 	bookingEntriesLookupAdapter := application10.NewBookingEntriesLookupAdapter(pool)
-	generateDraftInvoicesUseCase := application9.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, nil, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
+	generateDraftInvoicesUseCase := application9.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
 	computeInvoicePrefill := application9.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter)
 	createDraftInvoice := application9.NewCreateDraftInvoice(repository2, transactionManager, writer)
 	issueInvoice := application9.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
@@ -488,6 +493,11 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	listClosureDays := application21.NewListClosureDays(repository4)
 	deleteClosureDay := application21.NewDeleteClosureDay(repository4)
 	httpclosureHandler := httpclosure.NewHandler(createClosureDay, listClosureDays, deleteClosureDay, logger)
+	createHolidayPeriod := holidayperiodsapp.NewCreateHolidayPeriod(holidayPeriodRepository)
+	updateHolidayPeriod := holidayperiodsapp.NewUpdateHolidayPeriod(holidayPeriodRepository)
+	deleteHolidayPeriod := holidayperiodsapp.NewDeleteHolidayPeriod(holidayPeriodRepository)
+	listHolidayPeriods := holidayperiodsapp.NewListHolidayPeriods(holidayPeriodRepository)
+	holidayPeriodHandler := holidayperiodshttphandler.NewHandler(createHolidayPeriod, updateHolidayPeriod, deleteHolidayPeriod, listHolidayPeriods, logger)
 	httpHandler := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
@@ -517,6 +527,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		HourlyBookingsHandler:   httphourlybookingsHandler,
 		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
+		HolidayPeriodHandler:    holidayPeriodHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
@@ -717,9 +728,11 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bootstrapHourlyBookingLookupAdapter := provideHourlyBookingLookupAdapter(hourlyBookingRepository)
 	repository4 := postgres16.NewRepository(pool)
 	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository4)
+	holidayPeriodRepository := holidayperiodspostgres.NewRepository(pool)
+	bootstrapHolidayPeriodLookupAdapter := provideHolidayPeriodLookupAdapter(holidayPeriodRepository)
 	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository)
 	bookingEntriesLookupAdapter := application10.NewBookingEntriesLookupAdapter(pool)
-	generateDraftInvoicesUseCase := application9.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, nil, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
+	generateDraftInvoicesUseCase := application9.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
 	computeInvoicePrefill := application9.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter)
 	createDraftInvoice := application9.NewCreateDraftInvoice(repository2, transactionManager, writer)
 	issueInvoice := application9.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
@@ -898,6 +911,11 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	listClosureDays := application21.NewListClosureDays(repository4)
 	deleteClosureDay := application21.NewDeleteClosureDay(repository4)
 	httpclosureHandler := httpclosure.NewHandler(createClosureDay, listClosureDays, deleteClosureDay, logger)
+	createHolidayPeriod := holidayperiodsapp.NewCreateHolidayPeriod(holidayPeriodRepository)
+	updateHolidayPeriod := holidayperiodsapp.NewUpdateHolidayPeriod(holidayPeriodRepository)
+	deleteHolidayPeriod := holidayperiodsapp.NewDeleteHolidayPeriod(holidayPeriodRepository)
+	listHolidayPeriods := holidayperiodsapp.NewListHolidayPeriods(holidayPeriodRepository)
+	holidayPeriodHandler := holidayperiodshttphandler.NewHandler(createHolidayPeriod, updateHolidayPeriod, deleteHolidayPeriod, listHolidayPeriods, logger)
 	httpHandler := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
@@ -927,6 +945,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		HourlyBookingsHandler:   httphourlybookingsHandler,
 		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
+		HolidayPeriodHandler:    holidayPeriodHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)

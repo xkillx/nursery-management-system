@@ -40,6 +40,7 @@ import (
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
+	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	hourlyhttphandler "nursery-management-system/api/internal/modules/hourly_bookings/interfaces/http"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
@@ -364,6 +365,7 @@ type appComponents struct {
 	HourlyBookingsHandler   *hourlyhttphandler.Handler
 	BookingsHandler         *bookingshttphandler.Handler
 	BranchClosureHandler    *branchclosurehandler.Handler
+	HolidayPeriodHandler    *holidayperiodshttphandler.Handler
 	SiteProfileHandler      *siteprofilehandler.Handler
 }
 
@@ -454,6 +456,7 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.HourlyBookingsHandler.RegisterManagerRoutes(manager)
 	c.BookingsHandler.RegisterManagerRoutes(manager)
 	c.BranchClosureHandler.RegisterRoutes(protected)
+	c.HolidayPeriodHandler.RegisterRoutes(protected)
 
 	return router
 }
