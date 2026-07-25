@@ -11,7 +11,7 @@ import { StatusBadgeComponent } from '../../../../../shared/components/ui/badge/
 import { ConfirmationDialogComponent } from '../../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { DaySelectorComponent } from '../../../../../shared/components/form/day-selector/day-selector.component';
 import { BookingsApiService } from '../../../data/bookings-api.service';
-import { UnifiedBooking, BookingType } from '../../../models/booking.models';
+import { UnifiedBooking, BookingType, BookingDetail } from '../../../models/booking.models';
 
 @Component({
   selector: 'app-booking-detail-drawer',
@@ -54,6 +54,7 @@ export class BookingDetailDrawerComponent implements OnChanges {
   isLoadingDetail = false;
   formError: string | null = null;
   formFieldErrors: Record<string, string> = {};
+  bookingDetail: BookingDetail | null = null;
 
   // Edit form fields
   editDaysOfWeek: number[] = [];
@@ -62,12 +63,16 @@ export class BookingDetailDrawerComponent implements OnChanges {
   editFundingType = '';
   editFundingHours: number | null = null;
   editLaReference = '';
+  editSessionTypeId = '';
+  editStartTimeMinutes: number | null = null;
+  editDurationMinutes: number | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen'] && this.isOpen) {
       this.isEditMode = false;
       this.formError = null;
       this.formFieldErrors = {};
+      this.bookingDetail = null;
     }
     if (changes['booking'] && this.booking) {
       this.populateEditForm();
@@ -78,8 +83,40 @@ export class BookingDetailDrawerComponent implements OnChanges {
     return this.booking?.bookingType === 'recurring';
   }
 
+  get isAdhoc(): boolean {
+    return this.booking?.bookingType === 'ad_hoc';
+  }
+
+  get isHourly(): boolean {
+    return this.booking?.bookingType === 'hourly';
+  }
+
   get canEdit(): boolean {
-    return this.isRecurring;
+    return this.booking?.status === 'active';
+  }
+
+  get computedEndTime(): string {
+    if (this.editStartTimeMinutes == null || this.editDurationMinutes == null) return '';
+    const endMinutes = this.editStartTimeMinutes + this.editDurationMinutes;
+    const hours = Math.floor(endMinutes / 60);
+    const mins = endMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  }
+
+  formatTime(minutes: number | undefined): string {
+    if (minutes == null) return '—';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  }
+
+  formatDuration(minutes: number | undefined): string {
+    if (minutes == null) return '—';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins} min`;
+    if (mins === 0) return `${hours} hr`;
+    return `${hours} hr ${mins} min`;
   }
 
   bookingTypeLabel(type: BookingType): string {
@@ -130,6 +167,12 @@ export class BookingDetailDrawerComponent implements OnChanges {
     return this.sessionLookup[id] ?? id ?? '—';
   }
 
+  detailSessionName(): string {
+    if (this.bookingDetail?.sessionTypeName) return this.bookingDetail.sessionTypeName;
+    if (this.bookingDetail?.sessionTypeId) return this.sessionName(this.bookingDetail.sessionTypeId);
+    return '—';
+  }
+
   fundingTypeLabel(type: string | null | undefined): string {
     switch (type) {
       case 'universal_15': return 'Universal (15h)';
@@ -147,18 +190,20 @@ export class BookingDetailDrawerComponent implements OnChanges {
     this.formError = null;
     this.formFieldErrors = {};
 
-    this.bookingsApi.getBooking(this.siteId, this.booking.id).subscribe({
-      next: (full) => {
+    this.bookingsApi.getBookingDetail(this.siteId, this.booking.id).subscribe({
+      next: (detail) => {
+        this.bookingDetail = detail;
         this.isEditMode = true;
         this.isLoadingDetail = false;
-        this.editStartDate = full.startDate;
-        this.editEndDate = full.endDate ?? '';
-        // The full booking detail may include additional fields not in the list response
-        // For now, use what's available; fields not in UnifiedBooking default to empty
+        this.editStartDate = detail.startDate;
+        this.editEndDate = detail.endDate ?? '';
+        this.editSessionTypeId = detail.sessionTypeId ?? '';
+        this.editStartTimeMinutes = detail.startTimeMinutes ?? null;
+        this.editDurationMinutes = detail.durationMinutes ?? null;
         this.editDaysOfWeek = [];
-        this.editFundingType = '';
-        this.editFundingHours = null;
-        this.editLaReference = '';
+        this.editFundingType = detail.fundingType ?? '';
+        this.editFundingHours = detail.fundingHoursPerWeek ?? null;
+        this.editLaReference = detail.laReference ?? '';
       },
       error: () => {
         this.isLoadingDetail = false;
@@ -200,50 +245,78 @@ export class BookingDetailDrawerComponent implements OnChanges {
   }
 
   submitEdit(): void {
-    if (!this.siteId || !this.booking || !this.isRecurring) return;
+    if (!this.siteId || !this.booking || !this.canEdit) return;
     this.isSaving = true;
     this.formError = null;
     this.formFieldErrors = {};
 
-    this.bookingsApi.updateRecurringBooking(this.siteId, this.booking.id, {
-      effective_start_date: this.editStartDate || undefined,
-      effective_end_date: this.editEndDate || undefined,
-      funding_type: this.editFundingType || undefined,
-      funding_hours_per_week: this.editFundingHours ?? undefined,
-      la_reference: this.editLaReference || undefined,
-    }).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.isEditMode = false;
-        this.updated.emit();
-      },
-      error: (err) => {
-        this.isSaving = false;
-        const body = err?.error;
-        if (body?.code === 'validation_error' && body?.fields) {
-          this.formFieldErrors = body.fields as Record<string, string>;
-          this.formError = 'Please correct the highlighted fields.';
-        } else {
-          this.formError = body?.message ?? 'Failed to update booking.';
-        }
-      },
-    });
+    if (this.isRecurring) {
+      this.bookingsApi.updateRecurringBooking(this.siteId, this.booking.id, {
+        effective_start_date: this.editStartDate || undefined,
+        effective_end_date: this.editEndDate || undefined,
+        funding_type: this.editFundingType || undefined,
+        funding_hours_per_week: this.editFundingHours ?? undefined,
+        la_reference: this.editLaReference || undefined,
+      }).subscribe({
+        next: () => this.onSaveSuccess(),
+        error: (err) => this.onSaveError(err),
+      });
+    } else if (this.isAdhoc) {
+      this.bookingsApi.updateAdHocBooking(this.siteId, this.booking.id, {
+        calendar_date: this.editStartDate || undefined,
+        session_type_id: this.editSessionTypeId || undefined,
+      }).subscribe({
+        next: () => this.onSaveSuccess(),
+        error: (err) => this.onSaveError(err),
+      });
+    } else if (this.isHourly) {
+      this.bookingsApi.updateHourlyBooking(this.siteId, this.booking.id, {
+        calendar_date: this.editStartDate || undefined,
+        start_time_minutes: this.editStartTimeMinutes ?? undefined,
+        duration_minutes: this.editDurationMinutes ?? undefined,
+        session_type_id: this.editSessionTypeId || undefined,
+      }).subscribe({
+        next: () => this.onSaveSuccess(),
+        error: (err) => this.onSaveError(err),
+      });
+    }
   }
 
   onClose(): void {
     this.isEditMode = false;
+    this.bookingDetail = null;
     this.closed.emit();
+  }
+
+  private onSaveSuccess(): void {
+    this.isSaving = false;
+    this.isEditMode = false;
+    this.bookingDetail = null;
+    this.updated.emit();
+  }
+
+  private onSaveError(err: unknown): void {
+    this.isSaving = false;
+    const httpErr = err as { error?: { code?: string; fields?: Record<string, string>; message?: string } };
+    const body = httpErr?.error;
+    if (body?.code === 'validation_error' && body?.fields) {
+      this.formFieldErrors = body.fields;
+      this.formError = 'Please correct the highlighted fields.';
+    } else {
+      this.formError = body?.message ?? 'Failed to update booking.';
+    }
   }
 
   private populateEditForm(): void {
     if (!this.booking) return;
     this.editStartDate = this.booking.startDate;
     this.editEndDate = this.booking.endDate ?? '';
-    // days_of_week, funding_type, funding_hours, la_reference are not in the unified list response
-    // These would need a detail API call to populate fully
     this.editDaysOfWeek = [];
     this.editFundingType = '';
     this.editFundingHours = null;
     this.editLaReference = '';
+    this.editSessionTypeId = '';
+    this.editStartTimeMinutes = null;
+    this.editDurationMinutes = null;
   }
 }

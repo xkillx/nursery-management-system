@@ -43,21 +43,80 @@
             <dd class="text-sm font-semibold text-gray-900 dark:text-white text-right">{{ childFullName() }}</dd>
           </div>
 
+          <!-- Session / Template -->
           <div class="flex items-start justify-between gap-4">
             <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Session / Template</dt>
-            <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">{{ isRecurring ? 'Recurring booking' : '—' }}</dd>
-          </div>
-
-          <div class="flex items-start justify-between gap-4">
-            <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dates</dt>
-            <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right flex items-center gap-1.5">
-              <ng-icon name="heroCalendarDays" size="14" class="text-gray-400" />
-              {{ formatDate(booking.startDate) }}
-              @if (booking.endDate && booking.endDate !== booking.startDate) {
-                &ndash; {{ formatDate(booking.endDate) }}
+            <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+              @if (isRecurring) {
+                Recurring booking
+              } @else if (bookingDetail?.sessionTypeName) {
+                {{ bookingDetail.sessionTypeName }}
+              } @else if (isAdhoc) {
+                {{ sessionName(booking.sessionTypeId) }}
+              } @else {
+                —
               }
             </dd>
           </div>
+
+          <!-- Dates — adhoc and hourly show calendar date only -->
+          @if (isAdhoc || isHourly) {
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right flex items-center gap-1.5">
+                <ng-icon name="heroCalendarDays" size="14" class="text-gray-400" />
+                {{ formatDate(booking.startDate) }}
+              </dd>
+            </div>
+          } @else {
+            <!-- Recurring: date range -->
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dates</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right flex items-center gap-1.5">
+                <ng-icon name="heroCalendarDays" size="14" class="text-gray-400" />
+                {{ formatDate(booking.startDate) }}
+                @if (booking.endDate && booking.endDate !== booking.startDate) {
+                  &ndash; {{ formatDate(booking.endDate) }}
+                }
+              </dd>
+            </div>
+          }
+
+          <!-- Hourly: start time, duration, end time -->
+          @if (isHourly) {
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Start Time</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+                {{ formatTime(bookingDetail?.startTimeMinutes ?? booking.startTimeMinutes) }}
+              </dd>
+            </div>
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+                {{ formatDuration(bookingDetail?.durationMinutes ?? booking.durationMinutes) }}
+              </dd>
+            </div>
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">End Time</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+                @if ((bookingDetail?.startTimeMinutes ?? booking.startTimeMinutes) !== null && (bookingDetail?.durationMinutes ?? booking.durationMinutes) !== null) {
+                  {{ formatTime((bookingDetail?.startTimeMinutes ?? booking.startTimeMinutes)! + (bookingDetail?.durationMinutes ?? booking.durationMinutes)!) }}
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+          }
+
+          <!-- Session type for hourly (if present) -->
+          @if (isHourly && (bookingDetail?.sessionTypeName || booking.sessionTypeId)) {
+            <div class="flex items-start justify-between gap-4">
+              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Session Type</dt>
+              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+                {{ bookingDetail?.sessionTypeName ?? sessionName(booking.sessionTypeId) }}
+              </dd>
+            </div>
+          }
 
           <div class="flex items-start justify-between gap-4">
             <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</dt>
@@ -69,21 +128,24 @@
             <dd class="text-xs font-medium text-gray-500 dark:text-gray-400 text-right">{{ formatDateTime(booking.updatedAt) }}</dd>
           </div>
 
-          @if (booking.fundingType && booking.fundingType !== 'none') {
-            <div class="flex items-start justify-between gap-4">
-              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Funding</dt>
-              <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
-                {{ fundingTypeLabel(booking.fundingType) }}
-                @if (booking.fundingHoursPerWeek) {
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block">{{ booking.fundingHoursPerWeek }} hrs/week</span>
-                }
-              </dd>
-            </div>
-          } @else {
-            <div class="flex items-start justify-between gap-4">
-              <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Funding</dt>
-              <dd class="text-sm font-medium text-gray-500 dark:text-gray-400 text-right italic">No funding — fully chargeable</dd>
-            </div>
+          <!-- Funding — recurring only -->
+          @if (isRecurring) {
+            @if (booking.fundingType && booking.fundingType !== 'none') {
+              <div class="flex items-start justify-between gap-4">
+                <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Funding</dt>
+                <dd class="text-sm font-medium text-gray-700 dark:text-gray-200 text-right">
+                  {{ fundingTypeLabel(booking.fundingType) }}
+                  @if (booking.fundingHoursPerWeek) {
+                    <span class="text-xs text-gray-500 dark:text-gray-400 block">{{ booking.fundingHoursPerWeek }} hrs/week</span>
+                  }
+                </dd>
+              </div>
+            } @else {
+              <div class="flex items-start justify-between gap-4">
+                <dt class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Funding</dt>
+                <dd class="text-sm font-medium text-gray-500 dark:text-gray-400 text-right italic">No funding — fully chargeable</dd>
+              </div>
+            }
           }
         </dl>
 
@@ -120,7 +182,7 @@
         </div>
       </div>
     } @else {
-      <!-- Edit form (recurring only) -->
+      <!-- Edit form -->
       <div class="space-y-5">
         <button
           type="button"
@@ -133,81 +195,171 @@
           Back to details
         </button>
 
-        <!-- Days of week -->
-        <div>
-          <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Days of Week</span>
-          <app-day-selector
-            [(ngModel)]="editDaysOfWeek"
-            idPrefix="edit-day"
-            namePrefix="edit-day"
-          />
-        </div>
-
-        <!-- Start date -->
-        <div>
-          <label for="edit-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Date</label>
-          <input
-            id="edit-start"
-            type="date"
-            [(ngModel)]="editStartDate"
-            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          />
-        </div>
-
-        <!-- End date -->
-        <div>
-          <label for="edit-end" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">End Date</label>
-          <input
-            id="edit-end"
-            type="date"
-            [(ngModel)]="editEndDate"
-            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          />
-        </div>
-
-        <!-- Funding type -->
-        <div>
-          <label for="edit-funding" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Type</label>
-          <select
-            id="edit-funding"
-            [(ngModel)]="editFundingType"
-            class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
-          >
-            <option value="">None</option>
-            <option value="universal_15">Universal (15h)</option>
-            <option value="working_parent">Working Parent (30h)</option>
-            <option value="working_parent_under_3">Working Parent Under 3 (15h)</option>
-            <option value="disadvantaged_2yo">Disadvantaged 2yr (15h)</option>
-          </select>
-        </div>
-
-        <!-- Funding hours -->
-        @if (editFundingType) {
+        @if (isRecurring) {
+          <!-- Recurring edit form -->
           <div>
-            <label for="edit-funding-hours" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Hours per Week</label>
+            <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Days of Week</span>
+            <app-day-selector
+              [(ngModel)]="editDaysOfWeek"
+              idPrefix="edit-day"
+              namePrefix="edit-day"
+            />
+          </div>
+
+          <div>
+            <label for="edit-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Date</label>
             <input
-              id="edit-funding-hours"
-              type="number"
-              [(ngModel)]="editFundingHours"
-              min="0"
-              max="30"
-              step="0.5"
+              id="edit-start"
+              type="date"
+              [(ngModel)]="editStartDate"
               class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
             />
           </div>
-        }
 
-        <!-- LA reference -->
-        @if (editFundingType) {
           <div>
-            <label for="edit-la-ref" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">LA Reference</label>
+            <label for="edit-end" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">End Date</label>
             <input
-              id="edit-la-ref"
-              type="text"
-              [(ngModel)]="editLaReference"
-              placeholder="Local authority reference"
+              id="edit-end"
+              type="date"
+              [(ngModel)]="editEndDate"
               class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
             />
+          </div>
+
+          <div>
+            <label for="edit-funding" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Type</label>
+            <select
+              id="edit-funding"
+              [(ngModel)]="editFundingType"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            >
+              <option value="">None</option>
+              <option value="universal_15">Universal (15h)</option>
+              <option value="working_parent">Working Parent (30h)</option>
+              <option value="working_parent_under_3">Working Parent Under 3 (15h)</option>
+              <option value="disadvantaged_2yo">Disadvantaged 2yr (15h)</option>
+            </select>
+          </div>
+
+          @if (editFundingType) {
+            <div>
+              <label for="edit-funding-hours" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Funding Hours per Week</label>
+              <input
+                id="edit-funding-hours"
+                type="number"
+                [(ngModel)]="editFundingHours"
+                min="0"
+                max="30"
+                step="0.5"
+                class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+              />
+            </div>
+          }
+
+          @if (editFundingType) {
+            <div>
+              <label for="edit-la-ref" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">LA Reference</label>
+              <input
+                id="edit-la-ref"
+                type="text"
+                [(ngModel)]="editLaReference"
+                placeholder="Local authority reference"
+                class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+              />
+            </div>
+          }
+        }
+
+        @if (isAdhoc) {
+          <!-- Adhoc edit form -->
+          <div>
+            <label for="edit-adhoc-date" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Date</label>
+            <input
+              id="edit-adhoc-date"
+              type="date"
+              [(ngModel)]="editStartDate"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+          </div>
+
+          <div>
+            <label for="edit-adhoc-session" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Session Type</label>
+            <select
+              id="edit-adhoc-session"
+              [(ngModel)]="editSessionTypeId"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            >
+              <option value="">Select session type</option>
+              @for (entry of sessionLookup | keyvalue; track entry.key) {
+                <option [value]="entry.key">{{ entry.value }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (isHourly) {
+          <!-- Hourly edit form -->
+          <div>
+            <label for="edit-hourly-date" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Date</label>
+            <input
+              id="edit-hourly-date"
+              type="date"
+              [(ngModel)]="editStartDate"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+          </div>
+
+          <div>
+            <label for="edit-hourly-start" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Start Time</label>
+            <input
+              id="edit-hourly-start"
+              type="number"
+              [(ngModel)]="editStartTimeMinutes"
+              min="0"
+              max="1439"
+              placeholder="Minutes from midnight (e.g. 540 for 09:00)"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+            @if (editStartTimeMinutes !== null) {
+              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatTime(editStartTimeMinutes) }}</span>
+            }
+          </div>
+
+          <div>
+            <label for="edit-hourly-duration" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Duration (minutes)</label>
+            <input
+              id="edit-hourly-duration"
+              type="number"
+              [(ngModel)]="editDurationMinutes"
+              min="1"
+              max="1440"
+              placeholder="Duration in minutes"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            />
+            @if (editDurationMinutes) {
+              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDuration(editDurationMinutes) }}</span>
+            }
+          </div>
+
+          @if (computedEndTime) {
+            <div>
+              <span class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">End Time</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ computedEndTime }}</span>
+            </div>
+          }
+
+          <div>
+            <label for="edit-hourly-session" class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Session Type (optional)</label>
+            <select
+              id="edit-hourly-session"
+              [(ngModel)]="editSessionTypeId"
+              class="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10"
+            >
+              <option value="">None</option>
+              @for (entry of sessionLookup | keyvalue; track entry.key) {
+                <option [value]="entry.key">{{ entry.value }}</option>
+              }
+            </select>
           </div>
         }
 
