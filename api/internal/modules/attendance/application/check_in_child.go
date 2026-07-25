@@ -18,6 +18,8 @@ type CheckInChild struct {
 	repo           domain.Repository
 	childChecker   domain.ChildEnrollmentChecker
 	absenceChecker domain.AbsenceMarkerChecker
+	calendarQuery  domain.CalendarQuery
+	fundingLookup  domain.ChildFundingLookup
 	txMgr          *transaction.Manager
 	audit          *audit.Writer
 	clock          *AttendanceClock
@@ -27,6 +29,8 @@ func NewCheckInChild(
 	repo domain.Repository,
 	childChecker domain.ChildEnrollmentChecker,
 	absenceChecker domain.AbsenceMarkerChecker,
+	calendarQuery domain.CalendarQuery,
+	fundingLookup domain.ChildFundingLookup,
 	txMgr *transaction.Manager,
 	auditWriter *audit.Writer,
 	clock *AttendanceClock,
@@ -35,14 +39,21 @@ func NewCheckInChild(
 		repo:           repo,
 		childChecker:   childChecker,
 		absenceChecker: absenceChecker,
+		calendarQuery:  calendarQuery,
+		fundingLookup:  fundingLookup,
 		txMgr:          txMgr,
 		audit:          auditWriter,
 		clock:          clock,
 	}
 }
 
-func (uc *CheckInChild) Execute(ctx context.Context, actor tenant.ActorContext, childID uuid.UUID) (domain.Session, error) {
-	var result domain.Session
+type CheckInResult struct {
+	Session  domain.Session
+	Warnings []domain.ClosureWarning
+}
+
+func (uc *CheckInChild) Execute(ctx context.Context, actor tenant.ActorContext, childID uuid.UUID) (CheckInResult, error) {
+	var result CheckInResult
 
 	err := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
 		now, localDate := uc.clock.Now()
@@ -80,13 +91,26 @@ func (uc *CheckInChild) Execute(ctx context.Context, actor tenant.ActorContext, 
 			return domainerrors.Internal(fmt.Errorf("audit attendance_checked_in: %w", err))
 		}
 
-		result = session
+		result.Session = session
 		return nil
 	})
 
 	if err != nil {
-		return domain.Session{}, err
+		return CheckInResult{}, err
 	}
+
+	if uc.calendarQuery != nil && uc.fundingLookup != nil {
+		_, localDate := uc.clock.Now()
+		isTermTime, _ := uc.fundingLookup.GetChildTermTimeOnly(ctx, actor.TenantID, actor.BranchID, childID)
+		isClosed, reason, checkErr := uc.calendarQuery.CheckDate(ctx, actor.TenantID, actor.BranchID, localDate, isTermTime)
+		if checkErr == nil && isClosed {
+			result.Warnings = append(result.Warnings, domain.ClosureWarning{
+				Date:   localDate,
+				Reason: reason,
+			})
+		}
+	}
+
 	return result, nil
 }
 

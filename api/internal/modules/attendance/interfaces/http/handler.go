@@ -146,15 +146,34 @@ func (h *Handler) checkInHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := h.checkIn.Execute(c.Request.Context(), actor, childID)
+	result, err := h.checkIn.Execute(c.Request.Context(), actor, childID)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	resp := toSessionResponse(session)
+	resp := toSessionResponse(result.Session)
+	body := gin.H{
+		"id":                   resp.ID,
+		"child_id":             resp.ChildID,
+		"status":               resp.Status,
+		"check_in_at":          resp.CheckInAt,
+		"check_out_at":         resp.CheckOutAt,
+		"check_in_local_date":  resp.CheckInLocalDate,
+		"check_out_local_date": resp.CheckOutLocalDate,
+		"duration_minutes":     resp.DurationMinutes,
+		"created_at":           resp.CreatedAt,
+		"updated_at":           resp.UpdatedAt,
+	}
+	if len(result.Warnings) > 0 {
+		warnings := make([]gin.H, 0, len(result.Warnings))
+		for _, w := range result.Warnings {
+			warnings = append(warnings, gin.H{"date": w.Date.Format("2006-01-02"), "reason": w.Reason})
+		}
+		body["warnings"] = warnings
+	}
 	c.Header("Location", fmt.Sprintf("/api/attendance/sessions/%s", resp.ID))
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusCreated, body)
 }
 
 // checkOutHandler checks out a child.

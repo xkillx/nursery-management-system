@@ -1656,3 +1656,44 @@ var _ hourlydomain.ChildFundingLookup = (*hourlyChildFundingLookupAdapter)(nil)
 func provideHourlyChildFundingLookupAdapter(repo *fundingpostgres.FundingRecordRepositoryImpl) *hourlyChildFundingLookupAdapter {
 	return &hourlyChildFundingLookupAdapter{repo: repo}
 }
+
+// attendanceCalendarQueryAdapter satisfies attendance/domain.CalendarQuery.
+type attendanceCalendarQueryAdapter struct {
+	queryDay *nurserycalendarapp.QueryCalendarDay
+}
+
+func (a *attendanceCalendarQueryAdapter) CheckDate(ctx context.Context, tenantID, branchID uuid.UUID, date time.Time, isTermTime bool) (bool, string, error) {
+	result, err := a.queryDay.Execute(ctx, tenantID, branchID, date, isTermTime)
+	if err != nil {
+		return false, "", err
+	}
+	return !result.IsOpen, string(result.Reason), nil
+}
+
+var _ attendancedomain.CalendarQuery = (*attendanceCalendarQueryAdapter)(nil)
+
+func provideAttendanceCalendarQueryAdapter(queryDay *nurserycalendarapp.QueryCalendarDay) *attendanceCalendarQueryAdapter {
+	return &attendanceCalendarQueryAdapter{queryDay: queryDay}
+}
+
+// attendanceChildFundingLookupAdapter satisfies attendance/domain.ChildFundingLookup.
+type attendanceChildFundingLookupAdapter struct {
+	repo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *attendanceChildFundingLookupAdapter) GetChildTermTimeOnly(ctx context.Context, tenantID, branchID, childID uuid.UUID) (bool, error) {
+	record, found, err := a.repo.GetFundingRecord(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return false, fmt.Errorf("child funding lookup: %w", err)
+	}
+	if !found {
+		return false, nil
+	}
+	return record.FundingModel == fundingdomain.FundingModelTermTimeOnly, nil
+}
+
+var _ attendancedomain.ChildFundingLookup = (*attendanceChildFundingLookupAdapter)(nil)
+
+func provideAttendanceChildFundingLookupAdapter(repo *fundingpostgres.FundingRecordRepositoryImpl) *attendanceChildFundingLookupAdapter {
+	return &attendanceChildFundingLookupAdapter{repo: repo}
+}
