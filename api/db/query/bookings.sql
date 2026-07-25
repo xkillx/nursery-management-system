@@ -108,7 +108,11 @@ SELECT
     b.created_at,
     b.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    NULL::uuid AS session_type_id,
+    NULL::text AS session_type_name,
+    NULL::int AS start_time_minutes,
+    NULL::int AS duration_minutes
 FROM bookings b
 JOIN children c ON c.id = b.child_id AND c.tenant_id = b.tenant_id AND c.branch_id = b.branch_id
 WHERE b.tenant_id = $1
@@ -134,9 +138,14 @@ SELECT
     ah.created_at,
     ah.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    ah.session_type_id,
+    st.name AS session_type_name,
+    NULL::int AS start_time_minutes,
+    NULL::int AS duration_minutes
 FROM ad_hoc_bookings ah
 JOIN children c ON c.id = ah.child_id AND c.tenant_id = ah.tenant_id AND c.branch_id = ah.branch_id
+LEFT JOIN session_types st ON st.id = ah.session_type_id AND st.tenant_id = ah.tenant_id AND st.branch_id = ah.branch_id
 WHERE ah.tenant_id = $1
   AND ah.branch_id = $2
   AND ($3::uuid IS NULL OR ah.child_id = $3)
@@ -158,9 +167,14 @@ SELECT
     h.created_at,
     h.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    h.session_type_id,
+    st.name AS session_type_name,
+    h.start_time_minutes,
+    h.duration_minutes
 FROM hourly_bookings h
 JOIN children c ON c.id = h.child_id AND c.tenant_id = h.tenant_id AND c.branch_id = h.branch_id
+LEFT JOIN session_types st ON st.id = h.session_type_id AND st.tenant_id = h.tenant_id AND st.branch_id = h.branch_id
 WHERE h.tenant_id = $1
   AND h.branch_id = $2
   AND ($3::uuid IS NULL OR h.child_id = $3)
@@ -184,7 +198,11 @@ SELECT
     b.created_at,
     b.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    NULL::uuid AS session_type_id,
+    NULL::text AS session_type_name,
+    NULL::int AS start_time_minutes,
+    NULL::int AS duration_minutes
 FROM bookings b
 JOIN children c ON c.id = b.child_id AND c.tenant_id = b.tenant_id AND c.branch_id = b.branch_id
 WHERE b.tenant_id = $1
@@ -205,9 +223,14 @@ SELECT
     ah.created_at,
     ah.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    ah.session_type_id,
+    st.name AS session_type_name,
+    NULL::int AS start_time_minutes,
+    NULL::int AS duration_minutes
 FROM ad_hoc_bookings ah
 JOIN children c ON c.id = ah.child_id AND c.tenant_id = ah.tenant_id AND c.branch_id = ah.branch_id
+LEFT JOIN session_types st ON st.id = ah.session_type_id AND st.tenant_id = ah.tenant_id AND st.branch_id = ah.branch_id
 WHERE ah.tenant_id = $1
   AND ah.branch_id = $2
   AND ah.id = $3
@@ -226,9 +249,14 @@ SELECT
     h.created_at,
     h.updated_at,
     c.first_name AS child_first_name,
-    c.last_name AS child_last_name
+    c.last_name AS child_last_name,
+    h.session_type_id,
+    st.name AS session_type_name,
+    h.start_time_minutes,
+    h.duration_minutes
 FROM hourly_bookings h
 JOIN children c ON c.id = h.child_id AND c.tenant_id = h.tenant_id AND c.branch_id = h.branch_id
+LEFT JOIN session_types st ON st.id = h.session_type_id AND st.tenant_id = h.tenant_id AND st.branch_id = h.branch_id
 WHERE h.tenant_id = $1
   AND h.branch_id = $2
   AND h.id = $3

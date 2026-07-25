@@ -35,6 +35,10 @@ type bookingResponse struct {
 	BookedByMembershipID string                 `json:"booked_by_membership_id"`
 	CreatedAt            string                 `json:"created_at"`
 	UpdatedAt            string                 `json:"updated_at"`
+	SessionTypeID        *string                `json:"session_type_id,omitempty"`
+	SessionTypeName      *string                `json:"session_type_name,omitempty"`
+	StartTimeMinutes     *int                   `json:"start_time_minutes,omitempty"`
+	DurationMinutes      *int                   `json:"duration_minutes,omitempty"`
 }
 
 type unifiedBookingResponse struct {
@@ -165,6 +169,26 @@ func toUnifiedBookingDetailResponse(b domain.UnifiedBookingRow) bookingResponse 
 	}
 
 	startDateStr := b.StartDate.UTC().Format("2006-01-02")
+
+	var sessionTypeID, sessionTypeName *string
+	if b.SessionTypeID != nil {
+		s := b.SessionTypeID.String()
+		sessionTypeID = &s
+	}
+	if b.SessionTypeName != nil {
+		sessionTypeName = b.SessionTypeName
+	}
+
+	var startTimeMinutes, durationMinutes *int
+	if b.StartTimeMinutes != nil {
+		v := int(*b.StartTimeMinutes)
+		startTimeMinutes = &v
+	}
+	if b.DurationMinutes != nil {
+		v := int(*b.DurationMinutes)
+		durationMinutes = &v
+	}
+
 	return bookingResponse{
 		BookingType:        b.BookingType,
 		ID:                 b.ID.String(),
@@ -178,6 +202,10 @@ func toUnifiedBookingDetailResponse(b domain.UnifiedBookingRow) bookingResponse 
 		Status:             b.Status,
 		CreatedAt:          b.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt:          b.UpdatedAt.UTC().Format(time.RFC3339),
+		SessionTypeID:      sessionTypeID,
+		SessionTypeName:    sessionTypeName,
+		StartTimeMinutes:   startTimeMinutes,
+		DurationMinutes:    durationMinutes,
 	}
 }
 

@@ -56,6 +56,14 @@ func pgtypeTextPtr(t pgtype.Text) *string {
 	return &t.String
 }
 
+func pgtypeInt4Ptr(i pgtype.Int4) *int32 {
+	if !i.Valid {
+		return nil
+	}
+	v := i.Int32
+	return &v
+}
+
 func isNoRows(err error) bool {
 	return errors.Is(err, pgx.ErrNoRows)
 }
@@ -195,34 +203,42 @@ func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAn
 
 func mapUnifiedBookingRow(row sqlc.BookingsUnifiedListByBranchRow) domain.UnifiedBookingRow {
 	return domain.UnifiedBookingRow{
-		BookingType:    row.BookingType,
-		ID:             pgtypeUUIDToUUID(row.ID),
-		TenantID:       pgtypeUUIDToUUID(row.TenantID),
-		BranchID:       pgtypeUUIDToUUID(row.BranchID),
-		ChildID:        pgtypeUUIDToUUID(row.ChildID),
-		StartDate:      pgtypeDateToTime(row.StartDate),
-		EndDate:        pgtypeDatePtr(row.EndDate),
-		Status:         row.Status,
-		CreatedAt:      pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:      pgtypeTimestamptzToTime(row.UpdatedAt),
-		ChildFirstName: row.ChildFirstName,
-		ChildLastName:  row.ChildLastName.String,
+		BookingType:      row.BookingType,
+		ID:               pgtypeUUIDToUUID(row.ID),
+		TenantID:         pgtypeUUIDToUUID(row.TenantID),
+		BranchID:         pgtypeUUIDToUUID(row.BranchID),
+		ChildID:          pgtypeUUIDToUUID(row.ChildID),
+		StartDate:        pgtypeDateToTime(row.StartDate),
+		EndDate:          pgtypeDatePtr(row.EndDate),
+		Status:           row.Status,
+		CreatedAt:        pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:        pgtypeTimestamptzToTime(row.UpdatedAt),
+		ChildFirstName:   row.ChildFirstName,
+		ChildLastName:    row.ChildLastName.String,
+		SessionTypeID:    pgtypeUUIDPtr(row.SessionTypeID),
+		SessionTypeName:  pgtypeTextPtr(row.SessionTypeName),
+		StartTimeMinutes: pgtypeInt4Ptr(row.StartTimeMinutes),
+		DurationMinutes:  pgtypeInt4Ptr(row.DurationMinutes),
 	}
 }
 
 func mapUnifiedGetByIDRow(row sqlc.BookingsUnifiedGetByIDRow) domain.UnifiedBookingRow {
 	return domain.UnifiedBookingRow{
-		BookingType:    row.BookingType,
-		ID:             pgtypeUUIDToUUID(row.ID),
-		TenantID:       pgtypeUUIDToUUID(row.TenantID),
-		BranchID:       pgtypeUUIDToUUID(row.BranchID),
-		ChildID:        pgtypeUUIDToUUID(row.ChildID),
-		StartDate:      pgtypeDateToTime(row.StartDate),
-		EndDate:        pgtypeDatePtr(row.EndDate),
-		Status:         row.Status,
-		CreatedAt:      pgtypeTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:      pgtypeTimestamptzToTime(row.UpdatedAt),
-		ChildFirstName: row.ChildFirstName,
-		ChildLastName:  row.ChildLastName.String,
+		BookingType:      row.BookingType,
+		ID:               pgtypeUUIDToUUID(row.ID),
+		TenantID:         pgtypeUUIDToUUID(row.TenantID),
+		BranchID:         pgtypeUUIDToUUID(row.BranchID),
+		ChildID:          pgtypeUUIDToUUID(row.ChildID),
+		StartDate:        pgtypeDateToTime(row.StartDate),
+		EndDate:          pgtypeDatePtr(row.EndDate),
+		Status:           row.Status,
+		CreatedAt:        pgtypeTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:        pgtypeTimestamptzToTime(row.UpdatedAt),
+		ChildFirstName:   row.ChildFirstName,
+		ChildLastName:    row.ChildLastName.String,
+		SessionTypeID:    pgtypeUUIDPtr(row.SessionTypeID),
+		SessionTypeName:  pgtypeTextPtr(row.SessionTypeName),
+		StartTimeMinutes: pgtypeInt4Ptr(row.StartTimeMinutes),
+		DurationMinutes:  pgtypeInt4Ptr(row.DurationMinutes),
 	}
 }
