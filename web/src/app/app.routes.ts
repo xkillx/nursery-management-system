@@ -605,6 +605,16 @@ export const routes: Routes = [
             loadComponent: () => import('./features/parent-portal/pages/parent-funding/parent-funding.component').then((m) => m.ParentFundingComponent),
             title: 'Funding | Nursery Management',
           },
+          {
+            path: 'parent/calendar',
+            canActivate: [authGuard, roleGuard],
+            data: {
+              roles: ['parent'],
+              breadcrumb: { label: 'Calendar', link: ['/parent/calendar'] },
+            },
+            loadComponent: () => import('./features/parent-portal/pages/parent-calendar/parent-calendar.component').then((m) => m.ParentCalendarComponent),
+            title: 'Calendar | Nursery Management',
+          },
     ],
   },
   {
