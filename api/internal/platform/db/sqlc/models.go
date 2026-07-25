@@ -551,6 +551,18 @@ type ChildSafeguardingProfile struct {
 	UpdatedAt                 pgtype.Timestamptz
 }
 
+type HolidayPeriod struct {
+	ID        pgtype.UUID
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	Name      string
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	Type      string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type HourlyBooking struct {
 	ID                   pgtype.UUID
 	TenantID             pgtype.UUID
