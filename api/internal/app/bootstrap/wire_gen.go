@@ -63,6 +63,8 @@ import (
 	tokens2 "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	"nursery-management-system/api/internal/modules/invites/interfaces/http"
 	application23 "nursery-management-system/api/internal/modules/notifications/application"
+	nurserycalendarapp "nursery-management-system/api/internal/modules/nursery_calendar/application"
+	nurserycalendarhandler "nursery-management-system/api/internal/modules/nursery_calendar/interfaces/http"
 	application13 "nursery-management-system/api/internal/modules/owner/application"
 	domain12 "nursery-management-system/api/internal/modules/owner/domain"
 	postgres6 "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
@@ -462,20 +464,30 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	updateTerm := application18.NewUpdateTerm(academicTermRepository, transactionManager)
 	archiveTerm := application18.NewArchiveTerm(academicTermRepository, transactionManager)
 	httptermcalendarHandler := httptermcalendar.NewHandler(createTerm, listTerms, updateTerm, archiveTerm, logger)
+	bootstrapNurseryCalendarClosureAdapter := provideNurseryCalendarClosureAdapter(repository4)
+	bootstrapNurseryCalendarHolidayAdapter := provideNurseryCalendarHolidayAdapter(holidayPeriodRepository)
+	queryCalendarDay := nurserycalendarapp.NewQueryCalendarDay(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
+	queryDateRange := nurserycalendarapp.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
+	nurseryCalendarHandler := nurserycalendarhandler.NewHandler(queryCalendarDay, queryDateRange, logger)
 	adHocBookingRepository := postgres21.NewRepository(pool)
-	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository)
+	bootstrapAdhocCalendarQueryAdapter := provideAdhocCalendarQueryAdapter(queryCalendarDay)
+	bootstrapAdhocChildFundingLookupAdapter := provideAdhocChildFundingLookupAdapter(fundingRecordRepositoryImpl)
+	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository, bootstrapAdhocCalendarQueryAdapter, bootstrapAdhocChildFundingLookupAdapter)
 	listAdHocBookings := application19.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application19.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
 	updateAdHocBooking := application19.NewUpdateAdHocBooking(adHocBookingRepository, transactionManager)
 	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, updateAdHocBooking, logger)
-	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
+	bootstrapHourlyCalendarQueryAdapter := provideHourlyCalendarQueryAdapter(queryCalendarDay)
+	bootstrapHourlyChildFundingLookupAdapter := provideHourlyChildFundingLookupAdapter(fundingRecordRepositoryImpl)
+	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository, bootstrapHourlyCalendarQueryAdapter, bootstrapHourlyChildFundingLookupAdapter)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	updateHourlyBooking := application20.NewUpdateHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, updateHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
 	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
-	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
+	bootstrapBookingsCalendarQueryAdapter := provideBookingsCalendarQueryAdapter(queryCalendarDay)
+	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter, bootstrapBookingsCalendarQueryAdapter)
 	getBooking := application10.NewGetBooking(bookingRepository)
 	listBookings := application10.NewListBookings(bookingRepository)
 	updateBooking := application10.NewUpdateBooking(bookingRepository, transactionManager)
@@ -528,6 +540,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
 		HolidayPeriodHandler:    holidayPeriodHandler,
+		NurseryCalendarHandler:  nurseryCalendarHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
@@ -880,20 +893,30 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	updateTerm := application18.NewUpdateTerm(academicTermRepository, transactionManager)
 	archiveTerm := application18.NewArchiveTerm(academicTermRepository, transactionManager)
 	httptermcalendarHandler := httptermcalendar.NewHandler(createTerm, listTerms, updateTerm, archiveTerm, logger)
+	bootstrapNurseryCalendarClosureAdapter := provideNurseryCalendarClosureAdapter(repository4)
+	bootstrapNurseryCalendarHolidayAdapter := provideNurseryCalendarHolidayAdapter(holidayPeriodRepository)
+	queryCalendarDay := nurserycalendarapp.NewQueryCalendarDay(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
+	queryDateRange := nurserycalendarapp.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
+	nurseryCalendarHandler := nurserycalendarhandler.NewHandler(queryCalendarDay, queryDateRange, logger)
 	adHocBookingRepository := postgres21.NewRepository(pool)
-	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository)
+	bootstrapAdhocCalendarQueryAdapter := provideAdhocCalendarQueryAdapter(queryCalendarDay)
+	bootstrapAdhocChildFundingLookupAdapter := provideAdhocChildFundingLookupAdapter(fundingRecordRepositoryImpl)
+	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository, bootstrapAdhocCalendarQueryAdapter, bootstrapAdhocChildFundingLookupAdapter)
 	listAdHocBookings := application19.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application19.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
 	updateAdHocBooking := application19.NewUpdateAdHocBooking(adHocBookingRepository, transactionManager)
 	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, updateAdHocBooking, logger)
-	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
+	bootstrapHourlyCalendarQueryAdapter := provideHourlyCalendarQueryAdapter(queryCalendarDay)
+	bootstrapHourlyChildFundingLookupAdapter := provideHourlyChildFundingLookupAdapter(fundingRecordRepositoryImpl)
+	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository, bootstrapHourlyCalendarQueryAdapter, bootstrapHourlyChildFundingLookupAdapter)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
 	updateHourlyBooking := application20.NewUpdateHourlyBooking(hourlyBookingRepository, transactionManager)
 	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, updateHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
 	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
-	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
+	bootstrapBookingsCalendarQueryAdapter := provideBookingsCalendarQueryAdapter(queryCalendarDay)
+	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter, bootstrapBookingsCalendarQueryAdapter)
 	getBooking := application10.NewGetBooking(bookingRepository)
 	listBookings := application10.NewListBookings(bookingRepository)
 	updateBooking := application10.NewUpdateBooking(bookingRepository, transactionManager)
@@ -946,6 +969,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		BookingsHandler:         httpbookingsHandler,
 		BranchClosureHandler:    httpclosureHandler,
 		HolidayPeriodHandler:    holidayPeriodHandler,
+		NurseryCalendarHandler:  nurseryCalendarHandler,
 		SiteProfileHandler:      httpHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)

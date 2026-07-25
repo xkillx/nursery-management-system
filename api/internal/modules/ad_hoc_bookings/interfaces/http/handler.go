@@ -229,15 +229,23 @@ func (h *Handler) createBooking(c *gin.Context) {
 		SessionTypeID: sessionTypeID,
 	}
 
-	booking, err := h.create.Execute(c.Request.Context(), actor, siteID, params)
+	result, err := h.create.Execute(c.Request.Context(), actor, siteID, params)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	resp := toAdHocBookingResponse(booking)
+	resp := toAdHocBookingResponse(result.Booking)
+	body := gin.H{"ad_hoc_booking": resp}
+	if len(result.Warnings) > 0 {
+		warnings := make([]gin.H, 0, len(result.Warnings))
+		for _, w := range result.Warnings {
+			warnings = append(warnings, gin.H{"date": w.Date.Format("2006-01-02"), "reason": string(w.Reason)})
+		}
+		body["warnings"] = warnings
+	}
 	c.Header("Location", fmt.Sprintf("/api/sites/%s/ad-hoc-bookings/%s", siteID, resp.ID))
-	c.JSON(http.StatusCreated, gin.H{"ad_hoc_booking": resp})
+	c.JSON(http.StatusCreated, body)
 }
 
 // cancelBooking cancels an ad hoc booking.

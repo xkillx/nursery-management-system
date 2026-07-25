@@ -17,29 +17,36 @@ type CreateAdHocBookingParams struct {
 }
 
 type CreateAdHocBooking struct {
-	repo domain.Repository
+	repo          domain.Repository
+	calendarQuery domain.CalendarQuery
+	fundingLookup domain.ChildFundingLookup
 }
 
-func NewCreateAdHocBooking(repo domain.Repository) *CreateAdHocBooking {
-	return &CreateAdHocBooking{repo: repo}
+func NewCreateAdHocBooking(repo domain.Repository, calendarQuery domain.CalendarQuery, fundingLookup domain.ChildFundingLookup) *CreateAdHocBooking {
+	return &CreateAdHocBooking{repo: repo, calendarQuery: calendarQuery, fundingLookup: fundingLookup}
 }
 
-func (uc *CreateAdHocBooking) Execute(ctx context.Context, actor AdHocBookingActor, siteID uuid.UUID, params CreateAdHocBookingParams) (domain.AdHocBooking, error) {
+type CreateAdHocBookingResult struct {
+	Booking  domain.AdHocBooking
+	Warnings []domain.ClosureWarning
+}
+
+func (uc *CreateAdHocBooking) Execute(ctx context.Context, actor AdHocBookingActor, siteID uuid.UUID, params CreateAdHocBookingParams) (CreateAdHocBookingResult, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
-		return domain.AdHocBooking{}, err
+		return CreateAdHocBookingResult{}, err
 	}
 
 	today := time.Now().UTC().Truncate(24 * time.Hour)
 	if params.CalendarDate.Before(today) {
-		return domain.AdHocBooking{}, domainerrors.Validation("Calendar date must be today or in the future.", "calendar_date")
+		return CreateAdHocBookingResult{}, domainerrors.Validation("Calendar date must be today or in the future.", "calendar_date")
 	}
 
 	if params.SessionTypeID == uuid.Nil {
-		return domain.AdHocBooking{}, domainerrors.Validation("Session type is required.", "session_type_id")
+		return CreateAdHocBookingResult{}, domainerrors.Validation("Session type is required.", "session_type_id")
 	}
 
 	if params.ChildID == uuid.Nil {
-		return domain.AdHocBooking{}, domainerrors.Validation("Child is required.", "child_id")
+		return CreateAdHocBookingResult{}, domainerrors.Validation("Child is required.", "child_id")
 	}
 
 	booking := domain.AdHocBooking{
@@ -53,9 +60,18 @@ func (uc *CreateAdHocBooking) Execute(ctx context.Context, actor AdHocBookingAct
 		Status:               domain.StatusActive,
 	}
 
-	if err := uc.repo.Create(ctx, booking); err != nil {
-		return domain.AdHocBooking{}, internalError(err)
+	var warnings []domain.ClosureWarning
+	if uc.calendarQuery != nil && uc.fundingLookup != nil {
+		isTermTime, _ := uc.fundingLookup.GetChildTermTimeOnly(ctx, actor.TenantID(), siteID, params.ChildID)
+		isClosed, reason, err := uc.calendarQuery.CheckDate(ctx, actor.TenantID(), siteID, params.CalendarDate, isTermTime)
+		if err == nil && isClosed {
+			warnings = append(warnings, domain.ClosureWarning{Date: params.CalendarDate, Reason: reason})
+		}
 	}
 
-	return booking, nil
+	if err := uc.repo.Create(ctx, booking); err != nil {
+		return CreateAdHocBookingResult{}, internalError(err)
+	}
+
+	return CreateAdHocBookingResult{Booking: booking, Warnings: warnings}, nil
 }

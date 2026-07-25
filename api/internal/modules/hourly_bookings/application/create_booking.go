@@ -21,37 +21,44 @@ type CreateHourlyBookingParams struct {
 }
 
 type CreateHourlyBooking struct {
-	repo domain.Repository
+	repo          domain.Repository
+	calendarQuery domain.CalendarQuery
+	fundingLookup domain.ChildFundingLookup
 }
 
-func NewCreateHourlyBooking(repo domain.Repository) *CreateHourlyBooking {
-	return &CreateHourlyBooking{repo: repo}
+func NewCreateHourlyBooking(repo domain.Repository, calendarQuery domain.CalendarQuery, fundingLookup domain.ChildFundingLookup) *CreateHourlyBooking {
+	return &CreateHourlyBooking{repo: repo, calendarQuery: calendarQuery, fundingLookup: fundingLookup}
 }
 
-func (uc *CreateHourlyBooking) Execute(ctx context.Context, actor HourlyBookingActor, siteID uuid.UUID, params CreateHourlyBookingParams) (domain.HourlyBooking, error) {
+type CreateHourlyBookingResult struct {
+	Booking  domain.HourlyBooking
+	Warnings []domain.ClosureWarning
+}
+
+func (uc *CreateHourlyBooking) Execute(ctx context.Context, actor HourlyBookingActor, siteID uuid.UUID, params CreateHourlyBookingParams) (CreateHourlyBookingResult, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
-		return domain.HourlyBooking{}, err
+		return CreateHourlyBookingResult{}, err
 	}
 
 	today := time.Now().UTC().Truncate(24 * time.Hour)
 	if params.CalendarDate.Before(today) {
-		return domain.HourlyBooking{}, domainerrors.Validation("Calendar date must be today or in the future.", "calendar_date")
+		return CreateHourlyBookingResult{}, domainerrors.Validation("Calendar date must be today or in the future.", "calendar_date")
 	}
 
 	if params.ChildID == uuid.Nil {
-		return domain.HourlyBooking{}, domainerrors.Validation("Child is required.", "child_id")
+		return CreateHourlyBookingResult{}, domainerrors.Validation("Child is required.", "child_id")
 	}
 
 	if params.DurationMinutes <= 0 {
-		return domain.HourlyBooking{}, domainerrors.Validation("Duration must be positive.", "duration_minutes")
+		return CreateHourlyBookingResult{}, domainerrors.Validation("Duration must be positive.", "duration_minutes")
 	}
 
 	if params.DurationMinutes > maxDurationMinutes {
-		return domain.HourlyBooking{}, domainerrors.Validation("Duration cannot exceed 10 hours.", "duration_minutes")
+		return CreateHourlyBookingResult{}, domainerrors.Validation("Duration cannot exceed 10 hours.", "duration_minutes")
 	}
 
 	if params.StartTimeMinutes < 0 || params.StartTimeMinutes > 1439 {
-		return domain.HourlyBooking{}, domainerrors.Validation("Start time must be between 0 and 1439.", "start_time_minutes")
+		return CreateHourlyBookingResult{}, domainerrors.Validation("Start time must be between 0 and 1439.", "start_time_minutes")
 	}
 
 	booking := domain.HourlyBooking{
@@ -67,9 +74,18 @@ func (uc *CreateHourlyBooking) Execute(ctx context.Context, actor HourlyBookingA
 		Status:               domain.StatusActive,
 	}
 
-	if err := uc.repo.Create(ctx, booking); err != nil {
-		return domain.HourlyBooking{}, internalError(err)
+	var warnings []domain.ClosureWarning
+	if uc.calendarQuery != nil && uc.fundingLookup != nil {
+		isTermTime, _ := uc.fundingLookup.GetChildTermTimeOnly(ctx, actor.TenantID(), siteID, params.ChildID)
+		isClosed, reason, err := uc.calendarQuery.CheckDate(ctx, actor.TenantID(), siteID, params.CalendarDate, isTermTime)
+		if err == nil && isClosed {
+			warnings = append(warnings, domain.ClosureWarning{Date: params.CalendarDate, Reason: reason})
+		}
 	}
 
-	return booking, nil
+	if err := uc.repo.Create(ctx, booking); err != nil {
+		return CreateHourlyBookingResult{}, internalError(err)
+	}
+
+	return CreateHourlyBookingResult{Booking: booking, Warnings: warnings}, nil
 }

@@ -24,28 +24,34 @@ type CreateBookingParams struct {
 type CreateBooking struct {
 	repo          domain.Repository
 	fundingLookup domain.FundingLookup
+	calendarQuery domain.CalendarQuery
 }
 
-func NewCreateBooking(repo domain.Repository, fundingLookup domain.FundingLookup) *CreateBooking {
-	return &CreateBooking{repo: repo, fundingLookup: fundingLookup}
+func NewCreateBooking(repo domain.Repository, fundingLookup domain.FundingLookup, calendarQuery domain.CalendarQuery) *CreateBooking {
+	return &CreateBooking{repo: repo, fundingLookup: fundingLookup, calendarQuery: calendarQuery}
 }
 
-func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID uuid.UUID, params CreateBookingParams) (domain.Booking, error) {
+type CreateBookingResult struct {
+	Booking  domain.Booking
+	Warnings []domain.ClosureWarning
+}
+
+func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID uuid.UUID, params CreateBookingParams) (CreateBookingResult, error) {
 	if err := actor.ValidateSiteAccess(ctx, siteID); err != nil {
-		return domain.Booking{}, err
+		return CreateBookingResult{}, err
 	}
 
 	if params.ChildID == uuid.Nil {
-		return domain.Booking{}, domainerrors.Validation("Child is required.", "child_id")
+		return CreateBookingResult{}, domainerrors.Validation("Child is required.", "child_id")
 	}
 	if len(params.SessionEntries) == 0 {
-		return domain.Booking{}, domainerrors.Validation("Session entries are required.", "session_entries")
+		return CreateBookingResult{}, domainerrors.Validation("Session entries are required.", "session_entries")
 	}
 	if params.EffectiveEndDate != nil && params.EffectiveEndDate.Before(params.EffectiveStartDate) {
-		return domain.Booking{}, domain.ErrInvalidDateRange
+		return CreateBookingResult{}, domain.ErrInvalidDateRange
 	}
 	if params.FundingType != nil && !domain.ValidFundingType(*params.FundingType) {
-		return domain.Booking{}, domain.ErrInvalidFundingType
+		return CreateBookingResult{}, domain.ErrInvalidFundingType
 	}
 
 	fundingType := params.FundingType
@@ -56,7 +62,7 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 	if fundingType == nil {
 		fi, err := uc.fundingLookup.GetChildFunding(ctx, actor.TenantID(), siteID, params.ChildID)
 		if err != nil {
-			return domain.Booking{}, internalError(err)
+			return CreateBookingResult{}, internalError(err)
 		}
 		if fi.HasFunding {
 			fundingType = &fi.FundingType
@@ -85,9 +91,41 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 		BookedByMembershipID: actor.MembershipID(),
 	}
 
-	if err := uc.repo.Create(ctx, booking); err != nil {
-		return domain.Booking{}, internalError(err)
+	var warnings []domain.ClosureWarning
+	if uc.calendarQuery != nil {
+		warnings = uc.checkClosureWarnings(ctx, actor.TenantID(), siteID, params, termTimeOnly)
 	}
 
-	return booking, nil
+	if err := uc.repo.Create(ctx, booking); err != nil {
+		return CreateBookingResult{}, internalError(err)
+	}
+
+	return CreateBookingResult{Booking: booking, Warnings: warnings}, nil
+}
+
+func (uc *CreateBooking) checkClosureWarnings(ctx context.Context, tenantID, branchID uuid.UUID, params CreateBookingParams, termTimeOnly bool) []domain.ClosureWarning {
+	sessionDays := make(map[int]bool)
+	for _, se := range params.SessionEntries {
+		sessionDays[int(se.DayOfWeek)] = true
+	}
+
+	endDate := params.EffectiveStartDate.AddDate(0, 3, 0)
+	if params.EffectiveEndDate != nil && params.EffectiveEndDate.Before(endDate) {
+		endDate = *params.EffectiveEndDate
+	}
+
+	var warnings []domain.ClosureWarning
+	for d := params.EffectiveStartDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
+		if !sessionDays[int(d.Weekday())] {
+			continue
+		}
+		isClosed, reason, err := uc.calendarQuery.CheckDate(ctx, tenantID, branchID, d, termTimeOnly)
+		if err != nil {
+			continue
+		}
+		if isClosed {
+			warnings = append(warnings, domain.ClosureWarning{Date: d, Reason: reason})
+		}
+	}
+	return warnings
 }

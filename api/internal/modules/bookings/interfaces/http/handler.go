@@ -431,15 +431,23 @@ func (h *Handler) createBooking(c *gin.Context) {
 		return
 	}
 
-	booking, err := h.create.Execute(c.Request.Context(), actor, siteID, params)
+	result, err := h.create.Execute(c.Request.Context(), actor, siteID, params)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	resp := toBookingResponse(booking)
+	resp := toBookingResponse(result.Booking)
+	body := gin.H{"booking": resp}
+	if len(result.Warnings) > 0 {
+		warnings := make([]gin.H, 0, len(result.Warnings))
+		for _, w := range result.Warnings {
+			warnings = append(warnings, gin.H{"date": w.Date.Format("2006-01-02"), "reason": string(w.Reason)})
+		}
+		body["warnings"] = warnings
+	}
 	c.Header("Location", fmt.Sprintf("/api/sites/%s/bookings/%s", siteID, resp.ID))
-	c.JSON(http.StatusCreated, gin.H{"booking": resp})
+	c.JSON(http.StatusCreated, body)
 }
 
 // updateBooking updates an existing booking.

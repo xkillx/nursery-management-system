@@ -16,6 +16,7 @@ import (
 
 	absencedomain "nursery-management-system/api/internal/modules/absence/domain"
 	postgresabsence "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
+	adhocdomain "nursery-management-system/api/internal/modules/ad_hoc_bookings/domain"
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
@@ -31,9 +32,11 @@ import (
 	fundingdomain "nursery-management-system/api/internal/modules/funding/domain"
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
 	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
+	hourlydomain "nursery-management-system/api/internal/modules/hourly_bookings/domain"
 	hourlypostgres "nursery-management-system/api/internal/modules/hourly_bookings/infrastructure/postgres"
 	invitetokens "nursery-management-system/api/internal/modules/invites/infrastructure/tokens"
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
+	nurserycalendarapp "nursery-management-system/api/internal/modules/nursery_calendar/application"
 	nurserycalendardomain "nursery-management-system/api/internal/modules/nursery_calendar/domain"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
@@ -1523,4 +1526,133 @@ var _ nurserycalendardomain.HolidayPeriodLookup = (*nurseryCalendarHolidayAdapte
 
 func provideNurseryCalendarHolidayAdapter(repo *holidayperiodspostgres.Repository) *nurseryCalendarHolidayAdapter {
 	return &nurseryCalendarHolidayAdapter{repo: repo}
+}
+
+// bookingsCalendarQueryAdapter satisfies bookings/domain.CalendarQuery by
+// delegating to the nursery_calendar module's QueryCalendarDay use case.
+type bookingsCalendarQueryAdapter struct {
+	queryDay *nurserycalendarapp.QueryCalendarDay
+}
+
+func (a *bookingsCalendarQueryAdapter) CheckDate(ctx context.Context, tenantID, branchID uuid.UUID, date time.Time, isTermTime bool) (bool, bookingsdomain.ClosureReason, error) {
+	result, err := a.queryDay.Execute(ctx, tenantID, branchID, date, isTermTime)
+	if err != nil {
+		return false, bookingsdomain.ClosureReasonNone, err
+	}
+	var reason bookingsdomain.ClosureReason
+	switch result.Reason {
+	case nurserycalendardomain.ClosureReasonClosureDay:
+		reason = bookingsdomain.ClosureReasonClosureDay
+	case nurserycalendardomain.ClosureReasonHolidayPeriod:
+		reason = bookingsdomain.ClosureReasonHolidayPeriod
+	default:
+		reason = bookingsdomain.ClosureReasonNone
+	}
+	return !result.IsOpen, reason, nil
+}
+
+var _ bookingsdomain.CalendarQuery = (*bookingsCalendarQueryAdapter)(nil)
+
+func provideBookingsCalendarQueryAdapter(queryDay *nurserycalendarapp.QueryCalendarDay) *bookingsCalendarQueryAdapter {
+	return &bookingsCalendarQueryAdapter{queryDay: queryDay}
+}
+
+// adhocCalendarQueryAdapter satisfies ad_hoc_bookings/domain.CalendarQuery.
+type adhocCalendarQueryAdapter struct {
+	queryDay *nurserycalendarapp.QueryCalendarDay
+}
+
+func (a *adhocCalendarQueryAdapter) CheckDate(ctx context.Context, tenantID, branchID uuid.UUID, date time.Time, isTermTime bool) (bool, adhocdomain.ClosureReason, error) {
+	result, err := a.queryDay.Execute(ctx, tenantID, branchID, date, isTermTime)
+	if err != nil {
+		return false, adhocdomain.ClosureReasonNone, err
+	}
+	var reason adhocdomain.ClosureReason
+	switch result.Reason {
+	case nurserycalendardomain.ClosureReasonClosureDay:
+		reason = adhocdomain.ClosureReasonClosureDay
+	case nurserycalendardomain.ClosureReasonHolidayPeriod:
+		reason = adhocdomain.ClosureReasonHolidayPeriod
+	default:
+		reason = adhocdomain.ClosureReasonNone
+	}
+	return !result.IsOpen, reason, nil
+}
+
+var _ adhocdomain.CalendarQuery = (*adhocCalendarQueryAdapter)(nil)
+
+func provideAdhocCalendarQueryAdapter(queryDay *nurserycalendarapp.QueryCalendarDay) *adhocCalendarQueryAdapter {
+	return &adhocCalendarQueryAdapter{queryDay: queryDay}
+}
+
+// hourlyCalendarQueryAdapter satisfies hourly_bookings/domain.CalendarQuery.
+type hourlyCalendarQueryAdapter struct {
+	queryDay *nurserycalendarapp.QueryCalendarDay
+}
+
+func (a *hourlyCalendarQueryAdapter) CheckDate(ctx context.Context, tenantID, branchID uuid.UUID, date time.Time, isTermTime bool) (bool, hourlydomain.ClosureReason, error) {
+	result, err := a.queryDay.Execute(ctx, tenantID, branchID, date, isTermTime)
+	if err != nil {
+		return false, hourlydomain.ClosureReasonNone, err
+	}
+	var reason hourlydomain.ClosureReason
+	switch result.Reason {
+	case nurserycalendardomain.ClosureReasonClosureDay:
+		reason = hourlydomain.ClosureReasonClosureDay
+	case nurserycalendardomain.ClosureReasonHolidayPeriod:
+		reason = hourlydomain.ClosureReasonHolidayPeriod
+	default:
+		reason = hourlydomain.ClosureReasonNone
+	}
+	return !result.IsOpen, reason, nil
+}
+
+var _ hourlydomain.CalendarQuery = (*hourlyCalendarQueryAdapter)(nil)
+
+func provideHourlyCalendarQueryAdapter(queryDay *nurserycalendarapp.QueryCalendarDay) *hourlyCalendarQueryAdapter {
+	return &hourlyCalendarQueryAdapter{queryDay: queryDay}
+}
+
+// adhocChildFundingLookupAdapter satisfies ad_hoc_bookings/domain.ChildFundingLookup.
+type adhocChildFundingLookupAdapter struct {
+	repo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *adhocChildFundingLookupAdapter) GetChildTermTimeOnly(ctx context.Context, tenantID, branchID, childID uuid.UUID) (bool, error) {
+	record, found, err := a.repo.GetFundingRecord(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return false, fmt.Errorf("child funding lookup: %w", err)
+	}
+	if !found {
+		return false, nil
+	}
+	return record.FundingModel == fundingdomain.FundingModelTermTimeOnly, nil
+}
+
+var _ adhocdomain.ChildFundingLookup = (*adhocChildFundingLookupAdapter)(nil)
+
+func provideAdhocChildFundingLookupAdapter(repo *fundingpostgres.FundingRecordRepositoryImpl) *adhocChildFundingLookupAdapter {
+	return &adhocChildFundingLookupAdapter{repo: repo}
+}
+
+// hourlyChildFundingLookupAdapter satisfies hourly_bookings/domain.ChildFundingLookup.
+type hourlyChildFundingLookupAdapter struct {
+	repo *fundingpostgres.FundingRecordRepositoryImpl
+}
+
+func (a *hourlyChildFundingLookupAdapter) GetChildTermTimeOnly(ctx context.Context, tenantID, branchID, childID uuid.UUID) (bool, error) {
+	record, found, err := a.repo.GetFundingRecord(ctx, tenantID, branchID, childID)
+	if err != nil {
+		return false, fmt.Errorf("child funding lookup: %w", err)
+	}
+	if !found {
+		return false, nil
+	}
+	return record.FundingModel == fundingdomain.FundingModelTermTimeOnly, nil
+}
+
+var _ hourlydomain.ChildFundingLookup = (*hourlyChildFundingLookupAdapter)(nil)
+
+func provideHourlyChildFundingLookupAdapter(repo *fundingpostgres.FundingRecordRepositoryImpl) *hourlyChildFundingLookupAdapter {
+	return &hourlyChildFundingLookupAdapter{repo: repo}
 }
