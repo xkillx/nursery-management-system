@@ -56,6 +56,10 @@ export interface BookingDetail {
   termTimeOnly: boolean;
   createdAt: string;
   updatedAt: string;
+  sessionTypeId?: string;
+  sessionTypeName?: string;
+  startTimeMinutes?: number;
+  durationMinutes?: number;
 }
 
 export interface CreateRecurringBookingRequest {
@@ -90,4 +94,16 @@ export interface UpdateRecurringBookingRequest {
   funding_hours_per_week?: number;
   la_reference?: string;
   term_time_only?: boolean;
+}
+
+export interface UpdateAdHocBookingRequest {
+  calendar_date?: string;
+  session_type_id?: string;
+}
+
+export interface UpdateHourlyBookingRequest {
+  calendar_date?: string;
+  start_time_minutes?: number;
+  duration_minutes?: number;
+  session_type_id?: string;
 }

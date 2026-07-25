@@ -15,6 +15,8 @@ import {
   CreateAdHocBookingRequest,
   CreateHourlyBookingRequest,
   UpdateRecurringBookingRequest,
+  UpdateAdHocBookingRequest,
+  UpdateHourlyBookingRequest,
 } from '../models/booking.models';
 
 interface UnifiedBookingApi {
@@ -56,6 +58,10 @@ interface BookingDetailApi {
   term_time_only?: boolean;
   created_at: string;
   updated_at: string;
+  session_type_id?: string | null;
+  session_type_name?: string | null;
+  start_time_minutes?: number | null;
+  duration_minutes?: number | null;
 }
 
 interface UnifiedListResponseApi {
@@ -120,6 +126,14 @@ export class BookingsApiService {
     return this.http.patch(apiUrl(`/sites/${siteId}/bookings/${bookingId}`), data);
   }
 
+  updateAdHocBooking(siteId: string, bookingId: string, data: UpdateAdHocBookingRequest): Observable<unknown> {
+    return this.http.patch(apiUrl(`/sites/${siteId}/ad-hoc-bookings/${bookingId}`), data);
+  }
+
+  updateHourlyBooking(siteId: string, bookingId: string, data: UpdateHourlyBookingRequest): Observable<unknown> {
+    return this.http.patch(apiUrl(`/sites/${siteId}/hourly-bookings/${bookingId}`), data);
+  }
+
   cancelBooking(siteId: string, bookingType: BookingType, bookingId: string): Observable<void> {
     switch (bookingType) {
       case 'recurring':
@@ -178,6 +192,10 @@ export class BookingsApiService {
       termTimeOnly: b.term_time_only ?? false,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
+      sessionTypeId: b.session_type_id ?? undefined,
+      sessionTypeName: b.session_type_name ?? undefined,
+      startTimeMinutes: b.start_time_minutes ?? undefined,
+      durationMinutes: b.duration_minutes ?? undefined,
     };
   }
 }
