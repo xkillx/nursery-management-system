@@ -182,7 +182,7 @@ func computeFlagsWithAllowance(row domain.OverviewRow, termDates []domain.TermDa
 		model = domain.FundingModel(*row.FundingModel)
 	}
 
-	allowance, _ := domain.ComputeAllowanceMinutes(hoursPerWeek, model, termDates, billingMonth, nil, row.FundingStartDate, row.FundingEndDate)
+	allowance, _ := domain.ComputeAllowanceMinutes(hoursPerWeek, model, termDates, billingMonth, nil, nil, row.FundingStartDate, row.FundingEndDate)
 
 	var flags []domain.OverviewFlag
 	if allowance == 0 {

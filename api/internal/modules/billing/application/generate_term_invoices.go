@@ -22,12 +22,13 @@ type GenerateTermInvoices struct {
 	adHocLookup          domain.AdHocBookingLookup
 	hourlyLookup         domain.HourlyBookingLookup
 	closureDateLookup    domain.ClosureDateLookup
+	holidayPeriodLookup  domain.HolidayPeriodLookup
 	fundingLookup        domain.FundingLookup
 	bookingEntriesLookup domain.BookingEntriesLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, fundingLookup domain.FundingLookup, bookingEntriesLookup domain.BookingEntriesLookup) *GenerateTermInvoices {
-	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, fundingLookup: fundingLookup, bookingEntriesLookup: bookingEntriesLookup}
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, holidayPeriodLookup domain.HolidayPeriodLookup, fundingLookup domain.FundingLookup, bookingEntriesLookup domain.BookingEntriesLookup) *GenerateTermInvoices {
+	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, holidayPeriodLookup: holidayPeriodLookup, fundingLookup: fundingLookup, bookingEntriesLookup: bookingEntriesLookup}
 }
 
 type GenerateTermInvoicesInput struct {
@@ -120,6 +121,14 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			}
 		}
 
+		var holidayPeriods []domain.HolidayPeriodDateRange
+		if uc.holidayPeriodLookup != nil && termRow.TermTimeOnly {
+			holidayPeriods, err = uc.holidayPeriodLookup.GetHolidayPeriodsForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
+			if err != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup holiday periods: %w", err)
+			}
+		}
+
 		calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
 			termRow.BookingPatternID.String(),
 			domainEntries,
@@ -127,6 +136,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			termRow.SiteHourlyRateMinor,
 			termDates,
 			closureDates,
+			holidayPeriods,
 		)
 		if calcErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)

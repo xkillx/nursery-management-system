@@ -11,6 +11,11 @@ type TermDateRange struct {
 	EndDate   time.Time
 }
 
+type HolidayPeriodDateRange struct {
+	StartDate time.Time
+	EndDate   time.Time
+}
+
 // ComputeAllowanceMinutes computes the funded allowance in minutes for a billing month.
 func ComputeAllowanceMinutes(
 	fundedHoursPerWeek float64,
@@ -18,6 +23,7 @@ func ComputeAllowanceMinutes(
 	termDates []TermDateRange,
 	billingMonth time.Time,
 	closureDates []time.Time,
+	holidayPeriods []HolidayPeriodDateRange,
 	fundingStartDate *time.Time,
 	fundingEndDate *time.Time,
 ) (int, error) {
@@ -27,7 +33,7 @@ func ComputeAllowanceMinutes(
 
 	switch fundingModel {
 	case FundingModelTermTimeOnly:
-		return computeTermTimeAllowance(fundedHoursPerWeek, termDates, billingMonth, closureDates, fundingStartDate, fundingEndDate), nil
+		return computeTermTimeAllowance(fundedHoursPerWeek, termDates, billingMonth, closureDates, holidayPeriods, fundingStartDate, fundingEndDate), nil
 	case FundingModelStretched:
 		return computeStretchedAllowance(fundedHoursPerWeek, fundingStartDate, fundingEndDate, billingMonth), nil
 	default:
@@ -40,6 +46,7 @@ func computeTermTimeAllowance(
 	termDates []TermDateRange,
 	billingMonth time.Time,
 	closureDates []time.Time,
+	holidayPeriods []HolidayPeriodDateRange,
 	fundingStartDate *time.Time,
 	fundingEndDate *time.Time,
 ) int {
@@ -95,6 +102,31 @@ func computeTermTimeAllowance(
 		}
 	}
 	termDayCount -= len(closureSet)
+
+	// Subtract holiday period weekdays that fall within effective range
+	holidaySet := make(map[string]bool)
+	for _, hp := range holidayPeriods {
+		hpStart := hp.StartDate
+		hpEnd := hp.EndDate
+		if hpStart.Before(effectiveStart) {
+			hpStart = effectiveStart
+		}
+		if hpEnd.After(effectiveEnd) {
+			hpEnd = effectiveEnd
+		}
+		if hpStart.After(hpEnd) {
+			continue
+		}
+		for d := hpStart; !d.After(hpEnd); d = d.AddDate(0, 0, 1) {
+			if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+				key := d.Format("2006-01-02")
+				if !closureSet[key] {
+					holidaySet[key] = true
+				}
+			}
+		}
+	}
+	termDayCount -= len(holidaySet)
 
 	if termDayCount <= 0 {
 		return 0

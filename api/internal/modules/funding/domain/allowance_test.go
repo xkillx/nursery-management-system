@@ -12,7 +12,7 @@ func TestComputeAllowanceMinutes_TermTime(t *testing.T) {
 	}
 
 	// 15h/week, 20 weekdays in term (Jan 5-30 has 20 weekdays)
-	minutes, err := ComputeAllowanceMinutes(15, FundingModelTermTimeOnly, termDates, billingMonth, nil, nil, nil)
+	minutes, err := ComputeAllowanceMinutes(15, FundingModelTermTimeOnly, termDates, billingMonth, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestComputeAllowanceMinutes_TermTime(t *testing.T) {
 func TestComputeAllowanceMinutes_Stretched(t *testing.T) {
 	billingMonth := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	minutes, err := ComputeAllowanceMinutes(15, FundingModelStretched, nil, billingMonth, nil, nil, nil)
+	minutes, err := ComputeAllowanceMinutes(15, FundingModelStretched, nil, billingMonth, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestComputeAllowanceMinutes_ProRating(t *testing.T) {
 		{StartDate: time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2026, 1, 30, 0, 0, 0, 0, time.UTC)},
 	}
 
-	minutes, err := ComputeAllowanceMinutes(15, FundingModelTermTimeOnly, termDates, billingMonth, nil, &startDate, nil)
+	minutes, err := ComputeAllowanceMinutes(15, FundingModelTermTimeOnly, termDates, billingMonth, nil, nil, &startDate, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestComputeAllowanceMinutes_ProRating(t *testing.T) {
 func TestComputeAllowanceMinutes_ZeroHours(t *testing.T) {
 	billingMonth := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	minutes, err := ComputeAllowanceMinutes(0, FundingModelTermTimeOnly, nil, billingMonth, nil, nil, nil)
+	minutes, err := ComputeAllowanceMinutes(0, FundingModelTermTimeOnly, nil, billingMonth, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestComputeAllowanceMinutes_FundingEndsBeforeMonth(t *testing.T) {
 	billingMonth := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
 
-	minutes, err := ComputeAllowanceMinutes(15, FundingModelStretched, nil, billingMonth, nil, nil, &endDate)
+	minutes, err := ComputeAllowanceMinutes(15, FundingModelStretched, nil, billingMonth, nil, nil, nil, &endDate)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestComputeAllowanceMinutes_FundingEndsBeforeMonth(t *testing.T) {
 func TestComputeAllowanceMinutes_UnknownModel(t *testing.T) {
 	billingMonth := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	_, err := ComputeAllowanceMinutes(15, FundingModelUnknown, nil, billingMonth, nil, nil, nil)
+	_, err := ComputeAllowanceMinutes(15, FundingModelUnknown, nil, billingMonth, nil, nil, nil, nil)
 	if err == nil {
 		t.Error("expected error for unknown funding model")
 	}

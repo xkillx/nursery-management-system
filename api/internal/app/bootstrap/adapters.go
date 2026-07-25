@@ -1385,7 +1385,7 @@ func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, br
 
 	fundingModel := record.FundingModel
 	termDates, _ := a.getTermDates(ctx, tenantID, branchID, billingMonth)
-	allowance, _ := fundingdomain.ComputeAllowanceMinutes(hoursPerWeek, fundingModel, termDates, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+	allowance, _ := fundingdomain.ComputeAllowanceMinutes(hoursPerWeek, fundingModel, termDates, billingMonth, nil, nil, record.FundingStartDate, record.FundingEndDate)
 
 	return billingdomain.FundedChildInfo{
 		HasFunding:             true,

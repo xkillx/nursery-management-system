@@ -20,7 +20,7 @@ func TestCalculateBookedCoreMinutesInMonth(t *testing.T) {
 		},
 	}
 	// July 2026 has 4 Mondays: 6, 13, 20, 27.
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestCalculateBookedCoreMinutesInMonth_MultipleDays(t *testing.T) {
 		{DayOfWeek: 5, SessionType: BookedSessionType{ID: "st3", Name: "Fri", DurationMinutes: 180}},
 	}
 	// July 2026: Mondays=4, Wednesdays=5, Fridays=5 → 14 * 180 = 2520
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestCalculateBookedCoreMinutesInMonth_DayOfWeekConversion(t *testing.T) {
 		{DayOfWeek: 5, SessionType: BookedSessionType{ID: "st1", Name: "Fri", DurationMinutes: 60}},
 	}
 	// July 2026: Fridays are 3, 10, 17, 24, 31 = 5.
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil, nil)
 	if calc.TotalMinutes != 5*60 {
 		t.Errorf("Friday count: got %d, want %d", calc.TotalMinutes, 5*60)
 	}
@@ -70,7 +70,7 @@ func TestCalculateBookedCoreMinutesInMonth_FebruaryLeapYear(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "M", DurationMinutes: 60}},
 	}
-	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000, nil, nil)
+	calc, _ := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2028-02-01"), 1000, nil, nil, nil)
 	if calc.TotalMinutes != 4*60 {
 		t.Errorf("Feb leap year: got %d, want %d", calc.TotalMinutes, 4*60)
 	}
@@ -80,7 +80,7 @@ func TestCalculateBookedCoreMinutesInMonth_BadDayOfWeek(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 0, SessionType: BookedSessionType{ID: "st1", Name: "X", DurationMinutes: 60}},
 	}
-	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil)
+	_, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 1000, nil, nil, nil)
 	if err == nil {
 		t.Error("expected error for day_of_week=0")
 	}
@@ -93,7 +93,7 @@ func TestCalculateBookedCoreMinutesInMonth_ClosureDayExclusion(t *testing.T) {
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
 	}
 	closureDates := []time.Time{timeMustParse("2026-07-13")}
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestCalculateBookedCoreMinutesInMonth_ClosureDayNonMatching(t *testing.T) {
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
 	}
 	closureDates := []time.Time{timeMustParse("2026-07-04")} // Saturday
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestCalculateBookedCoreMinutesInMonth_NilClosureDates(t *testing.T) {
 	entries := []BookedPatternEntry{
 		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
 	}
-	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil)
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestCalculateTermTimeFundedAllowanceMinutes_ClosureDayExclusion(t *testing.
 		{StartDate: timeMustParse("2026-07-01"), EndDate: timeMustParse("2026-07-31")},
 	}
 	closureDates := []time.Time{timeMustParse("2026-07-13")}
-	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), closureDates)
+	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), closureDates, nil)
 	// 15 * 60 * 22 / 5 = 3960
 	if allowance != 3960 {
 		t.Errorf("expected 3960, got %d", allowance)
@@ -153,7 +153,7 @@ func TestCalculateTermTimeFundedAllowanceMinutes_NoClosures(t *testing.T) {
 	termRanges := []TermDateRange{
 		{StartDate: timeMustParse("2026-07-01"), EndDate: timeMustParse("2026-07-31")},
 	}
-	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), nil)
+	allowance := CalculateTermTimeFundedAllowanceMinutes(15.0, termRanges, timeMustParse("2026-07-01"), nil, nil)
 	// 23 weekdays in July 2026. 15 * 60 * 23 / 5 = 4140
 	if allowance != 4140 {
 		t.Errorf("expected 4140, got %d", allowance)

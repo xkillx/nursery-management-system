@@ -16,6 +16,7 @@ type InvoicePrefillParams struct {
 	HasFunding             bool
 	TermDates              []TermDateRange
 	ClosureDates           []time.Time
+	HolidayPeriods         []HolidayPeriodDateRange
 }
 
 // InvoicePrefillLine is a computed line item from the prefill calculation.
@@ -57,6 +58,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 		params.SiteHourlyRateMinor,
 		params.TermDates,
 		params.ClosureDates,
+		params.HolidayPeriods,
 	)
 	if err != nil {
 		return InvoicePrefillResult{}, fmt.Errorf("calculate booked minutes: %w", err)

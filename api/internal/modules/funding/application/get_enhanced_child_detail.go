@@ -60,7 +60,7 @@ func (uc *GetEnhancedChildDetail) Execute(ctx context.Context, actor tenant.Acto
 	allowance := 0
 	if record.FundingEnabled && record.FundedHoursPerWeek != nil && *record.FundedHoursPerWeek > 0 {
 		termDateRanges, _ := uc.termDates.GetTermDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
-		allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+		allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, nil, record.FundingStartDate, record.FundingEndDate)
 	}
 
 	return domain.EnhancedChildDetail{

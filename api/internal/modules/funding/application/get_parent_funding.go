@@ -65,7 +65,7 @@ func (uc *GetParentFunding) Execute(ctx context.Context, actor tenant.ActorConte
 
 		allowance := 0
 		if record.FundedHoursPerWeek != nil && *record.FundedHoursPerWeek > 0 {
-			allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, record.FundingStartDate, record.FundingEndDate)
+			allowance, _ = domain.ComputeAllowanceMinutes(*record.FundedHoursPerWeek, record.FundingModel, termDateRanges, billingMonth, nil, nil, record.FundingStartDate, record.FundingEndDate)
 		}
 
 		ft := string(record.FundingType)
