@@ -183,3 +183,22 @@ func (r *AdHocBookingRepository) GetByIDForUpdate(ctx context.Context, tx domain
 	}
 	return mapAdHocBooking(row), nil
 }
+
+func (r *AdHocBookingRepository) Update(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, calendarDate *time.Time, sessionTypeID *uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
+	var pgDate pgtype.Date
+	if calendarDate != nil {
+		pgDate = timeToPgtypeDate(*calendarDate)
+	}
+	var pgSession pgtype.UUID
+	if sessionTypeID != nil {
+		pgSession = uuidToPgtype(*sessionTypeID)
+	}
+	return q.AdHocBookingsUpdate(ctx, sqlc.AdHocBookingsUpdateParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		ID:            uuidToPgtype(id),
+		CalendarDate:  pgDate,
+		SessionTypeID: pgSession,
+	})
+}

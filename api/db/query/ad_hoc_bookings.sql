@@ -65,3 +65,10 @@ WHERE tenant_id = $1
   AND ($4::date IS NULL OR calendar_date >= $4)
   AND ($5::date IS NULL OR calendar_date <= $5)
   AND (NOT $6::bool OR status = 'active');
+
+-- name: AdHocBookingsUpdate :exec
+UPDATE ad_hoc_bookings
+SET calendar_date = COALESCE($4, calendar_date),
+    session_type_id = COALESCE($5, session_type_id),
+    updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;

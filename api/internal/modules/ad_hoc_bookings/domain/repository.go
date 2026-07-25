@@ -18,4 +18,5 @@ type Repository interface {
 	Create(ctx context.Context, booking AdHocBooking) error
 	Cancel(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
 	GetByIDForUpdate(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (AdHocBooking, error)
+	Update(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID, calendarDate *time.Time, sessionTypeID *uuid.UUID) error
 }

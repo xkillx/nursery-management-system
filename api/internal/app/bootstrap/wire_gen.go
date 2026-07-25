@@ -461,7 +461,8 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository)
 	listAdHocBookings := application19.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application19.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
-	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, logger)
+	updateAdHocBooking := application19.NewUpdateAdHocBooking(adHocBookingRepository, transactionManager)
+	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, updateAdHocBooking, logger)
 	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
@@ -869,7 +870,8 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	createAdHocBooking := application19.NewCreateAdHocBooking(adHocBookingRepository)
 	listAdHocBookings := application19.NewListAdHocBookings(adHocBookingRepository)
 	cancelAdHocBooking := application19.NewCancelAdHocBooking(adHocBookingRepository, transactionManager)
-	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, logger)
+	updateAdHocBooking := application19.NewUpdateAdHocBooking(adHocBookingRepository, transactionManager)
+	httpadhocbookingsHandler := httpadhocbookings.NewHandler(createAdHocBooking, listAdHocBookings, cancelAdHocBooking, updateAdHocBooking, logger)
 	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
@@ -1108,7 +1110,7 @@ var siteProfileSet = wire.NewSet(postgres9.NewRepository, wire.Bind(new(domain16
 
 var termCalendarSet = wire.NewSet(postgres14.NewRepository, wire.Bind(new(domain17.Repository), new(*postgres14.AcademicTermRepository)), application18.NewCreateTerm, application18.NewListTerms, application18.NewUpdateTerm, application18.NewArchiveTerm, httptermcalendar.NewHandler)
 
-var adHocBookingsSet = wire.NewSet(postgres21.NewRepository, wire.Bind(new(domain18.Repository), new(*postgres21.AdHocBookingRepository)), application19.NewCreateAdHocBooking, application19.NewListAdHocBookings, application19.NewCancelAdHocBooking, httpadhocbookings.NewHandler)
+var adHocBookingsSet = wire.NewSet(postgres21.NewRepository, wire.Bind(new(domain18.Repository), new(*postgres21.AdHocBookingRepository)), application19.NewCreateAdHocBooking, application19.NewListAdHocBookings, application19.NewCancelAdHocBooking, application19.NewUpdateAdHocBooking, httpadhocbookings.NewHandler)
 
 var hourlyBookingsSet = wire.NewSet(postgres15.NewRepository, wire.Bind(new(domain19.Repository), new(*postgres15.HourlyBookingRepository)), application20.NewCreateHourlyBooking, application20.NewListHourlyBookings, application20.NewCancelHourlyBooking, httphourlybookings.NewHandler)
 

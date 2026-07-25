@@ -648,6 +648,7 @@ var adHocBookingsSet = wire.NewSet(
 	adhocapp.NewCreateAdHocBooking,
 	adhocapp.NewListAdHocBookings,
 	adhocapp.NewCancelAdHocBooking,
+	adhocapp.NewUpdateAdHocBooking,
 	adhochttphandler.NewHandler,
 )
 

@@ -334,3 +334,30 @@ func (q *Queries) AdHocBookingsListByChildAndDateRange(ctx context.Context, arg 
 	}
 	return items, nil
 }
+
+const adHocBookingsUpdate = `-- name: AdHocBookingsUpdate :exec
+UPDATE ad_hoc_bookings
+SET calendar_date = COALESCE($4, calendar_date),
+    session_type_id = COALESCE($5, session_type_id),
+    updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
+`
+
+type AdHocBookingsUpdateParams struct {
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	ID            pgtype.UUID
+	CalendarDate  pgtype.Date
+	SessionTypeID pgtype.UUID
+}
+
+func (q *Queries) AdHocBookingsUpdate(ctx context.Context, arg AdHocBookingsUpdateParams) error {
+	_, err := q.db.Exec(ctx, adHocBookingsUpdate,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.CalendarDate,
+		arg.SessionTypeID,
+	)
+	return err
+}

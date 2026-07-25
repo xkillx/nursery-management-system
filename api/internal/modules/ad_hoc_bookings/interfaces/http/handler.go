@@ -31,6 +31,11 @@ type createAdHocBookingRequest struct {
 	SessionTypeID string `json:"session_type_id" binding:"required"`
 }
 
+type updateAdHocBookingRequest struct {
+	CalendarDate  *string `json:"calendar_date"`
+	SessionTypeID *string `json:"session_type_id"`
+}
+
 func toAdHocBookingResponse(b domain.AdHocBooking) adHocBookingResponse {
 	return adHocBookingResponse{
 		ID:            b.ID.String(),
@@ -55,12 +60,14 @@ type Handler struct {
 	create *application.CreateAdHocBooking
 	list   *application.ListAdHocBookings
 	cancel *application.CancelAdHocBooking
+	update *application.UpdateAdHocBooking
 }
 
 func NewHandler(
 	create *application.CreateAdHocBooking,
 	list *application.ListAdHocBookings,
 	cancel *application.CancelAdHocBooking,
+	update *application.UpdateAdHocBooking,
 	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
@@ -68,6 +75,7 @@ func NewHandler(
 		create: create,
 		list:   list,
 		cancel: cancel,
+		update: update,
 	}
 }
 
@@ -75,6 +83,7 @@ func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 	manager.GET("/sites/:site_id/ad-hoc-bookings", h.listBookings)
 	manager.POST("/sites/:site_id/ad-hoc-bookings", h.createBooking)
 	manager.POST("/sites/:site_id/ad-hoc-bookings/:booking_id/cancel", h.cancelBooking)
+	manager.PATCH("/sites/:site_id/ad-hoc-bookings/:booking_id", h.updateBooking)
 }
 
 func (h *Handler) resolveActor(c *gin.Context) (application.AdHocBookingActor, bool) {
@@ -270,6 +279,76 @@ func (h *Handler) cancelBooking(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// updateBooking reschedules an ad hoc booking.
+//
+//	@Summary		Update ad hoc booking
+//	@Description	Reschedule an ad hoc booking by changing the calendar date and/or session type.
+//	@Tags			ad-hoc-bookings
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id		path		string					true	"Site ID"		format(uuid)
+//	@Param			booking_id	path		string					true	"Booking ID"	format(uuid)
+//	@Param			body		body		updateAdHocBookingRequest	true	"Update data"
+//	@Success		200			{object}	object{ad_hoc_booking=adHocBookingResponse}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/ad-hoc-bookings/{booking_id} [patch]
+func (h *Handler) updateBooking(c *gin.Context) {
+	actor, ok := h.resolveActor(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	siteID, err := uuid.Parse(c.Param("site_id"))
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	bookingID, err := uuid.Parse(c.Param("booking_id"))
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	var req updateAdHocBookingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	var params application.UpdateAdHocBookingParams
+	if req.CalendarDate != nil {
+		t, err := time.Parse("2006-01-02", *req.CalendarDate)
+		if err != nil {
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid calendar_date format.", nil)
+			return
+		}
+		params.CalendarDate = &t
+	}
+	if req.SessionTypeID != nil {
+		id, err := uuid.Parse(*req.SessionTypeID)
+		if err != nil {
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid session_type_id.", nil)
+			return
+		}
+		params.SessionTypeID = &id
+	}
+
+	booking, err := h.update.Execute(c.Request.Context(), actor, siteID, bookingID, params)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ad_hoc_booking": toAdHocBookingResponse(booking)})
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {
