@@ -466,7 +466,8 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
-	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
+	updateHourlyBooking := application20.NewUpdateHourlyBooking(hourlyBookingRepository, transactionManager)
+	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, updateHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
 	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
 	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
@@ -875,7 +876,8 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	createHourlyBooking := application20.NewCreateHourlyBooking(hourlyBookingRepository)
 	listHourlyBookings := application20.NewListHourlyBookings(hourlyBookingRepository)
 	cancelHourlyBooking := application20.NewCancelHourlyBooking(hourlyBookingRepository, transactionManager)
-	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, logger)
+	updateHourlyBooking := application20.NewUpdateHourlyBooking(hourlyBookingRepository, transactionManager)
+	httphourlybookingsHandler := httphourlybookings.NewHandler(createHourlyBooking, listHourlyBookings, cancelHourlyBooking, updateHourlyBooking, logger)
 	bookingRepository := postgres22.NewRepository(pool)
 	bootstrapBookingsFundingLookupAdapter := provideBookingsFundingLookupAdapterForWire(fundingRecordRepositoryImpl)
 	createBooking := application10.NewCreateBooking(bookingRepository, bootstrapBookingsFundingLookupAdapter)
@@ -1112,7 +1114,7 @@ var termCalendarSet = wire.NewSet(postgres14.NewRepository, wire.Bind(new(domain
 
 var adHocBookingsSet = wire.NewSet(postgres21.NewRepository, wire.Bind(new(domain18.Repository), new(*postgres21.AdHocBookingRepository)), application19.NewCreateAdHocBooking, application19.NewListAdHocBookings, application19.NewCancelAdHocBooking, application19.NewUpdateAdHocBooking, httpadhocbookings.NewHandler)
 
-var hourlyBookingsSet = wire.NewSet(postgres15.NewRepository, wire.Bind(new(domain19.Repository), new(*postgres15.HourlyBookingRepository)), application20.NewCreateHourlyBooking, application20.NewListHourlyBookings, application20.NewCancelHourlyBooking, httphourlybookings.NewHandler)
+var hourlyBookingsSet = wire.NewSet(postgres15.NewRepository, wire.Bind(new(domain19.Repository), new(*postgres15.HourlyBookingRepository)), application20.NewCreateHourlyBooking, application20.NewListHourlyBookings, application20.NewCancelHourlyBooking, application20.NewUpdateHourlyBooking, httphourlybookings.NewHandler)
 
 func provideRoomCapacityLookupAdapter(
 	roomsRepo *postgres19.RoomRepository,

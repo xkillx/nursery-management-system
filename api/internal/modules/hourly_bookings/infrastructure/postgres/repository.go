@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -166,5 +167,50 @@ func (r *HourlyBookingRepository) Cancel(ctx context.Context, tx domain.Tx, tena
 		TenantID: uuidToPgtype(tenantID),
 		BranchID: uuidToPgtype(branchID),
 		ID:       uuidToPgtype(id),
+	})
+}
+
+func (r *HourlyBookingRepository) GetByIDForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID) (domain.HourlyBooking, error) {
+	q := sqlc.New(tx.(pgx.Tx))
+	row, err := q.HourlyBookingsGetByIDForUpdate(ctx, sqlc.HourlyBookingsGetByIDForUpdateParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(id),
+	})
+	if isNoRows(err) {
+		return domain.HourlyBooking{}, domainerrors.NotFound("hourly_booking", "Hourly booking not found.")
+	}
+	if err != nil {
+		return domain.HourlyBooking{}, fmt.Errorf("query hourly booking for update: %w", err)
+	}
+	return mapHourlyBooking(row), nil
+}
+
+func (r *HourlyBookingRepository) Update(ctx context.Context, tx domain.Tx, tenantID, branchID, id uuid.UUID, calendarDate *time.Time, startTimeMinutes *int, durationMinutes *int, sessionTypeID *uuid.UUID) error {
+	q := sqlc.New(tx.(pgx.Tx))
+	var pgDate pgtype.Date
+	if calendarDate != nil {
+		pgDate = timeToPgtypeDate(*calendarDate)
+	}
+	startVal := int32(-1)
+	if startTimeMinutes != nil {
+		startVal = int32(*startTimeMinutes)
+	}
+	durationVal := int32(-1)
+	if durationMinutes != nil {
+		durationVal = int32(*durationMinutes)
+	}
+	var pgSession pgtype.UUID
+	if sessionTypeID != nil {
+		pgSession = uuidToPgtype(*sessionTypeID)
+	}
+	return q.HourlyBookingsUpdate(ctx, sqlc.HourlyBookingsUpdateParams{
+		TenantID:      uuidToPgtype(tenantID),
+		BranchID:      uuidToPgtype(branchID),
+		ID:            uuidToPgtype(id),
+		CalendarDate:  pgDate,
+		Column5:       startVal,
+		Column6:       durationVal,
+		SessionTypeID: pgSession,
 	})
 }

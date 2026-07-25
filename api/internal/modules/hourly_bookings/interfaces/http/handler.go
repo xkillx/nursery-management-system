@@ -36,6 +36,13 @@ type createHourlyBookingRequest struct {
 	SessionTypeID    *string `json:"session_type_id,omitempty"`
 }
 
+type updateHourlyBookingRequest struct {
+	CalendarDate     *string `json:"calendar_date"`
+	StartTimeMinutes *int    `json:"start_time_minutes"`
+	DurationMinutes  *int    `json:"duration_minutes"`
+	SessionTypeID    *string `json:"session_type_id"`
+}
+
 func toHourlyBookingResponse(b domain.HourlyBooking) hourlyBookingResponse {
 	resp := hourlyBookingResponse{
 		ID:               b.ID.String(),
@@ -67,12 +74,14 @@ type Handler struct {
 	create *application.CreateHourlyBooking
 	list   *application.ListHourlyBookings
 	cancel *application.CancelHourlyBooking
+	update *application.UpdateHourlyBooking
 }
 
 func NewHandler(
 	create *application.CreateHourlyBooking,
 	list *application.ListHourlyBookings,
 	cancel *application.CancelHourlyBooking,
+	update *application.UpdateHourlyBooking,
 	logger *slog.Logger,
 ) *Handler {
 	return &Handler{
@@ -80,6 +89,7 @@ func NewHandler(
 		create: create,
 		list:   list,
 		cancel: cancel,
+		update: update,
 	}
 }
 
@@ -87,6 +97,7 @@ func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
 	manager.GET("/sites/:site_id/hourly-bookings", h.listBookings)
 	manager.POST("/sites/:site_id/hourly-bookings", h.createBooking)
 	manager.POST("/sites/:site_id/hourly-bookings/:booking_id/cancel", h.cancelBooking)
+	manager.PATCH("/sites/:site_id/hourly-bookings/:booking_id", h.updateBooking)
 }
 
 func (h *Handler) resolveActor(c *gin.Context) (application.HourlyBookingActor, bool) {
@@ -289,6 +300,82 @@ func (h *Handler) cancelBooking(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// updateBooking reschedules an hourly booking.
+//
+//	@Summary		Update hourly booking
+//	@Description	Reschedule an hourly booking by changing the calendar date, start time, duration, and/or session type.
+//	@Tags			hourly-bookings
+//	@Accept			json
+//	@Produce		json
+//	@Param			site_id		path		string						true	"Site ID"		format(uuid)
+//	@Param			booking_id	path		string						true	"Booking ID"	format(uuid)
+//	@Param			body		body		updateHourlyBookingRequest	true	"Update data"
+//	@Success		200			{object}	object{hourly_booking=hourlyBookingResponse}
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager","owner"]
+//	@Router			/sites/{site_id}/hourly-bookings/{booking_id} [patch]
+func (h *Handler) updateBooking(c *gin.Context) {
+	actor, ok := h.resolveActor(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	siteID, err := uuid.Parse(c.Param("site_id"))
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	bookingID, err := uuid.Parse(c.Param("booking_id"))
+	if err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	var req updateHourlyBookingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request payload.", nil)
+		return
+	}
+
+	var params application.UpdateHourlyBookingParams
+	if req.CalendarDate != nil {
+		t, err := time.Parse("2006-01-02", *req.CalendarDate)
+		if err != nil {
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid calendar_date format.", nil)
+			return
+		}
+		params.CalendarDate = &t
+	}
+	if req.StartTimeMinutes != nil {
+		params.StartTimeMinutes = req.StartTimeMinutes
+	}
+	if req.DurationMinutes != nil {
+		params.DurationMinutes = req.DurationMinutes
+	}
+	if req.SessionTypeID != nil {
+		id, err := uuid.Parse(*req.SessionTypeID)
+		if err != nil {
+			httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid session_type_id.", nil)
+			return
+		}
+		params.SessionTypeID = &id
+	}
+
+	booking, err := h.update.Execute(c.Request.Context(), actor, siteID, bookingID, params)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"hourly_booking": toHourlyBookingResponse(booking)})
 }
 
 func (h *Handler) handleError(c *gin.Context, err error) {

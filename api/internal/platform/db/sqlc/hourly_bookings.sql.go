@@ -128,6 +128,41 @@ func (q *Queries) HourlyBookingsGetByID(ctx context.Context, arg HourlyBookingsG
 	return i, err
 }
 
+const hourlyBookingsGetByIDForUpdate = `-- name: HourlyBookingsGetByIDForUpdate :one
+SELECT id, tenant_id, branch_id, child_id, calendar_date, start_time_minutes, duration_minutes, session_type_id, booked_by_membership_id, status, created_at, updated_at
+FROM hourly_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND id = $3
+FOR UPDATE
+`
+
+type HourlyBookingsGetByIDForUpdateParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+func (q *Queries) HourlyBookingsGetByIDForUpdate(ctx context.Context, arg HourlyBookingsGetByIDForUpdateParams) (HourlyBooking, error) {
+	row := q.db.QueryRow(ctx, hourlyBookingsGetByIDForUpdate, arg.TenantID, arg.BranchID, arg.ID)
+	var i HourlyBooking
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.ChildID,
+		&i.CalendarDate,
+		&i.StartTimeMinutes,
+		&i.DurationMinutes,
+		&i.SessionTypeID,
+		&i.BookedByMembershipID,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const hourlyBookingsListByBranch = `-- name: HourlyBookingsListByBranch :many
 SELECT id, tenant_id, branch_id, child_id, calendar_date, start_time_minutes, duration_minutes, session_type_id, booked_by_membership_id, status, created_at, updated_at
 FROM hourly_bookings
@@ -312,4 +347,37 @@ func (q *Queries) HourlyBookingsListByChildAndDateRange(ctx context.Context, arg
 		return nil, err
 	}
 	return items, nil
+}
+
+const hourlyBookingsUpdate = `-- name: HourlyBookingsUpdate :exec
+UPDATE hourly_bookings
+SET calendar_date = COALESCE($4, calendar_date),
+    start_time_minutes = CASE WHEN $5 = -1 THEN start_time_minutes ELSE $5 END,
+    duration_minutes = CASE WHEN $6 = -1 THEN duration_minutes ELSE $6 END,
+    session_type_id = $7,
+    updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
+`
+
+type HourlyBookingsUpdateParams struct {
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	ID            pgtype.UUID
+	CalendarDate  pgtype.Date
+	Column5       interface{}
+	Column6       interface{}
+	SessionTypeID pgtype.UUID
+}
+
+func (q *Queries) HourlyBookingsUpdate(ctx context.Context, arg HourlyBookingsUpdateParams) error {
+	_, err := q.db.Exec(ctx, hourlyBookingsUpdate,
+		arg.TenantID,
+		arg.BranchID,
+		arg.ID,
+		arg.CalendarDate,
+		arg.Column5,
+		arg.Column6,
+		arg.SessionTypeID,
+	)
+	return err
 }

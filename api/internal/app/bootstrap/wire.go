@@ -660,6 +660,7 @@ var hourlyBookingsSet = wire.NewSet(
 	hourlyapp.NewCreateHourlyBooking,
 	hourlyapp.NewListHourlyBookings,
 	hourlyapp.NewCancelHourlyBooking,
+	hourlyapp.NewUpdateHourlyBooking,
 	hourlyhttphandler.NewHandler,
 )
 

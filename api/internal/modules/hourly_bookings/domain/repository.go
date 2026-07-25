@@ -17,4 +17,6 @@ type Repository interface {
 	ListActiveByChildAndDateRange(ctx context.Context, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]HourlyBooking, error)
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (HourlyBooking, error)
 	Cancel(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) error
+	GetByIDForUpdate(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID) (HourlyBooking, error)
+	Update(ctx context.Context, tx Tx, tenantID, branchID, id uuid.UUID, calendarDate *time.Time, startTimeMinutes *int, durationMinutes *int, sessionTypeID *uuid.UUID) error
 }

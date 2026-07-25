@@ -57,3 +57,20 @@ WHERE tenant_id = $1
 UPDATE hourly_bookings
 SET status = 'cancelled', updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status = 'active';
+
+-- name: HourlyBookingsGetByIDForUpdate :one
+SELECT id, tenant_id, branch_id, child_id, calendar_date, start_time_minutes, duration_minutes, session_type_id, booked_by_membership_id, status, created_at, updated_at
+FROM hourly_bookings
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND id = $3
+FOR UPDATE;
+
+-- name: HourlyBookingsUpdate :exec
+UPDATE hourly_bookings
+SET calendar_date = COALESCE($4, calendar_date),
+    start_time_minutes = CASE WHEN $5 = -1 THEN start_time_minutes ELSE $5 END,
+    duration_minutes = CASE WHEN $6 = -1 THEN duration_minutes ELSE $6 END,
+    session_type_id = $7,
+    updated_at = now()
+WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
