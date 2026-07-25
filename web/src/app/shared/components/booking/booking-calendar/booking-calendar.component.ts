@@ -14,6 +14,14 @@ export interface BookingCalendarEvent {
   extendedProps?: Record<string, unknown>;
 }
 
+export interface CalendarBackgroundEvent {
+  start: string;
+  end?: string;
+  display: 'background';
+  backgroundColor: string;
+  classNames?: string[];
+}
+
 const BOOKING_TYPE_COLORS: Record<string, string> = {
   regular: 'fc-bg-regular',
   funded: 'fc-bg-funded',
@@ -21,6 +29,9 @@ const BOOKING_TYPE_COLORS: Record<string, string> = {
   cancelled: 'fc-bg-cancelled',
   wraparound: 'fc-bg-wraparound',
 };
+
+export const CLOSURE_BACKGROUND_COLOR = 'rgba(239, 68, 68, 0.15)';
+export const HOLIDAY_BACKGROUND_COLOR = 'rgba(245, 158, 11, 0.15)';
 
 @Component({
   selector: 'app-booking-calendar',
@@ -31,10 +42,12 @@ export class BookingCalendarComponent implements OnChanges {
   @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
 
   @Input() bookings: BookingCalendarEvent[] = [];
+  @Input() backgroundEvents: CalendarBackgroundEvent[] = [];
   @Input() view: 'week' | 'month' = 'month';
 
   @Output() dateSelect = new EventEmitter<{ start: string; end: string }>();
   @Output() bookingClick = new EventEmitter<BookingCalendarEvent>();
+  @Output() datesSet = new EventEmitter<{ start: string; end: string }>();
 
   calendarOptions!: CalendarOptions;
 
@@ -74,13 +87,22 @@ export class BookingCalendarComponent implements OnChanges {
         right: 'dayGridMonth,timeGridWeek,timeGridDay',
       },
       selectable: true,
-      events: this.bookings.map((b) => ({
-        id: b.id,
-        title: b.title,
-        start: b.start,
-        end: b.end,
-        extendedProps: { type: b.type, ...b.extendedProps },
-      })),
+      events: [
+        ...this.bookings.map((b) => ({
+          id: b.id,
+          title: b.title,
+          start: b.start,
+          end: b.end,
+          extendedProps: { type: b.type, ...b.extendedProps },
+        })),
+        ...this.backgroundEvents.map((bg) => ({
+          start: bg.start,
+          end: bg.end,
+          display: 'background' as const,
+          backgroundColor: bg.backgroundColor,
+          classNames: bg.classNames,
+        })),
+      ],
       select: (info: DateSelectArg) => {
         this.dateSelect.emit({ start: info.startStr, end: info.endStr });
       },
@@ -89,6 +111,12 @@ export class BookingCalendarComponent implements OnChanges {
         if (booking) {
           this.bookingClick.emit(booking);
         }
+      },
+      datesSet: (info: { start: Date; end: Date }) => {
+        this.datesSet.emit({
+          start: info.start.toISOString().split('T')[0],
+          end: info.end.toISOString().split('T')[0],
+        });
       },
       eventContent: (arg: EventContentArg) => this.renderEventContent(arg),
     };
