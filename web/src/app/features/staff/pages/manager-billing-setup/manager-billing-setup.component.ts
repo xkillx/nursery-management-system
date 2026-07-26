@@ -2,10 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroCheck, heroPencilSquare, heroXMark } from '@ng-icons/heroicons/outline';
+import {
+  heroBanknotes,
+  heroCheck,
+  heroClock,
+  heroInformationCircle,
+} from '@ng-icons/heroicons/outline';
 
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { StaffApiService } from '../../data/staff-api.service';
 
 @Component({
@@ -14,148 +21,123 @@ import { StaffApiService } from '../../data/staff-api.service';
   imports: [CommonModule, FormsModule, NgIcon, AlertComponent, LoadingStateComponent],
   templateUrl: './manager-billing-setup.component.html',
   providers: [
-    provideIcons({ heroCheck, heroPencilSquare, heroXMark }),
+    provideIcons({ heroBanknotes, heroCheck, heroClock, heroInformationCircle }),
   ],
 })
 export class ManagerBillingSetupComponent implements OnInit {
   private readonly api = inject(StaffApiService);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
+  siteName = '';
   loading = true;
   error: string | null = null;
-  rateMinor: number | null = null;
-  hasRate = false;
 
-  editing = false;
-  editValue = '';
-  editError: string | null = null;
-  saving = false;
+  ratePounds = '';
+  gracePeriod = '3';
+  reminderDays = '3';
 
-  gracePeriod = 3;
-  reminderDays = 3;
-  editingGrace = false;
-  graceEditValue = '3';
-  reminderEditValue = '3';
-  graceEditError: string | null = null;
-  savingGrace = false;
+  formSaving = false;
+  formError: string | null = null;
+  formFieldErrors: { rate?: string; gracePeriod?: string; reminderDays?: string } = {};
+
+  private originalRateMinor: number | null = null;
+  private originalGrace = 3;
+  private originalReminder = 3;
 
   ngOnInit(): void {
-    this.loadRate();
-    this.loadBranchSettings();
+    const membership = this.auth.activeMembership();
+    this.siteName = membership?.branch_name ?? 'Your site';
+    this.loadData();
   }
 
-  get displayRate(): string {
-    if (!this.hasRate || this.rateMinor === null) {
-      return 'Not set';
-    }
-    return '£' + (this.rateMinor / 100).toFixed(2) + '/hr';
-  }
-
-  startEdit(): void {
-    this.editing = true;
-    this.editValue = this.rateMinor !== null ? (this.rateMinor / 100).toFixed(2) : '';
-    this.editError = null;
-  }
-
-  cancelEdit(): void {
-    this.editing = false;
-    this.editValue = '';
-    this.editError = null;
+  get hasChanges(): boolean {
+    const currentRate = this.ratePounds ? Math.round(parseFloat(this.ratePounds) * 100) : 0;
+    const currentGrace = parseInt(this.gracePeriod, 10) || 0;
+    const currentReminder = parseInt(this.reminderDays, 10) || 0;
+    return (
+      currentRate !== (this.originalRateMinor ?? 0) ||
+      currentGrace !== this.originalGrace ||
+      currentReminder !== this.originalReminder
+    );
   }
 
   save(): void {
-    const pounds = parseFloat(this.editValue);
+    this.formError = null;
+    this.formFieldErrors = {};
+
+    const pounds = parseFloat(this.ratePounds);
     if (isNaN(pounds) || pounds <= 0) {
-      this.editError = 'Enter a positive rate.';
+      this.formFieldErrors.rate = 'Enter a positive hourly rate.';
+      this.formError = 'Please correct the highlighted fields.';
       return;
     }
-    const minor = Math.round(pounds * 100);
-    this.editError = null;
-    this.saving = true;
 
-    this.api.updateSiteRate(minor).subscribe({
+    const graceDays = parseInt(this.gracePeriod, 10);
+    if (isNaN(graceDays) || graceDays < 0 || graceDays > 30) {
+      this.formFieldErrors.gracePeriod = 'Grace period must be between 0 and 30 days.';
+      this.formError = 'Please correct the highlighted fields.';
+      return;
+    }
+
+    const reminder = parseInt(this.reminderDays, 10);
+    if (isNaN(reminder) || reminder < 1 || reminder > 30) {
+      this.formFieldErrors.reminderDays = 'Reminder days must be between 1 and 30.';
+      this.formError = 'Please correct the highlighted fields.';
+      return;
+    }
+
+    const rateMinor = Math.round(pounds * 100);
+    this.formSaving = true;
+
+    this.api.updateSiteRate(rateMinor).subscribe({
       next: () => {
-        this.saving = false;
-        this.editing = false;
-        this.editValue = '';
-        this.loadRate();
+        this.api.updateBranchSettings(graceDays, reminder).subscribe({
+          next: () => {
+            this.formSaving = false;
+            this.originalRateMinor = rateMinor;
+            this.originalGrace = graceDays;
+            this.originalReminder = reminder;
+            this.toast.success('Billing settings saved.');
+          },
+          error: () => {
+            this.formSaving = false;
+            this.toast.error('Rate saved but overdue settings failed. Please retry.');
+          },
+        });
       },
       error: () => {
-        this.saving = false;
-        this.editError = 'Failed to save rate. Please try again.';
+        this.formSaving = false;
+        this.toast.error('Failed to save billing settings. Please try again.');
       },
     });
   }
 
-  private loadRate(): void {
+  private loadData(): void {
     this.loading = true;
     this.error = null;
 
     this.api.getSiteRate().subscribe({
-      next: (res) => {
-        this.rateMinor = res.core_hourly_rate_minor;
-        this.hasRate = res.has_rate;
-        this.loading = false;
+      next: (rateRes) => {
+        this.originalRateMinor = rateRes.core_hourly_rate_minor;
+        this.ratePounds = rateRes.has_rate ? (rateRes.core_hourly_rate_minor / 100).toFixed(2) : '';
+
+        this.api.getBranchSettings().subscribe({
+          next: (settingsRes) => {
+            this.originalGrace = settingsRes.overdue_grace_days;
+            this.originalReminder = settingsRes.reminder_days_before;
+            this.gracePeriod = String(settingsRes.overdue_grace_days);
+            this.reminderDays = String(settingsRes.reminder_days_before);
+            this.loading = false;
+          },
+          error: () => {
+            this.loading = false;
+          },
+        });
       },
       error: () => {
         this.error = 'Failed to load billing setup. Please try again.';
         this.loading = false;
-      },
-    });
-  }
-
-  startGraceEdit(): void {
-    this.editingGrace = true;
-    this.graceEditValue = String(this.gracePeriod);
-    this.reminderEditValue = String(this.reminderDays);
-    this.graceEditError = null;
-  }
-
-  cancelGraceEdit(): void {
-    this.editingGrace = false;
-    this.graceEditValue = '3';
-    this.reminderEditValue = '3';
-    this.graceEditError = null;
-  }
-
-  saveGrace(): void {
-    const graceDays = parseInt(this.graceEditValue, 10);
-    const reminderDays = parseInt(this.reminderEditValue, 10);
-
-    if (isNaN(graceDays) || graceDays < 0 || graceDays > 30) {
-      this.graceEditError = 'Grace period must be between 0 and 30 days.';
-      return;
-    }
-
-    if (isNaN(reminderDays) || reminderDays < 1 || reminderDays > 30) {
-      this.graceEditError = 'Reminder days must be between 1 and 30.';
-      return;
-    }
-
-    this.graceEditError = null;
-    this.savingGrace = true;
-
-    this.api.updateBranchSettings(graceDays, reminderDays).subscribe({
-      next: () => {
-        this.savingGrace = false;
-        this.editingGrace = false;
-        this.gracePeriod = graceDays;
-        this.reminderDays = reminderDays;
-      },
-      error: () => {
-        this.savingGrace = false;
-        this.graceEditError = 'Failed to save settings. Please try again.';
-      },
-    });
-  }
-
-  private loadBranchSettings(): void {
-    this.api.getBranchSettings().subscribe({
-      next: (res) => {
-        this.gracePeriod = res.overdue_grace_days;
-        this.reminderDays = res.reminder_days_before;
-      },
-      error: () => {
-        // Silently fail - use defaults
       },
     });
   }

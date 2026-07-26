@@ -1,128 +1,161 @@
-<div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-  <div class="max-w-3xl">
-    <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">Billing setup</h1>
-    <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">View and update your site's core hourly billing rate and overdue settings.</p>
+<div class="space-y-6">
+  <div>
+    <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">Billing Setup</h1>
+    <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+      Configure the core hourly billing rate and overdue reminder settings for {{ siteName }}.
+    </p>
   </div>
-</div>
 
-@if (loading) {
-  <app-loading-state label="Loading billing setup..." />
-} @else if (error) {
-  <app-alert variant="error" title="Error" [message]="error" />
-} @else {
-  <div class="mt-6 space-y-6">
-    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Hourly Rate</h2>
-      <div class="flex items-center gap-4">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Core hourly rate:</span>
-        @if (editing) {
-          <span class="inline-flex items-center gap-2">
-            <span class="text-sm text-gray-500">&pound;</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              [(ngModel)]="editValue"
-              class="h-8 w-28 rounded-lg border border-gray-300 px-2 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            />
-            <button
-              (click)="save()"
-              [disabled]="saving"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
-            >
-              <ng-icon name="heroCheck" size="16" aria-hidden="true" />
-              {{ saving ? 'Saving...' : 'Save' }}
-            </button>
-            <button
-              (click)="cancelEdit()"
-              [disabled]="saving"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              <ng-icon name="heroXMark" size="16" aria-hidden="true" />
-              Cancel
-            </button>
+  @if (loading) {
+    <app-loading-state label="Loading billing setup..." />
+  } @else if (error) {
+    <app-alert variant="error" title="Error" [message]="error" />
+  } @else {
+    @if (formError) {
+      <app-alert variant="error" title="Error" [message]="formError" />
+    }
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <!-- Left Column: Form Details Card -->
+      <section class="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroBanknotes" size="20" aria-hidden="true" />
           </span>
-          @if (editError) {
-            <p class="text-xs text-red-600">{{ editError }}</p>
-          }
-        } @else {
-          <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ displayRate }}</span>
-          <button (click)="startEdit()" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400">
-            <ng-icon name="heroPencilSquare" size="14" aria-hidden="true" />
-            Edit
-          </button>
-        }
-      </div>
-    </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Billing Configuration</h2>
+        </div>
 
-    <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Overdue &amp; Reminders</h2>
-      @if (editingGrace) {
-        <div class="space-y-4">
-          <div class="flex items-center gap-4">
-            <label for="graceDays" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Grace period (days):</label>
-            <input
-              id="graceDays"
-              type="number"
-              min="0"
-              max="30"
-              [(ngModel)]="graceEditValue"
-              class="h-8 w-24 rounded-lg border border-gray-300 px-2 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            />
-            <span class="text-xs text-gray-500">0-30 days. Default: 3</span>
+        <form #billingForm="ngForm" class="space-y-6 px-6 py-6" (ngSubmit)="save()" novalidate>
+          <!-- Hourly Rate -->
+          <div>
+            <label for="rate" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Core Hourly Rate (&pound;) <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">&pound;</span>
+              <input
+                id="rate"
+                name="rate"
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                [(ngModel)]="ratePounds"
+                placeholder="0.00"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 pl-8 pr-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="formFieldErrors.rate"
+                [disabled]="formSaving"
+              />
+            </div>
+            @if (formFieldErrors.rate) {
+              <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.rate }}</p>
+            } @else {
+              <p class="mt-1 text-xs text-gray-500">The standard hourly rate applied to ad-hoc bookings.</p>
+            }
           </div>
-          <div class="flex items-center gap-4">
-            <label for="reminderDays" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-48">Reminder days before due:</label>
-            <input
-              id="reminderDays"
-              type="number"
-              min="1"
-              max="30"
-              [(ngModel)]="reminderEditValue"
-              class="h-8 w-24 rounded-lg border border-gray-300 px-2 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            />
-            <span class="text-xs text-gray-500">1-30 days. Default: 3</span>
+
+          <div class="border-t border-gray-200 dark:border-gray-800"></div>
+
+          <!-- Overdue & Reminders Section -->
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
+              <ng-icon name="heroClock" size="20" aria-hidden="true" />
+            </span>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Overdue &amp; Reminders</h3>
           </div>
-          <div class="flex items-center gap-2">
+
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label for="gracePeriod" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Grace Period (days) <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="gracePeriod"
+                name="gracePeriod"
+                type="number"
+                min="0"
+                max="30"
+                required
+                [(ngModel)]="gracePeriod"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="formFieldErrors.gracePeriod"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.gracePeriod) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.gracePeriod }}</p>
+              } @else {
+                <p class="mt-1 text-xs text-gray-500">Invoices aren't marked overdue until this many days after the due date.</p>
+              }
+            </div>
+
+            <div>
+              <label for="reminderDays" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Reminder Days Before Due <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="reminderDays"
+                name="reminderDays"
+                type="number"
+                min="1"
+                max="30"
+                required
+                [(ngModel)]="reminderDays"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                [class.border-red-500]="formFieldErrors.reminderDays"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.reminderDays) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.reminderDays }}</p>
+              } @else {
+                <p class="mt-1 text-xs text-gray-500">A "due soon" reminder email is sent this many days before the due date.</p>
+              }
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end dark:border-gray-800">
             <button
-              (click)="saveGrace()"
-              [disabled]="savingGrace"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+              type="submit"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50 cursor-pointer"
+              [disabled]="formSaving || !billingForm.valid"
             >
-              <ng-icon name="heroCheck" size="16" aria-hidden="true" />
-              {{ savingGrace ? 'Saving...' : 'Save' }}
-            </button>
-            <button
-              (click)="cancelGraceEdit()"
-              [disabled]="savingGrace"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              <ng-icon name="heroXMark" size="16" aria-hidden="true" />
-              Cancel
+              @if (formSaving) {
+                <svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+              Save Changes
             </button>
           </div>
-          @if (graceEditError) {
-            <p class="text-xs text-red-600">{{ graceEditError }}</p>
-          }
-        </div>
-      } @else {
-        <div class="space-y-3">
-          <div class="flex items-center gap-4">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Grace period:</span>
-            <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ gracePeriod }} {{ gracePeriod === 1 ? 'day' : 'days' }}</span>
-            <span class="text-xs text-gray-500">Invoices aren't marked overdue until this many days after the due date.</span>
+        </form>
+      </section>
+
+      <!-- Right Column: Sidebar Guidance -->
+      <aside class="space-y-6">
+        <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-500/20 dark:bg-blue-500/10">
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-blue-500 shadow-sm dark:bg-gray-900">
+              <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
           </div>
-          <div class="flex items-center gap-4">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Reminder before due:</span>
-            <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ reminderDays }} {{ reminderDays === 1 ? 'day' : 'days' }}</span>
-            <span class="text-xs text-gray-500">A "due soon" reminder email is sent this many days before the due date.</span>
-          </div>
-          <button (click)="startGraceEdit()" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400">
-            <ng-icon name="heroPencilSquare" size="14" aria-hidden="true" />
-            Edit
-          </button>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>The core hourly rate is used as the default rate for ad-hoc bookings when a child does not have a specific rate override.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Setting a grace period prevents invoices from being flagged as overdue immediately after the due date passes.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Reminder emails are automatically sent to parents the configured number of days before an invoice is due.</span>
+            </li>
+          </ul>
         </div>
-      }
+      </aside>
     </div>
-  </div>
-}
+  }
+</div>
