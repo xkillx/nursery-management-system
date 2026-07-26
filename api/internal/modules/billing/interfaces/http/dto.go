@@ -226,8 +226,7 @@ type invoiceCalculationResponse struct {
 	CoreBillableMinutes    int                     `json:"core_billable_minutes"`
 	CoreSubtotalMinor      int                     `json:"core_subtotal_minor"`
 	ExtrasTotalMinor       int                     `json:"extras_total_minor"`
-	TermID                 string                  `json:"term_id"`
-	BookingPatternID       string                  `json:"booking_pattern_id"`
+	BookingID              string                  `json:"booking_id"`
 	BookedSessions         []bookedSessionResponse `json:"booked_sessions"`
 	BookedPerEntry         []bookedEntryResponse   `json:"booked_per_entry"`
 }

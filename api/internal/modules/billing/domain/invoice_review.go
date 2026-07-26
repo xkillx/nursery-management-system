@@ -89,8 +89,7 @@ type InvoiceReviewCalculation struct {
 	CoreBillableMinutes    int                    `json:"core_billable_minutes"`
 	CoreSubtotal           Money                  `json:"core_subtotal_minor"`
 	ExtrasTotal            Money                  `json:"extras_total_minor"`
-	TermID                 uuid.UUID              `json:"term_id"`
-	BookingPatternID       uuid.UUID              `json:"booking_pattern_id"`
+	BookingID              uuid.UUID              `json:"booking_id"`
 	BookedSessions         []BookedSession        `json:"booked_sessions"`
 	BookedPerEntry         []BookedEntryBreakdown `json:"booked_per_entry"`
 }

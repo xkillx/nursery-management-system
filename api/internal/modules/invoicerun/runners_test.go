@@ -2,7 +2,6 @@ package invoicerun
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"os"
 	"testing"
@@ -23,9 +22,7 @@ func newTestLogger() *slog.Logger {
 }
 
 func TestNewScheduler_RegistersAllJobs(t *testing.T) {
-	lister := &fakeLister{}
-	expire := NewExpireTermsRunner(nil, nil, lister)
-	s, err := NewScheduler(newTestLogger(), nil, expire, nil, nil)
+	s, err := NewScheduler(newTestLogger(), nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("NewScheduler: %v", err)
 	}
@@ -34,30 +31,9 @@ func TestNewScheduler_RegistersAllJobs(t *testing.T) {
 	}
 }
 
-func TestExpireTermsRunner_PropagatesError(t *testing.T) {
-	want := errors.New("lister boom")
-	lister := &fakeLister{err: want}
-	_ = termAppStubForExpire{}
-	r := &ExpireTermsRunner{expireTerms: nil, tenantBranchLister: lister}
-	if err := r.RunForAllTenantsAndBranches(context.Background()); err == nil {
-		t.Fatal("expected error, got nil")
-	} else if !contains(err.Error(), "expire-terms use case not configured") {
-		t.Errorf("unexpected error: %v", err)
+func TestExpireTermsRunner_NoOp(t *testing.T) {
+	r := NewExpireTermsRunner(nil)
+	if err := r.RunForAllTenantsAndBranches(context.Background()); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
 	}
-	_ = want
-}
-
-type termAppStubForExpire struct{}
-
-func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || (len(s) > 0 && stringIndex(s, sub) >= 0))
-}
-
-func stringIndex(s, sub string) int {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return i
-		}
-	}
-	return -1
 }

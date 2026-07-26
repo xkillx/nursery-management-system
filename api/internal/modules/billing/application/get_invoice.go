@@ -113,8 +113,7 @@ func parseCalculationDetails(raw json.RawMessage) (domain.InvoiceReviewCalculati
 		CoreBillableMinutes:    details.CoreBillableMinutes,
 		CoreSubtotal:           details.CoreSubtotal,
 		ExtrasTotal:            details.ExtrasTotal,
-		TermID:                 details.TermID,
-		BookingPatternID:       details.BookingPatternID,
+		BookingID:              details.BookingID,
 		BookedSessions:         details.BookedSessions,
 		BookedPerEntry:         details.BookedPerEntry,
 	}

@@ -67,23 +67,23 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 	var result ComputeInvoicePrefillResult
 
 	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
-		terms, listErr := uc.repo.ListActiveTermsForGeneration(ctx, tx, actor.TenantID, actor.BranchID, billingMonth)
+		bookings, listErr := uc.repo.ListActiveBookingsForGeneration(ctx, tx, actor.TenantID, actor.BranchID, billingMonth)
 		if listErr != nil {
-			return fmt.Errorf("list active terms: %w", listErr)
+			return fmt.Errorf("list active bookings: %w", listErr)
 		}
 
-		var termRow *domain.AdvancePayTermRow
-		for i, t := range terms {
-			if t.ChildID == childID {
-				termRow = &terms[i]
+		var bookingRow *domain.BillableChildRow
+		for i, b := range bookings {
+			if b.ChildID == childID {
+				bookingRow = &bookings[i]
 				break
 			}
 		}
-		if termRow == nil {
+		if bookingRow == nil {
 			return domainerrors.NotFound("child", "Child not found for this billing month.")
 		}
 
-		warnings := prefillWarnings(*termRow)
+		warnings := prefillWarnings(*bookingRow)
 
 		entries, entriesErr := uc.bookingEntriesLookup.GetEntriesForChildInMonth(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
 		if entriesErr != nil {
@@ -95,10 +95,9 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 		fundedAllowance := 0
 
 		prefillResult, prefillErr := domain.ComputeInvoicePrefill(domain.InvoicePrefillParams{
-			BookingPatternID:       termRow.BookingPatternID.String(),
 			Entries:                domainEntries,
 			BillingMonthStart:      billingMonth,
-			SiteHourlyRateMinor:    termRow.SiteHourlyRateMinor,
+			SiteHourlyRateMinor:    bookingRow.SiteHourlyRateMinor,
 			FundedAllowanceMinutes: fundedAllowance,
 			HasFunding:             false,
 		})
@@ -125,10 +124,10 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 		warnings = append(warnings, prefillResult.Warnings...)
 
 		result = ComputeInvoicePrefillResult{
-			ChildID:                termRow.ChildID,
-			ChildFirstName:         termRow.FirstName,
-			ChildMiddleName:        termRow.MiddleName,
-			ChildLastName:          termRow.LastName,
+			ChildID:                bookingRow.ChildID,
+			ChildFirstName:         bookingRow.FirstName,
+			ChildMiddleName:        bookingRow.MiddleName,
+			ChildLastName:          bookingRow.LastName,
 			BillingMonth:           billingMonthRaw,
 			FundedAllowanceMinutes: fundedAllowance,
 			Lines:                  lines,
@@ -151,7 +150,7 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 	return result, nil
 }
 
-func prefillWarnings(t domain.AdvancePayTermRow) []string {
+func prefillWarnings(t domain.BillableChildRow) []string {
 	var w []string
 	if t.FirstName == "" {
 		w = append(w, "missing_child_name")

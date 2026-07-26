@@ -87,10 +87,6 @@ import (
 
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
-	termapp "nursery-management-system/api/internal/modules/term/application"
-	termdomain "nursery-management-system/api/internal/modules/term/domain"
-	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
-	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
@@ -188,20 +184,13 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	childRepo := childpostgres.NewChildRepository(pool)
 	sessionTypeRepo := sessiontypepostgres.NewRepository(pool)
 	ownerRepo := ownerpostgres.NewRepository(pool)
-	termRepo := termpostgres.NewTermRepository(pool)
 	fundingHistoryRepo := fundingpostgres.NewHistoryRepository(pool)
 	fundingRecordRepo := fundingpostgres.NewFundingRecordRepository(pool)
-	siteRateProvider := &siteRateProviderAdapter{repo: ownerRepo}
-	termCreator := &enrollmentTermCreatorAdapter{
-		termRepo:     termRepo,
-		rateProvider: siteRateProvider,
-		auditWriter:  auditWriter,
-	}
 	childConfig := childhandler.ChildrenHandlerConfig{
 		Core: childhandler.CoreUseCases{
 			List:           childapp.NewListChildren(childRepo),
 			Get:            childapp.NewGetChild(childRepo),
-			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, termCreator, &childFundingWriterAdapter{repo: fundingRecordRepo}, func() time.Time { return time.Now().UTC() }),
+			Create:         childapp.NewCreateChildWithFullProfile(childRepo, auditWriter, txManager, &sessionTypeLookupAdapter{repo: sessionTypeRepo}, &childFundingWriterAdapter{repo: fundingRecordRepo}, func() time.Time { return time.Now().UTC() }),
 			Update:         childapp.NewUpdateChild(childRepo, auditWriter, txManager),
 			MarkInactive:   childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter),
 			ListAttendance: childapp.NewListAttendance(childRepo, func() time.Time { return time.Now().UTC() }),
@@ -467,41 +456,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	sessionTemplatesReactivateUC := sessiontemplateapp.NewReactivateSessionTemplate(sessionTemplateRepo, txManager, auditWriter)
 	sessionTemplatesHandler := sessiontemplatehttphandler.NewHandler(sessionTemplatesCreateUC, sessionTemplatesUpdateUC, sessionTemplatesListUC, sessionTemplatesGetUC, sessionTemplatesArchiveUC, sessionTemplatesReactivateUC, logger)
 	sessionTemplatesHandler.RegisterRoutes(protected)
-
-	scheduleChangeRepo := termpostgres.NewScheduleChangeRepository(pool)
-
-	createTermUC := termapp.NewCreateTermUseCase(termRepo, txManager, auditWriter, siteRateProvider)
-	getTermUC := termapp.NewGetTermUseCase(termRepo)
-	getCurrentTermUC := termapp.NewGetCurrentTermForChildUseCase(termRepo)
-	listTermsUC := termapp.NewListTermsForChildUseCase(termRepo)
-	listExpiringUC := termapp.NewListExpiringTermsUseCase(termRepo)
-	requestChangeUC := termapp.NewRequestScheduleChangeUseCase(termRepo, scheduleChangeRepo, txManager, auditWriter)
-	approveChangeUC := termapp.NewApproveScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
-	rejectChangeUC := termapp.NewRejectScheduleChangeUseCase(scheduleChangeRepo, auditWriter, txManager)
-	terminateUC := termapp.NewTerminateTermUseCase(termRepo, txManager, auditWriter)
-	expireTermsUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txManager).
-		WithDeactivator(&childDeactivatorAdapter{markInactiveUC: childapp.NewMarkInactive(childRepo, eventDispatcher, auditWriter)})
-	markPendingRenewalUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txManager)
-	_ = expireTermsUC
-	_ = markPendingRenewalUC
-	_ = termdomain.ErrTermAlreadyExists
-	termCfg := termhttphandler.TermHandlerConfig{
-		Core: termhttphandler.CoreTermUseCases{
-			Create:       createTermUC,
-			Get:          getTermUC,
-			GetCurrent:   getCurrentTermUC,
-			List:         listTermsUC,
-			ListExpiring: listExpiringUC,
-			Terminate:    terminateUC,
-		},
-		Changes: termhttphandler.ScheduleChangeUseCases{
-			Request: requestChangeUC,
-			Approve: approveChangeUC,
-			Reject:  rejectChangeUC,
-		},
-	}
-	termHandler := termhttphandler.NewHandler(termCfg, logger)
-	termHandler.RegisterManagerRoutes(manager)
 
 	return router
 }

@@ -221,8 +221,6 @@ func Reset(t testing.TB, pool *pgxpool.Pool) {
 		"attendance_sessions",
 		"manager_invites",
 		"parent_membership_children",
-		"child_booking_pattern_entries",
-		"child_booking_patterns",
 		"session_types",
 		"child_room_assignments",
 		"children",

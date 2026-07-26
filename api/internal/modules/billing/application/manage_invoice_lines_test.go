@@ -58,13 +58,10 @@ func (s *manageLinesRepoStub) UpdateDraftInvoice(_ context.Context, _ domain.Tx,
 }
 
 // Satisfy the rest of BillingRepository with panics (unused in these tests).
-func (s *manageLinesRepoStub) ListActiveTermsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
+func (s *manageLinesRepoStub) ListActiveBookingsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
 	panic("stub")
 }
-func (s *manageLinesRepoStub) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
-	panic("stub")
-}
-func (s *manageLinesRepoStub) ListBookingPatternEntries(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
+func (s *manageLinesRepoStub) ListActiveBookings(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
 	panic("stub")
 }
 func (s *manageLinesRepoStub) ListActiveAdHocBookingsForChildInMonth(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AdHocBookingRow, error) {

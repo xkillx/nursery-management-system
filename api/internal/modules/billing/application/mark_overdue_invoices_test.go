@@ -31,13 +31,10 @@ func (s *stubBillingRepo) MarkIssuedInvoicesOverdue(ctx context.Context, tx doma
 
 // Satisfy the rest of BillingRepository with panics (unused in these tests).
 
-func (s *stubBillingRepo) ListActiveTermsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
+func (s *stubBillingRepo) ListActiveBookingsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
 	panic("stub")
 }
-func (s *stubBillingRepo) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
-	panic("stub")
-}
-func (s *stubBillingRepo) ListBookingPatternEntries(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
+func (s *stubBillingRepo) ListActiveBookings(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
 	panic("stub")
 }
 func (s *stubBillingRepo) ListActiveAdHocBookingsForChildInMonth(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AdHocBookingRow, error) {

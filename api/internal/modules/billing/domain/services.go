@@ -7,7 +7,6 @@ import (
 
 // InvoicePrefillParams holds the inputs for the billing prefill calculation.
 type InvoicePrefillParams struct {
-	BookingPatternID       string
 	Entries                []BookedPatternEntry
 	BillingMonthStart      time.Time
 	SiteHourlyRateMinor    int
@@ -52,7 +51,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 	}
 
 	calc, err := CalculateBookedCoreMinutesInMonth(
-		params.BookingPatternID,
+		"",
 		params.Entries,
 		params.BillingMonthStart,
 		params.SiteHourlyRateMinor,

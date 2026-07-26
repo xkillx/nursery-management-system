@@ -1523,8 +1523,7 @@ func toCalculationResponse(calc domain.InvoiceReviewCalculation) invoiceCalculat
 		CoreBillableMinutes:    calc.CoreBillableMinutes,
 		CoreSubtotalMinor:      calc.CoreSubtotal.Minor(),
 		ExtrasTotalMinor:       calc.ExtrasTotal.Minor(),
-		TermID:                 calc.TermID.String(),
-		BookingPatternID:       calc.BookingPatternID.String(),
+		BookingID:              calc.BookingID.String(),
 		BookedSessions:         sessions,
 		BookedPerEntry:         perEntry,
 	}

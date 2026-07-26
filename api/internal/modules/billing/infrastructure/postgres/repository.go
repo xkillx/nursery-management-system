@@ -81,46 +81,45 @@ func (r *Repository) ListPreflightAttendanceSessions(ctx context.Context, tenant
 	return result, nil
 }
 
-func (r *Repository) ListActiveTermsForGeneration(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.AdvancePayTermRow, error) {
+func (r *Repository) ListActiveBookingsForGeneration(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.BillableChildRow, error) {
 	monthEnd := billingMonth.AddDate(0, 1, -1)
-	rows, err := r.queriesTx(tx).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
-		TenantID:      uuidToPgtype(tenantID),
-		BranchID:      uuidToPgtype(branchID),
-		TermEndDate:   timeToPgtypeDate(billingMonth),
-		TermStartDate: timeToPgtypeDate(monthEnd),
+	rows, err := r.queriesTx(tx).BillingListActiveBookingsForGeneration(ctx, sqlc.BillingListActiveBookingsForGenerationParams{
+		TenantID:           uuidToPgtype(tenantID),
+		BranchID:           uuidToPgtype(branchID),
+		EffectiveStartDate: timeToPgtypeDate(billingMonth),
+		EffectiveEndDate:   timeToPgtypeDate(monthEnd),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("list active terms for generation: %w", err)
+		return nil, fmt.Errorf("list active bookings for generation: %w", err)
 	}
-	return mapAdvancePayTermRows(rows), nil
+	return mapBillableChildRows(rows), nil
 }
 
-func (r *Repository) ListActiveTerms(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.AdvancePayTermRow, error) {
+func (r *Repository) ListActiveBookings(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]domain.BillableChildRow, error) {
 	monthEnd := billingMonth.AddDate(0, 1, -1)
-	rows, err := sqlc.New(r.pool).BillingListActiveTermsForGeneration(ctx, sqlc.BillingListActiveTermsForGenerationParams{
-		TenantID:      uuidToPgtype(tenantID),
-		BranchID:      uuidToPgtype(branchID),
-		TermEndDate:   timeToPgtypeDate(billingMonth),
-		TermStartDate: timeToPgtypeDate(monthEnd),
+	rows, err := sqlc.New(r.pool).BillingListActiveBookingsForGeneration(ctx, sqlc.BillingListActiveBookingsForGenerationParams{
+		TenantID:           uuidToPgtype(tenantID),
+		BranchID:           uuidToPgtype(branchID),
+		EffectiveStartDate: timeToPgtypeDate(billingMonth),
+		EffectiveEndDate:   timeToPgtypeDate(monthEnd),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("list active terms (no tx): %w", err)
+		return nil, fmt.Errorf("list active bookings (no tx): %w", err)
 	}
-	return mapAdvancePayTermRows(rows), nil
+	return mapBillableChildRows(rows), nil
 }
 
-func mapAdvancePayTermRows(rows []sqlc.BillingListActiveTermsForGenerationRow) []domain.AdvancePayTermRow {
-	out := make([]domain.AdvancePayTermRow, 0, len(rows))
+func mapBillableChildRows(rows []sqlc.BillingListActiveBookingsForGenerationRow) []domain.BillableChildRow {
+	out := make([]domain.BillableChildRow, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, domain.AdvancePayTermRow{
-			TermID:                pgtypeUUIDToUUID(row.TermID),
+		out = append(out, domain.BillableChildRow{
+			BookingID:             pgtypeUUIDToUUID(row.BookingID),
 			TenantID:              pgtypeUUIDToUUID(row.TenantID),
 			BranchID:              pgtypeUUIDToUUID(row.BranchID),
 			ChildID:               pgtypeUUIDToUUID(row.ChildID),
-			TermStartDate:         pgtypeDateToTime(row.TermStartDate),
-			TermEndDate:           pgtypeDateToTime(row.TermEndDate),
-			BookingPatternID:      pgtypeUUIDToUUID(row.BookingPatternID),
-			SiteHourlyRateMinor:   int(row.SiteHourlyRateMinor),
+			EffectiveStartDate:    pgtypeDateToTime(row.EffectiveStartDate),
+			EffectiveEndDate:      pgtypeDateToTimePtr(row.EffectiveEndDate),
+			SiteHourlyRateMinor:   pgtypeInt4ToInt(row.SiteHourlyRateMinor),
 			Status:                row.Status,
 			FirstName:             row.FirstName,
 			MiddleName:            pgtypeTextToStrPtr(row.MiddleName),
@@ -134,36 +133,6 @@ func mapAdvancePayTermRows(rows []sqlc.BillingListActiveTermsForGenerationRow) [
 		})
 	}
 	return out
-}
-
-func (r *Repository) ListBookingPatternEntries(ctx context.Context, tx domain.Tx, tenantID, branchID, patternID uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
-	// We deliberately query the child_booking_pattern_entries + session_types tables directly
-	// rather than going through the children module's repository, to keep the billing
-	// module independent of the children module's application layer.
-	rows, err := r.queriesTx(tx).ChildBookingPatternEntriesListByPattern(ctx, sqlc.ChildBookingPatternEntriesListByPatternParams{
-		TenantID:  uuidToPgtype(tenantID),
-		BranchID:  uuidToPgtype(branchID),
-		PatternID: uuidToPgtype(patternID),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("list booking pattern entries: %w", err)
-	}
-	out := make([]domain.BookingPatternEntryRow, 0, len(rows))
-	for _, row := range rows {
-		startMin := timeOfDayToMinutes(row.SessionTypeStartTime)
-		endMin := timeOfDayToMinutes(row.SessionTypeEndTime)
-		if endMin <= startMin {
-			continue
-		}
-		out = append(out, domain.BookingPatternEntryRow{
-			DayOfWeek:       int(row.DayOfWeek),
-			SessionTypeID:   pgtypeUUIDToUUID(row.SessionTypeID),
-			SessionTypeName: row.SessionTypeName,
-			StartMinutes:    startMin,
-			EndMinutes:      endMin,
-		})
-	}
-	return out, nil
 }
 
 func (r *Repository) ListActiveAdHocBookingsForChildInMonth(ctx context.Context, tx domain.Tx, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]domain.AdHocBookingRow, error) {

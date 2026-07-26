@@ -46,40 +46,40 @@ type GenerateTermInvoicesOutput struct {
 	TotalDueSum int
 }
 
-func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvoicesInput, terms []domain.AdvancePayTermRow, requestedSet map[uuid.UUID]struct{}, isFullMonth bool) (GenerateTermInvoicesOutput, error) {
+func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvoicesInput, bookings []domain.BillableChildRow, requestedSet map[uuid.UUID]struct{}, isFullMonth bool) (GenerateTermInvoicesOutput, error) {
 	var generated []domain.DraftGenerationChildResult
 	var blocked []domain.DraftGenerationBlockedChild
 	var totalDueSum int
 
-	for _, termRow := range terms {
+	for _, bookingRow := range bookings {
 		if !isFullMonth {
-			if _, ok := requestedSet[termRow.ChildID]; !ok {
+			if _, ok := requestedSet[bookingRow.ChildID]; !ok {
 				continue
 			}
 		}
 
-		preflightBlockers := preflightBlockers(termRow)
+		preflightBlockers := preflightBlockers(bookingRow)
 		if len(preflightBlockers) > 0 {
 			blocked = append(blocked, domain.DraftGenerationBlockedChild{
-				ChildID:         termRow.ChildID,
-				ChildFirstName:  termRow.FirstName,
-				ChildMiddleName: termRow.MiddleName,
-				ChildLastName:   termRow.LastName,
+				ChildID:         bookingRow.ChildID,
+				ChildFirstName:  bookingRow.FirstName,
+				ChildMiddleName: bookingRow.MiddleName,
+				ChildLastName:   bookingRow.LastName,
 				Blockers:        preflightBlockers,
 			})
 			continue
 		}
 
-		existingInvoice, invoiceFound, err := uc.repo.GetMonthlyInvoiceForUpdate(ctx, in.Tx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+		existingInvoice, invoiceFound, err := uc.repo.GetMonthlyInvoiceForUpdate(ctx, in.Tx, in.Actor.TenantID, in.Actor.BranchID, bookingRow.ChildID, in.BillingMonth)
 		if err != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("get monthly invoice: %w", err)
 		}
 		if invoiceFound && existingInvoice.Status != domain.InvoiceStatusDraft {
 			blocked = append(blocked, domain.DraftGenerationBlockedChild{
-				ChildID:         termRow.ChildID,
-				ChildFirstName:  termRow.FirstName,
-				ChildMiddleName: termRow.MiddleName,
-				ChildLastName:   termRow.LastName,
+				ChildID:         bookingRow.ChildID,
+				ChildFirstName:  bookingRow.FirstName,
+				ChildMiddleName: bookingRow.MiddleName,
+				ChildLastName:   bookingRow.LastName,
 				Blockers: []domain.PreflightBlocker{
 					{
 						Code:    domain.BlockerInvoiceAlreadyIssued,
@@ -90,7 +90,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			continue
 		}
 
-		entries, err := uc.bookingEntriesLookup.GetEntriesForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+		entries, err := uc.bookingEntriesLookup.GetEntriesForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, bookingRow.ChildID, in.BillingMonth)
 		if err != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup booking entries for child: %w", err)
 		}
@@ -99,10 +99,10 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		var termDates []domain.TermDateRange
 		var termDatesUsedLabels []string
-		if termRow.TermTimeOnly && uc.termDateLookup != nil {
+		if bookingRow.TermTimeOnly && uc.termDateLookup != nil {
 			termDates, err = uc.termDateLookup.GetTermDateRangesForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
 			if err != nil {
-				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup term dates for term %s: %w", termRow.TermID, err)
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup term dates for booking %s: %w", bookingRow.BookingID, err)
 			}
 			for _, r := range termDates {
 				termDatesUsedLabels = append(termDatesUsedLabels, fmt.Sprintf("%s to %s", r.StartDate.Format("2006-01-02"), r.EndDate.Format("2006-01-02")))
@@ -122,7 +122,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		}
 
 		var holidayPeriods []domain.HolidayPeriodDateRange
-		if uc.holidayPeriodLookup != nil && termRow.TermTimeOnly {
+		if uc.holidayPeriodLookup != nil && bookingRow.TermTimeOnly {
 			holidayPeriods, err = uc.holidayPeriodLookup.GetHolidayPeriodsForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
 			if err != nil {
 				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup holiday periods: %w", err)
@@ -130,16 +130,16 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		}
 
 		calc, calcErr := domain.CalculateBookedCoreMinutesInMonth(
-			termRow.BookingPatternID.String(),
+			"",
 			domainEntries,
 			in.BillingMonth,
-			termRow.SiteHourlyRateMinor,
+			bookingRow.SiteHourlyRateMinor,
 			termDates,
 			closureDates,
 			holidayPeriods,
 		)
 		if calcErr != nil {
-			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for term %s: %w", termRow.TermID, calcErr)
+			return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate booked minutes for booking %s: %w", bookingRow.BookingID, calcErr)
 		}
 
 		subtotalMinor := calc.Subtotal.Minor()
@@ -150,9 +150,9 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		var fundedHourlyRateMinor int
 		var fundedHoursPerWeek float64
 		if uc.fundingLookup != nil {
-			fundingInfo, fundErr := uc.fundingLookup.GetChildFunding(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+			fundingInfo, fundErr := uc.fundingLookup.GetChildFunding(ctx, in.Actor.TenantID, in.Actor.BranchID, bookingRow.ChildID, in.BillingMonth)
 			if fundErr != nil {
-				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup funding for child %s: %w", termRow.ChildID, fundErr)
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup funding for child %s: %w", bookingRow.ChildID, fundErr)
 			}
 			if fundingInfo.HasFunding {
 				fundedAllowance = fundingInfo.FundedAllowanceMinutes
@@ -168,7 +168,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			calc.TotalMinutes, fundedAllowance, fundedHourlyRateMinor,
 		)
 		if err != nil {
-			return GenerateTermInvoicesOutput{}, fmt.Errorf("compute funded deduction for term %s: %w", termRow.TermID, err)
+			return GenerateTermInvoicesOutput{}, fmt.Errorf("compute funded deduction for booking %s: %w", bookingRow.BookingID, err)
 		}
 		fundedDeductionMinutes := minInt(calc.TotalMinutes, fundedAllowance)
 		fundedDeductionMinor := subtotalMinor - billableMinor
@@ -199,9 +199,9 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		adHocTotalMinor := 0
 		if uc.adHocLookup != nil {
 			monthEnd := in.BillingMonth.AddDate(0, 1, 0).AddDate(0, 0, -1)
-			adHocBookings, adHocErr := uc.adHocLookup.ListActiveBookingsForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth)
+			adHocBookings, adHocErr := uc.adHocLookup.ListActiveBookingsForChildInMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, bookingRow.ChildID, in.BillingMonth)
 			if adHocErr != nil {
-				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup ad-hoc bookings for term %s: %w", termRow.TermID, adHocErr)
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup ad-hoc bookings for booking %s: %w", bookingRow.BookingID, adHocErr)
 			}
 			for _, ab := range adHocBookings {
 				if ab.CalendarDate.Before(in.BillingMonth) || ab.CalendarDate.After(monthEnd) {
@@ -215,12 +215,12 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				var lineDesc string
 				sortOrder := 3
 				_ = sortOrder
-				multiplier := termRow.AdHocRateMultiplier
+				multiplier := bookingRow.AdHocRateMultiplier
 				if multiplier <= 0 {
 					multiplier = 1.50
 				}
 				chargedMinutes := domain.CalculateAdHocChargeMinutes(duration, multiplier)
-				minor, hrErr := domain.CalculateHourlyAmountMinor(chargedMinutes, termRow.SiteHourlyRateMinor)
+				minor, hrErr := domain.CalculateHourlyAmountMinor(chargedMinutes, bookingRow.SiteHourlyRateMinor)
 				if hrErr != nil {
 					return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate ad-hoc charge: %w", hrErr)
 				}
@@ -257,9 +257,9 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		var hourlyBookingDetails []domain.HourlyBookingLineDetail
 		if uc.hourlyLookup != nil {
 			monthEnd := in.BillingMonth.AddDate(0, 1, 0).AddDate(0, 0, -1)
-			hourlyBookings, hourlyErr := uc.hourlyLookup.ListActiveByChildAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, termRow.ChildID, in.BillingMonth, monthEnd)
+			hourlyBookings, hourlyErr := uc.hourlyLookup.ListActiveByChildAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, bookingRow.ChildID, in.BillingMonth, monthEnd)
 			if hourlyErr != nil {
-				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup hourly bookings for term %s: %w", termRow.TermID, hourlyErr)
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup hourly bookings for booking %s: %w", bookingRow.BookingID, hourlyErr)
 			}
 			for _, hb := range hourlyBookings {
 				if hb.CalendarDate.Before(in.BillingMonth) || hb.CalendarDate.After(monthEnd) {
@@ -268,7 +268,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				if hb.DurationMinutes <= 0 {
 					continue
 				}
-				minor, hrErr := domain.CalculateHourlyAmountMinor(hb.DurationMinutes, termRow.SiteHourlyRateMinor)
+				minor, hrErr := domain.CalculateHourlyAmountMinor(hb.DurationMinutes, bookingRow.SiteHourlyRateMinor)
 				if hrErr != nil {
 					return GenerateTermInvoicesOutput{}, fmt.Errorf("calculate hourly charge: %w", hrErr)
 				}
@@ -305,8 +305,8 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		calcDetails := domain.InvoiceCalculationDetails{
 			BillingMonth:           in.BillingMonthRaw,
-			ChildID:                termRow.ChildID,
-			CoreHourlyRate:         domain.MustGBP(termRow.SiteHourlyRateMinor),
+			ChildID:                bookingRow.ChildID,
+			CoreHourlyRate:         domain.MustGBP(bookingRow.SiteHourlyRateMinor),
 			FundedHourlyRate:       domain.MustGBP(fundedHourlyRateMinor),
 			CoreSubtotal:           domain.MustGBP(subtotalMinor),
 			ExtrasTotal:            domain.MustGBP(extrasTotalMinor),
@@ -314,12 +314,11 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			FundedAllowanceMinutes: fundedAllowance,
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
-			TermTimeOnly:           termRow.TermTimeOnly,
+			TermTimeOnly:           bookingRow.TermTimeOnly,
 			FundingModel:           fundingModel,
 			TermDatesUsed:          termDatesUsedLabels,
 			ClosureDaysExcluded:    closureDaysExcludedLabels,
-			TermID:                 termRow.TermID,
-			BookingPatternID:       termRow.BookingPatternID,
+			BookingID:              bookingRow.BookingID,
 			BookedCoreMinutes:      calc.TotalMinutes,
 			BookedSessions:         calc.Sessions,
 			BookedPerEntry:         calc.PerEntry,
@@ -357,7 +356,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				ID:                 invoiceID,
 				TenantID:           in.Actor.TenantID,
 				BranchID:           in.Actor.BranchID,
-				ChildID:            termRow.ChildID,
+				ChildID:            bookingRow.ChildID,
 				BillingMonth:       in.BillingMonth,
 				GeneratedRunID:     in.RunID,
 				CurrencyCode:       "GBP",
@@ -390,7 +389,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			Description:     "Core childcare",
 			SortOrder:       1,
 			QuantityMinutes: calc.TotalMinutes,
-			UnitAmount:      domain.MustGBP(termRow.SiteHourlyRateMinor),
+			UnitAmount:      domain.MustGBP(bookingRow.SiteHourlyRateMinor),
 			LineAmount:      domain.MustGBP(calc.Subtotal.Minor()),
 			SessionCount:    len(calc.Sessions),
 			Details:         coreLineDetailsJSON,
@@ -493,8 +492,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			EntityType: domain.AuditEntityInvoice,
 			EntityID:   invoiceID,
 			Details: map[string]any{
-				"term_id":              termRow.TermID.String(),
-				"booking_pattern_id":   termRow.BookingPatternID.String(),
+				"booking_id":           bookingRow.BookingID.String(),
 				"billing_month":        in.BillingMonthRaw,
 				"booked_core_minutes":  calc.TotalMinutes,
 				"funded_deduction_min": fundedDeductionMinor,
@@ -507,10 +505,10 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		}
 
 		generated = append(generated, domain.DraftGenerationChildResult{
-			ChildID:         termRow.ChildID,
-			ChildFirstName:  termRow.FirstName,
-			ChildMiddleName: termRow.MiddleName,
-			ChildLastName:   termRow.LastName,
+			ChildID:         bookingRow.ChildID,
+			ChildFirstName:  bookingRow.FirstName,
+			ChildMiddleName: bookingRow.MiddleName,
+			ChildLastName:   bookingRow.LastName,
 			Action:          action,
 			InvoiceID:       invoiceID,
 			Subtotal:        domain.MustGBP(subtotalMinor + extrasTotalMinor),

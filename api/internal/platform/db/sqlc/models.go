@@ -251,7 +251,6 @@ type Booking struct {
 	LaReference          pgtype.Text
 	Status               string
 	BookedByMembershipID pgtype.UUID
-	SessionEntries       []byte
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
 	TermTimeOnly         bool
@@ -306,7 +305,6 @@ type Child struct {
 	FirstName        string
 	MiddleName       pgtype.Text
 	LastName         pgtype.Text
-	CurrentTermID    pgtype.UUID
 	ProfilePhotoPath pgtype.Text
 }
 
@@ -320,30 +318,6 @@ type ChildBillingProfile struct {
 	EffectiveFrom   pgtype.Date
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
-}
-
-type ChildBookingPattern struct {
-	ID            pgtype.UUID
-	TenantID      pgtype.UUID
-	BranchID      pgtype.UUID
-	ChildID       pgtype.UUID
-	EffectiveFrom pgtype.Date
-	EffectiveTo   pgtype.Date
-	IsCurrent     bool
-	TermTimeOnly  bool
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
-}
-
-type ChildBookingPatternEntry struct {
-	ID            pgtype.UUID
-	TenantID      pgtype.UUID
-	BranchID      pgtype.UUID
-	PatternID     pgtype.UUID
-	DayOfWeek     int32
-	SessionTypeID pgtype.UUID
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
 }
 
 type ChildCollectionSetting struct {
@@ -962,40 +936,6 @@ type Tenant struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
-}
-
-type Term struct {
-	ID                    pgtype.UUID
-	TenantID              pgtype.UUID
-	BranchID              pgtype.UUID
-	ChildID               pgtype.UUID
-	TermStartDate         pgtype.Date
-	TermEndDate           pgtype.Date
-	BookingPatternID      pgtype.UUID
-	SiteHourlyRateMinor   int32
-	Status                string
-	TerminationReasonCode pgtype.Text
-	TerminationReasonNote pgtype.Text
-	TerminatedAt          pgtype.Timestamptz
-	CreatedAt             pgtype.Timestamptz
-	CreatedByMembershipID pgtype.UUID
-	UpdatedAt             pgtype.Timestamptz
-}
-
-type TermScheduleChange struct {
-	ID                       pgtype.UUID
-	TenantID                 pgtype.UUID
-	BranchID                 pgtype.UUID
-	TermID                   pgtype.UUID
-	PreviousBookingPatternID pgtype.UUID
-	NewBookingPatternID      pgtype.UUID
-	ChangeKind               string
-	RequestedAt              pgtype.Timestamptz
-	EffectiveFrom            pgtype.Date
-	ApprovedByMembershipID   pgtype.UUID
-	ApprovalDecision         pgtype.Text
-	RejectedAt               pgtype.Timestamptz
-	RequestID                string
 }
 
 type User struct {

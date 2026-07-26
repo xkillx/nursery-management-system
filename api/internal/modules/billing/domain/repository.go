@@ -38,12 +38,11 @@ type BranchSettingsRepository interface {
 }
 
 type BillingRepository interface {
-	// Advance-pay generation: list active terms covering the billing month,
-	// joined with child + funding data, locked FOR UPDATE.
-	ListActiveTermsForGeneration(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
-	// ListActiveTerms is the non-tx variant used by the preflight preview.
-	ListActiveTerms(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]AdvancePayTermRow, error)
-	ListBookingPatternEntries(ctx context.Context, tx Tx, tenantID, branchID, patternID uuid.UUID) ([]BookingPatternEntryRow, error)
+	// Advance-pay generation: list active bookings covering the billing month,
+	// joined with child + branch data, locked FOR UPDATE.
+	ListActiveBookingsForGeneration(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]BillableChildRow, error)
+	// ListActiveBookings is the non-tx variant used by the preflight preview.
+	ListActiveBookings(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]BillableChildRow, error)
 	// ListActiveAdHocBookingsForChildInMonth returns enriched ad-hoc booking rows
 	// (joined with session_types) used for invoice line generation.
 	ListActiveAdHocBookingsForChildInMonth(ctx context.Context, tx Tx, tenantID, branchID, childID uuid.UUID, from, to time.Time) ([]AdHocBookingRow, error)
@@ -117,17 +116,15 @@ type InvoiceRow struct {
 	CalculationDetails   json.RawMessage
 }
 
-// AdvancePayTermRow is the per-term row from BillingListActiveTermsForGeneration.
-// The application layer joins this with booking-pattern entries to compute the
-// per-term monthly invoice.
-type AdvancePayTermRow struct {
-	TermID                uuid.UUID
+// BillableChildRow is the per-booking row from BillingListActiveBookingsForGeneration.
+// The application layer uses this to compute the per-booking monthly invoice.
+type BillableChildRow struct {
+	BookingID             uuid.UUID
 	TenantID              uuid.UUID
 	BranchID              uuid.UUID
 	ChildID               uuid.UUID
-	TermStartDate         time.Time
-	TermEndDate           time.Time
-	BookingPatternID      uuid.UUID
+	EffectiveStartDate    time.Time
+	EffectiveEndDate      *time.Time
 	SiteHourlyRateMinor   int
 	Status                string
 	FirstName             string
@@ -139,15 +136,6 @@ type AdvancePayTermRow struct {
 	HasParentCarerContact bool
 	TermTimeOnly          bool
 	AdHocRateMultiplier   float64
-}
-
-// BookingPatternEntryRow is the per-entry row from ListBookingPatternEntries.
-type BookingPatternEntryRow struct {
-	DayOfWeek       int
-	SessionTypeID   uuid.UUID
-	SessionTypeName string
-	StartMinutes    int
-	EndMinutes      int
 }
 
 // ExtraLineRow maps an extra invoice line row.

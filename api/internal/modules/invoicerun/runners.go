@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	termapp "nursery-management-system/api/internal/modules/term/application"
 	"nursery-management-system/api/internal/platform/db/sqlc"
 )
 
@@ -49,53 +48,19 @@ func (l *SystemTenantBranchLister) ListAllTenantBranches(ctx context.Context) ([
 	return out, nil
 }
 
-// ExpireTermsRunner iterates every (tenant, branch) and runs the term
-// lifecycle steps in order:
-//
-//  1. MarkPendingRenewal — flip active terms to pending_renewal when
-//     their term_end_date is within the next PendingRenewalThresholdDays days.
-//  2. ExpireTerms — flip terms that reached their term_end_date + 1 day to
-//     status='ended' and, if no renewal term exists, mark the child
-//     inactive (Phase 5 acceptance criterion).
+// ExpireTermsRunner is a no-op since the term module has been removed.
+// The billing module now derives billable children from bookings directly.
 type ExpireTermsRunner struct {
-	expireTerms        *termapp.ExpireTermsUseCase
-	markPendingRenewal *termapp.MarkPendingRenewalUseCase
 	tenantBranchLister TenantBranchLister
 }
 
-func NewExpireTermsRunner(
-	expireTerms *termapp.ExpireTermsUseCase,
-	markPendingRenewal *termapp.MarkPendingRenewalUseCase,
-	lister TenantBranchLister,
-) *ExpireTermsRunner {
+func NewExpireTermsRunner(lister TenantBranchLister) *ExpireTermsRunner {
 	return &ExpireTermsRunner{
-		expireTerms:        expireTerms,
-		markPendingRenewal: markPendingRenewal,
 		tenantBranchLister: lister,
 	}
 }
 
 func (r *ExpireTermsRunner) RunForAllTenantsAndBranches(ctx context.Context) error {
-	if r.tenantBranchLister == nil {
-		return fmt.Errorf("tenant-branch lister not configured")
-	}
-	if r.expireTerms == nil {
-		return fmt.Errorf("expire-terms use case not configured")
-	}
-	if r.markPendingRenewal == nil {
-		return fmt.Errorf("mark-pending-renewal use case not configured")
-	}
-	scopes, err := r.tenantBranchLister.ListAllTenantBranches(ctx)
-	if err != nil {
-		return fmt.Errorf("list tenant branches: %w", err)
-	}
-	for _, scope := range scopes {
-		if _, err := r.markPendingRenewal.RunForTenantBranch(ctx, scope.TenantID, scope.BranchID); err != nil {
-			return fmt.Errorf("mark pending renewal for %s/%s: %w", scope.TenantID, scope.BranchID, err)
-		}
-		if _, err := r.expireTerms.RunForTenantBranch(ctx, scope.TenantID, scope.BranchID); err != nil {
-			return fmt.Errorf("expire terms for %s/%s: %w", scope.TenantID, scope.BranchID, err)
-		}
-	}
+	// No-op: term module has been removed.
 	return nil
 }

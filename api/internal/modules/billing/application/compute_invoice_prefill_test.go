@@ -13,10 +13,8 @@ import (
 )
 
 type stubPrefillRepo struct {
-	terms      []domain.AdvancePayTermRow
-	termsErr   error
-	entries    []domain.BookingPatternEntryRow
-	entriesErr error
+	bookings    []domain.BillableChildRow
+	bookingsErr error
 }
 
 type stubBookingEntriesLookup struct {
@@ -28,20 +26,16 @@ func (s *stubBookingEntriesLookup) GetEntriesForChildInMonth(_ context.Context, 
 	return s.entries, s.err
 }
 
-func (s *stubPrefillRepo) ListActiveTermsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
-	return s.terms, s.termsErr
+func (s *stubPrefillRepo) ListActiveBookingsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
+	return s.bookings, s.bookingsErr
 }
 
-func (s *stubPrefillRepo) ListBookingPatternEntries(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.BookingPatternEntryRow, error) {
-	return s.entries, s.entriesErr
+func (s *stubPrefillRepo) ListActiveBookings(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
+	panic("unused")
 }
 
 func (s *stubPrefillRepo) ListActiveAdHocBookingsForChildInMonth(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _, _ time.Time) ([]domain.AdHocBookingRow, error) {
 	return nil, nil
-}
-
-func (s *stubPrefillRepo) ListActiveTerms(_ context.Context, _, _ uuid.UUID, _ time.Time) ([]domain.AdvancePayTermRow, error) {
-	panic("unused")
 }
 
 func (s *stubPrefillRepo) CreateInvoiceRun(_ context.Context, _ domain.Tx, _ domain.InvoiceRunCreateParams) error {
@@ -185,16 +179,14 @@ func (m *stubPrefillTxMgr) ExecTx(ctx context.Context, fn func(tx pgx.Tx) error)
 	return fn(nil)
 }
 
-func makeTerm() domain.AdvancePayTermRow {
+func makeBooking() domain.BillableChildRow {
 	lastName := "Doe"
-	return domain.AdvancePayTermRow{
-		TermID:                uuid.MustParse("11111111-1111-4111-8111-111111111001"),
+	return domain.BillableChildRow{
+		BookingID:             uuid.MustParse("11111111-1111-4111-8111-111111111001"),
 		TenantID:              uuid.MustParse("00000000-0000-4000-8000-000000000001"),
 		BranchID:              uuid.MustParse("00000000-0000-4000-8000-000000000002"),
 		ChildID:               uuid.MustParse("33333333-3333-4333-8333-333333333003"),
-		TermStartDate:         time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-		TermEndDate:           time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
-		BookingPatternID:      uuid.MustParse("44444444-4444-4444-8444-444444444004"),
+		EffectiveStartDate:    time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 		SiteHourlyRateMinor:   600,
 		Status:                "active",
 		FirstName:             "Jane",
@@ -207,21 +199,21 @@ func makeTerm() domain.AdvancePayTermRow {
 
 func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
-	termRow := makeTerm()
+	bookingRow := makeBooking()
 	lookupEntries := []domain.BookedPatternEntry{
 		{DayOfWeek: 1, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 1020, DurationMinutes: 540}},
 		{DayOfWeek: 2, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 1020, DurationMinutes: 540}},
 	}
 
 	repo := &stubPrefillRepo{
-		terms: []domain.AdvancePayTermRow{termRow},
+		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: lookupEntries}
 	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
-		TenantID: termRow.TenantID,
-		BranchID: termRow.BranchID,
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
 	}
 	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
 	if err != nil {
@@ -259,17 +251,17 @@ func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 
 func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
-	termRow := makeTerm()
+	bookingRow := makeBooking()
 
 	repo := &stubPrefillRepo{
-		terms: []domain.AdvancePayTermRow{termRow},
+		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
 	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
-		TenantID: termRow.TenantID,
-		BranchID: termRow.BranchID,
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
 	}
 	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
 	if err != nil {
@@ -296,17 +288,17 @@ func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 
 func TestComputeInvoicePrefill_ZeroAttendance(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
-	termRow := makeTerm()
+	bookingRow := makeBooking()
 
 	repo := &stubPrefillRepo{
-		terms: []domain.AdvancePayTermRow{termRow},
+		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
 	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
-		TenantID: termRow.TenantID,
-		BranchID: termRow.BranchID,
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
 	}
 	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
 	if err != nil {
@@ -324,7 +316,7 @@ func TestComputeInvoicePrefill_ZeroAttendance(t *testing.T) {
 func TestComputeInvoicePrefill_ChildNotFound(t *testing.T) {
 	childID := uuid.New()
 	repo := &stubPrefillRepo{
-		terms: []domain.AdvancePayTermRow{},
+		bookings: []domain.BillableChildRow{},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
 	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
@@ -354,18 +346,18 @@ func TestComputeInvoicePrefill_InvalidBillingMonth(t *testing.T) {
 
 func TestComputeInvoicePrefill_SiteRateNotSet(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
-	termRow := makeTerm()
-	termRow.SiteHourlyRateMinor = 0
+	bookingRow := makeBooking()
+	bookingRow.SiteHourlyRateMinor = 0
 
 	repo := &stubPrefillRepo{
-		terms: []domain.AdvancePayTermRow{termRow},
+		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
 	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup)
 
 	actor := tenant.ActorContext{
-		TenantID: termRow.TenantID,
-		BranchID: termRow.BranchID,
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
 	}
 	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
 	if err != nil {

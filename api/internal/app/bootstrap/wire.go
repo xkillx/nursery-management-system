@@ -98,11 +98,6 @@ import (
 	resetpostgres "nursery-management-system/api/internal/modules/passwordreset/infrastructure/postgres"
 	resethandler "nursery-management-system/api/internal/modules/passwordreset/interfaces/http"
 
-	termapp "nursery-management-system/api/internal/modules/term/application"
-	termdomain "nursery-management-system/api/internal/modules/term/domain"
-	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
-	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
-
 	termcalendarapp "nursery-management-system/api/internal/modules/term_calendar/application"
 	termcalendardomain "nursery-management-system/api/internal/modules/term_calendar/domain"
 	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
@@ -205,8 +200,6 @@ var childrenSet = wire.NewSet(
 	provideFileStorage,
 	provideSessionTypeLookupAdapter,
 	wire.Bind(new(childapp.SessionTypeLookup), new(*sessionTypeLookupAdapter)),
-	provideEnrollmentTermCreatorAdapter,
-	wire.Bind(new(childapp.EnrollmentTermCreator), new(*enrollmentTermCreatorAdapter)),
 	provideClock,
 	provideTodayFunc,
 	provideChildFundingWriterAdapter,
@@ -595,30 +588,6 @@ var sessionTemplatesSet = wire.NewSet(
 	sessiontemplatehttphandler.NewHandler,
 )
 
-// ── Term module ───────────────────────────────────────────────────────
-
-var termSet = wire.NewSet(
-	termpostgres.NewTermRepository,
-	termpostgres.NewScheduleChangeRepository,
-	wire.Bind(new(termdomain.Repository), new(*termpostgres.TermRepository)),
-	wire.Bind(new(termdomain.ScheduleChangeRepository), new(*termpostgres.ScheduleChangeRepository)),
-	provideSiteRateProviderAdapter,
-	wire.Bind(new(termapp.SiteRateProvider), new(*siteRateProviderAdapter)),
-	termapp.NewCreateTermUseCase,
-	termapp.NewGetTermUseCase,
-	termapp.NewGetCurrentTermForChildUseCase,
-	termapp.NewListTermsForChildUseCase,
-	termapp.NewListExpiringTermsUseCase,
-	termapp.NewRequestScheduleChangeUseCase,
-	termapp.NewApproveScheduleChangeUseCase,
-	termapp.NewRejectScheduleChangeUseCase,
-	termapp.NewTerminateTermUseCase,
-	wire.Struct(new(termhttphandler.CoreTermUseCases), "*"),
-	wire.Struct(new(termhttphandler.ScheduleChangeUseCases), "*"),
-	wire.Struct(new(termhttphandler.TermHandlerConfig), "*"),
-	termhttphandler.NewHandler,
-)
-
 // ── Site Profile module ────────────────────────────────────────────────
 
 func provideSiteProfileHandlerSet(
@@ -825,7 +794,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		roomsSet,
 		sessionTypesSet,
 		sessionTemplatesSet,
-		termSet,
 		termCalendarSet,
 		adHocBookingsSet,
 		hourlyBookingsSet,
@@ -887,7 +855,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		roomsSet,
 		sessionTypesSet,
 		sessionTemplatesSet,
-		termSet,
 		termCalendarSet,
 		adHocBookingsSet,
 		hourlyBookingsSet,

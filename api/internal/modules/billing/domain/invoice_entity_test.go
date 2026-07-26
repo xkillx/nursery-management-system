@@ -9,12 +9,12 @@ import (
 
 func newDraftInvoice() Invoice {
 	return Invoice{
-		ID:       uuid.New(),
-		TenantID: uuid.New(),
-		BranchID: uuid.New(),
-		ChildID:  uuid.New(),
-		TermID:   uuid.New(),
-		Status:   InvoiceStatusDraft,
+		ID:        uuid.New(),
+		TenantID:  uuid.New(),
+		BranchID:  uuid.New(),
+		ChildID:   uuid.New(),
+		BookingID: uuid.New(),
+		Status:    InvoiceStatusDraft,
 	}
 }
 

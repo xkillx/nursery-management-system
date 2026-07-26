@@ -166,16 +166,15 @@ type CreateChildWithFullProfile struct {
 	audit         *audit.Writer
 	txm           TxManager
 	sessionLookup SessionTypeLookup
-	termCreator   EnrollmentTermCreator
 	fundingWriter domain.ChildFundingWriter
 	clock         TodayFunc
 }
 
-func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, termCreator EnrollmentTermCreator, fundingWriter domain.ChildFundingWriter, clock TodayFunc) *CreateChildWithFullProfile {
+func NewCreateChildWithFullProfile(repo domain.Repository, auditWriter *audit.Writer, txm TxManager, lookup SessionTypeLookup, fundingWriter domain.ChildFundingWriter, clock TodayFunc) *CreateChildWithFullProfile {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
-	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, termCreator: termCreator, fundingWriter: fundingWriter, clock: clock}
+	return &CreateChildWithFullProfile{repo: repo, audit: auditWriter, txm: txm, sessionLookup: lookup, fundingWriter: fundingWriter, clock: clock}
 }
 
 func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.ActorContext, input CreateChildFullInput) (*ChildCreationResult, error) {
@@ -411,7 +410,6 @@ func (uc *CreateChildWithFullProfile) Execute(ctx context.Context, actor tenant.
 			MiddleName:        child.MiddleName,
 			LastName:          child.LastName,
 			StartDate:         startDate.Format("2006-01-02"),
-			TermID:            result.TermID,
 			CreatedSubRecords: created,
 		}
 		return nil

@@ -87,7 +87,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 
 		repo := &fakeChildRepository{}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil, func() time.Time {
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, func() time.Time {
 			return time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 		})
 
@@ -111,7 +111,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 
 		repo := &fakeChildRepository{}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil, nil)
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil)
 
 		input := newDefaultInput()
 		input.Child.FirstName = ""
@@ -128,7 +128,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 
 		repo := &fakeChildRepository{}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil, nil)
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil)
 
 		input := newDefaultInput()
 		input.Consent = nil
@@ -145,7 +145,7 @@ func TestCreateChildWithFullProfile(t *testing.T) {
 
 		repo := &fakeChildRepository{}
 		txm := &fakeCreateTxm{}
-		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil, nil)
+		uc := application.NewCreateChildWithFullProfile(repo, nil, txm, nil, nil, nil)
 
 		input := newDefaultInput()
 		input.Room = nil

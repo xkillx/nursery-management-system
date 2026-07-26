@@ -20,7 +20,7 @@ func NewPreflightDraftInvoices(repo domain.BillingRepository) *PreflightDraftInv
 	return &PreflightDraftInvoices{repo: repo}
 }
 
-// Execute previews the advance-pay generation: for each active Term covering
+// Execute previews the advance-pay generation: for each active booking covering
 // the billing month, checks funding profile presence and basic eligibility.
 // It does NOT run booking-minute arithmetic (that's done in the generator).
 func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string) (domain.PreflightResult, error) {
@@ -34,10 +34,10 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 		return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("billing period: %w", err))
 	}
 
-	var terms []domain.AdvancePayTermRow
-	terms, err = uc.repo.ListActiveTerms(ctx, actor.TenantID, actor.BranchID, billingMonth)
+	var bookings []domain.BillableChildRow
+	bookings, err = uc.repo.ListActiveBookings(ctx, actor.TenantID, actor.BranchID, billingMonth)
 	if err != nil {
-		return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("list active terms: %w", err))
+		return domain.PreflightResult{}, domainerrors.Internal(fmt.Errorf("list active bookings: %w", err))
 	}
 
 	result := domain.PreflightResult{
@@ -52,36 +52,36 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 
 	blockerChildSet := make(map[domain.BlockerCode]map[uuid.UUID]struct{})
 
-	for _, t := range terms {
-		blockers := preflightBlockers(t)
+	for _, b := range bookings {
+		blockers := preflightBlockers(b)
 		if len(blockers) > 0 {
 			result.BlockedChildren = append(result.BlockedChildren, domain.BlockedChild{
-				ChildID:         t.ChildID,
-				ChildFirstName:  t.FirstName,
-				ChildMiddleName: t.MiddleName,
-				ChildLastName:   t.LastName,
+				ChildID:         b.ChildID,
+				ChildFirstName:  b.FirstName,
+				ChildMiddleName: b.MiddleName,
+				ChildLastName:   b.LastName,
 				Blockers:        blockers,
 			})
-			for _, b := range blockers {
-				if blockerChildSet[b.Code] == nil {
-					blockerChildSet[b.Code] = make(map[uuid.UUID]struct{})
+			for _, bl := range blockers {
+				if blockerChildSet[bl.Code] == nil {
+					blockerChildSet[bl.Code] = make(map[uuid.UUID]struct{})
 				}
-				blockerChildSet[b.Code][t.ChildID] = struct{}{}
+				blockerChildSet[bl.Code][b.ChildID] = struct{}{}
 			}
 			continue
 		}
 
 		// Eligible: compute the booking-driven total. We don't run the full
 		// per-entry arithmetic in the preflight, but the summary uses the
-		// Term's site_hourly_rate for display purposes. Per-child amounts are
+		// site_hourly_rate for display purposes. Per-child amounts are
 		// filled in by the generator.
 		fundedAllowance := 0
 		result.EligibleChildren = append(result.EligibleChildren, domain.EligibleChild{
-			ChildID:                t.ChildID,
-			ChildFirstName:         t.FirstName,
-			ChildMiddleName:        t.MiddleName,
-			ChildLastName:          t.LastName,
-			CoreHourlyRate:         domain.MustGBP(t.SiteHourlyRateMinor),
+			ChildID:                b.ChildID,
+			ChildFirstName:         b.FirstName,
+			ChildMiddleName:        b.MiddleName,
+			ChildLastName:          b.LastName,
+			CoreHourlyRate:         domain.MustGBP(b.SiteHourlyRateMinor),
 			FundedAllowanceMinutes: fundedAllowance,
 		})
 
@@ -109,30 +109,30 @@ func (uc *PreflightDraftInvoices) Execute(ctx context.Context, actor tenant.Acto
 	return result, nil
 }
 
-// preflightBlockers returns the blockers for one term row in the preflight.
-func preflightBlockers(t domain.AdvancePayTermRow) []domain.PreflightBlocker {
+// preflightBlockers returns the blockers for one booking row in the preflight.
+func preflightBlockers(b domain.BillableChildRow) []domain.PreflightBlocker {
 	var blockers []domain.PreflightBlocker
-	if t.FirstName == "" {
+	if b.FirstName == "" {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingChildName, Message: "Child first name is missing.",
 		})
 	}
-	if t.DateOfBirth.IsZero() {
+	if b.DateOfBirth.IsZero() {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingChildDateOfBirth, Message: "Child date of birth is missing.",
 		})
 	}
-	if t.StartDate.IsZero() {
+	if b.StartDate.IsZero() {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingChildStartDate, Message: "Child start date is missing.",
 		})
 	}
-	if !t.HasParentCarerContact {
+	if !b.HasParentCarerContact {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingGuardianLink, Message: "No active guardian linked to this child.",
 		})
 	}
-	if t.SiteHourlyRateMinor <= 0 {
+	if b.SiteHourlyRateMinor <= 0 {
 		blockers = append(blockers, domain.PreflightBlocker{
 			Code: domain.BlockerMissingBillingRate, Message: "Site billing rate is missing or invalid.",
 		})

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"nursery-management-system/api/internal/app/bootstrap"
-	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/db"
 	"nursery-management-system/api/internal/platform/events"
@@ -21,8 +20,6 @@ import (
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	invoicerun "nursery-management-system/api/internal/modules/invoicerun"
-	termapp "nursery-management-system/api/internal/modules/term/application"
-	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/transaction"
 )
 
@@ -78,26 +75,15 @@ func main() {
 		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
 		reminderUC := billingapp.NewSendDueSoonReminders(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
 
-		termRepo := termpostgres.NewTermRepository(pool)
-		auditWriter := audit.NewWriter()
-		expireUC := termapp.NewExpireTermsUseCase(termRepo, auditWriter, txMgr)
-		markPendingUC := termapp.NewMarkPendingRenewalUseCase(termRepo, auditWriter, txMgr)
-		lister := invoicerun.NewSystemTenantBranchLister(pool)
-		expireRunner := invoicerun.NewExpireTermsRunner(expireUC, markPendingUC, lister)
-
 		var schedErr error
-		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, expireRunner, nil, reminderUC)
+		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, nil, nil, reminderUC)
 		if schedErr != nil {
 			logger.Error("failed to create scheduler", "error", schedErr)
 			os.Exit(1)
 		}
 	}
 
-	router, err := bootstrap.InitializeApp(cfg, logger, pool)
-	if err != nil {
-		logger.Error("failed to initialize app", "error", err)
-		os.Exit(1)
-	}
+	router := bootstrap.Bootstrap(cfg, logger, pool)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.APIPort,

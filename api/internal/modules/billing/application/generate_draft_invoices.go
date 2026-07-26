@@ -60,8 +60,8 @@ func NewGenerateDraftInvoices(
 
 // Execute runs the full-month advance-pay generation. The billing month is
 // the first day of the calendar month being invoiced. The system iterates
-// every active Term in the branch whose term range covers the billing month
-// and produces one draft (or issued) invoice per Term.
+// every active booking in the branch whose date range covers the billing month
+// and produces one draft (or issued) invoice per booking.
 func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenant.ActorContext, billingMonthRaw string, rawChildIDs []string) (domain.DraftGenerationResult, error) {
 	startedAt := time.Now()
 
@@ -102,12 +102,12 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 			return fmt.Errorf("create invoice run: %w", runErr)
 		}
 
-		candidateTerms, err := uc.repo.ListActiveTermsForGeneration(ctx, tx, actor.TenantID, actor.BranchID, billingMonth)
+		candidateBookings, err := uc.repo.ListActiveBookingsForGeneration(ctx, tx, actor.TenantID, actor.BranchID, billingMonth)
 		if err != nil {
-			return fmt.Errorf("list active terms: %w", err)
+			return fmt.Errorf("list active bookings: %w", err)
 		}
 
-		blocked := buildSelectedChildBlockers(candidateTerms, childIDs, isFullMonth)
+		blocked := buildSelectedChildBlockers(candidateBookings, childIDs, isFullMonth)
 
 		genInput := GenerateTermInvoicesInput{
 			Tx:              tx,
@@ -118,7 +118,7 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 			RunID:           runID,
 		}
 		requestedSet := buildRequestedSet(childIDs)
-		genOutput, genErr := uc.termInvoices.Execute(ctx, genInput, candidateTerms, requestedSet, isFullMonth)
+		genOutput, genErr := uc.termInvoices.Execute(ctx, genInput, candidateBookings, requestedSet, isFullMonth)
 		if genErr != nil {
 			return genErr
 		}
@@ -158,21 +158,21 @@ func (uc *GenerateDraftInvoicesUseCase) Execute(ctx context.Context, actor tenan
 	return result, nil
 }
 
-func buildSelectedChildBlockers(candidateTerms []domain.AdvancePayTermRow, childIDs []uuid.UUID, isFullMonth bool) []domain.DraftGenerationBlockedChild {
+func buildSelectedChildBlockers(candidateBookings []domain.BillableChildRow, childIDs []uuid.UUID, isFullMonth bool) []domain.DraftGenerationBlockedChild {
 	if isFullMonth {
 		return nil
 	}
-	foundTermByChild := make(map[uuid.UUID]domain.AdvancePayTermRow, len(candidateTerms))
-	for _, t := range candidateTerms {
-		foundTermByChild[t.ChildID] = t
+	foundBookingByChild := make(map[uuid.UUID]domain.BillableChildRow, len(candidateBookings))
+	for _, b := range candidateBookings {
+		foundBookingByChild[b.ChildID] = b
 	}
 	var blocked []domain.DraftGenerationBlockedChild
 	for _, id := range childIDs {
-		if _, found := foundTermByChild[id]; !found {
+		if _, found := foundBookingByChild[id]; !found {
 			blocked = append(blocked, domain.DraftGenerationBlockedChild{
 				ChildID: id,
 				Blockers: []domain.PreflightBlocker{
-					{Code: domain.BlockerChildNotFound, Message: "Child has no active term for this billing month."},
+					{Code: domain.BlockerChildNotFound, Message: "Child has no active booking for this billing month."},
 				},
 			})
 		}

@@ -66,8 +66,6 @@ import (
 	siteprofileapp "nursery-management-system/api/internal/modules/siteprofile/application"
 	siteprofilepostgres "nursery-management-system/api/internal/modules/siteprofile/infrastructure/postgres"
 	siteprofilehandler "nursery-management-system/api/internal/modules/siteprofile/interfaces/http"
-	termpostgres "nursery-management-system/api/internal/modules/term/infrastructure/postgres"
-	termhttphandler "nursery-management-system/api/internal/modules/term/interfaces/http"
 	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	termcalendarhttphandler "nursery-management-system/api/internal/modules/term_calendar/interfaces/http"
 )
@@ -215,22 +213,6 @@ func provideSessionTemplateLookupTemplateAdapter(inner *sessionTypeLookupAdapter
 	return &sessionTemplateLookupTemplateAdapter{inner: inner}
 }
 
-func provideSiteRateProviderAdapter(repo *ownerpostgres.OwnerRepository) *siteRateProviderAdapter {
-	return &siteRateProviderAdapter{repo: repo}
-}
-
-func provideEnrollmentTermCreatorAdapter(termRepo *termpostgres.TermRepository, rateProvider *siteRateProviderAdapter, auditWriter *audit.Writer) *enrollmentTermCreatorAdapter {
-	return &enrollmentTermCreatorAdapter{
-		termRepo:     termRepo,
-		rateProvider: rateProvider,
-		auditWriter:  auditWriter,
-	}
-}
-
-func provideChildDeactivatorAdapter(markInactive *childapp.MarkInactive) *childDeactivatorAdapter {
-	return &childDeactivatorAdapter{markInactiveUC: markInactive}
-}
-
 func provideTermDateLookupAdapter(repo *termcalendarpostgres.AcademicTermRepository) *termDateLookupAdapter {
 	return &termDateLookupAdapter{repo: repo}
 }
@@ -360,7 +342,6 @@ type appComponents struct {
 	RoomsHandler            *roomshttphandler.Handler
 	SessionTypesHandler     *sessiontypehttphandler.Handler
 	SessionTemplatesHandler *sessiontemplatehttphandler.Handler
-	TermHandler             *termhttphandler.Handler
 	TermCalendarHandler     *termcalendarhttphandler.Handler
 	AdHocBookingsHandler    *adhochttphandler.Handler
 	HourlyBookingsHandler   *hourlyhttphandler.Handler
@@ -453,7 +434,6 @@ func buildGinEngine(c appComponents) *gin.Engine {
 	c.SessionTypesHandler.RegisterRoutes(protected)
 	c.SessionTemplatesHandler.RegisterRoutes(protected)
 	c.SiteProfileHandler.RegisterRoutes(protected)
-	c.TermHandler.RegisterManagerRoutes(manager)
 	c.TermCalendarHandler.RegisterManagerRoutes(manager)
 	c.AdHocBookingsHandler.RegisterManagerRoutes(manager)
 	c.HourlyBookingsHandler.RegisterManagerRoutes(manager)

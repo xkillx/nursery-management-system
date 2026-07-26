@@ -777,19 +777,18 @@ WHERE ab.tenant_id = $1
   AND ab.status = 'active'
 ORDER BY ab.calendar_date ASC, ab.created_at ASC;
 
--- Advance-pay billing: list active terms covering the billing month, joined with child
+-- Advance-pay billing: list active bookings covering the billing month, joined with child
 -- and branch data so the application layer can drive invoice generation off a single query.
--- name: BillingListActiveTermsForGeneration :many
+-- name: BillingListActiveBookingsForGeneration :many
 SELECT
-    t.id            AS term_id,
-    t.tenant_id,
-    t.branch_id,
-    t.child_id,
-    t.term_start_date,
-    t.term_end_date,
-    t.booking_pattern_id,
-    t.site_hourly_rate_minor,
-    t.status,
+    b.id            AS booking_id,
+    b.tenant_id,
+    b.branch_id,
+    b.child_id,
+    b.effective_start_date,
+    b.effective_end_date,
+    br.core_hourly_rate_minor AS site_hourly_rate_minor,
+    b.status,
     c.first_name,
     c.middle_name,
     c.last_name,
@@ -799,32 +798,28 @@ SELECT
     EXISTS (
         SELECT 1
         FROM child_contacts cc
-        WHERE cc.tenant_id = t.tenant_id
-          AND cc.branch_id = t.branch_id
-          AND cc.child_id = t.child_id
+        WHERE cc.tenant_id = b.tenant_id
+          AND cc.branch_id = b.branch_id
+          AND cc.child_id = b.child_id
           AND cc.contact_type = 'parent_carer'
     ) AS has_parent_carer_contact,
-    bp.term_time_only,
-    b.ad_hoc_rate_multiplier
-FROM term t
+    b.term_time_only,
+    br.ad_hoc_rate_multiplier
+FROM bookings b
 JOIN children c
-  ON c.tenant_id = t.tenant_id
- AND c.branch_id = t.branch_id
- AND c.id = t.child_id
-JOIN child_booking_patterns bp
-  ON bp.tenant_id = t.tenant_id
- AND bp.branch_id = t.branch_id
- AND bp.id = t.booking_pattern_id
-JOIN branches b
-  ON b.tenant_id = t.tenant_id
- AND b.id = t.branch_id
-WHERE t.tenant_id = $1
-  AND t.branch_id = $2
-  AND t.status = ANY (ARRAY['active', 'pending_renewal']::text[])
-  AND t.term_start_date <= $4
-  AND t.term_end_date >= $3
-ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, t.id ASC
-FOR UPDATE OF t;
+  ON c.tenant_id = b.tenant_id
+ AND c.branch_id = b.branch_id
+ AND c.id = b.child_id
+JOIN branches br
+  ON br.tenant_id = b.tenant_id
+ AND br.id = b.branch_id
+WHERE b.tenant_id = $1
+  AND b.branch_id = $2
+  AND b.status = 'active'
+  AND b.effective_start_date <= $4
+  AND (b.effective_end_date IS NULL OR b.effective_end_date >= $3)
+ORDER BY c.first_name ASC, c.middle_name ASC NULLS FIRST, c.last_name ASC NULLS FIRST, b.id ASC
+FOR UPDATE OF b;
 
 -- name: InvoiceListForParent :many
 SELECT
