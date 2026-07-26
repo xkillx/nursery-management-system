@@ -39,7 +39,8 @@ export type SidebarIcon =
   | 'session-templates'
   | 'fees-billing'
   | 'term-calendar'
-  | 'closure-days';
+  | 'closure-days'
+  | 'holiday-periods';
 
 export interface SidebarNavItem {
   label: string;
@@ -101,6 +102,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     'fees-billing': 'heroReceiptPercent',
     'term-calendar': 'heroCalendarDays',
     'closure-days': 'heroCalendarDays',
+    'holiday-periods': 'heroCalendarDays',
   };
 
   private subscription: Subscription = new Subscription();
@@ -213,6 +215,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
               { label: 'Fees & billing', path: ROLE_ROUTES.managerBillingSetup, testId: 'staff-link-manager-billing-setup', icon: 'fees-billing', matchPaths: ['/manager/site-settings/billing-setup'] },
               { label: 'Term calendar', path: ROLE_ROUTES.managerTermCalendar, testId: 'staff-link-manager-term-calendar', icon: 'term-calendar', matchPaths: ['/manager/site-settings/term-calendar'] },
               { label: 'Closure days', path: ROLE_ROUTES.managerClosureDays, testId: 'staff-link-manager-closure-days', icon: 'closure-days', matchPaths: ['/manager/site-settings/closure-days'] },
+              { label: 'Holiday periods', path: ROLE_ROUTES.managerHolidayPeriods, testId: 'staff-link-manager-holiday-periods', icon: 'holiday-periods', matchPaths: ['/manager/site-settings/holiday-periods'] },
             ],
           },
       ];

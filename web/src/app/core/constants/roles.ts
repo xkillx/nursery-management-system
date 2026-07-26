@@ -22,6 +22,7 @@ export const ROLE_ROUTES = {
   managerSessionTemplatesSetup: '/manager/site-settings/session-templates',
   managerTermCalendar: '/manager/site-settings/term-calendar',
   managerClosureDays: '/manager/site-settings/closure-days',
+  managerHolidayPeriods: '/manager/site-settings/holiday-periods',
   managerFunding: '/manager/funding',
   managerBillingSetup: '/manager/site-settings/billing-setup',
   managerAttendanceCorrections: '/manager/attendance-corrections',
