@@ -23,6 +23,7 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { presentApiError, formatPresentedApiError } from '../../../../core/errors/api-error-presenter';
 import { ManagerInvoiceCreateApiService } from '../../data/manager-invoice-create-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
@@ -67,6 +68,7 @@ import { ChildRecord } from '../../models/children.models';
 export class ManagerInvoiceCreateComponent implements OnInit {
   private readonly api = inject(ManagerInvoiceCreateApiService);
   private readonly staffApi = inject(StaffApiService);
+  private readonly roomsApi = inject(StaffRoomsApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -235,10 +237,41 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     const ageGroupStr = this.calculateAgeGroup(child.dateOfBirth);
     this.ageGroup.set(ageGroupStr);
 
-    // Compute room name dynamically
-    this.roomName.set(this.getRoomNameByAgeGroup(ageGroupStr));
+    // Load actual room assignment
+    this.roomName.set('Loading...');
+    const membership = this.auth.activeMembership();
+    const siteId = membership?.branch_id;
+    if (!siteId) {
+      this.roomName.set('Not assigned');
+      this.loadPrefill();
+      return;
+    }
 
-    this.loadPrefill();
+    this.staffApi.listChildRoomAssignments(child.id).subscribe({
+      next: (assignments) => {
+        const current = assignments.find((a) => a.is_current);
+        if (!current) {
+          this.roomName.set('Not assigned');
+          this.loadPrefill();
+          return;
+        }
+        this.roomsApi.listRooms(siteId).subscribe({
+          next: (rooms) => {
+            const room = rooms.find((r) => r.id === current.room_id);
+            this.roomName.set(room?.name ?? 'Not assigned');
+            this.loadPrefill();
+          },
+          error: () => {
+            this.roomName.set('Not assigned');
+            this.loadPrefill();
+          },
+        });
+      },
+      error: () => {
+        this.roomName.set('Not assigned');
+        this.loadPrefill();
+      },
+    });
   }
 
   calculateAgeGroup(dobString: string): string {
@@ -254,21 +287,6 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     if (age < 2) return '1-2 Years';
     if (age < 3) return '2-3 Years';
     return '3-5 Years';
-  }
-
-  getRoomNameByAgeGroup(ageGroupStr: string): string {
-    switch (ageGroupStr) {
-      case 'Under 1 Year':
-        return 'Babies Room';
-      case '1-2 Years':
-        return 'Minnows Room';
-      case '2-3 Years':
-        return 'Squirrels Room';
-      case '3-5 Years':
-        return 'Badgers Room';
-      default:
-        return 'Main Hall';
-    }
   }
 
   onBillingMonthChange(val: MonthYear): void {

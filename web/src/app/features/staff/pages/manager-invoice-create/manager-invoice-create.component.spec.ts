@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { ManagerInvoiceCreateComponent } from './manager-invoice-create.component';
 import { ManagerInvoiceCreateApiService } from '../../data/manager-invoice-create-api.service';
 import { StaffApiService } from '../../data/staff-api.service';
+import { StaffRoomsApiService } from '../../data/staff-rooms-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -87,11 +88,13 @@ describe('ManagerInvoiceCreateComponent', () => {
   let component: ManagerInvoiceCreateComponent;
   let apiService: jasmine.SpyObj<ManagerInvoiceCreateApiService>;
   let staffApiService: jasmine.SpyObj<StaffApiService>;
+  let roomsApiService: jasmine.SpyObj<StaffRoomsApiService>;
   let toastService: jasmine.SpyObj<ToastService>;
 
   beforeEach(async () => {
     apiService = jasmine.createSpyObj('ManagerInvoiceCreateApiService', ['getPrefill', 'createDraft', 'createAndIssue']);
-    staffApiService = jasmine.createSpyObj('StaffApiService', ['listChildren', 'getChildContacts']);
+    staffApiService = jasmine.createSpyObj('StaffApiService', ['listChildren', 'getChildContacts', 'listChildRoomAssignments']);
+    roomsApiService = jasmine.createSpyObj('StaffRoomsApiService', ['listRooms']);
     toastService = jasmine.createSpyObj('ToastService', ['success', 'error']);
 
     const authService = jasmine.createSpyObj('AuthService', [], {
@@ -104,6 +107,7 @@ describe('ManagerInvoiceCreateComponent', () => {
         provideRouter([]),
         { provide: ManagerInvoiceCreateApiService, useValue: apiService },
         { provide: StaffApiService, useValue: staffApiService },
+        { provide: StaffRoomsApiService, useValue: roomsApiService },
         { provide: AuthService, useValue: authService },
         { provide: ToastService, useValue: toastService },
         ApiErrorMapper,
@@ -272,16 +276,6 @@ describe('ManagerInvoiceCreateComponent', () => {
 
     it('returns Unknown for empty string', () => {
       expect(component.calculateAgeGroup('')).toBe('Unknown');
-    });
-  });
-
-  describe('getRoomNameByAgeGroup', () => {
-    it('returns correct room names', () => {
-      expect(component.getRoomNameByAgeGroup('Under 1 Year')).toBe('Babies Room');
-      expect(component.getRoomNameByAgeGroup('1-2 Years')).toBe('Minnows Room');
-      expect(component.getRoomNameByAgeGroup('2-3 Years')).toBe('Squirrels Room');
-      expect(component.getRoomNameByAgeGroup('3-5 Years')).toBe('Badgers Room');
-      expect(component.getRoomNameByAgeGroup('Unknown')).toBe('Main Hall');
     });
   });
 });
