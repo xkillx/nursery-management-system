@@ -7,14 +7,17 @@ import {
   heroCheck,
   heroCheckCircle,
   heroChevronRight,
+  heroClock,
   heroEnvelope,
   heroExclamationCircle,
+  heroIdentification,
   heroLink,
   heroMapPin,
   heroPencilSquare,
   heroPhone,
   heroPlus,
   heroShieldCheck,
+  heroSquare2Stack,
   heroTrash,
   heroUser,
   heroUserGroup,
@@ -30,7 +33,6 @@ import { StaffApiService } from '../../data/staff-api.service';
 import { ChildRecord } from '../../models/children.models';
 import { ParentRecord, ParentChildLink } from '../../models/parents.models';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
@@ -48,7 +50,6 @@ export interface LinkedChildDetail {
     CommonModule,
     RouterLink,
     AlertComponent,
-    BadgeComponent,
     StatusBadgeComponent,
     ConfirmationDialogComponent,
     EmptyStateComponent,
@@ -62,14 +63,17 @@ export interface LinkedChildDetail {
       heroCheck,
       heroCheckCircle,
       heroChevronRight,
+      heroClock,
       heroEnvelope,
       heroExclamationCircle,
+      heroIdentification,
       heroLink,
       heroMapPin,
       heroPencilSquare,
       heroPhone,
       heroPlus,
       heroShieldCheck,
+      heroSquare2Stack,
       heroTrash,
       heroUser,
       heroUserGroup,
@@ -165,6 +169,23 @@ export class ManagerParentDetailComponent implements OnInit, OnDestroy {
     const f = child.firstName ? child.firstName[0] : '';
     const l = child.lastName ? child.lastName[0] : '';
     return (f + l).toUpperCase() || 'C';
+  }
+
+  activePermissionsCount(): number {
+    if (!this.parent) return 0;
+    let count = 0;
+    if (this.parent.has_parental_responsibility) count++;
+    if (this.parent.can_pick_up) count++;
+    if (this.parent.is_emergency_contact) count++;
+    return count;
+  }
+
+  copyToClipboard(text: string, label: string): void {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(
+      () => this.toast.success(`${label} copied to clipboard`),
+      () => this.toast.error(`Failed to copy ${label.toLowerCase()}`),
+    );
   }
 
   formatAddress(): string {
@@ -295,3 +316,4 @@ export class ManagerParentDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/manager/parents']);
   }
 }
+

@@ -1,9 +1,9 @@
-<div class="space-y-6">
+<div class="space-y-6 max-w-[1440px] mx-auto">
   <!-- Back Button Navigation -->
-  <div class="flex items-center gap-3">
+  <div class="flex items-center justify-between">
     <button
       type="button"
-      class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+      class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
       (click)="goBack()"
     >
       <ng-icon name="heroArrowLeft" size="14" aria-hidden="true" />
@@ -27,56 +27,43 @@
     <!-- Profile Hero Card Header -->
     <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-theme-sm relative overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
       <!-- Background Decorative Accent Glow -->
-      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-brand-500/5 to-transparent rounded-full pointer-events-none"></div>
+      <div class="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-brand-500/10 via-indigo-500/5 to-transparent rounded-full pointer-events-none"></div>
 
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-1">
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <!-- Avatar Circle with Gradient -->
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-400 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-brand-500/20 shrink-0 select-none">
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-500 text-white font-bold text-2xl flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0 select-none">
             {{ parentInitials() }}
           </div>
 
-          <div>
-            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight font-outfit">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+              <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight font-outfit">
                 {{ parentName() }}
               </h1>
 
               <app-status-badge [status]="parent.is_active ? 'active' : 'inactive'" />
 
               @if (parent.relationship_to_child) {
-                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100 text-[11px] font-bold font-outfit dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30">
+                <span class="px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-100 text-xs font-bold font-outfit dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30 capitalize">
                   {{ parent.relationship_to_child }}
                 </span>
               }
             </div>
 
-            <!-- Permission Badge Pills -->
-            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mt-2">
-              @if (parent.has_parental_responsibility) {
-                <app-badge variant="light" color="primary" size="sm">
-                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-                    <ng-icon name="heroShieldCheck" size="12" />
-                    Parental Responsibility
-                  </span>
-                </app-badge>
-              }
-              @if (parent.can_pick_up) {
-                <app-badge variant="light" color="success" size="sm">
-                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-                    <ng-icon name="heroCheck" size="12" />
-                    Can Pick Up
-                  </span>
-                </app-badge>
-              }
-              @if (parent.is_emergency_contact) {
-                <app-badge variant="light" color="error" size="sm">
-                  <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-                    <ng-icon name="heroExclamationCircle" size="12" />
-                    Emergency Contact
-                  </span>
-                </app-badge>
-              }
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-gray-500 dark:text-gray-400">
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroEnvelope" size="14" class="text-gray-400" />
+                <span>{{ parent.email || 'No email registered' }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroPhone" size="14" class="text-gray-400" />
+                <span>{{ parent.phone || 'No phone registered' }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ng-icon name="heroIdentification" size="14" class="text-gray-400" />
+                <span class="font-mono text-[11px]">ID: {{ parent.id.slice(0, 8) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -85,7 +72,7 @@
         <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 shrink-0">
           <a
             [routerLink]="['/manager/parents', parent.id, 'edit']"
-            class="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 active:scale-98 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 active:scale-98 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
             Edit Profile
@@ -94,7 +81,7 @@
           @if (!parent.user_id) {
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/10 transition hover:bg-brand-600 active:scale-98 disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 transition hover:bg-brand-600 active:scale-98 disabled:opacity-50"
               [disabled]="actionInProgress"
               (click)="promptInviteToPortal()"
             >
@@ -116,7 +103,7 @@
           @if (parent.is_active) {
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-xl border border-error-300 bg-white px-4 py-2.5 text-xs font-bold text-error-700 shadow-theme-xs transition hover:bg-error-50 active:scale-98 disabled:opacity-50 dark:border-error-700 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-500/10"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-error-200 bg-white px-4 py-2.5 text-xs font-bold text-error-700 shadow-theme-xs transition hover:bg-error-50 active:scale-98 disabled:opacity-50 dark:border-error-800 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-500/10"
               [disabled]="actionInProgress"
               (click)="promptDeactivateParent()"
             >
@@ -128,63 +115,143 @@
       </div>
     </div>
 
+    <!-- Quick Metrics Summary Bar -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Linked Children Metric -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm flex justify-between items-center relative overflow-hidden group hover:shadow-theme-md transition-all">
+        <div class="space-y-1">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Linked Children</span>
+          <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white font-outfit">
+            {{ linkedChildrenDetails.length }}
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Registered nursery child(ren)</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300 flex items-center justify-center shrink-0">
+          <ng-icon name="heroUserGroup" size="22" />
+        </div>
+      </div>
+
+      <!-- Portal Status Metric -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm flex justify-between items-center relative overflow-hidden group hover:shadow-theme-md transition-all">
+        <div class="space-y-1">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Portal Access</span>
+          <div class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white font-outfit">
+            {{ parent.user_id ? 'Active User' : 'Not Invited' }}
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+            {{ parent.user_id ? 'Parent portal account active' : 'Invite pending to parent' }}
+          </p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" [ngClass]="parent.user_id ? 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'">
+          <ng-icon [name]="parent.user_id ? 'heroCheckCircle' : 'heroEnvelope'" size="22" />
+        </div>
+      </div>
+
+      <!-- Authorizations Metric -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm flex justify-between items-center relative overflow-hidden group hover:shadow-theme-md transition-all">
+        <div class="space-y-1">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Authorizations</span>
+          <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white font-outfit">
+            {{ activePermissionsCount() }} <span class="text-sm font-semibold text-gray-400">/ 3</span>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Active legal & pickup permissions</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300 flex items-center justify-center shrink-0">
+          <ng-icon name="heroShieldCheck" size="22" />
+        </div>
+      </div>
+    </div>
+
     <!-- Details Grid Layout -->
     <div class="grid grid-cols-12 gap-6">
       <!-- Main Column -->
       <div class="col-span-12 lg:col-span-8 space-y-6">
         <!-- Contact Information Section -->
         <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
-            <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
-              <ng-icon name="heroEnvelope" size="18" />
+          <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+                <ng-icon name="heroEnvelope" size="18" />
+              </div>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">Contact Information</h2>
             </div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white">Contact Information</h2>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- Email -->
-            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between">
-              <div>
-                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Email Address</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+            <!-- Email Card -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <dt class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email Address</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
                   {{ parent.email || '—' }}
                 </dd>
               </div>
               @if (parent.email) {
-                <a
-                  [href]="'mailto:' + parent.email"
-                  class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
-                  title="Send Email"
-                >
-                  <ng-icon name="heroEnvelope" size="16" />
-                </a>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    (click)="copyToClipboard(parent.email!, 'Email address')"
+                    class="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-brand-600 hover:bg-gray-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-brand-400"
+                    title="Copy Email"
+                  >
+                    <ng-icon name="heroSquare2Stack" size="15" />
+                  </button>
+                  <a
+                    [href]="'mailto:' + parent.email"
+                    class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
+                    title="Send Email"
+                  >
+                    <ng-icon name="heroEnvelope" size="15" />
+                  </a>
+                </div>
               }
             </div>
 
-            <!-- Phone -->
-            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between">
-              <div>
-                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Phone Number</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+            <!-- Phone Card -->
+            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/30 flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <dt class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Phone Number</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
                   {{ parent.phone || '—' }}
                 </dd>
               </div>
               @if (parent.phone) {
-                <a
-                  [href]="'tel:' + parent.phone"
-                  class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
-                  title="Call Phone"
-                >
-                  <ng-icon name="heroPhone" size="16" />
-                </a>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    (click)="copyToClipboard(parent.phone!, 'Phone number')"
+                    class="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-brand-600 hover:bg-gray-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-brand-400"
+                    title="Copy Phone"
+                  >
+                    <ng-icon name="heroSquare2Stack" size="15" />
+                  </button>
+                  <a
+                    [href]="'tel:' + parent.phone"
+                    class="p-2 rounded-xl bg-white border border-gray-200 text-brand-600 hover:bg-brand-50 transition-colors shadow-theme-xs dark:bg-gray-800 dark:border-gray-700 dark:text-brand-400"
+                    title="Call Phone"
+                  >
+                    <ng-icon name="heroPhone" size="15" />
+                  </a>
+                </div>
               }
             </div>
 
-            <!-- Full Address -->
-            <div class="md:col-span-2 p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30">
-              <div class="flex items-center gap-1.5 mb-1">
-                <ng-icon name="heroMapPin" size="14" class="text-gray-400" />
-                <dt class="text-xs font-bold uppercase tracking-wider text-gray-400">Home Address</dt>
+            <!-- Home Address Card -->
+            <div class="md:col-span-2 p-4.5 rounded-2xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/30">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  <ng-icon name="heroMapPin" size="15" class="text-brand-500" />
+                  <dt class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Home Address</dt>
+                </div>
+                @if (formatAddress() !== '—') {
+                  <button
+                    type="button"
+                    (click)="copyToClipboard(formatAddress(), 'Address')"
+                    class="text-[11px] font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                  >
+                    Copy Address
+                  </button>
+                }
               </div>
               <dd class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
                 {{ formatAddress() }}
@@ -195,57 +262,84 @@
 
         <!-- Flags & Permissions Section -->
         <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
-            <div class="p-2 bg-brand-50 text-brand-600 rounded-xl dark:bg-brand-500/15 dark:text-brand-300">
+          <div class="flex items-center gap-2.5 mb-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl dark:bg-indigo-500/15 dark:text-indigo-300">
               <ng-icon name="heroShieldCheck" size="18" />
             </div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white">Permissions & Authorization</h2>
+            <div>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">Permissions & Authorization</h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Legal, collection, and emergency contacts configuration</p>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <!-- Parental Responsibility -->
-            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
-              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Parental Responsibility</span>
-              <div class="mt-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Parental Responsibility Card -->
+            <div class="p-4.5 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between space-y-3">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Parental Responsibility</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Authorized legal guardian for child health, education, and consent decisions.
+                </p>
+              </div>
+
+              <div>
                 @if (parent.has_parental_responsibility) {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
-                    <ng-icon name="heroCheckCircle" size="14" /> Granted
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-50 text-success-700 border border-success-200/60 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
+                    <ng-icon name="heroCheckCircle" size="15" /> Granted
                   </span>
                 } @else {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
-                    No
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    Not Granted
                   </span>
                 }
               </div>
             </div>
 
-            <!-- Can Pick Up -->
-            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
-              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Can Pick Up Child</span>
-              <div class="mt-3">
+            <!-- Can Pick Up Child Card -->
+            <div class="p-4.5 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between space-y-3">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Can Pick Up Child</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Approved for collecting child from nursery premises during standard dismissal.
+                </p>
+              </div>
+
+              <div>
                 @if (parent.can_pick_up) {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
-                    <ng-icon name="heroCheckCircle" size="14" /> Authorized
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-50 text-success-700 border border-success-200/60 text-xs font-bold dark:bg-success-500/15 dark:text-success-400 dark:border-success-500/30">
+                    <ng-icon name="heroCheckCircle" size="15" /> Authorized
                   </span>
                 } @else {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
-                    No
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    Unauthorized
                   </span>
                 }
               </div>
             </div>
 
-            <!-- Emergency Contact -->
-            <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between">
-              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Emergency Contact</span>
-              <div class="mt-3">
+            <!-- Emergency Contact Card -->
+            <div class="p-4.5 rounded-2xl border border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-gray-900/30 flex flex-col justify-between space-y-3">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Emergency Contact</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Designated key contact during urgent situations, child illness, or emergencies.
+                </p>
+              </div>
+
+              <div>
                 @if (parent.is_emergency_contact) {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-50 text-error-700 border border-error-100 text-xs font-bold dark:bg-error-500/15 dark:text-error-400 dark:border-error-500/30">
-                    <ng-icon name="heroCheckCircle" size="14" /> Emergency Listed
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-error-50 text-error-700 border border-error-200/60 text-xs font-bold dark:bg-error-500/15 dark:text-error-400 dark:border-error-500/30">
+                    <ng-icon name="heroExclamationCircle" size="15" /> Emergency Listed
                   </span>
                 } @else {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
-                    No
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                    Not Listed
                   </span>
                 }
               </div>
@@ -256,7 +350,7 @@
         <!-- Notes Section -->
         @if (parent.notes) {
           <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">Notes</h2>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-3">Notes & Observations</h2>
             <div class="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 dark:bg-gray-900/40 dark:border-gray-800 text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-normal">
               {{ parent.notes }}
             </div>
@@ -283,11 +377,11 @@
           </div>
 
           @if (linkedChildrenDetails.length === 0) {
-            <p class="text-sm text-gray-500 dark:text-gray-400 py-2">No children linked yet.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-3 text-center">No children linked to this parent yet.</p>
           } @else {
             <div class="space-y-3">
               @for (item of linkedChildrenDetails; track item.link.id) {
-                <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/30 dark:border-gray-800 dark:bg-gray-900/20 hover:border-brand-300 transition-all flex items-center justify-between gap-3 group">
+                <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/30 dark:border-gray-800 dark:bg-gray-900/20 hover:border-brand-200 transition-all flex items-center justify-between gap-3 group">
                   <div class="flex items-center gap-3 min-w-0">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
                       {{ childInitials(item.child) }}
