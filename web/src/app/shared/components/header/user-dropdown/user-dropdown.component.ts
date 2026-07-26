@@ -1,4 +1,6 @@
 import { Component, inject } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroArrowRightOnRectangle, heroChevronDown } from '@ng-icons/heroicons/outline';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { AvatarTextComponent } from '../../ui/avatar/avatar-text.component';
 import { CommonModule } from '@angular/common';
@@ -10,7 +12,8 @@ import { AuthService } from '../../../../core/services/auth.service';
 @Component({
   selector: 'app-user-dropdown',
   templateUrl: './user-dropdown.component.html',
-  imports:[CommonModule,RouterModule,DropdownComponent,AvatarTextComponent]
+  imports: [CommonModule, RouterModule, DropdownComponent, AvatarTextComponent, NgIcon],
+  providers: [provideIcons({ heroArrowRightOnRectangle, heroChevronDown })]
 })
 export class UserDropdownComponent {
   private readonly authService = inject(AuthService);

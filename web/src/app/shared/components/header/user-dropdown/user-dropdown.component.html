@@ -1,46 +1,61 @@
 <div class="relative">
-  <button (click)="toggleDropdown()" class="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400">
-    <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-      <app-avatar-text [name]="initialsName" className="h-11 w-11" />
+  <!-- User Dropdown Trigger -->
+  <button
+    (click)="toggleDropdown()"
+    type="button"
+    class="dropdown-toggle group flex items-center gap-2.5 rounded-full border border-transparent p-1.5 pr-3 transition-all duration-200 hover:border-gray-200/80 hover:bg-gray-100/80 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:hover:border-gray-700/50 dark:hover:bg-gray-800/60"
+  >
+    <div class="relative flex shrink-0 items-center justify-center">
+      <app-avatar-text [name]="initialsName" className="h-9 w-9 rounded-full shadow-xs ring-2 ring-brand-500/20" />
+      <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-900"></span>
+    </div>
+    <span class="hidden max-w-[150px] truncate text-sm font-medium text-gray-700 dark:text-gray-200 sm:block">
+      {{ displayName }}
     </span>
-    <span class="block mr-1 font-medium text-theme-sm">{{ displayName }}</span>
-    <svg
+    <ng-icon
+      name="heroChevronDown"
       [ngClass]="{
-        'stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200': true,
+        'text-gray-400 dark:text-gray-500 transition-transform duration-200 group-hover:text-gray-600 dark:group-hover:text-gray-300': true,
         'rotate-180': isOpen
       }"
-      width="18"
-      height="20"
-      viewBox="0 0 18 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M4.3125 8.65625L9 13.3437L13.6875 8.65625"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
+      class="text-sm"
+    ></ng-icon>
   </button>
 
+  <!-- Dropdown Menu Card -->
   <app-dropdown
     [isOpen]="isOpen"
     (closed)="closeDropdown()"
-    className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+    className="absolute right-0 mt-2 flex w-72 flex-col rounded-2xl border border-gray-200/80 bg-white/95 p-3.5 shadow-2xl shadow-gray-900/10 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/95 z-[100]"
   >
-    <div>
-      <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">{{ displayName }}</span>
-      <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ sessionLabel }}</span>
+    <!-- User Info Card Header -->
+    <div class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-800/50">
+      <app-avatar-text [name]="initialsName" className="h-10 w-10 shrink-0 rounded-full shadow-xs" />
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-semibold text-gray-900 dark:text-white" [title]="displayName">
+          {{ displayName }}
+        </p>
+        <div class="mt-1 flex items-center gap-1.5">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700 dark:border dark:border-brand-800/50 dark:bg-brand-950/60 dark:text-brand-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+            {{ sessionLabel }}
+          </span>
+        </div>
+      </div>
     </div>
 
-    <button
-      type="button"
-      (click)="signOut()"
-      class="mt-4 flex items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-gray-700 text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-    >
-      Sign out
-    </button>
+    <!-- Menu Items -->
+    <div class="mt-2 space-y-1">
+      <button
+        type="button"
+        (click)="signOut()"
+        class="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rose-600 transition-all duration-150 hover:bg-rose-50/80 dark:text-rose-400 dark:hover:bg-rose-950/40"
+      >
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100/60 text-rose-600 transition-colors group-hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-400 dark:group-hover:bg-rose-900/60">
+          <ng-icon name="heroArrowRightOnRectangle" class="text-base transition-transform group-hover:translate-x-0.5"></ng-icon>
+        </div>
+        <span>Sign out</span>
+      </button>
+    </div>
   </app-dropdown>
 </div>
