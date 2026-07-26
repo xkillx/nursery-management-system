@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -110,7 +109,6 @@ type bookingRow struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	TermTimeOnly         bool
 	Status               string
 	BookedByMembershipID pgtype.UUID
@@ -119,11 +117,6 @@ type bookingRow struct {
 }
 
 func mapBooking(row bookingRow) domain.Booking {
-	var sessionEntries []domain.SessionEntry
-	if len(row.SessionEntries) > 0 {
-		_ = json.Unmarshal(row.SessionEntries, &sessionEntries)
-	}
-
 	var fundingHours *float64
 	if row.FundingHoursPerWeek.Valid {
 		f, _ := row.FundingHoursPerWeek.Float64Value()
@@ -143,7 +136,6 @@ func mapBooking(row bookingRow) domain.Booking {
 		FundingType:          pgtypeTextPtr(row.FundingType),
 		FundingHoursPerWeek:  fundingHours,
 		LaReference:          pgtypeTextPtr(row.LaReference),
-		SessionEntries:       sessionEntries,
 		TermTimeOnly:         row.TermTimeOnly,
 		Status:               row.Status,
 		BookedByMembershipID: pgtypeUUIDToUUID(row.BookedByMembershipID),
@@ -158,7 +150,7 @@ func bookingsGetByIDRowToBookingRow(r sqlc.BookingsGetByIDRow) bookingRow {
 		ChildFirstName: r.ChildFirstName, ChildLastName: pgtypeTextString(r.ChildLastName),
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
-		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		LaReference: r.LaReference,
 		TermTimeOnly: r.TermTimeOnly,
 		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
@@ -170,7 +162,7 @@ func bookingsGetByIDForUpdateRowToBookingRow(r sqlc.BookingsGetByIDForUpdateRow)
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
-		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		LaReference: r.LaReference,
 		TermTimeOnly: r.TermTimeOnly,
 		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
@@ -182,7 +174,7 @@ func bookingsListByBranchPaginatedRowToBookingRow(r sqlc.BookingsListByBranchPag
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
-		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		LaReference: r.LaReference,
 		TermTimeOnly: r.TermTimeOnly,
 		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
@@ -194,7 +186,7 @@ func bookingsListByChildAndDateRangeRowToBookingRow(r sqlc.BookingsListByChildAn
 		ID: r.ID, TenantID: r.TenantID, BranchID: r.BranchID, ChildID: r.ChildID,
 		EffectiveStartDate: r.EffectiveStartDate, EffectiveEndDate: r.EffectiveEndDate,
 		FundingType: r.FundingType, FundingHoursPerWeek: r.FundingHoursPerWeek,
-		LaReference: r.LaReference, SessionEntries: r.SessionEntries,
+		LaReference: r.LaReference,
 		TermTimeOnly: r.TermTimeOnly,
 		Status:       r.Status, BookedByMembershipID: r.BookedByMembershipID,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
@@ -241,4 +233,18 @@ func mapUnifiedGetByIDRow(row sqlc.BookingsUnifiedGetByIDRow) domain.UnifiedBook
 		StartTimeMinutes: pgtypeInt4Ptr(row.StartTimeMinutes),
 		DurationMinutes:  pgtypeInt4Ptr(row.DurationMinutes),
 	}
+}
+
+func mapSessionEntries(entries []sqlc.BookingSessionEntry) []domain.SessionEntry {
+	if len(entries) == 0 {
+		return nil
+	}
+	result := make([]domain.SessionEntry, 0, len(entries))
+	for _, e := range entries {
+		result = append(result, domain.SessionEntry{
+			DayOfWeek:     e.DayOfWeek,
+			SessionTypeID: pgtypeUUIDToUUID(e.SessionTypeID),
+		})
+	}
+	return result
 }

@@ -11,75 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const bookingEntriesForChildInMonth = `-- name: BookingEntriesForChildInMonth :many
-SELECT
-    (entry->>'day_of_week')::int AS day_of_week,
-    st.id AS session_type_id,
-    st.name AS session_type_name,
-    st.start_time AS session_type_start_time,
-    st.end_time AS session_type_end_time
-FROM bookings b
-CROSS JOIN jsonb_array_elements(b.session_entries) AS entry
-JOIN session_types st ON st.id = (entry->>'session_type_id')::uuid
-    AND st.tenant_id = b.tenant_id
-    AND st.branch_id = b.branch_id
-WHERE b.tenant_id = $1
-  AND b.branch_id = $2
-  AND b.child_id = $3
-  AND b.status = 'active'
-  AND b.effective_start_date <= $4
-  AND (b.effective_end_date IS NULL OR b.effective_end_date >= $5)
-ORDER BY day_of_week
-`
-
-type BookingEntriesForChildInMonthParams struct {
-	TenantID   pgtype.UUID
-	BranchID   pgtype.UUID
-	ChildID    pgtype.UUID
-	MonthEnd   pgtype.Date
-	MonthStart pgtype.Date
-}
-
-type BookingEntriesForChildInMonthRow struct {
-	DayOfWeek            int32
-	SessionTypeID        pgtype.UUID
-	SessionTypeName      string
-	SessionTypeStartTime pgtype.Time
-	SessionTypeEndTime   pgtype.Time
-}
-
-func (q *Queries) BookingEntriesForChildInMonth(ctx context.Context, arg BookingEntriesForChildInMonthParams) ([]BookingEntriesForChildInMonthRow, error) {
-	rows, err := q.db.Query(ctx, bookingEntriesForChildInMonth,
-		arg.TenantID,
-		arg.BranchID,
-		arg.ChildID,
-		arg.MonthEnd,
-		arg.MonthStart,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []BookingEntriesForChildInMonthRow
-	for rows.Next() {
-		var i BookingEntriesForChildInMonthRow
-		if err := rows.Scan(
-			&i.DayOfWeek,
-			&i.SessionTypeID,
-			&i.SessionTypeName,
-			&i.SessionTypeStartTime,
-			&i.SessionTypeEndTime,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const bookingsCancel = `-- name: BookingsCancel :exec
 UPDATE bookings
 SET status = 'cancelled', updated_at = now()
@@ -138,8 +69,8 @@ func (q *Queries) BookingsCountByBranch(ctx context.Context, arg BookingsCountBy
 }
 
 const bookingsCreate = `-- name: BookingsCreate :exec
-INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)
+INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', $10, $11)
 `
 
 type BookingsCreateParams struct {
@@ -152,7 +83,6 @@ type BookingsCreateParams struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	BookedByMembershipID pgtype.UUID
 	TermTimeOnly         bool
 }
@@ -168,7 +98,6 @@ func (q *Queries) BookingsCreate(ctx context.Context, arg BookingsCreateParams) 
 		arg.FundingType,
 		arg.FundingHoursPerWeek,
 		arg.LaReference,
-		arg.SessionEntries,
 		arg.BookedByMembershipID,
 		arg.TermTimeOnly,
 	)
@@ -186,7 +115,6 @@ SELECT
     b.funding_type,
     b.funding_hours_per_week,
     b.la_reference,
-    b.session_entries,
     b.status,
     b.booked_by_membership_id,
     b.term_time_only,
@@ -217,7 +145,6 @@ type BookingsGetByIDRow struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	Status               string
 	BookedByMembershipID pgtype.UUID
 	TermTimeOnly         bool
@@ -240,7 +167,6 @@ func (q *Queries) BookingsGetByID(ctx context.Context, arg BookingsGetByIDParams
 		&i.FundingType,
 		&i.FundingHoursPerWeek,
 		&i.LaReference,
-		&i.SessionEntries,
 		&i.Status,
 		&i.BookedByMembershipID,
 		&i.TermTimeOnly,
@@ -253,7 +179,7 @@ func (q *Queries) BookingsGetByID(ctx context.Context, arg BookingsGetByIDParams
 }
 
 const bookingsGetByIDForUpdate = `-- name: BookingsGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -277,7 +203,6 @@ type BookingsGetByIDForUpdateRow struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	Status               string
 	BookedByMembershipID pgtype.UUID
 	TermTimeOnly         bool
@@ -298,7 +223,6 @@ func (q *Queries) BookingsGetByIDForUpdate(ctx context.Context, arg BookingsGetB
 		&i.FundingType,
 		&i.FundingHoursPerWeek,
 		&i.LaReference,
-		&i.SessionEntries,
 		&i.Status,
 		&i.BookedByMembershipID,
 		&i.TermTimeOnly,
@@ -309,7 +233,7 @@ func (q *Queries) BookingsGetByIDForUpdate(ctx context.Context, arg BookingsGetB
 }
 
 const bookingsListByBranchPaginated = `-- name: BookingsListByBranchPaginated :many
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -346,7 +270,6 @@ type BookingsListByBranchPaginatedRow struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	Status               string
 	BookedByMembershipID pgtype.UUID
 	TermTimeOnly         bool
@@ -384,7 +307,6 @@ func (q *Queries) BookingsListByBranchPaginated(ctx context.Context, arg Booking
 			&i.FundingType,
 			&i.FundingHoursPerWeek,
 			&i.LaReference,
-			&i.SessionEntries,
 			&i.Status,
 			&i.BookedByMembershipID,
 			&i.TermTimeOnly,
@@ -402,7 +324,7 @@ func (q *Queries) BookingsListByBranchPaginated(ctx context.Context, arg Booking
 }
 
 const bookingsListByChildAndDateRange = `-- name: BookingsListByChildAndDateRange :many
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -431,7 +353,6 @@ type BookingsListByChildAndDateRangeRow struct {
 	FundingType          pgtype.Text
 	FundingHoursPerWeek  pgtype.Numeric
 	LaReference          pgtype.Text
-	SessionEntries       []byte
 	Status               string
 	BookedByMembershipID pgtype.UUID
 	TermTimeOnly         bool
@@ -464,7 +385,6 @@ func (q *Queries) BookingsListByChildAndDateRange(ctx context.Context, arg Booki
 			&i.FundingType,
 			&i.FundingHoursPerWeek,
 			&i.LaReference,
-			&i.SessionEntries,
 			&i.Status,
 			&i.BookedByMembershipID,
 			&i.TermTimeOnly,

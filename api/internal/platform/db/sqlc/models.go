@@ -255,6 +255,18 @@ type Booking struct {
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
 	TermTimeOnly         bool
+	ClosureOverride      bool
+}
+
+type BookingSessionEntry struct {
+	ID            pgtype.UUID
+	TenantID      pgtype.UUID
+	BranchID      pgtype.UUID
+	BookingID     pgtype.UUID
+	DayOfWeek     int32
+	SessionTypeID pgtype.UUID
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type Branch struct {

@@ -15,7 +15,7 @@ import (
 
 // BookingEntriesLookupAdapter implements billing.BookingEntriesLookup by
 // querying the bookings table for the child's active recurring booking and
-// expanding session_entries JSONB with session type details.
+// joining with booking_session_entries for session type details.
 type BookingEntriesLookupAdapter struct {
 	pool *pgxpool.Pool
 }
@@ -33,7 +33,7 @@ func (a *BookingEntriesLookupAdapter) GetEntriesForChildInMonth(ctx context.Cont
 	}
 	monthEnd := monthStart.AddDate(0, 1, -1)
 
-	rows, err := q.BookingEntriesForChildInMonth(ctx, sqlc.BookingEntriesForChildInMonthParams{
+	rows, err := q.BookingSessionEntriesForChildInMonth(ctx, sqlc.BookingSessionEntriesForChildInMonthParams{
 		TenantID:   pgtype.UUID{Bytes: [16]byte(tenantID), Valid: true},
 		BranchID:   pgtype.UUID{Bytes: [16]byte(branchID), Valid: true},
 		ChildID:    pgtype.UUID{Bytes: [16]byte(childID), Valid: true},

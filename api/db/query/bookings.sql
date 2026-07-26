@@ -1,6 +1,6 @@
 -- name: BookingsCreate :exec
-INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12);
+INSERT INTO bookings (id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', $10, $11);
 
 -- name: BookingsGetByID :one
 SELECT
@@ -13,7 +13,6 @@ SELECT
     b.funding_type,
     b.funding_hours_per_week,
     b.la_reference,
-    b.session_entries,
     b.status,
     b.booked_by_membership_id,
     b.term_time_only,
@@ -28,7 +27,7 @@ WHERE b.tenant_id = $1
   AND b.id = $3;
 
 -- name: BookingsGetByIDForUpdate :one
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -36,7 +35,7 @@ WHERE tenant_id = $1
 FOR UPDATE;
 
 -- name: BookingsListByBranchPaginated :many
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -85,7 +84,7 @@ SET status = 'paused', updated_at = now()
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3 AND status = 'active';
 
 -- name: BookingsListByChildAndDateRange :many
-SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, session_entries, status, booked_by_membership_id, term_time_only, created_at, updated_at
+SELECT id, tenant_id, branch_id, child_id, effective_start_date, effective_end_date, funding_type, funding_hours_per_week, la_reference, status, booked_by_membership_id, term_time_only, created_at, updated_at
 FROM bookings
 WHERE tenant_id = $1
   AND branch_id = $2
@@ -262,23 +261,3 @@ WHERE h.tenant_id = $1
   AND h.id = $3
 
 LIMIT 1;
-
--- name: BookingEntriesForChildInMonth :many
-SELECT
-    (entry->>'day_of_week')::int AS day_of_week,
-    st.id AS session_type_id,
-    st.name AS session_type_name,
-    st.start_time AS session_type_start_time,
-    st.end_time AS session_type_end_time
-FROM bookings b
-CROSS JOIN jsonb_array_elements(b.session_entries) AS entry
-JOIN session_types st ON st.id = (entry->>'session_type_id')::uuid
-    AND st.tenant_id = b.tenant_id
-    AND st.branch_id = b.branch_id
-WHERE b.tenant_id = $1
-  AND b.branch_id = $2
-  AND b.child_id = $3
-  AND b.status = 'active'
-  AND b.effective_start_date <= @month_end
-  AND (b.effective_end_date IS NULL OR b.effective_end_date >= @month_start)
-ORDER BY day_of_week;
