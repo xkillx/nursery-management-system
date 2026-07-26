@@ -1,27 +1,25 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroCalendarDays,
+  heroCheck,
+  heroClock,
+  heroInformationCircle,
+  heroPencilSquare,
   heroPlus,
   heroTrash,
-  heroPencil,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
 
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
-import { SelectComponent } from '../../../../shared/components/form/select/select.component';
-import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
+import { SelectComponent } from '../../../../shared/components/form/select/select.component';
+import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { HolidayPeriodsApiService } from '../../data/holiday-periods-api.service';
@@ -32,6 +30,13 @@ import {
   HOLIDAY_PERIOD_TYPE_LABELS,
 } from '../../models/holiday-period.models';
 
+interface HolidayPeriodForm {
+  name: string;
+  type: HolidayPeriodType | '';
+  start_date: string;
+  end_date: string;
+}
+
 @Component({
   selector: 'app-manager-holiday-periods',
   imports: [
@@ -40,24 +45,22 @@ import {
     NgIcon,
     LoadingStateComponent,
     EmptyStateComponent,
-    ConfirmationDialogComponent,
-    PageHeaderComponent,
-    ButtonComponent,
-    InputFieldComponent,
-    DatePickerComponent,
-    SelectComponent,
     AlertComponent,
-    FormFieldComponent,
-    ComponentCardComponent,
     BadgeComponent,
+    SelectComponent,
+    DatePickerComponent,
+    ConfirmationDialogComponent,
   ],
   templateUrl: './manager-holiday-periods.component.html',
   providers: [
     provideIcons({
       heroCalendarDays,
+      heroCheck,
+      heroClock,
+      heroInformationCircle,
+      heroPencilSquare,
       heroPlus,
       heroTrash,
-      heroPencil,
       heroXMark,
     }),
   ],
@@ -68,30 +71,32 @@ export class ManagerHolidayPeriodsComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   siteId: string | null = null;
+  siteName = '';
   loading = false;
   periods = signal<HolidayPeriod[]>([]);
 
-  formName = '';
-  formType: HolidayPeriodType | '' = '';
-  formStartDate = '';
-  formEndDate = '';
+  totalPeriods = computed(() => this.periods().length);
+  activePeriods = computed(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return this.periods().filter((p) => p.end_date >= todayStr).length;
+  });
+  pastPeriods = computed(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return this.periods().filter((p) => p.end_date < todayStr).length;
+  });
+
+  readonly typeOptions = HOLIDAY_PERIOD_TYPE_OPTIONS;
+
+  editorMode: 'closed' | 'create' | 'edit' = 'closed';
+  editingPeriodId: string | null = null;
+  form: HolidayPeriodForm = { name: '', type: '', start_date: '', end_date: '' };
   formSaving = false;
   formError: string | null = null;
-
-  typeOptions = HOLIDAY_PERIOD_TYPE_OPTIONS;
+  formFieldErrors: { name?: string; type?: string; start_date?: string; end_date?: string } = {};
 
   isConfirmDeleteOpen = false;
   periodToDelete: HolidayPeriod | null = null;
   deleteSaving = false;
-
-  editingPeriod: HolidayPeriod | null = null;
-
-  totalPeriods = computed(() => this.periods().length);
-
-  upcomingPeriods = computed(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    return this.periods().filter((p) => p.end_date >= todayStr).length;
-  });
 
   ngOnInit(): void {
     const membership = this.auth.activeMembership();
@@ -100,6 +105,7 @@ export class ManagerHolidayPeriodsComponent implements OnInit {
       return;
     }
     this.siteId = membership.branch_id;
+    this.siteName = membership.branch_name ?? 'Assigned site';
     this.loadPeriods();
   }
 
@@ -118,63 +124,71 @@ export class ManagerHolidayPeriodsComponent implements OnInit {
     });
   }
 
-  onSubmit(form: NgForm): void {
-    if (!this.siteId || !this.formName || !this.formType || !this.formStartDate || !this.formEndDate) return;
+  openCreate(): void {
+    this.editorMode = 'create';
+    this.editingPeriodId = null;
+    this.form = { name: '', type: '', start_date: '', end_date: '' };
+    this.formError = null;
+    this.formFieldErrors = {};
+  }
+
+  openEdit(period: HolidayPeriod): void {
+    this.editorMode = 'edit';
+    this.editingPeriodId = period.id;
+    this.form = { name: period.name, type: period.type, start_date: period.start_date, end_date: period.end_date };
+    this.formError = null;
+    this.formFieldErrors = {};
+  }
+
+  closeEditor(): void {
+    this.editorMode = 'closed';
+    this.editingPeriodId = null;
+    this.formError = null;
+    this.formFieldErrors = {};
+  }
+
+  save(): void {
+    if (!this.siteId || !this.form.name || !this.form.type || !this.form.start_date || !this.form.end_date) return;
 
     this.formSaving = true;
     this.formError = null;
+    this.formFieldErrors = {};
 
     const body = {
-      name: this.formName.trim(),
-      type: this.formType,
-      start_date: this.formStartDate,
-      end_date: this.formEndDate,
+      name: this.form.name.trim(),
+      type: this.form.type as HolidayPeriodType,
+      start_date: this.form.start_date,
+      end_date: this.form.end_date,
     };
 
-    const req = this.editingPeriod
-      ? this.api.update(this.siteId, this.editingPeriod.id, body)
+    const req$ = this.editorMode === 'edit' && this.editingPeriodId
+      ? this.api.update(this.siteId, this.editingPeriodId, body)
       : this.api.create(this.siteId, body);
 
-    req.subscribe({
+    req$.subscribe({
       next: () => {
         this.formSaving = false;
-        this.toast.success(this.editingPeriod ? 'Holiday period updated.' : 'Holiday period added.');
-        this.resetForm(form);
+        this.toast.success(this.editorMode === 'edit' ? 'Holiday period updated.' : 'Holiday period created.');
+        this.closeEditor();
         this.loadPeriods();
       },
       error: (err) => {
         this.formSaving = false;
         const body = err?.error;
-        this.formError = body?.message ?? 'Failed to save holiday period.';
+        if (body?.code === 'validation_error' && body?.fields) {
+          const fields = body.fields as Record<string, string>;
+          this.formFieldErrors = {
+            name: fields['name'],
+            type: fields['type'],
+            start_date: fields['start_date'],
+            end_date: fields['end_date'],
+          };
+          this.formError = 'Please correct the highlighted fields.';
+        } else {
+          this.formError = body?.message ?? 'Failed to save holiday period.';
+        }
       },
     });
-  }
-
-  startEdit(period: HolidayPeriod): void {
-    this.editingPeriod = period;
-    this.formName = period.name;
-    this.formType = period.type;
-    this.formStartDate = period.start_date;
-    this.formEndDate = period.end_date;
-  }
-
-  cancelEdit(): void {
-    this.editingPeriod = null;
-    this.formName = '';
-    this.formType = '';
-    this.formStartDate = '';
-    this.formEndDate = '';
-    this.formError = null;
-  }
-
-  resetForm(form: NgForm): void {
-    this.editingPeriod = null;
-    this.formName = '';
-    this.formType = '';
-    this.formStartDate = '';
-    this.formEndDate = '';
-    this.formError = null;
-    form.resetForm();
   }
 
   confirmDelete(period: HolidayPeriod): void {

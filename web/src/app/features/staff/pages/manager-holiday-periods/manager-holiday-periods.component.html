@@ -1,190 +1,397 @@
 <div class="space-y-6">
-  <app-page-header
-    title="Holiday Periods"
-    description="Define school holidays (half-term, Christmas, Easter, summer) so billing automatically excludes these dates for term-time children."
-  />
-
-  @if (formError) {
-    <app-alert
-      variant="error"
-      [title]="editingPeriod ? 'Failed to update holiday period' : 'Failed to add holiday period'"
-      [message]="formError"
-      [dismissible]="true"
-      (dismissed)="formError = null"
-    />
-  }
-
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-    <!-- Left Column: Add/Edit Form -->
-    <div class="lg:col-span-4">
-      <app-component-card
-        [title]="editingPeriod ? 'Edit Holiday Period' : 'Add Holiday Period'"
-        [desc]="editingPeriod ? 'Update the holiday period details.' : 'Set a date range and type for a school holiday.'"
-      >
-        <form #addForm="ngForm" (ngSubmit)="onSubmit(addForm)" class="space-y-5">
-          <app-form-field label="Name" labelFor="hp-name" [required]="true">
-            <app-input-field
-              id="hp-name"
-              name="name"
-              [(ngModel)]="formName"
-              placeholder="e.g. October Half Term 2026"
-              [disabled]="formSaving"
-            />
-          </app-form-field>
-
-          <app-form-field label="Type" labelFor="hp-type" [required]="true">
-            <app-select
-              id="hp-type"
-              name="type"
-              [options]="typeOptions"
-              [(ngModel)]="formType"
-              placeholder="Select type"
-              [disabled]="formSaving"
-            />
-          </app-form-field>
-
-          <app-form-field label="Start Date" labelFor="hp-start" [required]="true">
-            <app-date-picker
-              id="hp-start"
-              name="startDate"
-              [(ngModel)]="formStartDate"
-              placeholder="Select start date"
-              [disabled]="formSaving"
-            />
-          </app-form-field>
-
-          <app-form-field label="End Date" labelFor="hp-end" [required]="true">
-            <app-date-picker
-              id="hp-end"
-              name="endDate"
-              [(ngModel)]="formEndDate"
-              placeholder="Select end date"
-              [disabled]="formSaving"
-            />
-          </app-form-field>
-
-          <div class="flex gap-2">
-            <app-button
-              type="submit"
-              [disabled]="formSaving || !formName || !formType || !formStartDate || !formEndDate"
-              [loading]="formSaving"
-              className="flex-1"
-            >
-              {{ editingPeriod ? 'Update' : 'Add Holiday Period' }}
-            </app-button>
-            @if (editingPeriod) {
-              <app-button
-                type="button"
-                variant="outline"
-                (click)="cancelEdit()"
-                [disabled]="formSaving"
-              >
-                Cancel
-              </app-button>
-            }
-          </div>
-        </form>
-      </app-component-card>
-    </div>
-
-    <!-- Right Column: List & Stats -->
-    <div class="lg:col-span-8 space-y-6">
-      <!-- Stats Dashboard -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
-          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
-          </div>
-          <div>
-            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total Holiday Periods</span>
-            <span class="mt-1 block text-2xl font-semibold text-gray-800 dark:text-white/90">
-              {{ totalPeriods() }}
-            </span>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
-          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400">
-            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
-          </div>
-          <div>
-            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Upcoming / Active</span>
-            <span class="mt-1 block text-2xl font-semibold text-gray-800 dark:text-white/90">
-              {{ upcomingPeriods() }}
-            </span>
-          </div>
-        </div>
+  @if (editorMode === 'closed') {
+    <!-- List view -->
+    <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="hp-title">
+      <div class="max-w-3xl">
+        <h1 id="hp-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+          Holiday Periods
+        </h1>
+        <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+          Define school holidays (half-term, Christmas, Easter, summer) so billing automatically excludes these dates for term-time children.
+        </p>
       </div>
 
-      <!-- List of Holiday Periods -->
-      @if (loading) {
-        <app-loading-state />
-      } @else if (periods().length === 0) {
-        <app-empty-state
-          title="No holiday periods"
-          description="Add half-term, Christmas, Easter, or summer holiday periods to exclude them from term-time billing."
-        />
-      } @else {
-        <div class="space-y-3">
-          @for (period of periods(); track period.id) {
-            <div class="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-gray-700 transition duration-200">
-              <div class="flex items-center gap-4">
-                <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
-                  <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
-                    {{ period.start_date | date: 'MMM' : 'UTC' }}
-                  </span>
-                  <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
-                    {{ period.start_date | date: 'd' : 'UTC' }}
-                  </span>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          (click)="openCreate()"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 cursor-pointer"
+        >
+          <ng-icon name="heroPlus" size="18" aria-hidden="true"></ng-icon>
+          New Holiday Period
+        </button>
+      </div>
+    </section>
+
+    <!-- Stats cards -->
+    <section class="grid gap-4 md:grid-cols-3" aria-label="Holiday periods summary">
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-brand-600 dark:text-brand-400">All Time</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Periods</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ totalPeriods() }}</p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+            <ng-icon name="heroCheck" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-success-600 dark:text-success-400">Current</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Upcoming / Active</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ activePeriods() }}</p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
+            <ng-icon name="heroClock" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">History</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Past Periods</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ pastPeriods() }}</p>
+      </article>
+    </section>
+
+    <!-- Table section -->
+    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Holiday period records">
+      <div class="flex items-center justify-between border-b border-gray-200 px-4 py-4 lg:px-6 lg:py-5 dark:border-gray-800">
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+          Showing {{ periods().length }} holiday periods
+        </span>
+      </div>
+
+      <!-- Mobile view -->
+      <div class="lg:hidden">
+        @if (loading) {
+          <app-loading-state label="Loading holiday periods..."></app-loading-state>
+        } @else if (periods().length === 0) {
+          <app-empty-state
+            title="No holiday periods"
+            message="Add half-term, Christmas, Easter, or summer holiday periods to exclude them from term-time billing."
+          ></app-empty-state>
+        } @else {
+          <div class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (period of periods(); track period.id) {
+              <article class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                <div class="flex items-start gap-3">
+                  <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
+                    <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
+                      {{ period.start_date | date: 'MMM' : 'UTC' }}
+                    </span>
+                    <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
+                      {{ period.start_date | date: 'd' : 'UTC' }}
+                    </span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">{{ period.name }}</h2>
+                    <p class="mt-1 flex flex-wrap gap-1.5 items-center">
+                      <app-badge [color]="getTypeColor(period.type)" variant="light" size="sm">
+                        {{ getTypeLabel(period.type) }}
+                      </app-badge>
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-sm font-semibold text-gray-800 dark:text-white/90">
-                      {{ period.name }}
-                    </span>
-                    <app-badge [color]="getTypeColor(period.type)" size="sm">
+                <dl class="mt-4 grid gap-3 text-sm xsm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Date Range</dt>
+                    <dd class="mt-1 text-gray-800 dark:text-gray-200 font-medium">
+                      {{ period.start_date | date: 'd MMM y' : 'UTC' }} &ndash; {{ period.end_date | date: 'd MMM y' : 'UTC' }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Duration</dt>
+                    <dd class="mt-1 text-gray-800 dark:text-gray-200 font-medium">
+                      {{ getDurationDays(period.start_date, period.end_date) }} days
+                    </dd>
+                  </div>
+                </dl>
+
+                <div class="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    (click)="openEdit(period)"
+                    class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05] cursor-pointer"
+                    [attr.aria-label]="'Edit holiday period ' + period.name"
+                  >
+                    <ng-icon name="heroPencilSquare" size="16" aria-hidden="true"></ng-icon>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    (click)="confirmDelete(period)"
+                    class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                    [attr.aria-label]="'Remove holiday period ' + period.name"
+                  >
+                    <ng-icon name="heroTrash" size="16" aria-hidden="true"></ng-icon>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Desktop view -->
+      <div class="hidden overflow-x-auto lg:block">
+        <table class="w-full min-w-[960px] border-collapse text-left">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+              <th class="px-6 py-4">Name</th>
+              <th class="px-6 py-4">Type</th>
+              <th class="px-6 py-4">Start Date</th>
+              <th class="px-6 py-4">End Date</th>
+              <th class="px-6 py-4">Duration</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @if (loading) {
+              <tr>
+                <td colspan="6">
+                  <app-loading-state label="Loading holiday periods..."></app-loading-state>
+                </td>
+              </tr>
+            } @else if (periods().length === 0) {
+              <tr>
+                <td colspan="6">
+                  <app-empty-state
+                    title="No holiday periods"
+                    message="Add half-term, Christmas, Easter, or summer holiday periods to exclude them from term-time billing."
+                  ></app-empty-state>
+                </td>
+              </tr>
+            } @else {
+              @for (period of periods(); track period.id) {
+                <tr class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-4">
+                      <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
+                          {{ period.start_date | date: 'MMM' : 'UTC' }}
+                        </span>
+                        <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
+                          {{ period.start_date | date: 'd' : 'UTC' }}
+                        </span>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="font-semibold text-gray-900 dark:text-white/90">{{ period.name }}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <app-badge [color]="getTypeColor(period.type)" variant="light">
                       {{ getTypeLabel(period.type) }}
                     </app-badge>
-                  </div>
-                  <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {{ period.start_date | date: 'd MMM y' : 'UTC' }} &ndash; {{ period.end_date | date: 'd MMM y' : 'UTC' }}
-                    ({{ getDurationDays(period.start_date, period.end_date) }} days)
-                  </div>
-                </div>
-              </div>
+                  </td>
 
-              <div class="flex items-center gap-1">
-                <button
-                  (click)="startEdit(period)"
-                  class="inline-flex size-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
-                  aria-label="Edit holiday period"
-                >
-                  <ng-icon name="heroPencil" size="18" aria-hidden="true" />
-                </button>
-                <button
-                  (click)="confirmDelete(period)"
-                  class="inline-flex size-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10 dark:hover:text-error-400"
-                  aria-label="Remove holiday period"
-                >
-                  <ng-icon name="heroTrash" size="18" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      }
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {{ period.start_date | date: 'dd MMM yyyy' }}
+                  </td>
+
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {{ period.end_date | date: 'dd MMM yyyy' }}
+                  </td>
+
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {{ getDurationDays(period.start_date, period.end_date) }} days
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="openEdit(period)"
+                        class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.05] cursor-pointer"
+                      >
+                        <ng-icon name="heroPencilSquare" size="15" aria-hidden="true"></ng-icon>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        (click)="confirmDelete(period)"
+                        class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                      >
+                        <ng-icon name="heroTrash" size="15" aria-hidden="true"></ng-icon>
+                        Remove
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <!-- Create/Edit Form View -->
+    <div>
+      <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        {{ editorMode === 'edit' ? 'Edit Holiday Period' : 'New Holiday Period' }}
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        {{ editorMode === 'edit' ? 'Update the holiday period details below.' : 'Set a date range and type for a school holiday.' }}
+      </p>
     </div>
-  </div>
-</div>
 
-<app-confirmation-dialog
-  [isOpen]="isConfirmDeleteOpen"
-  title="Remove holiday period"
-  [message]="periodToDelete ? 'Are you sure you want to remove \u201C' + periodToDelete.name + '\u201D? This will re-enable billing for dates within this period for term-time children.' : ''"
-  confirmText="Remove"
-  variant="danger"
-  [loading]="deleteSaving"
-  (confirmed)="doDelete()"
-  (cancelled)="cancelDelete()"
-/>
+    @if (formError) {
+      <app-alert variant="error" title="Error" [message]="formError" />
+    }
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <!-- Left Column: Form Details Card -->
+      <section class="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroPencilSquare" size="20" aria-hidden="true" />
+          </span>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Holiday Period Details</h2>
+        </div>
+
+        <form #hpForm="ngForm" class="space-y-6 px-6 py-6" (ngSubmit)="save()" novalidate>
+          <div>
+            <label for="hp-name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name <span class="text-red-500">*</span></label>
+            <input
+              id="hp-name"
+              name="name"
+              type="text"
+              required
+              maxlength="120"
+              [(ngModel)]="form.name"
+              placeholder="e.g. October Half Term 2026"
+              class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              [class.border-red-500]="formFieldErrors.name"
+              [disabled]="formSaving"
+            />
+            @if (formFieldErrors.name) {
+              <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.name }}</p>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label for="hp-type" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type <span class="text-red-500">*</span></label>
+              <app-select
+                id="hp-type"
+                name="type"
+                [options]="typeOptions"
+                [(ngModel)]="form.type"
+                placeholder="Select type"
+                [error]="!!formFieldErrors.type"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.type) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.type }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label for="hp-start-date" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date <span class="text-red-500">*</span></label>
+              <app-date-picker
+                id="hp-start-date"
+                name="start_date"
+                [(ngModel)]="form.start_date"
+                placeholder="Select start date"
+                [error]="!!formFieldErrors.start_date"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.start_date) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.start_date }}</p>
+              }
+            </div>
+
+            <div>
+              <label for="hp-end-date" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">End Date <span class="text-red-500">*</span></label>
+              <app-date-picker
+                id="hp-end-date"
+                name="end_date"
+                [(ngModel)]="form.end_date"
+                placeholder="Select end date"
+                [error]="!!formFieldErrors.end_date"
+                [disabled]="formSaving"
+              />
+              @if (formFieldErrors.end_date) {
+                <p class="mt-1 text-xs text-red-600">{{ formFieldErrors.end_date }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end dark:border-gray-800">
+            <button
+              type="button"
+              (click)="closeEditor()"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+              [disabled]="formSaving"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50 cursor-pointer"
+              [disabled]="formSaving || !hpForm.valid"
+            >
+              @if (formSaving) {
+                <svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+              {{ editorMode === 'edit' ? 'Save Changes' : 'Create Holiday Period' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Sidebar Guidance -->
+      <aside class="space-y-6">
+        <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-500/20 dark:bg-blue-500/10">
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-blue-500 shadow-sm dark:bg-gray-900">
+              <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
+          </div>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Holiday periods are excluded from billing for term-time children automatically.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Ensure the start and end dates do not overlap with other holiday periods of the same type.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Removing a holiday period will re-enable billing for dates within that period for term-time children.</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  }
+
+  <!-- Delete Confirmation Dialog -->
+  <app-confirmation-dialog
+    [isOpen]="isConfirmDeleteOpen"
+    title="Remove Holiday Period"
+    [message]="periodToDelete ? 'Are you sure you want to remove \u201C' + periodToDelete.name + '\u201D? This will re-enable billing for dates within this period for term-time children.' : ''"
+    confirmText="Remove"
+    cancelText="Cancel"
+    variant="danger"
+    [loading]="deleteSaving"
+    (confirmed)="doDelete()"
+    (cancelled)="cancelDelete()"
+  ></app-confirmation-dialog>
+</div>
