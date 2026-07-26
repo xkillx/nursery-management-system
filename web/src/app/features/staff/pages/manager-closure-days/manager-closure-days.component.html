@@ -1,26 +1,288 @@
 <div class="space-y-6">
-  <!-- Page Header -->
-  <app-page-header
-    title="Closure Days"
-    description="Manage inset days and bank holidays. Children booked on closure days are not billed."
-  />
+  @if (editorMode === 'closed') {
+    <!-- List view -->
+    <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="closure-days-title">
+      <div class="max-w-3xl">
+        <h1 id="closure-days-title" class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+          Closure Days
+        </h1>
+        <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+          Manage inset days and bank holidays across {{ siteName }}. Children booked on closure days are not billed.
+        </p>
+      </div>
 
-  @if (formError) {
-    <app-alert
-      variant="error"
-      title="Failed to add closure day"
-      [message]="formError"
-      [dismissible]="true"
-      (dismissed)="formError = null"
-    />
-  }
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          (click)="openCreate()"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30 cursor-pointer"
+        >
+          <ng-icon name="heroPlus" size="18" aria-hidden="true"></ng-icon>
+          New Closure Day
+        </button>
+      </div>
+    </section>
 
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-    <!-- Left Column: Add Form -->
-    <div class="lg:col-span-4">
-      <app-component-card title="Add Closure Day" desc="Set a date and reason to exclude it from billing.">
-        <form #addForm="ngForm" (ngSubmit)="addClosureDay(addForm)" class="space-y-5">
-          <app-form-field label="Date" labelFor="closure-date" [required]="true">
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Closure days summary">
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-brand-600 dark:text-brand-400">All Dates</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Total Closures ({{ currentYear }})</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ totalClosures() }}</p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300">
+            <ng-icon name="heroCheck" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-success-600 dark:text-success-400">
+            {{ nextClosure() ? (nextClosureDaysRemaining() ?? 'Soon') : 'None' }}
+          </span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Next Upcoming</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">
+          {{ nextClosure() ? (nextClosure()!.date | date:'d MMM yyyy' : 'UTC') : 'None scheduled' }}
+        </p>
+      </article>
+
+      <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex size-12 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
+            <ng-icon name="heroClock" size="24" aria-hidden="true"></ng-icon>
+          </div>
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">History</span>
+        </div>
+        <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Past Closures</p>
+        <p class="mt-2 text-title-sm font-bold text-gray-900 dark:text-white/90">{{ pastClosures() }}</p>
+      </article>
+    </section>
+
+    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Closure day records">
+      <div class="flex flex-col gap-4 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6 dark:border-gray-800">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <span class="text-sm text-gray-600 dark:text-gray-400">
+            {{ currentYear }} closure days
+          </span>
+        </div>
+
+        <div class="flex items-center justify-end">
+          <span class="text-sm text-gray-600 dark:text-gray-400">
+            Showing {{ closureDays().length }} {{ closureDays().length === 1 ? 'day' : 'days' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Mobile view -->
+      <div class="lg:hidden">
+        @if (loading) {
+          <app-loading-state label="Loading closure days..."></app-loading-state>
+        } @else if (closureDays().length === 0) {
+          <app-empty-state
+            title="No closure days"
+            message="Add inset days or bank holidays to exclude them from billing."
+          ></app-empty-state>
+        } @else {
+          <div class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (group of groupedClosureDays(); track group.monthKey) {
+              <div class="px-4 pt-4 pb-1">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  {{ group.monthKey }}
+                </h3>
+              </div>
+              @for (day of group.days; track day.id) {
+                <article class="p-4 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                  <div class="flex items-start gap-3">
+                    <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
+                      <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
+                        {{ day.date | date:'MMM' : 'UTC' }}
+                      </span>
+                      <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
+                        {{ day.date | date:'d' : 'UTC' }}
+                      </span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <h2 class="text-base font-semibold text-gray-900 dark:text-white/90">
+                        {{ day.date | date:'EEEE' : 'UTC' }}
+                      </h2>
+                      <p class="mt-1 flex flex-wrap gap-1.5 items-center">
+                        @if (day.reason) {
+                          <app-badge [color]="getReasonColor(day.reason)" variant="light" size="sm">{{ day.reason }}</app-badge>
+                        }
+                        @switch (getDateStatus(day.date)) {
+                          @case ('today') {
+                            <app-badge color="success" variant="light" size="sm">Today</app-badge>
+                          }
+                          @case ('upcoming') {
+                            <app-badge color="primary" variant="light" size="sm">Upcoming</app-badge>
+                          }
+                          @case ('past') {
+                            <app-badge color="light" variant="light" size="sm">Passed</app-badge>
+                          }
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      (click)="confirmDelete(day)"
+                      class="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                      [attr.aria-label]="'Remove closure day on ' + (day.date | date:'EEEE, d MMMM y' : 'UTC')"
+                    >
+                      <ng-icon name="heroTrash" size="16" aria-hidden="true"></ng-icon>
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Desktop view -->
+      <div class="hidden overflow-x-auto lg:block">
+        <table class="w-full min-w-[720px] border-collapse text-left">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+              <th class="px-6 py-4">Date</th>
+              <th class="px-6 py-4">Day</th>
+              <th class="px-6 py-4">Reason</th>
+              <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @if (loading) {
+              <tr>
+                <td colspan="5">
+                  <app-loading-state label="Loading closure days..."></app-loading-state>
+                </td>
+              </tr>
+            } @else if (closureDays().length === 0) {
+              <tr>
+                <td colspan="5">
+                  <app-empty-state
+                    title="No closure days"
+                    message="Add inset days or bank holidays to exclude them from billing."
+                  ></app-empty-state>
+                </td>
+              </tr>
+            } @else {
+              @for (group of groupedClosureDays(); track group.monthKey) {
+                <tr class="bg-gray-50/50 dark:bg-white/[0.02]">
+                  <td colspan="5" class="px-6 py-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      {{ group.monthKey }}
+                    </span>
+                  </td>
+                </tr>
+                @for (day of group.days; track day.id) {
+                  <tr class="group transition hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-4">
+                        <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
+                          <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
+                            {{ day.date | date:'MMM' : 'UTC' }}
+                          </span>
+                          <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
+                            {{ day.date | date:'d' : 'UTC' }}
+                          </span>
+                        </div>
+                        <div class="min-w-0">
+                          <p class="font-semibold text-gray-900 dark:text-white/90">
+                            {{ day.date | date:'dd MMM yyyy' : 'UTC' }}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                      {{ day.date | date:'EEEE' : 'UTC' }}
+                    </td>
+
+                    <td class="px-6 py-4">
+                      @if (day.reason) {
+                        <app-badge [color]="getReasonColor(day.reason)" variant="light">{{ day.reason }}</app-badge>
+                      } @else {
+                        <span class="text-sm text-gray-400 dark:text-gray-500">--</span>
+                      }
+                    </td>
+
+                    <td class="px-6 py-4">
+                      <span class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        @switch (getDateStatus(day.date)) {
+                          @case ('today') {
+                            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                            Today
+                          }
+                          @case ('upcoming') {
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+                            Upcoming
+                          }
+                          @case ('past') {
+                            <span class="h-2.5 w-2.5 rounded-full bg-gray-400"></span>
+                            Passed
+                          }
+                        }
+                      </span>
+                    </td>
+
+                    <td class="px-6 py-4">
+                      <div class="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          (click)="confirmDelete(day)"
+                          class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 focus:outline-hidden focus:ring-3 focus:ring-red-500/10 disabled:opacity-50 dark:border-red-500/30 dark:hover:bg-red-500/10 cursor-pointer"
+                          [attr.aria-label]="'Remove closure day on ' + (day.date | date:'EEEE, d MMMM y' : 'UTC')"
+                        >
+                          <ng-icon name="heroTrash" size="15" aria-hidden="true"></ng-icon>
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <!-- Create Form View -->
+    <div>
+      <h1 class="text-title-sm font-bold text-gray-900 dark:text-white/90 md:text-title-md">
+        New Closure Day
+      </h1>
+      <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+        Set a date and reason to exclude it from billing calculations.
+      </p>
+    </div>
+
+    @if (formError) {
+      <app-alert variant="error" title="Error" [message]="formError" />
+    }
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <!-- Left Column: Form Details Card -->
+      <section class="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+            <ng-icon name="heroCalendarDays" size="20" aria-hidden="true" />
+          </span>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Closure Day Details</h2>
+        </div>
+
+        <form #addForm="ngForm" class="space-y-6 px-6 py-6" (ngSubmit)="addClosureDay(addForm)" novalidate>
+          <div>
+            <label for="closure-date" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Date <span class="text-red-500">*</span></label>
             <app-date-picker
               id="closure-date"
               name="date"
@@ -28,9 +290,10 @@
               placeholder="Select date"
               [disabled]="formSaving"
             />
-          </app-form-field>
+          </div>
 
-          <app-form-field label="Reason" labelFor="closure-reason-select" [required]="true">
+          <div>
+            <label for="closure-reason-select" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Reason <span class="text-red-500">*</span></label>
             <app-select
               id="closure-reason-select"
               name="reasonSelect"
@@ -39,147 +302,76 @@
               placeholder="Select a reason"
               [disabled]="formSaving"
             />
-          </app-form-field>
+          </div>
 
           @if (selectedReasonOption === 'Other') {
-            <app-form-field label="Custom Reason" labelFor="closure-reason-custom" [required]="true">
-              <app-input-field
+            <div>
+              <label for="closure-reason-custom" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Custom Reason <span class="text-red-500">*</span></label>
+              <input
                 id="closure-reason-custom"
                 name="reasonCustom"
+                type="text"
                 [(ngModel)]="customReason"
                 placeholder="e.g. Building Maintenance"
+                class="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                 [disabled]="formSaving"
               />
-            </app-form-field>
-          }
-
-          <app-button
-            type="submit"
-            [disabled]="formSaving || !formDate || !selectedReasonOption || (selectedReasonOption === 'Other' && !customReason.trim())"
-            [loading]="formSaving"
-            className="w-full"
-          >
-            Add Closure Day
-          </app-button>
-        </form>
-      </app-component-card>
-    </div>
-
-    <!-- Right Column: List & Stats -->
-    <div class="lg:col-span-8 space-y-6">
-      <!-- Stats Dashboard -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <!-- Card 1: Total Closures -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
-          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
-          </div>
-          <div>
-            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total Closures ({{ currentYear }})</span>
-            <span class="mt-1 block text-2xl font-semibold text-gray-800 dark:text-white/90">
-              {{ totalClosures() }} {{ totalClosures() === 1 ? 'day' : 'days' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Card 2: Next Closure Day -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4">
-          <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400">
-            <ng-icon name="heroCalendarDays" size="24" aria-hidden="true" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Next Upcoming Closure</span>
-            <span class="mt-1 block text-lg font-semibold text-gray-800 dark:text-white/90 truncate" [title]="nextClosure() ? (nextClosure()!.date | date: 'EEEE, d MMMM y' : 'UTC') : 'None scheduled'">
-              {{ nextClosure() ? (nextClosure()!.date | date: 'd MMM y' : 'UTC') : 'None scheduled' }}
-            </span>
-            @if (nextClosure()) {
-              <span class="block text-xs text-gray-500 dark:text-gray-400 truncate">
-                {{ nextClosure()!.reason || 'No reason specified' }} ({{ nextClosureDaysRemaining() }})
-              </span>
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- List of Closure Days -->
-      @if (loading) {
-        <app-loading-state />
-      } @else if (closureDays().length === 0) {
-        <app-empty-state
-          title="No closure days"
-          description="Add inset days or bank holidays to exclude them from billing."
-        />
-      } @else {
-        <div class="space-y-6">
-          @for (group of groupedClosureDays(); track group.monthKey) {
-            <div>
-              <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-1">
-                {{ group.monthKey }}
-              </h3>
-              
-              <div class="space-y-3">
-                @for (day of group.days; track day.id) {
-                  <div class="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-gray-700 transition duration-200">
-                    <div class="flex items-center gap-4">
-                      <!-- Calendar Page Icon Style -->
-                      <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 shadow-theme-xs">
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 leading-none">
-                          {{ day.date | date: 'MMM' : 'UTC' }}
-                        </span>
-                        <span class="text-lg font-extrabold leading-tight text-gray-800 dark:text-white/90">
-                          {{ day.date | date: 'd' : 'UTC' }}
-                        </span>
-                      </div>
-                      
-                      <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-sm font-semibold text-gray-800 dark:text-white/90">
-                            {{ day.date | date: 'EEEE' : 'UTC' }}
-                          </span>
-                          
-                          @if (day.reason) {
-                            <app-badge [color]="getReasonColor(day.reason)" size="sm">
-                              {{ day.reason }}
-                            </app-badge>
-                          }
-                        </div>
-                        
-                        <!-- Status context -->
-                        <div class="mt-1 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                          @switch (getDateStatus(day.date)) {
-                            @case ('today') {
-                              <span class="flex size-2 rounded-full bg-success-500"></span>
-                              <span class="text-success-600 dark:text-success-400 font-medium">Today</span>
-                            }
-                            @case ('upcoming') {
-                              <span class="flex size-2 rounded-full bg-brand-500"></span>
-                              <span class="text-brand-600 dark:text-brand-400 font-medium">Upcoming</span>
-                            }
-                            @case ('past') {
-                              <span class="flex size-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                              <span>Passed</span>
-                            }
-                          }
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <button
-                      (click)="confirmDelete(day)"
-                      class="inline-flex size-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10 dark:hover:text-error-400"
-                      aria-label="Remove closure day"
-                    >
-                      <ng-icon name="heroTrash" size="18" aria-hidden="true" />
-                    </button>
-                  </div>
-                }
-              </div>
             </div>
           }
+
+          <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end dark:border-gray-800">
+            <button
+              type="button"
+              (click)="closeEditor()"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+              [disabled]="formSaving"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50 cursor-pointer"
+              [disabled]="formSaving || !formDate || !selectedReasonOption || (selectedReasonOption === 'Other' && !customReason.trim())"
+            >
+              @if (formSaving) {
+                <svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+              Add Closure Day
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Sidebar Guidance Details -->
+      <aside class="space-y-6">
+        <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-500/20 dark:bg-blue-500/10">
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-blue-500 shadow-sm dark:bg-gray-900">
+              <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+            </span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configuration Tips</h2>
+          </div>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Closure days are excluded from billing automatically. Children booked on these dates will not be charged.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>Use "Inset Day" for staff training days and "Bank Holiday" for public holidays.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <ng-icon name="heroInformationCircle" size="16" aria-hidden="true" class="mt-1 shrink-0 text-blue-500" />
+              <span>For multi-day closures like Christmas, add each date individually or use the holiday closure option.</span>
+            </li>
+          </ul>
         </div>
-      }
+      </aside>
     </div>
-  </div>
+  }
 </div>
 
 <app-confirmation-dialog

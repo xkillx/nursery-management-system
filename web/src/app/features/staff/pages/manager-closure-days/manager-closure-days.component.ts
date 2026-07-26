@@ -3,7 +3,11 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  heroCalendar,
   heroCalendarDays,
+  heroCheck,
+  heroClock,
+  heroInformationCircle,
   heroPlus,
   heroTrash,
   heroXMark,
@@ -12,14 +16,9 @@ import {
 import { EmptyStateComponent } from '../../../../shared/components/common/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { DatePickerComponent } from '../../../../shared/components/form/date-picker/date-picker.component';
 import { SelectComponent } from '../../../../shared/components/form/select/select.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -35,20 +34,19 @@ import { ClosureDay } from '../../models/closure-day.models';
     LoadingStateComponent,
     EmptyStateComponent,
     ConfirmationDialogComponent,
-    PageHeaderComponent,
-    ButtonComponent,
-    InputFieldComponent,
     DatePickerComponent,
     SelectComponent,
     AlertComponent,
-    FormFieldComponent,
-    ComponentCardComponent,
     BadgeComponent,
   ],
   templateUrl: './manager-closure-days.component.html',
   providers: [
     provideIcons({
+      heroCalendar,
       heroCalendarDays,
+      heroCheck,
+      heroClock,
+      heroInformationCircle,
       heroPlus,
       heroTrash,
       heroXMark,
@@ -61,11 +59,13 @@ export class ManagerClosureDaysComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   siteId: string | null = null;
+  siteName = '';
   loading = false;
   closureDays = signal<ClosureDay[]>([]);
 
   currentYear = new Date().getFullYear();
 
+  editorMode: 'closed' | 'create' = 'closed';
   formDate = '';
   selectedReasonOption = '';
   customReason = '';
@@ -85,6 +85,11 @@ export class ManagerClosureDaysComponent implements OnInit {
   deleteSaving = false;
 
   totalClosures = computed(() => this.closureDays().length);
+
+  pastClosures = computed(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return this.closureDays().filter((d) => d.date < todayStr).length;
+  });
 
   nextClosure = computed(() => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -113,13 +118,13 @@ export class ManagerClosureDaysComponent implements OnInit {
     const groups: { monthKey: string; days: ClosureDay[] }[] = [];
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
     for (const d of sorted) {
       const [yearStr, monthStr] = d.date.split('-');
       const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10) - 1; // 0-indexed
+      const month = parseInt(monthStr, 10) - 1;
       const monthName = `${monthNames[month]} ${year}`;
 
       let group = groups.find((g) => g.monthKey === monthName);
@@ -139,6 +144,7 @@ export class ManagerClosureDaysComponent implements OnInit {
       return;
     }
     this.siteId = membership.branch_id;
+    this.siteName = membership.branch_name ?? 'Assigned site';
     this.loadClosureDays();
   }
 
@@ -160,12 +166,26 @@ export class ManagerClosureDaysComponent implements OnInit {
     });
   }
 
+  openCreate(): void {
+    this.editorMode = 'create';
+    this.formDate = '';
+    this.selectedReasonOption = '';
+    this.customReason = '';
+    this.formError = null;
+  }
+
+  closeEditor(): void {
+    this.editorMode = 'closed';
+    this.formError = null;
+  }
+
   addClosureDay(form: NgForm): void {
     if (!this.siteId || !this.formDate) return;
 
-    const reason = this.selectedReasonOption === 'Other'
-      ? this.customReason.trim()
-      : this.selectedReasonOption;
+    const reason =
+      this.selectedReasonOption === 'Other'
+        ? this.customReason.trim()
+        : this.selectedReasonOption;
 
     this.formSaving = true;
     this.formError = null;
@@ -177,6 +197,7 @@ export class ManagerClosureDaysComponent implements OnInit {
         this.selectedReasonOption = '';
         this.customReason = '';
         form.resetForm();
+        this.closeEditor();
         this.loadClosureDays();
       },
       error: (err) => {
@@ -197,7 +218,8 @@ export class ManagerClosureDaysComponent implements OnInit {
   getReasonColor(reason: string): 'warning' | 'info' | 'error' | 'success' | 'light' {
     const clean = reason.toLowerCase();
     if (clean.includes('bank holiday')) return 'warning';
-    if (clean.includes('inset') || clean.includes('training') || clean.includes('staff')) return 'info';
+    if (clean.includes('inset') || clean.includes('training') || clean.includes('staff'))
+      return 'info';
     if (clean.includes('christmas')) return 'error';
     if (clean.includes('easter')) return 'success';
     return 'light';
