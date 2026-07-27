@@ -861,7 +861,10 @@ func setupPeopleHarness(t *testing.T) *peopleHarness {
 
 	cfg := testConfig()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := Bootstrap(cfg, logger, pool)
+	router, err := InitializeApp(cfg, logger, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tokens := authtokens.NewTokenManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLHours, cfg.JWTRefreshShortTTLHours)
 

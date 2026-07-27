@@ -38,8 +38,13 @@ func setupBillingIssueHarness(t *testing.T) *billingIssueHarness {
 	pool := dbtest.RequirePostgres(t)
 	dbtest.Reset(t, pool)
 
+	router, err := InitializeApp(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	h := &billingIssueHarness{
-		router:     Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
+		router:     router,
 		pool:       pool,
 		tokens:     authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24),
 		tenantID:   uuid.MustParse("e1000000-0000-0000-0000-000000000001"),

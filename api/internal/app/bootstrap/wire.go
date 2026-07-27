@@ -129,6 +129,7 @@ import (
 	branchclosurehandler "nursery-management-system/api/internal/modules/branch_closures/interfaces/http"
 
 	holidayperiodsapp "nursery-management-system/api/internal/modules/holiday_periods/application"
+	holidayperiodsdomain "nursery-management-system/api/internal/modules/holiday_periods/domain"
 	holidayperiodspostgres "nursery-management-system/api/internal/modules/holiday_periods/infrastructure/postgres"
 	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
 
@@ -204,6 +205,8 @@ var childrenSet = wire.NewSet(
 	provideTodayFunc,
 	provideChildFundingWriterAdapter,
 	wire.Bind(new(childdomain.ChildFundingWriter), new(*childFundingWriterAdapter)),
+	provideChildFundingReaderAdapter,
+	wire.Bind(new(childdomain.ChildFundingReader), new(*childFundingReaderAdapter)),
 	childapp.NewListChildren,
 	childapp.NewGetChild,
 	childapp.NewCreateChildWithFullProfile,
@@ -230,6 +233,7 @@ var childrenSet = wire.NewSet(
 	childapp.NewGetLeavingRecord,
 	childapp.NewUploadPhoto,
 	childapp.NewRemovePhoto,
+	childapp.NewGetChildFunding,
 	wire.Struct(new(childhandler.CoreUseCases), "*"),
 	wire.Struct(new(childhandler.ProfileUseCases), "*"),
 	wire.Struct(new(childhandler.ContactsUseCases), "*"),
@@ -240,6 +244,7 @@ var childrenSet = wire.NewSet(
 	wire.Struct(new(childhandler.RoomAssignmentUseCases), "*"),
 	wire.Struct(new(childhandler.BillingProfileUseCases), "*"),
 	wire.Struct(new(childhandler.PhotoUseCases), "*"),
+	wire.Struct(new(childhandler.FundingUseCases), "*"),
 	wire.Struct(new(childhandler.ChildrenHandlerConfig), "*"),
 	childhandler.NewHandler,
 )
@@ -716,6 +721,7 @@ var branchClosuresSet = wire.NewSet(
 
 var holidayPeriodsSet = wire.NewSet(
 	holidayperiodspostgres.NewRepository,
+	wire.Bind(new(holidayperiodsdomain.Repository), new(*holidayperiodspostgres.Repository)),
 	holidayperiodsapp.NewCreateHolidayPeriod,
 	holidayperiodsapp.NewUpdateHolidayPeriod,
 	holidayperiodsapp.NewDeleteHolidayPeriod,

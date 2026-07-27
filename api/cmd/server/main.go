@@ -83,7 +83,11 @@ func main() {
 		}
 	}
 
-	router := bootstrap.Bootstrap(cfg, logger, pool)
+	router, err := bootstrap.InitializeApp(cfg, logger, pool)
+	if err != nil {
+		logger.Error("failed to initialize app", "error", err)
+		os.Exit(1)
+	}
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.APIPort,

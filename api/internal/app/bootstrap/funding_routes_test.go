@@ -36,8 +36,13 @@ func setupFundingHarness(t *testing.T) *fundingHarness {
 	pool := dbtest.RequirePostgres(t)
 	dbtest.Reset(t, pool)
 
+	router, err := InitializeApp(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	h := &fundingHarness{
-		router:         Bootstrap(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool),
+		router:         router,
 		pool:           pool,
 		tokens:         authtokens.NewTokenManager("access-secret", "refresh-secret", 15, 720, 24),
 		tenantID:       uuid.MustParse("f1000000-0000-0000-0000-000000000001"),
@@ -69,7 +74,7 @@ func setupFundingHarness(t *testing.T) *fundingHarness {
 	// Child enrolled from 2026-01-01 to 2026-03-31
 	dbtest.InsertChild(t, pool, h.childWithEndID, h.tenantID, h.branchID, "Funding Child With End",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
-	_, err := pool.Exec(context.Background(),
+	_, err = pool.Exec(context.Background(),
 		"UPDATE children SET end_date = $1 WHERE id = $2",
 		dbtest.DateAt(2026, 3, 31), h.childWithEndID)
 	if err != nil {
