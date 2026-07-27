@@ -4,12 +4,15 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
+  heroBanknotes,
   heroBuildingOffice2,
   heroCalendarDays,
   heroCheckBadge,
   heroChevronDown,
   heroClock,
   heroCreditCard,
+  heroCurrencyPound,
+  heroDocumentText,
   heroEnvelope,
   heroExclamationCircle,
   heroExclamationTriangle,
@@ -20,6 +23,7 @@ import {
   heroPencil,
   heroReceiptPercent,
   heroShieldCheck,
+  heroUser,
   heroUserCircle,
 } from '@ng-icons/heroicons/outline';
 
@@ -83,7 +87,7 @@ function lineKindLabel(kind: string): string {
 function invoiceDisplayTitle(detail: ManagerInvoiceDetail): string {
   if (detail.invoiceNumberDisplay) return detail.invoiceNumberDisplay;
   if (detail.invoiceNumber) return detail.invoiceNumber;
-  return `Draft invoice — ${detail.childName}`;
+  return `Draft Invoice — ${detail.childName}`;
 }
 
 function lineQuantityLabel(line: ManagerInvoiceLine): string {
@@ -134,12 +138,15 @@ function fundingModelLabel(model: string | null): string {
   providers: [
     provideIcons({
       heroArrowDownTray,
+      heroBanknotes,
       heroBuildingOffice2,
       heroCalendarDays,
       heroCheckBadge,
       heroChevronDown,
       heroClock,
       heroCreditCard,
+      heroCurrencyPound,
+      heroDocumentText,
       heroEnvelope,
       heroExclamationCircle,
       heroExclamationTriangle,
@@ -150,6 +157,7 @@ function fundingModelLabel(model: string | null): string {
       heroPencil,
       heroReceiptPercent,
       heroShieldCheck,
+      heroUser,
       heroUserCircle,
     }),
   ],
