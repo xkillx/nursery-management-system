@@ -102,6 +102,7 @@ const RANGE_PRESETS: RangePreset[] = [
   { value: 'this', label: 'This month' },
   { value: '3m', label: 'Last 3 months' },
   { value: '6m', label: 'Last 6 months' },
+  { value: 'all', label: 'All time' },
   { value: 'custom', label: 'Custom' },
 ];
 
@@ -163,9 +164,9 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   readonly rangePresets = RANGE_PRESETS;
   readonly invoicesRoute = ROLE_ROUTES.managerInvoices;
 
-  selectedBillingMonthFrom: string;
-  selectedBillingMonthTo: string;
-  activePreset = 'this';
+  selectedBillingMonthFrom = '';
+  selectedBillingMonthTo = '';
+  activePreset = 'all';
   selectedStatuses: ManagerInvoiceStatus[] = [];
   searchQuery = '';
   offset = 0;
@@ -287,12 +288,6 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
     return 'border-l-transparent';
   }
 
-  constructor() {
-    const now = new Date();
-    this.selectedBillingMonthTo = formatBillingMonth(now);
-    this.selectedBillingMonthFrom = formatBillingMonth(now);
-  }
-
   paymentCueState(item: ManagerInvoiceListItem): PaymentDisplayState {
     return getPaymentDisplayState(item.status, item.dueStatus, item.amountPaidMinor, null);
   }
@@ -327,14 +322,19 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   onRangePreset(preset: string): void {
     this.activePreset = preset;
     const now = new Date();
-    this.selectedBillingMonthTo = formatBillingMonth(now);
 
-    if (preset === 'this') {
+    if (preset === 'all') {
+      this.selectedBillingMonthFrom = '';
+      this.selectedBillingMonthTo = '';
+    } else if (preset === 'this') {
       this.selectedBillingMonthFrom = formatBillingMonth(now);
+      this.selectedBillingMonthTo = formatBillingMonth(now);
     } else if (preset === '3m') {
       this.selectedBillingMonthFrom = formatBillingMonth(new Date(now.getFullYear(), now.getMonth() - 2, 1));
+      this.selectedBillingMonthTo = formatBillingMonth(now);
     } else if (preset === '6m') {
       this.selectedBillingMonthFrom = formatBillingMonth(new Date(now.getFullYear(), now.getMonth() - 5, 1));
+      this.selectedBillingMonthTo = formatBillingMonth(now);
     }
     this.offset = 0;
     this.onFilterChange();
@@ -373,11 +373,10 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   }
 
   clearAllFilters(): void {
-    const now = new Date();
     this.selectedStatuses = [];
-    this.activePreset = 'this';
-    this.selectedBillingMonthFrom = formatBillingMonth(now);
-    this.selectedBillingMonthTo = formatBillingMonth(now);
+    this.activePreset = 'all';
+    this.selectedBillingMonthFrom = '';
+    this.selectedBillingMonthTo = '';
     this.searchQuery = '';
     this.offset = 0;
     localStorage.removeItem(LS_KEY);
@@ -386,15 +385,12 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   }
 
   get hasActiveFilters(): boolean {
-    const now = new Date();
-    const defaultFrom = formatBillingMonth(now);
-    const defaultTo = formatBillingMonth(now);
     return (
       this.selectedStatuses.length > 0 ||
       this.searchQuery.trim() !== '' ||
-      this.activePreset !== 'this' ||
-      this.selectedBillingMonthFrom !== defaultFrom ||
-      this.selectedBillingMonthTo !== defaultTo
+      this.activePreset !== 'all' ||
+      this.selectedBillingMonthFrom !== '' ||
+      this.selectedBillingMonthTo !== ''
     );
   }
 
@@ -411,6 +407,9 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   }
 
   get billingMonthLabel(): string {
+    if (this.activePreset === 'all') {
+      return 'All time';
+    }
     if (this.selectedBillingMonthFrom === this.selectedBillingMonthTo) {
       return formatBillingMonthLabel(this.selectedBillingMonthFrom);
     }
