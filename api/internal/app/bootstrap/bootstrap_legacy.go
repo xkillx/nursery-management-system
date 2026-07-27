@@ -24,6 +24,10 @@ import (
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	parentchildhandler "nursery-management-system/api/internal/modules/parentchildmappings/interfaces/http"
 
+	parentsapp "nursery-management-system/api/internal/modules/parents/application"
+	parentspostgres "nursery-management-system/api/internal/modules/parents/infrastructure/postgres"
+	parentshandler "nursery-management-system/api/internal/modules/parents/interfaces/http"
+
 	attendanceapp "nursery-management-system/api/internal/modules/attendance/application"
 	attendancepostgres "nursery-management-system/api/internal/modules/attendance/infrastructure/postgres"
 	attendancehandler "nursery-management-system/api/internal/modules/attendance/interfaces/http"
@@ -241,6 +245,24 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		logger,
 	)
 
+	parentsRepo := parentspostgres.NewParentRepository(pool)
+	parentsChildChecker := &parentsChildExistenceCheckerAdapter{repo: childRepo}
+	parentsUserCreator := &parentUserCreatorAdapter{pool: pool}
+	parentsEmailSender := &parentEmailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
+	parentsHandler := parentshandler.NewHandler(
+		parentsapp.NewCreateParentUseCase(parentsRepo, auditWriter, txManager),
+		parentsapp.NewUpdateParentUseCase(parentsRepo, auditWriter, txManager),
+		parentsapp.NewGetParentUseCase(parentsRepo),
+		parentsapp.NewListParentsUseCase(parentsRepo),
+		parentsapp.NewListParentsByChildUseCase(parentsRepo),
+		parentsapp.NewSoftDeleteParentUseCase(parentsRepo, auditWriter, txManager),
+		parentsapp.NewLinkChildUseCase(parentsRepo, auditWriter, txManager, parentsChildChecker),
+		parentsapp.NewUnlinkChildUseCase(parentsRepo, auditWriter, txManager),
+		parentsapp.NewInviteToPortalUseCase(parentsRepo, auditWriter, txManager, parentsUserCreator, parentsEmailSender, cfg.WebBaseURL),
+		parentsapp.NewRevokePortalAccessUseCase(parentsRepo, auditWriter, txManager),
+		logger,
+	)
+
 	attendanceRepo := attendancepostgres.NewAttendanceRepository(pool)
 	childEnrollmentChecker := &childEnrollmentCheckerAdapter{repo: childRepo}
 	childCorrectionChecker := &childCorrectionCheckerAdapter{repo: childRepo}
@@ -271,6 +293,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	manager := protected.Group("")
 	manager.Use(httpserver.RequireRolesWithObservability(logger, recorder, "manager"))
 	mappingsHandler.RegisterRoutes(manager)
+	parentsHandler.RegisterRoutes(manager)
 
 	attendanceHandler.RegisterRoutes(protected)
 	absenceHandler.RegisterRoutes(protected)
