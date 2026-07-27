@@ -133,6 +133,7 @@ type InvoiceCalculationDetails struct {
 	FundingModel           string    `json:"funding_model,omitempty"`
 	TermDatesUsed          []string  `json:"term_dates_used,omitempty"`
 	ClosureDaysExcluded    []string  `json:"closure_days_excluded,omitempty"`
+	HolidayPeriodsExcluded []string  `json:"holiday_periods_excluded,omitempty"`
 
 	// Advance-pay source.
 	BookingID         uuid.UUID                 `json:"booking_id"`

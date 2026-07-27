@@ -1154,11 +1154,14 @@ func toPrefillResponse(r application.ComputeInvoicePrefillResult) prefillRespons
 			FundedAllowanceMinutes: r.FundedAllowanceMinutes,
 			StatusLabel:            entitlementLabel,
 		},
-		Lines:                lines,
-		SubtotalMinor:        r.SubtotalMinor,
-		FundedDeductionMinor: r.FundedDeductionMinor,
-		TotalDueMinor:        r.TotalDueMinor,
-		Warnings:             r.Warnings,
+		Lines:                  lines,
+		SubtotalMinor:          r.SubtotalMinor,
+		FundedDeductionMinor:   r.FundedDeductionMinor,
+		TotalDueMinor:          r.TotalDueMinor,
+		Warnings:               r.Warnings,
+		TermDatesUsed:          r.TermDatesUsed,
+		ClosureDaysExcluded:    r.ClosureDaysExcluded,
+		HolidayPeriodsExcluded: r.HolidayPeriodsExcluded,
 	}
 }
 

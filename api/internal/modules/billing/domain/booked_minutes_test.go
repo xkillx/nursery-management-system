@@ -193,3 +193,79 @@ func TestComputeFundedDeductionMinor(t *testing.T) {
 		t.Errorf("expected fdmMinor=%d bmMinor=%d, got fdmMinor=%d bmMinor=%d", wantFdm, wantBm, fdmMinor, bmMinor)
 	}
 }
+
+func TestCalculateBookedCoreMinutesInMonth_TransparencyFieldsEmpty(t *testing.T) {
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calc.TermDatesUsed) != 0 {
+		t.Errorf("expected empty TermDatesUsed, got %v", calc.TermDatesUsed)
+	}
+	if len(calc.ClosureDaysExcluded) != 0 {
+		t.Errorf("expected empty ClosureDaysExcluded, got %v", calc.ClosureDaysExcluded)
+	}
+	if len(calc.HolidayPeriodsExcluded) != 0 {
+		t.Errorf("expected empty HolidayPeriodsExcluded, got %v", calc.HolidayPeriodsExcluded)
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_TransparencyFieldsTermDates(t *testing.T) {
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	termDates := []TermDateRange{
+		{StartDate: timeMustParse("2026-07-01"), EndDate: timeMustParse("2026-07-31")},
+	}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, termDates, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calc.TermDatesUsed) != 1 {
+		t.Fatalf("expected 1 TermDatesUsed, got %d", len(calc.TermDatesUsed))
+	}
+	if calc.TermDatesUsed[0] != "2026-07-01 to 2026-07-31" {
+		t.Errorf("unexpected TermDatesUsed: %s", calc.TermDatesUsed[0])
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_TransparencyFieldsClosureDates(t *testing.T) {
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	closureDates := []time.Time{
+		timeMustParse("2026-07-06"),
+	}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, closureDates, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calc.ClosureDaysExcluded) != 1 {
+		t.Fatalf("expected 1 ClosureDaysExcluded, got %d", len(calc.ClosureDaysExcluded))
+	}
+	if calc.ClosureDaysExcluded[0] != "2026-07-06" {
+		t.Errorf("unexpected ClosureDaysExcluded: %s", calc.ClosureDaysExcluded[0])
+	}
+}
+
+func TestCalculateBookedCoreMinutesInMonth_TransparencyFieldsHolidayPeriods(t *testing.T) {
+	entries := []BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: BookedSessionType{ID: "st1", Name: "Full Day", DurationMinutes: 300}},
+	}
+	holidayPeriods := []HolidayPeriodDateRange{
+		{StartDate: timeMustParse("2026-07-20"), EndDate: timeMustParse("2026-07-24")},
+	}
+	calc, err := CalculateBookedCoreMinutesInMonth("p1", entries, timeMustParse("2026-07-01"), 750, nil, nil, holidayPeriods)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calc.HolidayPeriodsExcluded) != 1 {
+		t.Fatalf("expected 1 HolidayPeriodsExcluded, got %d", len(calc.HolidayPeriodsExcluded))
+	}
+	if calc.HolidayPeriodsExcluded[0] != "2026-07-20 to 2026-07-24" {
+		t.Errorf("unexpected HolidayPeriodsExcluded: %s", calc.HolidayPeriodsExcluded[0])
+	}
+}

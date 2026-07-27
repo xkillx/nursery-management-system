@@ -38,11 +38,14 @@ type BookedSession struct {
 
 // BookedCoreCalculation is the per-term result of the advance-pay calculation.
 type BookedCoreCalculation struct {
-	BookingPatternID string
-	TotalMinutes     int
-	Subtotal         Money
-	PerEntry         []BookedEntryBreakdown
-	Sessions         []BookedSession
+	BookingPatternID       string
+	TotalMinutes           int
+	Subtotal               Money
+	PerEntry               []BookedEntryBreakdown
+	Sessions               []BookedSession
+	TermDatesUsed          []string
+	ClosureDaysExcluded    []string
+	HolidayPeriodsExcluded []string
 }
 
 // BookedEntryBreakdown is the per-(day,session) subtotal.
@@ -288,6 +291,23 @@ func CalculateBookedCoreMinutesInMonth(
 		return BookedCoreCalculation{}, err
 	}
 	calc.Subtotal = Money{minor: subtotal}
+
+	if len(termDates) > 0 {
+		for _, r := range termDates {
+			calc.TermDatesUsed = append(calc.TermDatesUsed, fmt.Sprintf("%s to %s", r.StartDate.Format("2006-01-02"), r.EndDate.Format("2006-01-02")))
+		}
+	}
+	if len(closureDates) > 0 {
+		for _, cd := range closureDates {
+			calc.ClosureDaysExcluded = append(calc.ClosureDaysExcluded, cd.Format("2006-01-02"))
+		}
+	}
+	if len(holidayPeriods) > 0 {
+		for _, hp := range holidayPeriods {
+			calc.HolidayPeriodsExcluded = append(calc.HolidayPeriodsExcluded, fmt.Sprintf("%s to %s", hp.StartDate.Format("2006-01-02"), hp.EndDate.Format("2006-01-02")))
+		}
+	}
+
 	return calc, nil
 }
 

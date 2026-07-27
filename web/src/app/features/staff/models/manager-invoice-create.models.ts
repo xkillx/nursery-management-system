@@ -29,6 +29,9 @@ export interface ManagerInvoicePrefill {
   fundedDeductionMinor: number;
   totalDueMinor: number;
   warnings: string[];
+  termDatesUsed: string[];
+  closureDaysExcluded: string[];
+  holidayPeriodsExcluded: string[];
 }
 
 export interface FormInvoiceLine {

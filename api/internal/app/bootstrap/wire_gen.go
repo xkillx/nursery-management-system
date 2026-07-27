@@ -314,10 +314,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository3)
 	bootstrapHolidayPeriodLookupAdapter := provideHolidayPeriodLookupAdapter(repository4)
 	ownerRepository := postgres16.NewRepository(pool)
-	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository, bootstrapTermDateLookupAdapter)
+	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository)
 	bookingEntriesLookupAdapter := application11.NewBookingEntriesLookupAdapter(pool)
 	generateDraftInvoicesUseCase := application10.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
-	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter)
+	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer)
 	issueInvoice := application10.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
 	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice)
@@ -713,10 +713,10 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bootstrapClosureDateLookupAdapter := provideClosureDateLookupAdapter(repository3)
 	bootstrapHolidayPeriodLookupAdapter := provideHolidayPeriodLookupAdapter(repository4)
 	ownerRepository := postgres16.NewRepository(pool)
-	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository, bootstrapTermDateLookupAdapter)
+	bootstrapFundingLookupAdapter := provideFundingLookupAdapter(fundingRecordRepositoryImpl, ownerRepository)
 	bookingEntriesLookupAdapter := application11.NewBookingEntriesLookupAdapter(pool)
 	generateDraftInvoicesUseCase := application10.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
-	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter)
+	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer)
 	issueInvoice := application10.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
 	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice)
@@ -984,9 +984,8 @@ var fundingSet = wire.NewSet(postgres5.NewRepository, wire.Bind(new(domain8.Fund
 func provideFundingLookupAdapter(
 	fundingRepo *postgres5.FundingRecordRepositoryImpl,
 	ownerRepo *postgres16.OwnerRepository,
-	termDateLookup *termDateLookupAdapter,
 ) *fundingLookupAdapter {
-	return &fundingLookupAdapter{fundingRepo: fundingRepo, ownerRepo: ownerRepo, termDateLookup: termDateLookup}
+	return &fundingLookupAdapter{fundingRepo: fundingRepo, ownerRepo: ownerRepo}
 }
 
 var billingSet = wire.NewSet(postgres6.NewRepository, wire.Bind(new(domain9.BillingRepository), new(*postgres6.Repository)), wire.Bind(new(domain9.BranchSettingsRepository), new(*postgres6.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application10.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application10.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain9.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain9.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain9.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), provideHourlyBookingLookupAdapter, wire.Bind(new(domain9.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)), provideFundingLookupAdapter, wire.Bind(new(domain9.FundingLookup), new(*fundingLookupAdapter)), application11.NewBookingEntriesLookupAdapter, wire.Bind(new(domain9.BookingEntriesLookup), new(*application11.BookingEntriesLookupAdapter)), application10.NewPreflightDraftInvoices, application10.NewComputeInvoicePrefill, application10.NewCreateDraftInvoice, application10.NewCreateAndIssueInvoiceFromForm, application10.NewGenerateDraftInvoices, application10.NewListInvoices, application10.NewGetInvoice, application10.NewIssueInvoice, application10.NewBulkIssueInvoices, application10.NewOverrideAttendanceBlockUseCase, application10.NewVoidInvoice, application10.NewManageInvoiceLines, application10.NewListParentInvoices, application10.NewGetParentInvoice, application10.NewUpdateSiteRateUseCase, application10.NewUpdateBranchSettingsUseCase, application10.NewExportInvoices, application10.NewInvoiceSummary, application10.NewOverdueSummary, provideInvoicePDFRenderer, wire.Bind(new(httpbilling.InvoicePDFRenderer), new(*pdf.Renderer)), wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.ExportUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)

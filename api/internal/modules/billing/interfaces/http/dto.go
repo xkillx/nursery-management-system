@@ -448,17 +448,20 @@ type parentInvoiceLineResponse struct {
 // --- Invoice Prefill DTOs ---
 
 type prefillResponse struct {
-	ChildID              string                `json:"child_id"`
-	ChildFirstName       string                `json:"child_first_name"`
-	ChildMiddleName      *string               `json:"child_middle_name"`
-	ChildLastName        *string               `json:"child_last_name"`
-	BillingMonth         string                `json:"billing_month"`
-	EntitlementStatus    entitlementResponse   `json:"entitlement_status"`
-	Lines                []prefillLineResponse `json:"lines"`
-	SubtotalMinor        int                   `json:"subtotal_minor"`
-	FundedDeductionMinor int                   `json:"funded_deduction_minor"`
-	TotalDueMinor        int                   `json:"total_due_minor"`
-	Warnings             []string              `json:"warnings"`
+	ChildID                string                `json:"child_id"`
+	ChildFirstName         string                `json:"child_first_name"`
+	ChildMiddleName        *string               `json:"child_middle_name"`
+	ChildLastName          *string               `json:"child_last_name"`
+	BillingMonth           string                `json:"billing_month"`
+	EntitlementStatus      entitlementResponse   `json:"entitlement_status"`
+	Lines                  []prefillLineResponse `json:"lines"`
+	SubtotalMinor          int                   `json:"subtotal_minor"`
+	FundedDeductionMinor   int                   `json:"funded_deduction_minor"`
+	TotalDueMinor          int                   `json:"total_due_minor"`
+	Warnings               []string              `json:"warnings"`
+	TermDatesUsed          []string              `json:"term_dates_used"`
+	ClosureDaysExcluded    []string              `json:"closure_days_excluded"`
+	HolidayPeriodsExcluded []string              `json:"holiday_periods_excluded"`
 }
 
 type entitlementResponse struct {

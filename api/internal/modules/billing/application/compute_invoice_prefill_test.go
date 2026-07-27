@@ -209,7 +209,7 @@ func TestComputeInvoicePrefill_HappyPath(t *testing.T) {
 		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: lookupEntries}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{
 		TenantID: bookingRow.TenantID,
@@ -257,7 +257,7 @@ func TestComputeInvoicePrefill_MissingFundingProfile(t *testing.T) {
 		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{
 		TenantID: bookingRow.TenantID,
@@ -294,7 +294,7 @@ func TestComputeInvoicePrefill_ZeroAttendance(t *testing.T) {
 		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{
 		TenantID: bookingRow.TenantID,
@@ -319,7 +319,7 @@ func TestComputeInvoicePrefill_ChildNotFound(t *testing.T) {
 		bookings: []domain.BillableChildRow{},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{
 		TenantID: uuid.MustParse("00000000-0000-4000-8000-000000000001"),
@@ -335,7 +335,7 @@ func TestComputeInvoicePrefill_InvalidBillingMonth(t *testing.T) {
 	childID := uuid.New()
 	repo := &stubPrefillRepo{}
 	bookingLookup := &stubBookingEntriesLookup{}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{}
 	_, err := uc.Execute(context.Background(), actor, childID.String(), "invalid-month")
@@ -353,7 +353,7 @@ func TestComputeInvoicePrefill_SiteRateNotSet(t *testing.T) {
 		bookings: []domain.BillableChildRow{bookingRow},
 	}
 	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
-	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil)
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
 
 	actor := tenant.ActorContext{
 		TenantID: bookingRow.TenantID,

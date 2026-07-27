@@ -16,6 +16,7 @@ type InvoicePrefillParams struct {
 	TermDates              []TermDateRange
 	ClosureDates           []time.Time
 	HolidayPeriods         []HolidayPeriodDateRange
+	TermTimeOnly           bool
 }
 
 // InvoicePrefillLine is a computed line item from the prefill calculation.
@@ -34,12 +35,15 @@ type InvoicePrefillLine struct {
 
 // InvoicePrefillResult holds the output of the billing prefill calculation.
 type InvoicePrefillResult struct {
-	Lines                []InvoicePrefillLine
-	SubtotalMinor        int
-	FundedDeductionMinor int
-	TotalDueMinor        int
-	TotalMinutes         int
-	Warnings             []string
+	Lines                  []InvoicePrefillLine
+	SubtotalMinor          int
+	FundedDeductionMinor   int
+	TotalDueMinor          int
+	TotalMinutes           int
+	Warnings               []string
+	TermDatesUsed          []string
+	ClosureDaysExcluded    []string
+	HolidayPeriodsExcluded []string
 }
 
 // ComputeInvoicePrefill is a pure domain service that computes invoice line
@@ -122,13 +126,19 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 			warnings = append(warnings, "significant_funding_deduction")
 		}
 	}
+	if params.TermTimeOnly && len(params.TermDates) == 0 {
+		warnings = append(warnings, "no_term_dates_for_month")
+	}
 
 	return InvoicePrefillResult{
-		Lines:                lines,
-		SubtotalMinor:        subtotalMinor,
-		FundedDeductionMinor: fundedDeductionMinor,
-		TotalDueMinor:        totalDueMinor,
-		TotalMinutes:         calc.TotalMinutes,
-		Warnings:             warnings,
+		Lines:                  lines,
+		SubtotalMinor:          subtotalMinor,
+		FundedDeductionMinor:   fundedDeductionMinor,
+		TotalDueMinor:          totalDueMinor,
+		TotalMinutes:           calc.TotalMinutes,
+		Warnings:               warnings,
+		TermDatesUsed:          calc.TermDatesUsed,
+		ClosureDaysExcluded:    calc.ClosureDaysExcluded,
+		HolidayPeriodsExcluded: calc.HolidayPeriodsExcluded,
 	}, nil
 }

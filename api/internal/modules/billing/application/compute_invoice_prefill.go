@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -21,10 +22,13 @@ type ComputeInvoicePrefill struct {
 	txMgr                PrefillTxManager
 	bookingEntriesLookup domain.BookingEntriesLookup
 	fundingLookup        domain.FundingLookup
+	termDateLookup       domain.TermDateLookup
+	closureDateLookup    domain.ClosureDateLookup
+	holidayPeriodLookup  domain.HolidayPeriodLookup
 }
 
-func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager, bookingEntriesLookup domain.BookingEntriesLookup, fundingLookup domain.FundingLookup) *ComputeInvoicePrefill {
-	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr, bookingEntriesLookup: bookingEntriesLookup, fundingLookup: fundingLookup}
+func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager, bookingEntriesLookup domain.BookingEntriesLookup, fundingLookup domain.FundingLookup, termDateLookup domain.TermDateLookup, closureDateLookup domain.ClosureDateLookup, holidayPeriodLookup domain.HolidayPeriodLookup) *ComputeInvoicePrefill {
+	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr, bookingEntriesLookup: bookingEntriesLookup, fundingLookup: fundingLookup, termDateLookup: termDateLookup, closureDateLookup: closureDateLookup, holidayPeriodLookup: holidayPeriodLookup}
 }
 
 type ComputeInvoicePrefillResult struct {
@@ -39,6 +43,9 @@ type ComputeInvoicePrefillResult struct {
 	FundedDeductionMinor   int
 	TotalDueMinor          int
 	Warnings               []string
+	TermDatesUsed          []string
+	ClosureDaysExcluded    []string
+	HolidayPeriodsExcluded []string
 }
 
 type PrefillLine struct {
@@ -109,6 +116,33 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			}
 		}
 
+		var termDates []domain.TermDateRange
+		if bookingRow.TermTimeOnly && uc.termDateLookup != nil {
+			var termErr error
+			termDates, termErr = uc.termDateLookup.GetTermDateRangesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
+			if termErr != nil {
+				return fmt.Errorf("lookup term dates: %w", termErr)
+			}
+		}
+
+		var closureDates []time.Time
+		if uc.closureDateLookup != nil {
+			var closureErr error
+			closureDates, closureErr = uc.closureDateLookup.GetClosureDatesForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
+			if closureErr != nil {
+				return fmt.Errorf("lookup closure dates: %w", closureErr)
+			}
+		}
+
+		var holidayPeriods []domain.HolidayPeriodDateRange
+		if bookingRow.TermTimeOnly && uc.holidayPeriodLookup != nil {
+			var holidayErr error
+			holidayPeriods, holidayErr = uc.holidayPeriodLookup.GetHolidayPeriodsForBranchAndMonth(ctx, actor.TenantID, actor.BranchID, billingMonth)
+			if holidayErr != nil {
+				return fmt.Errorf("lookup holiday periods: %w", holidayErr)
+			}
+		}
+
 		prefillResult, prefillErr := domain.ComputeInvoicePrefill(domain.InvoicePrefillParams{
 			Entries:                domainEntries,
 			BillingMonthStart:      billingMonth,
@@ -116,6 +150,10 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			FundedHourlyRateMinor:  fundedHourlyRateMinor,
 			FundedAllowanceMinutes: fundedAllowance,
 			HasFunding:             hasFunding,
+			TermDates:              termDates,
+			ClosureDates:           closureDates,
+			HolidayPeriods:         holidayPeriods,
+			TermTimeOnly:           bookingRow.TermTimeOnly,
 		})
 		if prefillErr != nil {
 			return fmt.Errorf("compute invoice prefill: %w", prefillErr)
@@ -151,6 +189,9 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 			FundedDeductionMinor:   prefillResult.FundedDeductionMinor,
 			TotalDueMinor:          prefillResult.TotalDueMinor,
 			Warnings:               warnings,
+			TermDatesUsed:          prefillResult.TermDatesUsed,
+			ClosureDaysExcluded:    prefillResult.ClosureDaysExcluded,
+			HolidayPeriodsExcluded: prefillResult.HolidayPeriodsExcluded,
 		}
 
 		return nil

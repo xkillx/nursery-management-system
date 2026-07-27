@@ -41,6 +41,9 @@ interface PrefillResponseApi {
   funded_deduction_minor: number;
   total_due_minor: number;
   warnings: string[];
+  term_dates_used: string[];
+  closure_days_excluded: string[];
+  holiday_periods_excluded: string[];
 }
 
 interface DraftLineRequestApi {
@@ -187,6 +190,9 @@ export class ManagerInvoiceCreateApiService {
       fundedDeductionMinor: res.funded_deduction_minor,
       totalDueMinor: res.total_due_minor,
       warnings: res.warnings,
+      termDatesUsed: res.term_dates_used,
+      closureDaysExcluded: res.closure_days_excluded,
+      holidayPeriodsExcluded: res.holiday_periods_excluded,
     };
   }
 

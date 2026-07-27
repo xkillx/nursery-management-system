@@ -98,26 +98,18 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		domainEntries := entries
 
 		var termDates []domain.TermDateRange
-		var termDatesUsedLabels []string
 		if bookingRow.TermTimeOnly && uc.termDateLookup != nil {
 			termDates, err = uc.termDateLookup.GetTermDateRangesForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
 			if err != nil {
 				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup term dates for booking %s: %w", bookingRow.BookingID, err)
 			}
-			for _, r := range termDates {
-				termDatesUsedLabels = append(termDatesUsedLabels, fmt.Sprintf("%s to %s", r.StartDate.Format("2006-01-02"), r.EndDate.Format("2006-01-02")))
-			}
 		}
 
 		var closureDates []time.Time
-		var closureDaysExcludedLabels []string
 		if uc.closureDateLookup != nil {
 			closureDates, err = uc.closureDateLookup.GetClosureDatesForBranchAndMonth(ctx, in.Actor.TenantID, in.Actor.BranchID, in.BillingMonth)
 			if err != nil {
 				return GenerateTermInvoicesOutput{}, fmt.Errorf("lookup closure dates: %w", err)
-			}
-			for _, cd := range closureDates {
-				closureDaysExcludedLabels = append(closureDaysExcludedLabels, cd.Format("2006-01-02"))
 			}
 		}
 
@@ -316,8 +308,9 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			CoreBillableMinutes:    billableMinutes,
 			TermTimeOnly:           bookingRow.TermTimeOnly,
 			FundingModel:           fundingModel,
-			TermDatesUsed:          termDatesUsedLabels,
-			ClosureDaysExcluded:    closureDaysExcludedLabels,
+			TermDatesUsed:          calc.TermDatesUsed,
+			ClosureDaysExcluded:    calc.ClosureDaysExcluded,
+			HolidayPeriodsExcluded: calc.HolidayPeriodsExcluded,
 			BookingID:              bookingRow.BookingID,
 			BookedCoreMinutes:      calc.TotalMinutes,
 			BookedSessions:         calc.Sessions,
