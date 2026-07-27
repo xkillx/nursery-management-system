@@ -128,7 +128,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
 
   selectedTypes: BookingType[] = [];
   selectedStatuses: BookingStatus[] = [];
-  datePreset: DatePreset = 'this_month';
+  datePreset: DatePreset = '';
   dateFrom = '';
   dateTo = '';
   searchQuery = '';
@@ -362,7 +362,7 @@ export class ManagerBookingsComponent implements OnInit, OnDestroy {
     localStorage.removeItem(LS_KEY);
     this.router.navigate([], { queryParams: {} });
     this.datePreset = '' as DatePreset;
-    this.setDatePreset('this_month');
+    this.onFilterChange();
   }
 
   setDatePreset(preset: DatePreset): void {
