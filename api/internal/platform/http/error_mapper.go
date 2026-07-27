@@ -63,6 +63,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"attendance_outside_enrollment_window",
 		"funding_month_outside_enrollment_window",
 		"absence_attendance_exists", "absence_marker_exists",
+		"duplicate_child_month",
 		"invoice_not_draft", "invoice_not_monthly",
 		"invoice_not_payable",
 		"invite_email_already_registered", "invite_scope_conflict",

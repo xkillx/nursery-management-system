@@ -128,6 +128,17 @@ func TestMapDomainError_AbsenceMarkerNotFound_404(t *testing.T) {
 	}
 }
 
+func TestMapDomainError_DuplicateChildMonth_Conflict(t *testing.T) {
+	err := domainerrors.Conflict("duplicate_child_month", "A monthly invoice already exists.")
+	status, resp := MapDomainError(err, "req-1")
+	if status != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", status)
+	}
+	if resp.Code != "duplicate_child_month" {
+		t.Fatalf("expected duplicate_child_month, got %s", resp.Code)
+	}
+}
+
 func TestMapDomainError_InvoiceNotPayable_Conflict(t *testing.T) {
 	err := domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
 	status, resp := MapDomainError(err, "req-1")
