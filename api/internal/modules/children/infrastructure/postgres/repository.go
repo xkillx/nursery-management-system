@@ -522,7 +522,7 @@ func (r *ChildRepository) GetProfileForUpdate(ctx context.Context, tx domain.Tx,
 	if err != nil {
 		return nil, fmt.Errorf("get child profile for update: %w", err)
 	}
-	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
+	return mapChildProfileRow(sqlc.ChildProfile(row)), nil
 }
 
 func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
@@ -561,7 +561,7 @@ func (r *ChildRepository) InsertProfile(ctx context.Context, tx domain.Tx, p *do
 	if err != nil {
 		return nil, fmt.Errorf("insert child profile: %w", err)
 	}
-	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
+	return mapChildProfileRow(sqlc.ChildProfile(row)), nil
 }
 
 func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *domain.ChildProfile) (*domain.ChildProfile, error) {
@@ -600,10 +600,10 @@ func (r *ChildRepository) UpdateProfile(ctx context.Context, tx domain.Tx, p *do
 	if err != nil {
 		return nil, fmt.Errorf("update child profile: %w", err)
 	}
-	return mapChildProfileRow(sqlc.ChildProfileGetByChildRow(row)), nil
+	return mapChildProfileRow(sqlc.ChildProfile(row)), nil
 }
 
-func mapChildProfileRow(row sqlc.ChildProfileGetByChildRow) *domain.ChildProfile {
+func mapChildProfileRow(row sqlc.ChildProfile) *domain.ChildProfile {
 	return &domain.ChildProfile{
 		ID:                           pgtypeUUIDToUUID(row.ID),
 		TenantID:                     pgtypeUUIDToUUID(row.TenantID),

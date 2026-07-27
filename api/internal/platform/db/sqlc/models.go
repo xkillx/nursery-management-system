@@ -251,10 +251,10 @@ type Booking struct {
 	LaReference          pgtype.Text
 	Status               string
 	BookedByMembershipID pgtype.UUID
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
 	TermTimeOnly         bool
 	ClosureOverride      bool
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
 }
 
 type BookingSessionEntry struct {
@@ -479,6 +479,10 @@ type ChildProfile struct {
 	EthnicOrigin                 pgtype.Text
 	FirstLanguage                pgtype.Text
 	OtherLanguages               pgtype.Text
+	AddressLine1                 pgtype.Text
+	AddressLine2                 pgtype.Text
+	AddressCity                  pgtype.Text
+	AddressPostcode              pgtype.Text
 	HomeTelephone                pgtype.Text
 	DisabilityStatus             string
 	DisabilityNotes              pgtype.Text
@@ -497,10 +501,6 @@ type ChildProfile struct {
 	RoutineCareReviewed          bool
 	CreatedAt                    pgtype.Timestamptz
 	UpdatedAt                    pgtype.Timestamptz
-	AddressLine1                 pgtype.Text
-	AddressLine2                 pgtype.Text
-	AddressCity                  pgtype.Text
-	AddressPostcode              pgtype.Text
 }
 
 type ChildRoomAssignment struct {

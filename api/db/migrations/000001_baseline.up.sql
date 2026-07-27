@@ -1,5 +1,8 @@
--- Baseline schema (squashed — single migration for fresh builds).
--- No production data; rebuilt from scratch.
+-- Clean baseline schema (squashed single migration).
+-- Final current schema from scratch — no incremental history.
+-- Replaces migrations 000001 through 000011.
+
+-- ===== Types =====
 
 CREATE TYPE child_contact_type AS ENUM (
     'parent_carer',
@@ -23,6 +26,8 @@ CREATE TYPE registration_term_time_only_status AS ENUM (
     'no',
     'not_applicable'
 );
+
+-- ===== Functions =====
 
 CREATE FUNCTION enforce_invoice_status_transition() RETURNS trigger
     LANGUAGE plpgsql
@@ -219,6 +224,69 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION enforce_parent_children_scope() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    parent_exists BOOLEAN;
+    child_exists BOOLEAN;
+BEGIN
+    IF NEW.ended_at IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM parents
+        WHERE id = NEW.parent_id
+          AND tenant_id = NEW.tenant_id
+          AND branch_id = NEW.branch_id
+    ) INTO parent_exists;
+
+    IF NOT parent_exists THEN
+        RAISE EXCEPTION 'parent_children requires parent in same tenant and branch';
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM children
+        WHERE id = NEW.child_id
+          AND tenant_id = NEW.tenant_id
+          AND branch_id = NEW.branch_id
+    ) INTO child_exists;
+
+    IF NOT child_exists THEN
+        RAISE EXCEPTION 'parent_children requires child in same tenant and branch';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE FUNCTION enforce_parent_user_scope() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    user_exists BOOLEAN;
+BEGIN
+    IF NEW.user_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM users
+        WHERE id = NEW.user_id
+          AND tenant_id = NEW.tenant_id
+    ) INTO user_exists;
+
+    IF NOT user_exists THEN
+        RAISE EXCEPTION 'parents.user_id must belong to the same tenant';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+-- ===== Tables =====
+
 CREATE TABLE tenants (
     id uuid NOT NULL,
     name text NOT NULL,
@@ -326,7 +394,6 @@ CREATE TABLE children (
     first_name text NOT NULL,
     middle_name text,
     last_name text,
-    current_term_id uuid,
     profile_photo_path text,
     CONSTRAINT children_enrollment_dates_check CHECK (((end_date IS NULL) OR (start_date <= end_date))),
     CONSTRAINT children_first_name_not_blank_check CHECK ((btrim(first_name) <> ''::text))
@@ -342,8 +409,10 @@ CREATE TABLE child_profiles (
     ethnic_origin text,
     first_language text,
     other_languages text,
-    home_address jsonb DEFAULT '{}'::jsonb NOT NULL,
-    home_postcode text,
+    address_line1 text,
+    address_line2 text,
+    address_city text,
+    address_postcode text,
     home_telephone text,
     disability_status text DEFAULT 'unknown'::text NOT NULL,
     disability_notes text,
@@ -361,8 +430,7 @@ CREATE TABLE child_profiles (
     emergency_collection_reviewed boolean DEFAULT false NOT NULL,
     routine_care_reviewed boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_profiles_address_is_object CHECK ((jsonb_typeof(home_address) = 'object'::text))
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE child_contacts (
@@ -648,32 +716,6 @@ CREATE TABLE session_types (
     CONSTRAINT session_types_time_check CHECK ((start_time < end_time))
 );
 
-CREATE TABLE child_booking_patterns (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    effective_from date NOT NULL,
-    effective_to date,
-    is_current boolean GENERATED ALWAYS AS ((effective_to IS NULL)) STORED NOT NULL,
-    term_time_only boolean NOT NULL DEFAULT false,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_booking_patterns_dates_check CHECK (((effective_to IS NULL) OR (effective_to >= effective_from)))
-);
-
-CREATE TABLE child_booking_pattern_entries (
-    id uuid NOT NULL,
-    tenant_id uuid NOT NULL,
-    branch_id uuid NOT NULL,
-    pattern_id uuid NOT NULL,
-    day_of_week integer NOT NULL,
-    session_type_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT child_booking_pattern_entries_dow_check CHECK (((day_of_week >= 1) AND (day_of_week <= 5)))
-);
-
 CREATE TABLE session_templates (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
@@ -702,8 +744,6 @@ CREATE TABLE bookings (
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
     child_id uuid NOT NULL,
-    session_template_id uuid,
-    days_of_week integer[] NOT NULL,
     effective_start_date date NOT NULL,
     effective_end_date date,
     funding_type text,
@@ -711,63 +751,82 @@ CREATE TABLE bookings (
     la_reference text,
     status text NOT NULL DEFAULT 'active',
     booked_by_membership_id uuid NOT NULL,
-    session_entries jsonb,
+    term_time_only boolean NOT NULL DEFAULT false,
+    closure_override boolean NOT NULL DEFAULT false,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT bookings_status_check CHECK (status IN ('active', 'paused', 'cancelled')),
     CONSTRAINT bookings_funding_type_check CHECK (funding_type IS NULL OR funding_type IN ('none', 'universal_15', 'working_parent', 'working_parent_under_3', 'disadvantaged_2yo', 'unknown')),
-    CONSTRAINT bookings_days_of_week_check CHECK (array_length(days_of_week, 1) > 0),
-    CONSTRAINT bookings_effective_dates_check CHECK (effective_end_date IS NULL OR effective_end_date >= effective_start_date),
-    CONSTRAINT bookings_session_source_check CHECK (session_template_id IS NOT NULL OR session_entries IS NOT NULL)
+    CONSTRAINT bookings_effective_dates_check CHECK (effective_end_date IS NULL OR effective_end_date >= effective_start_date)
 );
 
-CREATE TABLE term (
+CREATE TABLE booking_session_entries (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    booking_id uuid NOT NULL,
+    day_of_week integer NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 4),
+    session_type_id uuid NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT booking_session_entries_unique_day
+        UNIQUE (tenant_id, branch_id, booking_id, day_of_week)
+);
+
+CREATE TABLE parents (
     id uuid NOT NULL,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    child_id uuid NOT NULL,
-    term_start_date date NOT NULL,
-    term_end_date date NOT NULL,
-    booking_pattern_id uuid NOT NULL,
-    site_hourly_rate_minor integer NOT NULL,
-    status text NOT NULL,
-    termination_reason_code text,
-    termination_reason_note text,
-    terminated_at timestamp with time zone,
+    first_name text NOT NULL,
+    last_name text,
+    email text,
+    phone text,
+    address_line1 text,
+    address_line2 text,
+    address_city text,
+    address_postcode text,
+    relationship_to_child text,
+    has_parental_responsibility boolean DEFAULT false NOT NULL,
+    can_pick_up boolean DEFAULT false NOT NULL,
+    is_emergency_contact boolean DEFAULT false NOT NULL,
+    notes text,
+    user_id uuid,
+    is_active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    created_by_membership_id uuid NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT term_dates_first_of_month CHECK ((term_start_date = date_trunc('month', term_start_date)::date)),
-    CONSTRAINT term_end_after_start CHECK ((term_end_date >= term_start_date)),
-    CONSTRAINT term_end_minus_start_is_12_months_minus_one_day CHECK ((term_end_date = ((term_start_date + interval '12 months') - interval '1 day')::date)),
-    CONSTRAINT term_status_valid CHECK ((status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text, 'ended'::text, 'terminated'::text]))),
-    CONSTRAINT term_hourly_rate_nonneg CHECK ((site_hourly_rate_minor >= 0)),
-    CONSTRAINT term_terminated_shape CHECK (
-        ((status = 'terminated') AND (terminated_at IS NOT NULL) AND (termination_reason_code IS NOT NULL) AND (btrim(termination_reason_code) <> ''::text))
-        OR (status <> 'terminated')
+    CONSTRAINT parents_first_name_check CHECK ((btrim(first_name) <> ''::text))
+);
+
+CREATE TABLE parent_children (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    parent_id uuid NOT NULL,
+    child_id uuid NOT NULL,
+    ended_at timestamp with time zone,
+    ended_reason_code lifecycle_reason_code,
+    ended_reason_note text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT parent_children_end_reason_check CHECK (
+        (((ended_at IS NULL) AND (ended_reason_code IS NULL) AND (ended_reason_note IS NULL)) OR
+         ((ended_at IS NOT NULL) AND (ended_reason_code IS NOT NULL) AND
+          ((ended_reason_code <> 'other'::lifecycle_reason_code) OR
+           ((ended_reason_note IS NOT NULL) AND (btrim(ended_reason_note) <> ''::text)))))
     )
 );
 
-CREATE TABLE term_schedule_change (
-    id uuid NOT NULL,
+CREATE TABLE holiday_periods (
+    id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
-    term_id uuid NOT NULL,
-    previous_booking_pattern_id uuid NOT NULL,
-    new_booking_pattern_id uuid NOT NULL,
-    change_kind text NOT NULL,
-    requested_at timestamp with time zone DEFAULT now() NOT NULL,
-    effective_from date NOT NULL,
-    approved_by_membership_id uuid,
-    approval_decision text,
-    rejected_at timestamp with time zone,
-    request_id text NOT NULL,
-    CONSTRAINT term_schedule_change_kind_valid CHECK ((change_kind = ANY (ARRAY['decrease'::text, 'increase'::text]))),
-    CONSTRAINT term_schedule_change_decision_valid CHECK (
-        (approval_decision IS NULL)
-        OR (approval_decision = ANY (ARRAY['approved'::text, 'rejected'::text]))
-    ),
-    CONSTRAINT term_schedule_change_first_of_month CHECK ((effective_from = date_trunc('month', effective_from)::date))
+    name varchar(200) NOT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    type varchar(20) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT holiday_periods_start_before_end CHECK (start_date < end_date)
 );
 
 CREATE TABLE invoice_run_advance (
@@ -991,12 +1050,6 @@ CREATE TABLE hourly_bookings (
     CONSTRAINT hourly_bookings_status_check CHECK (status IN ('active', 'cancelled'))
 );
 
-CREATE UNIQUE INDEX hourly_bookings_unique_slot
-    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date, start_time_minutes);
-
-CREATE INDEX hourly_bookings_child_date_idx
-    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date);
-
 CREATE TABLE branch_closure_days (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
@@ -1159,7 +1212,7 @@ CREATE TABLE payment_links (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Primary keys
+-- ===== Primary keys =====
 
 ALTER TABLE ONLY tenants
     ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
@@ -1278,18 +1331,6 @@ ALTER TABLE ONLY session_types
 ALTER TABLE ONLY session_types
     ADD CONSTRAINT session_types_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY child_booking_patterns
-    ADD CONSTRAINT child_booking_patterns_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_booking_patterns
-    ADD CONSTRAINT child_booking_patterns_scope_id_unique UNIQUE (tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_booking_pattern_entries
-    ADD CONSTRAINT child_booking_pattern_entries_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY child_booking_pattern_entries
-    ADD CONSTRAINT child_booking_pattern_entries_scope_id_unique UNIQUE (tenant_id, branch_id, id);
-
 ALTER TABLE ONLY session_templates
     ADD CONSTRAINT session_templates_pkey PRIMARY KEY (id);
 
@@ -1305,17 +1346,14 @@ ALTER TABLE ONLY session_template_entries
 ALTER TABLE ONLY bookings
     ADD CONSTRAINT bookings_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY bookings
+    ADD CONSTRAINT bookings_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+ALTER TABLE ONLY parents
+    ADD CONSTRAINT parents_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY term_schedule_change
-    ADD CONSTRAINT term_schedule_change_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY term_schedule_change
-    ADD CONSTRAINT term_schedule_change_scope_id_unique UNIQUE (tenant_id, branch_id, id);
+ALTER TABLE ONLY parent_children
+    ADD CONSTRAINT parent_children_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY invoice_run_advance
     ADD CONSTRAINT invoice_run_advance_pkey PRIMARY KEY (id);
@@ -1350,6 +1388,9 @@ ALTER TABLE ONLY invoice_lines
 ALTER TABLE ONLY invoice_lines
     ADD CONSTRAINT invoice_lines_scope_id_unique UNIQUE (tenant_id, branch_id, id);
 
+ALTER TABLE ONLY hourly_bookings
+    ADD CONSTRAINT hourly_bookings_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY payment_attempts
     ADD CONSTRAINT payment_attempts_pkey PRIMARY KEY (id);
 
@@ -1383,7 +1424,7 @@ ALTER TABLE ONLY password_reset_tokens
 ALTER TABLE ONLY password_reset_tokens
     ADD CONSTRAINT password_reset_tokens_token_hash_key UNIQUE (token_hash);
 
--- Indexes
+-- ===== Indexes =====
 
 CREATE UNIQUE INDEX attendance_events_scope_id_unique ON attendance_events USING btree (tenant_id, branch_id, id);
 
@@ -1529,22 +1570,6 @@ CREATE INDEX session_types_branch_id ON session_types USING btree (branch_id);
 
 CREATE INDEX session_types_tenant_id ON session_types USING btree (tenant_id);
 
-CREATE UNIQUE INDEX child_booking_patterns_one_open_per_child ON child_booking_patterns USING btree (tenant_id, branch_id, child_id) WHERE is_current;
-
-CREATE INDEX child_booking_patterns_by_child ON child_booking_patterns USING btree (tenant_id, branch_id, child_id, effective_from DESC);
-
-CREATE INDEX child_booking_patterns_branch_id ON child_booking_patterns USING btree (branch_id);
-
-CREATE INDEX child_booking_patterns_tenant_id ON child_booking_patterns USING btree (tenant_id);
-
-CREATE UNIQUE INDEX child_booking_pattern_entries_unique_day ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week);
-
-CREATE INDEX child_booking_pattern_entries_by_pattern ON child_booking_pattern_entries USING btree (tenant_id, branch_id, pattern_id, day_of_week);
-
-CREATE INDEX child_booking_pattern_entries_branch_id ON child_booking_pattern_entries USING btree (branch_id);
-
-CREATE INDEX child_booking_pattern_entries_tenant_id ON child_booking_pattern_entries USING btree (tenant_id);
-
 CREATE UNIQUE INDEX session_templates_active_name_unique
     ON session_templates USING btree (tenant_id, branch_id, name)
     WHERE (is_active = true);
@@ -1561,27 +1586,6 @@ CREATE INDEX session_template_entries_by_template
 
 CREATE INDEX idx_bookings_tenant_branch_child ON bookings USING btree (tenant_id, branch_id, child_id);
 CREATE INDEX idx_bookings_tenant_branch_status ON bookings USING btree (tenant_id, branch_id, status);
-
-CREATE UNIQUE INDEX term_one_active_per_child ON term USING btree (tenant_id, branch_id, child_id)
-    WHERE (status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text]));
-
-CREATE INDEX term_by_child ON term USING btree (tenant_id, branch_id, child_id, term_start_date DESC);
-
-CREATE INDEX term_active_by_branch ON term USING btree (tenant_id, branch_id)
-    WHERE (status = ANY (ARRAY['pre_term'::text, 'active'::text, 'pending_renewal'::text]));
-
-CREATE INDEX term_ending_soon ON term USING btree (tenant_id, branch_id, term_end_date)
-    WHERE (status = ANY (ARRAY['active'::text, 'pending_renewal'::text]));
-
-CREATE INDEX term_branch_id ON term USING btree (branch_id);
-
-CREATE INDEX term_tenant_id ON term USING btree (tenant_id);
-
-CREATE UNIQUE INDEX invoice_run_advance_one_per_month ON invoice_run_advance USING btree (tenant_id, branch_id, billing_month);
-
-CREATE INDEX invoice_run_advance_branch_id ON invoice_run_advance USING btree (branch_id);
-
-CREATE INDEX invoice_run_advance_tenant_id ON invoice_run_advance USING btree (tenant_id);
 
 CREATE UNIQUE INDEX idx_parent_membership_children_active_pair
     ON parent_membership_children USING btree (tenant_id, branch_id, membership_id, child_id)
@@ -1622,7 +1626,41 @@ CREATE UNIQUE INDEX idx_payment_links_active_per_invoice
 CREATE INDEX idx_payment_links_invoice_id
     ON payment_links (tenant_id, branch_id, invoice_id);
 
--- Triggers
+CREATE UNIQUE INDEX hourly_bookings_unique_slot
+    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date, start_time_minutes);
+
+CREATE INDEX hourly_bookings_child_date_idx
+    ON hourly_bookings (tenant_id, branch_id, child_id, calendar_date);
+
+CREATE UNIQUE INDEX idx_parents_tenant_branch_id ON parents USING btree (tenant_id, branch_id, id);
+
+CREATE INDEX idx_parents_tenant_branch ON parents USING btree (tenant_id, branch_id);
+CREATE INDEX idx_parents_user ON parents USING btree (user_id) WHERE (user_id IS NOT NULL);
+
+CREATE UNIQUE INDEX idx_parent_children_active_pair
+    ON parent_children USING btree (tenant_id, branch_id, parent_id, child_id)
+    WHERE (ended_at IS NULL);
+
+CREATE INDEX idx_parent_children_parent_active ON parent_children USING btree (parent_id) WHERE (ended_at IS NULL);
+CREATE INDEX idx_parent_children_child_active ON parent_children USING btree (child_id) WHERE (ended_at IS NULL);
+
+CREATE INDEX idx_holiday_periods_tenant_branch
+    ON holiday_periods (tenant_id, branch_id);
+
+CREATE INDEX idx_holiday_periods_date_range
+    ON holiday_periods (tenant_id, branch_id, start_date, end_date);
+
+CREATE INDEX booking_session_entries_tenant_id ON booking_session_entries(tenant_id);
+CREATE INDEX booking_session_entries_branch_id ON booking_session_entries(branch_id);
+CREATE INDEX booking_session_entries_by_booking ON booking_session_entries(tenant_id, branch_id, booking_id);
+
+CREATE UNIQUE INDEX invoice_run_advance_one_per_month ON invoice_run_advance USING btree (tenant_id, branch_id, billing_month);
+
+CREATE INDEX invoice_run_advance_branch_id ON invoice_run_advance USING btree (branch_id);
+
+CREATE INDEX invoice_run_advance_tenant_id ON invoice_run_advance USING btree (tenant_id);
+
+-- ===== Triggers =====
 
 CREATE TRIGGER trg_invoice_immutability BEFORE UPDATE ON invoices FOR EACH ROW EXECUTE FUNCTION protect_issued_invoice_immutability();
 
@@ -1642,7 +1680,15 @@ CREATE TRIGGER memberships_end_cascade_children
     AFTER UPDATE OF ended_at ON memberships
     FOR EACH ROW EXECUTE FUNCTION cascade_parent_membership_child_end();
 
--- Foreign keys
+CREATE TRIGGER parent_children_scope_check
+    BEFORE INSERT OR UPDATE OF parent_id, child_id, ended_at ON parent_children
+    FOR EACH ROW EXECUTE FUNCTION enforce_parent_children_scope();
+
+CREATE TRIGGER parent_user_scope_check
+    BEFORE INSERT OR UPDATE OF user_id ON parents
+    FOR EACH ROW EXECUTE FUNCTION enforce_parent_user_scope();
+
+-- ===== Foreign keys =====
 
 ALTER TABLE ONLY branches
     ADD CONSTRAINT branches_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
@@ -1675,9 +1721,6 @@ ALTER TABLE ONLY children
 
 ALTER TABLE ONLY children
     ADD CONSTRAINT children_branch_scope_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY children
-    ADD CONSTRAINT children_current_term_fkey FOREIGN KEY (tenant_id, branch_id, current_term_id) REFERENCES term(tenant_id, branch_id, id);
 
 ALTER TABLE ONLY child_profiles
     ADD CONSTRAINT child_profiles_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
@@ -1802,21 +1845,6 @@ ALTER TABLE ONLY session_types
 ALTER TABLE ONLY session_types
     ADD CONSTRAINT session_types_branch_fkey FOREIGN KEY (branch_id) REFERENCES branches(id);
 
-ALTER TABLE ONLY child_booking_patterns
-    ADD CONSTRAINT child_booking_patterns_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
-
-ALTER TABLE ONLY child_booking_patterns
-    ADD CONSTRAINT child_booking_patterns_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
-
-ALTER TABLE ONLY child_booking_patterns
-    ADD CONSTRAINT child_booking_patterns_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_booking_pattern_entries
-    ADD CONSTRAINT child_booking_pattern_entries_pattern_fkey FOREIGN KEY (tenant_id, branch_id, pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
-
-ALTER TABLE ONLY child_booking_pattern_entries
-    ADD CONSTRAINT child_booking_pattern_entries_session_type_fkey FOREIGN KEY (tenant_id, branch_id, session_type_id) REFERENCES session_types(tenant_id, branch_id, id);
-
 ALTER TABLE ONLY session_templates
     ADD CONSTRAINT session_templates_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
@@ -1838,32 +1866,46 @@ ALTER TABLE ONLY bookings
 ALTER TABLE ONLY bookings
     ADD CONSTRAINT bookings_child_id_fkey FOREIGN KEY (child_id) REFERENCES children(id);
 
-ALTER TABLE ONLY bookings
-    ADD CONSTRAINT bookings_session_template_id_fkey FOREIGN KEY (session_template_id) REFERENCES session_templates(id);
+ALTER TABLE ONLY booking_session_entries
+    ADD CONSTRAINT booking_session_entries_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+ALTER TABLE ONLY booking_session_entries
+    ADD CONSTRAINT booking_session_entries_booking_fkey
+        FOREIGN KEY (tenant_id, branch_id, booking_id)
+        REFERENCES bookings(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_branch_fkey FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id);
+ALTER TABLE ONLY booking_session_entries
+    ADD CONSTRAINT booking_session_entries_session_type_fkey
+        FOREIGN KEY (tenant_id, branch_id, session_type_id)
+        REFERENCES session_types(tenant_id, branch_id, id);
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_child_fkey FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id);
+ALTER TABLE ONLY parents
+    ADD CONSTRAINT parents_tenant_scope_fkey
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_booking_pattern_fkey FOREIGN KEY (tenant_id, branch_id, booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+ALTER TABLE ONLY parents
+    ADD CONSTRAINT parents_branch_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY term
-    ADD CONSTRAINT term_created_by_membership_fkey FOREIGN KEY (tenant_id, branch_id, created_by_membership_id) REFERENCES memberships(tenant_id, branch_id, id);
+ALTER TABLE ONLY parents
+    ADD CONSTRAINT parents_user_fkey
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
 
-ALTER TABLE ONLY term_schedule_change
-    ADD CONSTRAINT term_schedule_change_term_fkey FOREIGN KEY (tenant_id, branch_id, term_id) REFERENCES term(tenant_id, branch_id, id);
+ALTER TABLE ONLY parent_children
+    ADD CONSTRAINT parent_children_tenant_scope_fkey
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY term_schedule_change
-    ADD CONSTRAINT term_schedule_change_previous_pattern_fkey FOREIGN KEY (tenant_id, branch_id, previous_booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+ALTER TABLE ONLY parent_children
+    ADD CONSTRAINT parent_children_branch_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id) REFERENCES branches(tenant_id, id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY term_schedule_change
-    ADD CONSTRAINT term_schedule_change_new_pattern_fkey FOREIGN KEY (tenant_id, branch_id, new_booking_pattern_id) REFERENCES child_booking_patterns(tenant_id, branch_id, id);
+ALTER TABLE ONLY parent_children
+    ADD CONSTRAINT parent_children_parent_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id, parent_id) REFERENCES parents(tenant_id, branch_id, id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY parent_children
+    ADD CONSTRAINT parent_children_child_scope_fkey
+    FOREIGN KEY (tenant_id, branch_id, child_id) REFERENCES children(tenant_id, branch_id, id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY invoice_run_advance
     ADD CONSTRAINT invoice_run_advance_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id);
@@ -1942,9 +1984,6 @@ ALTER TABLE ONLY ad_hoc_bookings
 
 ALTER TABLE ONLY ad_hoc_bookings
     ADD CONSTRAINT ad_hoc_bookings_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY hourly_bookings
-    ADD CONSTRAINT hourly_bookings_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY hourly_bookings
     ADD CONSTRAINT hourly_bookings_child_id_fkey FOREIGN KEY (child_id) REFERENCES children(id);

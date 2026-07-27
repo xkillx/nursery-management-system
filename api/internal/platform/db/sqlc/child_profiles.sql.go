@@ -34,43 +34,9 @@ type ChildProfileGetByChildParams struct {
 	ChildID  pgtype.UUID
 }
 
-type ChildProfileGetByChildRow struct {
-	ID                           pgtype.UUID
-	TenantID                     pgtype.UUID
-	BranchID                     pgtype.UUID
-	ChildID                      pgtype.UUID
-	Sex                          pgtype.Text
-	Religion                     pgtype.Text
-	EthnicOrigin                 pgtype.Text
-	FirstLanguage                pgtype.Text
-	OtherLanguages               pgtype.Text
-	AddressLine1                 pgtype.Text
-	AddressLine2                 pgtype.Text
-	AddressCity                  pgtype.Text
-	AddressPostcode              pgtype.Text
-	HomeTelephone                pgtype.Text
-	DisabilityStatus             string
-	DisabilityNotes              pgtype.Text
-	AccessRequirements           pgtype.Text
-	RoutineCareNotes             pgtype.Text
-	GdprDeclaredByName           pgtype.Text
-	GdprDeclaredAt               pgtype.Timestamptz
-	GdprDeclarationDate          pgtype.Date
-	RegistrationDate             pgtype.Date
-	DemographicsHomeReviewed     bool
-	MedicalDietaryReviewed       bool
-	HealthContactsReviewed       bool
-	SocialDevelopmentReviewed    bool
-	ParentResponsibilityReviewed bool
-	EmergencyCollectionReviewed  bool
-	RoutineCareReviewed          bool
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
-}
-
-func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGetByChildParams) (ChildProfileGetByChildRow, error) {
+func (q *Queries) ChildProfileGetByChild(ctx context.Context, arg ChildProfileGetByChildParams) (ChildProfile, error) {
 	row := q.db.QueryRow(ctx, childProfileGetByChild, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildProfileGetByChildRow
+	var i ChildProfile
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -131,43 +97,9 @@ type ChildProfileGetForUpdateParams struct {
 	ChildID  pgtype.UUID
 }
 
-type ChildProfileGetForUpdateRow struct {
-	ID                           pgtype.UUID
-	TenantID                     pgtype.UUID
-	BranchID                     pgtype.UUID
-	ChildID                      pgtype.UUID
-	Sex                          pgtype.Text
-	Religion                     pgtype.Text
-	EthnicOrigin                 pgtype.Text
-	FirstLanguage                pgtype.Text
-	OtherLanguages               pgtype.Text
-	AddressLine1                 pgtype.Text
-	AddressLine2                 pgtype.Text
-	AddressCity                  pgtype.Text
-	AddressPostcode              pgtype.Text
-	HomeTelephone                pgtype.Text
-	DisabilityStatus             string
-	DisabilityNotes              pgtype.Text
-	AccessRequirements           pgtype.Text
-	RoutineCareNotes             pgtype.Text
-	GdprDeclaredByName           pgtype.Text
-	GdprDeclaredAt               pgtype.Timestamptz
-	GdprDeclarationDate          pgtype.Date
-	RegistrationDate             pgtype.Date
-	DemographicsHomeReviewed     bool
-	MedicalDietaryReviewed       bool
-	HealthContactsReviewed       bool
-	SocialDevelopmentReviewed    bool
-	ParentResponsibilityReviewed bool
-	EmergencyCollectionReviewed  bool
-	RoutineCareReviewed          bool
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
-}
-
-func (q *Queries) ChildProfileGetForUpdate(ctx context.Context, arg ChildProfileGetForUpdateParams) (ChildProfileGetForUpdateRow, error) {
+func (q *Queries) ChildProfileGetForUpdate(ctx context.Context, arg ChildProfileGetForUpdateParams) (ChildProfile, error) {
 	row := q.db.QueryRow(ctx, childProfileGetForUpdate, arg.TenantID, arg.BranchID, arg.ChildID)
-	var i ChildProfileGetForUpdateRow
+	var i ChildProfile
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -274,41 +206,7 @@ type ChildProfileInsertParams struct {
 	RoutineCareReviewed          bool
 }
 
-type ChildProfileInsertRow struct {
-	ID                           pgtype.UUID
-	TenantID                     pgtype.UUID
-	BranchID                     pgtype.UUID
-	ChildID                      pgtype.UUID
-	Sex                          pgtype.Text
-	Religion                     pgtype.Text
-	EthnicOrigin                 pgtype.Text
-	FirstLanguage                pgtype.Text
-	OtherLanguages               pgtype.Text
-	AddressLine1                 pgtype.Text
-	AddressLine2                 pgtype.Text
-	AddressCity                  pgtype.Text
-	AddressPostcode              pgtype.Text
-	HomeTelephone                pgtype.Text
-	DisabilityStatus             string
-	DisabilityNotes              pgtype.Text
-	AccessRequirements           pgtype.Text
-	RoutineCareNotes             pgtype.Text
-	GdprDeclaredByName           pgtype.Text
-	GdprDeclaredAt               pgtype.Timestamptz
-	GdprDeclarationDate          pgtype.Date
-	RegistrationDate             pgtype.Date
-	DemographicsHomeReviewed     bool
-	MedicalDietaryReviewed       bool
-	HealthContactsReviewed       bool
-	SocialDevelopmentReviewed    bool
-	ParentResponsibilityReviewed bool
-	EmergencyCollectionReviewed  bool
-	RoutineCareReviewed          bool
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
-}
-
-func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsertParams) (ChildProfileInsertRow, error) {
+func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsertParams) (ChildProfile, error) {
 	row := q.db.QueryRow(ctx, childProfileInsert,
 		arg.ID,
 		arg.TenantID,
@@ -340,7 +238,7 @@ func (q *Queries) ChildProfileInsert(ctx context.Context, arg ChildProfileInsert
 		arg.EmergencyCollectionReviewed,
 		arg.RoutineCareReviewed,
 	)
-	var i ChildProfileInsertRow
+	var i ChildProfile
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -452,41 +350,7 @@ type ChildProfileUpdateParams struct {
 	RoutineCareReviewed          bool
 }
 
-type ChildProfileUpdateRow struct {
-	ID                           pgtype.UUID
-	TenantID                     pgtype.UUID
-	BranchID                     pgtype.UUID
-	ChildID                      pgtype.UUID
-	Sex                          pgtype.Text
-	Religion                     pgtype.Text
-	EthnicOrigin                 pgtype.Text
-	FirstLanguage                pgtype.Text
-	OtherLanguages               pgtype.Text
-	AddressLine1                 pgtype.Text
-	AddressLine2                 pgtype.Text
-	AddressCity                  pgtype.Text
-	AddressPostcode              pgtype.Text
-	HomeTelephone                pgtype.Text
-	DisabilityStatus             string
-	DisabilityNotes              pgtype.Text
-	AccessRequirements           pgtype.Text
-	RoutineCareNotes             pgtype.Text
-	GdprDeclaredByName           pgtype.Text
-	GdprDeclaredAt               pgtype.Timestamptz
-	GdprDeclarationDate          pgtype.Date
-	RegistrationDate             pgtype.Date
-	DemographicsHomeReviewed     bool
-	MedicalDietaryReviewed       bool
-	HealthContactsReviewed       bool
-	SocialDevelopmentReviewed    bool
-	ParentResponsibilityReviewed bool
-	EmergencyCollectionReviewed  bool
-	RoutineCareReviewed          bool
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
-}
-
-func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdateParams) (ChildProfileUpdateRow, error) {
+func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdateParams) (ChildProfile, error) {
 	row := q.db.QueryRow(ctx, childProfileUpdate,
 		arg.TenantID,
 		arg.BranchID,
@@ -518,7 +382,7 @@ func (q *Queries) ChildProfileUpdate(ctx context.Context, arg ChildProfileUpdate
 		arg.EmergencyCollectionReviewed,
 		arg.RoutineCareReviewed,
 	)
-	var i ChildProfileUpdateRow
+	var i ChildProfile
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,

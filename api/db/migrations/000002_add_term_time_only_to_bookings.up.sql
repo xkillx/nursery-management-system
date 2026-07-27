@@ -1,1 +1,0 @@
-ALTER TABLE bookings ADD COLUMN term_time_only BOOLEAN NOT NULL DEFAULT false;
