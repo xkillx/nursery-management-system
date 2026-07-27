@@ -24,6 +24,8 @@ import {
   PaymentLinkResult,
   OverdueSummary,
   BulkIssueResult,
+  DeleteInvoiceResult,
+  BulkDeleteResult,
 } from '../models/manager-invoices.models';
 import { formatChildName } from '../utils/manager-list-formatters';
 
@@ -448,6 +450,41 @@ export class ManagerInvoicesApiService {
               ? formatChildName({ firstName: b.child_first_name, middleName: b.child_middle_name, lastName: b.child_last_name })
               : '',
             blockers: b.blockers,
+          })),
+        })),
+      );
+  }
+
+  deleteInvoice(invoiceId: string): Observable<DeleteInvoiceResult> {
+    return this.http
+      .delete<{ invoice_id: string; status: string; deleted_at: string }>(apiUrl(`/invoices/${invoiceId}`))
+      .pipe(
+        map((res) => ({
+          invoiceId: res.invoice_id,
+          status: res.status,
+          deletedAt: res.deleted_at,
+        })),
+      );
+  }
+
+  bulkDeleteInvoices(invoiceIds: string[]): Observable<BulkDeleteResult> {
+    return this.http
+      .post<{ deleted: { invoice_id: string; status: string; deleted_at: string }[]; blocked: { invoice_id: string; error_code: string; message: string }[] }>(
+        apiUrl('/invoices'),
+        { invoice_ids: invoiceIds },
+        { observe: 'body', method: 'DELETE' },
+      )
+      .pipe(
+        map((res) => ({
+          deleted: res.deleted.map((d) => ({
+            invoiceId: d.invoice_id,
+            status: d.status,
+            deletedAt: d.deleted_at,
+          })),
+          blocked: res.blocked.map((b) => ({
+            invoiceId: b.invoice_id,
+            errorCode: b.error_code,
+            message: b.message,
           })),
         })),
       );

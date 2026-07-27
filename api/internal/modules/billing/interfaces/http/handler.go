@@ -42,6 +42,8 @@ type (
 		BulkIssueInvoices     *application.BulkIssueInvoices
 		OverrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
 		VoidInvoice           *application.VoidInvoice
+		DeleteInvoice         *application.DeleteInvoice
+		BulkDeleteInvoices    *application.BulkDeleteInvoices
 		ManageInvoiceLines    *application.ManageInvoiceLines
 	}
 
@@ -84,6 +86,8 @@ type Handler struct {
 	bulkIssueInvoices      *application.BulkIssueInvoices
 	overrideAttendanceBlk  *application.OverrideAttendanceBlockUseCase
 	voidInvoice            *application.VoidInvoice
+	deleteInvoice          *application.DeleteInvoice
+	bulkDeleteInvoices     *application.BulkDeleteInvoices
 	manageInvoiceLines     *application.ManageInvoiceLines
 	listParentInvoices     *application.ListParentInvoices
 	getParentInvoice       *application.GetParentInvoice
@@ -109,6 +113,8 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		bulkIssueInvoices:      cfg.Lifecycle.BulkIssueInvoices,
 		overrideAttendanceBlk:  cfg.Lifecycle.OverrideAttendanceBlk,
 		voidInvoice:            cfg.Lifecycle.VoidInvoice,
+		deleteInvoice:          cfg.Lifecycle.DeleteInvoice,
+		bulkDeleteInvoices:     cfg.Lifecycle.BulkDeleteInvoices,
 		manageInvoiceLines:     cfg.Lifecycle.ManageInvoiceLines,
 		listParentInvoices:     cfg.Parent.List,
 		getParentInvoice:       cfg.Parent.Get,
@@ -132,6 +138,8 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/drafts/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/void", h.voidInvoiceHandler)
+	manager.DELETE("/invoices/:invoice_id", h.deleteInvoiceHandler)
+	manager.DELETE("/invoices", h.bulkDeleteInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/override-attendance-block", h.overrideAttendanceBlockHandler)
 	manager.POST("/invoices/:invoice_id/lines", h.addLineHandler)
 	manager.PUT("/invoices/:invoice_id/lines/:line_id", h.updateLineHandler)
@@ -589,6 +597,73 @@ func (h *Handler) voidInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toVoidInvoiceResponse(result))
+}
+
+// deleteInvoiceHandler deletes a single invoice permanently.
+//
+//	@Summary		Delete invoice
+//	@Description	Permanently delete a draft or void invoice and its line items.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			invoice_id	path		string	true	"Invoice ID"	format(uuid)
+//	@Success		200			{object}	deleteInvoiceResponse
+//	@Failure		400			{object}	object{code=string,message=string}
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id} [delete]
+func (h *Handler) deleteInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.deleteInvoice.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toDeleteInvoiceResponse(result))
+}
+
+// bulkDeleteInvoicesHandler deletes multiple invoices permanently.
+//
+//	@Summary		Bulk delete invoices
+//	@Description	Permanently delete multiple draft or void invoices and their line items.
+//	@Tags			invoices
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		bulkDeleteInvoicesRequest	true	"Invoice IDs to delete"
+//	@Success		200		{object}	bulkDeleteInvoicesResponse
+//	@Failure		400		{object}	object{code=string,message=string}
+//	@Failure		401		{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices [delete]
+func (h *Handler) bulkDeleteInvoicesHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	var req bulkDeleteInvoicesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
+		return
+	}
+
+	result, err := h.bulkDeleteInvoices.Execute(c.Request.Context(), actor, req.InvoiceIDs)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toBulkDeleteInvoicesResponse(result))
 }
 
 func (h *Handler) addLineHandler(c *gin.Context) {
@@ -1561,6 +1636,37 @@ func toVoidInvoiceResponse(r application.VoidInvoiceResult) voidInvoiceResponse 
 		Status:     r.Status,
 		VoidedAt:   formatTime(r.VoidedAt),
 		VoidReason: r.VoidReason,
+	}
+}
+
+func toDeleteInvoiceResponse(r application.DeleteInvoiceResult) deleteInvoiceResponse {
+	return deleteInvoiceResponse{
+		InvoiceID: r.InvoiceID.String(),
+		Status:    r.Status,
+		DeletedAt: formatTime(r.DeletedAt),
+	}
+}
+
+func toBulkDeleteInvoicesResponse(r application.BulkDeleteInvoicesResult) bulkDeleteInvoicesResponse {
+	deleted := make([]deleteInvoiceResponse, 0, len(r.Deleted))
+	for _, d := range r.Deleted {
+		deleted = append(deleted, deleteInvoiceResponse{
+			InvoiceID: d.InvoiceID.String(),
+			Status:    d.Status,
+			DeletedAt: formatTime(d.DeletedAt),
+		})
+	}
+	blocked := make([]bulkDeleteBlockedResponse, 0, len(r.Blocked))
+	for _, b := range r.Blocked {
+		blocked = append(blocked, bulkDeleteBlockedResponse{
+			InvoiceID: b.InvoiceID.String(),
+			ErrorCode: b.ErrorCode,
+			Message:   b.Message,
+		})
+	}
+	return bulkDeleteInvoicesResponse{
+		Deleted: deleted,
+		Blocked: blocked,
 	}
 }
 

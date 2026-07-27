@@ -289,3 +289,20 @@ export interface BulkIssueResult {
   issued: BulkIssueIssuedInvoice[];
   blocked: BulkIssueBlockedInvoice[];
 }
+
+export interface DeleteInvoiceResult {
+  invoiceId: string;
+  status: string;
+  deletedAt: string;
+}
+
+export interface BulkDeleteBlockedInvoice {
+  invoiceId: string;
+  errorCode: string;
+  message: string;
+}
+
+export interface BulkDeleteResult {
+  deleted: DeleteInvoiceResult[];
+  blocked: BulkDeleteBlockedInvoice[];
+}

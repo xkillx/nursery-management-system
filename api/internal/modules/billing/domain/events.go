@@ -30,6 +30,15 @@ type InvoiceVoided struct {
 
 func (e InvoiceVoided) OccurredAt() time.Time { return e.Occurred }
 
+type InvoiceDeleted struct {
+	InvoiceID uuid.UUID
+	TenantID  uuid.UUID
+	BranchID  uuid.UUID
+	Occurred  time.Time
+}
+
+func (e InvoiceDeleted) OccurredAt() time.Time { return e.Occurred }
+
 type InvoiceDueSoon struct {
 	InvoiceID uuid.UUID
 	TenantID  uuid.UUID

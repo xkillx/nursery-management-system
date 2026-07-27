@@ -189,6 +189,7 @@ const (
 	AuditInvoiceDraftRegenerated = "invoice_draft_regenerated"
 	AuditInvoiceIssued           = "invoice_issued"
 	AuditInvoiceVoided           = "invoice_voided"
+	AuditInvoiceDeleted          = "invoice_deleted"
 	AuditEntityInvoice           = "invoice"
 )
 

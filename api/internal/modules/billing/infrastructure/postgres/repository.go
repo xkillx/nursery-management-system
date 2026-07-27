@@ -1001,6 +1001,20 @@ func (r *Repository) MarkInvoiceVoid(ctx context.Context, tx domain.Tx, tenantID
 	return n, nil
 }
 
+// --- Invoice Delete ---
+
+func (r *Repository) DeleteInvoice(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) (int64, error) {
+	n, err := r.queriesTx(tx).DeleteInvoice(ctx, sqlc.DeleteInvoiceParams{
+		ID:       uuidToPgtype(invoiceID),
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 // --- Overdue Transition (API-20) transactional methods ---
 
 func (r *Repository) TryAcquireOverdueTransitionJobLock(ctx context.Context, tx domain.Tx) (bool, error) {

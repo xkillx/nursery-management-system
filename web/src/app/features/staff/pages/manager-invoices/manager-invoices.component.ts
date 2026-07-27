@@ -20,6 +20,7 @@ import {
   heroPencilSquare,
   heroPlus,
   heroReceiptPercent,
+  heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
@@ -147,6 +148,7 @@ function formatBillingMonth(date: Date): string {
       heroPencilSquare,
       heroPlus,
       heroReceiptPercent,
+      heroTrash,
       heroXMark,
     }),
   ],
@@ -180,6 +182,12 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
   isConfirmIssueOpen = false;
   isIssuing = false;
   issuingIds = new Set<string>();
+
+  isConfirmDeleteOpen = false;
+  isDeleting = false;
+  deletingIds = new Set<string>();
+  deleteTarget: 'single' | 'bulk' = 'single';
+  singleDeleteId: string | null = null;
 
   readonly formatGbp = formatGbp;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
@@ -278,6 +286,94 @@ export class ManagerInvoicesComponent implements OnInit, OnDestroy {
         this.isIssuing = false;
       },
     });
+  }
+
+  get selectedDeletableCount(): number {
+    return this.selectedItems.filter((i) => i.status === 'draft' || i.status === 'void').length;
+  }
+
+  openDeleteConfirmation(invoiceId: string): void {
+    this.deleteTarget = 'single';
+    this.singleDeleteId = invoiceId;
+    this.isConfirmDeleteOpen = true;
+  }
+
+  openBulkDeleteConfirmation(): void {
+    this.deleteTarget = 'bulk';
+    this.singleDeleteId = null;
+    this.isConfirmDeleteOpen = true;
+  }
+
+  cancelDelete(): void {
+    this.isConfirmDeleteOpen = false;
+    this.singleDeleteId = null;
+  }
+
+  confirmDelete(): void {
+    if (this.deleteTarget === 'single' && this.singleDeleteId) {
+      this.executeSingleDelete(this.singleDeleteId);
+    } else if (this.deleteTarget === 'bulk') {
+      this.executeBulkDelete();
+    }
+    this.isConfirmDeleteOpen = false;
+  }
+
+  private executeSingleDelete(invoiceId: string): void {
+    this.isDeleting = true;
+    this.deletingIds = new Set([invoiceId]);
+
+    this.apiService.deleteInvoice(invoiceId).subscribe({
+      next: () => {
+        this.toast.success('Invoice deleted successfully');
+        this.selectedIds.delete(invoiceId);
+        this.deletingIds = new Set();
+        this.isDeleting = false;
+        this.loadList();
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.delete')));
+        this.deletingIds = new Set();
+        this.isDeleting = false;
+      },
+    });
+  }
+
+  private executeBulkDelete(): void {
+    const deletableIds = this.selectedItems
+      .filter((i) => i.status === 'draft' || i.status === 'void')
+      .map((i) => i.invoiceId);
+
+    if (deletableIds.length === 0) return;
+
+    this.isDeleting = true;
+    this.deletingIds = new Set(deletableIds);
+
+    this.apiService.bulkDeleteInvoices(deletableIds).subscribe({
+      next: (result) => {
+        const deletedCount = result.deleted.length;
+        const blockedCount = result.blocked.length;
+        if (blockedCount > 0) {
+          this.toast.warning(`${deletedCount} deleted, ${blockedCount} blocked`);
+        } else {
+          this.toast.success(`${deletedCount} invoice${deletedCount === 1 ? '' : 's'} deleted successfully`);
+        }
+        this.selectedIds = new Set();
+        this.deletingIds = new Set();
+        this.isDeleting = false;
+        this.loadList();
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.delete')));
+        this.deletingIds = new Set();
+        this.isDeleting = false;
+      },
+    });
+  }
+
+  isDeletable(item: ManagerInvoiceListItem): boolean {
+    return item.status === 'draft' || item.status === 'void';
   }
 
   getStatusBorderClass(status: string, dueStatus: string): string {

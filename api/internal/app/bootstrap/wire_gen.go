@@ -333,6 +333,8 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bulkIssueInvoices := application10.NewBulkIssueInvoices(repository2, transactionManager, writer)
 	overrideAttendanceBlockUseCase := application10.NewOverrideAttendanceBlockUseCase(repository2, writer, transactionManager)
 	voidInvoice := application10.NewVoidInvoice(repository2, transactionManager, writer, eventDispatcher)
+	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
+	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:          listInvoices,
@@ -341,6 +343,8 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		BulkIssueInvoices:     bulkIssueInvoices,
 		OverrideAttendanceBlk: overrideAttendanceBlockUseCase,
 		VoidInvoice:           voidInvoice,
+		DeleteInvoice:         deleteInvoice,
+		BulkDeleteInvoices:    bulkDeleteInvoices,
 		ManageInvoiceLines:    manageInvoiceLines,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)
@@ -732,6 +736,8 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bulkIssueInvoices := application10.NewBulkIssueInvoices(repository2, transactionManager, writer)
 	overrideAttendanceBlockUseCase := application10.NewOverrideAttendanceBlockUseCase(repository2, writer, transactionManager)
 	voidInvoice := application10.NewVoidInvoice(repository2, transactionManager, writer, eventDispatcher)
+	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
+	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:          listInvoices,
@@ -740,6 +746,8 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		BulkIssueInvoices:     bulkIssueInvoices,
 		OverrideAttendanceBlk: overrideAttendanceBlockUseCase,
 		VoidInvoice:           voidInvoice,
+		DeleteInvoice:         deleteInvoice,
+		BulkDeleteInvoices:    bulkDeleteInvoices,
 		ManageInvoiceLines:    manageInvoiceLines,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)

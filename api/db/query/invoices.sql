@@ -698,6 +698,13 @@ WHERE id = $1
   AND branch_id = $3
   AND status = 'draft';
 
+-- name: DeleteInvoice :execrows
+DELETE FROM invoices
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND status IN ('draft', 'void');
+
 -- name: TryAcquireOverdueTransitionJobLock :one
 SELECT pg_try_advisory_xact_lock(200020) AS acquired;
 

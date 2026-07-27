@@ -381,6 +381,28 @@ func (q *Queries) DeleteDraftSystemInvoiceLines(ctx context.Context, arg DeleteD
 	return result.RowsAffected(), nil
 }
 
+const deleteInvoice = `-- name: DeleteInvoice :execrows
+DELETE FROM invoices
+WHERE id = $1
+  AND tenant_id = $2
+  AND branch_id = $3
+  AND status IN ('draft', 'void')
+`
+
+type DeleteInvoiceParams struct {
+	ID       pgtype.UUID
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+}
+
+func (q *Queries) DeleteInvoice(ctx context.Context, arg DeleteInvoiceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteInvoice, arg.ID, arg.TenantID, arg.BranchID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getConsumedMinutesByChildren = `-- name: GetConsumedMinutesByChildren :many
 SELECT
     i.child_id,

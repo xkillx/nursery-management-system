@@ -294,6 +294,27 @@ type voidInvoiceResponse struct {
 	VoidReason string `json:"void_reason"`
 }
 
+type deleteInvoiceResponse struct {
+	InvoiceID string `json:"invoice_id"`
+	Status    string `json:"status"`
+	DeletedAt string `json:"deleted_at"`
+}
+
+type bulkDeleteInvoicesRequest struct {
+	InvoiceIDs []string `json:"invoice_ids" binding:"required"`
+}
+
+type bulkDeleteInvoicesResponse struct {
+	Deleted []deleteInvoiceResponse     `json:"deleted"`
+	Blocked []bulkDeleteBlockedResponse `json:"blocked"`
+}
+
+type bulkDeleteBlockedResponse struct {
+	InvoiceID string `json:"invoice_id"`
+	ErrorCode string `json:"error_code"`
+	Message   string `json:"message"`
+}
+
 type overrideAttendanceBlockRequest struct {
 	BillingMonth string `json:"billing_month"`
 	Note         string `json:"note"`

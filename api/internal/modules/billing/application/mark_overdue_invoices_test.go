@@ -95,6 +95,9 @@ func (s *stubBillingRepo) MarkInvoiceIssued(_ context.Context, _ domain.Tx, _ do
 func (s *stubBillingRepo) MarkInvoiceVoid(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ time.Time) (int64, error) {
 	panic("stub")
 }
+func (s *stubBillingRepo) DeleteInvoice(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
+	panic("stub")
+}
 func (s *stubBillingRepo) ListInvoicesForParent(_ context.Context, _, _, _ uuid.UUID, _ domain.ParentInvoiceFilters) ([]domain.ParentInvoiceRow, error) {
 	panic("stub")
 }

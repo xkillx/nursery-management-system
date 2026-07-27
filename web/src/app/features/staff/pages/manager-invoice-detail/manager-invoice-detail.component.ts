@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, AfterViewInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroArrowDownTray,
@@ -23,6 +23,7 @@ import {
   heroPencil,
   heroReceiptPercent,
   heroShieldCheck,
+  heroTrash,
   heroUser,
   heroUserCircle,
 } from '@ng-icons/heroicons/outline';
@@ -32,6 +33,7 @@ import { presentApiError, formatPresentedApiError } from '../../../../core/error
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { InvoiceTimelineComponent, TimelineEntry } from '../../../../shared/components/invoice/invoice-timeline/invoice-timeline.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import {
@@ -131,6 +133,7 @@ function fundingModelLabel(model: string | null): string {
     LoadingStateComponent,
     AlertComponent,
     StatusBadgeComponent,
+    ConfirmationDialogComponent,
     InvoiceTimelineComponent,
     NgIcon,
   ],
@@ -157,6 +160,7 @@ function fundingModelLabel(model: string | null): string {
       heroPencil,
       heroReceiptPercent,
       heroShieldCheck,
+      heroTrash,
       heroUser,
       heroUserCircle,
     }),
@@ -175,6 +179,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   private readonly apiService = inject(ManagerInvoicesApiService);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
   detail: ManagerInvoiceDetail | null = null;
@@ -194,6 +199,8 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   isPaymentLinkLoading = false;
   isDownloadingPdf = false;
   isIssuing = false;
+  isConfirmDeleteOpen = false;
+  isDeleting = false;
 
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
@@ -517,6 +524,37 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
       error: () => {
         this.isDownloadingPdf = false;
         this.toast.error('Failed to download PDF. Please try again.');
+      },
+    });
+  }
+
+  get isDeletable(): boolean {
+    return this.detail?.status === 'draft' || this.detail?.status === 'void';
+  }
+
+  openDeleteConfirmation(): void {
+    this.isConfirmDeleteOpen = true;
+  }
+
+  cancelDelete(): void {
+    this.isConfirmDeleteOpen = false;
+  }
+
+  confirmDelete(): void {
+    if (!this.detail) return;
+
+    this.isDeleting = true;
+    this.isConfirmDeleteOpen = false;
+
+    this.apiService.deleteInvoice(this.detail.invoiceId).subscribe({
+      next: () => {
+        this.toast.success('Invoice deleted successfully');
+        this.router.navigate(['/manager/invoices']);
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.delete')));
+        this.isDeleting = false;
       },
     });
   }

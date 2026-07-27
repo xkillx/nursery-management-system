@@ -88,6 +88,9 @@ type BillingRepository interface {
 	// Invoice Void — transactional method using Tx.
 	MarkInvoiceVoid(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, reason string, voidedAt time.Time) (int64, error)
 
+	// Invoice Delete — hard-deletes invoice and cascaded lines. Transactional.
+	DeleteInvoice(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (int64, error)
+
 	// Parent Invoice View (API-21) — read-only, no transaction required.
 	ListInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) ([]ParentInvoiceRow, error)
 	CountInvoicesForParent(ctx context.Context, tenantID, branchID, membershipID uuid.UUID, filters ParentInvoiceFilters) (int, error)
