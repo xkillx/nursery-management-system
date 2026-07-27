@@ -36,6 +36,7 @@ tail -f tmp/web.log
 - **Auth:** actor from `tenant.ActorFromGinContext(c)`. Never parse JWT manually.
 - **Error flow:** DomainError → MapDomainError() → HTTP. Auth: generic "Invalid credentials or session" only.
 - **Debug DB access:** Agent may query PostgreSQL directly for debugging and error tracing. Use `psql` or Go's `pgx` to inspect data, trace issues, and verify state. Always use read-only queries unless explicitly modifying data for fixes. Never expose credentials in logs or commits. Read `api/.env` for connection details (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME).
+- **Long-term over quick fix:** Always recommend and implement the long-term, future-proof solution. Avoid hacks, workarounds, or shortcuts that accumulate tech debt. If a quick fix is needed for an immediate issue, still plan the proper fix as follow-up work.
 
 ---
 
