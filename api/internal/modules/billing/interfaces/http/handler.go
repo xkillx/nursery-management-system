@@ -1431,6 +1431,7 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 		GeneratedRunCompletedAt:    formatTimePtr(inv.GeneratedRunCompletedAt),
 		GeneratedRunExceptionCount: r.GeneratedRunExceptionCount,
 		Calculation:                toCalculationResponse(r.Calculation),
+		ParentNote:                 inv.ParentNote,
 		CreatedAt:                  formatTime(inv.CreatedAt),
 		UpdatedAt:                  formatTime(inv.UpdatedAt),
 	}

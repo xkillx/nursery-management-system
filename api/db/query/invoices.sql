@@ -593,6 +593,7 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     r.name AS room_name,
+    i.parent_note,
     i.created_at, i.updated_at,
     c.profile_photo_path AS child_profile_photo_path
 FROM invoices i

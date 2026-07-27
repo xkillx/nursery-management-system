@@ -83,7 +83,7 @@ func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, li
 		SubtotalMinor:  subtotal.Minor(),
 		DeductionMinor: deduction.Minor(),
 		TotalMinor:     total.Minor(),
-		PaymentNote:    "Please settle outstanding balances by the due date.",
+		PaymentNote:    inv.ParentNote,
 	}
 	if sp != nil {
 		inp.SiteProfile = InvoicePDFSiteProfile{

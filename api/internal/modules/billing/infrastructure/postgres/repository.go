@@ -778,6 +778,7 @@ func mapInvoiceReviewRowFromGet(row sqlc.InvoiceGetForManagerReviewRow) domain.I
 		CalculationDetails:      json.RawMessage(row.CalculationDetails),
 		RoomName:                pgtypeTextToStrPtr(row.RoomName),
 		ChildPhotoPath:          pgtypeTextToStrPtr(row.ChildProfilePhotoPath),
+		ParentNote:              row.ParentNote.String,
 		CreatedAt:               pgtypeTimestamptzToTime(row.CreatedAt),
 		UpdatedAt:               pgtypeTimestamptzToTime(row.UpdatedAt),
 	}

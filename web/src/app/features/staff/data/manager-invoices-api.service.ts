@@ -150,6 +150,7 @@ interface InvoiceDetailApi extends ChildNameApi {
   site_profile?: { nursery_name: string; phone: string; email: string; website: string; address_street: string; address_city: string; address_postcode: string } | null;
   room_name?: string | null;
   parent_contact?: ParentContactApi | null;
+  parent_note?: string;
   calculation?: InvoiceCalculationApi | null;
   lines?: InvoiceLineApi[] | null;
   child_photo_url?: string | null;
@@ -532,6 +533,7 @@ export class ManagerInvoicesApiService {
       site_profile: d.site_profile ?? null,
       roomName: d.room_name ?? null,
       parentContact: d.parent_contact ? this.toParentContact(d.parent_contact) : null,
+      parentNote: d.parent_note ?? '',
       photoUrl: d.child_photo_url ?? null,
       calculation: d.calculation ? this.toCalculation(d.calculation) : null,
       lines: (d.lines ?? [])

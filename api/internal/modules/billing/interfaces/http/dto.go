@@ -198,6 +198,7 @@ type invoiceDetailResponse struct {
 	SiteProfile                *parentInvoiceSiteProfileResponse `json:"site_profile"`
 	RoomName                   *string                           `json:"room_name"`
 	ParentContact              *parentContactResponse            `json:"parent_contact"`
+	ParentNote                 string                            `json:"parent_note"`
 	CreatedAt                  string                            `json:"created_at"`
 	UpdatedAt                  string                            `json:"updated_at"`
 }

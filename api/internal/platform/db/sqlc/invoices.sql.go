@@ -1055,6 +1055,7 @@ SELECT
     gr.details AS generated_run_details,
     i.calculation_details,
     r.name AS room_name,
+    i.parent_note,
     i.created_at, i.updated_at,
     c.profile_photo_path AS child_profile_photo_path
 FROM invoices i
@@ -1104,6 +1105,7 @@ type InvoiceGetForManagerReviewRow struct {
 	GeneratedRunDetails     []byte
 	CalculationDetails      []byte
 	RoomName                pgtype.Text
+	ParentNote              pgtype.Text
 	CreatedAt               pgtype.Timestamptz
 	UpdatedAt               pgtype.Timestamptz
 	ChildProfilePhotoPath   pgtype.Text
@@ -1145,6 +1147,7 @@ func (q *Queries) InvoiceGetForManagerReview(ctx context.Context, arg InvoiceGet
 		&i.GeneratedRunDetails,
 		&i.CalculationDetails,
 		&i.RoomName,
+		&i.ParentNote,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ChildProfilePhotoPath,

@@ -137,6 +137,7 @@ export interface ManagerInvoiceDetail {
   site_profile: ManagerInvoiceSiteProfile | null;
   roomName: string | null;
   parentContact: ManagerInvoiceParentContact | null;
+  parentNote: string;
   photoUrl: string | null;
   calculation: ManagerInvoiceCalculation | null;
   lines: ManagerInvoiceLine[];

@@ -56,6 +56,7 @@ type InvoiceReviewRow struct {
 	CalculationDetails            json.RawMessage
 	RoomName                      *string
 	ChildPhotoPath                *string
+	ParentNote                    string
 	CreatedAt                     time.Time
 	UpdatedAt                     time.Time
 	LatestPaymentAttemptStatus    string
