@@ -1263,8 +1263,9 @@ func provideChildFundingReaderAdapter(
 // fundingLookupAdapter satisfies billingdomain.FundingLookup by loading
 // FundingRecord from the funding module's repository and computing allowance on the fly.
 type fundingLookupAdapter struct {
-	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl
-	ownerRepo   *ownerpostgres.OwnerRepository
+	fundingRepo    *fundingpostgres.FundingRecordRepositoryImpl
+	ownerRepo      *ownerpostgres.OwnerRepository
+	termDateLookup billingdomain.TermDateLookup
 }
 
 func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, branchID, childID uuid.UUID, billingMonth time.Time) (billingdomain.FundedChildInfo, error) {
@@ -1306,9 +1307,21 @@ func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, br
 }
 
 func (a *fundingLookupAdapter) getTermDates(ctx context.Context, tenantID, branchID uuid.UUID, billingMonth time.Time) ([]fundingdomain.TermDateRange, error) {
-	// This is a simplified implementation; the real one would query the term_calendar module.
-	// For now, return nil to use the fallback computation.
-	return nil, nil
+	if a.termDateLookup == nil {
+		return nil, nil
+	}
+	billingRanges, err := a.termDateLookup.GetTermDateRangesForBranchAndMonth(ctx, tenantID, branchID, billingMonth)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]fundingdomain.TermDateRange, 0, len(billingRanges))
+	for _, r := range billingRanges {
+		out = append(out, fundingdomain.TermDateRange{
+			StartDate: r.StartDate,
+			EndDate:   r.EndDate,
+		})
+	}
+	return out, nil
 }
 
 // ── Bookings Funding Lookup adapter ─────────────────────────────────────

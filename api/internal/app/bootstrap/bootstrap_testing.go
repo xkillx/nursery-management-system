@@ -324,13 +324,14 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	billingRepo := billingpostgres.NewRepository(pool)
 	siteRateAdapter := &siteRateUpdateAdapter{repo: ownerRepo}
 	updateSiteRateUC := billingapp.NewUpdateSiteRateUseCase(siteRateAdapter, auditWriter, txManager)
-	fundingLookup := &fundingLookupAdapter{fundingRepo: fundingRecordRepo, ownerRepo: ownerRepo}
+	termDateLookup := &termDateLookupAdapter{repo: termCalendarRepo}
+	fundingLookup := &fundingLookupAdapter{fundingRepo: fundingRecordRepo, ownerRepo: ownerRepo, termDateLookup: termDateLookup}
 	bookingEntriesLookup := bookingsapp.NewBookingEntriesLookupAdapter(pool)
 
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
-			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder, &termDateLookupAdapter{repo: termCalendarRepo}, &adHocBookingLookupAdapter{repo: billingRepo}, nil, nil, nil, fundingLookup, bookingEntriesLookup),
+			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder, termDateLookup, &adHocBookingLookupAdapter{repo: billingRepo}, nil, nil, nil, fundingLookup, bookingEntriesLookup),
 			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager, bookingEntriesLookup, fundingLookup),
 			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter),
 			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher)),
