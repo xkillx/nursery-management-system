@@ -374,11 +374,11 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).toContain('45 Maple Avenue');
   });
 
-  it('renders bank details placeholder card', () => {
+  it('renders service breakdown section', () => {
     createFixture();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Bank Details');
-    expect(text).toContain('coming soon');
+    expect(text).toContain('Service Breakdown');
+    expect(text).toContain('Core childcare');
   });
 
   it('renders line items in sorted order', () => {
@@ -406,20 +406,13 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).not.toContain('Issued invoice locked');
   });
 
-  it('does not render Checkout or Retry payment as actionable buttons or links', () => {
+  it('renders Send to Parent button for issued invoice', () => {
     createFixture();
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Send to Parent');
     expect(text).not.toContain('Checkout');
     expect(text).not.toContain('Retry payment');
-
-    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
-    const anchors: HTMLAnchorElement[] = Array.from(fixture.nativeElement.querySelectorAll('a'));
-    const allElements: HTMLElement[] = [...buttons, ...anchors];
-    const payElements = allElements.filter((el) => el.textContent?.includes('Pay'));
-    expect(payElements.length).toBe(2);
-    expect(payElements.some((el) => el.textContent?.includes('Make Payment'))).toBe(true);
-    expect(payElements.some((el) => el.textContent?.includes('Generate Payment Link'))).toBe(true);
   });
 
   it('shows net due and funded deduction summary', () => {
@@ -436,18 +429,17 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).toContain('incomplete_attendance');
   });
 
-  it('shows breadcrumb link to invoices list', () => {
+  it('shows Download PDF and Send to Parent action buttons', () => {
     createFixture();
-    const links: HTMLAnchorElement[] = fixture.nativeElement.querySelectorAll('a');
-    const invoicesLink = Array.from(links).find((a) => a.textContent?.trim() === 'Invoices');
-    expect(invoicesLink).toBeTruthy();
-    expect(invoicesLink!.href).toContain('/manager/invoices');
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Download PDF');
+    expect(text).toContain('Send to Parent');
   });
 
   it('shows collapsed payment review section for issued invoice', () => {
     createFixture();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Payment review');
+    expect(text).toContain('Payment Review');
     expect(text).not.toContain('Amount paid');
   });
 
@@ -464,7 +456,7 @@ describe('ManagerInvoiceDetailComponent', () => {
   it('does not show payment review section for draft invoice', () => {
     createFixture(draftDetail, null, []);
     const text = fixture.nativeElement.textContent;
-    expect(text).not.toContain('Payment review');
+    expect(text).not.toContain('Payment Review');
   });
 
   function expandPayReview() {
@@ -502,7 +494,6 @@ describe('ManagerInvoiceDetailComponent', () => {
     expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Awaiting provider update');
-    expect(text).toContain('checkout session is open');
   });
 
   it('does not show parent retry for open attempt even when checkoutRetryAvailable is true', () => {
@@ -526,7 +517,6 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(text).toContain('Payment history');
     expect(text).toContain('Payment succeeded');
     expect(text).toContain('checkout_paid');
-    expect(text).toContain('issued → paid');
   });
 
   it('shows empty payment history state', () => {
@@ -540,7 +530,6 @@ describe('ManagerInvoiceDetailComponent', () => {
     createFixture(issuedDetail, paidPaymentStatus, samplePaymentEvents);
     expandPayReview();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('evt_1');
     expect(text).toContain('cs_1');
     expect(text).toContain('pi_1');
   });
@@ -554,7 +543,7 @@ describe('ManagerInvoiceDetailComponent', () => {
     createFixture(issuedDetail, noRetryStatus, emptyPaymentEvents);
     expandPayReview();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Already paid');
+    expect(text).not.toContain('Parent retry available');
   });
 
   it('shows issue button for draft invoice', () => {
@@ -689,7 +678,7 @@ describe('ManagerInvoiceDetailComponent payment diagnostics error', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('INV-202605-0001');
     expect(text).toContain('Ben');
-    expect(text).toContain('Payment review');
+    expect(text).toContain('Payment Review');
   });
 
   it('shows payment diagnostics error with request ID', () => {

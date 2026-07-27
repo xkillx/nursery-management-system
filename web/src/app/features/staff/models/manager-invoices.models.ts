@@ -1,4 +1,4 @@
-export type ManagerInvoiceStatus = 'draft' | 'issued' | 'payment_failed' | 'paid' | 'overdue';
+export type ManagerInvoiceStatus = 'draft' | 'issued' | 'payment_failed' | 'paid' | 'overdue' | 'void';
 
 export type ManagerInvoiceDueStatus = 'not_due' | 'due' | 'overdue' | 'paid';
 

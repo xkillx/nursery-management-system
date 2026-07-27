@@ -469,10 +469,10 @@ export class ManagerInvoicesApiService {
 
   bulkDeleteInvoices(invoiceIds: string[]): Observable<BulkDeleteResult> {
     return this.http
-      .post<{ deleted: { invoice_id: string; status: string; deleted_at: string }[]; blocked: { invoice_id: string; error_code: string; message: string }[] }>(
+      .request<{ deleted: { invoice_id: string; status: string; deleted_at: string }[]; blocked: { invoice_id: string; error_code: string; message: string }[] }>(
+        'DELETE',
         apiUrl('/invoices'),
-        { invoice_ids: invoiceIds },
-        { observe: 'body', method: 'DELETE' },
+        { body: { invoice_ids: invoiceIds }, observe: 'body' },
       )
       .pipe(
         map((res) => ({

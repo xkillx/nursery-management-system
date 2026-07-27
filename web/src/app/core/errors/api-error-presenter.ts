@@ -17,6 +17,7 @@ export type ApiErrorContext =
   | 'invoice.prefill'
   | 'invoice.createDraft'
   | 'invoice.issue'
+  | 'invoice.delete'
   | 'payment.managerDiagnostics'
   | 'payment.parentList'
   | 'payment.parentDetail'
