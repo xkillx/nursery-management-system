@@ -289,6 +289,10 @@ func (r *Repository) GetMonthlyInvoiceForUpdate(ctx context.Context, tx domain.T
 }
 
 func (r *Repository) CreateDraftInvoice(ctx context.Context, tx domain.Tx, params domain.DraftInvoiceCreateParams) error {
+	calcDetails := params.CalculationDetails
+	if len(calcDetails) == 0 {
+		calcDetails = []byte("{}")
+	}
 	return r.queriesTx(tx).CreateDraftInvoice(ctx, sqlc.CreateDraftInvoiceParams{
 		ID:                   uuidToPgtype(params.ID),
 		TenantID:             uuidToPgtype(params.TenantID),
@@ -298,18 +302,22 @@ func (r *Repository) CreateDraftInvoice(ctx context.Context, tx domain.Tx, param
 		InvoiceKind:          domain.InvoiceKindMonthly,
 		Status:               domain.InvoiceStatusDraft,
 		CurrencyCode:         params.CurrencyCode,
-		GeneratedRunID:       uuidToPgtype(params.GeneratedRunID),
+		GeneratedRunID:       uuidToPgtypePtr(params.GeneratedRunID),
 		SubtotalMinor:        int32(params.Subtotal.Minor()),
 		FundedDeductionMinor: int32(params.FundedDeduction.Minor()),
 		TotalDueMinor:        int32(params.TotalDue.Minor()),
 		PeriodStartDate:      timeToPgtypeDate(params.PeriodStartDate),
 		PeriodEndDate:        timeToPgtypeDate(params.PeriodEndDate),
-		CalculationDetails:   params.CalculationDetails,
+		CalculationDetails:   calcDetails,
 		ParentNote:           pgtype.Text{String: params.ParentNote, Valid: params.ParentNote != ""},
 	})
 }
 
 func (r *Repository) UpdateDraftInvoice(ctx context.Context, tx domain.Tx, params domain.DraftInvoiceUpdateParams) error {
+	calcDetails := params.CalculationDetails
+	if len(calcDetails) == 0 {
+		calcDetails = []byte("{}")
+	}
 	return r.queriesTx(tx).UpdateDraftInvoice(ctx, sqlc.UpdateDraftInvoiceParams{
 		ID:                   uuidToPgtype(params.ID),
 		TenantID:             uuidToPgtype(params.TenantID),
@@ -318,7 +326,7 @@ func (r *Repository) UpdateDraftInvoice(ctx context.Context, tx domain.Tx, param
 		SubtotalMinor:        int32(params.Subtotal.Minor()),
 		FundedDeductionMinor: int32(params.FundedDeduction.Minor()),
 		TotalDueMinor:        int32(params.TotalDue.Minor()),
-		CalculationDetails:   params.CalculationDetails,
+		CalculationDetails:   calcDetails,
 	})
 }
 
@@ -354,6 +362,10 @@ func (r *Repository) ListDraftExtraLines(ctx context.Context, tx domain.Tx, tena
 }
 
 func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params domain.InvoiceLineCreateParams) error {
+	details := params.Details
+	if len(details) == 0 {
+		details = []byte("{}")
+	}
 	return r.queriesTx(tx).InsertInvoiceLine(ctx, sqlc.InsertInvoiceLineParams{
 		ID:                     uuidToPgtype(params.ID),
 		TenantID:               uuidToPgtype(params.TenantID),
@@ -371,7 +383,7 @@ func (r *Repository) InsertInvoiceLine(ctx context.Context, tx domain.Tx, params
 		FundedDeductionMinutes: pgtypeInt4OrNil(params.FundedDeductionMinutes),
 		CoreBillableMinutes:    pgtypeInt4OrNil(params.CoreBillableMinutes),
 		SessionCount:           pgtypeInt4OrNil(params.SessionCount),
-		Details:                params.Details,
+		Details:                details,
 	})
 }
 

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -82,7 +83,6 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 		}
 
 		invoiceID := uid.NewUUID()
-		formRunID := uid.NewUUID()
 
 		subtotalMinor := 0
 		for _, line := range input.Lines {
@@ -101,14 +101,13 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 			BranchID:           actor.BranchID,
 			ChildID:            input.ChildID,
 			BillingMonth:       billingMonth,
-			GeneratedRunID:     formRunID,
 			CurrencyCode:       "GBP",
 			Subtotal:           domain.MustGBP(subtotalMinor),
 			FundedDeduction:    domain.MustGBP(fundedDeductionMinor),
 			TotalDue:           domain.MustGBP(totalDueMinor),
 			PeriodStartDate:    periodStart,
 			PeriodEndDate:      periodEnd,
-			CalculationDetails: nil,
+			CalculationDetails: json.RawMessage("{}"),
 			ParentNote:         input.ParentNote,
 		}); createErr != nil {
 			return fmt.Errorf("create draft invoice: %w", createErr)

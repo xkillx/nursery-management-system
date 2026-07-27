@@ -358,7 +358,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 				BranchID:           in.Actor.BranchID,
 				ChildID:            bookingRow.ChildID,
 				BillingMonth:       in.BillingMonth,
-				GeneratedRunID:     in.RunID,
+				GeneratedRunID:     &in.RunID,
 				CurrencyCode:       "GBP",
 				Subtotal:           domain.MustGBP(subtotalMinor + extrasTotalMinor),
 				FundedDeduction:    domain.MustGBP(fundedDeductionMinor),

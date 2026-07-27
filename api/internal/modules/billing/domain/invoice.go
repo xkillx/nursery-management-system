@@ -317,7 +317,7 @@ type DraftInvoiceCreateParams struct {
 	BranchID           uuid.UUID
 	ChildID            uuid.UUID
 	BillingMonth       time.Time
-	GeneratedRunID     uuid.UUID
+	GeneratedRunID     *uuid.UUID
 	CurrencyCode       string
 	Subtotal           Money
 	FundedDeduction    Money
