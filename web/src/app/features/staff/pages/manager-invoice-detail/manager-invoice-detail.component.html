@@ -38,6 +38,16 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
+        @if (!isImmutable) {
+          <a
+            [routerLink]="['/manager/invoices', detail.invoiceId, 'edit']"
+            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-xs font-bold text-white shadow-theme-xs transition hover:brightness-110 focus:outline-hidden"
+          >
+            <ng-icon name="heroPencil" size="16" aria-hidden="true" />
+            Edit Draft
+          </a>
+        }
+
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
@@ -59,14 +69,6 @@
             {{ isPaymentLinkLoading ? 'Generating...' : (paymentLinkUrl ? 'Copy Payment Link' : 'Send to Parent') }}
           </button>
         }
-
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-xs font-bold text-white shadow-theme-xs transition hover:brightness-110 focus:outline-hidden"
-        >
-          <ng-icon name="heroBanknotes" size="16" aria-hidden="true" />
-          Make Payment
-        </button>
       </div>
     </div>
 
@@ -98,9 +100,6 @@
         <div class="space-y-0.5">
           <p class="text-sm font-semibold text-warning-900 dark:text-warning-200">
             Draft invoice — editable
-          </p>
-          <p class="text-xs text-warning-700 dark:text-warning-300/80">
-            You can add, edit, or remove extra and ad-hoc lines on this draft.
           </p>
         </div>
       </div>
@@ -191,93 +190,8 @@
               <span class="rounded-full bg-brand-50 border border-brand-100 px-3 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-300">
                 {{ detail.lines.length }} Items
               </span>
-              @if (!isImmutable) {
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden"
-                  (click)="startAddLine()"
-                  [disabled]="isAddingLine"
-                >
-                  <ng-icon name="heroPlus" size="14" aria-hidden="true" />
-                  Add line
-                </button>
-              }
             </div>
           </div>
-
-          @if (isAddingLine) {
-            <div class="border-b border-gray-200 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.01]">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">New Line</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label for="lineKind" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Type</label>
-                  <select
-                    id="lineKind"
-                    [(ngModel)]="addForm.lineKind"
-                    class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                  >
-                    <option value="extra">Extra</option>
-                    <option value="ad_hoc">Ad-hoc</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="lineDesc" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Description</label>
-                  <input
-                    id="lineDesc"
-                    type="text"
-                    [(ngModel)]="addForm.description"
-                    class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                    placeholder="Line description"
-                  />
-                </div>
-                <div>
-                  <label for="lineQty" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Qty (minutes)</label>
-                  <input
-                    id="lineQty"
-                    type="number"
-                    [(ngModel)]="addForm.quantityMinutes"
-                    class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                  />
-                </div>
-                <div>
-                  <label for="lineUnitAmt" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Unit Amount (pence)</label>
-                  <input
-                    id="lineUnitAmt"
-                    type="number"
-                    [(ngModel)]="addForm.unitAmountMinor"
-                    class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                  />
-                </div>
-                <div>
-                  <label for="lineLineAmt" class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Line Amount (pence)</label>
-                  <input
-                    id="lineLineAmt"
-                    type="number"
-                    [(ngModel)]="addForm.lineAmountMinor"
-                    class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                  />
-                </div>
-              </div>
-              <div class="flex gap-2 mt-3">
-                <button
-                  type="button"
-                  class="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
-                  (click)="saveAddLine()"
-                  [disabled]="isSavingLine || !addForm.description"
-                >
-                  {{ isSavingLine ? 'Saving...' : 'Save' }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                  (click)="cancelAddLine()"
-                  [disabled]="isSavingLine"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          }
 
           @if (detail.lines.length > 0) {
             <div class="overflow-x-auto">
@@ -288,68 +202,10 @@
                     <th class="px-6 py-3.5 text-center w-28">QTY</th>
                     <th class="px-6 py-3.5 text-right w-36">UNIT PRICE</th>
                     <th class="px-6 py-3.5 text-right w-36">GROSS</th>
-                    @if (!isImmutable) {
-                      <th class="px-6 py-3.5 text-right w-24">ACTIONS</th>
-                    }
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   @for (line of detail.lines; track line.lineId) {
-                    @if (editingLineId === line.lineId) {
-                      <!-- Inline edit row -->
-                      <tr class="bg-brand-50/30 dark:bg-brand-500/5">
-                        <td class="px-6 py-3">
-                          <input
-                            type="text"
-                            [(ngModel)]="editForm.description"
-                            class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                          />
-                        </td>
-                        <td class="px-6 py-3 text-center">
-                          <input
-                            type="number"
-                            [(ngModel)]="editForm.quantityMinutes"
-                            class="w-20 rounded border border-gray-200 bg-white px-2 py-1 text-xs text-center dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                          />
-                        </td>
-                        <td class="px-6 py-3 text-right">
-                          <input
-                            type="number"
-                            [(ngModel)]="editForm.unitAmountMinor"
-                            class="w-24 rounded border border-gray-200 bg-white px-2 py-1 text-xs text-right dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                          />
-                        </td>
-                        <td class="px-6 py-3 text-right">
-                          <input
-                            type="number"
-                            [(ngModel)]="editForm.lineAmountMinor"
-                            class="w-24 rounded border border-gray-200 bg-white px-2 py-1 text-xs text-right dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
-                          />
-                        </td>
-                        @if (!isImmutable) {
-                          <td class="px-6 py-3 text-right">
-                            <div class="flex gap-1 justify-end">
-                              <button
-                                type="button"
-                                class="rounded px-2 py-1 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50"
-                                (click)="saveEditLine(line.lineId)"
-                                [disabled]="isSavingLine"
-                              >
-                                Save
-                              </button>
-                              <button
-                                type="button"
-                                class="rounded px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                                (click)="cancelEditLine()"
-                                [disabled]="isSavingLine"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </td>
-                        }
-                      </tr>
-                    } @else {
                       <tr class="transition" [class.bg-orange-50\/40]="line.lineKind === 'funded_deduction'" [class.hover:bg-orange-50\/70]="line.lineKind === 'funded_deduction'" [class.dark:bg-orange-500\/5]="line.lineKind === 'funded_deduction'" [class.hover:bg-gray-50\/60]="line.lineKind !== 'funded_deduction'" [class.dark:hover:bg-white\/[0.01]]="line.lineKind !== 'funded_deduction'">
                         <td class="px-6 py-4.5">
                           <p class="font-bold text-sm" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white/90]="line.lineKind !== 'funded_deduction'">
@@ -382,33 +238,7 @@
                             {{ formatGbp(line.lineAmountMinor) }}
                           }
                         </td>
-                        @if (!isImmutable) {
-                          <td class="px-6 py-4.5 text-right">
-                            @if (isEditableLine(line)) {
-                              <div class="flex gap-1 justify-end">
-                                <button
-                                  type="button"
-                                  class="rounded p-1.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition"
-                                  title="Edit line"
-                                  (click)="startEditLine(line)"
-                                >
-                                  <ng-icon name="heroPencil" size="14" aria-hidden="true" />
-                                </button>
-                                <button
-                                  type="button"
-                                  class="rounded p-1.5 text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition"
-                                  title="Delete line"
-                                  (click)="deleteLine(line.lineId)"
-                                  [disabled]="isSavingLine"
-                                >
-                                  <ng-icon name="heroTrash" size="14" aria-hidden="true" />
-                                </button>
-                              </div>
-                            }
-                          </td>
-                        }
                       </tr>
-                    }
                   }
                 </tbody>
               </table>
