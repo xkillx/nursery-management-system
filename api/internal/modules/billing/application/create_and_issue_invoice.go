@@ -116,6 +116,9 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 		for _, line := range input.Lines {
 			unitAmount := domain.MustGBP(line.UnitAmountMinor)
 			lineAmount := domain.MustGBP(line.LineAmountMinor)
+			if line.LineKind == domain.LineKindFundedDeduction && lineAmount.Minor() > 0 {
+				lineAmount = domain.MustGBP(-line.LineAmountMinor)
+			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
 				ID:              uid.NewUUID(),
 				TenantID:        actor.TenantID,
