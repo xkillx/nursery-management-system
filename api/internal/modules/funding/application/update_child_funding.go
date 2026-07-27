@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/funding/domain"
 	"nursery-management-system/api/internal/platform/audit"
@@ -16,10 +17,11 @@ type UpdateChildFunding struct {
 	repo        domain.FundingRecordRepository
 	auditW      *audit.Writer
 	historyRepo domain.HistoryRepository
+	txMgr       TxManager
 }
 
-func NewUpdateChildFunding(repo domain.FundingRecordRepository, auditW *audit.Writer, historyRepo domain.HistoryRepository) *UpdateChildFunding {
-	return &UpdateChildFunding{repo: repo, auditW: auditW, historyRepo: historyRepo}
+func NewUpdateChildFunding(repo domain.FundingRecordRepository, auditW *audit.Writer, historyRepo domain.HistoryRepository, txMgr TxManager) *UpdateChildFunding {
+	return &UpdateChildFunding{repo: repo, auditW: auditW, historyRepo: historyRepo, txMgr: txMgr}
 }
 
 type UpdateChildFundingParams struct {
@@ -56,22 +58,33 @@ func (uc *UpdateChildFunding) Execute(ctx context.Context, actor tenant.ActorCon
 		EvidenceReceived:         params.EvidenceReceived,
 	}
 
-	saved, err := uc.repo.UpsertFundingRecord(ctx, nil, record)
-	if err != nil {
-		return domain.FundingRecord{}, fmt.Errorf("upsert funding record: %w", err)
-	}
+	var saved domain.FundingRecord
+	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+		var lerr error
+		saved, lerr = uc.repo.UpsertFundingRecord(ctx, tx, record)
+		if lerr != nil {
+			return fmt.Errorf("upsert funding record: %w", lerr)
+		}
 
-	if uc.auditW != nil {
-		_ = uc.auditW.WriteWithTx(ctx, nil, actor, audit.WriteParams{
-			ActionType: "funding.record.updated",
-			EntityType: "child",
-			EntityID:   parsedChildID,
-			Details: map[string]any{
-				"funding_type":    string(params.FundingType),
-				"funding_model":   string(params.FundingModel),
-				"funding_enabled": params.FundingEnabled,
-			},
-		})
+		if uc.auditW != nil {
+			if aerr := uc.auditW.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+				ActionType: "funding.record.updated",
+				EntityType: "child",
+				EntityID:   parsedChildID,
+				Details: map[string]any{
+					"funding_type":    string(params.FundingType),
+					"funding_model":   string(params.FundingModel),
+					"funding_enabled": params.FundingEnabled,
+				},
+			}); aerr != nil {
+				return fmt.Errorf("audit funding update: %w", aerr)
+			}
+		}
+
+		return nil
+	})
+	if txErr != nil {
+		return domain.FundingRecord{}, txErr
 	}
 
 	return saved, nil

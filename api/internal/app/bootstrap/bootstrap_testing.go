@@ -304,7 +304,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	termDateProv := &termDateProviderAdapter{repo: termCalendarRepo}
 	fundingHandler := fundinghandler.NewHandler(
 		fundingapp.NewGetChildFunding(fundingRecordRepo),
-		fundingapp.NewUpdateChildFunding(fundingRecordRepo, auditWriter, fundingHistoryRepo),
+		fundingapp.NewUpdateChildFunding(fundingRecordRepo, auditWriter, fundingHistoryRepo, txManager),
 		fundingapp.NewListOverview(fundingRepo, consumedMinutesProvider, termDateProv),
 		fundingapp.NewGetEnhancedOverview(fundingRepo),
 		fundingapp.NewGetEnhancedChildDetail(fundingRecordRepo, fundingRepo, fundingHistoryRepo, termDateProv),

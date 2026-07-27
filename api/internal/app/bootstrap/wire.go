@@ -356,6 +356,7 @@ var fundingSet = wire.NewSet(
 	wire.Bind(new(fundingdomain.TermDateProvider), new(*termDateProviderAdapter)),
 	provideConsumedMinutesProviderAdapter,
 	wire.Bind(new(fundingapp.ConsumedMinutesProvider), new(*consumedMinutesProviderAdapter)),
+	wire.Bind(new(fundingapp.TxManager), new(*transaction.Manager)),
 	fundingapp.NewGetChildFunding,
 	fundingapp.NewUpdateChildFunding,
 	fundingapp.NewListOverview,
@@ -366,7 +367,7 @@ var fundingSet = wire.NewSet(
 	wire.Bind(new(fundingapp.ParentChildLookupForFunding), new(*parentChildLookupForFundingAdapter)),
 	fundingapp.NewGetParentFunding,
 	fundingapp.NewGetParentFundingBreakdown,
-	fundinghandler.NewHandler,
+	httpfunding.NewHandler,
 )
 
 // ── Billing module ─────────────────────────────────────────────────────
