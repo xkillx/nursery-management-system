@@ -53,6 +53,7 @@ const draftDetail: ManagerInvoiceDetail = {
     telephone: '07700 900123',
   },
   photoUrl: null,
+  parentNote: '',
   generatedRunExceptions: [],
   calculation: null,
   lines: [

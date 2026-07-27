@@ -193,6 +193,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   paymentLinkUrl: string | null = null;
   isPaymentLinkLoading = false;
   isDownloadingPdf = false;
+  isIssuing = false;
 
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
@@ -454,6 +455,30 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
       error: () => {
         this.isPaymentLinkLoading = false;
         this.toast.error('Failed to generate payment link. Please try again.');
+      },
+    });
+  }
+
+  issueInvoice(): void {
+    if (!this.detail || this.isIssuing) return;
+
+    const childName = this.detail.childName;
+    const amount = formatGbp(this.detail.totalDueMinor);
+    const confirmed = confirm(`Issue invoice for ${childName} — ${amount}? This will lock the invoice and make it visible to the parent.`);
+    if (!confirmed) return;
+
+    this.isIssuing = true;
+
+    this.apiService.issueInvoice(this.detail.invoiceId).subscribe({
+      next: () => {
+        this.toast.success('Invoice issued successfully.');
+        this.loadDetail(this.detail!.invoiceId);
+        this.isIssuing = false;
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.issue')));
+        this.isIssuing = false;
       },
     });
   }

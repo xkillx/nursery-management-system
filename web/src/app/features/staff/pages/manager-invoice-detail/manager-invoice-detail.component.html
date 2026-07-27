@@ -36,6 +36,16 @@
 
       <div class="flex flex-wrap items-center gap-3">
         @if (!isImmutable) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl bg-success-500 px-4 py-2.5 text-xs font-semibold text-white shadow-theme-xs transition hover:bg-success-600 focus:outline-hidden disabled:opacity-50"
+            (click)="issueInvoice()"
+            [disabled]="isIssuing"
+          >
+            <ng-icon name="heroCheckBadge" size="16" aria-hidden="true" />
+            {{ isIssuing ? 'Issuing...' : 'Issue Invoice' }}
+          </button>
+
           <a
             [routerLink]="['/manager/invoices', detail.invoiceId, 'edit']"
             class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden"

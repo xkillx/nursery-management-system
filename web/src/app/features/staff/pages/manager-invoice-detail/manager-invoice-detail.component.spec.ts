@@ -8,6 +8,7 @@ import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
 import { ManagerInvoiceDetailComponent } from './manager-invoice-detail.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import { ManagerInvoiceDetail, ManagerPaymentStatus, PaymentEvent } from '../../models/manager-invoices.models';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 const issuedDetail: ManagerInvoiceDetail = {
   invoiceId: 'inv-1',
@@ -51,6 +52,7 @@ const issuedDetail: ManagerInvoiceDetail = {
     telephone: '07700 900123',
   },
   photoUrl: null,
+  parentNote: 'Please pay by the due date.',
   generatedRunExceptions: [
     { childId: 'c2', childName: 'Alice', blockerCodes: ['incomplete_attendance'] },
   ],
@@ -294,6 +296,7 @@ function createSpy() {
     'getInvoice',
     'getPaymentStatus',
     'listPaymentEvents',
+    'issueInvoice',
   ]);
 }
 
@@ -552,6 +555,67 @@ describe('ManagerInvoiceDetailComponent', () => {
     expandPayReview();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Already paid');
+  });
+
+  it('shows issue button for draft invoice', () => {
+    createFixture(draftDetail, null, []);
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const issueButton = buttons.find((btn) => btn.textContent?.trim().includes('Issue Invoice'));
+    expect(issueButton).toBeTruthy();
+  });
+
+  it('hides issue button for issued invoice', () => {
+    createFixture(issuedDetail, unpaidPaymentStatus, emptyPaymentEvents);
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const issueButton = buttons.find((btn) => btn.textContent?.trim().includes('Issue Invoice'));
+    expect(issueButton).toBeFalsy();
+  });
+
+  it('calls issueInvoice and refreshes on confirm', () => {
+    createFixture(draftDetail, null, []);
+    apiService.issueInvoice.and.returnValue(of({ invoiceId: 'inv-3', status: 'issued' }));
+    spyOn(window, 'confirm').and.returnValue(true);
+    const component = fixture.componentInstance;
+    component.issueInvoice();
+    expect(window.confirm).toHaveBeenCalled();
+    expect(apiService.issueInvoice).toHaveBeenCalledWith('inv-3');
+    expect(apiService.getInvoice).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not call API when confirm is cancelled', () => {
+    createFixture(draftDetail, null, []);
+    spyOn(window, 'confirm').and.returnValue(false);
+    const component = fixture.componentInstance;
+    component.issueInvoice();
+    expect(window.confirm).toHaveBeenCalled();
+    expect(apiService.issueInvoice).not.toHaveBeenCalled();
+  });
+
+  it('shows error toast on issue failure', () => {
+    createFixture(draftDetail, null, []);
+    apiService.issueInvoice.and.returnValue(throwError(() => new HttpErrorResponse({
+      error: { code: 'invalid_state', message: 'Invoice already issued', request_id: 'req-err-1' },
+      status: 409,
+    })));
+    spyOn(window, 'confirm').and.returnValue(true);
+    const toastSpy = spyOn(TestBed.inject(ToastService), 'error');
+    const component = fixture.componentInstance;
+    component.issueInvoice();
+    expect(toastSpy).toHaveBeenCalled();
+    expect(component.isIssuing).toBe(false);
+  });
+
+  it('disables button and shows loading text while issuing', () => {
+    createFixture(draftDetail, null, []);
+    spyOn(window, 'confirm').and.returnValue(true);
+    apiService.issueInvoice.and.returnValue(of({ invoiceId: 'inv-3', status: 'issued' }));
+    const component = fixture.componentInstance;
+    component.isIssuing = true;
+    fixture.detectChanges();
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const issueButton = buttons.find((btn) => btn.textContent?.trim().includes('Issuing...'));
+    expect(issueButton).toBeTruthy();
+    expect(issueButton!.disabled).toBe(true);
   });
 });
 
