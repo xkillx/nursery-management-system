@@ -1281,8 +1281,10 @@ func (a *fundingLookupAdapter) GetChildFunding(ctx context.Context, tenantID, br
 		return billingdomain.FundedChildInfo{}, fmt.Errorf("get site for funded rate: %w", err)
 	}
 	fundedRateMinor := 0
-	if site.FundedHourlyRateMinor != nil {
+	if site.FundedHourlyRateMinor != nil && *site.FundedHourlyRateMinor > 0 {
 		fundedRateMinor = *site.FundedHourlyRateMinor
+	} else if site.CoreHourlyRateMinor != nil {
+		fundedRateMinor = *site.CoreHourlyRateMinor
 	}
 
 	hoursPerWeek := 0.0
