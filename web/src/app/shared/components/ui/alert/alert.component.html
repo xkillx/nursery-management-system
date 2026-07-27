@@ -1,21 +1,28 @@
 <div
-  class="rounded-xl border p-4"
-  [class.p-2]="compact"
+  class="rounded-2xl border p-4 sm:p-4.5 shadow-theme-xs transition-all duration-200"
+  [class.p-3]="compact"
   [ngClass]="variantClasses.container"
   [attr.role]="roleAttribute"
 >
-  <div class="flex items-start gap-3" [class.gap-2]="compact">
-    <div class="-mt-0.5" [ngClass]="variantClasses.icon" [innerHTML]="iconSvg | safeHtml"></div>
+  <div class="flex items-start gap-3.5" [class.gap-2.5]="compact">
+    <div
+      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors"
+      [class.h-7]="compact"
+      [class.w-7]="compact"
+      [ngClass]="variantClasses.iconBadge"
+    >
+      <div [innerHTML]="iconSvg | safeHtml" class="flex items-center justify-center"></div>
+    </div>
 
-    <div class="min-w-0 flex-1">
+    <div class="min-w-0 flex-1 pt-0.5">
       @if (title) {
-        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
+        <h4 class="text-sm font-bold tracking-tight mb-1" [ngClass]="variantClasses.title">
           {{ title }}
         </h4>
       }
 
       @if (message) {
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ message }}</p>
+        <p class="text-sm font-medium leading-relaxed" [ngClass]="variantClasses.message">{{ message }}</p>
       }
 
       <ng-content></ng-content>
@@ -23,7 +30,8 @@
       @if (showLink) {
         <a
           [routerLink]="linkHref"
-          class="inline-block mt-3 text-sm font-medium text-gray-500 underline dark:text-gray-400"
+          class="inline-flex items-center gap-1 mt-2.5 text-sm font-semibold underline underline-offset-2 transition-colors"
+          [ngClass]="variantClasses.link"
         >
           {{ linkText }}
         </a>
@@ -34,7 +42,8 @@
       <button
         type="button"
         (click)="dismissed.emit()"
-        class="shrink-0 ml-2 -mr-1 -mt-1 rounded-lg p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-white/10 focus:outline-hidden focus:ring-2 focus:ring-gray-400/50"
+        class="shrink-0 -mr-1 -mt-1 rounded-lg p-1.5 transition-colors focus:outline-hidden focus:ring-2"
+        [ngClass]="variantClasses.dismiss"
         aria-label="Dismiss"
       >
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -44,3 +53,4 @@
     }
   </div>
 </div>
+

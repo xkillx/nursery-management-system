@@ -85,7 +85,7 @@ const WEEKDAY_INDICES = [1, 2, 3, 4, 5];
 })
 export class SessionGridComponent implements ControlValueAccessor {
   @Input() sessionTypes: StaffSessionType[] = [];
-  @Input() days: { label: string; index: number }[] = DEFAULT_DAYS.map((label, index) => ({ label, index }));
+  @Input() days: { label: string; index: number }[] = DEFAULT_DAYS.map((label, index) => ({ label, index })).filter(d => d.index > 0);
   @Output() valueChange = new EventEmitter<SessionEntry[]>();
 
   selected: Record<number, Set<string>> = {};
@@ -110,7 +110,7 @@ export class SessionGridComponent implements ControlValueAccessor {
   }
 
   selectAllWeekdays(): void {
-    const monday = this.selected[0] ?? new Set<string>();
+    const monday = this.selected[1] ?? new Set<string>();
     for (const idx of WEEKDAY_INDICES) {
       this.selected[idx] = new Set(monday);
     }

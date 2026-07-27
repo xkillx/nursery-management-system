@@ -12,6 +12,9 @@ export interface OverCapacityRoom {
   selector: 'app-over-capacity-banner',
   imports: [CommonModule],
   templateUrl: './over-capacity-banner.component.html',
+  host: {
+    class: 'block w-full my-5 lg:my-6',
+  },
 })
 export class OverCapacityBannerComponent {
   @Input() rooms: OverCapacityRoom[] = [];
