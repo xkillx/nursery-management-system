@@ -20,10 +20,11 @@ type ComputeInvoicePrefill struct {
 	repo                 domain.BillingRepository
 	txMgr                PrefillTxManager
 	bookingEntriesLookup domain.BookingEntriesLookup
+	fundingLookup        domain.FundingLookup
 }
 
-func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager, bookingEntriesLookup domain.BookingEntriesLookup) *ComputeInvoicePrefill {
-	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr, bookingEntriesLookup: bookingEntriesLookup}
+func NewComputeInvoicePrefill(repo domain.BillingRepository, txMgr PrefillTxManager, bookingEntriesLookup domain.BookingEntriesLookup, fundingLookup domain.FundingLookup) *ComputeInvoicePrefill {
+	return &ComputeInvoicePrefill{repo: repo, txMgr: txMgr, bookingEntriesLookup: bookingEntriesLookup, fundingLookup: fundingLookup}
 }
 
 type ComputeInvoicePrefillResult struct {
@@ -93,13 +94,28 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 		domainEntries := entries
 
 		fundedAllowance := 0
+		hasFunding := false
+		fundedHourlyRateMinor := 0
+
+		if uc.fundingLookup != nil {
+			fundingInfo, fundErr := uc.fundingLookup.GetChildFunding(ctx, actor.TenantID, actor.BranchID, childID, billingMonth)
+			if fundErr != nil {
+				return fmt.Errorf("lookup funding for child: %w", fundErr)
+			}
+			if fundingInfo.HasFunding {
+				hasFunding = true
+				fundedAllowance = fundingInfo.FundedAllowanceMinutes
+				fundedHourlyRateMinor = fundingInfo.FundedHourlyRateMinor
+			}
+		}
 
 		prefillResult, prefillErr := domain.ComputeInvoicePrefill(domain.InvoicePrefillParams{
 			Entries:                domainEntries,
 			BillingMonthStart:      billingMonth,
 			SiteHourlyRateMinor:    bookingRow.SiteHourlyRateMinor,
+			FundedHourlyRateMinor:  fundedHourlyRateMinor,
 			FundedAllowanceMinutes: fundedAllowance,
-			HasFunding:             false,
+			HasFunding:             hasFunding,
 		})
 		if prefillErr != nil {
 			return fmt.Errorf("compute invoice prefill: %w", prefillErr)

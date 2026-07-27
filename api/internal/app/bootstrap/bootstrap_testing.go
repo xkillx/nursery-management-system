@@ -331,7 +331,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		Drafting: billinghandler.DraftUseCases{
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
 			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder, &termDateLookupAdapter{repo: termCalendarRepo}, &adHocBookingLookupAdapter{repo: billingRepo}, nil, nil, nil, fundingLookup, bookingEntriesLookup),
-			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager, bookingEntriesLookup),
+			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager, bookingEntriesLookup, fundingLookup),
 			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter),
 			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher)),
 		},
