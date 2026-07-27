@@ -1,6 +1,7 @@
 package httpbookings
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -246,6 +247,9 @@ func parseCreateRequest(req createBookingRequest) (application.CreateBookingPara
 	if len(req.SessionEntries) > 0 {
 		sessionEntries = make([]domain.SessionEntry, 0, len(req.SessionEntries))
 		for _, e := range req.SessionEntries {
+			if e.DayOfWeek < 1 || e.DayOfWeek > 7 {
+				return application.CreateBookingParams{}, fmt.Errorf("day_of_week must be between 1 and 7 (got %d)", e.DayOfWeek)
+			}
 			typeID, err := uuid.Parse(e.SessionTypeID)
 			if err != nil {
 				return application.CreateBookingParams{}, err

@@ -43,7 +43,7 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/ui/mo
 
 export type BookingDetailTab = 'overview' | 'audit' | 'edit';
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 @Component({
   selector: 'app-manager-booking-detail',
@@ -133,13 +133,13 @@ export class ManagerBookingDetailComponent implements OnInit, OnDestroy {
   readonly dayNames = DAY_NAMES;
 
   readonly scheduleDays = [
-    { label: 'Monday', index: 0 },
-    { label: 'Tuesday', index: 1 },
-    { label: 'Wednesday', index: 2 },
-    { label: 'Thursday', index: 3 },
-    { label: 'Friday', index: 4 },
-    { label: 'Saturday', index: 5 },
-    { label: 'Sunday', index: 6 },
+    { label: 'Monday', index: 1 },
+    { label: 'Tuesday', index: 2 },
+    { label: 'Wednesday', index: 3 },
+    { label: 'Thursday', index: 4 },
+    { label: 'Friday', index: 5 },
+    { label: 'Saturday', index: 6 },
+    { label: 'Sunday', index: 7 },
   ];
 
   ngOnInit(): void {

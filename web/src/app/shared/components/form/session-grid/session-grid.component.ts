@@ -7,8 +7,8 @@ import { heroPlus, heroCheck } from '@ng-icons/heroicons/outline';
 import { StaffSessionType } from '../../../../features/staff/data/session-types-api.service';
 import { SessionEntry } from '../../../../features/staff/models/booking.models';
 
-const DEFAULT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const WEEKDAY_INDICES = [0, 1, 2, 3, 4];
+const DEFAULT_DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const WEEKDAY_INDICES = [1, 2, 3, 4, 5];
 
 @Component({
   selector: 'app-session-grid',

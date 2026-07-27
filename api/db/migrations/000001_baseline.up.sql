@@ -765,7 +765,7 @@ CREATE TABLE booking_session_entries (
     tenant_id uuid NOT NULL,
     branch_id uuid NOT NULL,
     booking_id uuid NOT NULL,
-    day_of_week integer NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 4),
+    day_of_week integer NOT NULL CHECK (day_of_week >= 1 AND day_of_week <= 7),
     session_type_id uuid NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),

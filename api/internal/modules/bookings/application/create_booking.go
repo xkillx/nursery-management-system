@@ -103,6 +103,15 @@ func (uc *CreateBooking) Execute(ctx context.Context, actor BookingActor, siteID
 	return CreateBookingResult{Booking: booking, Warnings: warnings}, nil
 }
 
+func weekdayToDayOfWeek(w time.Weekday) int {
+	// Convert Go's time.Weekday (Sunday=0, Monday=1, ..., Saturday=6)
+	// to domain convention (Monday=1, ..., Sunday=7).
+	if w == time.Sunday {
+		return 7
+	}
+	return int(w)
+}
+
 func (uc *CreateBooking) checkClosureWarnings(ctx context.Context, tenantID, branchID uuid.UUID, params CreateBookingParams, termTimeOnly bool) []domain.ClosureWarning {
 	sessionDays := make(map[int]bool)
 	for _, se := range params.SessionEntries {
@@ -116,7 +125,7 @@ func (uc *CreateBooking) checkClosureWarnings(ctx context.Context, tenantID, bra
 
 	var warnings []domain.ClosureWarning
 	for d := params.EffectiveStartDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
-		if !sessionDays[int(d.Weekday())] {
+		if !sessionDays[weekdayToDayOfWeek(d.Weekday())] {
 			continue
 		}
 		isClosed, reason, err := uc.calendarQuery.CheckDate(ctx, tenantID, branchID, d, termTimeOnly)
