@@ -1,6 +1,9 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type DomainError struct {
 	Code    string
@@ -81,7 +84,7 @@ func New(code, message string, field ...string) *DomainError {
 
 func IsNotFound(err error) bool {
 	if d, ok := err.(*DomainError); ok {
-		return d.Code == "not_found"
+		return d.Code == "not_found" || strings.HasSuffix(d.Code, "_not_found")
 	}
 	return false
 }
