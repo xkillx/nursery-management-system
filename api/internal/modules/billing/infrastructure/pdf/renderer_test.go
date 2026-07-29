@@ -242,3 +242,99 @@ func TestRenderer_Render_StatusValues(t *testing.T) {
 func timePtr(t time.Time) *time.Time {
 	return &t
 }
+
+func TestRenderer_Render_NurseryProDesign(t *testing.T) {
+	r, err := NewRenderer()
+	if err != nil {
+		t.Fatalf("NewRenderer: %v", err)
+	}
+
+	unit1 := 22500
+	unit2 := 1500
+	unit3 := 1050
+	unit4 := 3750
+	qty1 := 9600
+	qty2 := 720
+	qty3 := 3600
+
+	input := InvoicePDFInput{
+		SiteProfile: InvoicePDFSiteProfile{
+			NurseryName:     "NurseryPro Central",
+			Phone:           "020 8822 0033",
+			Email:           "admin@nurserypro.co.uk",
+			AddressStreet:   "88 Education Square",
+			AddressCity:     "Bloomsbury",
+			AddressPostcode: "WC1N 1EX",
+			RegNumber:       "12993844",
+			VATNumber:       "GB 992 1122 33",
+			BankName:        "Barclays UK",
+			SortCode:        "20-44-55",
+			AccountNumber:   "88220033",
+		},
+		Invoice: InvoicePDFMeta{
+			InvoiceNumber: "INV-2024-0892",
+			BillingMonth:  time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC),
+			IssueDate:     timePtr(time.Date(2023, 10, 12, 0, 0, 0, 0, time.UTC)),
+			DueDate:       timePtr(time.Date(2023, 10, 26, 0, 0, 0, 0, time.UTC)),
+			Status:        "PAID",
+		},
+		Parent: InvoicePDFParent{
+			FullName:        "Mr. David Harrison",
+			AddressLine1:    "42 Nightingale Lane",
+			AddressCity:     "London",
+			AddressPostcode: "SW12 8TH",
+			Email:           "david.h@example.com",
+		},
+		Child: InvoicePDFChild{
+			ChildName: "Leo Harrison",
+			RoomName:  "Pre-School Room",
+		},
+		Lines: []InvoicePDFLine{
+			{
+				Description:     "Full-Time Childcare",
+				SubDescription:  "Standard Weekly Rate - October Week 1-4",
+				QuantityMinutes: &qty1,
+				UnitAmountMinor: &unit1,
+				LineAmountMinor: 90000,
+			},
+			{
+				Description:     "After-School Club",
+				SubDescription:  "Extended hours: 17:30 - 18:30",
+				QuantityMinutes: &qty2,
+				UnitAmountMinor: &unit2,
+				LineAmountMinor: 18000,
+			},
+			{
+				Description:     "Universal 15 Hours Funding",
+				SubDescription:  "Early Years Funding Offset",
+				QuantityMinutes: &qty3,
+				UnitAmountMinor: &unit3,
+				LineAmountMinor: 63000,
+				IsFunded:        true,
+			},
+			{
+				Description:     "Sibling Discount",
+				SubDescription:  "5% applied to care fees",
+				UnitAmountMinor: &unit4,
+				LineAmountMinor: 3750,
+				IsDiscount:      true,
+			},
+		},
+		SubtotalMinor:   108000,
+		DeductionMinor:  66750,
+		TotalMinor:      41250,
+		BalanceDueMinor: 41250,
+	}
+
+	pdfBytes, err := r.Render(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+
+	if len(pdfBytes) == 0 {
+		t.Fatal("expected non-empty PDF bytes")
+	}
+	if !bytes.HasPrefix(pdfBytes, []byte("%PDF")) {
+		t.Fatal("expected valid PDF header")
+	}
+}

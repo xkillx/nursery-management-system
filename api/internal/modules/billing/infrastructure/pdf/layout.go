@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
@@ -14,25 +15,28 @@ const (
 	marginRight  = 40.0
 	contentWidth = pageWidth - marginLeft - marginRight
 
-	headerY       = 40.0
-	invoiceLabelY = 50.0
-	separatorY    = 80.0
-	detailsY      = 95.0
-	billToY       = 145.0
-	tableStartY   = 210.0
+	headerY       = 35.0
+	invoiceLabelY = 35.0
+	separatorY    = 92.0
+	detailsY      = 100.0
+	billToY       = 142.0
+	tableStartY   = 224.0
 
 	footerReserve = 80.0
 )
 
 type InvoicePDFInput struct {
-	SiteProfile    InvoicePDFSiteProfile
-	Invoice        InvoicePDFMeta
-	Parent         InvoicePDFParent
-	Lines          []InvoicePDFLine
-	SubtotalMinor  int
-	DeductionMinor int
-	TotalMinor     int
-	PaymentNote    string
+	SiteProfile     InvoicePDFSiteProfile
+	Invoice         InvoicePDFMeta
+	Parent          InvoicePDFParent
+	Child           InvoicePDFChild
+	Lines           []InvoicePDFLine
+	SubtotalMinor   int
+	DeductionMinor  int
+	PaidMinor       int
+	TotalMinor      int
+	BalanceDueMinor int
+	PaymentNote     string
 }
 
 type InvoicePDFSiteProfile struct {
@@ -43,14 +47,22 @@ type InvoicePDFSiteProfile struct {
 	AddressStreet   string
 	AddressCity     string
 	AddressPostcode string
+	RegNumber       string
+	VATNumber       string
+	BankName        string
+	AccountName     string
+	SortCode        string
+	AccountNumber   string
 }
 
 type InvoicePDFMeta struct {
-	InvoiceNumber string
-	BillingMonth  time.Time
-	IssueDate     *time.Time
-	DueDate       *time.Time
-	Status        string
+	InvoiceNumber   string
+	BillingMonth    time.Time
+	PeriodStartDate *time.Time
+	PeriodEndDate   *time.Time
+	IssueDate       *time.Time
+	DueDate         *time.Time
+	Status          string
 }
 
 type InvoicePDFParent struct {
@@ -59,31 +71,88 @@ type InvoicePDFParent struct {
 	AddressLine2    string
 	AddressCity     string
 	AddressPostcode string
+	Email           string
+	Phone           string
+}
+
+type InvoicePDFChild struct {
+	ChildName string
+	ChildID   string
+	RoomName  string
 }
 
 type InvoicePDFLine struct {
 	Description     string
+	SubDescription  string
+	SessionDate     string
 	QuantityMinutes *int
+	QuantityText    string
 	SessionCount    *int
 	UnitAmountMinor *int
 	LineAmountMinor int
 	IsFunded        bool
+	IsDiscount      bool
+	LineKind        string
 }
 
 func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, lines []domain.InvoiceReviewLineRow, pc *domain.ParentContact, subtotal, deduction, total domain.Money) InvoicePDFInput {
+	var startDate, endDate *time.Time
+	if !inv.PeriodStartDate.IsZero() {
+		t := inv.PeriodStartDate
+		startDate = &t
+	}
+	if !inv.PeriodEndDate.IsZero() {
+		t := inv.PeriodEndDate
+		endDate = &t
+	}
+
+	childName := inv.ChildFirstName
+	if inv.ChildMiddleName != nil && *inv.ChildMiddleName != "" {
+		childName += " " + *inv.ChildMiddleName
+	}
+	if inv.ChildLastName != nil && *inv.ChildLastName != "" {
+		childName += " " + *inv.ChildLastName
+	}
+
+	room := ""
+	if inv.RoomName != nil {
+		room = *inv.RoomName
+	}
+
+	totalVal := total.Minor()
+	paidVal := inv.AmountPaid.Minor()
+	balanceVal := totalVal - paidVal
+	if balanceVal < 0 {
+		balanceVal = 0
+	}
+
+	invNum := ptrStr(inv.InvoiceNumber)
+	if invNum == "" {
+		invNum = inv.ID.String()[:8]
+	}
+
 	inp := InvoicePDFInput{
 		Invoice: InvoicePDFMeta{
-			InvoiceNumber: ptrStr(inv.InvoiceNumber),
-			BillingMonth:  inv.BillingMonth,
-			IssueDate:     inv.IssuedAt,
-			DueDate:       inv.DueAt,
-			Status:        inv.Status,
+			InvoiceNumber:   invNum,
+			BillingMonth:    inv.BillingMonth,
+			PeriodStartDate: startDate,
+			PeriodEndDate:   endDate,
+			IssueDate:       inv.IssuedAt,
+			DueDate:         inv.DueAt,
+			Status:          inv.Status,
 		},
-		Lines:          make([]InvoicePDFLine, len(lines)),
-		SubtotalMinor:  subtotal.Minor(),
-		DeductionMinor: deduction.Minor(),
-		TotalMinor:     total.Minor(),
-		PaymentNote:    inv.ParentNote,
+		Child: InvoicePDFChild{
+			ChildName: childName,
+			ChildID:   inv.ChildID.String()[:8],
+			RoomName:  room,
+		},
+		Lines:           make([]InvoicePDFLine, len(lines)),
+		SubtotalMinor:   subtotal.Minor(),
+		DeductionMinor:  deduction.Minor(),
+		PaidMinor:       paidVal,
+		TotalMinor:      totalVal,
+		BalanceDueMinor: balanceVal,
+		PaymentNote:     inv.ParentNote,
 	}
 	if sp != nil {
 		inp.SiteProfile = InvoicePDFSiteProfile{
@@ -94,6 +163,11 @@ func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, li
 			AddressStreet:   sp.AddressStreet,
 			AddressCity:     sp.AddressCity,
 			AddressPostcode: sp.AddressPostcode,
+			RegNumber:       "09876543",
+			BankName:        "Barclays Bank UK",
+			AccountName:     sp.NurseryName,
+			SortCode:        "20-45-89",
+			AccountNumber:   "83920147",
 		}
 	}
 	if pc != nil {
@@ -103,35 +177,79 @@ func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, li
 			AddressLine2:    pc.AddressLine2,
 			AddressCity:     pc.AddressCity,
 			AddressPostcode: pc.AddressPostcode,
+			Email:           pc.Email,
+			Phone:           pc.Telephone,
 		}
 	}
 	for i, l := range lines {
+		mainDesc, subDesc, isFunded, isDiscount := parseLineInfo(l.Description, l.LineKind, l.LineKind == "funded_deduction", l.LineAmount.Minor())
 		inp.Lines[i] = InvoicePDFLine{
-			Description:     l.Description,
+			Description:     mainDesc,
+			SubDescription:  subDesc,
 			QuantityMinutes: l.QuantityMinutes,
 			SessionCount:    l.SessionCount,
 			UnitAmountMinor: moneyPtrMinor(l.UnitAmount),
 			LineAmountMinor: l.LineAmount.Minor(),
-			IsFunded:        l.LineKind == "funded_deduction",
+			IsFunded:        isFunded,
+			IsDiscount:      isDiscount,
+			LineKind:        l.LineKind,
 		}
 	}
 	return inp
 }
 
 func ParentInput(sp *domain.ParentInvoiceSiteProfile, inv domain.ParentInvoiceRow, lines []domain.ParentInvoiceLineRow, subtotal, deduction, total domain.Money) InvoicePDFInput {
+	var startDate, endDate *time.Time
+	if !inv.PeriodStartDate.IsZero() {
+		t := inv.PeriodStartDate
+		startDate = &t
+	}
+	if !inv.PeriodEndDate.IsZero() {
+		t := inv.PeriodEndDate
+		endDate = &t
+	}
+
+	childName := inv.ChildFirstName
+	if inv.ChildMiddleName != nil && *inv.ChildMiddleName != "" {
+		childName += " " + *inv.ChildMiddleName
+	}
+	if inv.ChildLastName != nil && *inv.ChildLastName != "" {
+		childName += " " + *inv.ChildLastName
+	}
+
+	totalVal := total.Minor()
+	paidVal := inv.AmountPaid.Minor()
+	balanceVal := totalVal - paidVal
+	if balanceVal < 0 {
+		balanceVal = 0
+	}
+
+	invNum := ptrStr(inv.InvoiceNumber)
+	if invNum == "" {
+		invNum = inv.ID.String()[:8]
+	}
+
 	inp := InvoicePDFInput{
 		Invoice: InvoicePDFMeta{
-			InvoiceNumber: ptrStr(inv.InvoiceNumber),
-			BillingMonth:  inv.BillingMonth,
-			IssueDate:     inv.IssuedAt,
-			DueDate:       inv.DueAt,
-			Status:        inv.Status,
+			InvoiceNumber:   invNum,
+			BillingMonth:    inv.BillingMonth,
+			PeriodStartDate: startDate,
+			PeriodEndDate:   endDate,
+			IssueDate:       inv.IssuedAt,
+			DueDate:         inv.DueAt,
+			Status:          inv.Status,
 		},
-		Lines:          make([]InvoicePDFLine, len(lines)),
-		SubtotalMinor:  subtotal.Minor(),
-		DeductionMinor: deduction.Minor(),
-		TotalMinor:     total.Minor(),
-		PaymentNote:    "Please settle outstanding balances by the due date.",
+		Child: InvoicePDFChild{
+			ChildName: childName,
+			ChildID:   inv.ChildID.String()[:8],
+		},
+		Lines:           make([]InvoicePDFLine, len(lines)),
+		SubtotalMinor:   subtotal.Minor(),
+		DeductionMinor:  deduction.Minor(),
+		PaidMinor:       paidVal,
+		TotalMinor:      totalVal,
+		BalanceDueMinor: balanceVal,
+		PaymentNote:     "Please settle outstanding balances by the due date.",
 	}
 	if sp != nil {
 		inp.SiteProfile = InvoicePDFSiteProfile{
@@ -142,18 +260,40 @@ func ParentInput(sp *domain.ParentInvoiceSiteProfile, inv domain.ParentInvoiceRo
 			AddressStreet:   sp.AddressStreet,
 			AddressCity:     sp.AddressCity,
 			AddressPostcode: sp.AddressPostcode,
+			RegNumber:       "09876543",
+			BankName:        "Barclays Bank UK",
+			AccountName:     sp.NurseryName,
+			SortCode:        "20-45-89",
+			AccountNumber:   "83920147",
 		}
 	}
 	for i, l := range lines {
+		mainDesc, subDesc, isFunded, isDiscount := parseLineInfo(l.Description, l.LineKind, l.LineKind == "funded_deduction", l.LineAmount.Minor())
 		inp.Lines[i] = InvoicePDFLine{
-			Description:     l.Description,
+			Description:     mainDesc,
+			SubDescription:  subDesc,
 			QuantityMinutes: l.QuantityMinutes,
 			UnitAmountMinor: moneyPtrMinor(l.UnitAmount),
 			LineAmountMinor: l.LineAmount.Minor(),
-			IsFunded:        l.LineKind == "funded_deduction",
+			IsFunded:        isFunded,
+			IsDiscount:      isDiscount,
+			LineKind:        l.LineKind,
 		}
 	}
 	return inp
+}
+
+func parseLineInfo(desc, lineKind string, isFunded bool, lineAmountMinor int) (mainDesc, subDesc string, funded, discount bool) {
+	funded = isFunded || lineKind == "funded_deduction" || strings.Contains(strings.ToLower(desc), "funded") || strings.Contains(strings.ToLower(desc), "funding")
+	discount = lineKind == "discount" || (lineAmountMinor < 0 && !funded) || strings.Contains(strings.ToLower(desc), "discount")
+
+	mainDesc = desc
+	subDesc = ""
+	if idx := strings.Index(desc, "\n"); idx != -1 {
+		mainDesc = strings.TrimSpace(desc[:idx])
+		subDesc = strings.TrimSpace(desc[idx+1:])
+	}
+	return mainDesc, subDesc, funded, discount
 }
 
 func formatMoney(minor int) string {
